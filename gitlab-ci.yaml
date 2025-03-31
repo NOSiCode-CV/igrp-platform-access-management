@@ -1,0 +1,238 @@
+###### DEV PIPELINE ######
+image: docker:27.3.1
+
+services:
+  - name: docker:27.3.1-dind
+    command: ["--tls=false", "--mtu=1240"]
+
+variables:
+  DOCKER_DRIVER: overlay2
+  DOCKER_TLS_CERTDIR: ""
+  DOCKER_HOST: tcp://docker:2375
+  KUBECONFIG: "/tmp/kubeconfig"
+  KUBE_NAMESPACE: "formacion6-back"
+  API_URL: "https://app-manager-dev-test.nosi.cv/apps/2/resources"
+  APPLICATION_NAME: "Formacion6"
+  HOME_URL: "frontend-dev-test.nosi.cv/wayvantbackend"
+  RESOURCE_NAME: "p2"
+  RESOURCE_DESCRIPTION: "staff 1"
+  REGISTRY_USERNAME: "bittor.vpn"
+  REGISTRY_PASSWORD: "Bh1030_1812#"
+  REGISTRY_URL: "registry.nosi.cv"
+  REGISTRY_PROJECT: "bittortest"
+  REGISTRY_IMAGE: "spring-api"
+  REGISTRY_TAG: "formacion6"
+  APP_URL: "https://frontend-dev-test.nosi.cv/wayvantbackend"
+  RESOURCE_ID: "2"
+  KEYCLOAK_URL: "https://keycloak-dev-test.nosi.cv"
+  KEYCLOAK_REALM: "igrp"
+  APP_MANAGER_CLIENT_ID: "CLIENT_igrp-app-manager"
+  APP_MANAGER_CLIENT_SECRET: "150TOLCyHV3PaofJLPaPjK1sGCNLDlJM"
+  KEYCLOAK_USERNAME: "admin"
+  KEYCLOAK_PASSWORD: "igrp30"
+
+stages:
+  - setup
+  - build
+  - deploy
+  - buildjson
+  - deployjson
+
+setup:
+  stage: setup
+  image: alpine:latest
+  script: |
+    echo "Configurando el entorno..." &&
+    export KUBE_NAMESPACE_FINAL="${CUSTOM_KUBE_NAMESPACE:-$KUBE_NAMESPACE}" &&
+    export API_URL_FINAL="${CUSTOM_API_URL:-$API_URL}" &&
+    export APPLICATION_NAME_FINAL="${CUSTOM_APPLICATION_NAME:-$APPLICATION_NAME}" &&
+    export HOME_URL_FINAL="${CUSTOM_HOME_URL:-$HOME_URL}" &&
+    export RESOURCE_NAME_FINAL="${CUSTOM_RESOURCE_NAME:-$RESOURCE_NAME}" &&
+    export RESOURCE_DESCRIPTION_FINAL="${CUSTOM_RESOURCE_DESCRIPTION:-$RESOURCE_DESCRIPTION}" &&
+    export APP_URL_FINAL="${CUSTOM_APP_URL:-$APP_URL}" &&
+    export RESOURCE_ID_FINAL="${CUSTOM_RESOURCE_ID:-$RESOURCE_ID}" &&
+    export PATHS_JSON=$(cat .igrpstudio/baseApi.json) &&
+    export APP_MANAGER_CLIENT_ID_FINAL="${CUSTOM_APP_MANAGER_CLIENT_ID:-$APP_MANAGER_CLIENT_ID}" &&
+    export APP_MANAGER_CLIENT_SECRET_FINAL="${CUSTOM_APP_MANAGER_CLIENT_SECRET:-$APP_MANAGER_CLIENT_SECRET}" &&
+    export KEYCLOAK_USERNAME_FINAL="${CUSTOM_KEYCLOAK_USERNAME:-$KEYCLOAK_USERNAME}" &&
+    export KEYCLOAK_PASSWORD_FINAL="${CUSTOM_KEYCLOAK_PASSWORD:-$KEYCLOAK_PASSWORD}" &&
+    export KEYCLOAK_URL_FINAL="${CUSTOM_KEYCLOAK_URL:-$KEYCLOAK_URL}" &&
+    export KEYCLOAK_REALM_FINAL="${CUSTOM_KEYCLOAK_REALM:-$KEYCLOAK_REALM}" &&
+    
+
+    echo "KUBE_NAMESPACE_FINAL: $KUBE_NAMESPACE_FINAL" &&
+    echo "API_URL_FINAL: $API_URL_FINAL" &&
+    echo "APPLICATION_NAME_FINAL: $APPLICATION_NAME_FINAL" &&
+    echo "HOME_URL_FINAL: $HOME_URL_FINAL" &&
+    echo "RESOURCE_NAME_FINAL: $RESOURCE_NAME_FINAL" &&
+    echo "RESOURCE_DESCRIPTION_FINAL: $RESOURCE_DESCRIPTION_FINAL" &&
+    echo "PATHS_JSON: $PATHS_JSON" &&
+    echo "APP_URL_FINAL: $APP_URL_FINAL" &&
+    echo "RESOURCE_ID_FINAL: $RESOURCE_ID_FINAL" &&
+    echo "APP_MANAGER_CLIENT_ID_FINAL: $APP_MANAGER_CLIENT_ID_FINAL" &&
+    echo "APP_MANAGER_CLIENT_SECRET_FINAL: $APP_MANAGER_CLIENT_SECRET_FINAL" &&
+    echo "KEYCLOAK_USERNAME_FINAL: $KEYCLOAK_USERNAME_FINAL" &&
+    echo "KEYCLOAK_PASSWORD_FINAL: $KEYCLOAK_PASSWORD_FINAL" &&
+    echo "KEYCLOAK_URL_FINAL: $KEYCLOAK_URL_FINAL" &&
+    echo "KEYCLOAK_REALM_FINAL: $KEYCLOAK_REALM_FINAL" &&
+    
+    printf 'KUBE_NAMESPACE_FINAL="%s"\n' "$KUBE_NAMESPACE_FINAL" > variables.env &&
+    printf 'API_URL_FINAL="%s"\n' "$API_URL_FINAL" >> variables.env &&
+    printf 'APPLICATION_NAME_FINAL="%s"\n' "$APPLICATION_NAME_FINAL" >> variables.env &&
+    printf 'HOME_URL_FINAL="%s"\n' "$HOME_URL_FINAL" >> variables.env &&
+    printf 'RESOURCE_NAME_FINAL="%s"\n' "$RESOURCE_NAME_FINAL" >> variables.env &&
+    printf 'RESOURCE_DESCRIPTION_FINAL="%s"\n' "$RESOURCE_DESCRIPTION_FINAL" >> variables.env &&
+    printf 'PATHS_JSON="%s"\n' "$PATHS_JSON" >> variables.env &&
+    printf 'APP_URL_FINAL="%s"\n' "$APP_URL_FINAL" >> variables.env &&
+    printf 'RESOURCE_ID_FINAL="%s"\n' "$RESOURCE_ID_FINAL" >> variables.env &&
+    printf 'APP_MANAGER_CLIENT_ID_FINAL="%s"\n' "$APP_MANAGER_CLIENT_ID_FINAL" >> variables.env &&
+    printf 'APP_MANAGER_CLIENT_SECRET_FINAL="%s"\n' "$APP_MANAGER_CLIENT_SECRET_FINAL" >> variables.env &&
+     printf 'KEYCLOAK_USERNAME_FINAL="%s"\n' "$KEYCLOAK_USERNAME_FINAL" >> variables.env &&
+    printf 'KEYCLOAK_PASSWORD_FINAL="%s"\n' "$KEYCLOAK_PASSWORD_FINAL" >> variables.env &&
+    printf 'KEYCLOAK_URL_FINAL="%s"\n' "$KEYCLOAK_URL_FINAL" >> variables.env &&
+    printf 'KEYCLOAK_REALM_FINAL="%s"\n' "$KEYCLOAK_REALM_FINAL" >> variables.env
+  artifacts:
+    paths:
+      - variables.env
+
+build:
+  stage: build
+  script:
+    - source variables.env
+    - docker login -u "$REGISTRY_USERNAME" -p "$REGISTRY_PASSWORD" $REGISTRY_URL
+    - docker build -t $REGISTRY_URL/$REGISTRY_PROJECT/$REGISTRY_IMAGE:$CI_PIPELINE_ID .
+    - docker tag $REGISTRY_URL/$REGISTRY_PROJECT/$REGISTRY_IMAGE:$CI_PIPELINE_ID $REGISTRY_URL/$REGISTRY_PROJECT/$REGISTRY_IMAGE:$REGISTRY_TAG
+    - docker push $REGISTRY_URL/$REGISTRY_PROJECT/$REGISTRY_IMAGE:$CI_PIPELINE_ID
+    - docker push $REGISTRY_URL/$REGISTRY_PROJECT/$REGISTRY_IMAGE:$REGISTRY_TAG
+
+deploy:
+  stage: deploy
+  image: ubuntu:22.04
+  before_script:
+    - apt-get update && apt-get install -y openssh-client
+    - apt-get -y install sshpass
+    - apt-get -y install gettext # Install gettext
+    - apt-get install -y apt-transport-https ca-certificates curl gnupg
+    - curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+    - chmod 644 /etc/apt/keyrings/kubernetes-apt-keyring.gpg 
+    - echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /' | tee /etc/apt/sources.list.d/kubernetes.list
+    - chmod 644 /etc/apt/sources.list.d/kubernetes.list   
+    - apt-get update
+    - apt-get install -y kubectl
+
+  script:
+    - source variables.env
+    - echo "$KUBECONFIG_CONTENT" > $KUBECONFIG
+    - kubectl create ns $KUBE_NAMESPACE_FINAL || true
+    # Process and apply cluster manifest
+    - envsubst < ./k8s/configmap.yaml | kubectl apply -f - -n $KUBE_NAMESPACE_FINAL
+    # Process and apply cluster manifest
+    - envsubst < ./k8s/cluster.yaml | kubectl apply -f - -n $KUBE_NAMESPACE_FINAL
+    - sleep 120
+    # Process and apply Deployment manifest
+    - envsubst < ./k8s/deployment.yaml | kubectl apply -f - -n $KUBE_NAMESPACE_FINAL
+    # Process and apply Service manifest
+    - envsubst < ./k8s/service.yaml | kubectl apply -f - -n $KUBE_NAMESPACE_FINAL
+    # Process and apply Ingress manifest
+    - envsubst < ./k8s/ingress.yaml | kubectl apply -f - -n $KUBE_NAMESPACE_FINAL
+    
+    
+build_json:
+  stage: buildjson
+  image: ubuntu:22.04
+  needs: [setup]
+  before_script:
+    - apt-get update -y # Update package list
+    - apt-get install -y jq # Install jq
+  script:
+    - source variables.env
+    - echo "Building payload.json..."
+    - |
+      permissions=$(jq -c '.' .igrpstudio/permissions.json)
+
+      if [ -z "$permissions" ] || [ "$permissions" = "[]" ]; then
+        echo "Error: permissions.json no contiene datos válidos."
+        exit 1
+      fi
+
+      endpoints=$(echo "$permissions" | jq '
+        map({
+          permission: .name,
+          endpoints: [.endpoints[] | {
+            name: .resource | sub("\\..*"; ""),
+            methods: [.method],
+            path: (if .path then "/" + .path else "/*" end)
+          }]
+        }) | 
+        group_by(.permission) | 
+        map({
+          permission: .[0].permission,
+          name: .[0].permission,
+          methods: (map(.endpoints[].methods[]) | unique),
+          path: "/*"
+        })
+      ')
+
+      jq -n \
+        --arg app_url "$APP_URL_FINAL" \
+        --arg home_url "$HOME_URL_FINAL" \
+        --arg application_name "$APPLICATION_NAME_FINAL" \
+        --arg resource_id "$RESOURCE_ID_FINAL" \
+        --argjson endpoints "$endpoints" \
+        '{
+          "type": "API",
+          "url": $app_url,
+          "description": "Demo backend",
+          "resourceItems": [
+            {
+              "name": "Backend permissions",
+              "url": $app_url,
+              "resourceItemType": "API_RESOURCE",
+              "description": "Permissions from the backend"
+            }
+          ],
+          "identityConfig": {
+            "application": $application_name,
+            "homeUrl": $app_url,
+            "name": ("app2-resource" + $resource_id),
+            "description": "App para registros de formaciones",
+            "endpoints": $endpoints
+          }
+        }' > payload.json
+
+    - cat payload.json
+  artifacts:
+    paths:
+      - payload.json
+
+
+
+
+
+
+deploy_resource:
+  stage: deployjson
+  image: ubuntu:22.04
+  needs: [build_json, setup]
+  before_script:
+    - apt-get update -y
+    - apt-get install -y curl jq
+  script:
+    - source variables.env
+    - |
+      TOKEN=$(
+        curl -v -X POST \
+          "$KEYCLOAK_URL_FINAL/realms/$KEYCLOAK_REALM_FINAL/protocol/openid-connect/token" \
+          -H 'content-type: application/x-www-form-urlencoded' \
+          -d "client_id=$APP_MANAGER_CLIENT_ID_FINAL" \
+          -d "client_secret=$APP_MANAGER_CLIENT_SECRET_FINAL" \
+          -d "username=$KEYCLOAK_USERNAME_FINAL" \
+          -d "password=$KEYCLOAK_PASSWORD_FINAL" \
+          -d 'grant_type=password' | jq --raw-output '.access_token'
+      )
+    - |
+      curl -X POST \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $TOKEN" \
+        -d @payload.json \
+        "$API_URL_FINAL"

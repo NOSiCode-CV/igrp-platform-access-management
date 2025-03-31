@@ -1,0 +1,1 @@
+{"type":"enum","module":"app","name":"Status","values":[{"name":"ACTIVE","attributes":[]},{"name":"INACTIVE","attributes":[]},{"name":"DELETED","attributes":[]}],"attributes":[{"type":"string","name":"Code"},{"type":"string","name":"Description"}]}

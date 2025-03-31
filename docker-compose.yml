@@ -1,0 +1,130 @@
+name: 'igrpplatformaccessmanagement-api-service'
+
+networks:
+  default:
+    name: igrpplatformaccessmanagement
+    external: false
+
+services:
+  otel-collector:
+      image: otel/opentelemetry-collector-contrib:0.82.0
+      container_name: otel-collector
+      restart: always
+      command:
+        - --config=/etc/otelcol-cont/otel-collector.yml
+      volumes:
+        - ./monitoring/collector/otel-collector.yml:/etc/otelcol-cont/otel-collector.yml
+      ports:
+        - ${OTEL_PPROF_EXTENSION}:${OTEL_PPROF_EXTENSION} # pprof extension
+        - ${OTEL_PROMETHEUS_METRICS_EXPORTER_PORT}:${OTEL_PROMETHEUS_METRICS_EXPORTER_PORT} # Prometheus' metrics exposed by the collector
+        - ${OTEL_PROMETHEUS_COLLECTOR_METRICS_EXPORTER_PORT}:${OTEL_PROMETHEUS_COLLECTOR_METRICS_EXPORTER_PORT} # Prometheus exporter metrics
+        - ${OTEL_HEALTH_CHECK_PORT}:${OTEL_HEALTH_CHECK_PORT} # health_check extension
+        - ${OTEL_GRPC_PORT}:${OTEL_GRPC_PORT} # OTLP gRPC receiver
+        - ${OTEL_HTTP_PORT}:${OTEL_HTTP_PORT} # OTLP http receiver
+        - ${OTEL_ZPAGES_PORT}:${OTEL_ZPAGES_PORT} # zpages extension
+  
+  prometheus:
+    image: prom/prometheus:v2.51.2
+    container_name: prometheus
+    ports:
+      - ${PROMETHEUS_SERVICE_EXTERNAL_PORT}:${PROMETHEUS_SERVICE_INTERNAL_PORT}
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    command: "--config.file=/etc/prometheus/prometheus.yml"
+  
+  promtail:
+    image: grafana/promtail:3.0.0
+    container_name: promtail
+    environment:
+      - PROMTAIL_SERVICE_INTERNAL_PORT=${PROMTAIL_SERVICE_INTERNAL_PORT}
+      - LOKI_SERVICE_INTERNAL_PORT=${LOKI_SERVICE_INTERNAL_PORT}
+    volumes:
+      - ./monitoring/promtail/promtail-docker-config.yml:/etc/promtail/docker-config.yml
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: "--config.expand-env=true --config.file=/etc/promtail/docker-config.yml"
+  
+  loki:
+    image: grafana/loki:3.0.0
+    container_name: loki
+    command: "-config.expand-env=true -config.file=/etc/loki/local-config.yaml"
+    ports:
+      - ${LOKI_SERVICE_EXTERNAL_PORT}:${LOKI_SERVICE_INTERNAL_PORT}
+    depends_on:
+      - promtail
+  
+  tempo:
+    image: grafana/tempo:2.4.1
+    container_name: tempo
+    command: "-config.expand-env=true -config.file /etc/tempo-config.yml"
+    environment:
+      - TEMPO_SERVICE_HTTP_PORT=${TEMPO_SERVICE_HTTP_PORT}
+    ports:
+      - ${TEMPO_SERVICE_HTTP_PORT}:${TEMPO_SERVICE_HTTP_PORT} # Tempo
+      - ${TEMPO_SERVICE_ZIPKIN_PORT}:${TEMPO_SERVICE_ZIPKIN_PORT}     # Zipkin
+      - ${OTEL_GRPC_PORT}  # otlp grpc
+    volumes:
+      - ./monitoring/tempo/tempo.yml:/etc/tempo-config.yml
+  
+  grafana:
+    image: grafana/grafana:10.4.2
+    container_name: grafana
+    ports:
+      - ${GRAFANA_SERVICE_EXTERNAL_PORT}:${GRAFANA_SERVICE_INTERNAL_PORT}
+    volumes:
+      - grafana_data:/var/lib/grafana
+    environment:
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=${GRAFANA_ALLOW_SIGN_UP}
+  postgres:
+      image: postgres:14-alpine
+      container_name: postgres
+      environment:
+        POSTGRES_USER: ${POSTGRES_USER}
+        POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+        POSTGRES_DB: ${POSTGRES_DATABASE}
+      ports:
+        - ${POSTGRES_EXTERNAL_PORT}:${POSTGRES_INTERNAL_PORT}
+      volumes:
+        - postgres-data-14:/var/lib/postgresql/data
+      restart: unless-stopped
+  igrpplatformaccessmanagement-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: igrpplatformaccessmanagement-service
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    environment:
+      - SERVER_PORT=${SERVICE_PORT}
+      - SERVICE_NAME=igrpplatformaccessmanagement-service
+      - SPRING_ACTIVE_PROFILE=${SERVICE_PROFILE}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:${POSTGRES_INTERNAL_PORT}/${POSTGRES_DATABASE}
+      - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
+      - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
+      - OTEL_TRACES_EXPORTER=${OTEL_TRACES_EXPORTER}
+      - OTEL_METRICS_EXPORTER=${OTEL_METRICS_EXPORTER}
+      - OTEL_LOGS_EXPORTER=${OTEL_LOGS_EXPORTER}
+      - OTEL_COLLECTOR_ENDPOINT=${OTEL_COLLECTOR_ENDPOINT}
+      - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME}
+      - MANAGEMENT_TRACING_ENABLED=true
+      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://tempo:${TEMPO_SERVICE_ZIPKIN_PORT}
+      - ENABLE_SWAGGER=${ENABLE_SWAGGER}
+    ports:
+      - ${SERVICE_PORT}:${SERVICE_PORT}
+    #restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          memory: 700m
+    labels:
+      logging: "promtail"
+
+volumes:
+  grafana_data:
+    driver: local
+  postgres-data-14:
+    driver: local

@@ -1,0 +1,1 @@
+{"type":"enum","module":"app","name":"AppType","values":[{"name":"EXTERNAL","attributes":[]},{"name":"INTERNAL","attributes":[]}],"attributes":[{"type":"string","name":"Code"},{"type":"string","name":"Description"}]}
