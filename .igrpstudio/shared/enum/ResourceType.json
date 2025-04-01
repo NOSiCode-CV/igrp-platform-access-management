@@ -1,0 +1,1 @@
+{"type":"enum","module":"shared","name":"ResourceType","values":[{"name":"API","attributes":["API","API"]},{"name":"UI","attributes":["UI","User Interface"]}],"attributes":[{"type":"string","name":"Code"},{"type":"string","name":"Description"}]}

@@ -111,30 +111,30 @@
 		    <groupId>com.fasterxml.jackson.dataformat</groupId>
 		    <artifactId>jackson-dataformat-xml</artifactId>
 		</dependency>
-    
-    <!-- IGRP dependencies -->
-    <dependency>
-        <groupId>cv.igrp.framework</groupId>
-        <artifactId>core</artifactId>
-        <version>0.0.1-alpha</version>
-    </dependency>
-    
-    <dependency>
-      <groupId>cv.igrp.framework</groupId>
-      <artifactId>stereotype</artifactId>
-      <version>0.0.1-alpha</version>
-    </dependency>		 
-		 <!-- OpenTelemetry SDK Nativo -->
-		 <dependency>
-		     <groupId>io.opentelemetry</groupId>
-		     <artifactId>opentelemetry-sdk</artifactId>
-		     <version>1.32.0</version>
-		 </dependency>
-		 <dependency>
-		     <groupId>io.opentelemetry</groupId>
-		     <artifactId>opentelemetry-exporter-otlp</artifactId>
-		     <version>1.32.0</version>
-		 </dependency>		
+
+		<!-- IGRP dependencies -->
+		<dependency>
+			<groupId>cv.igrp.framework</groupId>
+			<artifactId>core</artifactId>
+			<version>0.0.1-alpha</version>
+		</dependency>
+
+		<dependency>
+			<groupId>cv.igrp.framework</groupId>
+			<artifactId>stereotype</artifactId>
+			<version>0.0.1-alpha</version>
+		</dependency>
+		<!-- OpenTelemetry SDK Nativo -->
+		<dependency>
+			<groupId>io.opentelemetry</groupId>
+			<artifactId>opentelemetry-sdk</artifactId>
+			<version>1.32.0</version>
+		</dependency>
+		<dependency>
+			<groupId>io.opentelemetry</groupId>
+			<artifactId>opentelemetry-exporter-otlp</artifactId>
+			<version>1.32.0</version>
+		</dependency>
 		<!--Observability dependencies-->
 		<dependency>
 		  <groupId>org.springframework.boot</groupId>
@@ -152,6 +152,44 @@
 		<dependency>
 		  <groupId>io.opentelemetry</groupId>
 		  <artifactId>opentelemetry-exporter-zipkin</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
+		<!-- IGRP IAM Libraries -->
+		<dependency>
+			<groupId>cv.igrp.platform</groupId>
+			<artifactId>iam-keycloak</artifactId>
+			<version>0.0.1-alpha</version>
+		</dependency>
+
+		<dependency>
+			<groupId>cv.igrp.platform</groupId>
+			<artifactId>iam-core</artifactId>
+			<version>0.0.1-alpha</version>
+		</dependency>
+
+		<!-- IGRP Mail Libraries -->
+		<dependency>
+			<groupId>cv.igrp.platform</groupId>
+			<artifactId>mail-smtp</artifactId>
+			<version>0.0.1-alpha</version>
+		</dependency>
+
+		<!-- IGRP File Libraries -->
+		<dependency>
+			<groupId>cv.igrp.platform</groupId>
+			<artifactId>file-manager-core</artifactId>
+			<version>0.0.1-alpha</version>
+		</dependency>
+
+		<dependency>
+			<groupId>cv.igrp.platform</groupId>
+			<artifactId>file-manager-minio</artifactId>
+			<version>0.0.1-alpha</version>
 		</dependency>
 
   
