@@ -4,7 +4,7 @@ import cv.igrp.framework.stereotype.IgrpDTO;
 import jakarta.validation.*;
 import jakarta.validation.constraints.*;
 
-import cv.igrp.platform.access_management.resource.application.constants.ResourceItemType;
+import cv.igrp.platform.access_management.shared.application.constants.ResourceItemType;
 
 @IgrpDTO
 public record ResourceItemRequestDTO (

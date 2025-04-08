@@ -8,7 +8,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-import cv.igrp.platform.access_management.undefined.application.constants.MenuEntryType;
+import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 
 @Data
 @NoArgsConstructor

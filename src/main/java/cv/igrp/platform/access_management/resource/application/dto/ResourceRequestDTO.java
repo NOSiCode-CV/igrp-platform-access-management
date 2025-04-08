@@ -7,8 +7,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-import cv.igrp.platform.access_management.resource.application.constants.ResourceType;
 import cv.igrp.platform.access_management.resource.application.dto.ResourceItemRequestDTO;
+import cv.igrp.platform.access_management.shared.application.constants.ResourceType;
 import java.util.Collection;
 
 @Data

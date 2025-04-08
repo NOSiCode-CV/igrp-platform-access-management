@@ -88,5 +88,8 @@ public class MenuEntry extends AuditEntity {
     private App app;   @OneToMany(mappedBy = "Parent")
    private List<MenuEntry> Children;
 
+   @OneToMany(mappedBy = "Parent")
+   private List<MenuEntry> Self;
+
 
 }

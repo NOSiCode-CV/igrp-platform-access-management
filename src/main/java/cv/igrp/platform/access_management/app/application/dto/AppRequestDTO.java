@@ -3,7 +3,7 @@ package cv.igrp.platform.access_management.app.application.dto;
 import cv.igrp.framework.stereotype.IgrpDTO;
 import jakarta.validation.*;
 import jakarta.validation.constraints.*;
-import cv.igrp.platform.access_management.app.application.constants.AppType;
+import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import java.util.Collection;
 
 @IgrpDTO

@@ -81,8 +81,17 @@ public class App extends AuditEntity {
     @Column(name="picture", nullable = false)
     private String picture;
 
-     @OneToMany(mappedBy = "App")
+     @OneToMany(mappedBy = "Parent")
+   private List<MenuEntry> Children;
+
+   @OneToMany(mappedBy = "App")
    private List<App> MenuEntries;
+
+   @OneToMany(mappedBy = "App")
+   private List<App> Resources;
+
+   @OneToMany(mappedBy = "Application")
+   private List<App> Departments;
 
 
 }

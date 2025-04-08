@@ -42,7 +42,10 @@ public class ResourceItem extends AuditEntity {
 
   @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "resource", referencedColumnName = "id")
-    private Resource resource;   @OneToMany(mappedBy = "ResourceItem")
+    private Resource resource;   @OneToMany(mappedBy = "Parent")
+   private List<MenuEntry> Children;
+
+   @OneToMany(mappedBy = "ResourceItem")
    private List<ResourceItem> MenuEntries;
 
 

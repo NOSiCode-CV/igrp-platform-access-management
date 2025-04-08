@@ -1,0 +1,1 @@
+{"type":"model","module":"shared","name":"Role","tableName":"t_role","audit":true,"crud":false,"revision":true,"attributes":[{"name":"name","type":"string","length":255,"nullable":true,"unique":false,"primaryKey":true,"generationType":"AUTO","skipFieldRevision":false,"objectType":"java"}],"id":"gpu8ikuenr","uniqueConstraints":[],"indexes":[]}

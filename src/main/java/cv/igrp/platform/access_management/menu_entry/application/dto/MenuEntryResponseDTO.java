@@ -8,8 +8,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 
-import cv.igrp.platform.access_management.undefined.application.constants.MenuEntryType;
-import cv.igrp.platform.access_management.undefined.application.dto.FolderDTO;
+import cv.igrp.platform.access_management.menu_entry.application.dto.FolderDTO;
+import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 
 @Data
 @NoArgsConstructor
