@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
+import java.util.List;
 
 @Audited
 @Getter
@@ -35,5 +36,8 @@ public class User extends AuditEntity {
     @Column(name="image", nullable = false)
     private String image;
 
-  
+     @OneToMany(mappedBy = "User")
+private List<User> RecentApplications;
+
+
 }
