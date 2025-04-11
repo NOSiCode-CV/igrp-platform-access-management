@@ -4,13 +4,13 @@ import cv.igrp.platform.access_management.shared.config.AuditEntity;
 import cv.igrp.framework.stereotype.IgrpEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import org.hibernate.envers.Audited;
-import jakarta.validation.constraints.NotBlank;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
+import jakarta.validation.constraints.NotBlank;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
-@Audited
+
 @Getter
 @Setter
 @ToString
@@ -27,10 +27,8 @@ public class MenuEntry extends AuditEntity {
     private Integer id;
 
   
-
-    @NotBlank(message = "position is mandatory")
-    @Column(name="position", nullable = false)
-    private String position;
+    @Column(name="name", length=100)
+    private String name;
 
   
     @Enumerated(EnumType.STRING)
@@ -38,8 +36,8 @@ public class MenuEntry extends AuditEntity {
     private MenuEntryType type;
 
   
-    @Column(name="name")
-    private String name;
+    @Column(name="position")
+    private short position;
 
   
 
@@ -55,14 +53,8 @@ public class MenuEntry extends AuditEntity {
   
 
     @NotBlank(message = "target is mandatory")
-    @Column(name="target", nullable = false)
+    @Column(name="target", nullable = false, length=10)
     private String target;
-
-  
-
-    @NotBlank(message = "userPermissions is mandatory")
-    @Column(name="userpermissions", nullable = false)
-    private String userPermissions;
 
   
 
@@ -73,20 +65,22 @@ public class MenuEntry extends AuditEntity {
   
 
 
-  @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "resourceitem", referencedColumnName = "id")
-    private ResourceItem resourceItem;
+  @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "application_id", referencedColumnName = "id")
+    private Application applicationId;
+    @NotNull(message = "resourceId is mandatory")
 
 
-  @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "parent", referencedColumnName = "id")
-    private MenuEntry parent;
+  @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "resource_id", referencedColumnName = "id")
+    private Resource resourceId;
+    @NotNull(message = "parentId is mandatory")
 
 
-  @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "app", referencedColumnName = "id")
-    private App app;   @OneToMany(mappedBy = "Parent")
-   private List<MenuEntry> Children;
+  @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id", referencedColumnName = "id")
+    private MenuEntry parentId;   @OneToMany(mappedBy = "ParentId")
+   private List<MenuEntry> Menus;
 
    @OneToMany(mappedBy = "Parent")
    private List<MenuEntry> Self;

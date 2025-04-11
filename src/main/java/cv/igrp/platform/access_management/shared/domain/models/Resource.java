@@ -6,8 +6,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import cv.igrp.platform.access_management.shared.application.constants.ResourceType;
-import jakarta.validation.constraints.NotBlank;
-import cv.igrp.platform.access_management.shared.application.constants.Status;
 import java.util.List;
 
 @Audited
@@ -27,32 +25,25 @@ public class Resource extends AuditEntity {
     private Integer id;
 
   
-    @Enumerated(EnumType.STRING)
-    @Column(name="type")
-    private ResourceType type;
+    @Column(name="name", length=100)
+    private String name;
 
   
-    @Column(name="url", unique = true)
-    private String url;
-
-  
-
-    @NotBlank(message = "description is mandatory")
-    @Column(name="description", nullable = false)
-    private String description;
+    @Column(name="type", length=15)
+    private String type;
 
   
     @Enumerated(EnumType.STRING)
     @Column(name="status")
-    private Status status;
+    private ResourceType status;
 
   
 
 
-  @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "app", referencedColumnName = "id")
-    private App app;   @OneToMany(mappedBy = "Resource")
-   private List<Resource> ResourceItems;
+  @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "application_id", referencedColumnName = "id")
+    private Application applicationId;   @OneToMany(mappedBy = "ResourceId")
+   private List<Resource> Resource;
 
 
 }

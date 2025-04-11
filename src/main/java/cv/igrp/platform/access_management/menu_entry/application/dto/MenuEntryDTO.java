@@ -3,15 +3,18 @@ package cv.igrp.platform.access_management.menu_entry.application.dto;
 import cv.igrp.framework.stereotype.IgrpDTO;
 import jakarta.validation.*;
 import jakarta.validation.constraints.*;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
-import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 
 @IgrpDTO
-public record FolderDTO (
+public class MenuEntryDTO {
+
   
-  MenuEntryType type, 
-  
-  Integer id, 
-  
-  String name
-){}
+  private Integer id;
+
+}
