@@ -8,14 +8,18 @@ import java.util.Collection;
 
 @IgrpDTO
 public record DepartmentDTO (
-  
-  String departmentName, 
-  
+  @NotNull(message = "The field <id> is required.")
+  Integer id, 
+  @NotBlank(message = "The field <code> is required.")
   String code, 
+  @NotBlank(message = "The field <name> is required.")
+  String name, 
   
+  Collection<String> description, 
+  @NotNull(message = "The field <status> is required.")
   DepartmentStatus status, 
+  @NotNull(message = "The field <application_id> is required.")
+  Integer application_id, 
   
-  Collection<String> availablePermissions, 
-  
-  String application
+  Integer parent_id
 ){}
