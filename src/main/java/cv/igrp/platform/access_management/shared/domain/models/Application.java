@@ -5,10 +5,10 @@ import cv.igrp.framework.stereotype.IgrpEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
+import java.util.UUID;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import java.util.List;
 
 @Audited
@@ -19,8 +19,8 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "t_application")
-public class Application extends AuditEntity {
+@Table(name = "t_app")
+public class App extends AuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -28,54 +28,73 @@ public class Application extends AuditEntity {
     private Integer id;
 
   
-
-    @NotBlank(message = "code is mandatory")
-    @Column(name="code", unique = true, nullable = false, length=15)
-    private String code;
-
-  
-
-    @NotBlank(message = "name is mandatory")
-    @Column(name="name", nullable = false, length=50)
-    private String name;
-
-  
-    @Column(name="description")
-    private String description;
-
-  
-    @NotNull(message = "status is mandatory")
-    @Enumerated(EnumType.STRING)
-    @Column(name="status", nullable = false)
-    private Status status;
-
-  
-    @NotNull(message = "type is mandatory")
-    @Enumerated(EnumType.STRING)
-    @Column(name="type", nullable = false)
-    private AppType type;
+    @Column(name="uuid", unique = true)
+    private UUID uuid;
 
   
     @Column(name="owner")
     private String owner;
 
   
-    @Column(name="picture")
-    private String picture;
+    @Column(name="name")
+    private String name;
 
   
-    @Column(name="url")
+
+    @NotBlank(message = "description is mandatory")
+    @Column(name="description", nullable = false)
+    private String description;
+
+  
+    @Enumerated(EnumType.STRING)
+    @Column(name="type")
+    private AppType type;
+
+  
+
+    @NotBlank(message = "url is mandatory")
+    @Column(name="url", nullable = false)
     private String url;
 
   
-    @Column(name="slug", length=50)
+
+    @NotBlank(message = "slug is mandatory")
+    @Column(name="slug", nullable = false)
     private String slug;
 
-     @OneToMany(mappedBy = "applicationId")
-private List<MenuEntry> menus;
+  
+    @Column(name="code", unique = true)
+    private String code;
+
+  
+    @Column(name="userpermissions")
+    private String userPermissions;
+
+  
+    @Enumerated(EnumType.STRING)
+    @Column(name="status")
+    private Status status;
+
+  
+
+    @NotBlank(message = "picture is mandatory")
+    @Column(name="picture", nullable = false)
+    private String picture;
+
+     @OneToMany(mappedBy = "parent")
+private List<MenuEntry> childrens;
+
+   @OneToMany(mappedBy = "app")
+private List<App> menuentrieses;
+
+   @OneToMany(mappedBy = "app")
+private List<App> resourceses;
+
+   @OneToMany(mappedBy = "application")
+private List<App> departmentses;
 
    @OneToMany(mappedBy = "applicationId")
-private List<Resource> resources;
+private List<Department> departmentses;
 
 
 }

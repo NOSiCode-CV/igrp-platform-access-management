@@ -6,7 +6,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import java.time.LocalDate;
+import jakarta.validation.constraints.NotNull;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import java.util.List;
 
 @Audited
 @Getter
@@ -25,16 +27,17 @@ public class Department extends AuditEntity {
     private Integer id;
 
   
-    @Column(name="departmentname")
-    private String departmentName;
-
-  
     @Column(name="code")
     private String code;
 
   
-    @Column(name="archivedat")
-    private LocalDate archivedAt;
+    @Column(name="name")
+    private String name;
+
+  
+    @NotNull(message = "description is mandatory")
+    @Column(name="description", nullable = false)
+    private LocalDate description;
 
   
     @Enumerated(EnumType.STRING)
@@ -45,6 +48,14 @@ public class Department extends AuditEntity {
 
 
   @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "application", referencedColumnName = "id")
-    private Application application;
+    @JoinColumn(name = "application_id", referencedColumnName = "id")
+    private App applicationId;
+
+
+  @OneToMany(mappedBy = "", fetch = FetchType.LAZY)
+private List<Department> parentIds;   @ManyToOne(fetch = FetchType.LAZY)
+   @JoinColumn(name = "")
+   private Department ;
+
+
 }
