@@ -10,7 +10,7 @@ import lombok.AllArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
+//@AllArgsConstructor
 public class GetApplicationsQuery implements Query {
 
 

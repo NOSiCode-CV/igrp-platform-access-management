@@ -47,7 +47,7 @@ public class MenuEntryController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "The list of the Menus",
+          description = "The List of the Menus",
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -58,17 +58,17 @@ public class MenuEntryController {
     }
   )
   
-  public ResponseEntity<MenuEntryDTO> getMenus(
-    @RequestParam(value = "applicationId") Integer applicationId)
+  public ResponseEntity<List<MenuEntryDTO>> getMenus(
+    @RequestParam(value = "applicationId", required = false) Integer applicationId)
   {
       final var query = new GetMenusQuery(applicationId);
-      ResponseEntity<MenuEntryDTO> response = (ResponseEntity<MenuEntryDTO>) queryBus.handle(query);
+      ResponseEntity<List<MenuEntryDTO>> response = (ResponseEntity<List<MenuEntryDTO>>) queryBus.handle(query);
       return ResponseEntity.ok(response.getBody());
       //return queryBus.handle(query);
   }
 
   @GetMapping(
-    value = "menus/{id}/{id}"
+    value = "menus/{id}"
   )
   @Operation(
     summary = "GET method to handle operations for getMenuById",
@@ -76,7 +76,7 @@ public class MenuEntryController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          description = "The Menu Data",
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -87,25 +87,25 @@ public class MenuEntryController {
     }
   )
   
-  public ResponseEntity<List<MenuEntryDTO>> getMenuById(
+  public ResponseEntity<MenuEntryDTO> getMenuById(
     @PathVariable(value = "id") Integer id)
   {
       final var query = new GetMenuByIdQuery(id);
-      ResponseEntity<List<MenuEntryDTO>> response = (ResponseEntity<List<MenuEntryDTO>>) queryBus.handle(query);
+      ResponseEntity<MenuEntryDTO> response = (ResponseEntity<MenuEntryDTO>) queryBus.handle(query);
       return ResponseEntity.ok(response.getBody());
       //return queryBus.handle(query);
   }
 
-  @GetMapping(
+  @PostMapping(
     value = "menus"
   )
   @Operation(
-    summary = "GET method to handle operations for createMenu",
-    description = "GET method to handle operations for createMenu",
+    summary = "POST method to handle operations for createMenu",
+    description = "POST method to handle operations for createMenu",
     responses = {
       @ApiResponse(
           responseCode = "201",
-          description = "The persisted Menu Entry Data",
+          description = "The Persisted Menu",
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -119,14 +119,14 @@ public class MenuEntryController {
   public ResponseEntity<MenuEntryDTO> createMenu( @Valid @RequestBody MenuEntryDTO createMenuRequest
     )
   {
-      final var query = new CreateMenuQuery(createMenuRequest);
-      ResponseEntity<MenuEntryDTO> response = (ResponseEntity<MenuEntryDTO>) queryBus.handle(query);
-      return ResponseEntity.ok(response.getBody());
-      //return queryBus.handle(query);
+      final var command = new CreateMenuCommand(createMenuRequest);
+       ResponseEntity<MenuEntryDTO> response = (ResponseEntity<MenuEntryDTO>) commandBus.send(command);
+       return ResponseEntity.ok(response.getBody());
+       //return commandBus.send(command);
   }
 
   @PutMapping(
-    value = "menus/{id}/{id}"
+    value = "menus/{id}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateMenu",
@@ -134,7 +134,7 @@ public class MenuEntryController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "The updated Menu Entry",
+          description = "The Updated Menu",
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -155,7 +155,7 @@ public class MenuEntryController {
   }
 
   @DeleteMapping(
-    value = "menu/{id}/{id}"
+    value = "menus/{id}"
   )
   @Operation(
     summary = "DELETE method to handle operations for deleteMenu",

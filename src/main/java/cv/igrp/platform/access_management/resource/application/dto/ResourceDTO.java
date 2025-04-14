@@ -23,7 +23,7 @@ public class ResourceDTO {
 	@Size(min = 5, message = "The field length <name> must be at least 5 characters.")
 	@Size(max = 100, message = "The field length <name> cannot be more than 100 characters.")
   private String name;
-  
+  @NotNull(message = "The field <type> is required.")
   private ResourceType type;
   
   private Status status;

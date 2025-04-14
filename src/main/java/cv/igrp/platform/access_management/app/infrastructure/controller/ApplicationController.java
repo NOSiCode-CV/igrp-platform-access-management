@@ -47,7 +47,7 @@ public class ApplicationController {
     responses = {
       @ApiResponse(
           responseCode = "201",
-          description = "The Application Data",
+          description = "The Persisted Application",
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -58,7 +58,7 @@ public class ApplicationController {
     }
   )
   
-  public ResponseEntity<ApplicationDTO> createApplication(@Valid @RequestBody ApplicationDTO createApplicationRequest
+  public ResponseEntity<ApplicationDTO> createApplication( @Valid @RequestBody ApplicationDTO createApplicationRequest
     )
   {
       final var command = new CreateApplicationCommand(createApplicationRequest);
@@ -76,7 +76,7 @@ public class ApplicationController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "The Application Data",
+          description = "The List of Application",
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -87,17 +87,17 @@ public class ApplicationController {
     }
   )
   
-  public ResponseEntity<ApplicationDTO> getApplications(
+  public ResponseEntity<List<ApplicationDTO>> getApplications(
     )
   {
       final var query = new GetApplicationsQuery();
-      ResponseEntity<ApplicationDTO> response = (ResponseEntity<ApplicationDTO>) queryBus.handle(query);
+      ResponseEntity<List<ApplicationDTO>> response = (ResponseEntity<List<ApplicationDTO>>) queryBus.handle(query);
       return ResponseEntity.ok(response.getBody());
       //return queryBus.handle(query);
   }
 
   @GetMapping(
-    value = "applications/{id}/{id}"
+    value = "applications/{id}"
   )
   @Operation(
     summary = "GET method to handle operations for getApplicationById",
@@ -126,7 +126,7 @@ public class ApplicationController {
   }
 
   @PutMapping(
-    value = "applications/{id}/{id}"
+    value = "applications/{id}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateApplication",
@@ -134,7 +134,7 @@ public class ApplicationController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "The Application Data",
+          description = "The Updated Application",
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -145,17 +145,17 @@ public class ApplicationController {
     }
   )
   
-  public ResponseEntity<ApplicationDTO> updateApplication(
-    @PathVariable(value = "id") Integer id)
+  public ResponseEntity<ApplicationDTO> updateApplication( @Valid @RequestBody ApplicationDTO updateApplicationRequest
+    , @PathVariable(value = "id") Integer id)
   {
-      final var command = new UpdateApplicationCommand(id);
+      final var command = new UpdateApplicationCommand(updateApplicationRequest, id);
        ResponseEntity<ApplicationDTO> response = (ResponseEntity<ApplicationDTO>) commandBus.send(command);
        return ResponseEntity.ok(response.getBody());
        //return commandBus.send(command);
   }
 
   @DeleteMapping(
-    value = "applications/{id}/{id}"
+    value = "applications/{id}"
   )
   @Operation(
     summary = "DELETE method to handle operations for deleteApplication",
@@ -187,12 +187,12 @@ public class ApplicationController {
     value = "applicationsByIds"
   )
   @Operation(
-    summary = "POST method to handle operations for getApplicationsByIds",
-    description = "POST method to handle operations for getApplicationsByIds",
+    summary = "GET method to handle operations for getApplicationsByIds",
+    description = "GET method to handle operations for getApplicationsByIds",
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "The list of Application",
+          description = "The List of Application",
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -203,13 +203,13 @@ public class ApplicationController {
     }
   )
   
-  public ResponseEntity<List<ApplicationDTO>> getApplicationsByIds(
+  public ResponseEntity<List<ApplicationDTO>> getApplicationsByIds(@RequestBody List<Integer> ids
     )
   {
-      final var command = new GetApplicationsByIdsCommand();
-       ResponseEntity<List<ApplicationDTO>> response = (ResponseEntity<List<ApplicationDTO>>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+      final var query = new GetApplicationsByIdsQuery(ids);
+      ResponseEntity<List<ApplicationDTO>> response = (ResponseEntity<List<ApplicationDTO>>) queryBus.handle(query);
+      return ResponseEntity.ok(response.getBody());
+      //return queryBus.handle(query);
   }
 
 }

@@ -2,6 +2,12 @@ package cv.igrp.platform.access_management.menu_entry.application.commands.handl
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.menu_entry.application.dto.MenuEntryDTO;
+import cv.igrp.platform.access_management.menu_entry.mapper.MenuEntryMapper;
+import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.menu_entry.application.commands.commands.CreateMenuCommand;
@@ -11,14 +17,27 @@ import cv.igrp.platform.access_management.menu_entry.application.commands.comman
 @Service
 public class CreateMenuCommandHandler implements CommandHandler<CreateMenuCommand, ResponseEntity<MenuEntryDTO>> {
 
-   public CreateMenuCommandHandler() {
+   private MenuEntryRepository menuEntryRepository;
+   private MenuEntryMapper menuEntryMapper;
+   private ApplicationRepository applicationRepository;
+   private ResourceRepository resourceRepository;
 
+   public CreateMenuCommandHandler(MenuEntryRepository menuEntryRepository, MenuEntryMapper menuEntryMapper, ApplicationRepository applicationRepository, ResourceRepository resourceRepository) {
+      this.menuEntryRepository =  menuEntryRepository;
+      this.menuEntryMapper =  menuEntryMapper;
+      this.applicationRepository =  applicationRepository;
+      this.resourceRepository =  resourceRepository;
    }
 
    @IgrpCommandHandler
    public ResponseEntity<MenuEntryDTO> handle(CreateMenuCommand command) {
-      // TODO: Implement the command handling logic here
-      return null;
+      MenuEntry entity = menuEntryMapper.toEntity(command.getMenuentrydto());
+      entity.setApplicationId(applicationRepository.getReferenceById(command.getMenuentrydto().getApplicationId()));
+      if (command.getMenuentrydto().getResourceId() != null)
+         entity.setResourceId(resourceRepository.getReferenceById(command.getMenuentrydto().getResourceId()));
+      if (command.getMenuentrydto().getParentId() != null)
+         entity.setParentId(menuEntryRepository.getReferenceById(command.getMenuentrydto().getParentId()));
+      return ResponseEntity.ok(menuEntryMapper.toDTO(menuEntryRepository.save(entity)));
    }
 
 }

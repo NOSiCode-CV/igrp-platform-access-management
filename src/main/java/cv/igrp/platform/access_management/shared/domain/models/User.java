@@ -6,7 +6,6 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
-import java.util.List;
 
 @Audited
 @Getter
@@ -20,24 +19,25 @@ import java.util.List;
 public class User extends AuditEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "igrpusername", unique = true, nullable = false)
-    private String igrpUsername;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id", unique = true, nullable = false)
+    private Integer id;
 
   
 
-    @NotBlank(message = "igrpPassword is mandatory")
-    @Column(name="igrppassword", nullable = false)
-    private String igrpPassword;
+    @NotBlank(message = "name is mandatory")
+    @Column(name="name", nullable = false)
+    private String name;
 
   
 
-    @NotBlank(message = "image is mandatory")
-    @Column(name="image", nullable = false)
-    private String image;
+    @NotBlank(message = "username is mandatory")
+    @Column(name="username", unique = true, nullable = false)
+    private String username;
 
-     @OneToMany(mappedBy = "User")
-private List<User> RecentApplications;
+  
+    @Column(name="email", unique = true)
+    private String email;
 
-
+  
 }

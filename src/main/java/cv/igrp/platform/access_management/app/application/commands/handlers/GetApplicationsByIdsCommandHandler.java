@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.app.application.commands.handlers;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.app.application.commands.commands.GetApplicationsByIdsCommand;

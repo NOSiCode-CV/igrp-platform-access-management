@@ -19,6 +19,7 @@ import cv.igrp.platform.access_management.resource.application.queries.queries.*
 
 import java.util.List;
 import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
+import cv.igrp.platform.access_management.resource.application.dto.ResourceItemDTO;
 
 @IgrpController
 @RestController
@@ -47,7 +48,94 @@ public class ResourceController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "A List Resources",
+          description = "A List of Resources",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ResourceDTO.class,
+                  type = "ResourceDTO")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<ResourceDTO>> getResources(
+    @RequestParam(value = "applicationId", required = false) Integer applicationId)
+  {
+      final var query = new GetResourcesQuery(applicationId);
+      ResponseEntity<List<ResourceDTO>> response = (ResponseEntity<List<ResourceDTO>>) queryBus.handle(query);
+      return ResponseEntity.ok(response.getBody());
+      //return queryBus.handle(query);
+  }
+
+  @GetMapping(
+    value = "resources/{id}"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getResourceById",
+    description = "GET method to handle operations for getResourceById",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "The Resource Data",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ResourceDTO.class,
+                  type = "ResourceDTO")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<ResourceDTO> getResourceById(
+    @PathVariable(value = "id") Integer id)
+  {
+      final var query = new GetResourceByIdQuery(id);
+      ResponseEntity<ResourceDTO> response = (ResponseEntity<ResourceDTO>) queryBus.handle(query);
+      return ResponseEntity.ok(response.getBody());
+      //return queryBus.handle(query);
+  }
+
+  @PostMapping(
+    value = "resources"
+  )
+  @Operation(
+    summary = "POST method to handle operations for createResource",
+    description = "POST method to handle operations for createResource",
+    responses = {
+      @ApiResponse(
+          responseCode = "201",
+          description = "The Created Resource",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ResourceDTO.class,
+                  type = "ResourceDTO")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<ResourceDTO> createResource( @Valid @RequestBody ResourceDTO createResourceRequest
+    )
+  {
+      final var command = new CreateResourceCommand(createResourceRequest);
+       ResponseEntity<ResourceDTO> response = (ResponseEntity<ResourceDTO>) commandBus.send(command);
+       return ResponseEntity.ok(response.getBody());
+       //return commandBus.send(command);
+  }
+
+  @PutMapping(
+    value = "resources/{id}"
+  )
+  @Operation(
+    summary = "PUT method to handle operations for updateResource",
+    description = "PUT method to handle operations for updateResource",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "The Updated Resource Data",
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -58,13 +146,100 @@ public class ResourceController {
     }
   )
   
-  public ResponseEntity<List<ResourceDTO>> getResources(
-    )
+  public ResponseEntity<ResourceDTO> updateResource( @Valid @RequestBody ResourceDTO updateResourceRequest
+    , @PathVariable(value = "id") Integer id)
   {
-      final var query = new GetResourcesQuery();
-      ResponseEntity<List<ResourceDTO>> response = (ResponseEntity<List<ResourceDTO>>) queryBus.handle(query);
-      return ResponseEntity.ok(response.getBody());
-      //return queryBus.handle(query);
+      final var command = new UpdateResourceCommand(updateResourceRequest, id);
+       ResponseEntity<ResourceDTO> response = (ResponseEntity<ResourceDTO>) commandBus.send(command);
+       return ResponseEntity.ok(response.getBody());
+       //return commandBus.send(command);
+  }
+
+  @DeleteMapping(
+    value = "resources/{id}"
+  )
+  @Operation(
+    summary = "DELETE method to handle operations for deleteResource",
+    description = "DELETE method to handle operations for deleteResource",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "No Content",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> deleteResource(
+    @PathVariable(value = "id") Integer id)
+  {
+      final var command = new DeleteResourceCommand(id);
+       ResponseEntity<String> response = (ResponseEntity<String>) commandBus.send(command);
+       return ResponseEntity.ok(response.getBody());
+       //return commandBus.send(command);
+  }
+
+  @PostMapping(
+    value = "resources/{id}/addItems"
+  )
+  @Operation(
+    summary = "POST method to handle operations for addItems",
+    description = "POST method to handle operations for addItems",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "The Resource Data",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ResourceDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<ResourceDTO> addItems( @Valid @RequestBody ResourceItemDTO addItemsRequest
+    , @PathVariable(value = "id") Integer id)
+  {
+      final var command = new AddItemsCommand(addItemsRequest, id);
+       ResponseEntity<ResourceDTO> response = (ResponseEntity<ResourceDTO>) commandBus.send(command);
+       return ResponseEntity.ok(response.getBody());
+       //return commandBus.send(command);
+  }
+
+  @PostMapping(
+    value = "resources/{id}/removeItems"
+  )
+  @Operation(
+    summary = "POST method to handle operations for removeItems",
+    description = "POST method to handle operations for removeItems",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "The Resource Data",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ResourceDTO.class,
+                  type = "ResourceDTO")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<ResourceDTO> removeItems( @Valid @RequestBody ResourceItemDTO removeItemsRequest
+    , @PathVariable(value = "id") Integer id)
+  {
+      final var command = new RemoveItemsCommand(removeItemsRequest, id);
+       ResponseEntity<ResourceDTO> response = (ResponseEntity<ResourceDTO>) commandBus.send(command);
+       return ResponseEntity.ok(response.getBody());
+       //return commandBus.send(command);
   }
 
 }

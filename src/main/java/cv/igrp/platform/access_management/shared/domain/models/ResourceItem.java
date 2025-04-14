@@ -5,8 +5,8 @@ import cv.igrp.framework.stereotype.IgrpEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
-import cv.igrp.platform.access_management.shared.application.constants.ResourceItemType;
-import java.util.List;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 
 @Audited
 @Getter
@@ -25,12 +25,9 @@ public class ResourceItem extends AuditEntity {
     private Integer id;
 
   
-    @Enumerated(EnumType.STRING)
-    @Column(name="type")
-    private ResourceItemType type;
 
-  
-    @Column(name="name")
+    @NotBlank(message = "name is mandatory")
+    @Column(name="name", nullable = false, length=100)
     private String name;
 
   
@@ -38,15 +35,10 @@ public class ResourceItem extends AuditEntity {
     private String url;
 
   
+    @NotNull(message = "resourceId is mandatory")
 
 
-  @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "resource", referencedColumnName = "id")
-    private Resource resource;   @OneToMany(mappedBy = "Parent")
-   private List<MenuEntry> Children;
-
-   @OneToMany(mappedBy = "ResourceItem")
-   private List<ResourceItem> MenuEntries;
-
-
+  @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "resource_id", referencedColumnName = "id")
+    private Resource resourceId;
 }

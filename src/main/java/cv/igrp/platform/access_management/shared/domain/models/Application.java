@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import java.util.List;
@@ -27,58 +28,54 @@ public class Application extends AuditEntity {
     private Integer id;
 
   
-    @Column(name="code", unique = true, length=15)
+
+    @NotBlank(message = "code is mandatory")
+    @Column(name="code", unique = true, nullable = false, length=15)
     private String code;
 
   
-    @Column(name="name", length=50)
+
+    @NotBlank(message = "name is mandatory")
+    @Column(name="name", nullable = false, length=50)
     private String name;
 
   
-
-    @NotBlank(message = "description is mandatory")
-    @Column(name="description", nullable = false)
+    @Column(name="description")
     private String description;
 
   
+    @NotNull(message = "status is mandatory")
     @Enumerated(EnumType.STRING)
-    @Column(name="status")
+    @Column(name="status", nullable = false)
     private Status status;
 
   
+    @NotNull(message = "type is mandatory")
     @Enumerated(EnumType.STRING)
-    @Column(name="type")
+    @Column(name="type", nullable = false)
     private AppType type;
 
   
-
-    @NotBlank(message = "owner is mandatory")
-    @Column(name="owner", nullable = false)
+    @Column(name="owner")
     private String owner;
 
   
-
-    @NotBlank(message = "picture is mandatory")
-    @Column(name="picture", nullable = false)
+    @Column(name="picture")
     private String picture;
 
   
-
-    @NotBlank(message = "url is mandatory")
-    @Column(name="url", nullable = false)
+    @Column(name="url")
     private String url;
 
   
-
-    @NotBlank(message = "slug is mandatory")
-    @Column(name="slug", nullable = false, length=50)
+    @Column(name="slug", length=50)
     private String slug;
 
-     @OneToMany(mappedBy = "App")
-private List<App> MenuEntries;
+     @OneToMany(mappedBy = "applicationId")
+private List<MenuEntry> menus;
 
-   @OneToMany(mappedBy = "ApplicationId")
-private List<Application> Departments;
+   @OneToMany(mappedBy = "applicationId")
+private List<Resource> resources;
 
 
 }

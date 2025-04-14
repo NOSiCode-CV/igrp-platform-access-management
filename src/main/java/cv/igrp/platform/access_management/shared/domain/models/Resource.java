@@ -6,6 +6,7 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import cv.igrp.platform.access_management.shared.application.constants.ResourceType;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import java.util.List;
 
 @Audited
@@ -29,21 +30,25 @@ public class Resource extends AuditEntity {
     private String name;
 
   
-    @Column(name="type", length=15)
-    private String type;
+    @Enumerated(EnumType.STRING)
+    @Column(name="type")
+    private ResourceType type;
 
   
     @Enumerated(EnumType.STRING)
     @Column(name="status")
-    private ResourceType status;
+    private Status status;
 
   
 
 
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", referencedColumnName = "id")
-    private Application applicationId;   @OneToMany(mappedBy = "ResourceId")
-   private List<Resource> Resource;
+    private Application applicationId;   @OneToMany(mappedBy = "resourceId")
+private List<ResourceItem> items;
+
+   @OneToMany(mappedBy = "resourceId")
+private List<MenuEntry> menuses;
 
 
 }

@@ -4,13 +4,13 @@ import cv.igrp.platform.access_management.shared.config.AuditEntity;
 import cv.igrp.framework.stereotype.IgrpEntity;
 import jakarta.persistence.*;
 import lombok.*;
-import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
+import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
-import cv.igrp.platform.access_management.shared.application.constants.Status;
 import jakarta.validation.constraints.NotNull;
-import java.util.List;
+import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 
-
+@Audited
 @Getter
 @Setter
 @ToString
@@ -27,63 +27,54 @@ public class MenuEntry extends AuditEntity {
     private Integer id;
 
   
-    @Column(name="name", length=100)
+
+    @NotBlank(message = "name is mandatory")
+    @Column(name="name", nullable = false)
     private String name;
 
   
+    @NotNull(message = "type is mandatory")
     @Enumerated(EnumType.STRING)
-    @Column(name="type")
+    @Column(name="type", nullable = false)
     private MenuEntryType type;
 
   
-    @Column(name="position")
+    @NotNull(message = "position is mandatory")
+    @Column(name="position", nullable = false)
     private short position;
 
   
-
-    @NotBlank(message = "icon is mandatory")
-    @Column(name="icon", nullable = false)
+    @Column(name="icon")
     private String icon;
 
   
+    @NotNull(message = "status is mandatory")
     @Enumerated(EnumType.STRING)
-    @Column(name="status")
+    @Column(name="status", nullable = false)
     private Status status;
 
   
-
-    @NotBlank(message = "target is mandatory")
-    @Column(name="target", nullable = false, length=10)
+    @Column(name="target", length=10)
     private String target;
 
   
-
-    @NotBlank(message = "url is mandatory")
-    @Column(name="url", nullable = false)
+    @Column(name="url")
     private String url;
 
   
 
 
+  @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "parent_id", referencedColumnName = "id")
+    private MenuEntry parentId;
+
+    @NotNull(message = "applicationId is mandatory")
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", referencedColumnName = "id")
     private Application applicationId;
-    @NotNull(message = "resourceId is mandatory")
 
 
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resource_id", referencedColumnName = "id")
     private Resource resourceId;
-    @NotNull(message = "parentId is mandatory")
-
-
-  @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "parent_id", referencedColumnName = "id")
-    private MenuEntry parentId;   @OneToMany(mappedBy = "ParentId")
-   private List<MenuEntry> Menus;
-
-   @OneToMany(mappedBy = "Parent")
-   private List<MenuEntry> Self;
-
-
 }

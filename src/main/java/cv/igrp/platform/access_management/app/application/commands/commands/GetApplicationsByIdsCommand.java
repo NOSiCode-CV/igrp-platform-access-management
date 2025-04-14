@@ -9,7 +9,7 @@ import lombok.AllArgsConstructor;
 
 @Data
 @NoArgsConstructor
-@AllArgsConstructor
+//@AllArgsConstructor
 public class GetApplicationsByIdsCommand implements Command {
 
 

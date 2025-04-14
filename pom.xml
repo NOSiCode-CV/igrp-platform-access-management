@@ -46,10 +46,6 @@
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
 		<dependency>
-		  <groupId>org.springframework.boot</groupId>
-		  <artifactId>spring-boot-starter-data-rest</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
 			<scope>provided</scope>
@@ -83,26 +79,14 @@
 			<artifactId>postgresql</artifactId>
 			<scope>runtime</scope>
 		</dependency>
-		
+
+		<!-- Security Dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
-		
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-oauth2-client</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.security</groupId>
-			<artifactId>spring-security-oauth2-client</artifactId>
-			<version>6.3.7</version>
-		</dependency>
-		
+
+
 		<dependency>
 		    <groupId>org.apache.commons</groupId>
 		    <artifactId>commons-lang3</artifactId>
@@ -112,18 +96,45 @@
 		    <artifactId>jackson-dataformat-xml</artifactId>
 		</dependency>
 
+
+		<!-- Email -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
+
 		<!-- IGRP dependencies -->
 		<dependency>
 			<groupId>cv.igrp.framework</groupId>
 			<artifactId>core</artifactId>
 			<version>0.0.1-alpha</version>
 		</dependency>
-
 		<dependency>
 			<groupId>cv.igrp.framework</groupId>
 			<artifactId>stereotype</artifactId>
 			<version>0.0.1-alpha</version>
 		</dependency>
+		<!-- IGRP Mail Libraries -->
+		<dependency>
+			<groupId>cv.igrp.platform</groupId>
+			<artifactId>mail-smtp</artifactId>
+			<version>0.0.1-alpha</version>
+		</dependency>
+		<!-- IGRP File Libraries -->
+		<dependency>
+			<groupId>cv.igrp.platform</groupId>
+			<artifactId>file-manager-core</artifactId>
+			<version>0.0.1-alpha</version>
+		</dependency>
+		<dependency>
+			<groupId>cv.igrp.platform</groupId>
+			<artifactId>file-manager-minio</artifactId>
+			<version>0.0.1-alpha</version>
+		</dependency>
+
+
+
 		<!-- OpenTelemetry SDK Nativo -->
 		<dependency>
 			<groupId>io.opentelemetry</groupId>
@@ -152,44 +163,6 @@
 		<dependency>
 		  <groupId>io.opentelemetry</groupId>
 		  <artifactId>opentelemetry-exporter-zipkin</artifactId>
-		</dependency>
-
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-mail</artifactId>
-		</dependency>
-
-		<!-- IGRP IAM Libraries -->
-		<dependency>
-			<groupId>cv.igrp.platform</groupId>
-			<artifactId>iam-keycloak</artifactId>
-			<version>0.0.1-alpha</version>
-		</dependency>
-
-		<dependency>
-			<groupId>cv.igrp.platform</groupId>
-			<artifactId>iam-core</artifactId>
-			<version>0.0.1-alpha</version>
-		</dependency>
-
-		<!-- IGRP Mail Libraries -->
-		<dependency>
-			<groupId>cv.igrp.platform</groupId>
-			<artifactId>mail-smtp</artifactId>
-			<version>0.0.1-alpha</version>
-		</dependency>
-
-		<!-- IGRP File Libraries -->
-		<dependency>
-			<groupId>cv.igrp.platform</groupId>
-			<artifactId>file-manager-core</artifactId>
-			<version>0.0.1-alpha</version>
-		</dependency>
-
-		<dependency>
-			<groupId>cv.igrp.platform</groupId>
-			<artifactId>file-manager-minio</artifactId>
-			<version>0.0.1-alpha</version>
 		</dependency>
 
   
