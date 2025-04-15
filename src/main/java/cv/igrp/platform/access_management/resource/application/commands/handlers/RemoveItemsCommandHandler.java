@@ -14,7 +14,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.resource.application.commands.commands.RemoveItemsCommand;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 
 @Service
@@ -34,10 +36,7 @@ public class RemoveItemsCommandHandler implements CommandHandler<RemoveItemsComm
               .orElseThrow(() -> {
                  return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Resource not found", "Resource not found with id: " + command.getId()));
               });
-      List<ResourceItem> updatedItems = resource.getItems().stream()
-              .filter(item -> !command.getRemoveItemsRequest().contains(item.getId()))
-              .toList();
-      resource.setItems(updatedItems);
+      resource.getItems().removeIf(item -> command.getRemoveItemsRequest().contains(item.getId()));
       return ResponseEntity.ok(resourceMapper.toDto(resourceRepository.save(resource)));
    }
 

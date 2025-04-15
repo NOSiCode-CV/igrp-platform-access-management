@@ -200,7 +200,7 @@ public class ResourceController {
     }
   )
   
-  public ResponseEntity<ResourceDTO> addItems( @Valid @RequestBody List<ResourceItemDTO> addItemsRequest
+  public ResponseEntity<ResourceDTO> addItems(@RequestBody List<ResourceItemDTO> addItemsRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new AddItemsCommand(addItemsRequest, id);

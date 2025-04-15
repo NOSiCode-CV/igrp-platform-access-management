@@ -23,15 +23,15 @@ import cv.igrp.platform.access_management.menu_entry.application.dto.MenuEntryDT
 @IgrpController
 @RestController
 @RequestMapping(path = "api")
-@Tag(name = "MenuEntry", description = "Menu Entry Management")
-public class MenuEntryController {
+@Tag(name = "Menu", description = "Menu Management")
+public class MenuController {
 
   
   private final CommandBus commandBus;
   private final QueryBus queryBus;
 
   
-  public MenuEntryController(
+  public MenuController(
     CommandBus commandBus, QueryBus queryBus
   ) {
     this.commandBus = commandBus;

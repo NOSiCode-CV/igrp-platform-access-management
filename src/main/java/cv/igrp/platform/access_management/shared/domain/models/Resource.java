@@ -9,6 +9,8 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import cv.igrp.platform.access_management.shared.application.constants.ResourceType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+
+import java.util.ArrayList;
 import java.util.List;
 
 @Audited
@@ -56,7 +58,7 @@ public class Resource extends AuditEntity {
     @Column(name="external_id")
     private String externalId;
 
-     @OneToMany(mappedBy = "resourceId")
+     @OneToMany(mappedBy = "resourceId", cascade = CascadeType.ALL, orphanRemoval = true)
 private List<ResourceItem> items;
 
    @OneToMany(mappedBy = "resourceId")

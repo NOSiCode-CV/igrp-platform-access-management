@@ -40,5 +40,13 @@ public class ApplicationDTO {
   @Size(min = 3, message = "The field length <slug> must be at least 3 characters.")
 	@Size(max = 50, message = "The field length <slug> cannot be more than 50 characters.")
   private String slug;
+  
+  private String createdBy;
+  
+  private String createdDate;
+  
+  private String lastModifiedBy;
+  
+  private String lastModifiedDate;
 
 }

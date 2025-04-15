@@ -28,7 +28,7 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
 
    @IgrpQueryHandler
    public ResponseEntity<List<MenuEntryDTO>> handle(GetMenusQuery query) {
-      Specification<MenuEntry> spec = buildMenuEntrySpecification(query.getName(), query.getApplicationId(), MenuEntryType.valueOf(query.getType()));
+      Specification<MenuEntry> spec = buildMenuEntrySpecification(query.getName(), query.getApplicationId(), query.getType());
       List<MenuEntry> menus =  menuEntryRepository.findAll(spec);
       List<MenuEntryDTO> menuEntryDTOs = menus.stream()
               .map(menuEntryMapper::toDTO)
@@ -36,7 +36,7 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
       return ResponseEntity.ok(menuEntryDTOs);
    }
 
-   private Specification<MenuEntry> buildMenuEntrySpecification(String name, Integer applicationId, MenuEntryType type) {
+   private Specification<MenuEntry> buildMenuEntrySpecification(String name, Integer applicationId, String type) {
       Specification<MenuEntry> spec = Specification.where(null);
       if (name != null && !name.isEmpty()) {
          spec = spec.and((root, query, cb) ->
@@ -45,7 +45,7 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
       }
       if (type != null) {
          spec = spec.and((root, query, cb) ->
-                 cb.equal(root.get("type"), type)
+                 cb.equal(root.get("type"), MenuEntryType.valueOf(type))
          );
       }
       if (applicationId != null) {
