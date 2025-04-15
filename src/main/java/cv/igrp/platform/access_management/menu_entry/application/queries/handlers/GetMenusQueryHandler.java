@@ -4,9 +4,11 @@ import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.menu_entry.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu_entry.mapper.MenuEntryMapper;
+import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.menu_entry.application.queries.queries.GetMenusQuery;
@@ -26,11 +28,32 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
 
    @IgrpQueryHandler
    public ResponseEntity<List<MenuEntryDTO>> handle(GetMenusQuery query) {
-      List<MenuEntry> menus =  menuEntryRepository.findAll();
+      Specification<MenuEntry> spec = buildMenuEntrySpecification(query.getName(), query.getApplicationId(), MenuEntryType.valueOf(query.getType()));
+      List<MenuEntry> menus =  menuEntryRepository.findAll(spec);
       List<MenuEntryDTO> menuEntryDTOs = menus.stream()
               .map(menuEntryMapper::toDTO)
               .toList();
       return ResponseEntity.ok(menuEntryDTOs);
+   }
+
+   private Specification<MenuEntry> buildMenuEntrySpecification(String name, Integer applicationId, MenuEntryType type) {
+      Specification<MenuEntry> spec = Specification.where(null);
+      if (name != null && !name.isEmpty()) {
+         spec = spec.and((root, query, cb) ->
+                 cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%")
+         );
+      }
+      if (type != null) {
+         spec = spec.and((root, query, cb) ->
+                 cb.equal(root.get("type"), type)
+         );
+      }
+      if (applicationId != null) {
+         spec = spec.and((root, query, cb) ->
+                 cb.equal(root.get("applicationId").get("id"), applicationId)
+         );
+      }
+      return spec;
    }
 
 }

@@ -4,8 +4,10 @@ import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
+import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
 import org.springframework.context.event.EventListener;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.app.application.queries.queries.GetApplicationsQuery;
@@ -25,12 +27,28 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
    }
 
    @IgrpQueryHandler
-   public ResponseEntity<List<ApplicationDTO>> handle(GetApplicationsQuery query) {
-      List<ApplicationDTO> applications = applicationRepository.findAll()
+   public ResponseEntity<List<ApplicationDTO>> handle(GetApplicationsQuery applicationsQuery) {
+      Specification<Application> spec = buildSpecification(applicationsQuery.getCode(), applicationsQuery.getName());
+      List<ApplicationDTO> applications = applicationRepository.findAll(spec)
               .stream()
               .map(applicationMapper::toDto)
               .toList();
       return ResponseEntity.ok(applications);
+   }
+
+   private Specification<Application> buildSpecification(final String code, final String name) {
+      Specification<Application> spec = Specification.where(null);
+      if (code != null && !code.isEmpty()) {
+         spec = spec.and((root, query, cb) ->
+                 cb.equal(root.get("code"), code)
+         );
+      }
+      if (name != null && !name.isEmpty()) {
+         spec = spec.and((root, query, cb) ->
+                 cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%")
+         );
+      }
+      return spec;
    }
 
 }

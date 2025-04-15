@@ -67,8 +67,9 @@ public class MenuEntry extends AuditEntity {
   @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "parent_id", referencedColumnName = "id")
     private MenuEntry parentId;
-
     @NotNull(message = "applicationId is mandatory")
+
+
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", referencedColumnName = "id")
     private Application applicationId;

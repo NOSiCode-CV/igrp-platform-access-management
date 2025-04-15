@@ -5,6 +5,8 @@ import cv.igrp.framework.stereotype.IgrpEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import cv.igrp.platform.access_management.shared.application.constants.ResourceType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import java.util.List;
@@ -26,29 +28,39 @@ public class Resource extends AuditEntity {
     private Integer id;
 
   
-    @Column(name="name", length=100)
+
+    @NotBlank(message = "name is mandatory")
+    @Column(name="name", nullable = false, length=100)
     private String name;
 
   
+    @NotNull(message = "type is mandatory")
     @Enumerated(EnumType.STRING)
-    @Column(name="type")
+    @Column(name="type", nullable = false)
     private ResourceType type;
 
   
+    @NotNull(message = "status is mandatory")
     @Enumerated(EnumType.STRING)
-    @Column(name="status")
+    @Column(name="status", nullable = false)
     private Status status;
 
   
+    @NotNull(message = "applicationId is mandatory")
 
 
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", referencedColumnName = "id")
-    private Application applicationId;   @OneToMany(mappedBy = "resourceId")
+    private Application applicationId;
+
+    @Column(name="external_id")
+    private String externalId;
+
+     @OneToMany(mappedBy = "resourceId")
 private List<ResourceItem> items;
 
    @OneToMany(mappedBy = "resourceId")
-private List<MenuEntry> menuses;
+private List<MenuEntry> menus;
 
 
 }

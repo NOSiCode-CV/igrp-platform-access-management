@@ -53,19 +53,19 @@ public class ResourceController {
               mediaType = "application/json",
               schema = @Schema(
                   implementation = ResourceDTO.class,
-                  type = "ResourceDTO")
+                  type = "object")
           )
       )
     }
   )
   
   public ResponseEntity<List<ResourceDTO>> getResources(
-    @RequestParam(value = "applicationId", required = false) Integer applicationId)
+    @RequestParam(value = "applicationId", required = false) Integer applicationId,
+    @RequestParam(value = "name", required = false) String name)
   {
-      final var query = new GetResourcesQuery(applicationId);
-      ResponseEntity<List<ResourceDTO>> response = (ResponseEntity<List<ResourceDTO>>) queryBus.handle(query);
-      return ResponseEntity.ok(response.getBody());
-      //return queryBus.handle(query);
+      final var query = new GetResourcesQuery(applicationId, name);
+      ResponseEntity<List<ResourceDTO>> response = queryBus.handle(query);
+      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @GetMapping(
@@ -82,7 +82,7 @@ public class ResourceController {
               mediaType = "application/json",
               schema = @Schema(
                   implementation = ResourceDTO.class,
-                  type = "ResourceDTO")
+                  type = "object")
           )
       )
     }
@@ -92,9 +92,8 @@ public class ResourceController {
     @PathVariable(value = "id") Integer id)
   {
       final var query = new GetResourceByIdQuery(id);
-      ResponseEntity<ResourceDTO> response = (ResponseEntity<ResourceDTO>) queryBus.handle(query);
-      return ResponseEntity.ok(response.getBody());
-      //return queryBus.handle(query);
+      ResponseEntity<ResourceDTO> response = queryBus.handle(query);
+      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @PostMapping(
@@ -121,9 +120,8 @@ public class ResourceController {
     )
   {
       final var command = new CreateResourceCommand(createResourceRequest);
-       ResponseEntity<ResourceDTO> response = (ResponseEntity<ResourceDTO>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<ResourceDTO> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @PutMapping(
@@ -150,9 +148,8 @@ public class ResourceController {
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new UpdateResourceCommand(updateResourceRequest, id);
-       ResponseEntity<ResourceDTO> response = (ResponseEntity<ResourceDTO>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<ResourceDTO> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @DeleteMapping(
@@ -179,9 +176,8 @@ public class ResourceController {
     @PathVariable(value = "id") Integer id)
   {
       final var command = new DeleteResourceCommand(id);
-       ResponseEntity<String> response = (ResponseEntity<String>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<String> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @PostMapping(
@@ -204,13 +200,12 @@ public class ResourceController {
     }
   )
   
-  public ResponseEntity<ResourceDTO> addItems( @Valid @RequestBody ResourceItemDTO addItemsRequest
+  public ResponseEntity<ResourceDTO> addItems( @Valid @RequestBody List<ResourceItemDTO> addItemsRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new AddItemsCommand(addItemsRequest, id);
-       ResponseEntity<ResourceDTO> response = (ResponseEntity<ResourceDTO>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<ResourceDTO> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @PostMapping(
@@ -233,13 +228,12 @@ public class ResourceController {
     }
   )
   
-  public ResponseEntity<ResourceDTO> removeItems( @Valid @RequestBody ResourceItemDTO removeItemsRequest
+  public ResponseEntity<ResourceDTO> removeItems(  @RequestBody List<Integer> removeItemsRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new RemoveItemsCommand(removeItemsRequest, id);
-       ResponseEntity<ResourceDTO> response = (ResponseEntity<ResourceDTO>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<ResourceDTO> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
 }

@@ -4,10 +4,13 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.menu_entry.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.menu_entry.application.commands.commands.DeleteMenuCommand;
@@ -26,8 +29,11 @@ public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuComman
    @IgrpCommandHandler
    public ResponseEntity<String> handle(DeleteMenuCommand command) {
       MenuEntry menuEntry = menuEntryRepository.findById(command.getId())
-              .orElseThrow(() -> new EntityNotFoundException("Menu not found with id: " + command.getId()));
+              .orElseThrow(() -> {
+                 return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Menu not found", "Menu not found with id: " + command.getId()));
+              });
       menuEntry.setStatus(Status.DELETED);
+      menuEntryRepository.save(menuEntry);
       return ResponseEntity.noContent().build();
    }
 

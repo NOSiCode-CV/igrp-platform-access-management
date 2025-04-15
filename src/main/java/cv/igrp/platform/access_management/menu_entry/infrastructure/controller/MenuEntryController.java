@@ -59,12 +59,13 @@ public class MenuEntryController {
   )
   
   public ResponseEntity<List<MenuEntryDTO>> getMenus(
-    @RequestParam(value = "applicationId", required = false) Integer applicationId)
+    @RequestParam(value = "applicationId", required = false) Integer applicationId,
+    @RequestParam(value = "name", required = false) String name,
+    @RequestParam(value = "type", required = false) String type)
   {
-      final var query = new GetMenusQuery(applicationId);
-      ResponseEntity<List<MenuEntryDTO>> response = (ResponseEntity<List<MenuEntryDTO>>) queryBus.handle(query);
-      return ResponseEntity.ok(response.getBody());
-      //return queryBus.handle(query);
+      final var query = new GetMenusQuery(applicationId, name, type);
+      ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
+      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @GetMapping(
@@ -91,9 +92,8 @@ public class MenuEntryController {
     @PathVariable(value = "id") Integer id)
   {
       final var query = new GetMenuByIdQuery(id);
-      ResponseEntity<MenuEntryDTO> response = (ResponseEntity<MenuEntryDTO>) queryBus.handle(query);
-      return ResponseEntity.ok(response.getBody());
-      //return queryBus.handle(query);
+      ResponseEntity<MenuEntryDTO> response = queryBus.handle(query);
+      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @PostMapping(
@@ -120,9 +120,8 @@ public class MenuEntryController {
     )
   {
       final var command = new CreateMenuCommand(createMenuRequest);
-       ResponseEntity<MenuEntryDTO> response = (ResponseEntity<MenuEntryDTO>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @PutMapping(
@@ -149,9 +148,8 @@ public class MenuEntryController {
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new UpdateMenuCommand(updateMenuRequest, id);
-       ResponseEntity<MenuEntryDTO> response = (ResponseEntity<MenuEntryDTO>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @DeleteMapping(
@@ -178,9 +176,8 @@ public class MenuEntryController {
     @PathVariable(value = "id") Integer id)
   {
       final var command = new DeleteMenuCommand(id);
-       ResponseEntity<String> response = (ResponseEntity<String>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<String> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
 }

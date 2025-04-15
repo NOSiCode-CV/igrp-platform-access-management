@@ -10,8 +10,10 @@ import lombok.AllArgsConstructor;
 
 @Data
 @NoArgsConstructor
-//@AllArgsConstructor
-public class CreateApplicationQuery implements Query {
+@AllArgsConstructor
+public class GetApplicationDeniedToUserQuery implements Query {
 
+  @NotBlank(message = "The field <uid> is required.")
+  private String uid;
 
 }
