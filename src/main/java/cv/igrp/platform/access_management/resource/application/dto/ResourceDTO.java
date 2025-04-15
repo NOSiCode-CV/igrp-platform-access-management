@@ -31,5 +31,8 @@ public class ResourceDTO {
   private Integer applicationId;
   
   private List<ResourceItemDTO> items;
+  @Size(min = 3, message = "The field length <externalId> must be at least 3 characters.")
+	@Size(max = 255, message = "The field length <externalId> cannot be more than 255 characters.")
+  private String externalId;
 
 }

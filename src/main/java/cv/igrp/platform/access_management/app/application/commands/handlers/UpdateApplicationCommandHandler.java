@@ -4,6 +4,8 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
 import jakarta.persistence.EntityNotFoundException;
@@ -28,16 +30,21 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
    @IgrpCommandHandler
    public ResponseEntity<ApplicationDTO> handle(UpdateApplicationCommand command) {
       Application application = applicationRepository.findById(command.getId())
-              .orElseThrow(() -> new EntityNotFoundException("Application not found with id: " + command.getId()));
-      application.setCode(command.getApplicationdto().getCode());
-      application.setName(command.getApplicationdto().getName());
-      application.setDescription(command.getApplicationdto().getDescription());
-      application.setStatus(command.getApplicationdto().getStatus());
-      application.setType(command.getApplicationdto().getType());
-      application.setOwner(command.getApplicationdto().getOwner());
-      application.setPicture(command.getApplicationdto().getPicture());
-      application.setUrl(command.getApplicationdto().getUrl() != null ? command.getApplicationdto().getUrl().toString() : null);
-      application.setSlug(command.getApplicationdto().getSlug());
+              .orElseThrow(() -> {
+                 return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Application not found", "Application not found with id: " + command.getId()));
+              });
+
+      ApplicationDTO appDto = command.getApplicationdto();
+      application.setCode(appDto.getCode());
+      application.setName(appDto.getName());
+      application.setDescription(appDto.getDescription());
+      application.setStatus(appDto.getStatus());
+      application.setType(appDto.getType());
+      application.setOwner(appDto.getOwner());
+      application.setPicture(appDto.getPicture());
+      application.setUrl(appDto.getUrl() != null ? appDto.getUrl().toString() : null);
+      application.setSlug(appDto.getSlug());
+
       Application updatedApplication = applicationRepository.save(application);
       return ResponseEntity.ok(applicationMapper.toDto(updatedApplication));
    }

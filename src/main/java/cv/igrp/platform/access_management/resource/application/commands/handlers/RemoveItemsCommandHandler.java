@@ -4,10 +4,12 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
 import cv.igrp.platform.access_management.shared.domain.models.ResourceItem;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
-import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.resource.application.commands.commands.RemoveItemsCommand;
@@ -29,7 +31,9 @@ public class RemoveItemsCommandHandler implements CommandHandler<RemoveItemsComm
    @IgrpCommandHandler
    public ResponseEntity<ResourceDTO> handle(RemoveItemsCommand command) {
       Resource resource = resourceRepository.findById(command.getId())
-              .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
+              .orElseThrow(() -> {
+                 return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Resource not found", "Resource not found with id: " + command.getId()));
+              });
       List<ResourceItem> updatedItems = resource.getItems().stream()
               .filter(item -> !command.getRemoveItemsRequest().contains(item.getId()))
               .toList();

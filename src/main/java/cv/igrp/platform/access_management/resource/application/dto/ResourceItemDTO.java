@@ -25,7 +25,7 @@ public class ResourceItemDTO {
   private String url;
   
   private Integer permissionId;
-  
+  @NotNull(message = "The field <resourceId> is required.")
   private Integer resourceId;
 
 }

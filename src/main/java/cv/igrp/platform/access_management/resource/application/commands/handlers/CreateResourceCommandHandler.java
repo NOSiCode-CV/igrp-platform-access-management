@@ -5,12 +5,13 @@ import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
 import cv.igrp.platform.access_management.shared.domain.models.ResourceItem;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +41,9 @@ public class CreateResourceCommandHandler implements CommandHandler<CreateResour
 
       Integer applicationId = command.getResourcedto().getApplicationId();
       Application application = applicationRepository.findById(applicationId)
-              .orElseThrow(() -> new EntityNotFoundException("Application not found with id " + applicationId));
+              .orElseThrow(() -> {
+                 return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Application not found", "Application not found with id: " +applicationId));
+              });
       resource.setApplicationId(application);
 
       if (command.getResourcedto().getItems() != null && !command.getResourcedto().getItems().isEmpty()) {

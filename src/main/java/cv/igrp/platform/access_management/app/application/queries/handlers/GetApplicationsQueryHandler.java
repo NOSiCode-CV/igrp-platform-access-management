@@ -28,7 +28,7 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
 
    @IgrpQueryHandler
    public ResponseEntity<List<ApplicationDTO>> handle(GetApplicationsQuery applicationsQuery) {
-      Specification<Application> spec = buildSpecification(applicationsQuery.getName(), applicationsQuery.getCode());
+      Specification<Application> spec = buildSpecification(applicationsQuery.getCode(), applicationsQuery.getName());
       List<ApplicationDTO> applications = applicationRepository.findAll(spec)
               .stream()
               .map(applicationMapper::toDto)
@@ -40,7 +40,7 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
       Specification<Application> spec = Specification.where(null);
       if (code != null && !code.isEmpty()) {
          spec = spec.and((root, query, cb) ->
-                 cb.equal(cb.lower(root.get("code")), code.toLowerCase())
+                 cb.equal(root.get("code"), code)
          );
       }
       if (name != null && !name.isEmpty()) {

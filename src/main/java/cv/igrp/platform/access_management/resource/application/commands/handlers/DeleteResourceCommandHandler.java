@@ -3,9 +3,11 @@ package cv.igrp.platform.access_management.resource.application.commands.handler
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
-import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.resource.application.commands.commands.DeleteResourceCommand;
@@ -24,7 +26,9 @@ public class DeleteResourceCommandHandler implements CommandHandler<DeleteResour
    @IgrpCommandHandler
    public ResponseEntity<String> handle(DeleteResourceCommand command) {
       Resource resource = resourceRepository.findById(command.getId())
-              .orElseThrow(() -> new EntityNotFoundException("Resource not found with id " + command.getId()));
+              .orElseThrow(() -> {
+                 return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Resource not found", "Resource not found with id: " + command.getId()));
+              });
       resourceRepository.delete(resource);
       return ResponseEntity.noContent().build();
    }

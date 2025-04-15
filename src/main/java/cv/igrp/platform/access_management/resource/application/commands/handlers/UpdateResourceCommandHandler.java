@@ -3,9 +3,11 @@ package cv.igrp.platform.access_management.resource.application.commands.handler
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
-import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.resource.application.commands.commands.UpdateResourceCommand;
@@ -26,7 +28,9 @@ public class UpdateResourceCommandHandler implements CommandHandler<UpdateResour
    @IgrpCommandHandler
    public ResponseEntity<ResourceDTO> handle(UpdateResourceCommand command) {
       Resource resource = resourceRepository.findById(command.getId())
-              .orElseThrow(() -> new EntityNotFoundException("Resource not found with id " + command.getId()));
+              .orElseThrow(() -> {
+                 return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Resource not found", "Resource not found with id: " + command.getId()));
+              });
       resource.setName(command.getResourcedto().getName());
       resource.setType(command.getResourcedto().getType());
       return ResponseEntity.ok(resourceMapper.toDto(resourceRepository.save(resource)));

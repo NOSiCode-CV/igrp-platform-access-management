@@ -3,10 +3,12 @@ package cv.igrp.platform.access_management.resource.application.queries.handlers
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.springframework.context.event.EventListener;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.resource.application.queries.queries.GetResourceByIdQuery;
@@ -26,7 +28,9 @@ public class GetResourceByIdQueryHandler implements QueryHandler<GetResourceById
    @IgrpQueryHandler
    public ResponseEntity<ResourceDTO> handle(GetResourceByIdQuery query) {
       Resource resource = resourceRepository.findById(query.getId())
-              .orElseThrow(() -> new EntityNotFoundException("Resource not found with id " + query.getId()));
+              .orElseThrow(() -> {
+                 return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Resource not found", "Resource not found with id: " + query.getId()));
+              });
       return ResponseEntity.ok(resourceMapper.toDto(resource));
    }
 

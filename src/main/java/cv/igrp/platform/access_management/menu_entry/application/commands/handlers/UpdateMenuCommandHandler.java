@@ -4,11 +4,13 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.menu_entry.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu_entry.mapper.MenuEntryMapper;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
-import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.menu_entry.application.commands.commands.UpdateMenuCommand;
@@ -33,20 +35,32 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
    @IgrpCommandHandler
    public ResponseEntity<MenuEntryDTO> handle(UpdateMenuCommand command) {
       MenuEntry menuEntry = menuEntryRepository.findById(command.getId())
-              .orElseThrow(() -> new EntityNotFoundException("Menu not found"));
-      menuEntry.setName(command.getMenuentrydto().getName());
-      menuEntry.setType(command.getMenuentrydto().getType());
-      menuEntry.setPosition(command.getMenuentrydto().getPosition());
-      menuEntry.setIcon(command.getMenuentrydto().getIcon());
-      menuEntry.setStatus(command.getMenuentrydto().getStatus());
-      menuEntry.setTarget(command.getMenuentrydto().getTarget());
-      menuEntry.setUrl(command.getMenuentrydto().getUrl());
-      if (command.getMenuentrydto().getParentId() != null)
-         menuEntry.setParentId(menuEntryRepository.findById(command.getMenuentrydto().getParentId()).orElseThrow(() -> new EntityNotFoundException("Parent MenuEntry not found")));
-      if (command.getMenuentrydto().getResourceId() != null)
-         menuEntry.setResourceId(resourceRepository.findById(command.getMenuentrydto().getResourceId()).orElseThrow(() -> new EntityNotFoundException("Resource not found")));
-      if (command.getMenuentrydto().getApplicationId() != null)
-         menuEntry.setApplicationId(applicationRepository.findById(command.getMenuentrydto().getApplicationId()).orElseThrow(() -> new EntityNotFoundException("Application not found")));
+              .orElseThrow(() -> {
+                 return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Menu not found", "Menu not found with id: " + command.getId()));
+              });
+      MenuEntryDTO menuDto = command.getMenuentrydto();
+      menuEntry.setName(menuDto.getName());
+      menuEntry.setType(menuDto.getType());
+      menuEntry.setPosition(menuDto.getPosition());
+      menuEntry.setIcon(menuDto.getIcon());
+      menuEntry.setStatus(menuDto.getStatus());
+      menuEntry.setTarget(menuDto.getTarget());
+      menuEntry.setUrl(menuDto.getUrl());
+      if (menuDto.getParentId() != null)
+         menuEntry.setParentId(menuEntryRepository.findById(menuDto.getParentId())
+                 .orElseThrow(() -> {
+                    return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Parent MenuEntry not found", "Parent MenuEntry not found with id: " + menuDto.getParentId()));
+                 }));
+      if (menuDto.getResourceId() != null)
+         menuEntry.setResourceId(resourceRepository.findById(menuDto.getResourceId())
+                 .orElseThrow(() -> {
+                    return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Resource not found", "Resource not found with id: " + menuDto.getResourceId()));
+                 }));
+      if (menuDto.getApplicationId() != null)
+         menuEntry.setApplicationId(applicationRepository.findById(menuDto.getApplicationId())
+                 .orElseThrow(() -> {
+                    return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Application not found", "Application not found with id: " + menuDto.getApplicationId()));
+                 }));
       return ResponseEntity.ok(menuEntryMapper.toDTO(menuEntryRepository.save(menuEntry)));
    }
 

@@ -18,6 +18,7 @@ public class ResourceMapper {
         dto.setName(resource.getName());
         dto.setType(resource.getType());
         dto.setStatus(resource.getStatus());
+        dto.setExternalId(resource.getExternalId());
         dto.setApplicationId(resource.getApplicationId() != null ? resource.getApplicationId().getId() : null);
         if (resource.getItems() != null) {
             List<ResourceItemDTO> items = resource.getItems().stream().map(this::toItemDto).toList();
@@ -42,6 +43,7 @@ public class ResourceMapper {
         resource.setName(dto.getName());
         resource.setType(dto.getType());
         resource.setStatus(dto.getStatus());
+        resource.setExternalId(dto.getExternalId());
 
         return resource;
     }

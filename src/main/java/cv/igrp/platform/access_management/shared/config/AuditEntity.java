@@ -26,7 +26,7 @@ public abstract class AuditEntity {
   private LocalDateTime createdDate;
 
   @CreatedBy
-  @Column(name = "created_by", nullable = true, updatable = false)
+  @Column(name = "created_by", nullable = false, updatable = false)
   private String createdBy;
 
   @LastModifiedDate
