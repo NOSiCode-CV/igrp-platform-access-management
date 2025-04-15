@@ -27,6 +27,7 @@ public class DeleteApplicationCommandHandler implements CommandHandler<DeleteApp
       Application application = applicationRepository.findById(command.getId())
               .orElseThrow(() -> new EntityNotFoundException("Application not found with id: " + command.getId()));
       application.setStatus(Status.DELETED);
+      applicationRepository.save(application);
       return ResponseEntity.noContent().build();
    }
 

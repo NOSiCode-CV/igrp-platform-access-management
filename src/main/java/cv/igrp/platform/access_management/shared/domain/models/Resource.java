@@ -44,11 +44,13 @@ public class Resource extends AuditEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", referencedColumnName = "id")
-    private Application applicationId;   @OneToMany(mappedBy = "resourceId")
-private List<ResourceItem> items;
+    private Application applicationId;
+
+  @OneToMany(mappedBy = "resourceId", cascade = {CascadeType.PERSIST, CascadeType.REMOVE}, orphanRemoval = true)
+  private List<ResourceItem> items;
 
    @OneToMany(mappedBy = "resourceId")
-private List<MenuEntry> menuses;
+private List<MenuEntry> menus;
 
 
 }

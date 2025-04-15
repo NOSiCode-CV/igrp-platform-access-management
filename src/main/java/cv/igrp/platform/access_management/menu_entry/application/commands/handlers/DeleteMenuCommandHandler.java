@@ -28,6 +28,7 @@ public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuComman
       MenuEntry menuEntry = menuEntryRepository.findById(command.getId())
               .orElseThrow(() -> new EntityNotFoundException("Menu not found with id: " + command.getId()));
       menuEntry.setStatus(Status.DELETED);
+      menuEntryRepository.save(menuEntry);
       return ResponseEntity.noContent().build();
    }
 

@@ -41,4 +41,9 @@ public class ResourceItem extends AuditEntity {
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resource_id", referencedColumnName = "id")
     private Resource resourceId;
+
+    @Column(name="permission_id")
+    private Integer permissionId;
+
+  
 }

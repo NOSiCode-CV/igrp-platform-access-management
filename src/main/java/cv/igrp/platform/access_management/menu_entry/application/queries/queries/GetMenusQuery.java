@@ -15,5 +15,9 @@ public class GetMenusQuery implements Query {
 
   @NotNull(message = "The field <applicationId> is required.")
   private Integer applicationId;
+  @NotBlank(message = "The field <name> is required.")
+  private String name;
+  @NotBlank(message = "The field <type> is required.")
+  private String type;
 
 }

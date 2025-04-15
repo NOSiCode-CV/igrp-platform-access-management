@@ -62,9 +62,8 @@ public class ApplicationController {
     )
   {
       final var command = new CreateApplicationCommand(createApplicationRequest);
-       ResponseEntity<ApplicationDTO> response = (ResponseEntity<ApplicationDTO>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<ApplicationDTO> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @GetMapping(
@@ -88,12 +87,12 @@ public class ApplicationController {
   )
   
   public ResponseEntity<List<ApplicationDTO>> getApplications(
-    )
+    @RequestParam(value = "code", required = false) String code,
+    @RequestParam(value = "name", required = false) String name)
   {
-      final var query = new GetApplicationsQuery();
-      ResponseEntity<List<ApplicationDTO>> response = (ResponseEntity<List<ApplicationDTO>>) queryBus.handle(query);
-      return ResponseEntity.ok(response.getBody());
-      //return queryBus.handle(query);
+      final var query = new GetApplicationsQuery(code, name);
+      ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
+      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @GetMapping(
@@ -120,9 +119,8 @@ public class ApplicationController {
     @PathVariable(value = "id") Integer id)
   {
       final var query = new GetApplicationByIdQuery(id);
-      ResponseEntity<ApplicationDTO> response = (ResponseEntity<ApplicationDTO>) queryBus.handle(query);
-      return ResponseEntity.ok(response.getBody());
-      //return queryBus.handle(query);
+      ResponseEntity<ApplicationDTO> response = queryBus.handle(query);
+      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @PutMapping(
@@ -149,9 +147,8 @@ public class ApplicationController {
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new UpdateApplicationCommand(updateApplicationRequest, id);
-       ResponseEntity<ApplicationDTO> response = (ResponseEntity<ApplicationDTO>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<ApplicationDTO> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @DeleteMapping(
@@ -178,21 +175,48 @@ public class ApplicationController {
     @PathVariable(value = "id") Integer id)
   {
       final var command = new DeleteApplicationCommand(id);
-       ResponseEntity<String> response = (ResponseEntity<String>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<String> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @PostMapping(
     value = "applicationsByIds"
   )
   @Operation(
-    summary = "GET method to handle operations for getApplicationsByIds",
-    description = "GET method to handle operations for getApplicationsByIds",
+    summary = "POST method to handle operations for getApplicationsByIds",
+    description = "POST method to handle operations for getApplicationsByIds",
     responses = {
       @ApiResponse(
           responseCode = "200",
           description = "The List of Application",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ApplicationDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<ApplicationDTO>> getApplicationsByIds(  @RequestBody List<Integer> getApplicationsByIdsRequest
+    )
+  {
+      final var command = new GetApplicationsByIdsCommand(getApplicationsByIdsRequest);
+       ResponseEntity<List<ApplicationDTO>> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+  }
+
+  @GetMapping(
+    value = "applications/by-user/{uid}"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getApplicationsByUser",
+    description = "GET method to handle operations for getApplicationsByUser",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "List of accessible Applications",
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -203,13 +227,39 @@ public class ApplicationController {
     }
   )
   
-  public ResponseEntity<List<ApplicationDTO>> getApplicationsByIds(@RequestBody List<Integer> ids
-    )
+  public ResponseEntity<List<ApplicationDTO>> getApplicationsByUser(
+    @PathVariable(value = "uid") String uid)
   {
-      final var query = new GetApplicationsByIdsQuery(ids);
-      ResponseEntity<List<ApplicationDTO>> response = (ResponseEntity<List<ApplicationDTO>>) queryBus.handle(query);
-      return ResponseEntity.ok(response.getBody());
-      //return queryBus.handle(query);
+      final var query = new GetApplicationsByUserQuery(uid);
+      ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
+      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+  }
+
+  @GetMapping(
+    value = "/applications/denied-to-user/{uid}"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getApplicationDeniedToUser",
+    description = "GET method to handle operations for getApplicationDeniedToUser",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "List of Applications denied to User",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ApplicationDTO.class,
+                  type = "ApplicationDTO")
+          )
+      )
+    }
+  )
+  public ResponseEntity<List<ApplicationDTO>> getApplicationDeniedToUser(
+    @PathVariable(value = "uid") String uid)
+  {
+      final var query = new GetApplicationDeniedToUserQuery(uid);
+      ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
+      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
 }

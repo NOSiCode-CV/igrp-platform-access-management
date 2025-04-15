@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import cv.igrp.platform.access_management.resource.application.dto.ResourceItemDTO;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -13,7 +14,7 @@ import cv.igrp.platform.access_management.resource.application.dto.ResourceItemD
 public class AddItemsCommand implements Command {
 
   
-  private ResourceItemDTO resourceitemdto;
+  private List<ResourceItemDTO> resourceitemdto;
   @NotNull(message = "The field <id> is required.")
   private Integer id;
 

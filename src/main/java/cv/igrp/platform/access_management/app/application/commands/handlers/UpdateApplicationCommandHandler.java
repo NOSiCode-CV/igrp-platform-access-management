@@ -29,15 +29,15 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
    public ResponseEntity<ApplicationDTO> handle(UpdateApplicationCommand command) {
       Application application = applicationRepository.findById(command.getId())
               .orElseThrow(() -> new EntityNotFoundException("Application not found with id: " + command.getId()));
-      application.setCode(command.getApplicationDTO().getCode());
-      application.setName(command.getApplicationDTO().getName());
-      application.setDescription(command.getApplicationDTO().getDescription());
-      application.setStatus(command.getApplicationDTO().getStatus());
-      application.setType(command.getApplicationDTO().getType());
-      application.setOwner(command.getApplicationDTO().getOwner());
-      application.setPicture(command.getApplicationDTO().getPicture());
-      application.setUrl(command.getApplicationDTO().getUrl() != null ? command.getApplicationDTO().getUrl().toString() : null);
-      application.setSlug(command.getApplicationDTO().getSlug());
+      application.setCode(command.getApplicationdto().getCode());
+      application.setName(command.getApplicationdto().getName());
+      application.setDescription(command.getApplicationdto().getDescription());
+      application.setStatus(command.getApplicationdto().getStatus());
+      application.setType(command.getApplicationdto().getType());
+      application.setOwner(command.getApplicationdto().getOwner());
+      application.setPicture(command.getApplicationdto().getPicture());
+      application.setUrl(command.getApplicationdto().getUrl() != null ? command.getApplicationdto().getUrl().toString() : null);
+      application.setSlug(command.getApplicationdto().getSlug());
       Application updatedApplication = applicationRepository.save(application);
       return ResponseEntity.ok(applicationMapper.toDto(updatedApplication));
    }
