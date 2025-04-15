@@ -4,6 +4,7 @@ import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.role.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
 import org.springframework.context.event.EventListener;
@@ -29,9 +30,11 @@ public class GetRolesQueryHandler implements QueryHandler<GetRolesQuery, Respons
 
     @IgrpQueryHandler
     public ResponseEntity<List<RoleDTO>> handle(GetRolesQuery query) {
-        List<Role> allRoles = roleRepository.findAll();
+        Status active = Status.ACTIVE;
+        Status inactive = Status.INACTIVE;
+        List<Role> allRoles = roleRepository.findByStatusIn(List.of(active, inactive));
         List<RoleDTO> collectedRole = allRoles.stream()
-                .map(role -> roleMapper.mapToDto(role))
+                .map(roleMapper::mapToDto)
                 .toList();
         return new ResponseEntity<>(collectedRole, HttpStatus.OK);
     }
