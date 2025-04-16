@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.role.domain.service;
 
-import cv.igrp.platform.access_management.role.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.models.Department;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
 import org.springframework.stereotype.Component;

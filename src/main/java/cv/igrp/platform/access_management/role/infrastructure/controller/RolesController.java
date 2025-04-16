@@ -17,8 +17,9 @@ import cv.igrp.platform.access_management.role.application.commands.commands.*;
 import cv.igrp.platform.access_management.role.application.queries.queries.*;
 
 
-import cv.igrp.platform.access_management.role.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import java.util.List;
+import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 
 @IgrpController
 @RestController
@@ -80,7 +81,7 @@ public class RolesController {
               mediaType = "application/json",
               schema = @Schema(
                   implementation = RoleDTO.class,
-                  type = "RoleDTO")
+                  type = "object")
           )
       )
     }
@@ -175,6 +176,90 @@ public class RolesController {
   {
       final var command = new DeleteRoleCommand(id);
        ResponseEntity<Boolean> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+  }
+
+  @PostMapping(
+    value = "roles/{id}/removePermissions"
+  )
+  @Operation(
+    summary = "POST method to handle operations for RemovePermissions",
+    description = "POST method to handle operations for RemovePermissions",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = PermissionDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<PermissionDTO>> removePermissions(  @RequestBody List<Integer> removePermissionsRequest
+    , @PathVariable(value = "id") Integer id)
+  {
+      final var command = new RemovePermissionsCommand(removePermissionsRequest, id);
+       ResponseEntity<List<PermissionDTO>> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+  }
+
+  @GetMapping(
+    value = "roles/{id}/permissions"
+  )
+  @Operation(
+    summary = "GET method to handle operations for GetPermissionsByRoleId",
+    description = "GET method to handle operations for GetPermissionsByRoleId",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = PermissionDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<PermissionDTO>> getPermissionsByRoleId(
+    @PathVariable(value = "id") Integer id)
+  {
+      final var query = new GetPermissionsByRoleIdQuery(id);
+      ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
+      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+  }
+
+  @PostMapping(
+    value = "roles/{id}/addPermissions"
+  )
+  @Operation(
+    summary = "POST method to handle operations for addPermissions",
+    description = "POST method to handle operations for addPermissions",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = PermissionDTO.class,
+                  type = "PermissionDTO")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<PermissionDTO>> addPermissions(  @RequestBody List<Integer> addPermissionsRequest
+    , @PathVariable(value = "id") Integer id)
+  {
+      final var command = new AddPermissionsCommand(addPermissionsRequest, id);
+       ResponseEntity<List<PermissionDTO>> response = commandBus.send(command);
        return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
