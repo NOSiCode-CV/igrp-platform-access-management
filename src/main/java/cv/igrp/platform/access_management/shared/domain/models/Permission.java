@@ -6,6 +6,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
+import java.util.Set;
 
 @Audited
 @Getter
@@ -20,13 +22,11 @@ public class Permission extends AuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    @Column(name = "permission", unique = true, nullable = false)
-    private String permission;
+    @Column(name = "id", unique = true, nullable = false)
+    private Integer id;
 
   
-
-    @NotBlank(message = "name is mandatory")
-    @Column(name="name", nullable = false)
+    @Column(name="name", length=60)
     private String name;
 
   
@@ -36,4 +36,17 @@ public class Permission extends AuditEntity {
     private String description;
 
   
+    @Enumerated(EnumType.STRING)
+    @Column(name="status")
+    private Status status;
+
+  
+
+
+  @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "application", referencedColumnName = "id")
+    private Application application;   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
+private Set<Role> roles;
+
+
 }

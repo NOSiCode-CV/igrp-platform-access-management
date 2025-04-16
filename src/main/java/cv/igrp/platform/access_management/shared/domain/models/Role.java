@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import java.util.Set;
 
 @Audited
 @Getter
@@ -50,4 +51,14 @@ public class Role extends AuditEntity {
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent", referencedColumnName = "id")
     private Role parent;
+
+
+  
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "t_role_permission",
+            joinColumns = @JoinColumn(name = "role_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission")
+    )
+private Set<Permission> permissions;
 }

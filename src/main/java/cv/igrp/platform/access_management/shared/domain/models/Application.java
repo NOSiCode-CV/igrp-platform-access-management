@@ -77,5 +77,8 @@ private List<MenuEntry> menus;
    @OneToMany(mappedBy = "applicationId")
 private List<Resource> resources;
 
+   @OneToMany(mappedBy = "application")
+private List<Permission> permissions;
+
 
 }
