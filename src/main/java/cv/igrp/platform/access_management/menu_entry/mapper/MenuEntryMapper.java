@@ -29,6 +29,13 @@ public class MenuEntryMapper {
         if (entity.getResourceId() != null)
             dto.setResourceId(entity.getResourceId().getId());
 
+        dto.setCreatedBy(entity.getCreatedBy());
+        if(entity.getCreatedDate() != null)
+            dto.setCreatedDate(entity.getCreatedDate().toString());
+        dto.setLastModifiedBy(entity.getLastModifiedBy());
+        if(entity.getLastModifiedDate() != null)
+            dto.setLastModifiedDate(entity.getLastModifiedDate().toString());
+
         return dto;
     }
 

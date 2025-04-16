@@ -24,6 +24,12 @@ public class ResourceMapper {
             List<ResourceItemDTO> items = resource.getItems().stream().map(this::toItemDto).toList();
             dto.setItems(items);
         }
+        dto.setCreatedBy(resource.getCreatedBy());
+        if(resource.getCreatedDate() != null)
+            dto.setCreatedDate(resource.getCreatedDate().toString());
+        dto.setLastModifiedBy(resource.getLastModifiedBy());
+        if(resource.getLastModifiedDate() != null)
+            dto.setLastModifiedDate(resource.getLastModifiedDate().toString());
         return dto;
     }
 
@@ -33,6 +39,13 @@ public class ResourceMapper {
         dto.setId(item.getId());
         dto.setName(item.getName());
         dto.setUrl(item.getUrl());
+        dto.setResourceId(item.getResourceId().getId());
+        dto.setCreatedBy(item.getCreatedBy());
+        if(item.getCreatedDate() != null)
+            dto.setCreatedDate(item.getCreatedDate().toString());
+        dto.setLastModifiedBy(item.getLastModifiedBy());
+        if(item.getLastModifiedDate() != null)
+            dto.setLastModifiedDate(item.getLastModifiedDate().toString());
         return dto;
     }
 
