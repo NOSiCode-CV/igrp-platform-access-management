@@ -1,0 +1,31 @@
+package cv.igrp.platform.access_management.app.mapper;
+
+import cv.igrp.platform.access_management.app.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.domain.models.User;
+import org.springframework.stereotype.Component;
+
+@Component
+public class IGRPUserMapper {
+
+    public IGRPUserDTO toDto(User user) {
+        if (user == null) return null;
+        IGRPUserDTO dto = new IGRPUserDTO();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setStatus(user.getStatus());
+        dto.setName(user.getName());
+        return dto;
+    }
+
+    public User toEntity(IGRPUserDTO dto) {
+        if (dto == null) return null;
+        User user = new User();
+        user.setId(dto.getId());
+        user.setUsername(dto.getUsername());
+        user.setEmail(dto.getEmail());
+        user.setStatus(dto.getStatus());
+        user.setName(dto.getName());
+        return user;
+    }
+}
