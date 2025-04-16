@@ -5,8 +5,7 @@ import cv.igrp.framework.stereotype.IgrpEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
-import java.time.LocalDate;
-import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotBlank;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import java.util.List;
 
@@ -35,9 +34,10 @@ public class Department extends AuditEntity {
     private String name;
 
   
-    @NotNull(message = "description is mandatory")
+
+    @NotBlank(message = "description is mandatory")
     @Column(name="description", nullable = false)
-    private LocalDate description;
+    private String description;
 
   
     @Enumerated(EnumType.STRING)
@@ -49,13 +49,13 @@ public class Department extends AuditEntity {
 
   @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "application_id", referencedColumnName = "id")
-    private App applicationId;
+    private Application applicationId;
 
 
-  @OneToMany(mappedBy = "", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "childrenIds", fetch = FetchType.LAZY)
 private List<Department> parentIds;   @ManyToOne(fetch = FetchType.LAZY)
-   @JoinColumn(name = "")
-   private Department ;
+   @JoinColumn(name = "childrenIds")
+   private Department childrenIds;
 
 
 }
