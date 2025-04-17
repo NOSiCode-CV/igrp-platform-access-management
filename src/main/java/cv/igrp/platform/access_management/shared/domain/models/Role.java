@@ -40,8 +40,6 @@ public class Role extends AuditEntity {
     @Column(name="status")
     private Status status;
 
-  
-
 
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department", referencedColumnName = "id")

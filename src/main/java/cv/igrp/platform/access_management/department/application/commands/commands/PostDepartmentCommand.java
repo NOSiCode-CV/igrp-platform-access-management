@@ -10,8 +10,7 @@ import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 @NoArgsConstructor
 @AllArgsConstructor
 public class PostDepartmentCommand implements Command {
-
   
-  private DepartmentDTO departmentdto;
+  private DepartmentDTO departmentDTO;
 
 }

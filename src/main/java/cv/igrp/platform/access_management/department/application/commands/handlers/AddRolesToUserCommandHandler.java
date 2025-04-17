@@ -1,14 +1,14 @@
-package cv.igrp.platform.access_management.users.application.commands.handlers;
+package cv.igrp.platform.access_management.department.application.commands.handlers;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
+import cv.igrp.platform.access_management.users.application.commands.commands.AddRolesToUserCommand;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
-import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
-import cv.igrp.platform.access_management.users.application.commands.commands.AddRolesToUserCommand;
+import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.EntityNotFoundException;
@@ -29,29 +29,27 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
 
     @IgrpCommandHandler
     public ResponseEntity<List<RoleDTO>> handle(AddRolesToUserCommand command) {
-        // Buscar o usuário usando o user_id do comando
-        IGRPUser user = userRepository.findById(command.getId()
+        // Buscar o usuário
+        IGRPUser user = userRepository.findById(command.getId().toString()) // Certifique-se de que o ID é String
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + command.getId()));
 
-        // Obter o papel (role) pelo role_id do comando
-        Integer roleId = command.getRoleuserdto().role_id(); // Aqui acessamos o role_id do DTO
-        Role roleToAdd = roleRepository.findById(roleId) // Buscando o papel pelo ID
-                .orElseThrow(() -> new EntityNotFoundException("Role not found with id: " + roleId));
+        // Buscar o papel (role) correspondente ao role_id
+        Role roleToAdd = roleRepository.findById(command.getRoleuserdto().role_id())
+                .orElseThrow(() -> new EntityNotFoundException("Role not found with id: " + command.getRoleuserdto().role_id()));
 
         // Adicionar o papel ao usuário
         if (user.getRoles() != null) {
             user.getRoles().add(roleToAdd);
         } else {
-            user.setRoles(List.of(roleToAdd)); // Se não houver roles, cria uma nova lista com o role
+            user.setRoles(List.of(roleToAdd)); // Caso o usuário não tenha papéis definidos
         }
 
-        // Salvar o usuário atualizado
         userRepository.save(user);
 
         // Mapeando o papel para RoleDTO
-        RoleDTO roleDTO = roleMapper.mapToDto(roleToAdd);
+        RoleDTO result = roleMapper.mapToDto(roleToAdd);
 
-        // Retornar a resposta com a lista de RoleDTO
-        return ResponseEntity.status(201).body(List.of(roleDTO)); // Retorna um único RoleDTO, pois só foi adicionado um papel
+        // Retornar a resposta com o RoleDTO
+        return ResponseEntity.status(201).body(List.of(result));
     }
 }

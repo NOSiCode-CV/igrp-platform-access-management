@@ -22,7 +22,7 @@ public class GetIGRPUserByIdCommand implements Command {
         this.email = email;
     }
 
-    public Long getId() {
+    public Integer getId() {
         return id;
     }
 

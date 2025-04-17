@@ -7,6 +7,7 @@ import lombok.*;
 import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import java.util.ArrayList;
 import java.util.List;
 
 @Audited
@@ -45,6 +46,8 @@ public class Department extends AuditEntity {
     private DepartmentStatus status;
 
   
+  @OneToMany(mappedBy = "department", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    private List<Role> roles = new ArrayList<>();
 
 
   @ManyToOne(fetch = FetchType.EAGER)
@@ -53,6 +56,7 @@ public class Department extends AuditEntity {
 
 
   @OneToMany(mappedBy = "childrenIds", fetch = FetchType.LAZY)
+
 private List<Department> parentIds;   @ManyToOne(fetch = FetchType.LAZY)
    @JoinColumn(name = "childrenIds")
    private Department childrenIds;

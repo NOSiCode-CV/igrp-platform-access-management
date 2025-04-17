@@ -7,10 +7,10 @@ import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
+import jakarta.persistence.EntityNotFoundException;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -27,20 +27,21 @@ public class GetIGRPUserByIdCommandHandler implements CommandHandler<GetIGRPUser
 
     @IgrpQueryHandler
     public ResponseEntity<List<IGRPUserDTO>> handle(GetIGRPUserByIdCommand command) {
-        List<IGRPUser> users;
+    List<IGRPUser> users;
 
-        if (command.getId() != null) {
-            users = igrpUserRepository.findAllById(List.of(command.getId().toString()));
-        } else {
-            // Caso o ID não seja passado, faça uma busca com outros filtros, se necessário.
-            users = igrpUserRepository.findAll();
-        }
-
-        // Mapeia os usuários para DTOs e retorna a resposta
-        List<IGRPUserDTO> userDTOs = new ArrayList<>(); /*users.stream()
-                //.map(igrpUserMapper::toDto)
-                .collect(Collectors.toList());*/
-
-        return ResponseEntity.ok(userDTOs);
+    if (command.getId() != null) {
+        IGRPUser user = igrpUserRepository.findById(command.getId())
+            .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + command.getId()));
+        users = List.of(user); // Cria uma lista com um único usuário
+    } else {
+        users = igrpUserRepository.findAll(); // OK, já retorna uma lista
     }
+
+    List<IGRPUserDTO> userDTOs = users.stream()
+            .map(igrpUserMapper::toDto)
+            .collect(Collectors.toList());
+
+    return ResponseEntity.ok(userDTOs);
+}
+
 }
