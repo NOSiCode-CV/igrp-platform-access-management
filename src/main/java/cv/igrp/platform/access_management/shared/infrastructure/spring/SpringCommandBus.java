@@ -6,6 +6,7 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import org.springframework.stereotype.Component;
 
 import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,9 +19,19 @@ public class SpringCommandBus implements CommandBus {
 
    public SpringCommandBus(List<CommandHandler<?, ?>> handlerList) {
       for (CommandHandler<?, ?> handler : handlerList) {
-         Class<?> commandType = (Class<?>) ((ParameterizedType) handler.getClass()
-                 .getGenericInterfaces()[0]).getActualTypeArguments()[0];
-         handlers.put((Class<? extends Command>) commandType, handler);
+         Class<?> targetClass = resolveTargetClass(handler); // use the method above
+         Type[] interfaces = targetClass.getGenericInterfaces();
+
+         for (Type iface : interfaces) {
+            if (iface instanceof ParameterizedType) {
+               ParameterizedType pt = (ParameterizedType) iface;
+               Type actualType = pt.getActualTypeArguments()[0];
+               if (actualType instanceof Class<?>) {
+                  Class<?> commandType = (Class<?>) actualType;
+                  handlers.put((Class<? extends Command>) commandType, handler);
+               }
+            }
+         }
       }
    }
 
@@ -32,4 +43,16 @@ public class SpringCommandBus implements CommandBus {
       }
       return handler.handle(command);
    }
+
+   private Class<?> resolveTargetClass(Object bean) {
+      Class<?> clazz = bean.getClass();
+
+      // Check for CGLIB-generated class name
+      while (clazz.getName().contains("$$")) {
+         clazz = clazz.getSuperclass();
+      }
+
+      return clazz;
+   }
+
 }
