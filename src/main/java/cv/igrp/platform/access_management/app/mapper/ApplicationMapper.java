@@ -22,7 +22,12 @@ public class ApplicationMapper {
         dto.setPicture(entity.getPicture());
         dto.setUrl(entity.getUrl() != null ? URI.create(entity.getUrl()) : null);
         dto.setSlug(entity.getSlug());
-
+        dto.setCreatedBy(entity.getCreatedBy());
+        if(entity.getCreatedDate() != null)
+            dto.setCreatedDate(entity.getCreatedDate().toString());
+        dto.setLastModifiedBy(entity.getLastModifiedBy());
+        if(entity.getLastModifiedDate() != null)
+            dto.setLastModifiedDate(entity.getLastModifiedDate().toString());
         return dto;
     }
 

@@ -80,5 +80,8 @@ private List<Resource> resources;
    @OneToMany(mappedBy = "application")
 private List<Permission> permissions;
 
+   @OneToMany(mappedBy = "applicationId")
+private List<Department> departmentses;
+
 
 }

@@ -42,5 +42,13 @@ public class MenuEntryDTO {
   private Integer applicationId;
   
   private Integer resourceId;
+  
+  private String createdBy;
+  
+  private String createdDate;
+  
+  private String lastModifiedBy;
+  
+  private String lastModifiedDate;
 
 }
