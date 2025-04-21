@@ -50,18 +50,18 @@ public class DepartmentController {
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
-                  implementation = String.class,
-                  type = "String")
+                  implementation = DepartmentDTO.class,
+                  type = "object")
           )
       )
     }
   )
   
-  public ResponseEntity<String> postDepartment( @Valid @RequestBody DepartmentDTO postDepartmentRequest
+  public ResponseEntity<DepartmentDTO> postDepartment( @Valid @RequestBody DepartmentDTO postDepartmentRequest
     )
   {
       final var command = new PostDepartmentCommand(postDepartmentRequest);
-       ResponseEntity<String> response = commandBus.send(command);
+       ResponseEntity<DepartmentDTO> response = commandBus.send(command);
        return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
