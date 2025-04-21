@@ -14,6 +14,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.permission.application.commands.commands.UpdatePermissionCommand;
+import org.springframework.transaction.annotation.Transactional;
+
+import static cv.igrp.platform.access_management.shared.application.constants.Status.DELETED;
 
 
 @Service
@@ -30,8 +33,9 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
     }
 
     @IgrpCommandHandler
+    @Transactional
     public ResponseEntity<PermissionDTO> handle(UpdatePermissionCommand command) {
-        Permission foundPermission = permissionRepository.findById(command.getId())
+        Permission foundPermission = permissionRepository.findByIdAndStatusNot(command.getId(), DELETED)
                 .orElseThrow(() -> new IgrpResponseStatusException(
                         new IgrpProblem<>(HttpStatus.NOT_FOUND, "Update Permission", "Permission with id: " + command.getId() + " not found.")
                 ));

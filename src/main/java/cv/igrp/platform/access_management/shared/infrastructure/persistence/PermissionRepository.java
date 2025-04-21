@@ -8,6 +8,7 @@ import org.springframework.data.repository.history.RevisionRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface PermissionRepository extends
@@ -16,4 +17,6 @@ public interface PermissionRepository extends
         RevisionRepository<Permission, Integer, Integer> {
 
     List<Permission> findByStatusIn(List<Status> statusList);
+
+    Optional<Permission> findByIdAndStatusNot(Integer id, Status status);
 }
