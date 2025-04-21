@@ -11,7 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.permission.application.commands.commands.DeletePermissionCommand;
-
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
@@ -24,6 +24,7 @@ public class DeletePermissionCommandHandler implements CommandHandler<DeletePerm
    }
 
    @IgrpCommandHandler
+   @Transactional
    public ResponseEntity<Boolean> handle(DeletePermissionCommand command) {
       Permission permission = permissionRepository.findById(command.getId())
               .orElseThrow(() -> new IgrpResponseStatusException(

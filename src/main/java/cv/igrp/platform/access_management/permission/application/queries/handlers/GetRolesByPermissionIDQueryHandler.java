@@ -13,6 +13,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.Perm
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -29,6 +30,7 @@ public class GetRolesByPermissionIDQueryHandler implements QueryHandler<GetRoles
     }
 
     @IgrpQueryHandler
+    @Transactional(readOnly = true)
     public ResponseEntity<List<RoleDTO>> handle(GetRolesByPermissionIDQuery query) {
         Permission permissionFound = permissionRepository.findById(query.getId())
                 .filter(permission -> permission.getStatus().equals(Status.ACTIVE) || permission.getStatus().equals(Status.INACTIVE))

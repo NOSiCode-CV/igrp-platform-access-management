@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.permission.application.queries.queries.GetPermissionByIDQuery;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class GetPermissionByIDQueryHandler implements QueryHandler<GetPermissionByIDQuery, ResponseEntity<PermissionDTO>> {
@@ -28,9 +29,9 @@ public class GetPermissionByIDQueryHandler implements QueryHandler<GetPermission
     }
 
     @IgrpQueryHandler
+    @Transactional(readOnly = true)
     public ResponseEntity<PermissionDTO> handle(GetPermissionByIDQuery query) {
-        Permission foundPermission = permissionRepository.findById(query.getId())
-                .filter(permission -> permission.getStatus().equals(Status.ACTIVE) || permission.getStatus().equals(Status.INACTIVE))
+        Permission foundPermission = permissionRepository.findByIdAndStatusNot(query.getId(), Status.DELETED)
                 .orElseThrow(() -> new IgrpResponseStatusException(
                         new IgrpProblem<>(HttpStatus.NOT_FOUND, "Get Permission By ID", "Permission with id: " + query.getId() + " not found.")
                 ));

@@ -14,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.permission.application.queries.queries.GetPermissionByApplicationIdQuery;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +34,7 @@ public class GetPermissionByApplicationIdQueryHandler implements QueryHandler<Ge
     }
 
     @IgrpQueryHandler
+    @Transactional(readOnly = true)
     public ResponseEntity<List<PermissionDTO>> handle(GetPermissionByApplicationIdQuery query) {
         Set<Permission> permissionList = permissionRepository.findAll()
                 .stream()

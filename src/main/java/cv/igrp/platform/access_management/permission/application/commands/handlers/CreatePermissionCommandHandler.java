@@ -14,6 +14,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.Perm
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CreatePermissionCommandHandler implements CommandHandler<CreatePermissionCommand, ResponseEntity<PermissionDTO>> {
@@ -30,6 +31,7 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
     }
 
     @IgrpCommandHandler
+    @Transactional
     public ResponseEntity<PermissionDTO> handle(CreatePermissionCommand command) {
         PermissionDTO request = command.getPermissiondto();
         Application foundApplication = applicationRepository.findById(command.getPermissiondto().getApplicationId())
