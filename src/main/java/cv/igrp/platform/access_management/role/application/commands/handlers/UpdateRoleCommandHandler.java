@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.role.application.commands.handlers;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -14,6 +15,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.role.application.commands.commands.UpdateRoleCommand;
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Service
@@ -31,11 +33,12 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
     }
 
     @IgrpCommandHandler
+    @Transactional
     public ResponseEntity<RoleDTO> handle(UpdateRoleCommand command) {
         RoleDTO newData = command.getRoledto();
         Department department = null;
         Role parentRole = null;
-        Role roleToUpdate = roleRepository.findById(command.getId())
+        Role roleToUpdate = roleRepository.findByIdAndStatusNot(command.getId(), Status.DELETED)
                 .orElseThrow(() -> new IgrpResponseStatusException(
                         new IgrpProblem<>(HttpStatus.NOT_FOUND, "Update Role", "Role with id: " + command.getId() + " not found.")
                 ));

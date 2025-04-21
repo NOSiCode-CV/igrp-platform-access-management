@@ -21,4 +21,7 @@ public interface RoleRepository extends
     Optional<Role> findById(Integer id);
     List<Role> findByStatusIn(List<Status> statuses);
 
+    List<Role> findByParent(Role parent);
+    Optional<Role> findByIdAndStatusNot(Integer id, Status status);
+
 }

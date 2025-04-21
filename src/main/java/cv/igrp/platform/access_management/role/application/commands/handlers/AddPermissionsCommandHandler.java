@@ -15,6 +15,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.Role
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Set;
@@ -34,10 +35,14 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
     }
 
     @IgrpCommandHandler
+    @Transactional
     public ResponseEntity<List<PermissionDTO>> handle(AddPermissionsCommand command) {
-        List<Permission> permissionList = permissionRepository.findAllById(command.getAddPermissionsRequest());
+        List<Permission> permissionList = permissionRepository.findAllById(command.getAddPermissionsRequest())
+                .stream()
+                .filter(permission -> !permission.getStatus().equals(Status.DELETED))
+                .toList();
 
-        Role foundRole = roleRepository.findById(command.getId())
+        Role foundRole = roleRepository.findByIdAndStatusNot(command.getId(), Status.DELETED)
                 .orElseThrow(() -> new IgrpResponseStatusException(
                         new IgrpProblem<>(HttpStatus.NOT_FOUND, "Add Permission", "Role with id: " + command.getId() + " not found.")
                 ));

@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.role.application.queries.queries.GetRolesQuery;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,6 +30,7 @@ public class GetRolesQueryHandler implements QueryHandler<GetRolesQuery, Respons
     }
 
     @IgrpQueryHandler
+    @Transactional(readOnly = true)
     public ResponseEntity<List<RoleDTO>> handle(GetRolesQuery query) {
         Status active = Status.ACTIVE;
         Status inactive = Status.INACTIVE;

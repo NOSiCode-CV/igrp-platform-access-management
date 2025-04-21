@@ -4,6 +4,7 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.application.commands.commands.CreateRoleCommand;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -14,6 +15,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.Role
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class CreateRoleCommandHandler implements CommandHandler<CreateRoleCommand, ResponseEntity<RoleDTO>> {
@@ -30,6 +32,7 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
     }
 
     @IgrpCommandHandler
+    @Transactional
     public ResponseEntity<RoleDTO> handle(CreateRoleCommand command) {
         RoleDTO request = command.getRoledto();
         Role parentRole = null;
@@ -39,7 +42,7 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
                 ));
         if (command.getRoledto().getParentId() != null) {
             Integer parentRoleId = command.getRoledto().getParentId();
-            parentRole = roleRepository.findById(parentRoleId)
+            parentRole = roleRepository.findByIdAndStatusNot(parentRoleId, Status.DELETED)
                     .orElseThrow(() -> new IgrpResponseStatusException(
                             new IgrpProblem<>(HttpStatus.NOT_FOUND, "Create Role", "Parent Role with id: " + parentRoleId + " not found.")
                     ));
