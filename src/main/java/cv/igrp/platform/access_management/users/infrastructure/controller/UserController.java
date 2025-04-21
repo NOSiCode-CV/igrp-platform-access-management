@@ -17,8 +17,8 @@ import cv.igrp.platform.access_management.users.application.commands.commands.*;
 import cv.igrp.platform.access_management.users.application.queries.queries.*;
 
 
-import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleUserDTO;
+import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 
@@ -60,11 +60,11 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<List<IGRPUserDTO>> getUser(
+  public ResponseEntity<IGRPUserDTO> getUser(
     @PathVariable(value = "id") Integer id)
   {
       final var query = new GetUserQuery(id);
-      ResponseEntity<List<IGRPUserDTO>> response = queryBus.handle(query);
+      ResponseEntity<IGRPUserDTO> response = queryBus.handle(query);
       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 

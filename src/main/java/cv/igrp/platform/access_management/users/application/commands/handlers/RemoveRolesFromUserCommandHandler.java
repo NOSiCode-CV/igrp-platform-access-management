@@ -28,9 +28,9 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
       IGRPUser user = userRepository.findById(command.getId())
               .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + command.getId()));
 
-      List<Integer> roleIdsToRemove = command.getRoleIds();
-      if (roleIdsToRemove != null && !roleIdsToRemove.isEmpty()) {
-          user.getRoles().removeIf(role -> roleIdsToRemove.contains(role.getId()));
+      Integer roleIdsToRemove = command.getId();
+      if (roleIdsToRemove != null) {
+          user.getRoles().removeIf(role -> roleIdsToRemove.equals(role.getId()));
       }
 
       // Salvar o usuário após a remoção dos papéis

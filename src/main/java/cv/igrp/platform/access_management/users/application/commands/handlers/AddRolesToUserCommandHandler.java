@@ -30,7 +30,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
     @IgrpCommandHandler
     public ResponseEntity<List<RoleDTO>> handle(AddRolesToUserCommand command) {
         // Buscar o usuário usando o user_id do comando
-        IGRPUser user = userRepository.findById(command.getId()
+        IGRPUser user = userRepository.findById(command.getId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + command.getId()));
 
         // Obter o papel (role) pelo role_id do comando

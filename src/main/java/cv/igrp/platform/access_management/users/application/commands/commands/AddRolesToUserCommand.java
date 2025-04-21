@@ -13,7 +13,7 @@ import cv.igrp.platform.access_management.shared.application.dto.RoleUserDTO;
 public class AddRolesToUserCommand implements Command {
 
   
-  private RoleUserDTO roleuserDTO;
+  private RoleUserDTO roleuserdto;
   @NotNull(message = "The field <id> is required.")
   private Integer id;
 
