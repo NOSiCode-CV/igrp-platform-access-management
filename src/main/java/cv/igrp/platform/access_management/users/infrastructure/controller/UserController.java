@@ -41,7 +41,7 @@ public class UserController {
   }
 
   @GetMapping(
-    value = "users/{id}"
+    value = "users/{id}/{id}"
   )
   @Operation(
     summary = "GET method to handle operations for getUser",
@@ -64,12 +64,13 @@ public class UserController {
     @PathVariable(value = "id") Integer id)
   {
       final var query = new GetUserQuery(id);
-      ResponseEntity<IGRPUserDTO> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+      ResponseEntity<IGRPUserDTO> response = (ResponseEntity<IGRPUserDTO>) queryBus.handle(query);
+      return ResponseEntity.ok(response.getBody());
+      //return queryBus.handle(query);
   }
 
   @PostMapping(
-    value = "users/{id}/addRoles"
+    value = "users/{id}/addRoles/{id}"
   )
   @Operation(
     summary = "POST method to handle operations for AddRolesToUser",
@@ -102,12 +103,13 @@ public class UserController {
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new AddRolesToUserCommand(addRolesToUserRequest, id);
-       ResponseEntity<?> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+       ResponseEntity<?> response = (ResponseEntity<?>) commandBus.send(command);
+       return ResponseEntity.ok(response.getBody());
+       //return commandBus.send(command);
   }
 
   @DeleteMapping(
-    value = "users/{id}/removeRoles"
+    value = "users/{id}/removeRoles/{id}"
   )
   @Operation(
     summary = "DELETE method to handle operations for RemoveRolesFromUser",
@@ -130,12 +132,13 @@ public class UserController {
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, id);
-       ResponseEntity<List<RoleDTO>> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+       ResponseEntity<List<RoleDTO>> response = (ResponseEntity<List<RoleDTO>>) commandBus.send(command);
+       return ResponseEntity.ok(response.getBody());
+       //return commandBus.send(command);
   }
 
   @GetMapping(
-    value = "users/{id}/roles"
+    value = "users/{id}/roles/{id}"
   )
   @Operation(
     summary = "GET method to handle operations for getUserRoles",
@@ -158,8 +161,9 @@ public class UserController {
     @RequestParam(value = "applicationId") Integer applicationId, @PathVariable(value = "id") Integer id)
   {
       final var query = new GetUserRolesQuery(applicationId, id);
-      ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+      ResponseEntity<List<RoleDTO>> response = (ResponseEntity<List<RoleDTO>>) queryBus.handle(query);
+      return ResponseEntity.ok(response.getBody());
+      //return queryBus.handle(query);
   }
 
   @GetMapping(
@@ -190,8 +194,67 @@ public class UserController {
     @RequestParam(value = "email", required = false) String email)
   {
       final var query = new GetUsersQuery(applicationId, departmentId, name, username, email);
-      ResponseEntity<List<IGRPUserDTO>> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+      ResponseEntity<List<IGRPUserDTO>> response = (ResponseEntity<List<IGRPUserDTO>>) queryBus.handle(query);
+      return ResponseEntity.ok(response.getBody());
+      //return queryBus.handle(query);
+  }
+
+  @PostMapping(
+    value = "users"
+  )
+  @Operation(
+    summary = "POST method to handle operations for createUser",
+    description = "POST method to handle operations for createUser",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = IGRPUserDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<IGRPUserDTO> createUser( @Valid @RequestBody IGRPUserDTO createUserRequest
+    )
+  {
+      final var command = new CreateUserCommand(createUserRequest);
+       ResponseEntity<IGRPUserDTO> response = (ResponseEntity<IGRPUserDTO>) commandBus.send(command);
+       return ResponseEntity.ok(response.getBody());
+       //return commandBus.send(command);
+  }
+
+  @PutMapping(
+    value = "users"
+  )
+  @Operation(
+    summary = "PUT method to handle operations for updateUser",
+    description = "PUT method to handle operations for updateUser",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = IGRPUserDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<IGRPUserDTO> updateUser( @Valid @RequestBody IGRPUserDTO updateUserRequest
+    )
+  {
+      final var command = new UpdateUserCommand(updateUserRequest);
+       ResponseEntity<IGRPUserDTO> response = (ResponseEntity<IGRPUserDTO>) commandBus.send(command);
+       return ResponseEntity.ok(response.getBody());
+       //return commandBus.send(command);
   }
 
 }

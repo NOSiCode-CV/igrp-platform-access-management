@@ -3,8 +3,14 @@ package cv.igrp.platform.access_management.department.application.queries.querie
 import cv.igrp.framework.core.domain.Query;
 import jakarta.validation.constraints.*;
 
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class GetDepartmentsQuery implements Query {
 
 
