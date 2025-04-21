@@ -11,27 +11,37 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.role.application.commands.commands.DeleteRoleCommand;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 
 
 @Service
 public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleCommand, ResponseEntity<Boolean>> {
 
-   private final RoleRepository repository;
-   public DeleteRoleCommandHandler(RoleRepository repository) {
+    private final RoleRepository repository;
 
-       this.repository = repository;
-   }
+    public DeleteRoleCommandHandler(RoleRepository repository) {
 
-   @IgrpCommandHandler
-   public ResponseEntity<Boolean> handle(DeleteRoleCommand command) {
-      Role role = repository.findById(command.getId())
-              .orElseThrow(() -> new IgrpResponseStatusException(
-                      new IgrpProblem<>(HttpStatus.NOT_FOUND, "Delete Role", "Role with id: " + command.getId() + " not found.")
-              ));
-      role.setStatus(Status.DELETED);
-      repository.save(role);
-      return new ResponseEntity<>(true, HttpStatus.NO_CONTENT);
-   }
+        this.repository = repository;
+    }
+
+    @IgrpCommandHandler
+    @Transactional
+    public ResponseEntity<Boolean> handle(DeleteRoleCommand command) {
+        Role role = repository.findById(command.getId())
+                .orElseThrow(() -> new IgrpResponseStatusException(
+                        new IgrpProblem<>(HttpStatus.NOT_FOUND, "Delete Role", "Role with id: " + command.getId() + " not found.")
+                ));
+        role.setStatus(Status.DELETED);
+        if (role.getParent() == null) {
+            List<Role> roleChildList = repository.findByParent(role);
+            roleChildList.stream()
+                    .filter(roleChild -> !roleChild.getStatus().equals(Status.DELETED))
+                    .forEach(roleChild -> roleChild.setStatus(Status.DELETED));
+        }
+        repository.save(role);
+        return new ResponseEntity<>(true, HttpStatus.NO_CONTENT);
+    }
 
 }
