@@ -28,7 +28,7 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
                 .orElseThrow(() -> new EntityNotFoundException("Department not found with id: " + command.getId()));
 
         // Atualizar os dados da entidade com o DTO
-        departmentMapper.updateEntityFromDto(command.getDepartmentDTO(), department);
+        departmentMapper.updateEntityFromDto(command.getDepartmentdto(), department);
         
         Department updated = departmentRepository.save(department);
         return ResponseEntity.ok(departmentMapper.toDto(updated));

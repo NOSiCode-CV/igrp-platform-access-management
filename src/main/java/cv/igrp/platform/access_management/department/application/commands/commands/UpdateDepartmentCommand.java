@@ -13,7 +13,7 @@ import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 public class UpdateDepartmentCommand implements Command {
 
   
-  private DepartmentDTO departmentDTO;
+  private DepartmentDTO departmentdto;
   @NotNull(message = "The field <id> is required.")
   private Integer id;
 

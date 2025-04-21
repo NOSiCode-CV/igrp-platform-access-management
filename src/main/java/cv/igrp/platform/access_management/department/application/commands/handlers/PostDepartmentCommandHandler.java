@@ -25,7 +25,7 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
 
     @IgrpCommandHandler
     public ResponseEntity<DepartmentDTO> handle(PostDepartmentCommand command) {
-        Department department = departmentMapper.toEntity(command.getDepartmentDTO());
+        Department department = departmentMapper.toEntity(command.getDepartmentdto());
         department.setId(null); // garante criação nova
         Department saved = departmentRepository.save(department);
         DepartmentDTO result = departmentMapper.toDto(saved);

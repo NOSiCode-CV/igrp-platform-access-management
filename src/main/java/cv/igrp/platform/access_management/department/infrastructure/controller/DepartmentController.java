@@ -3,11 +3,13 @@ package cv.igrp.platform.access_management.department.infrastructure.controller;
 import cv.igrp.framework.stereotype.IgrpController;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.http.HttpStatus;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.core.domain.QueryBus;
@@ -35,12 +37,12 @@ public class DepartmentController {
     this.queryBus = queryBus;
   }
 
-  @GetMapping(
+  @PostMapping(
     value = "department"
   )
   @Operation(
-    summary = "GET method to handle operations for postDepartment",
-    description = "GET method to handle operations for postDepartment",
+    summary = "POST method to handle operations for postDepartment",
+    description = "POST method to handle operations for postDepartment",
     responses = {
       @ApiResponse(
           responseCode = "201",
@@ -58,9 +60,9 @@ public class DepartmentController {
   public ResponseEntity<String> postDepartment( @Valid @RequestBody DepartmentDTO postDepartmentRequest
     )
   {
-      final var query = new PostDepartmentQuery(postDepartmentRequest);
-      ResponseEntity<String> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+      final var command = new PostDepartmentCommand(postDepartmentRequest);
+       ResponseEntity<String> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
   @GetMapping(
