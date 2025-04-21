@@ -183,11 +183,11 @@ public class UserController {
   )
   
   public ResponseEntity<List<IGRPUserDTO>> getUsers(
-    @RequestParam(value = "applicationId") Integer applicationId,
-    @RequestParam(value = "departmentId") Integer departmentId,
-    @RequestParam(value = "name") String name,
-    @RequestParam(value = "username") String username,
-    @RequestParam(value = "email") String email)
+    @RequestParam(value = "applicationId", required = false) Integer applicationId,
+    @RequestParam(value = "departmentId", required = false) Integer departmentId,
+    @RequestParam(value = "name", required = false) String name,
+    @RequestParam(value = "username", required = false) String username,
+    @RequestParam(value = "email", required = false) String email)
   {
       final var query = new GetUsersQuery(applicationId, departmentId, name, username, email);
       ResponseEntity<List<IGRPUserDTO>> response = queryBus.handle(query);
