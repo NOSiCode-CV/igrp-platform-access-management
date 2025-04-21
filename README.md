@@ -151,11 +151,8 @@ Supports:
 ## 🚀 Running the Project
 
 ```bash
-# Build the project
-mvn clean install
-
 # Run the Spring Boot app
-java -jar target/igrp-access-api.jar
+mvn spring-boot:run
 ```
 
 ---
