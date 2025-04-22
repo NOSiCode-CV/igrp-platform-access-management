@@ -90,7 +90,21 @@ The `IAdapter` is an abstraction layer that defines the contract for IAM provide
 
 ### 🏢 Department / Organization Management
 
-> **TODO**: Document endpoints related to managing organizational units and departments.
+#### Endpoints
+
+| Método | Endpoint | Request | Response | Status Code |
+|--------|----------|---------|----------|-------------|
+| POST   | `/api/departments` | `DepartmentDTO` | `DepartmentDTO` | 201 Created |
+| GET    | `/api/departments` | — | `List<DepartmentDTO>` | 200 OK |
+| GET    | `/api/departments/{id}` | — | `DepartmentDTO` | 200 OK |
+| PUT    | `/api/departments/{id}` | `DepartmentDTO` | `DepartmentDTO` | 200 OK |
+| DELETE | `/api/departments/{id}` | — | — | 204 No Content |
+| GET    | `/api/departments/{id}/roles` | — | `List<RoleDTO>` | 200 OK |
+| POST   | `/api/departments/{id}/addRoles` | `List<RoleDTO>` | `List<RoleDTO>` | 200 OK |
+| POST   | `/api/departments/{id}/removeRoles` | `List<Integer>` | `List<RoleDTO>` | 200 OK |
+| POST   | `/api/departments/{id}/invite` | `IGRPUserDTO` | — | 200 OK |
+
+---
 
 ### 🔐 Role Management
 
@@ -102,7 +116,14 @@ The `IAdapter` is an abstraction layer that defines the contract for IAM provide
 
 ### 👤 User Management
 
-> **TODO**: Document endpoints for user lifecycle (create, update, delete) and role/permission assignments.
+#### Endpoints
+
+| Método | Endpoint | Request | Response | Status Code |
+|--------|----------|---------|----------|-------------|
+| POST   | `/api/users/{id}/addRoles` | `List<Integer>` | `List<RoleDTO>` | 201 Created |
+| POST   | `/api/users/{id}/removeRoles` | `List<Integer>` | `List<RoleDTO>` | 200 OK |
+| GET    | `/api/users` | `?applicationId={id}&departmentId={id}&name={name}&username={username}&email={email}` | `List<UserDTO>` | 200 OK |
+| GET    | `/api/users/{id}/roles` | `?applicationId={id}` | `List<RoleDTO>` | 200 OK |
 
 ### 🧭 Menu Management
 
