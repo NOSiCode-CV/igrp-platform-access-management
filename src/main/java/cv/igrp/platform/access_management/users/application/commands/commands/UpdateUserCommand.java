@@ -14,5 +14,7 @@ public class UpdateUserCommand implements Command {
 
   
   private IGRPUserDTO igrpuserdto;
+  @NotNull(message = "The field <id> is required.")
+  private Integer id;
 
 }

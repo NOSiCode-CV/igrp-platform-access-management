@@ -235,7 +235,7 @@ public class UserController {
   }
 
   @PutMapping(
-    value = "users"
+    value = "users/{id}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateUser",
@@ -255,9 +255,9 @@ public class UserController {
   )
   
   public ResponseEntity<IGRPUserDTO> updateUser(@Valid @RequestBody IGRPUserDTO updateUserRequest
-    )
+    , @PathVariable(value = "id") Integer id)
   {
-      final var command = new UpdateUserCommand(updateUserRequest);
+      final var command = new UpdateUserCommand(updateUserRequest, id);
        ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())

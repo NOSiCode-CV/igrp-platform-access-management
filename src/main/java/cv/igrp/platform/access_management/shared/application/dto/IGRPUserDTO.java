@@ -6,7 +6,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import java.util.Collection;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -22,7 +22,7 @@ public class IGRPUserDTO {
   private String name;
   @NotBlank(message = "The field <username> is required.")
   
-  private Collection<String> username;
+  private String username;
   @NotBlank(message = "The field <email> is required.")
 	@Email(message = "Invalid email format for field <email>.")
   
