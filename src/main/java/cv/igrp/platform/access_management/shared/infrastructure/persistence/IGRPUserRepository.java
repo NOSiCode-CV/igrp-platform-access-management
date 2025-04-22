@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface IGRPUserRepository extends JpaRepository<IGRPUser, String> {
+public interface IGRPUserRepository extends JpaRepository<IGRPUser, Integer> {
 
     // Método para buscar todos os usuários
     List<IGRPUser> findAll();

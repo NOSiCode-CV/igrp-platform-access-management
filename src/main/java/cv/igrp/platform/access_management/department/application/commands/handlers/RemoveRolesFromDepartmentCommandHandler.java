@@ -3,14 +3,15 @@ package cv.igrp.platform.access_management.department.application.commands.handl
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.DepartmentRepository;
-import cv.igrp.platform.access_management.shared.domain.models.Department;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.domain.models.Department;
+import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.department.application.commands.commands.RemoveRolesFromDepartmentCommand;
-
+import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
 import jakarta.persistence.EntityNotFoundException;
+import java.util.Iterator;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -18,10 +19,11 @@ import java.util.stream.Collectors;
 public class RemoveRolesFromDepartmentCommandHandler implements CommandHandler<RemoveRolesFromDepartmentCommand, ResponseEntity<List<RoleDTO>>> {
 
     private final DepartmentRepository departmentRepository;
+    private final RoleMapper roleMapper;
 
-    public RemoveRolesFromDepartmentCommandHandler(DepartmentRepository departmentRepository /*RoleMapper roleMapper*/) {
+    public RemoveRolesFromDepartmentCommandHandler(DepartmentRepository departmentRepository, RoleMapper roleMapper) {
         this.departmentRepository = departmentRepository;
-        //this.roleMapper = roleMapper;
+        this.roleMapper = roleMapper;
     }
 
     @IgrpCommandHandler
@@ -29,10 +31,17 @@ public class RemoveRolesFromDepartmentCommandHandler implements CommandHandler<R
         Department department = departmentRepository.findById(command.getDepartmentId())
                 .orElseThrow(() -> new EntityNotFoundException("Department not found with id: " + command.getDepartmentId()));
 
-        //department.getRoles().removeIf(role -> command.getRoleIds().contains(role.getId()));
-        departmentRepository.save(department);
+        List<Integer> roleIdsToRemove = command.getRoleIds();
 
-        List<RoleDTO> result = List.of();//department.getRoles().stream().map(roleMapper::toDto).collect(Collectors.toList());
+        // Remover roles cujo ID está presente na lista
+        department.getRoleses().removeIf(role -> roleIdsToRemove.contains(role.getId()));
+
+        Department updated = departmentRepository.save(department);
+
+        List<RoleDTO> result = updated.getRoleses().stream()
+                .map(roleMapper::mapToDto)
+                .collect(Collectors.toList());
+
         return ResponseEntity.ok(result);
     }
 }

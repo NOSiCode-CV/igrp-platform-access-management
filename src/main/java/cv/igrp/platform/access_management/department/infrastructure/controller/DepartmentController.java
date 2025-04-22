@@ -37,12 +37,12 @@ public class DepartmentController {
     this.queryBus = queryBus;
   }
 
-  @GetMapping(
+  @PostMapping(
     value = "department"
   )
   @Operation(
-    summary = "GET method to handle operations for postDepartment",
-    description = "GET method to handle operations for postDepartment",
+    summary = "POST method to handle operations for postDepartment",
+    description = "POST method to handle operations for postDepartment",
     responses = {
       @ApiResponse(
           responseCode = "201",
@@ -50,19 +50,21 @@ public class DepartmentController {
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
-                  implementation = String.class,
-                  type = "String")
+                  implementation = DepartmentDTO.class,
+                  type = "object")
           )
       )
     }
   )
   
-  public ResponseEntity<String> postDepartment( @Valid @RequestBody DepartmentDTO postDepartmentRequest
+  public ResponseEntity<DepartmentDTO> postDepartment(@Valid @RequestBody DepartmentDTO postDepartmentRequest
     )
   {
-      final var query = new PostDepartmentQuery(postDepartmentRequest);
-      ResponseEntity<String> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+      final var command = new PostDepartmentCommand(postDepartmentRequest);
+       ResponseEntity<DepartmentDTO> response = commandBus.send(command);
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @GetMapping(
@@ -90,7 +92,9 @@ public class DepartmentController {
   {
       final var query = new GetDepartmentsQuery();
       ResponseEntity<DepartmentDTO> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @GetMapping(
@@ -118,7 +122,9 @@ public class DepartmentController {
   {
       final var query = new GetDepartmentByIdQuery(id);
       ResponseEntity<DepartmentDTO> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @PutMapping(
@@ -141,12 +147,14 @@ public class DepartmentController {
     }
   )
   
-  public ResponseEntity<DepartmentDTO> updateDepartment( @Valid @RequestBody DepartmentDTO updateDepartmentRequest
+  public ResponseEntity<DepartmentDTO> updateDepartment(@Valid @RequestBody DepartmentDTO updateDepartmentRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new UpdateDepartmentCommand(updateDepartmentRequest, id);
        ResponseEntity<DepartmentDTO> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @DeleteMapping(
@@ -174,7 +182,9 @@ public class DepartmentController {
   {
       final var command = new DeleteDepartmentCommand(id);
        ResponseEntity<?> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
 }

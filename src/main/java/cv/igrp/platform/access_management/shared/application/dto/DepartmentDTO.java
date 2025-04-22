@@ -14,7 +14,7 @@ import cv.igrp.platform.access_management.shared.application.constants.Departmen
 @IgrpDTO
 public class DepartmentDTO {
 
-  @NotNull(message = "The field <id> is required.")
+  
   private Integer id;
   @NotBlank(message = "The field <code> is required.")
   private String code;

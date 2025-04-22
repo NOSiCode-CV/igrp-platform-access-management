@@ -12,7 +12,6 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-// UPDATE
 @Service
 public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepartmentCommand, ResponseEntity<DepartmentDTO>> {
     private final DepartmentRepository departmentRepository;
@@ -28,8 +27,11 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
         Department department = departmentRepository.findById(command.getId())
                 .orElseThrow(() -> new EntityNotFoundException("Department not found with id: " + command.getId()));
 
-        //departmentMapper.updateEntityFromDto(command.getDepartmentDTO(), department);
+        // Atualizar os dados da entidade com o DTO
+        departmentMapper.updateEntityFromDto(command.getDepartmentdto(), department);
+        
         Department updated = departmentRepository.save(department);
         return ResponseEntity.ok(departmentMapper.toDto(updated));
     }
 }
+

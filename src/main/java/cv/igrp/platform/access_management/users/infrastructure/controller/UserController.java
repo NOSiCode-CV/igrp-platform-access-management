@@ -17,8 +17,8 @@ import cv.igrp.platform.access_management.users.application.commands.commands.*;
 import cv.igrp.platform.access_management.users.application.queries.queries.*;
 
 
-import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleUserDTO;
+import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 
@@ -60,12 +60,14 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<List<IGRPUserDTO>> getUser(
+  public ResponseEntity<IGRPUserDTO> getUser(
     @PathVariable(value = "id") Integer id)
   {
       final var query = new GetUserQuery(id);
-      ResponseEntity<List<IGRPUserDTO>> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+      ResponseEntity<IGRPUserDTO> response = queryBus.handle(query);
+       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @PostMapping(
@@ -98,12 +100,14 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<?> addRolesToUser( @Valid @RequestBody RoleUserDTO addRolesToUserRequest
+  public ResponseEntity<?> addRolesToUser(@Valid @RequestBody RoleUserDTO addRolesToUserRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new AddRolesToUserCommand(addRolesToUserRequest, id);
        ResponseEntity<?> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @DeleteMapping(
@@ -126,12 +130,14 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<List<RoleDTO>> removeRolesFromUser( @Valid @RequestBody RoleDTO removeRolesFromUserRequest
+  public ResponseEntity<List<RoleDTO>> removeRolesFromUser(@Valid @RequestBody RoleDTO removeRolesFromUserRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, id);
        ResponseEntity<List<RoleDTO>> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @GetMapping(
@@ -159,7 +165,9 @@ public class UserController {
   {
       final var query = new GetUserRolesQuery(applicationId, id);
       ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @GetMapping(
@@ -183,15 +191,77 @@ public class UserController {
   )
   
   public ResponseEntity<List<IGRPUserDTO>> getUsers(
-    @RequestParam(value = "applicationId") Integer applicationId,
-    @RequestParam(value = "departmentId") Integer departmentId,
-    @RequestParam(value = "name") String name,
-    @RequestParam(value = "username") String username,
-    @RequestParam(value = "email") String email)
+    @RequestParam(value = "applicationId", required = false) Integer applicationId,
+    @RequestParam(value = "departmentId", required = false) Integer departmentId,
+    @RequestParam(value = "name", required = false) String name,
+    @RequestParam(value = "username", required = false) String username,
+    @RequestParam(value = "email", required = false) String email)
   {
       final var query = new GetUsersQuery(applicationId, departmentId, name, username, email);
       ResponseEntity<List<IGRPUserDTO>> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+  @PostMapping(
+    value = "users"
+  )
+  @Operation(
+    summary = "POST method to handle operations for createUser",
+    description = "POST method to handle operations for createUser",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = IGRPUserDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<IGRPUserDTO> createUser(@Valid @RequestBody IGRPUserDTO createUserRequest
+    )
+  {
+      final var command = new CreateUserCommand(createUserRequest);
+       ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+  @PutMapping(
+    value = "users/{id}"
+  )
+  @Operation(
+    summary = "PUT method to handle operations for updateUser",
+    description = "PUT method to handle operations for updateUser",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = IGRPUserDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<IGRPUserDTO> updateUser(@Valid @RequestBody IGRPUserDTO updateUserRequest
+    , @PathVariable(value = "id") Integer id)
+  {
+      final var command = new UpdateUserCommand(updateUserRequest, id);
+       ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
 }

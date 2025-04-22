@@ -6,16 +6,14 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-
+import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class GetUserRolesQuery implements Query {
+public class CreateUserQuery implements Query {
 
-  @NotNull(message = "The field <applicationId> is required.")
-  private Integer applicationid;
-  @NotNull(message = "The field <id> is required.")
-  private Integer id;
+  
+  private IGRPUserDTO igrpuserdto;
 
 }

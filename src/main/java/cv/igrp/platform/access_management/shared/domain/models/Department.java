@@ -52,10 +52,13 @@ public class Department extends AuditEntity {
     private Application applicationId;
 
 
-  @OneToMany(mappedBy = "childrenIds", fetch = FetchType.LAZY)
-private List<Department> parentIds;   @ManyToOne(fetch = FetchType.LAZY)
-   @JoinColumn(name = "childrenIds")
-   private Department childrenIds;
+  @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "parent_id", referencedColumnName = "id")
+    private Department parentId;   @OneToMany(mappedBy = "parentId")
+private List<Department> childrenidses;
+
+   @OneToMany(mappedBy = "department")
+private List<Role> roleses;
 
 
 }
