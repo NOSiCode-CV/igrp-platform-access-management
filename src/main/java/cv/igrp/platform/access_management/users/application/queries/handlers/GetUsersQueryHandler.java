@@ -36,12 +36,12 @@ public class GetUsersQueryHandler implements QueryHandler<GetUsersQuery, Respons
     private Specification<IGRPUser> buildSpecification(GetUsersQuery query) {
         Specification<IGRPUser> spec = Specification.where(null);
 
-        if (query.getApplicationId() != null) {
-            spec = spec.and((root, q, cb) -> cb.equal(root.get("application").get("id"), query.getApplicationId()));
+        if (query.getApplicationid() != null) {
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("application").get("id"), query.getApplicationid()));
         }
 
-        if (query.getDepartmentId() != null) {
-            spec = spec.and((root, q, cb) -> cb.equal(root.get("department").get("id"), query.getDepartmentId()));
+        if (query.getDepartmentid() != null) {
+            spec = spec.and((root, q, cb) -> cb.equal(root.get("department").get("id"), query.getDepartmentid()));
         }
 
         if (query.getName() != null && !query.getName().isEmpty()) {
