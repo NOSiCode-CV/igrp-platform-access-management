@@ -57,13 +57,14 @@ public class DepartmentController {
     }
   )
   
-  public ResponseEntity<DepartmentDTO> postDepartment( @Valid @RequestBody DepartmentDTO postDepartmentRequest
+  public ResponseEntity<DepartmentDTO> postDepartment(@Valid @RequestBody DepartmentDTO postDepartmentRequest
     )
   {
       final var command = new PostDepartmentCommand(postDepartmentRequest);
-       ResponseEntity<DepartmentDTO> response = (ResponseEntity<DepartmentDTO>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<DepartmentDTO> response = commandBus.send(command);
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @GetMapping(
@@ -90,13 +91,14 @@ public class DepartmentController {
     )
   {
       final var query = new GetDepartmentsQuery();
-      ResponseEntity<DepartmentDTO> response = (ResponseEntity<DepartmentDTO>) queryBus.handle(query);
-      return ResponseEntity.ok(response.getBody());
-      //return queryBus.handle(query);
+      ResponseEntity<DepartmentDTO> response = queryBus.handle(query);
+       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @GetMapping(
-    value = "departments/{id}/{id}"
+    value = "departments/{id}"
   )
   @Operation(
     summary = "GET method to handle operations for getDepartmentById",
@@ -119,13 +121,14 @@ public class DepartmentController {
     @PathVariable(value = "id") Integer id)
   {
       final var query = new GetDepartmentByIdQuery(id);
-      ResponseEntity<DepartmentDTO> response = (ResponseEntity<DepartmentDTO>) queryBus.handle(query);
-      return ResponseEntity.ok(response.getBody());
-      //return queryBus.handle(query);
+      ResponseEntity<DepartmentDTO> response = queryBus.handle(query);
+       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @PutMapping(
-    value = "departments/{id}/{id}"
+    value = "departments/{id}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateDepartment",
@@ -144,17 +147,18 @@ public class DepartmentController {
     }
   )
   
-  public ResponseEntity<DepartmentDTO> updateDepartment( @Valid @RequestBody DepartmentDTO updateDepartmentRequest
+  public ResponseEntity<DepartmentDTO> updateDepartment(@Valid @RequestBody DepartmentDTO updateDepartmentRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new UpdateDepartmentCommand(updateDepartmentRequest, id);
-       ResponseEntity<DepartmentDTO> response = (ResponseEntity<DepartmentDTO>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<DepartmentDTO> response = commandBus.send(command);
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @DeleteMapping(
-    value = "departments/{id}/{id}"
+    value = "departments/{id}"
   )
   @Operation(
     summary = "DELETE method to handle operations for deleteDepartment",
@@ -177,9 +181,10 @@ public class DepartmentController {
     @PathVariable(value = "id") Integer id)
   {
       final var command = new DeleteDepartmentCommand(id);
-       ResponseEntity<?> response = (ResponseEntity<?>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<?> response = commandBus.send(command);
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
 }
