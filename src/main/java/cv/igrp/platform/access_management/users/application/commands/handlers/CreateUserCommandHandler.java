@@ -4,6 +4,8 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 
 import java.util.ArrayList;
+
+import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.users.application.commands.commands.CreateUserCommand;
@@ -19,22 +21,24 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.Role
 public class CreateUserCommandHandler implements CommandHandler<CreateUserCommand, ResponseEntity<?>> {
 
     private final IGRPUserRepository userRepository;
+    private final IGRPUserMapper userMapper;
 
-    public CreateUserCommandHandler(IGRPUserRepository userRepository) {
+    public CreateUserCommandHandler(IGRPUserRepository userRepository, IGRPUserMapper userMapper) {
         this.userRepository = userRepository;
+        this.userMapper = userMapper;
     }
 
     @IgrpCommandHandler
-    public ResponseEntity<?> handle(CreateUserCommand command) {
+    public ResponseEntity<IGRPUserDTO> handle(CreateUserCommand command) {
         IGRPUser user = new IGRPUser();
-        user.setName(command.getName());
-        user.setUsername(command.getUsername());
-        user.setEmail(command.getEmail());
+        user.setName(command.getIgrpuserdto().getName());
+        user.setUsername(command.getIgrpuserdto().getUsername());
+        user.setEmail(command.getIgrpuserdto().getEmail());
         user.setRoles(new ArrayList<>()); // Nenhum papel atribuído no momento
 
-        userRepository.save(user);
+        var savedUser = userRepository.save(user);
 
-        return ResponseEntity.status(201).body("Usuário criado com sucesso!");
+        return ResponseEntity.ok(userMapper.toDto(savedUser));
     }
 }
 

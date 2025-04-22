@@ -4,6 +4,8 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 
 import java.util.List;
+
+import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -21,10 +23,12 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
 
     private final IGRPUserRepository userRepository;
     private final RoleRepository roleRepository;
+    private final IGRPUserMapper userMapper;
 
-    public UpdateUserCommandHandler(IGRPUserRepository userRepository, RoleRepository roleRepository) {
+    public UpdateUserCommandHandler(IGRPUserRepository userRepository, RoleRepository roleRepository, IGRPUserMapper userMapper) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
+        this.userMapper = userMapper;
     }
 
     @IgrpCommandHandler
@@ -32,8 +36,8 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
         IGRPUserDTO dto = command.getIgrpuserdto();
 
         // Verifica se o user existe
-        IGRPUser user = userRepository.findById(dto.getId())
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + dto.getId()));
+        IGRPUser user = userRepository.findById(command.getId())
+                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + command.getId()));
 
         // Atualiza os campos
         user.setName(dto.getName());
@@ -41,9 +45,9 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
         user.setEmail(dto.getEmail());
 
         // Salva o user atualizado
-        userRepository.save(user);
+        var updatedUser = userRepository.save(user);
 
         // Retorna o DTO atualizado
-        return ResponseEntity.ok(dto);
+        return ResponseEntity.ok(userMapper.toDto(updatedUser));
     }
 }

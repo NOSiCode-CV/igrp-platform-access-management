@@ -14,9 +14,9 @@ import lombok.AllArgsConstructor;
 public class GetUsersQuery implements Query {
 
   @NotNull(message = "The field <applicationId> is required.")
-  private Integer applicationId;
+  private Integer applicationid;
   @NotNull(message = "The field <departmentId> is required.")
-  private Integer departmentId;
+  private Integer departmentid;
   @NotBlank(message = "The field <name> is required.")
   private String name;
   @NotBlank(message = "The field <username> is required.")

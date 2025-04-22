@@ -41,7 +41,7 @@ public class UserController {
   }
 
   @GetMapping(
-    value = "users/{id}/{id}"
+    value = "users/{id}"
   )
   @Operation(
     summary = "GET method to handle operations for getUser",
@@ -64,13 +64,14 @@ public class UserController {
     @PathVariable(value = "id") Integer id)
   {
       final var query = new GetUserQuery(id);
-      ResponseEntity<IGRPUserDTO> response = (ResponseEntity<IGRPUserDTO>) queryBus.handle(query);
-      return ResponseEntity.ok(response.getBody());
-      //return queryBus.handle(query);
+      ResponseEntity<IGRPUserDTO> response = queryBus.handle(query);
+       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @PostMapping(
-    value = "users/{id}/addRoles/{id}"
+    value = "users/{id}/addRoles"
   )
   @Operation(
     summary = "POST method to handle operations for AddRolesToUser",
@@ -99,17 +100,18 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<?> addRolesToUser( @Valid @RequestBody RoleUserDTO addRolesToUserRequest
+  public ResponseEntity<?> addRolesToUser(@Valid @RequestBody RoleUserDTO addRolesToUserRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new AddRolesToUserCommand(addRolesToUserRequest, id);
-       ResponseEntity<?> response = (ResponseEntity<?>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<?> response = commandBus.send(command);
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @DeleteMapping(
-    value = "users/{id}/removeRoles/{id}"
+    value = "users/{id}/removeRoles"
   )
   @Operation(
     summary = "DELETE method to handle operations for RemoveRolesFromUser",
@@ -128,17 +130,18 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<List<RoleDTO>> removeRolesFromUser( @Valid @RequestBody RoleDTO removeRolesFromUserRequest
+  public ResponseEntity<List<RoleDTO>> removeRolesFromUser(@Valid @RequestBody RoleDTO removeRolesFromUserRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, id);
-       ResponseEntity<List<RoleDTO>> response = (ResponseEntity<List<RoleDTO>>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<List<RoleDTO>> response = commandBus.send(command);
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @GetMapping(
-    value = "users/{id}/roles/{id}"
+    value = "users/{id}/roles"
   )
   @Operation(
     summary = "GET method to handle operations for getUserRoles",
@@ -161,9 +164,10 @@ public class UserController {
     @RequestParam(value = "applicationId") Integer applicationId, @PathVariable(value = "id") Integer id)
   {
       final var query = new GetUserRolesQuery(applicationId, id);
-      ResponseEntity<List<RoleDTO>> response = (ResponseEntity<List<RoleDTO>>) queryBus.handle(query);
-      return ResponseEntity.ok(response.getBody());
-      //return queryBus.handle(query);
+      ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
+       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @GetMapping(
@@ -194,9 +198,10 @@ public class UserController {
     @RequestParam(value = "email", required = false) String email)
   {
       final var query = new GetUsersQuery(applicationId, departmentId, name, username, email);
-      ResponseEntity<List<IGRPUserDTO>> response = (ResponseEntity<List<IGRPUserDTO>>) queryBus.handle(query);
-      return ResponseEntity.ok(response.getBody());
-      //return queryBus.handle(query);
+      ResponseEntity<List<IGRPUserDTO>> response = queryBus.handle(query);
+       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @PostMapping(
@@ -219,17 +224,18 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<IGRPUserDTO> createUser( @Valid @RequestBody IGRPUserDTO createUserRequest
+  public ResponseEntity<IGRPUserDTO> createUser(@Valid @RequestBody IGRPUserDTO createUserRequest
     )
   {
       final var command = new CreateUserCommand(createUserRequest);
-       ResponseEntity<IGRPUserDTO> response = (ResponseEntity<IGRPUserDTO>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+       ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @PutMapping(
-    value = "users"
+    value = "users/{id}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateUser",
@@ -248,13 +254,14 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<IGRPUserDTO> updateUser( @Valid @RequestBody IGRPUserDTO updateUserRequest
-    )
+  public ResponseEntity<IGRPUserDTO> updateUser(@Valid @RequestBody IGRPUserDTO updateUserRequest
+    , @PathVariable(value = "id") Integer id)
   {
-      final var command = new UpdateUserCommand(updateUserRequest);
-       ResponseEntity<IGRPUserDTO> response = (ResponseEntity<IGRPUserDTO>) commandBus.send(command);
-       return ResponseEntity.ok(response.getBody());
-       //return commandBus.send(command);
+      final var command = new UpdateUserCommand(updateUserRequest, id);
+       ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
 }
