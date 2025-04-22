@@ -104,6 +104,170 @@ The `IAdapter` is an abstraction layer that defines the contract for IAM provide
 | POST   | `/api/departments/{id}/removeRoles` | `List<Integer>` | `List<RoleDTO>` | 200 OK |
 | POST   | `/api/departments/{id}/invite` | `IGRPUserDTO` | — | 200 OK |
 
+#### 🔹 Create Departament
+
+- **POST** `/api/departments`  
+Creates a new departament.
+
+**📥 Request:**
+```json
+{
+  "code": "TI",
+  "name": "Tecnologias de Informação",
+  "description": "Departamento responsável pela infraestrutura tecnológica",
+  "status": "ACTIVE",
+  "application_id": 1,
+  "parent_id": null
+}
+```
+
+**📤 Response:**
+```json
+{
+  "id": 3,
+  "code": "TI",
+  "name": "Tecnologias de Informação",
+  "description": "Departamento responsável pela infraestrutura tecnológica",
+  "status": "ACTIVE",
+  "application_id": 1,
+  "parent_id": null
+}
+```
+
+#### 🔹 List Departaments
+
+- **GET** `/api/departments`  
+List all departaments.
+
+**📤 Response:**
+```json
+[
+  {
+    "id": 1,
+    "code": "ADM",
+    "name": "Administração",
+    "description": "Administração Geral",
+    "status": "ACTIVE",
+    "application_id": 1,
+    "parent_id": null
+  }
+]
+```
+
+#### 🔹 Search Departament by ID
+
+- **GET** `/api/departments/{id}`  
+Returns the details of a departament.
+
+**📤 Response:**
+```json
+{
+  "id": 1,
+  "code": "ADM",
+  "name": "Administração",
+  "description": "Administração Geral",
+  "status": "ACTIVE",
+  "application_id": 1,
+  "parent_id": null
+}
+```
+
+#### 🔹 Update Departament
+
+- **PUT** `/api/departments/{id}`  
+Updates a departament.
+
+**📥 Request:**
+```json
+{
+  "code": "FIN",
+  "name": "Financeiro",
+  "description": "Gestão de recursos financeiros",
+  "status": "INACTIVE",
+  "application_id": 1,
+  "parent_id": null
+}
+```
+
+**📤 Response:** *(Same format as GET by ID)*
+
+#### 🔹 Remove Departament
+
+- **DELETE** `/api/departments/{id}`  
+Removes a departament.
+
+**📤 Response:** `204 No Content`
+
+#### 🔸 Department Roles
+
+##### 🔹 List Roles
+
+- **GET** `/api/departments/{id}/roles`  
+List all roles related to a departament.
+
+**📤 Response:**
+```json
+[
+  {
+    "id": 1,
+    "name": "Admin",
+    "description": "Acesso completo",
+    "departmentId": 1,
+    "parentId": null,
+    "status": "ACTIVE"
+  }
+]
+```
+
+##### 🔹 Add Roles
+
+- **POST** `/api/departments/{id}/addRoles`  
+Adds a list of roles to a departament.
+
+**📥 Request:**
+```json
+[
+  {
+    "id": 2,
+    "name": "Editor",
+    "description": "Permite edição de dados",
+    "departmentId": 1
+  }
+]
+```
+
+**📤 Response:** List of `RoleDTO` updated
+
+##### 🔹 Remove Roles
+
+- **POST** `/api/departments/{id}/removeRoles`  
+Removes roles from departament.
+
+**📥 Request:**
+```json
+[2, 3]
+```
+
+**📤 Response:** List of remaining `RoleDTO`
+
+#### 🔸 Invite User to a Departament
+
+- **POST** `/api/departments/{id}/invite`  
+Associates a new user to the department.
+
+**📥 Request (`IGRPUserDTO`):**
+```json
+{
+  "username": "mrodrigues",
+  "name": "Maria Rodrigues",
+  "email": "maria@dominio.gov.cv",
+  "departmentId": 2,
+  "applicationId": 1
+}
+```
+
+**📤 Response:** `200 OK`
+
 ---
 
 ### 🔐 Role Management
@@ -124,6 +288,74 @@ The `IAdapter` is an abstraction layer that defines the contract for IAM provide
 | POST   | `/api/users/{id}/removeRoles` | `List<Integer>` | `List<RoleDTO>` | 200 OK |
 | GET    | `/api/users` | `?applicationId={id}&departmentId={id}&name={name}&username={username}&email={email}` | `List<UserDTO>` | 200 OK |
 | GET    | `/api/users/{id}/roles` | `?applicationId={id}` | `List<RoleDTO>` | 200 OK |
+
+#### 🔹 List Users with Filters
+
+- **GET** `/api/users`  
+Search Users applying mandatory filters.
+
+**🔍 Required Parameters:**
+- `applicationId`
+- `departmentId`
+- `name`
+- `username`
+- `email`
+
+**📤 Response:**
+```json
+[
+  {
+    "id": 5,
+    "username": "jfernandes",
+    "name": "João Fernandes",
+    "email": "joao@example.com"
+  }
+]
+```
+
+#### 🔹 Add Roles to an User
+
+- **POST** `/api/users/{id}/addRoles`  
+Associates new roles to a User.
+
+**📥 Request:**
+```json
+[1, 3]
+```
+
+**📤 Response:**
+```json
+[
+  {
+    "id": 1,
+    "name": "Admin",
+    "description": "Acesso completo",
+    "departmentId": 2,
+    "parentId": null,
+    "status": "ACTIVE"
+  }
+]
+```
+
+#### 🔹 Remove Roles from an User
+
+- **POST** `/api/users/{id}/removeRoles`  
+Remove roles from User.
+
+**📥 Request:**
+```json
+[3]
+```
+
+**📤 Response:** List of remaining `RoleDTO`
+
+#### 🔹 List Roles of User
+
+- **GET** `/api/users/{id}/roles?applicationId={id}`  
+Returns the roles associated with the User in the application context.
+
+**📤 Response:** *(Same structure as `RoleDTO`)*
+---
 
 ### 🧭 Menu Management
 
