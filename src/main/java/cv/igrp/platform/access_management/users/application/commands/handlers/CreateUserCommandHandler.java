@@ -27,9 +27,9 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
     @IgrpCommandHandler
     public ResponseEntity<?> handle(CreateUserCommand command) {
         IGRPUser user = new IGRPUser();
-        user.setName(command.getName());
-        user.setUsername(command.getUsername());
-        user.setEmail(command.getEmail());
+        user.setName(command.getIgrpuserdto().getName());
+        user.setUsername(command.getIgrpuserdto().getUsername());
+        user.setEmail(command.getIgrpuserdto().getEmail());
         user.setRoles(new ArrayList<>()); // Nenhum papel atribuído no momento
 
         userRepository.save(user);
