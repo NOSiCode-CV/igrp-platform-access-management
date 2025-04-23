@@ -48,7 +48,8 @@ public class GetUsersQueryHandler implements QueryHandler<GetUsersQuery, Respons
             spec = spec.and((root, q, cb) -> {
                 Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
                 Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
-                return cb.equal(departmentJoin.get("applicationId"), query.getApplicationid());
+                Join<Object, Object> applicationJoin = departmentJoin.join("applicationId", JoinType.INNER);
+                return cb.equal(applicationJoin.get("id"), query.getApplicationid());
             });
         }
 
