@@ -18,6 +18,7 @@ import cv.igrp.platform.access_management.department.application.queries.queries
 
 
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
+import java.util.List;
 
 @IgrpController
 @RestController
@@ -81,17 +82,17 @@ public class DepartmentController {
               mediaType = "application/json",
               schema = @Schema(
                   implementation = DepartmentDTO.class,
-                  type = "object")
+                  type = "DepartmentDTO")
           )
       )
     }
   )
   
-  public ResponseEntity<DepartmentDTO> getDepartments(
+  public ResponseEntity<List<DepartmentDTO>> getDepartments(
     )
   {
       final var query = new GetDepartmentsQuery();
-      ResponseEntity<DepartmentDTO> response = queryBus.handle(query);
+      ResponseEntity<List<DepartmentDTO>> response = queryBus.handle(query);
        return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
