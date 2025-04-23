@@ -20,6 +20,7 @@ import cv.igrp.platform.access_management.resource.application.queries.queries.*
 import java.util.List;
 import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.resource.application.dto.ResourceItemDTO;
+import java.util.Map;
 
 @IgrpController
 @RestController
@@ -61,9 +62,11 @@ public class ResourceController {
   
   public ResponseEntity<List<ResourceDTO>> getResources(
     @RequestParam(value = "applicationId", required = false) Integer applicationId,
-    @RequestParam(value = "name", required = false) String name)
+    @RequestParam(value = "name", required = false) String name,
+    @RequestParam(value = "type", required = false) String type,
+    @RequestParam(value = "externalID", required = false) String externalID)
   {
-      final var query = new GetResourcesQuery(applicationId, name);
+      final var query = new GetResourcesQuery(applicationId, name, type, externalID);
       ResponseEntity<List<ResourceDTO>> response = queryBus.handle(query);
       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
@@ -200,7 +203,7 @@ public class ResourceController {
     }
   )
   
-  public ResponseEntity<ResourceDTO> addItems(@RequestBody List<ResourceItemDTO> addItemsRequest
+  public ResponseEntity<ResourceDTO> addItems( @Valid @RequestBody List<ResourceItemDTO> addItemsRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new AddItemsCommand(addItemsRequest, id);
@@ -234,6 +237,90 @@ public class ResourceController {
       final var command = new RemoveItemsCommand(removeItemsRequest, id);
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
        return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+  }
+
+  @PostMapping(
+    value = "resources/{id}/custom-fields"
+  )
+  @Operation(
+    summary = "POST method to handle operations for addResourceCustomFields",
+    description = "POST method to handle operations for addResourceCustomFields",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "No Content",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> addResourceCustomFields(  @RequestBody Map<String, ?> addResourceCustomFieldsRequest
+    , @PathVariable(value = "id") Integer id)
+  {
+      final var command = new AddResourceCustomFieldsCommand(addResourceCustomFieldsRequest, id);
+       ResponseEntity<String> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+  }
+
+  @PostMapping(
+    value = "resources/{id}/custom-fields/remove"
+  )
+  @Operation(
+    summary = "POST method to handle operations for removeResourceCustomFields",
+    description = "POST method to handle operations for removeResourceCustomFields",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "No Content",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> removeResourceCustomFields(  @RequestBody List<String> removeResourceCustomFieldsRequest
+    , @PathVariable(value = "id") Integer id)
+  {
+      final var command = new RemoveResourceCustomFieldsCommand(removeResourceCustomFieldsRequest, id);
+       ResponseEntity<String> response = commandBus.send(command);
+       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+  }
+
+  @GetMapping(
+    value = "/resources/{id}/custom-fields"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getResourceCustomFields",
+    description = "GET method to handle operations for getResourceCustomFields",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "Resource Custom Fields",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<Map<String, ?>> getResourceCustomFields(
+    @PathVariable(value = "id") Integer id)
+  {
+      final var query = new GetResourceCustomFieldsQuery(id);
+      ResponseEntity<Map<String, ?>> response = queryBus.handle(query);
+      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
   }
 
 }
