@@ -36,11 +36,11 @@ public class RemoveRolesFromDepartmentCommandHandler implements CommandHandler<R
         List<Integer> roleIdsToRemove = command.getRoleIds();
 
         // Remover roles cujo ID está presente na lista
-        department.getRoleses().removeIf(role -> roleIdsToRemove.contains(role.getId()));
+        department.getRoles().removeIf(role -> roleIdsToRemove.contains(role.getId()));
 
         Department updated = departmentRepository.save(department);
 
-        List<RoleDTO> result = updated.getRoleses().stream()
+        List<RoleDTO> result = updated.getRoles().stream()
                 .map(roleMapper::mapToDto)
                 .collect(Collectors.toList());
 

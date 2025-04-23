@@ -16,7 +16,7 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "t_igrp_user")
+@Table(name = "t_user")
 public class IGRPUser extends AuditEntity {
 
     @Id
@@ -42,8 +42,8 @@ public class IGRPUser extends AuditEntity {
 
 
   @OneToMany(mappedBy = "", fetch = FetchType.LAZY)
-private List<Role> roles;   @OneToMany(mappedBy = "user")
-private List<RecentApplication> recentapplications;
+private List<Role> roleses;   @OneToMany(mappedBy = "user")
+private List<RecentApplication> recentapplicationses;
 
 
 }

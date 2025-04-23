@@ -60,5 +60,11 @@ private List<Department> childrenidses;
    @OneToMany(mappedBy = "department")
 private List<Role> roleses;
 
+   @OneToMany(mappedBy = "parentId")
+private List<Department> childrenids;
+
+   @OneToMany(mappedBy = "department")
+private List<Role> roles;
+
 
 }

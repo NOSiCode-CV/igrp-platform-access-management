@@ -57,7 +57,7 @@ public class Role extends AuditEntity {
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "t_role_permission",
-            joinColumns = @JoinColumn(name = "role_id"),
+            joinColumns = @JoinColumn(name = ""),
             inverseJoinColumns = @JoinColumn(name = "permission")
     )
 private Set<Permission> permissions;
