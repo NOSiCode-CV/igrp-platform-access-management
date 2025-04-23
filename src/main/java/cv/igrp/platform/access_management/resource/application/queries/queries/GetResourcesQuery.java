@@ -17,5 +17,9 @@ public class GetResourcesQuery implements Query {
   private Integer applicationId;
   @NotBlank(message = "The field <name> is required.")
   private String name;
+  @NotBlank(message = "The field <type> is required.")
+  private String type;
+  @NotBlank(message = "The field <externalID> is required.")
+  private String externalID;
 
 }

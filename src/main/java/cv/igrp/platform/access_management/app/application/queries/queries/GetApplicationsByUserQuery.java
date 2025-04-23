@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetApplicationsByUserQuery implements Query {
 
-    @NotBlank(message = "The field <uid> is required.")
-    private String uid;
+  @NotBlank(message = "The field <uid> is required.")
+  private String uid;
 
 }
