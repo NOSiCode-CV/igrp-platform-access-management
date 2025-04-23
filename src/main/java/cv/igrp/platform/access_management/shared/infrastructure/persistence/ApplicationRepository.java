@@ -28,7 +28,7 @@ public interface ApplicationRepository extends
             JOIN app.departments d
             JOIN d.roles r
             JOIN r.users u
-            WHERE a.id=app.id and u.username = :uid OR u.email = :uid
+            WHERE app.id=a.id and u.username = :uid OR u.email = :uid
         )
     """)
     List<Application> findDeniedApplications(@Param("uid") String uid);
