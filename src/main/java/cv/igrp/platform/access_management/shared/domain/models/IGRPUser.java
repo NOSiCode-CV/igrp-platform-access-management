@@ -6,7 +6,9 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
+
 import java.util.List;
+import java.util.Set;
 
 @Audited
 @Getter
@@ -38,12 +40,8 @@ public class IGRPUser extends AuditEntity {
     @Column(name="email", unique = true)
     private String email;
 
-  
-
-
-  @OneToMany(mappedBy = "", fetch = FetchType.LAZY)
-private List<Role> roleses;   @OneToMany(mappedBy = "user")
-private List<RecentApplication> recentapplicationses;
+     @ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
+private List<Role> roles;
 
 
 }

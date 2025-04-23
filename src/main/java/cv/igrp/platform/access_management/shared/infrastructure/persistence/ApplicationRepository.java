@@ -18,15 +18,15 @@ public interface ApplicationRepository extends
     JpaSpecificationExecutor<Application>,
     RevisionRepository<Application, Integer, Integer>
 {
-    List<Application> findDistinctByDepartmentses_Roleses_Users_UsernameOrDepartmentses_Roleses_Users_Email(String username, String email);
+    List<Application> findDistinctByDepartments_Roles_Users_UsernameOrDepartments_Roles_Users_Email(String username, String email);
 
 
     @Query("""
         SELECT a FROM Application a
         WHERE a.id NOT IN (
             SELECT DISTINCT app.id FROM Application app
-            JOIN app.departmentses d
-            JOIN d.roleses r
+            JOIN app.departments d
+            JOIN d.roles r
             JOIN r.users u
             WHERE u.username = :uid OR u.email = :uid
         )
