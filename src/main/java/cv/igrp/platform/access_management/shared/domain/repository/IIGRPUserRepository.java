@@ -22,7 +22,7 @@ public interface IIGRPUserRepository {
   * @param id the IGRPUser's ID
   * @return an Optional IGRPUser, if found
   */
-  Optional<IGRPUser> findById(String id);
+  Optional<IGRPUser> findById(Integer id);
 
   /**
   * Fetch all the IGRPUser objects.
@@ -36,6 +36,6 @@ public interface IIGRPUserRepository {
   *
   * @param id the IGRPUser's ID
   */
-  void deleteById(String id);
+  void deleteById(Integer id);
 
 }

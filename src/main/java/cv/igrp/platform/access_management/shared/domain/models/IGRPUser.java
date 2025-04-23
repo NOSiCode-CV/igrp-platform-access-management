@@ -16,7 +16,7 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "t_igrp_user")
+@Table(name = "t_user")
 public class IGRPUser extends AuditEntity {
 
     @Id
@@ -24,23 +24,26 @@ public class IGRPUser extends AuditEntity {
     @Column(name = "id", unique = true, nullable = false)
     private Integer id;
 
+  
+
     @NotBlank(message = "name is mandatory")
     @Column(name="name", nullable = false)
     private String name;
 
+  
     @Column(name="username", unique = true)
     private String username;
 
+  
     @Column(name="email", unique = true)
     private String email;
 
-    // Relacionamento ManyToMany com Role (papéis)
-    @ManyToMany
-    @JoinTable(
-        name = "user_roles", // Nome da tabela de junção
-        joinColumns = @JoinColumn(name = "user_id"), // Coluna que se refere ao usuário
-        inverseJoinColumns = @JoinColumn(name = "role_id") // Coluna que se refere ao papel (role)
-    )
-    private List<Role> roles; // Lista de papéis (roles) atribuídos ao usuário
+  
+
+
+  @OneToMany(mappedBy = "", fetch = FetchType.LAZY)
+private List<Role> roleses;   @OneToMany(mappedBy = "user")
+private List<RecentApplication> recentapplicationses;
+
 
 }
