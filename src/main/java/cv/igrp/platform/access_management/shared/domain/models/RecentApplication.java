@@ -31,4 +31,10 @@ public class RecentApplication extends AuditEntity {
     @Column(name="lastaccess")
     private LocalDateTime lastAccess;
 
+  
+
+
+  @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user", referencedColumnName = "id")
+    private IGRPUser user;
 }
