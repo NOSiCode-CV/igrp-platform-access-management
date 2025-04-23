@@ -41,7 +41,7 @@ public class IGRPUser extends AuditEntity {
   
 
 
-  @OneToMany(mappedBy = "users", fetch = FetchType.LAZY)
+  @OneToMany(mappedBy = "", fetch = FetchType.LAZY)
 private List<Role> roles;   @OneToMany(mappedBy = "user")
 private List<RecentApplication> recentapplications;
 
