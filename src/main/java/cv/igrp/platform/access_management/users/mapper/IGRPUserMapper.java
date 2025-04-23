@@ -21,7 +21,7 @@ public class IGRPUserMapper {
         if (dto == null) return null;
         IGRPUser user = new IGRPUser();
         user.setId(dto.getId());
-        //user.setUsername(dto.getUsername());
+        user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
         //user.setStatus(dto.getStatus());
         user.setName(dto.getName());

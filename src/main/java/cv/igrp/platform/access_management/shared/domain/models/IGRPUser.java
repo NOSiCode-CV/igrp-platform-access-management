@@ -38,7 +38,11 @@ public class IGRPUser extends AuditEntity {
     @Column(name="email", unique = true)
     private String email;
 
-     @OneToMany(mappedBy = "user")
+  
+
+
+  @OneToMany(mappedBy = "users", fetch = FetchType.LAZY)
+private List<Role> roles;   @OneToMany(mappedBy = "user")
 private List<RecentApplication> recentapplications;
 
 
