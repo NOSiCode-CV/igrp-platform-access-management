@@ -4,6 +4,7 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.permission.application.commands.commands.CreatePermissionCommand;
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -16,6 +17,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -45,7 +48,7 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
                     );
                 });
         Permission newPermission = new Permission();
-        newPermission.setStatus(request.getStatus());
+        newPermission.setStatus(Objects.nonNull(request.getStatus())? request.getStatus() : Status.ACTIVE);
         newPermission.setName(request.getName());
         if (request.getDescription() != null) {
             newPermission.setDescription(request.getDescription().trim());
