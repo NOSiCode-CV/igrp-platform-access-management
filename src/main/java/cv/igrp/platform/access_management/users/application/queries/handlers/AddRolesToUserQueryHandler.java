@@ -1,4 +1,4 @@
-package cv.igrp.platform.access_management.department.application.queries.handlers;
+package cv.igrp.platform.access_management.users.application.queries.handlers;
 
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;

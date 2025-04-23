@@ -33,9 +33,10 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
         Department department = departmentMapper.toEntity(command.getDepartmentdto());
         department.setApplicationId(applicationRepository.findById(command.getDepartmentdto().getApplication_id()).orElseThrow(() -> new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.BAD_REQUEST, "Invalid application ID", null))));
 
-        Department parent = departmentRepository.findById(command.getDepartmentdto().getParent_id()).orElseThrow(() -> new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.BAD_REQUEST, "Invalid department ID", null)));
-
-        department.setParentId(parent);
+        if(command.getDepartmentdto().getParent_id() != null) {
+            Department parent = departmentRepository.findById(command.getDepartmentdto().getParent_id()).orElseThrow(() -> new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.BAD_REQUEST, "Invalid department ID", null)));
+            department.setParentId(parent);
+        }
 
         Department saved = departmentRepository.save(department);
         DepartmentDTO result = departmentMapper.toDto(saved);

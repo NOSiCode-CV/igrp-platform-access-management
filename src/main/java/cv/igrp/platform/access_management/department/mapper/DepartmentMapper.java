@@ -1,9 +1,12 @@
 package cv.igrp.platform.access_management.department.mapper;
 
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.Department;
 import org.springframework.stereotype.Component;
+
+import java.util.Objects;
 
 import static java.util.Optional.ofNullable;
 
@@ -16,6 +19,7 @@ public class DepartmentMapper {
         dto.setId(department.getId());
         dto.setCode(department.getCode());
         dto.setName(department.getName());
+        dto.setStatus(department.getStatus());
         dto.setDescription(department.getDescription());
         dto.setApplication_id(ofNullable(department.getApplicationId()).map(Application::getId).orElse(null));
         dto.setParent_id(ofNullable(department.getParentId()).map(Department::getId).orElse(null));
@@ -28,7 +32,7 @@ public class DepartmentMapper {
         department.setId(dto.getId());
         department.setCode(dto.getCode());
         department.setName(dto.getName());
-        department.setStatus(dto.getStatus());
+        department.setStatus(Objects.nonNull(dto.getStatus()) ? dto.getStatus() : DepartmentStatus.ACTIVE);
         department.setDescription(dto.getDescription());
         return department;
     }
@@ -36,6 +40,7 @@ public class DepartmentMapper {
     public void updateEntityFromDto(DepartmentDTO dto, Department department) {
         department.setCode(dto.getCode());
         department.setName(dto.getName());
+        department.setStatus(dto.getStatus());
         department.setDescription(dto.getDescription());
     }
 }

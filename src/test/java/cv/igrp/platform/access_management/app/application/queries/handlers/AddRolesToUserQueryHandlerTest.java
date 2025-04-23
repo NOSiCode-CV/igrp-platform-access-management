@@ -1,11 +1,12 @@
 package cv.igrp.platform.access_management.app.application.queries.handlers;
 
-import cv.igrp.platform.access_management.department.application.queries.handlers.AddRolesToUserQueryHandler;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
+
+import cv.igrp.platform.access_management.users.application.queries.handlers.AddRolesToUserQueryHandler;
 
 @ExtendWith(MockitoExtension.class)
 public class AddRolesToUserQueryHandlerTest {
