@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.resource.application.commands.handler
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.CustomField;
@@ -27,7 +28,7 @@ public class RemoveResourceCustomFieldsCommandHandler implements CommandHandler<
    @IgrpCommandHandler
    public ResponseEntity<String> handle(RemoveResourceCustomFieldsCommand command) {
       CustomField customField = customFieldRepository
-              .findByTableNameAndRecordId("t_resource", command.getId())
+              .findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), command.getId())
               .orElseThrow(() -> {
                  return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "CustomField not found", "CustomField not found for Resource ID: " + command.getId()));
               });

@@ -1,1 +1,372 @@
-{"type":"controller","name":"Resource","module":"resource","description":"Resource Management","basePath":"api","actions":[{"actionName":"getResources","path":"resources","method":"GET","responses":{"200":{"description":"A List of Resources","content":{"application/json":{"schema":{"type":"ResourceDTO","objectType":"dto","name":"data","collectionType":"list","module":"resource"}}}}},"requestParams":[{"type":"integer","name":"applicationId","isRequired":false,"description":"Application ID"},{"type":"string","name":"name","description":"Resource Name","isRequired":false},{"type":"string","name":"type","description":"Resource Type","isRequired":false},{"type":"string","name":"externalID","description":"Resource External ID","isRequired":false}]},{"actionName":"getResourceById","path":"resources/{id}","method":"GET","responses":{"200":{"description":"The Resource Data","content":{"application/json":{"schema":{"type":"ResourceDTO","objectType":"dto","name":"data","collectionType":"none","module":"resource"}}}}},"pathVariables":[{"name":"id","type":"integer","isRequired":true,"description":"The Resource ID"}]},{"actionName":"createResource","path":"resources","method":"POST","requestBody":{"content":{"application/json":{"schema":{"type":"ResourceDTO","name":"undefined","objectType":"dto","module":"resource","description":"The Resource Data"}}}},"responses":{"201":{"description":"The Created Resource","content":{"application/json":{"schema":{"type":"ResourceDTO","name":"data","collectionType":"none"}}}}}},{"actionName":"updateResource","path":"resources/{id}","method":"PUT","requestBody":{"content":{"application/json":{"schema":{"type":"ResourceDTO","name":"undefined","objectType":"dto","module":"resource"}}}},"responses":{"200":{"description":"The Updated Resource Data","content":{"application/json":{"schema":{"type":"ResourceDTO","objectType":"dto","name":"data","collectionType":"none","module":"resource"}}}}},"pathVariables":[{"name":"id","type":"integer","isRequired":true,"description":"The Resource ID"}]},{"actionName":"deleteResource","path":"resources/{id}","method":"DELETE","responses":{"204":{"description":"No Content","content":{"application/json":{"schema":{"type":"string","name":"data","collectionType":"none"}}}}},"pathVariables":[{"name":"id","type":"integer","isRequired":true,"description":"The Resource ID"}]},{"actionName":"addItems","path":"resources/{id}/addItems","method":"POST","requestBody":{"content":{"application/json":{"schema":{"type":"ResourceItemDTO","name":"undefined","objectType":"dto","module":"resource","collectionType":"list"}}}},"responses":{"200":{"description":"The Resource Data","content":{"application/json":{"schema":{"type":"ResourceDTO","objectType":"dto","name":"data","collectionType":"none","module":"resource"}}}}},"pathVariables":[{"type":"integer","name":"id","description":"The Resource ID","isRequired":true}]},{"actionName":"removeItems","path":"resources/{id}/removeItems","method":"POST","requestBody":{"content":{"application/json":{"schema":{"type":"integer","name":"itemIds","collectionType":"list"}}}},"responses":{"200":{"description":"The Resource Data","content":{"application/json":{"schema":{"type":"ResourceDTO","name":"data","collectionType":"none"}}}}},"pathVariables":[{"type":"integer","name":"id","description":"The Resource ID","isRequired":true}]},{"actionName":"addResourceCustomFields","path":"resources/{id}/custom-fields","method":"POST","requestBody":{"content":{"application/json":{"schema":{"type":"string","name":"undefined","collectionType":"map","isRequired":true}}}},"responses":{"204":{"description":"No Content","content":{"application/json":{"schema":{"type":"string","name":"data","collectionType":"none"}}}}},"pathVariables":[{"type":"integer","name":"id","description":"Resource ID","isRequired":true}]},{"actionName":"removeResourceCustomFields","path":"resources/{id}/custom-fields/remove","method":"POST","requestBody":{"content":{"application/json":{"schema":{"type":"string","name":"undefined","collectionType":"list","isRequired":true}}}},"responses":{"204":{"description":"No Content","content":{"application/json":{"schema":{"type":"string","name":"data","collectionType":"none"}}}}},"pathVariables":[{"type":"integer","name":"id","description":"Resource ID","isRequired":true}]},{"actionName":"getResourceCustomFields","path":"/resources/{id}/custom-fields","method":"GET","responses":{"200":{"name":"OK","description":"Resource Custom Fields","content":{"application/json":{"schema":{"type":"string","name":"data","collectionType":"map"}}}}},"pathVariables":[{"type":"integer","name":"id","description":"Resource ID","isRequired":true}]}],"id":"74cqm14nbd-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"}
+{
+  "type": "controller",
+  "name": "Resource",
+  "module": "resource",
+  "description": "Resource Management",
+  "basePath": "api",
+  "actions": [
+    {
+      "actionName": "getResources",
+      "path": "resources",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "description": "A List of Resources",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ResourceDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "resource"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "integer",
+          "name": "applicationId",
+          "isRequired": false,
+          "description": "Application ID"
+        },
+        {
+          "type": "string",
+          "name": "name",
+          "description": "Resource Name",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "type",
+          "description": "Resource Type",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "externalID",
+          "description": "Resource External ID",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "actionName": "getResourceById",
+      "path": "resources/{id}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "description": "The Resource Data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ResourceDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "resource"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true,
+          "description": "The Resource ID"
+        }
+      ]
+    },
+    {
+      "actionName": "createResource",
+      "path": "resources",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "ResourceDTO",
+              "name": "undefined",
+              "objectType": "dto",
+              "module": "resource",
+              "description": "The Resource Data"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "The Created Resource",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ResourceDTO",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "updateResource",
+      "path": "resources/{id}",
+      "method": "PUT",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "ResourceDTO",
+              "name": "undefined",
+              "objectType": "dto",
+              "module": "resource"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The Updated Resource Data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ResourceDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "resource"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true,
+          "description": "The Resource ID"
+        }
+      ]
+    },
+    {
+      "actionName": "deleteResource",
+      "path": "resources/{id}",
+      "method": "DELETE",
+      "responses": {
+        "204": {
+          "description": "No Content",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true,
+          "description": "The Resource ID"
+        }
+      ]
+    },
+    {
+      "actionName": "addItems",
+      "path": "resources/{id}/addItems",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "ResourceItemDTO",
+              "name": "undefined",
+              "objectType": "dto",
+              "module": "resource",
+              "collectionType": "list"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The Resource Data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ResourceDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "resource"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "type": "integer",
+          "name": "id",
+          "description": "The Resource ID",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "removeItems",
+      "path": "resources/{id}/removeItems",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "integer",
+              "name": "itemIds",
+              "collectionType": "list"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The Resource Data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ResourceDTO",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "type": "integer",
+          "name": "id",
+          "description": "The Resource ID",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "addResourceCustomFields",
+      "path": "resources/{id}/custom-fields",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "undefined",
+              "collectionType": "map",
+              "isRequired": true
+            }
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "description": "No Content",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "type": "integer",
+          "name": "id",
+          "description": "Resource ID",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "removeResourceCustomFields",
+      "path": "resources/{id}/custom-fields/remove",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "undefined",
+              "collectionType": "list",
+              "isRequired": true
+            }
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "description": "No Content",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "type": "integer",
+          "name": "id",
+          "description": "Resource ID",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getResourceCustomFields",
+      "path": "/resources/{id}/custom-fields",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "description": "Resource Custom Fields",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "map"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "type": "integer",
+          "name": "id",
+          "description": "Resource ID",
+          "isRequired": true
+        }
+      ]
+    }
+  ],
+  "id": "74cqm14nbd-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"
+}
