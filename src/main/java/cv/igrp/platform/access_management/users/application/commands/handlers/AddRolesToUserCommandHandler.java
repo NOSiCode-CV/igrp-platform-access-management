@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.EntityNotFoundException;
 import java.util.List;
+import java.util.Set;
 
 @Service
 public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUserCommand, ResponseEntity<List<RoleDTO>>> {
@@ -39,17 +40,17 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
                 .orElseThrow(() -> new EntityNotFoundException("Role not found with id: " + roleId));
 
         // Adicionar o papel ao usuário
-        if (user.getRoles() != null) {
-            user.getRoles().add(roleToAdd);
+        if (roleToAdd.getUsers() != null) {
+            roleToAdd.getUsers().add(user);
         } else {
-            user.setRoles(List.of(roleToAdd)); // Se não houver roles, cria uma nova lista com o role
+            roleToAdd.setUsers(Set.of(user)); // Se não houver users, cria uma nova lista com o user
         }
 
         // Salvar o usuário atualizado
-        userRepository.save(user);
+        var roleUpdated = roleRepository.save(roleToAdd);
 
         // Mapeando o papel para RoleDTO
-        RoleDTO roleDTO = roleMapper.mapToDto(roleToAdd);
+        RoleDTO roleDTO = roleMapper.mapToDto(roleUpdated);
 
         // Retornar a resposta com a lista de RoleDTO
         return ResponseEntity.status(201).body(List.of(roleDTO)); // Retorna um único RoleDTO, pois só foi adicionado um papel
