@@ -5,8 +5,10 @@ import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
 import cv.igrp.platform.access_management.shared.domain.models.ResourceItem;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.PermissionRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,11 +23,13 @@ import java.util.List;
 public class AddItemsCommandHandler implements CommandHandler<AddItemsCommand, ResponseEntity<ResourceDTO>> {
 
    private ResourceRepository resourceRepository;
+   private PermissionRepository permissionRepository;
    private ResourceMapper resourceMapper;
 
-   public AddItemsCommandHandler(ResourceRepository resourceRepository, ResourceMapper resourceMapper) {
+   public AddItemsCommandHandler(ResourceRepository resourceRepository, ResourceMapper resourceMapper, PermissionRepository permissionRepository) {
       this.resourceRepository = resourceRepository;
       this.resourceMapper = resourceMapper;
+      this.permissionRepository = permissionRepository;
    }
 
    @IgrpCommandHandler
@@ -36,7 +40,11 @@ public class AddItemsCommandHandler implements CommandHandler<AddItemsCommand, R
               });
       List<ResourceItem> items = command.getResourceitemdto().stream()
               .map(dto -> {
-                  return resourceMapper.toItemEntity(dto, resource);
+                  Permission permission = permissionRepository.findById(dto.getPermissionId())
+                          .orElseThrow(() -> {
+                              return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Permission not found", "Permission not found with id: " + dto.getPermissionId()));
+                          });
+                  return resourceMapper.toItemEntity(dto, resource, permission);
               })
               .toList();
       resource.getItems().addAll(items);
