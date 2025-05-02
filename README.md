@@ -520,11 +520,28 @@ Associates a new user to the department.
 
 ### 🔐 Role Management
 
-> **TODO**: Document endpoints related to creating, updating, and assigning roles.
+| Method | Endpoint                          | Request             | Response                  | Status Code                   |
+|--------|-----------------------------------|---------------------|---------------------------|-------------------------------|
+| POST   | /api/roles                        | RoleDTO             | RoleDTO                   | 201 Created, 404 Not Found    |
+| GET    | /api/roles                        | —                   | List&lt;RoleDTO&gt;       | 200 OK                        |
+| GET    | /api/roles/{id}                   | —                   | RoleDTO                   | 200 OK, 404 Not Found         |
+| PUT    | /api/roles/{id}                   | RoleDTO             | RoleDTO                   | 200 OK, 404 Not Found         |
+| DELETE | /api/roles/{id}                   | —                   | —                         | 204 No Content, 404 Not Found |
+| GET    | /api/roles/{id}/permissions       | —                   | List&lt;PermissionDTO&gt; | 200 OK, 404 Not Found         |
+| POST   | /api/roles/{id}/addPermissions    | List&lt;Integer&gt; | List&lt;PermissionDTO&gt; | 200 OK, 404 Not Found         |
+| POST   | /api/roles/{id}/removePermissions | List&lt;Integer&gt; | List&lt;PermissionDTO&gt; | 200 OK, 404 Not Found         |
+
 
 ### 🛂 Permission Management
 
-> **TODO**: Document endpoints to define and assign granular permissions.
+| Method | Endpoint                            | Request       | Response                  | Status Code                   |
+|--------|-------------------------------------|---------------|---------------------------|-------------------------------|
+| POST   | /api/permissions                    | PermissionDTO | PermissionDTO             | 201 Created, 404 Not Found    |
+| GET    | /api/permissions?applicationId={id} | —             | List&lt;PermissionDTO&gt; | 200 OK                        |
+| GET    | /api/permissions/{id}               | —             | PermissionDTO             | 200 OK, 404 Not Found         |
+| PUT    | /api/permissions/{id}               | PermissionDTO | PermissionDTO             | 200 OK, 404 Not Found         |
+| DELETE | /api/permissions/{id}               | —             | —                         | 204 No Content, 404 Not Found |
+| GET    | /api/permissions/{id}/roles         | —             | List&lt;RoleDTO&gt;       | 200 OK, 404 Not Found         |
 
 ### 👤 User Management
 

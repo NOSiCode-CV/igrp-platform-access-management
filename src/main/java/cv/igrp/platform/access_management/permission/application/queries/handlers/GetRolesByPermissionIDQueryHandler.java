@@ -10,12 +10,15 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.PermissionRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class GetRolesByPermissionIDQueryHandler implements QueryHandler<GetRolesByPermissionIDQuery, ResponseEntity<List<RoleDTO>>> {
 
@@ -29,12 +32,17 @@ public class GetRolesByPermissionIDQueryHandler implements QueryHandler<GetRoles
     }
 
     @IgrpQueryHandler
+    @Transactional(readOnly = true)
     public ResponseEntity<List<RoleDTO>> handle(GetRolesByPermissionIDQuery query) {
+        log.info("Get Roles with Permission ID {}", query.getId());
         Permission permissionFound = permissionRepository.findById(query.getId())
                 .filter(permission -> permission.getStatus().equals(Status.ACTIVE) || permission.getStatus().equals(Status.INACTIVE))
-                .orElseThrow(() -> new IgrpResponseStatusException(
-                        new IgrpProblem<>(HttpStatus.NOT_FOUND, "Get Role By Permission ID", "Permission with id: " + query.getId() + " not found.")
-                ));
+                .orElseThrow(() -> {
+                    log.warn("Get Roles with Permission ID {}", query.getId());
+                    return new IgrpResponseStatusException(
+                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Get Role By Permission ID", "Permission with id: " + query.getId() + " not found.")
+                    );
+                });
         List<RoleDTO> response = permissionFound.getRoles()
                 .stream()
                 .filter(role -> role.getStatus().equals(Status.ACTIVE) || role.getStatus().equals(Status.INACTIVE))

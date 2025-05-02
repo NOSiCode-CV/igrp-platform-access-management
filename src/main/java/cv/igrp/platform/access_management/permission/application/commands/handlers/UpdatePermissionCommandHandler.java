@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.permission.application.commands.handl
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.permission.application.commands.commands.UpdatePermissionCommand;
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
@@ -10,12 +11,16 @@ import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.PermissionRepository;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import cv.igrp.platform.access_management.permission.application.commands.commands.UpdatePermissionCommand;
+import org.springframework.transaction.annotation.Transactional;
+
+import static cv.igrp.platform.access_management.shared.application.constants.Status.DELETED;
 
 
+@Slf4j
 @Service
 public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePermissionCommand, ResponseEntity<PermissionDTO>> {
 
@@ -30,15 +35,23 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
     }
 
     @IgrpCommandHandler
+    @Transactional
     public ResponseEntity<PermissionDTO> handle(UpdatePermissionCommand command) {
-        Permission foundPermission = permissionRepository.findById(command.getId())
-                .orElseThrow(() -> new IgrpResponseStatusException(
-                        new IgrpProblem<>(HttpStatus.NOT_FOUND, "Update Permission", "Permission with id: " + command.getId() + " not found.")
-                ));
+        log.info("Update permission with id: {}", command.getId());
+        Permission foundPermission = permissionRepository.findByIdAndStatusNot(command.getId(), DELETED)
+                .orElseThrow(() -> {
+                    log.warn("Permission with id: {} not found", command.getId());
+                    return new IgrpResponseStatusException(
+                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Update Permission", "Permission with id: " + command.getId() + " not found.")
+                    );
+                });
         Application application = applicationRepository.findById(command.getPermissiondto().getApplicationId())
-                .orElseThrow(() -> new IgrpResponseStatusException(
-                        new IgrpProblem<>(HttpStatus.NOT_FOUND, "Update Permission", "Application with id: " + command.getId() + " not found.")
-                ));
+                .orElseThrow(() -> {
+                    log.warn("Application with id: {} not found", command.getPermissiondto().getApplicationId());
+                    return new IgrpResponseStatusException(
+                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Update Permission", "Application with id: " + command.getId() + " not found.")
+                    );
+                });
 
         PermissionDTO newData = command.getPermissiondto();
         foundPermission.setName(newData.getName());
@@ -49,6 +62,7 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
         foundPermission.setStatus(command.getPermissiondto().getStatus());
         Permission updatedPermission = permissionRepository.save(foundPermission);
         PermissionDTO response = permissionMapper.mapToDTO(updatedPermission);
+        log.info("Permission with id: {} updated successfully", command.getId());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

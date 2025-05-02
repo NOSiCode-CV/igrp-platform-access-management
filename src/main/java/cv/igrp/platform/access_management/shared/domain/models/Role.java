@@ -8,6 +8,8 @@ import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import java.util.Set;
+import org.hibernate.annotations.OnDelete;
+import org.hibernate.annotations.OnDeleteAction;
 
 @Audited
 @Getter
@@ -54,12 +56,13 @@ public class Role extends AuditEntity {
 
 
   
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(
             name = "t_role_permission",
             joinColumns = @JoinColumn(name = "role_id"),
             inverseJoinColumns = @JoinColumn(name = "permission")
     )
+    @OnDelete(action = OnDeleteAction.SET_NULL)
 private Set<Permission> permissions;
 
 
