@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.resource.application.queries.handlers
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
+import cv.igrp.platform.access_management.shared.application.constants.ResourceType;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
 import org.springframework.data.jpa.domain.Specification;
@@ -25,12 +26,12 @@ public class GetResourcesQueryHandler implements QueryHandler<GetResourcesQuery,
 
    @IgrpQueryHandler
    public ResponseEntity<List<ResourceDTO>> handle(GetResourcesQuery query) {
-      Specification<Resource> spec = buildSpecification(query.getName(), query.getApplicationId());
+      Specification<Resource> spec = buildSpecification(query.getName(), query.getApplicationId(), query.getType(), query.getExternalID());
       List<ResourceDTO> resources = resourceRepository.findAll(spec).stream().map(resourceMapper::toDto).toList();
       return ResponseEntity.ok(resources);
    }
 
-   private Specification<Resource> buildSpecification(String name, Integer applicationId) {
+   private Specification<Resource> buildSpecification(String name, Integer applicationId, String type, String externalId) {
       Specification<Resource> spec = Specification.where(null);
       if (name != null && !name.isEmpty()) {
          spec = spec.and((root, query, cb) ->
@@ -40,6 +41,16 @@ public class GetResourcesQueryHandler implements QueryHandler<GetResourcesQuery,
       if (applicationId != null) {
          spec = spec.and((root, query, cb) ->
                  cb.equal(root.get("applicationId").get("id"), applicationId)
+         );
+      }
+      if (type != null) {
+         spec = spec.and((root, query, cb) ->
+                 cb.equal(root.get("type"), ResourceType.valueOf(type))
+         );
+      }
+      if (externalId != null) {
+         spec = spec.and((root, query, cb) ->
+                 cb.equal(root.get("externalId"), externalId)
          );
       }
       return spec;

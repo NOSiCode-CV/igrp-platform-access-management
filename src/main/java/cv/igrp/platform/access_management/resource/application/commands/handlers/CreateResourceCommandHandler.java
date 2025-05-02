@@ -8,12 +8,13 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
+import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
 import cv.igrp.platform.access_management.shared.domain.models.ResourceItem;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.PermissionRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.resource.application.commands.commands.CreateResourceCommand;
@@ -25,13 +26,15 @@ import java.util.List;
 public class CreateResourceCommandHandler implements CommandHandler<CreateResourceCommand, ResponseEntity<ResourceDTO>> {
 
    private ResourceRepository resourceRepository;
+   private PermissionRepository permissionRepository;
    private ApplicationRepository applicationRepository;
    private ResourceMapper resourceMapper;
 
-   public CreateResourceCommandHandler(ResourceRepository resourceRepository, ApplicationRepository applicationRepository, ResourceMapper resourceMapper) {
+   public CreateResourceCommandHandler(ResourceRepository resourceRepository, ApplicationRepository applicationRepository, ResourceMapper resourceMapper, PermissionRepository permissionRepository) {
       this.resourceRepository = resourceRepository;
       this.applicationRepository = applicationRepository;
       this.resourceMapper = resourceMapper;
+      this.permissionRepository = permissionRepository;
    }
 
    @IgrpCommandHandler
@@ -49,7 +52,11 @@ public class CreateResourceCommandHandler implements CommandHandler<CreateResour
       if (command.getResourcedto().getItems() != null && !command.getResourcedto().getItems().isEmpty()) {
          List<ResourceItem> items = command.getResourcedto().getItems().stream()
                  .map(itemDTO -> {
-                     return resourceMapper.toItemEntity(itemDTO, resource);
+                    Permission permission = permissionRepository.findById(itemDTO.getPermissionId())
+                            .orElseThrow(() -> {
+                               return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Permission not found", "Permission not found with id: " + itemDTO.getPermissionId()));
+                            });
+                     return resourceMapper.toItemEntity(itemDTO, resource, permission);
                  }).toList();
          resource.setItems(items);
       }

@@ -55,10 +55,10 @@ public class Department extends AuditEntity {
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id", referencedColumnName = "id")
     private Department parentId;   @OneToMany(mappedBy = "parentId")
-private List<Department> childrenidses;
+private List<Department> childrenids;
 
    @OneToMany(mappedBy = "department")
-private List<Role> roleses;
+private List<Role> roles;
 
 
 }

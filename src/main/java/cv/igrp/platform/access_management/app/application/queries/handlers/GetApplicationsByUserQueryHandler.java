@@ -4,6 +4,7 @@ import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
+import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
 import org.springframework.context.event.EventListener;
 import org.springframework.http.ResponseEntity;
@@ -26,8 +27,14 @@ public class GetApplicationsByUserQueryHandler implements QueryHandler<GetApplic
 
    @IgrpQueryHandler
    public ResponseEntity<List<ApplicationDTO>> handle(GetApplicationsByUserQuery query) {
-      List<ApplicationDTO> applications = new ArrayList<>();
-      return ResponseEntity.ok(applications);
+      List<Application> applications = applicationRepository
+              .findDistinctByDepartments_Roles_Users_UsernameOrDepartments_Roles_Users_Email(query.getUid(), query.getUid());
+
+      List<ApplicationDTO> applicationDTOs = applications.stream()
+              .map(applicationMapper::toDto)
+              .toList();
+
+      return ResponseEntity.ok(applicationDTOs);
    }
 
 }

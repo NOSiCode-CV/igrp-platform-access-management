@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.resource.mapper;
 
 import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.resource.application.dto.ResourceItemDTO;
+import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
 import cv.igrp.platform.access_management.shared.domain.models.ResourceItem;
 import org.springframework.stereotype.Component;
@@ -40,6 +41,7 @@ public class ResourceMapper {
         dto.setName(item.getName());
         dto.setUrl(item.getUrl());
         dto.setResourceId(item.getResourceId().getId());
+        dto.setPermissionId(item.getPermissionId().getId());
         dto.setCreatedBy(item.getCreatedBy());
         if(item.getCreatedDate() != null)
             dto.setCreatedDate(item.getCreatedDate().toString());
@@ -61,12 +63,13 @@ public class ResourceMapper {
         return resource;
     }
 
-    public ResourceItem toItemEntity(ResourceItemDTO dto, Resource parentResource) {
+    public ResourceItem toItemEntity(ResourceItemDTO dto, Resource parentResource, Permission permission) {
         if (dto == null) return null;
         ResourceItem item = new ResourceItem();
         item.setName(dto.getName());
         item.setUrl(dto.getUrl());
         item.setResourceId(parentResource);
+        item.setPermissionId(permission);
         return item;
     }
 }

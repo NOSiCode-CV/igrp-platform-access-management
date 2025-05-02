@@ -2,7 +2,10 @@ package cv.igrp.platform.access_management.department.application.queries.handle
 
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
+import org.springframework.data.jpa.domain.Specification;
+import jakarta.persistence.criteria.Predicate;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,13 +29,33 @@ public class GetDepartmentsQueryHandler implements QueryHandler<GetDepartmentsQu
     }
 
     @IgrpQueryHandler
-    public ResponseEntity<List<DepartmentDTO>> handle(GetDepartmentsQuery query) {
-        logger.info("Handling GetDepartmentsQuery");
-        List<Department> departments = departmentRepository.findAll();
-        List<DepartmentDTO> dtos = departments.stream()
-            .map(departmentMapper::toDto)
-            .toList();
+public ResponseEntity<List<DepartmentDTO>> handle(GetDepartmentsQuery query) {
+    logger.info("Handling GetDepartmentsQuery: applicationId={}, name={}, status={}",
+            query.getApplicationId(), query.getName(), query.getStatus());
 
-        return ResponseEntity.ok(dtos);
-    }
+    Specification<Department> spec = (root, q, cb) -> {
+        List<Predicate> predicates = new ArrayList<>();
+
+        if (query.getApplicationId() != null) {
+            predicates.add(cb.equal(root.get("application").get("id"), query.getApplicationId()));
+        }
+
+        if (query.getName() != null && !query.getName().isEmpty()) {
+            predicates.add(cb.like(cb.lower(root.get("name")), "%" + query.getName().toLowerCase() + "%"));
+        }
+
+        if (query.getStatus() != null) {
+            predicates.add(cb.equal(root.get("status"), query.getStatus()));
+        }
+
+        return cb.and(predicates.toArray(new Predicate[0]));
+    };
+
+    List<Department> departments = departmentRepository.findAll(spec);
+    List<DepartmentDTO> dtos = departments.stream()
+        .map(departmentMapper::toDto)
+        .toList();
+
+    return ResponseEntity.ok(dtos);
+}
 }
