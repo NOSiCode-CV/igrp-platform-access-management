@@ -86,7 +86,255 @@ The `IAdapter` is an abstraction layer that defines the contract for IAM provide
 
 ### 📦 Application Management
 
-> **TODO**: Document endpoints related to managing applications within the IAM module.
+#### Endpoints
+
+| Método | Endpoint                                      | Request          | Response | Status Code    |
+|--------|-----------------------------------------------|------------------|--|----------------|
+| POST   | `/api/applications`                           | `ApplicationDTO` | `ApplicationDTO` | 201 Created    |
+| GET    | `/api/applications`                           | —                | `List<ApplicationDTO>` | 200 OK         |
+| GET    | `/api/applications/{id}`                      | —                | `ApplicationDTO` | 200 OK         |
+| PUT    | `/api/applications/{id}`                      | `ApplicationDTO` | `ApplicationDTO` | 200 OK         |
+| DELETE | `/api/applications/{id}`                      | —                | — | 204 No Content |
+| GET    | `/api/applications/denied-to-user/{uid}`      | —                | `List<ApplicationDTO>` | 200 OK         |
+| GET    | `/api/applications/by-user/{uid}`             | —                | `List<ApplicationDTO>` | 200 OK         |
+| POST   | `/api/applications/{id}/custom-fields`        | `Map<String, ?>` | — | 204 No Content |
+| POST   | `/api/applications/{id}/custom-fields/remove` | `List<String>`   | — | 204 No Content |
+| GET    | `/api/applications/{id}/custom-fields`        | —                |  `Map<String, ?>` | 200 OK         |
+| GET    | `/api/applications/by-ids`                    | `List<Integer>`  |   `List<ApplicationDTO>`| 200 OK         |
+
+#### 🔹 Create Application
+
+- **POST** `/api/applications`  
+  Creates a new application.
+
+**📥 Request:**
+```json
+{
+  "code": "string",
+  "name": "string",
+  "description": "string",
+  "status": "ACTIVE",
+  "type": "EXTERNAL",
+  "owner": "string",
+  "picture": "string",
+  "url": "https://example.com/",
+  "slug": "string"
+}
+```
+
+**📤 Response:**
+```json
+{
+  "id": 1073741824,
+  "code": "string",
+  "name": "string",
+  "description": "string",
+  "status": "ACTIVE",
+  "type": "EXTERNAL",
+  "owner": "string",
+  "picture": "string",
+  "url": "https://example.com/",
+  "slug": "string",
+  "createdBy": "string",
+  "createdDate": "string",
+  "lastModifiedBy": "string",
+  "lastModifiedDate": "string"
+}
+```
+
+#### 🔹 List Applications
+
+- **GET** `/api/applications`
+- **Query Params**:
+  - `code` (optional): string
+  - `name` (optional): string
+  
+**📤 Response:**
+```json
+[
+  {
+    "id": 1073741824,
+    "code": "string",
+    "name": "string",
+    "description": "string",
+    "status": "ACTIVE",
+    "type": "EXTERNAL",
+    "owner": "string",
+    "picture": "string",
+    "url": "https://example.com/",
+    "slug": "string",
+    "createdBy": "string",
+    "createdDate": "string",
+    "lastModifiedBy": "string",
+    "lastModifiedDate": "string"
+  }
+]
+```
+
+#### 🔹 Search Application by ID
+
+- **GET** `/api/applications/{id}`
+
+**📤 Response:**
+```json
+{
+  "id": 1073741824,
+  "code": "string",
+  "name": "string",
+  "description": "string",
+  "status": "ACTIVE",
+  "type": "EXTERNAL",
+  "owner": "string",
+  "picture": "string",
+  "url": "https://example.com/",
+  "slug": "string",
+  "createdBy": "string",
+  "createdDate": "string",
+  "lastModifiedBy": "string",
+  "lastModifiedDate": "string"
+}
+```
+
+#### 🔹 Update Application
+
+- **PUT** `/api/applications/{id}`
+
+**📥 Request:**
+```json
+{
+  "code": "string",
+  "name": "string",
+  "description": "string",
+  "status": "ACTIVE",
+  "type": "EXTERNAL",
+  "owner": "string",
+  "picture": "string",
+  "url": "https://example.com/",
+  "slug": "string"
+}
+```
+
+**📤 Response:** *(Same format as GET by ID)*
+
+#### 🔹 Remove Application
+
+- **DELETE** `/api/applications/{id}`
+
+**📤 Response:** `204 No Content`
+
+#### 🔹 Application Custom Fields
+
+- **GET** `/api/applications/{id}/custom-fields`
+
+**📤 Response:**
+```json
+{
+  "field1": "value1",
+  "field2": 69,
+  "field3": {
+    "field4": "value4"
+  }
+}
+```
+
+#### 🔹 Application Add Custom Fields
+
+- **POST** `/api/applications/{id}/custom-fields`
+
+**📥 Request:**
+```json
+{
+  "field1": "value1",
+  "field2": "value2"
+}
+```
+**📤 Response:** `204 No Content`
+
+#### 🔹 Application Remove Custom Fields
+
+- **POST** `/api/applications/{id}/custom-fields/remove`
+
+**📥 Request:**
+```json
+["field1", "field2"]
+```
+**📤 Response:** `204 No Content`
+
+#### 🔹 List Applications By Ids
+
+- **POST** `/api/applications/by-ids`
+
+**📥 Request:**
+```json
+[69, 99]
+```
+**📤 Response:**
+```json
+[
+  {
+    "id": 69,
+    "code": "string",
+    "name": "string",
+    "description": "string",
+    "status": "ACTIVE"
+  },
+  {
+    "id": 99,
+    "code": "string",
+    "name": "string",
+    "description": "string",
+    "status": "ACTIVE"
+  }
+]
+```
+
+#### 🔹 Allowed Application by UID (User Identifier)
+
+- **GET** `/api/applications/by-user/{uid}`
+
+**📤 Response:**
+```json
+[{
+  "id": 1073741824,
+  "code": "string",
+  "name": "string",
+  "description": "string",
+  "status": "ACTIVE",
+  "type": "EXTERNAL",
+  "owner": "string",
+  "picture": "string",
+  "url": "https://example.com/",
+  "slug": "string",
+  "createdBy": "string",
+  "createdDate": "string",
+  "lastModifiedBy": "string",
+  "lastModifiedDate": "string"
+}]
+```
+
+#### 🔹 Denied Application by UID (User Identifier)
+
+- **GET** `/api/applications/denied-to-user/{uid}`
+
+**📤 Response:**
+```json
+[{
+  "id": 1073741824,
+  "code": "string",
+  "name": "string",
+  "description": "string",
+  "status": "ACTIVE",
+  "type": "EXTERNAL",
+  "owner": "string",
+  "picture": "string",
+  "url": "https://example.com/",
+  "slug": "string",
+  "createdBy": "string",
+  "createdDate": "string",
+  "lastModifiedBy": "string",
+  "lastModifiedDate": "string"
+}]
+```
 
 ### 🏢 Department / Organization Management
 
@@ -359,13 +607,414 @@ Returns the roles associated with the User in the application context.
 
 ### 🧭 Menu Management
 
-> **TODO**: Document endpoints for managing UI menus and access control.
+#### Endpoints
+
+| Método | Endpoint          | Request          | Response | Status Code    |
+|--------|-------------------|------------------|--|----------------|
+| POST   | `/api/menus`      | `MenuEntryDTO` | `MenuEntryDTO` | 201 Created    |
+| GET    | `/api/menus`      | —                | `List<MenuEntryDTO>` | 200 OK         |
+| GET    | `/api/menus/{id}` | —                | `MenuEntryDTO` | 200 OK         |
+| PUT    | `/api/menus/{id}` | `MenuEntryDTO` | `MenuEntryDTO` | 200 OK         |
+| DELETE | `/api/menus/{id}` | —                | — | 204 No Content |
+
+#### 🔹 Create Menu
+
+- **POST** `/api/menus`
+
+**📥 Request:**
+```json
+{
+  "name": "string",
+  "type": "MENU_PAGE",
+  "position": 1073741824,
+  "icon": "string",
+  "status": "ACTIVE",
+  "target": "string",
+  "url": "string",
+  "parentId": null,
+  "applicationId": 1073741824,
+  "resourceId": 1073741824
+}
+```
+
+**📤 Response:**
+```json
+{
+  "id": 1073741824,
+  "name": "string",
+  "type": "MENU_PAGE",
+  "position": 1073741824,
+  "icon": "string",
+  "status": "ACTIVE",
+  "target": "string",
+  "url": "string",
+  "parentId": null,
+  "applicationId": 1073741824,
+  "resourceId": 1073741824,
+  "createdBy": "string",
+  "createdDate": "string",
+  "lastModifiedBy": "string",
+  "lastModifiedDate": "string"
+}
+```
+
+#### 🔹 List Menus
+
+- **GET** `/api/menus`
+- **Query Params**:
+  - `applicationId` (optional): string
+  - `name` (optional): string
+  - `type` (optional): string
+
+**📤 Response:**
+```json
+[
+  {
+    "id": 1073741824,
+    "name": "string",
+    "type": "MENU_PAGE",
+    "position": 1073741824,
+    "icon": "string",
+    "status": "ACTIVE",
+    "target": "string",
+    "url": "string",
+    "parentId": 1073741824,
+    "applicationId": 1073741824,
+    "resourceId": 1073741824,
+    "createdBy": "string",
+    "createdDate": "string",
+    "lastModifiedBy": "string",
+    "lastModifiedDate": "string"
+  }
+]
+```
+
+#### 🔹 Search Menu by ID
+
+- **GET** `/api/menus/{id}`
+
+**📤 Response:**
+```json
+{
+  "id": 1073741824,
+  "name": "string",
+  "type": "MENU_PAGE",
+  "position": 1073741824,
+  "icon": "string",
+  "status": "ACTIVE",
+  "target": "string",
+  "url": "string",
+  "parentId": 1073741824,
+  "applicationId": 1073741824,
+  "resourceId": 1073741824,
+  "createdBy": "string",
+  "createdDate": "string",
+  "lastModifiedBy": "string",
+  "lastModifiedDate": "string"
+}
+```
+
+#### 🔹 Update Menu
+
+- **PUT** `/api/menus/{id}`
+
+**📥 Request:**
+```json
+{
+  "name": "string",
+  "type": "MENU_PAGE",
+  "position": 1073741824,
+  "icon": "string",
+  "status": "ACTIVE",
+  "target": "string",
+  "url": "string",
+  "parentId": null
+}
+```
+
+**📤 Response:** *(Same format as GET by ID)*
+
+#### 🔹 Remove Menu
+
+- **DELETE** `/api/menus/{id}`
+
+**📤 Response:** `204 No Content`
 
 ### 🧱 Resource Management
 
-> **TODO**: Document endpoints for handling protected resources and their associated policies.
+#### Endpoints
+
+| Método | Endpoint                                   | Request                  | Response        | Status Code    |
+|--------|--------------------------------------------|--------------------------|-----------------|----------------|
+| POST   | `/api/resources`                           | `ResourceDTO`            | `ResourceDTO`   | 201 Created    |
+| GET    | `/api/resources`                           | —                        | `List<ResourceDTO>` | 200 OK         |
+| GET    | `/api/resources/{id}`                      | —                        | `ResourceDTO`   | 200 OK         |
+| PUT    | `/api/resources/{id}`                      | `ResourceDTO`            | `ResourceDTO`   | 200 OK         |
+| DELETE | `/api/resources/{id}`                      | —                        | —               | 204 No Content |
+| POST   | `/api/resources/{id}/custom-fields`        | `Map<String, ?>`         | —               | 204 No Content |
+| POST   | `/api/resources/{id}/custom-fields/remove` | `List<String>`           | —               | 204 No Content |
+| GET    | `/api/resources/{id}/custom-fields`        | —                        | `Map<String, ?>`| 200 OK         |
+| POST   | `/api/resources/{id}/add-items`            | `List<ResourceItemDTO>`  | `ResourceDTO`   | 200 OK         |
+| POST   | `/api/resources/{id}/remove-items`         | `List<Integer>`          | `ResourceDTO`   | 200 OK         |
+
+#### 🔹 Create Resource
+
+- **POST** `/api/resources`
+
+**📥 Request:**
+```json
+{
+  "name": "string",
+  "type": "API",
+  "status": "ACTIVE",
+  "applicationId": 1073741824,
+  "items": [
+    {
+      "id": 1073741824,
+      "name": "string",
+      "url": "string",
+      "permissionId": 1073741824,
+      "resourceId": 1073741824
+    }
+  ],
+  "externalId": "string"
+}
+```
+
+**📤 Response:**
+```json
+{
+  "id": 1073741824,
+  "name": "string",
+  "type": "API",
+  "status": "ACTIVE",
+  "applicationId": 1073741824,
+  "items": [
+    {
+      "id": 1073741824,
+      "name": "string",
+      "url": "string",
+      "permissionId": 1073741824,
+      "resourceId": 1073741824,
+      "createdBy": "string",
+      "createdDate": "string",
+      "lastModifiedBy": "string",
+      "lastModifiedDate": "string"
+    }
+  ],
+  "externalId": "string",
+  "createdBy": "string",
+  "createdDate": "string",
+  "lastModifiedBy": "string",
+  "lastModifiedDate": "string"
+}
+```
+
+#### 🔹 List Resources
+
+- **GET** `/api/resources`
+- **Query Params**:
+  - `applicationId` (optional): string
+  - `name` (optional): string
+  - `type` (optional): string
+  - `externalID` (optional): string
+
+**📤 Response:**
+```json
+[
+  {
+    "id": 1073741824,
+    "name": "string",
+    "type": "API",
+    "status": "ACTIVE",
+    "applicationId": 1073741824,
+    "items": [
+      {
+        "id": 1073741824,
+        "name": "string",
+        "url": "string",
+        "permissionId": 1073741824,
+        "resourceId": 1073741824,
+        "createdBy": "string",
+        "createdDate": "string",
+        "lastModifiedBy": "string",
+        "lastModifiedDate": "string"
+      }
+    ],
+    "externalId": "string",
+    "createdBy": "string",
+    "createdDate": "string",
+    "lastModifiedBy": "string",
+    "lastModifiedDate": "string"
+  }
+]
+```
+
+#### 🔹 Search Resource by ID
+
+- **GET** `/api/resources/{id}`
+
+**📤 Response:**
+```json
+{
+  "id": 1073741824,
+  "name": "string",
+  "type": "API",
+  "status": "ACTIVE",
+  "applicationId": 1073741824,
+  "items": [
+    {
+      "id": 1073741824,
+      "name": "string",
+      "url": "string",
+      "permissionId": 1073741824,
+      "resourceId": 1073741824,
+      "createdBy": "string",
+      "createdDate": "string",
+      "lastModifiedBy": "string",
+      "lastModifiedDate": "string"
+    }
+  ],
+  "externalId": "string",
+  "createdBy": "string",
+  "createdDate": "string",
+  "lastModifiedBy": "string",
+  "lastModifiedDate": "string"
+}
+```
+
+#### 🔹 Update Resource
+
+- **PUT** `/api/resources/{id}`
+
+**📥 Request:**
+```json
+{
+  "name": "string",
+  "type": "API",
+  "status": "ACTIVE",
+  "applicationId": 1073741824,
+  "externalId": "string"
+}
+```
+
+**📤 Response:** *(Same format as GET by ID)*
+
+#### 🔹 Remove Resource
+
+- **DELETE** `/api/resources/{id}`
+
+**📤 Response:** `204 No Content`
 
 ---
+
+#### 🔹 Resource Custom Fields
+
+- **GET** `/api/resources/{id}/custom-fields`
+
+**📤 Response:**
+```json
+{
+  "field1": "value1",
+  "field2": 69,
+  "field3": {
+    "field4": "value4"
+  }
+}
+```
+
+#### 🔹 Resource Add Custom Fields
+
+- **POST** `/api/resources/{id}/custom-fields`
+
+**📥 Request:**
+```json
+{
+  "field1": "value1",
+  "field2": "value2"
+}
+```
+**📤 Response:** `204 No Content`
+
+#### 🔹 Resource Remove Custom Fields
+
+- **POST** `/api/resources/{id}/custom-fields/remove`
+
+**📥 Request:**
+```json
+["field1", "field2"]
+```
+**📤 Response:** `204 No Content`
+
+#### 🔹 Resource Add Items
+
+- **POST** `/api/resources/{id}/add-items`
+
+**📥 Request:**
+```json
+[
+  {
+    "name": "string",
+    "url": "string",
+    "permissionId": 1073741824,
+    "resourceId": 1073741824
+  }
+]
+```
+**📤 Response:**
+```json
+{
+  "id": 1073741824,
+  "name": "string",
+  "type": "API",
+  "status": "ACTIVE",
+  "applicationId": 1073741824,
+  "items": [
+    {
+      "id": 1073741824,
+      "name": "string",
+      "url": "string",
+      "permissionId": 1073741824,
+      "resourceId": 1073741824,
+      "createdBy": "string",
+      "createdDate": "string",
+      "lastModifiedBy": "string",
+      "lastModifiedDate": "string"
+    }
+  ],
+  "externalId": "string",
+  "createdBy": "string",
+  "createdDate": "string",
+  "lastModifiedBy": "string",
+  "lastModifiedDate": "string"
+}
+```
+
+#### 🔹 Resource Remove Items
+
+- **POST** `/api/resources/{id}/remove-items`
+
+**📥 Request:**
+```json
+[69, 99]
+```
+**📤 Response:**
+```json
+{
+  "id": 1073741824,
+  "name": "string",
+  "type": "API",
+  "status": "ACTIVE",
+  "applicationId": 1073741824,
+  "items": [],
+  "externalId": "string",
+  "createdBy": "string",
+  "createdDate": "string",
+  "lastModifiedBy": "string",
+  "lastModifiedDate": "string"
+}
+```
+
 
 ## 🌍 IAM Provider Integration
 

@@ -1,8 +1,8 @@
 package cv.igrp.platform.access_management.app.application.queries.handlers;
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -19,7 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import cv.igrp.platform.access_management.app.application.dto.*;
 import cv.igrp.platform.access_management.app.application.queries.queries.*;
-import cv.igrp.platform.access_management.app.application.queries.handlers.*;
 
 import java.util.Optional;
 
@@ -29,8 +28,14 @@ public class GetApplicationByIdQueryHandlerTest {
     @Mock
     private ApplicationRepository applicationRepository;
 
-    @InjectMocks
     private GetApplicationByIdQueryHandler getApplicationByIdQueryHandler;
+
+    private ApplicationMapper applicationMapper = new ApplicationMapper();
+
+    @BeforeEach
+    void setUp() {
+        getApplicationByIdQueryHandler = new GetApplicationByIdQueryHandler(applicationRepository, applicationMapper);
+    }
 
     @Test
     void testHandleGetApplicationByIdQuery_shouldReturnDTO_whenFound() {

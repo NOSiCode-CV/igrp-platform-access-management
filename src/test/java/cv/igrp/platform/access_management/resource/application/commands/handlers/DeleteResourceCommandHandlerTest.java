@@ -3,8 +3,11 @@ package cv.igrp.platform.access_management.resource.application.commands.handler
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.domain.models.CustomField;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,10 +32,8 @@ public class DeleteResourceCommandHandlerTest {
     @Mock
     private ResourceRepository resourceRepository;
 
-    @BeforeEach
-    void setUp() {
-        // ...
-    }
+    @Mock
+    private CustomFieldRepository customFieldRepository;
 
     @Test
     void testHandle_ShouldDeleteResourceAndReturnNoContent_WhenResourceExists() {
@@ -45,9 +46,16 @@ public class DeleteResourceCommandHandlerTest {
         resource.setId(resourceId);
         resource.setName("Resource 1");
 
+        CustomField customField = new CustomField();
+        customField.setRecordId(resourceId);
 
+        // Mocks
         when(resourceRepository.findById(resourceId)).thenReturn(Optional.of(resource));
-        doNothing().when(resourceRepository).delete(any(Resource.class));
+        when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resourceId))
+                .thenReturn(Optional.of(customField));
+
+        doNothing().when(resourceRepository).delete(resource);
+        doNothing().when(customFieldRepository).delete(customField);
 
         // When
         ResponseEntity<String> response = deleteResourceCommandHandler.handle(command);
@@ -57,6 +65,7 @@ public class DeleteResourceCommandHandlerTest {
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
 
         verify(resourceRepository, times(1)).delete(resource);
+        verify(customFieldRepository, times(1)).delete(customField);
     }
 
     @Test
@@ -73,5 +82,33 @@ public class DeleteResourceCommandHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
         assertTrue(ex.getProblem().getTitle().contains("Resource not found"));
+    }
+
+    @Test
+    void testHandle_ShouldNotDeleteCustomField_WhenCustomFieldNotFound() {
+        // Given
+        Integer resourceId = 1;
+        DeleteResourceCommand command = new DeleteResourceCommand();
+        command.setId(resourceId);
+
+        Resource resource = new Resource();
+        resource.setId(resourceId);
+
+        // Mocks
+        when(resourceRepository.findById(resourceId)).thenReturn(Optional.of(resource));
+        when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resourceId))
+                .thenReturn(Optional.empty());
+
+        doNothing().when(resourceRepository).delete(resource);
+
+        // When
+        ResponseEntity<String> response = deleteResourceCommandHandler.handle(command);
+
+        // Then
+        assertNotNull(response);
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+
+        verify(resourceRepository, times(1)).delete(resource);
+        verify(customFieldRepository, times(0)).delete(any(CustomField.class)); // Ensure no delete was called for custom field
     }
 }

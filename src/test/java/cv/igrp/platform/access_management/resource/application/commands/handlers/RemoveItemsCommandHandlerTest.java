@@ -59,16 +59,19 @@ public class RemoveItemsCommandHandlerTest {
         ResourceItem item1 = new ResourceItem();
         item1.setId(1);
         item1.setName("Dashboard");
+        item1.setResourceId(resource);
         resource.getItems().add(item1);
 
         ResourceItem item2 = new ResourceItem();
         item2.setId(2);
         item2.setName("Settings");
+        item2.setResourceId(resource);
         resource.getItems().add(item2);
 
         ResourceItem item3 = new ResourceItem();
         item3.setId(3);
         item3.setName("Reports");
+        item3.setResourceId(resource);
         resource.getItems().add(item3);
 
         when(resourceRepository.findById(resourceId)).thenReturn(Optional.of(resource));

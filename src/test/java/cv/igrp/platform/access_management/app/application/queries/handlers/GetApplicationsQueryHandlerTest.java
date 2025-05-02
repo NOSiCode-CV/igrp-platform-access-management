@@ -1,8 +1,8 @@
 package cv.igrp.platform.access_management.app.application.queries.handlers;
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
 
+import static org.junit.jupiter.api.Assertions.*;
+import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
@@ -10,7 +10,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.Appl
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -19,7 +18,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import cv.igrp.platform.access_management.app.application.dto.*;
 import cv.igrp.platform.access_management.app.application.queries.queries.*;
-import cv.igrp.platform.access_management.app.application.queries.handlers.*;
 
 import java.util.List;
 
@@ -29,8 +27,14 @@ public class GetApplicationsQueryHandlerTest {
     @Mock
     private ApplicationRepository applicationRepository;
 
-    @InjectMocks
     private GetApplicationsQueryHandler getApplicationsQueryHandler;
+
+    private ApplicationMapper applicationMapper = new ApplicationMapper();
+
+    @BeforeEach
+    void setUp() {
+        getApplicationsQueryHandler = new GetApplicationsQueryHandler(applicationRepository, applicationMapper);
+    }
 
     @Test
     void testHandleGetApplicationsQuery_shouldReturnFilteredList() {

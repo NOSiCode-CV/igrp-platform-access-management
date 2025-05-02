@@ -68,7 +68,9 @@ public class ResourceController {
   {
       final var query = new GetResourcesQuery(applicationId, name, type, externalID);
       ResponseEntity<List<ResourceDTO>> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @GetMapping(
@@ -96,7 +98,9 @@ public class ResourceController {
   {
       final var query = new GetResourceByIdQuery(id);
       ResponseEntity<ResourceDTO> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @PostMapping(
@@ -113,18 +117,20 @@ public class ResourceController {
               mediaType = "application/json",
               schema = @Schema(
                   implementation = ResourceDTO.class,
-                  type = "ResourceDTO")
+                  type = "")
           )
       )
     }
   )
   
-  public ResponseEntity<ResourceDTO> createResource( @Valid @RequestBody ResourceDTO createResourceRequest
+  public ResponseEntity<ResourceDTO> createResource(@Valid @RequestBody ResourceDTO createResourceRequest
     )
   {
       final var command = new CreateResourceCommand(createResourceRequest);
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @PutMapping(
@@ -147,12 +153,14 @@ public class ResourceController {
     }
   )
   
-  public ResponseEntity<ResourceDTO> updateResource( @Valid @RequestBody ResourceDTO updateResourceRequest
+  public ResponseEntity<ResourceDTO> updateResource(@Valid @RequestBody ResourceDTO updateResourceRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new UpdateResourceCommand(updateResourceRequest, id);
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @DeleteMapping(
@@ -180,11 +188,13 @@ public class ResourceController {
   {
       final var command = new DeleteResourceCommand(id);
        ResponseEntity<String> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @PostMapping(
-    value = "resources/{id}/addItems"
+    value = "resources/{id}/add-items"
   )
   @Operation(
     summary = "POST method to handle operations for addItems",
@@ -203,16 +213,18 @@ public class ResourceController {
     }
   )
   
-  public ResponseEntity<ResourceDTO> addItems( @Valid @RequestBody List<ResourceItemDTO> addItemsRequest
+  public ResponseEntity<ResourceDTO> addItems(@RequestBody List<ResourceItemDTO> addItemsRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new AddItemsCommand(addItemsRequest, id);
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @PostMapping(
-    value = "resources/{id}/removeItems"
+    value = "resources/{id}/remove-items"
   )
   @Operation(
     summary = "POST method to handle operations for removeItems",
@@ -225,18 +237,20 @@ public class ResourceController {
               mediaType = "application/json",
               schema = @Schema(
                   implementation = ResourceDTO.class,
-                  type = "ResourceDTO")
+                  type = "")
           )
       )
     }
   )
   
-  public ResponseEntity<ResourceDTO> removeItems(  @RequestBody List<Integer> removeItemsRequest
+  public ResponseEntity<ResourceDTO> removeItems(@RequestBody List<Integer> removeItemsRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new RemoveItemsCommand(removeItemsRequest, id);
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @PostMapping(
@@ -259,12 +273,14 @@ public class ResourceController {
     }
   )
   
-  public ResponseEntity<String> addResourceCustomFields(  @RequestBody Map<String, ?> addResourceCustomFieldsRequest
+  public ResponseEntity<String> addResourceCustomFields(@RequestBody Map<String, ?> addResourceCustomFieldsRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new AddResourceCustomFieldsCommand(addResourceCustomFieldsRequest, id);
        ResponseEntity<String> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @PostMapping(
@@ -287,12 +303,14 @@ public class ResourceController {
     }
   )
   
-  public ResponseEntity<String> removeResourceCustomFields(  @RequestBody List<String> removeResourceCustomFieldsRequest
+  public ResponseEntity<String> removeResourceCustomFields(@RequestBody List<String> removeResourceCustomFieldsRequest
     , @PathVariable(value = "id") Integer id)
   {
       final var command = new RemoveResourceCustomFieldsCommand(removeResourceCustomFieldsRequest, id);
        ResponseEntity<String> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @GetMapping(
@@ -320,7 +338,9 @@ public class ResourceController {
   {
       final var query = new GetResourceCustomFieldsQuery(id);
       ResponseEntity<Map<String, ?>> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
 }

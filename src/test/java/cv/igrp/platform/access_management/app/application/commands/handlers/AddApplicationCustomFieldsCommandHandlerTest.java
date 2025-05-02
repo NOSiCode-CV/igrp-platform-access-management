@@ -86,7 +86,7 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
         CustomField existingCustomField = new CustomField();
         existingCustomField.setTableName("t_application");
         existingCustomField.setRecordId(applicationId);
-        existingCustomField.setFields(Map.of("field2", "value2"));
+        existingCustomField.setFields(new HashMap<>(Map.of("field2", "value2")));
 
         when(applicationRepository.findById(applicationId)).thenReturn(Optional.of(application));
         when(customFieldRepository.findByTableNameAndRecordId("t_application", applicationId))

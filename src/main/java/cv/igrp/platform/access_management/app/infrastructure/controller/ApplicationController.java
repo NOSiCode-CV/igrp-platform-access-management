@@ -191,7 +191,7 @@ public class ApplicationController {
   }
 
   @PostMapping(
-    value = "applicationsByIds"
+    value = "applications/by-ids"
   )
   @Operation(
     summary = "POST method to handle operations for getApplicationsByIds",

@@ -63,9 +63,16 @@ public class CreateMenuCommandHandlerTest {
         application.setId(1);
         Resource resource = new Resource();
         resource.setId(1);
+        menuEntryDTO.setApplicationId(application.getId());
+        menuEntryDTO.setResourceId(resource.getId());
 
         when(applicationRepository.getReferenceById(anyInt())).thenReturn(application);
         when(resourceRepository.getReferenceById(anyInt())).thenReturn(resource);
+        when(menuEntryRepository.save(any(MenuEntry.class))).thenAnswer(invocation -> {
+            MenuEntry saved = invocation.getArgument(0);
+            saved.setId(100);
+            return saved;
+        });
 
         // When
         ResponseEntity<MenuEntryDTO> response = createMenuCommandHandler.handle(command);
