@@ -11,7 +11,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import cv.igrp.platform.access_management.users.application.commands.commands.*;
 import cv.igrp.platform.access_management.users.application.commands.handlers.*;
-import cv.igrp.platform.access_management.users.application.dto.*;
 
 @ExtendWith(MockitoExtension.class)
 public class AddRolesToUserCommandHandlerTest {

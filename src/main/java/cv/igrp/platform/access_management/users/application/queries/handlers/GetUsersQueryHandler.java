@@ -31,7 +31,7 @@ public class GetUsersQueryHandler implements QueryHandler<GetUsersQuery, Respons
     @IgrpQueryHandler
     public ResponseEntity<List<IGRPUserDTO>> handle(GetUsersQuery query) {
         logger.info("Handling GetUsersQuery: applicationId={}, departmentId={}, name={}, username={}, email={}",
-                query.getApplicationid(), query.getDepartmentid(), query.getName(), query.getUsername(), query.getEmail());
+                query.getApplicationId(), query.getDepartmentId(), query.getName(), query.getUsername(), query.getEmail());
         Specification<IGRPUser> spec = buildSpecification(query);
         List<IGRPUserDTO> users = userRepository.findAll(spec)
                 .stream()
@@ -44,21 +44,21 @@ public class GetUsersQueryHandler implements QueryHandler<GetUsersQuery, Respons
         Specification<IGRPUser> spec = Specification.where(null);
 
         // Filter by applicationId
-        if (query.getApplicationid() != null) {
+        if (query.getApplicationId() != null) {
             spec = spec.and((root, q, cb) -> {
                 Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
                 Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
                 Join<Object, Object> applicationJoin = departmentJoin.join("applicationId", JoinType.INNER);
-                return cb.equal(applicationJoin.get("id"), query.getApplicationid());
+                return cb.equal(applicationJoin.get("id"), query.getApplicationId());
             });
         }
 
         // Filter by departmentId
-        if (query.getDepartmentid() != null) {
+        if (query.getDepartmentId() != null) {
             spec = spec.and((root, q, cb) -> {
                 Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
                 Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
-                return cb.equal(departmentJoin.get("id"), query.getDepartmentid());
+                return cb.equal(departmentJoin.get("id"), query.getDepartmentId());
             });
         }
 

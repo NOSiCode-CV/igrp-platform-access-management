@@ -31,7 +31,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
 
     @IgrpCommandHandler
     public ResponseEntity<List<RoleDTO>> handle(RemoveRolesFromUserCommand command) {
-        logger.info("Handling RemoveRolesFromUserCommand: userId={}, roleIds={}", command.getId(), command.getRoleIds());
+        logger.info("Handling RemoveRolesFromUserCommand: userId={}, roleIds={}", command.getId(), command.getRemoveRolesFromUserRequest());
 
         // Buscar o usuário
         IGRPUser user = userRepository.findById(command.getId())
@@ -40,7 +40,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
                     return new EntityNotFoundException("User not found with id: " + command.getId());
                 });
 
-        List<Integer> roleIdsToRemove = command.getRoleIds();
+        List<Integer> roleIdsToRemove = command.getRemoveRolesFromUserRequest();
 
         if (roleIdsToRemove != null && !roleIdsToRemove.isEmpty()) {
             logger.info("Removing roles with IDs {} from user {}", roleIdsToRemove, user.getId());
