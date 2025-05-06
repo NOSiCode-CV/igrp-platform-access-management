@@ -15,6 +15,27 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+/**
+ * Command handler responsible for processing {@link PostDepartmentCommand} to create a new department.
+ * <p>
+ * This handler maps the incoming {@link DepartmentDTO} to a domain {@link Department} entity,
+ * validates associated application and parent department references, and persists the new department.
+ * </p>
+ *
+ * <p><strong>Validation behavior:</strong></p>
+ * <ul>
+ *   <li>If the provided {@code application_id} does not exist, throws {@link IgrpResponseStatusException} with HTTP 400.</li>
+ *   <li>If the provided {@code parent_id} does not exist (when present), throws {@link IgrpResponseStatusException} with HTTP 400.</li>
+ * </ul>
+ *
+ * <p><strong>Response:</strong> Returns HTTP 201 Created with the created {@link DepartmentDTO}.</p>
+ *
+ * @see DepartmentRepository
+ * @see ApplicationRepository
+ * @see DepartmentMapper
+ * @see PostDepartmentCommand
+ * @see DepartmentDTO
+ */
 @Service
 public class PostDepartmentCommandHandler implements CommandHandler<PostDepartmentCommand, ResponseEntity<DepartmentDTO>> {
 
@@ -22,12 +43,30 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
     private final ApplicationRepository applicationRepository;
     private final DepartmentMapper departmentMapper;
 
+    /**
+     * Constructs the command handler with required dependencies.
+     *
+     * @param departmentRepository the repository used to persist departments
+     * @param applicationRepository the repository used to fetch associated applications
+     * @param departmentMapper the mapper used to convert between DTOs and domain entities
+     */
     public PostDepartmentCommandHandler(DepartmentRepository departmentRepository, ApplicationRepository applicationRepository, DepartmentMapper departmentMapper) {
         this.departmentRepository = departmentRepository;
         this.applicationRepository = applicationRepository;
         this.departmentMapper = departmentMapper;
     }
 
+    /**
+     * Handles the creation of a department.
+     * <p>
+     * Validates and maps the incoming {@link DepartmentDTO}, resolves its application and optional parent,
+     * persists the new department, and returns the corresponding {@link DepartmentDTO}.
+     * </p>
+     *
+     * @param command the command containing the department creation request
+     * @return HTTP 201 Created response with the created department DTO
+     * @throws IgrpResponseStatusException if the application or parent department ID is invalid
+     */
     @IgrpCommandHandler
     public ResponseEntity<DepartmentDTO> handle(PostDepartmentCommand command) {
         Department department = departmentMapper.toEntity(command.getDepartmentdto());
