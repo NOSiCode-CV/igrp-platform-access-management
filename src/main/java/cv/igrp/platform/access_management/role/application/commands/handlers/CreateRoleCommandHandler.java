@@ -18,6 +18,14 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Command handler responsible for processing the {@link CreateRoleCommand}
+ * to create a new role in the system.
+ * <p>
+ * This handler ensures that the specified department exists and, if provided, that the parent role exists
+ * and is not marked as deleted. It maps the input data to the corresponding entity, persists the new role,
+ * and returns its DTO representation.
+ */
 @Slf4j
 @Service
 public class CreateRoleCommandHandler implements CommandHandler<CreateRoleCommand, ResponseEntity<RoleDTO>> {
@@ -26,6 +34,13 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
     private final RoleRepository roleRepository;
     private final RoleMapper roleMapper;
 
+    /**
+     * Constructs the role creation handler with required dependencies.
+     *
+     * @param departmentRepository repository to access department data
+     * @param roleRepository repository to manage roles
+     * @param roleMapper mapper to convert between entity and DTO
+     */
     public CreateRoleCommandHandler(DepartmentRepository departmentRepository, RoleRepository roleRepository, RoleMapper roleMapper) {
 
         this.departmentRepository = departmentRepository;
@@ -33,6 +48,18 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
         this.roleMapper = roleMapper;
     }
 
+    /**
+     * Handles the creation of a new role using the data provided in the {@link CreateRoleCommand}.
+     * <ul>
+     *     <li>Validates the existence of the associated department.</li>
+     *     <li>If a parent role ID is provided, validates its existence and status.</li>
+     *     <li>Maps the DTO to a Role entity, persists it, and returns the result as a DTO.</li>
+     * </ul>
+     *
+     * @param command the command containing the role data to be created
+     * @return a {@link ResponseEntity} containing the created {@link RoleDTO}
+     * @throws IgrpResponseStatusException if the department or parent role is not found
+     */
     @IgrpCommandHandler
     @Transactional
     public ResponseEntity<RoleDTO> handle(CreateRoleCommand command) {
