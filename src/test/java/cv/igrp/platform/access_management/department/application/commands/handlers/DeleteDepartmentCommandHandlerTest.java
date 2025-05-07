@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.DepartmentRepository;
 import jakarta.persistence.EntityNotFoundException;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -19,55 +20,60 @@ import cv.igrp.platform.access_management.department.application.commands.comman
 @DisplayName("DeleteDepartmentCommandHandler Tests")
 public class DeleteDepartmentCommandHandlerTest {
 
+    @Mock
+    private DepartmentRepository departmentRepository;
+
     @InjectMocks
     private DeleteDepartmentCommandHandler deleteDepartmentCommandHandler;
 
-    @Mock
-    private DepartmentRepository departmentRepository;
+    private DeleteDepartmentCommand command;
+    private final Integer DEPARTMENT_ID = 1;
 
     private DeleteDepartmentCommand createCommand(Integer id) {
         return new DeleteDepartmentCommand(id);
     }
 
+    @BeforeEach
+    void setUp() {
+        command = createCommand(DEPARTMENT_ID);
+    }
+
     @Test
     @DisplayName("Should delete department and return 204 when department exists")
     void testHandle_whenDepartmentExists_shouldDeleteAndReturnNoContent() {
-        //Given
+        // Arrange
+        when(departmentRepository.existsById(DEPARTMENT_ID)).thenReturn(true);
 
-        Integer departmentId = 1;
-        DeleteDepartmentCommand command = createCommand(departmentId);
-
-        when(departmentRepository.existsById(departmentId)).thenReturn(true);
-
-        //When
+        // Act
         ResponseEntity<Void> response = deleteDepartmentCommandHandler.handle(command);
 
-        //Then
-        assertNotNull(response);
+        // Assert
+        assertNull(response.getBody());
         assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatusCode().value());
-        verify(departmentRepository).existsById(departmentId);
-        verify(departmentRepository).deleteById(departmentId);
+
+        // Verify
+        verify(departmentRepository).existsById(DEPARTMENT_ID);
+        verify(departmentRepository).deleteById(DEPARTMENT_ID);
         verifyNoMoreInteractions(departmentRepository);
     }
 
     @Test
     @DisplayName("Should throw EntityNotFoundException when department does not exist")
     void testHandle_whenDepartmentDoesNotExist_shouldThrowException() {
+        // Arrange
 
-        //Given
-        Integer departmentId = -1;
-        DeleteDepartmentCommand command = createCommand(departmentId);
+        when(departmentRepository.existsById(DEPARTMENT_ID)).thenReturn(false);
 
-        when(departmentRepository.existsById(departmentId)).thenReturn(false);
-
-        //When Then
+        // Act
         EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () ->
                 deleteDepartmentCommandHandler.handle(command));
 
-        assertEquals("Department not found with id: 99", exception.getMessage());
+        // Assert
+        assertEquals("Department not found with id: " + DEPARTMENT_ID, exception.getMessage());
 
-        verify(departmentRepository).existsById(departmentId);
-        verify(departmentRepository, never()).deleteById(departmentId);
+        // Verify
+        verify(departmentRepository).existsById(DEPARTMENT_ID);
+        verify(departmentRepository, never()).deleteById(DEPARTMENT_ID);
         verifyNoMoreInteractions(departmentRepository);
     }
 
