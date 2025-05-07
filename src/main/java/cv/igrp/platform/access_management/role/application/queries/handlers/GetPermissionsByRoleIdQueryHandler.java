@@ -18,6 +18,17 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Handles the query to retrieve permissions associated with a specific role ID.
+ * <p>
+ * This query handler performs the following:
+ * <ul>
+ *   <li>Validates if the role with the given ID exists and is not marked as {@link Status#DELETED}.</li>
+ *   <li>Filters out any permissions with {@link Status#DELETED}.</li>
+ *   <li>Maps the valid permissions to {@link PermissionDTO} objects.</li>
+ *   <li>Returns the permissions in a {@link ResponseEntity} with status {@code 200 OK}.</li>
+ * </ul>
+ */
 @Slf4j
 @Service
 public class GetPermissionsByRoleIdQueryHandler implements QueryHandler<GetPermissionsByRoleIdQuery, ResponseEntity<List<PermissionDTO>>> {
@@ -25,12 +36,25 @@ public class GetPermissionsByRoleIdQueryHandler implements QueryHandler<GetPermi
     private final RoleRepository roleRepository;
     private final PermissionMapper permissionMapper;
 
+    /**
+     * Constructs the handler with necessary dependencies.
+     *
+     * @param roleRepository   repository to retrieve roles from the database
+     * @param permissionMapper mapper to convert permission entities to DTOs
+     */
     public GetPermissionsByRoleIdQueryHandler(RoleRepository roleRepository, PermissionMapper permissionMapper) {
 
         this.roleRepository = roleRepository;
         this.permissionMapper = permissionMapper;
     }
 
+    /**
+     * Handles the query to fetch permissions for a given role ID.
+     *
+     * @param query the query containing the role ID
+     * @return a list of mapped {@link PermissionDTO} objects excluding those with status {@link Status#DELETED}
+     * @throws IgrpResponseStatusException if the role is not found or is marked as deleted
+     */
     @IgrpQueryHandler
     @Transactional(readOnly = true)
     public ResponseEntity<List<PermissionDTO>> handle(GetPermissionsByRoleIdQuery query) {
@@ -49,5 +73,4 @@ public class GetPermissionsByRoleIdQueryHandler implements QueryHandler<GetPermi
                 .toList();
         return new ResponseEntity<>(permissionList, HttpStatus.OK);
     }
-
 }
