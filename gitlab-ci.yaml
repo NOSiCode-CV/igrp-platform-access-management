@@ -10,7 +10,7 @@ variables:
 
 stages:
   - build
-  - deploy
+#  - deploy
 
 build_docker_image_dev:
   stage: build
