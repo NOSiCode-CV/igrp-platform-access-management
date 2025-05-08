@@ -14,17 +14,40 @@ import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.permission.application.commands.commands.DeletePermissionCommand;
 import org.springframework.transaction.annotation.Transactional;
 
-
+/**
+ * Command handler responsible for performing a logical deletion of a {@link Permission}.
+ * <p>
+ * Instead of removing the permission from the database, this handler sets its {@link Status} to {@code DELETED}.
+ * </p>
+ * <p>
+ * If the permission is not found, a {@link IgrpResponseStatusException} is thrown with HTTP 404.
+ * </p>
+ *
+ */
 @Slf4j
 @Service
 public class DeletePermissionCommandHandler implements CommandHandler<DeletePermissionCommand, ResponseEntity<Boolean>> {
 
+    /**
+     * Constructs the handler with the required repository.
+     *
+     * @param permissionRepository the repository used to access and update permissions
+     */
    private final PermissionRepository permissionRepository;
    public DeletePermissionCommandHandler(PermissionRepository permissionRepository) {
 
        this.permissionRepository = permissionRepository;
    }
 
+    /**
+     * Handles the deletion of a {@link Permission} by setting its status to {@link Status#DELETED}.
+     * <p>
+     * If the permission with the given ID is not found, it throws {@link IgrpResponseStatusException}.
+     * </p>
+     *
+     * @param command the command containing the ID of the permission to delete
+     * @return a {@link ResponseEntity} with status {@code 204 NO_CONTENT} if successful
+     */
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<Boolean> handle(DeletePermissionCommand command) {
