@@ -19,10 +19,10 @@ import cv.igrp.platform.access_management.menu.application.commands.commands.Cre
 @Service
 public class CreateMenuCommandHandler implements CommandHandler<CreateMenuCommand, ResponseEntity<MenuEntryDTO>> {
 
-   private MenuEntryRepository menuEntryRepository;
-   private MenuEntryMapper menuEntryMapper;
-   private ApplicationRepository applicationRepository;
-   private ResourceRepository resourceRepository;
+   private final MenuEntryRepository menuEntryRepository;
+   private final MenuEntryMapper menuEntryMapper;
+   private final ApplicationRepository applicationRepository;
+   private final ResourceRepository resourceRepository;
 
    public CreateMenuCommandHandler(MenuEntryRepository menuEntryRepository, MenuEntryMapper menuEntryMapper, ApplicationRepository applicationRepository, ResourceRepository resourceRepository) {
       this.menuEntryRepository =  menuEntryRepository;
@@ -42,5 +42,4 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
          menuEntry.setParentId(menuEntryRepository.getReferenceById(command.getMenuentrydto().getParentId()));
       return ResponseEntity.status(HttpStatus.CREATED).body(menuEntryMapper.toDTO(menuEntryRepository.save(menuEntry)));
    }
-
 }
