@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.users.application.commands.commands.*;
@@ -27,6 +29,8 @@ import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 @RequestMapping(path = "api")
 @Tag(name = "User", description = "User")
 public class UserController {
+
+   private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
 
   
   private final CommandBus commandBus;
@@ -54,7 +58,7 @@ public class UserController {
               mediaType = "application/json",
               schema = @Schema(
                   implementation = IGRPUserDTO.class,
-                  type = "IGRPUserDTO")
+                  type = "")
           )
       )
     }
@@ -63,9 +67,11 @@ public class UserController {
   public ResponseEntity<IGRPUserDTO> getUser(
     @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "UserController", "getUser");
       final var query = new GetUserQuery(id);
       ResponseEntity<IGRPUserDTO> response = queryBus.handle(query);
-       return ResponseEntity.status(response.getStatusCode())
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "UserController", "getUser");
+      return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }
@@ -84,7 +90,7 @@ public class UserController {
               mediaType = "application/json",
               schema = @Schema(
                   implementation = RoleDTO.class,
-                  type = "RoleDTO")
+                  type = "")
           )
       ), 
       @ApiResponse(
@@ -94,7 +100,7 @@ public class UserController {
               mediaType = "application/json",
               schema = @Schema(
                   implementation = RoleDTO.class,
-                  type = "RoleDTO")
+                  type = "")
           )
       )
     }
@@ -103,8 +109,10 @@ public class UserController {
   public ResponseEntity<?> addRolesToUser(@Valid @RequestBody RoleUserDTO addRolesToUserRequest
     , @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "UserController", "AddRolesToUser");
       final var command = new AddRolesToUserCommand(addRolesToUserRequest, id);
        ResponseEntity<?> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "UserController", "AddRolesToUser");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -130,11 +138,13 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<List<RoleDTO>> removeRolesFromUser(@Valid @RequestBody RoleDTO removeRolesFromUserRequest
+  public ResponseEntity<List<RoleDTO>> removeRolesFromUser(@RequestBody List<Integer> removeRolesFromUserRequest
     , @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "UserController", "RemoveRolesFromUser");
       final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, id);
        ResponseEntity<List<RoleDTO>> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "UserController", "RemoveRolesFromUser");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -163,9 +173,11 @@ public class UserController {
   public ResponseEntity<List<RoleDTO>> getUserRoles(
     @RequestParam(value = "applicationId") Integer applicationId, @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "UserController", "getUserRoles");
       final var query = new GetUserRolesQuery(applicationId, id);
       ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
-       return ResponseEntity.status(response.getStatusCode())
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "UserController", "getUserRoles");
+      return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }
@@ -190,16 +202,18 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<List<IGRPUserDTO>> getUsers(
-    @RequestParam(value = "applicationId", required = false) Integer applicationId,
+  public ResponseEntity<List<IGRPUserDTO>> getUsers(@RequestBody List<Integer> getUsersRequest
+    , @RequestParam(value = "applicationId", required = false) Integer applicationId,
     @RequestParam(value = "departmentId", required = false) Integer departmentId,
     @RequestParam(value = "name", required = false) String name,
     @RequestParam(value = "username", required = false) String username,
     @RequestParam(value = "email", required = false) String email)
   {
-      final var query = new GetUsersQuery(applicationId, departmentId, name, username, email);
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "UserController", "getUsers");
+      final var query = new GetUsersQuery(getUsersRequest, applicationId, departmentId, name, username, email);
       ResponseEntity<List<IGRPUserDTO>> response = queryBus.handle(query);
-       return ResponseEntity.status(response.getStatusCode())
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "UserController", "getUsers");
+      return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }
@@ -227,8 +241,10 @@ public class UserController {
   public ResponseEntity<IGRPUserDTO> createUser(@Valid @RequestBody IGRPUserDTO createUserRequest
     )
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "UserController", "createUser");
       final var command = new CreateUserCommand(createUserRequest);
        ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "UserController", "createUser");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -257,8 +273,10 @@ public class UserController {
   public ResponseEntity<IGRPUserDTO> updateUser(@Valid @RequestBody IGRPUserDTO updateUserRequest
     , @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "UserController", "updateUser");
       final var command = new UpdateUserCommand(updateUserRequest, id);
        ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "UserController", "updateUser");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());

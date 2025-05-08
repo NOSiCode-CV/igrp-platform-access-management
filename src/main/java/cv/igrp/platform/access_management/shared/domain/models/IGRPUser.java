@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.shared.domain.models;
 
 import cv.igrp.platform.access_management.shared.config.AuditEntity;
 import cv.igrp.framework.stereotype.IgrpEntity;
+import cv.igrp.platform.iam.core.model.UserIdentity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
@@ -10,8 +11,6 @@ import jakarta.validation.constraints.NotBlank;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import javax.management.relation.Role;
 
 @Audited
 @Getter

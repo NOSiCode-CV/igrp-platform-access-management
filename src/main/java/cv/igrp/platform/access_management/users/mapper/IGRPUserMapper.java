@@ -10,7 +10,7 @@ public class IGRPUserMapper {
     public IGRPUserDTO toDto(IGRPUser user) {
         if (user == null) return null;
         IGRPUserDTO dto = new IGRPUserDTO();
-        dto.setId(user.getId());
+        dto.setId(Integer.parseInt(user.getId()));
         dto.setName(user.getName());
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());

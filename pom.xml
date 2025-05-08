@@ -85,6 +85,10 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+		</dependency>
 
 
 		<dependency>
@@ -114,6 +118,11 @@
 			<groupId>cv.igrp.framework</groupId>
 			<artifactId>stereotype</artifactId>
 			<version>0.0.1-alpha</version>
+		</dependency>
+		<dependency>
+			<groupId>cv.igrp.platform</groupId>
+			<artifactId>iam-core</artifactId>
+			<version>0.0.2-alpha</version>
 		</dependency>
 		<!-- IGRP Mail Libraries -->
 		<dependency>
