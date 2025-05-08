@@ -9,12 +9,34 @@ import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.users.application.commands.commands.AddRolesToUserCommand;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import jakarta.persistence.EntityNotFoundException;
+
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+
+/**
+ * Command handler responsible for associating a {@link Role} with a specific {@link IGRPUser}.
+ * <p>
+ * This handler processes the {@link AddRolesToUserCommand} by:
+ * <ul>
+ *   <li>Fetching the user from the {@link IGRPUserRepository} using the provided user ID.</li>
+ *   <li>Fetching the role from the {@link RoleRepository} using the provided role ID.</li>
+ *   <li>Adding the user to the role's user set (initializing it if necessary).</li>
+ *   <li>Saving the updated role and mapping it to a {@link RoleDTO}.</li>
+ *   <li>Returning the mapped role in a {@link ResponseEntity} with HTTP status 201 (Created).</li>
+ * </ul>
+ *
+ * @see AddRolesToUserCommand
+ * @see IGRPUserRepository
+ * @see RoleRepository
+ * @see RoleMapper
+ * @see RoleDTO
+ */
 @Service
 public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUserCommand, ResponseEntity<List<RoleDTO>>> {
 
@@ -22,37 +44,47 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
     private final RoleRepository roleRepository;
     private final RoleMapper roleMapper;
 
+    /**
+     * Constructs the handler with required dependencies.
+     *
+     * @param userRepository the repository used to retrieve user entities
+     * @param roleRepository the repository used to retrieve and update roles
+     * @param roleMapper the mapper used to convert role entities to DTOs
+     */
     public AddRolesToUserCommandHandler(IGRPUserRepository userRepository, RoleRepository roleRepository, RoleMapper roleMapper) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.roleMapper = roleMapper;
     }
 
+    /**
+     * Handles the command to add a role to a user.
+     *
+     * @param command the command containing the user ID and RoleUserDTO to associate the corresponding ID
+     * @return a {@link ResponseEntity} containing a list with the updated {@link RoleDTO}
+     * @throws EntityNotFoundException if the user or role is not found
+     */
     @IgrpCommandHandler
     public ResponseEntity<List<RoleDTO>> handle(AddRolesToUserCommand command) {
-        // Buscar o usuário usando o user_id do comando
+
         IGRPUser user = userRepository.findById(command.getId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + command.getId()));
 
-        // Obter o papel (role) pelo role_id do comando
-        Integer roleId = command.getRoleuserdto().role_id(); // Aqui acessamos o role_id do DTO
-        Role roleToAdd = roleRepository.findById(roleId) // Buscando o papel pelo ID
+        Integer roleId = command.getRoleuserdto().role_id();
+        Role roleToAdd = roleRepository.findById(roleId)
                 .orElseThrow(() -> new EntityNotFoundException("Role not found with id: " + roleId));
 
-        // Adicionar o papel ao usuário
-        if (roleToAdd.getUsers() != null) {
-            roleToAdd.getUsers().add(user);
-        } else {
-            roleToAdd.setUsers(Set.of(user)); // Se não houver users, cria uma nova lista com o user
+        Set<IGRPUser> users = roleToAdd.getUsers();
+        if (users == null) {
+            users = new HashSet<>();
+            roleToAdd.setUsers(users);
         }
+        users.add(user);
 
-        // Salvar o usuário atualizado
         var roleUpdated = roleRepository.save(roleToAdd);
 
-        // Mapeando o papel para RoleDTO
         RoleDTO roleDTO = roleMapper.mapToDto(roleUpdated);
 
-        // Retornar a resposta com a lista de RoleDTO
-        return ResponseEntity.status(201).body(List.of(roleDTO)); // Retorna um único RoleDTO, pois só foi adicionado um papel
+        return ResponseEntity.status(HttpStatus.CREATED).body(List.of(roleDTO));
     }
 }

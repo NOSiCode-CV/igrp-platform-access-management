@@ -3,8 +3,6 @@ package cv.igrp.platform.access_management.users.application.commands.handlers;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 
-import java.util.List;
-
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
@@ -12,42 +10,74 @@ import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.users.application.commands.commands.UpdateUserCommand;
 
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
-import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
-import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
 
+/**
+ * Command handler responsible for updating an existing {@link IGRPUser} entity.
+ * <p>
+ * This handler processes {@link UpdateUserCommand} instances, which include the user ID and
+ * an {@link IGRPUserDTO} containing the updated user data.
+ * <p>
+ * The handler performs the following:
+ * <ul>
+ *   <li>Retrieves the user entity by ID from the {@link IGRPUserRepository}.</li>
+ *   <li>Updates the user entity's fields only if the corresponding fields in the DTO are non-null.</li>
+ *   <li>Saves the updated entity using the repository.</li>
+ *   <li>Maps the updated entity to a DTO and returns it in a {@link ResponseEntity}.</li>
+ * </ul>
+ *
+ * <p>Defensive checks are applied to ensure existing data is not overwritten by {@code null} values.</p>
+ *
+ * @see UpdateUserCommand
+ * @see IGRPUserDTO
+ * @see IGRPUserRepository
+ * @see IGRPUserMapper
+ */
 @Service
 public class UpdateUserCommandHandler implements CommandHandler<UpdateUserCommand, ResponseEntity<IGRPUserDTO>> {
 
     private final IGRPUserRepository userRepository;
-    private final RoleRepository roleRepository;
     private final IGRPUserMapper userMapper;
 
-    public UpdateUserCommandHandler(IGRPUserRepository userRepository, RoleRepository roleRepository, IGRPUserMapper userMapper) {
+    /**
+     * Constructs the handler with required dependencies.
+     *
+     * @param userRepository the repository to retrieve and save user entities
+     * @param userMapper     the mapper used to convert entities to DTOs
+     */
+    public UpdateUserCommandHandler(IGRPUserRepository userRepository, IGRPUserMapper userMapper) {
         this.userRepository = userRepository;
-        this.roleRepository = roleRepository;
         this.userMapper = userMapper;
     }
 
+    /**
+     * Handles the update of an existing user.
+     *
+     * @param command the command containing the user ID and the updated user data
+     * @return a {@link ResponseEntity} containing the updated {@link IGRPUserDTO}
+     * @throws EntityNotFoundException if no user exists with the given ID
+     */
     @IgrpCommandHandler
     public ResponseEntity<IGRPUserDTO> handle(UpdateUserCommand command) {
-        IGRPUserDTO dto = command.getIgrpuserdto();
 
-        // Verifica se o user existe
         IGRPUser user = userRepository.findById(command.getId())
                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + command.getId()));
 
-        // Atualiza os campos
-        user.setName(dto.getName());
-        user.setUsername(dto.getUsername());
-        user.setEmail(dto.getEmail());
+        IGRPUserDTO dto = command.getIgrpuserdto();
 
-        // Salva o user atualizado
+        if (dto.getName() != null) {
+            user.setName(dto.getName());
+        }
+        if (dto.getUsername() != null) {
+            user.setUsername(dto.getUsername());
+        }
+        if (dto.getEmail() != null) {
+            user.setEmail(dto.getEmail());
+        }
+
         var updatedUser = userRepository.save(user);
 
-        // Retorna o DTO atualizado
         return ResponseEntity.ok(userMapper.toDto(updatedUser));
     }
 }

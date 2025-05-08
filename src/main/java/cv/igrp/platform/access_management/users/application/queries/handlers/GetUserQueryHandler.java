@@ -10,29 +10,58 @@ import jakarta.persistence.EntityNotFoundException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.users.application.queries.queries.GetUserQuery;
-import java.util.List;
 
+/**
+ * Query handler responsible for retrieving a single {@link IGRPUser} entity by its ID.
+ * <p>
+ * This handler processes {@link GetUserQuery} instances and performs the following steps:
+ * <ul>
+ *   <li>Validates that the provided query ID is not {@code null}.</li>
+ *   <li>Attempts to retrieve the user from the {@link IGRPUserRepository}.</li>
+ *   <li>Maps the retrieved {@link IGRPUser} entity to a {@link IGRPUserDTO} using the {@link IGRPUserMapper}.</li>
+ *   <li>Returns a {@link ResponseEntity} containing the user DTO and HTTP status {@code 200 OK}.</li>
+ * </ul>
+ * <p>
+ * If the ID is {@code null}, a {@code 400 Bad Request} response is returned with no body.
+ * If no user is found for the provided ID, an {@link jakarta.persistence.EntityNotFoundException} is thrown.
+ *
+ */
 @Service
 public class GetUserQueryHandler implements QueryHandler<GetUserQuery, ResponseEntity<IGRPUserDTO>>{
 
    private final IGRPUserRepository igrpUserRepository;
    private final IGRPUserMapper igrpUserMapper;
 
+   /**
+    * Constructs a new {@code GetUserQueryHandler} with required dependencies.
+    *
+    * @param igrpUserRepository the repository used to retrieve users
+    * @param igrpUserMapper     the mapper used to convert entities to DTOs
+    */
    public GetUserQueryHandler(IGRPUserRepository igrpUserRepository, IGRPUserMapper igrpUserMapper) {
       this.igrpUserRepository = igrpUserRepository;
       this.igrpUserMapper = igrpUserMapper;
    }
 
+   /**
+    * Handles the {@link GetUserQuery} by retrieving the user and returning a corresponding DTO.
+    *
+    * @param query the query containing the user ID to fetch
+    * @return a {@link ResponseEntity} with the user DTO and status {@code 200 OK},
+    *         or {@code 400 Bad Request} if the query ID is {@code null}
+    * @throws EntityNotFoundException if no user is found for the given ID
+    */
    @IgrpQueryHandler
    public ResponseEntity<IGRPUserDTO> handle(GetUserQuery query) {
-
-      if (query.getId() != null) {
-         return ResponseEntity.ok(igrpUserMapper.toDto(igrpUserRepository.findById(query.getId())
-                 .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + query.getId()))));
+      if(query.getId() == null) {
+         return ResponseEntity.badRequest().build();
       }
 
-      return ResponseEntity.badRequest().body(null);
+      IGRPUser user = igrpUserRepository.findById(query.getId())
+              .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + query.getId()));
 
+      IGRPUserDTO dto = igrpUserMapper.toDto(user);
+
+      return ResponseEntity.ok(dto);
    }
-
 }
