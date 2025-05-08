@@ -17,16 +17,20 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * Handles the retrieval of all {@link Role} entities with status {@code ACTIVE} or {@code INACTIVE}.
+ * Query handler responsible for retrieving all active or inactive {@link RoleDTO} entries.
  *
- * <p>
- * This query handler fetches roles from the repository and maps them to {@link RoleDTO} objects.
- * Only roles with status {@link Status#ACTIVE} or {@link Status#INACTIVE} are included.
- * </p>
+ * <p>This handler performs the following:</p>
+ * <ul>
+ *   <li>Retrieves all {@link Role} entities from the database that have a status of {@link Status#ACTIVE} or {@link Status#INACTIVE}</li>
+ *   <li>Maps each entity to its {@link RoleDTO} representation using {@link RoleMapper}</li>
+ *   <li>Returns the results wrapped in a {@link ResponseEntity} with HTTP status {@link HttpStatus#OK}</li>
+ * </ul>
  *
- * <p>
- * The resulting list of DTOs is returned in a {@link ResponseEntity} with HTTP status 200 (OK).
- * </p>
+ * @see GetRolesQuery
+ * @see RoleRepository
+ * @see RoleMapper
+ * @see RoleDTO
+ * @see Status
  */
 @Slf4j
 @Service

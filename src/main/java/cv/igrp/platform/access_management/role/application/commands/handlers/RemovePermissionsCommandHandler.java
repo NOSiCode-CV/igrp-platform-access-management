@@ -31,6 +31,16 @@ import java.util.List;
  *     <li>Saves the updated role</li>
  * </ul>
  * The result is a list of {@link PermissionDTO}s that were successfully removed from the role.
+ * @see RemovePermissionsCommand
+ * @see Role
+ * @see Permission
+ * @see RoleRepository
+ * @see PermissionMapper
+ * @see PermissionDTO
+ * @see Status
+ * @see IgrpResponseStatusException
+ * @see IgrpProblem
+ *
  */
 @Slf4j
 @Service

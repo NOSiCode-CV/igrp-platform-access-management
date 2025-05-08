@@ -27,6 +27,12 @@ import java.util.List;
  * cascade the deletion status to all its non-deleted child roles.
  * <p>
  * This ensures integrity of role hierarchies and prevents orphaned child roles.
+ * @see DeleteRoleCommand
+ * @see Role
+ * @see RoleRepository
+ * @see Status
+ * @see IgrpResponseStatusException
+ * @see IgrpProblem
  */
 @Slf4j
 @Service

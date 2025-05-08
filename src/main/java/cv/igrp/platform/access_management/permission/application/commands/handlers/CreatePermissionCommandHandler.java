@@ -19,17 +19,25 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Command handler responsible for creating a new {@link Permission}.
- * <p>
- * This handler processes a {@link CreatePermissionCommand}, validates the associated
- * {@link Application} existence, constructs a new {@link Permission} entity, persists it,
- * and returns the resulting {@link PermissionDTO}.
- * </p>
+ * Command handler responsible for creating a new {@link Permission} entity in the system.
  *
- * <p>
- * If the application ID provided in the command does not correspond to an existing application,
- * an {@link IgrpResponseStatusException} is thrown with status {@code 404 NOT_FOUND}.
- * </p>
+ * <p>This handler executes the following workflow:</p>
+ * <ul>
+ *   <li>Receives a {@link CreatePermissionCommand} containing permission creation data.</li>
+ *   <li>Validates that the referenced {@link Application} exists.</li>
+ *   <li>Maps the incoming {@link PermissionDTO} to a {@link Permission} entity via {@link PermissionMapper}.</li>
+ *   <li>Saves the new permission entity and returns the mapped {@link PermissionDTO}.</li>
+ * </ul>
+ *
+ * <p>If the application ID is invalid (i.e., not found), an {@link IgrpResponseStatusException} is thrown with a {@link HttpStatus#NOT_FOUND} status.</p>
+ *
+ * @see CreatePermissionCommand
+ * @see PermissionRepository
+ * @see ApplicationRepository
+ * @see PermissionMapper
+ * @see PermissionDTO
+ * @see Status
+ * @see IgrpResponseStatusException
  */
 @Slf4j
 @Service

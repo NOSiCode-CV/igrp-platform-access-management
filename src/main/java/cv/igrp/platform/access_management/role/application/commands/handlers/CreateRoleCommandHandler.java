@@ -25,6 +25,15 @@ import org.springframework.transaction.annotation.Transactional;
  * This handler ensures that the specified department exists and, if provided, that the parent role exists
  * and is not marked as deleted. It maps the input data to the corresponding entity, persists the new role,
  * and returns its DTO representation.
+ * @see CreateRoleCommand
+ * @see RoleDTO
+ * @see Role
+ * @see RoleRepository
+ * @see RoleMapper
+ * @see Department
+ * @see DepartmentRepository
+ * @see Status
+ * @see IgrpResponseStatusException
  */
 @Slf4j
 @Service

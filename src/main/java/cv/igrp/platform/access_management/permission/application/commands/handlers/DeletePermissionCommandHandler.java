@@ -16,13 +16,28 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Command handler responsible for performing a logical deletion of a {@link Permission}.
+ *
  * <p>
- * Instead of removing the permission from the database, this handler sets its {@link Status} to {@code DELETED}.
- * </p>
- * <p>
- * If the permission is not found, a {@link IgrpResponseStatusException} is thrown with HTTP 404.
+ * Instead of physically removing the permission from the database, this handler sets its {@link Status}
+ * to {@link Status#DELETED}, representing a soft delete strategy.
  * </p>
  *
+ * <p>
+ * If the permission with the specified ID does not exist, an {@link IgrpResponseStatusException} is thrown
+ * with an appropriate {@link HttpStatus#NOT_FOUND} response.
+ * </p>
+ *
+ * <p>
+ * The updated {@link Permission} is persisted using {@link PermissionRepository}, and the result is returned
+ * as a {@link ResponseEntity} with status {@code 204 NO_CONTENT}.
+ * </p>
+ *
+ * @see DeletePermissionCommand
+ * @see Permission
+ * @see PermissionRepository
+ * @see Status
+ * @see IgrpResponseStatusException
+ * @see ResponseEntity
  */
 @Slf4j
 @Service

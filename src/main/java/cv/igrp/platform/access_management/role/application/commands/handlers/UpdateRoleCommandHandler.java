@@ -34,6 +34,17 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>
  * The updated role is saved to the database and returned as a {@link RoleDTO} wrapped in a {@link ResponseEntity}.
  * </p>
+ *
+ * @see UpdateRoleCommand
+ * @see Role
+ * @see RoleDTO
+ * @see RoleRepository
+ * @see Department
+ * @see DepartmentRepository
+ * @see RoleMapper
+ * @see IgrpResponseStatusException
+ * @see IgrpProblem
+ * @see Status
  */
 @Slf4j
 @Service

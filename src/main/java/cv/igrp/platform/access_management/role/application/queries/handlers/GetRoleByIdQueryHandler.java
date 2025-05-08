@@ -17,17 +17,22 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
- * Handles the retrieval of a {@link Role} by its identifier.
- * <p>
- * This query handler fetches the role from the repository based on the provided ID, ensuring that the role is not
- * marked as {@link Status#DELETED}. If the role is found, it is mapped to a {@link RoleDTO} and returned in the
- * response.
- * </p>
+ * Query handler responsible for retrieving a single {@link RoleDTO} based on its unique identifier.
  *
- * <p>
- * In case no role is found with the specified ID, or if the role has been marked as deleted, an
- * {@link IgrpResponseStatusException} is thrown with a {@link HttpStatus#NOT_FOUND} status.
- * </p>
+ * <p>This handler performs the following actions:</p>
+ * <ul>
+ *   <li>Looks up a {@link Role} by its ID using {@link RoleRepository}, ignoring those marked as {@link Status#DELETED}</li>
+ *   <li>If found, the role is mapped to a {@link RoleDTO} via {@link RoleMapper}</li>
+ *   <li>The mapped result is returned in a {@link ResponseEntity} with HTTP status {@link HttpStatus#OK}</li>
+ *   <li>If the role is not found or is deleted, an {@link IgrpResponseStatusException} is thrown with HTTP status {@link HttpStatus#NOT_FOUND}</li>
+ * </ul>
+ *
+ * @see GetRoleByIdQuery
+ * @see RoleRepository
+ * @see RoleMapper
+ * @see RoleDTO
+ * @see Status
+ * @see IgrpResponseStatusException
  */
 @Slf4j
 @Service

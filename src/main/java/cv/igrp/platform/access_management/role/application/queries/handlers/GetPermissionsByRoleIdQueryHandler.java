@@ -8,6 +8,7 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -19,15 +20,24 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 
 /**
- * Handles the query to retrieve permissions associated with a specific role ID.
- * <p>
- * This query handler performs the following:
+ * Query handler responsible for retrieving all active (non-deleted) {@link PermissionDTO}s associated with a specific {@link Role} ID.
+ *
+ * <p>This handler performs the following operations:</p>
  * <ul>
- *   <li>Validates if the role with the given ID exists and is not marked as {@link Status#DELETED}.</li>
- *   <li>Filters out any permissions with {@link Status#DELETED}.</li>
- *   <li>Maps the valid permissions to {@link PermissionDTO} objects.</li>
- *   <li>Returns the permissions in a {@link ResponseEntity} with status {@code 200 OK}.</li>
+ *   <li>Validates that the {@link Role} exists and is not marked as {@link Status#DELETED}</li>
+ *   <li>Filters out permissions that are marked as {@link Status#DELETED}</li>
+ *   <li>Maps the remaining {@link Permission} entities to {@link PermissionDTO} instances</li>
+ *   <li>Returns the result wrapped in a {@link ResponseEntity} with status {@link HttpStatus#OK}</li>
  * </ul>
+ *
+ * <p>If the role is not found or is marked as deleted, an {@link IgrpResponseStatusException} is thrown.</p>
+ *
+ * @see GetPermissionsByRoleIdQuery
+ * @see PermissionDTO
+ * @see RoleRepository
+ * @see PermissionMapper
+ * @see Status
+ * @see IgrpResponseStatusException
  */
 @Slf4j
 @Service

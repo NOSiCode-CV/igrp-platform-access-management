@@ -29,6 +29,15 @@ import java.util.stream.Collectors;
  * This handler ensures the target role exists and is active (not deleted),
  * filters out any permissions marked as deleted, and attaches valid permissions
  * to the role. The updated role is then persisted, and the added permissions are returned as DTOs.
+ * @see AddPermissionsCommand
+ * @see Permission
+ * @see PermissionDTO
+ * @see PermissionRepository
+ * @see Role
+ * @see RoleRepository
+ * @see PermissionMapper
+ * @see IgrpResponseStatusException
+ * @see Status
  */
 @Slf4j
 @Service
