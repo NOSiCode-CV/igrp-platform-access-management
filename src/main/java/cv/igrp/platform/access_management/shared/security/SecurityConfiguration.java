@@ -36,7 +36,7 @@ public class SecurityConfiguration {
 
         http.sessionManagement(t -> t.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        http.httpBasic(Customizer.withDefaults());
+        //http.httpBasic(Customizer.withDefaults());
 
         // Cors
         http.cors(cors -> cors.configurationSource(request -> {
