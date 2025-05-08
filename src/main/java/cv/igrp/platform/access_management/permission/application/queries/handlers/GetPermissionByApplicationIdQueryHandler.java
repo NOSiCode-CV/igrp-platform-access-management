@@ -6,6 +6,7 @@ import cv.igrp.platform.access_management.permission.application.queries.queries
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
+import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.PermissionRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,21 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+/**
+ * Query handler responsible for retrieving all active or inactive {@link Permission} entities
+ * associated with a specific {@link Application} ID.
+ * <p>
+ * This handler filters the result in-memory after fetching all permissions,
+ * returning only those with the provided application ID and a {@link Status} of
+ * {@code ACTIVE} or {@code INACTIVE}.
+ * </p>
+ *
+ * @see GetPermissionByApplicationIdQuery
+ * @see PermissionRepository
+ * @see PermissionMapper
+ * @see PermissionDTO
+ * @see Status
+ */
 @Slf4j
 @Service
 public class GetPermissionByApplicationIdQueryHandler implements QueryHandler<GetPermissionByApplicationIdQuery, ResponseEntity<List<PermissionDTO>>> {
@@ -25,12 +41,25 @@ public class GetPermissionByApplicationIdQueryHandler implements QueryHandler<Ge
     private final PermissionRepository permissionRepository;
     private final PermissionMapper permissionMapper;
 
+    /**
+     * Constructs a new instance of the handler with required dependencies.
+     *
+     * @param permissionRepository repository used to retrieve all permissions
+     * @param permissionMapper     mapper to convert {@link Permission} entities to {@link PermissionDTO}
+     */
     public GetPermissionByApplicationIdQueryHandler(PermissionRepository permissionRepository, PermissionMapper permissionMapper) {
 
         this.permissionRepository = permissionRepository;
         this.permissionMapper = permissionMapper;
     }
 
+
+    /**
+     * Handles the query by filtering all permissions by application ID and status.
+     *
+     * @param query the query containing the application ID to filter by
+     * @return a {@link ResponseEntity} containing the filtered list of {@link PermissionDTO}
+     */
     @IgrpQueryHandler
     @Transactional(readOnly = true)
     public ResponseEntity<List<PermissionDTO>> handle(GetPermissionByApplicationIdQuery query) {
