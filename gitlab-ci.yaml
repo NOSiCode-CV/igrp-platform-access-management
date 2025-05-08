@@ -15,7 +15,7 @@ stages:
 build_docker_image_dev:
   stage: build
   only:
-    - main
+    - deploy-inss
   script:
     - docker login $REGISTRY_URL -u "$REGISTRY_USERNAME" -p "$REGISTRY_PASSWORD" 
     - docker build -t $REGISTRY_URL/$REGISTRY_PROJECT/igrp-user-management-api:$CI_PIPELINE_ID .
