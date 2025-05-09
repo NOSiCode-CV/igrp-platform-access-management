@@ -8,6 +8,8 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -24,6 +26,8 @@ import cv.igrp.platform.access_management.menu.application.queries.queries.GetMe
  */
 @Service
 public class GetMenuByIdQueryHandler implements QueryHandler<GetMenuByIdQuery, ResponseEntity<MenuEntryDTO>>{
+
+   private static final Logger logger = LoggerFactory.getLogger(GetMenuByIdQueryHandler.class);
 
    private final MenuEntryRepository menuEntryRepository;
    private final MenuEntryMapper menuEntryMapper;
@@ -54,9 +58,15 @@ public class GetMenuByIdQueryHandler implements QueryHandler<GetMenuByIdQuery, R
    @IgrpQueryHandler
    public ResponseEntity<MenuEntryDTO> handle(GetMenuByIdQuery query) {
       MenuEntry menu = menuEntryRepository.findById(query.getId())
-              .orElseThrow(() -> new IgrpResponseStatusException
-                      (new IgrpProblem<>(HttpStatus.NOT_FOUND, "Menu not found", "Menu not found with id: " + query.getId())
-              ));
+              .orElseThrow(() -> {
+                 logger.warn("Menu not found with ID: {}", query.getId());
+                 return new IgrpResponseStatusException
+                      (new IgrpProblem<>(HttpStatus.NOT_FOUND,
+                              "Menu not found",
+                              "Menu not found with id: " + query.getId()));
+              });
+
+      logger.info("Menu with ID: {} successfully retrieved", query.getId());
       return ResponseEntity.ok(menuEntryMapper.toDTO(menu));
    }
 }

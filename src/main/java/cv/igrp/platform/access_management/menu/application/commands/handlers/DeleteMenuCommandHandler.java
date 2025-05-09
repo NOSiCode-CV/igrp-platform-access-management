@@ -55,14 +55,22 @@ public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuComman
     public ResponseEntity<Void> handle(DeleteMenuCommand command) {
 
         MenuEntry menuEntry = menuEntryRepository.findById(command.getId())
-                .orElseThrow(() -> new IgrpResponseStatusException(
-                        new IgrpProblem<>(HttpStatus.NOT_FOUND, "Menu not found", "Menu not found with id: " + command.getId())
-                ));
+                .orElseThrow(() -> {
+                        logger.warn("Menu entry with id {} not found", command.getId());
+                        return new IgrpResponseStatusException(
+                        new IgrpProblem<>(HttpStatus.NOT_FOUND, "Menu not found", "Menu not found with id: " + command.getId()));
+                });
 
         menuEntry.setStatus(Status.DELETED);
-        menuEntryRepository.save(menuEntry);
 
-        logger.info("Menu with id {} has been marked as deleted", command.getId());
+        var deletedMenuEntry = menuEntryRepository.save(menuEntry);
+        logger.info("""
+                    Menu with id={}, name={}, type={} has been marked as deleted
+                    """,
+                deletedMenuEntry.getId(),
+                deletedMenuEntry.getName(),
+                deletedMenuEntry.getType());
+
         return ResponseEntity.noContent().build();
     }
 }

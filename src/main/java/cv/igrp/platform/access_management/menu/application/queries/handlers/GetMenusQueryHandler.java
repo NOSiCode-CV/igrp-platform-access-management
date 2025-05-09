@@ -5,9 +5,14 @@ import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.menu.application.queries.queries.GetMenusQuery;
@@ -25,6 +30,8 @@ import java.util.List;
  */
 @Service
 public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, ResponseEntity<List<MenuEntryDTO>>>{
+
+   private static final Logger logger = LoggerFactory.getLogger(GetMenusQueryHandler.class);
 
    private final MenuEntryRepository menuEntryRepository;
    private final MenuEntryMapper menuEntryMapper;
@@ -58,6 +65,8 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
       List<MenuEntryDTO> menuEntryDTOs = menus.stream()
               .map(menuEntryMapper::toDTO)
               .toList();
+
+      logger.info("Found {} menu(s) matching the filters.", menus.size());
       return ResponseEntity.ok(menuEntryDTOs);
    }
 
@@ -69,8 +78,9 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
          );
       }
       if (type != null) {
+         MenuEntryType menuEntryType = resolveMenuEntryType(type);
          spec = spec.and((root, query, cb) ->
-                 cb.equal(root.get("type"), MenuEntryType.valueOf(type))
+                 cb.equal(root.get("type"), menuEntryType)
          );
       }
       if (applicationId != null) {
@@ -79,6 +89,27 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
          );
       }
       return spec;
+   }
+
+   /**
+    * Resolves the string type to a {@link MenuEntryType}.
+    * <p>Throws {@link IgrpResponseStatusException} if the type is invalid.</p>
+    *
+    * @param type the raw string representation of the enum value
+    * @return the resolved {@link MenuEntryType}
+    * @throws IgrpResponseStatusException if the type is invalid
+    */
+   private MenuEntryType resolveMenuEntryType(String type) {
+      try {
+         return MenuEntryType.valueOf(type);
+      } catch (IllegalArgumentException ex) {
+         logger.warn("Invalid menu type provided: '{}'", type);
+         throw new IgrpResponseStatusException(
+                 new IgrpProblem<>(HttpStatus.BAD_REQUEST,
+                         "Invalid menu type",
+                         "No menu type found with name: " + type)
+         );
+      }
    }
 
 }

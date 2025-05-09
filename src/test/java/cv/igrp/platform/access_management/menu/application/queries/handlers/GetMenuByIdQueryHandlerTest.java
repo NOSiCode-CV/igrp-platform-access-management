@@ -60,7 +60,7 @@ public class GetMenuByIdQueryHandlerTest {
 
         dto = new MenuEntryDTO();
         dto.setId(1);
-        dto.setName("Settings");
+        dto.setName("Test Menu");
         dto.setType(MenuEntryType.MENU_PAGE);
         dto.setPosition((short) 1);
         dto.setIcon("icon-class");
@@ -97,7 +97,7 @@ public class GetMenuByIdQueryHandlerTest {
     @DisplayName("should throw IgrpResponseStatusException when menu not found")
     void testHandle_whenMenuNotFound_shouldThrowException() {
         // Arrange
-        GetMenuByIdQuery query = new GetMenuByIdQuery(999);
+        GetMenuByIdQuery query = getMenuByIdQuery(999);
         when(menuEntryRepository.findById(999)).thenReturn(Optional.empty());
 
         // Act & Assert

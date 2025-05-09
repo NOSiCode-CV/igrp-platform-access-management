@@ -10,6 +10,8 @@ import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -28,6 +30,8 @@ import cv.igrp.platform.access_management.menu.application.commands.commands.Upd
  */
 @Service
 public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuCommand, ResponseEntity<MenuEntryDTO>> {
+
+    private static final Logger logger = LoggerFactory.getLogger(UpdateMenuCommandHandler.class);
 
     private final MenuEntryRepository menuEntryRepository;
     private final MenuEntryMapper menuEntryMapper;
@@ -65,9 +69,13 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
     public ResponseEntity<MenuEntryDTO> handle(UpdateMenuCommand command) {
 
         MenuEntry menuEntry = menuEntryRepository.findById(command.getId())
-                .orElseThrow(() -> new IgrpResponseStatusException(
-                        new IgrpProblem<>(HttpStatus.NOT_FOUND, "Menu not found", "Menu not found with id: " + command.getId()))
-                );
+                .orElseThrow(() -> {
+                    logger.warn("Menu not found with ID: {}", command.getId());
+                    return new IgrpResponseStatusException(
+                            new IgrpProblem<>(HttpStatus.NOT_FOUND,
+                                    "Menu not found",
+                                    "Menu not found with id: " + command.getId()));
+                });
 
         MenuEntryDTO menuDto = command.getMenuentrydto();
 
@@ -79,25 +87,48 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
         menuEntry.setTarget(menuDto.getTarget());
         menuEntry.setUrl(menuDto.getUrl());
 
-        if (menuDto.getParentId() != null)
+        if (menuDto.getParentId() != null) {
             menuEntry.setParentId(menuEntryRepository.findById(menuDto.getParentId())
-                    .orElseThrow(() -> new IgrpResponseStatusException
-                            (new IgrpProblem<>(HttpStatus.NOT_FOUND, "Parent MenuEntry not found", "Parent MenuEntry not found with id: " + menuDto.getParentId())
-                            )));
+                    .orElseThrow(() -> {
+                        logger.warn("Parent Menu not found with ID: {}", menuDto.getParentId());
+                        return new IgrpResponseStatusException(
+                                new IgrpProblem<>(HttpStatus.NOT_FOUND,
+                                "Parent MenuEntry not found",
+                                "Parent MenuEntry not found with id: " + menuDto.getParentId()));
+                    }));
+        }
 
-        if (menuDto.getResourceId() != null)
+        if (menuDto.getResourceId() != null) {
             menuEntry.setResourceId(resourceRepository.findById(menuDto.getResourceId())
-                    .orElseThrow(() -> new IgrpResponseStatusException
-                            (new IgrpProblem<>(HttpStatus.NOT_FOUND, "Resource not found", "Resource not found with id: " + menuDto.getResourceId())
-                            )));
+                    .orElseThrow(() -> {
+                        logger.warn("Resource not found with ID: {}", menuDto.getResourceId());
+                        return new IgrpResponseStatusException
+                            (new IgrpProblem<>(HttpStatus.NOT_FOUND,
+                                    "Resource not found",
+                                    "Resource not found with id: " + menuDto.getResourceId()));
+                    }));
+        }
 
-        if (menuDto.getApplicationId() != null)
+        if (menuDto.getApplicationId() != null){
             menuEntry.setApplicationId(applicationRepository.findById(menuDto.getApplicationId())
-                    .orElseThrow(() -> new IgrpResponseStatusException
-                            (new IgrpProblem<>(HttpStatus.NOT_FOUND, "Application not found", "Application not found with id: " + menuDto.getApplicationId())
-                            )));
+                    .orElseThrow(() -> {
+                        logger.warn("Application not found with ID: {}", menuDto.getApplicationId());
+                        return new IgrpResponseStatusException
+                            (new IgrpProblem<>(HttpStatus.NOT_FOUND,
+                                    "Application not found",
+                                    "Application not found with id: " + menuDto.getApplicationId()));
+                    }));
+            }
 
-        return ResponseEntity.ok(menuEntryMapper.toDTO(menuEntryRepository.save(menuEntry)));
+        var savedMenuEntry = menuEntryRepository.save(menuEntry);
+        logger.info("""
+                    Menu updated: id={}, name={}, type={}
+                    """,
+                savedMenuEntry.getId(),
+                savedMenuEntry.getName(),
+                savedMenuEntry.getType());
+
+        return ResponseEntity.ok(menuEntryMapper.toDTO(savedMenuEntry));
     }
 
 }

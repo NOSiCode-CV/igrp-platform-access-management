@@ -5,6 +5,7 @@ import cv.igrp.platform.access_management.menu.application.queries.queries.GetMe
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -22,8 +23,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.List;
 import java.util.Objects;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -179,5 +179,19 @@ public class GetMenusQueryHandlerTest {
     @Test
     @DisplayName("should return exception when type doesnt match MenuEntryType")
     void testHandle_withNotCorrectTypeFilter_shouldReturnException() {
+        // Arrange
+        query = getMenusQuery(null, null, "NON_EXISTENT_TYPE");
+
+        // Act
+        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
+                getMenusQueryHandler.handle(query));
+
+        // Assert
+        assertNotNull(ex);
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getProblem().getStatus());
+        assertTrue(ex.getProblem().getTitle().toString().contains("Invalid menu type"));
+
+        // Verify
+        verifyNoInteractions(menuEntryRepository);
     }
 }
