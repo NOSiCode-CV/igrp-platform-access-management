@@ -15,7 +15,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.menu.application.commands.commands.UpdateMenuCommand;
 
-
+/**
+ * Command handler responsible for processing {@link UpdateMenuCommand} requests to update
+ * existing {@link MenuEntry} records.
+ * <p>
+ * This handler updates core attributes (such as name, type, icon, and status) and validates
+ * related references including parent menus, resources, and applications. If any of the related
+ * entities are not found, it throws an {@link IgrpResponseStatusException} with the appropriate
+ * HTTP status and descriptive error message.
+ * </p>
+ *
+ */
 @Service
 public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuCommand, ResponseEntity<MenuEntryDTO>> {
 
@@ -24,6 +34,14 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
     private final ApplicationRepository applicationRepository;
     private final ResourceRepository resourceRepository;
 
+    /**
+     * Constructs an {@code UpdateMenuCommandHandler} with required dependencies.
+     *
+     * @param menuEntryRepository the repository used to access and persist {@link MenuEntry} entities
+     * @param menuEntryMapper the mapper used to convert between {@link MenuEntry} and {@link MenuEntryDTO}
+     * @param applicationRepository the repository used to validate and retrieve associated {@link cv.igrp.platform.access_management.shared.domain.models.Application} entities
+     * @param resourceRepository the repository used to validate and retrieve associated {@link cv.igrp.platform.access_management.shared.domain.models.Resource} entities
+     */
     public UpdateMenuCommandHandler(MenuEntryRepository menuEntryRepository, MenuEntryMapper menuEntryMapper, ApplicationRepository applicationRepository, ResourceRepository resourceRepository) {
         this.menuEntryRepository = menuEntryRepository;
         this.applicationRepository = applicationRepository;
@@ -31,8 +49,21 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
         this.menuEntryMapper = menuEntryMapper;
     }
 
+    /**
+     * Handles the {@link UpdateMenuCommand} by updating the corresponding {@link MenuEntry}
+     * with values from the provided {@link MenuEntryDTO}.
+     * <p>
+     * It validates the existence of the menu entry, and optionally resolves and verifies foreign key
+     * relationships for parent menu, resource, and application if the corresponding IDs are provided.
+     * </p>
+     *
+     * @param command the command containing the menu ID and updated data
+     * @return {@link ResponseEntity} with status 200 OK and the updated {@link MenuEntryDTO}
+     * @throws IgrpResponseStatusException if the menu, parent, resource, or application is not found
+     */
     @IgrpCommandHandler
     public ResponseEntity<MenuEntryDTO> handle(UpdateMenuCommand command) {
+
         MenuEntry menuEntry = menuEntryRepository.findById(command.getId())
                 .orElseThrow(() -> new IgrpResponseStatusException(
                         new IgrpProblem<>(HttpStatus.NOT_FOUND, "Menu not found", "Menu not found with id: " + command.getId()))
@@ -57,13 +88,13 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
         if (menuDto.getResourceId() != null)
             menuEntry.setResourceId(resourceRepository.findById(menuDto.getResourceId())
                     .orElseThrow(() -> new IgrpResponseStatusException
-                            (new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Resource not found", "Resource not found with id: " + menuDto.getResourceId())
+                            (new IgrpProblem<>(HttpStatus.NOT_FOUND, "Resource not found", "Resource not found with id: " + menuDto.getResourceId())
                             )));
 
         if (menuDto.getApplicationId() != null)
             menuEntry.setApplicationId(applicationRepository.findById(menuDto.getApplicationId())
                     .orElseThrow(() -> new IgrpResponseStatusException
-                            (new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Application not found", "Application not found with id: " + menuDto.getApplicationId())
+                            (new IgrpProblem<>(HttpStatus.NOT_FOUND, "Application not found", "Application not found with id: " + menuDto.getApplicationId())
                             )));
 
         return ResponseEntity.ok(menuEntryMapper.toDTO(menuEntryRepository.save(menuEntry)));
