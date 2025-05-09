@@ -17,7 +17,7 @@ import cv.igrp.platform.access_management.menu.application.commands.commands.Del
 @Service
 public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuCommand, ResponseEntity<String>> {
 
-   private MenuEntryRepository menuEntryRepository;
+   private final MenuEntryRepository menuEntryRepository;
 
    public DeleteMenuCommandHandler(MenuEntryRepository menuEntryRepository) {
       this.menuEntryRepository =  menuEntryRepository;
