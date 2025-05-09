@@ -31,6 +31,7 @@ This module provides identity, authentication, and authorization services to app
 - [IAM Provider Integration](#iam-provider-integration)
 - [Configuration](#configuration)
 - [Running the Project](#running-the-project)
+- [Code Quality & Reports](#code-quality--reports)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -1268,6 +1269,60 @@ Supports:
 # Run the Spring Boot app
 mvn spring-boot:run
 ```
+---
+
+## 📊 Code Quality & Reports
+
+This project integrates the following tools to ensure code quality and maintainability:
+
+### ✅ Generate JaCoCo Code Coverage Report
+
+Runs the tests and generates a coverage report:
+```bash
+# Run the following command
+mvn clean verify
+```
+
+The coverage report will be available at:
+
+```target/site/jacoco/index.html```
+
+
+### 📚 Generate Javadoc Documentation
+
+Generates the Javadoc API documentation:
+
+```bash
+# Run the following command
+mvn javadoc:javadoc
+```
+
+The documentation can be found at:
+
+```target/reports/apidocs/index.html```
+
+The maven-javadoc-plugin is configured to attach a JAR with docs, also check:
+
+```target/access-management-*-javadoc.jar```
+
+### 🛡 Run OWASP Dependency Check
+
+Checks for known vulnerabilities in the dependencies:
+
+```bash
+# Using Maven verify phase
+mvn verify
+```
+
+```bash
+# Invoke directly
+mvn dependency-check:check
+```
+
+The generated report will be available at:
+
+```target/reports/dependency-check-report.html```
+
 
 ---
 
