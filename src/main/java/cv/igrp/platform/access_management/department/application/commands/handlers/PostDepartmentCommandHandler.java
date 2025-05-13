@@ -11,6 +11,8 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.Appl
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.DepartmentRepository;
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -39,6 +41,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class PostDepartmentCommandHandler implements CommandHandler<PostDepartmentCommand, ResponseEntity<DepartmentDTO>> {
 
+    private static final Logger logger =
+            LoggerFactory.getLogger(PostDepartmentCommandHandler.class);
+
     private final DepartmentRepository departmentRepository;
     private final ApplicationRepository applicationRepository;
     private final DepartmentMapper departmentMapper;
@@ -50,7 +55,10 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
      * @param applicationRepository the repository used to fetch associated applications
      * @param departmentMapper the mapper used to convert between DTOs and domain entities
      */
-    public PostDepartmentCommandHandler(DepartmentRepository departmentRepository, ApplicationRepository applicationRepository, DepartmentMapper departmentMapper) {
+    public PostDepartmentCommandHandler(
+            DepartmentRepository departmentRepository,
+            ApplicationRepository applicationRepository,
+            DepartmentMapper departmentMapper) {
         this.departmentRepository = departmentRepository;
         this.applicationRepository = applicationRepository;
         this.departmentMapper = departmentMapper;
@@ -69,15 +77,32 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
      */
     @IgrpCommandHandler
     public ResponseEntity<DepartmentDTO> handle(PostDepartmentCommand command) {
-        Department department = departmentMapper.toEntity(command.getDepartmentdto());
-        department.setApplicationId(applicationRepository.findById(command.getDepartmentdto().getApplication_id()).orElseThrow(() -> new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.BAD_REQUEST, "Invalid application ID", null))));
+        var departmentDto = command.getDepartmentdto();
 
-        if(command.getDepartmentdto().getParent_id() != null) {
-            Department parent = departmentRepository.findById(command.getDepartmentdto().getParent_id()).orElseThrow(() -> new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.BAD_REQUEST, "Invalid department ID", null)));
+        logger.info("Creating department: name={}, code={}", departmentDto.getName(), departmentDto.getCode());
+
+        Department department = departmentMapper.toEntity(departmentDto);
+        department.setApplicationId(applicationRepository.findById(command.getDepartmentdto().getApplication_id())
+                .orElseThrow(() -> {
+                    logger.warn("Invalid application ID: {}", departmentDto.getApplication_id());
+                    return new IgrpResponseStatusException(new IgrpProblem<String>
+                            (HttpStatus.BAD_REQUEST, "Invalid application ID", null));
+                }));
+
+        if(departmentDto.getParent_id() != null) {
+            Department parent = departmentRepository.findById(command.getDepartmentdto().getParent_id())
+                    .orElseThrow(() -> {
+                        logger.warn("Invalid parent ID: {}", departmentDto.getParent_id());
+                        return new IgrpResponseStatusException(new IgrpProblem<String>
+                                (HttpStatus.BAD_REQUEST, "Invalid department ID", null));
+                    });
             department.setParentId(parent);
         }
 
         Department saved = departmentRepository.save(department);
+
+        logger.info("Department created successfully: id={}", saved.getId());
+
         DepartmentDTO result = departmentMapper.toDto(saved);
         return ResponseEntity.status(HttpStatus.CREATED).body(result);
     }

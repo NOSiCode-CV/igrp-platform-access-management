@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Department;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.DepartmentRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -83,18 +83,18 @@ public class GetDepartmentByIdQueryHandlerTest {
     }
 
     @Test
-    @DisplayName("should throw EntityNotFoundException when department not found")
+    @DisplayName("should throw IgrpResponseStatusException when department not found")
     void handle_whenDepartmentNotFound_shouldThrowException() {
         // Arrange
         when(departmentRepository.findById(DEPARTMENT_ID)).thenReturn(Optional.empty());
 
         // Act
-        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () ->
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
                 getDepartmentByIdQueryHandler.handle(query));
 
         // Assert
         assertNotNull(exception);
-        assertEquals("Department not found with id: " + DEPARTMENT_ID, exception.getMessage());
+        assertEquals("Department not found with id: " + DEPARTMENT_ID, exception.getProblem().getDetails());
 
         // Verify
         verify(departmentRepository, times(1)).findById(DEPARTMENT_ID);

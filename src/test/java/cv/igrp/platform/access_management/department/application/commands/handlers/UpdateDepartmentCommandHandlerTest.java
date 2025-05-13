@@ -1,13 +1,13 @@
 package cv.igrp.platform.access_management.department.application.commands.handlers;
 
-import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Department;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.DepartmentRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -97,19 +97,19 @@ public class UpdateDepartmentCommandHandlerTest {
     }
 
     @Test
-    @DisplayName("should throw EntityNotFoundException when department does not exist")
+    @DisplayName("should throw IgrpResponseStatusException when department does not exist")
     void testHandle_whenDepartmentDoesNotExist_shouldThrowEntityNotFoundException(){
         // Arrange
         command = updateCommand(departmentDTO);
         when(departmentRepository.findById(DEPARTMENT_ID)).thenReturn(Optional.empty());
 
         // Act
-        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () ->
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
                 updateDepartmentCommandHandler.handle(command));
 
         // Assert
         assertNotNull(exception);
-        assertEquals("Department not found with id: " + command.getId(), exception.getMessage());
+        assertEquals("Department not found with id: " + command.getId(), exception.getProblem().getDetails());
 
         // Verify
         verify(departmentRepository, times(1)).findById(DEPARTMENT_ID);

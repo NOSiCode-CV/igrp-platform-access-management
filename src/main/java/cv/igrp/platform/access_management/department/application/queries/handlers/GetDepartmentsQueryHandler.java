@@ -34,7 +34,10 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.Depa
  */
 @Service
 public class GetDepartmentsQueryHandler implements QueryHandler<GetDepartmentsQuery, ResponseEntity<List<DepartmentDTO>>> {
-    private static final Logger logger = LoggerFactory.getLogger(GetDepartmentsQueryHandler.class);
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(GetDepartmentsQueryHandler.class);
+
     private final DepartmentRepository departmentRepository;
     private final DepartmentMapper departmentMapper;
 
@@ -44,7 +47,9 @@ public class GetDepartmentsQueryHandler implements QueryHandler<GetDepartmentsQu
      * @param departmentRepository the repository to retrieve department data
      * @param departmentMapper the mapper to convert department entities to DTOs
      */
-    public GetDepartmentsQueryHandler(DepartmentRepository departmentRepository, DepartmentMapper departmentMapper) {
+    public GetDepartmentsQueryHandler(
+            DepartmentRepository departmentRepository,
+            DepartmentMapper departmentMapper) {
         this.departmentRepository = departmentRepository;
         this.departmentMapper = departmentMapper;
     }

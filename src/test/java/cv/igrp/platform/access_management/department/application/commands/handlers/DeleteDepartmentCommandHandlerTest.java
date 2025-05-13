@@ -3,8 +3,8 @@ package cv.igrp.platform.access_management.department.application.commands.handl
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.DepartmentRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -65,11 +65,11 @@ public class DeleteDepartmentCommandHandlerTest {
         when(departmentRepository.existsById(DEPARTMENT_ID)).thenReturn(false);
 
         // Act
-        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () ->
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
                 deleteDepartmentCommandHandler.handle(command));
 
         // Assert
-        assertEquals("Department not found with id: " + DEPARTMENT_ID, exception.getMessage());
+        assertEquals("Department not found with id: " + DEPARTMENT_ID, exception.getProblem().getDetails());
 
         // Verify
         verify(departmentRepository).existsById(DEPARTMENT_ID);
