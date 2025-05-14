@@ -2,15 +2,18 @@ package cv.igrp.platform.access_management.users.application.commands.handlers;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.users.application.commands.commands.RemoveRolesFromUserCommand;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import jakarta.persistence.EntityNotFoundException;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -37,6 +40,9 @@ import java.util.stream.Collectors;
 @Service
 public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveRolesFromUserCommand, ResponseEntity<List<RoleDTO>>> {
 
+   private static final Logger logger =
+           LoggerFactory.getLogger(RemoveRolesFromUserCommandHandler.class);
+
    private final IGRPUserRepository userRepository;
 
    /**
@@ -44,7 +50,8 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
     *
     * @param userRepository the repository used to retrieve and save {@link IGRPUser} entities
     */
-   public RemoveRolesFromUserCommandHandler(IGRPUserRepository userRepository) {
+   public RemoveRolesFromUserCommandHandler(
+           IGRPUserRepository userRepository) {
       this.userRepository = userRepository;
    }
 
@@ -53,26 +60,47 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
     *
     * @param command the command containing the user ID and the list of role IDs to remove
     * @return a {@link ResponseEntity} containing the updated list of the user's {@link RoleDTO}s
-    * @throws EntityNotFoundException if no user is found with the given ID
+    * @throws IgrpResponseStatusException if no user is found with the given ID
     */
    @IgrpCommandHandler
    public ResponseEntity<List<RoleDTO>> handle(RemoveRolesFromUserCommand command) {
+      Integer userId = command.getId();
+      List<Integer> roleIdsToRemove = command.getRemoveRolesFromUserRequest();
+
+      logger.info("Attempting to remove roles {} from user id={}", roleIdsToRemove, userId);
 
       IGRPUser user = userRepository.findById(command.getId())
-              .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + command.getId()));
+              .orElseThrow(() -> {
+                 logger.warn("User not found with id={}", userId);
+                 return new IgrpResponseStatusException(
+                         new IgrpProblem<>(HttpStatus.NOT_FOUND,
+                                 "Invalid User id",
+                                 "User not found with id: " + userId));
+                   });
 
-      List<Integer> roleIdsToRemove = command.getRemoveRolesFromUserRequest();
       if (roleIdsToRemove != null && !roleIdsToRemove.isEmpty()) {
          List<Role> roles = new ArrayList<>(user.getRoles());
-         roles.removeIf(role -> roleIdsToRemove.contains(role.getId()));
+         boolean isRolesRemoved = roles.removeIf(role -> roleIdsToRemove.contains(role.getId()));
+         if (isRolesRemoved) {
+            logger.info("Roles removed successfully from user id={}", userId);
+         } else {
+            logger.info("No matching roles found to remove for user id={}", userId);
+         }
          user.setRoles(roles);
+      } else {
+         logger.info("No roles provided for removal for user id={}", userId);
       }
 
       userRepository.save(user);
 
       List<RoleDTO> result = user.getRoles().stream()
-              .map(role -> new RoleDTO(role.getId(), role.getName(), role.getDescription(), null, null, null))
+              .map(role -> new RoleDTO(role.getId(),
+                      role.getName(), role.getDescription(),
+                      null, null,
+                      null))
               .collect(Collectors.toList());
+
+      logger.info("Returning {} remaining roles for user id={}", result.size(), userId);
 
       return ResponseEntity.ok(result);
    }

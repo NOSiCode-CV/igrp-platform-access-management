@@ -4,10 +4,10 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -88,18 +88,18 @@ public class UpdateUserCommandHandlerTest {
     }
 
     @Test
-    @DisplayName("should throw EntityNotFoundException if user does not exist")
+    @DisplayName("should throw IgrpResponseStatusException if user does not exist")
     void testHandle_whenUserNotFound_shouldThrowException() {
         // Arrange
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         // Act
-        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () ->
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
                 updateUserCommandHandler.handle(command));
 
         // Assert
         assertNotNull(exception);
-        assertEquals("User not found with id: " + USER_ID, exception.getMessage());
+        assertEquals("User not found with id: " + USER_ID, exception.getProblem().getDetails());
 
         // Verify
         verify(userRepository, times(1)).findById(USER_ID);

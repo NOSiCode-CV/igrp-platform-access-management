@@ -2,6 +2,8 @@ package cv.igrp.platform.access_management.users.application.commands.handlers;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
@@ -9,11 +11,11 @@ import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.users.application.commands.commands.AddRolesToUserCommand;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import jakarta.persistence.EntityNotFoundException;
-
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -40,6 +42,9 @@ import java.util.Set;
 @Service
 public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUserCommand, ResponseEntity<List<RoleDTO>>> {
 
+    private static final Logger logger =
+            LoggerFactory.getLogger(AddRolesToUserCommandHandler.class);
+
     private final IGRPUserRepository userRepository;
     private final RoleRepository roleRepository;
     private final RoleMapper roleMapper;
@@ -51,7 +56,10 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
      * @param roleRepository the repository used to retrieve and update roles
      * @param roleMapper the mapper used to convert role entities to DTOs
      */
-    public AddRolesToUserCommandHandler(IGRPUserRepository userRepository, RoleRepository roleRepository, RoleMapper roleMapper) {
+    public AddRolesToUserCommandHandler(
+            IGRPUserRepository userRepository,
+            RoleRepository roleRepository,
+            RoleMapper roleMapper) {
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.roleMapper = roleMapper;
@@ -62,27 +70,45 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
      *
      * @param command the command containing the user ID and RoleUserDTO to associate the corresponding ID
      * @return a {@link ResponseEntity} containing a list with the updated {@link RoleDTO}
-     * @throws EntityNotFoundException if the user or role is not found
+     * @throws IgrpResponseStatusException if the user or role is not found
      */
     @IgrpCommandHandler
     public ResponseEntity<List<RoleDTO>> handle(AddRolesToUserCommand command) {
-
-        IGRPUser user = userRepository.findById(command.getId())
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + command.getId()));
-
+        Integer userId = command.getId();
         Integer roleId = command.getRoleuserdto().role_id();
+
+        logger.info("Assigning role id={} to user id={}", roleId, userId);
+
+        IGRPUser user = userRepository.findById(userId)
+                .orElseThrow(() -> {
+                    logger.warn("User not found with id={}", userId);
+                    return new IgrpResponseStatusException(
+                            new IgrpProblem<>(HttpStatus.NOT_FOUND,"Invalid User id",
+                                    "User not found with id: " + userId));
+                });
+
         Role roleToAdd = roleRepository.findById(roleId)
-                .orElseThrow(() -> new EntityNotFoundException("Role not found with id: " + roleId));
+                .orElseThrow(() -> {
+                    logger.warn("Role not found with id={}", roleId);
+                    return new IgrpResponseStatusException(
+                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Invalid Role id",
+                                    "Role not found with id: " + roleId));
+                    });
 
         Set<IGRPUser> users = roleToAdd.getUsers();
         if (users == null) {
             users = new HashSet<>();
             roleToAdd.setUsers(users);
         }
-        users.add(user);
+        boolean isRoleAdded = users.add(user);
+
+        if (isRoleAdded) {
+            logger.info("User id={} successfully added to role id={}", userId, roleId);
+        } else {
+            logger.info("User id={} was already associated with role id={}", userId, roleId);
+        }
 
         var roleUpdated = roleRepository.save(roleToAdd);
-
         RoleDTO roleDTO = roleMapper.mapToDto(roleUpdated);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(List.of(roleDTO));

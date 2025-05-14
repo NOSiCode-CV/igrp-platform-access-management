@@ -42,7 +42,10 @@ import jakarta.persistence.criteria.Join;
  */
 @Service
 public class GetUsersQueryHandler implements QueryHandler<GetUsersQuery, ResponseEntity<List<IGRPUserDTO>>> {
-    private static final Logger logger = LoggerFactory.getLogger(GetUsersQueryHandler.class);
+
+    private static final Logger logger =
+            LoggerFactory.getLogger(GetUsersQueryHandler.class);
+
     private final IGRPUserRepository userRepository;
     private final IGRPUserMapper userMapper;
 
@@ -67,9 +70,12 @@ public class GetUsersQueryHandler implements QueryHandler<GetUsersQuery, Respons
      */
     @IgrpQueryHandler
     public ResponseEntity<List<IGRPUserDTO>> handle(GetUsersQuery query) {
+
         logger.info("Handling GetUsersQuery: applicationId={}, departmentId={}, name={}, username={}, email={}",
                 query.getApplicationId(), query.getDepartmentId(), query.getName(), query.getUsername(), query.getEmail());
+
         Specification<IGRPUser> spec = buildSpecification(query);
+
         List<IGRPUserDTO> users = userRepository.findAll(spec)
                 .stream()
                 .map(userMapper::toDto)

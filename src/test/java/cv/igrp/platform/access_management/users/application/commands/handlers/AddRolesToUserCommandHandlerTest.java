@@ -6,11 +6,11 @@ import static org.junit.jupiter.api.Assertions.*;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleUserDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -101,18 +101,18 @@ public class AddRolesToUserCommandHandlerTest {
     }
 
     @Test
-    @DisplayName("should throw EntityNotFoundException if user not found")
+    @DisplayName("should throw IgrpResponseStatusException if user not found")
     void testHandle_whenUserNotFound_shouldThrowException() {
         // Arrange
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         // Act
-        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () ->
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
                 addRolesToUserCommandHandler.handle(command));
 
         // Assert
         assertNotNull(exception);
-        assertEquals("User not found with id: " + USER_ID, exception.getMessage());
+        assertEquals("User not found with id: " + USER_ID, exception.getProblem().getDetails());
 
         // Verify
         verify(userRepository, times(1)).findById(USER_ID);
@@ -121,19 +121,19 @@ public class AddRolesToUserCommandHandlerTest {
     }
 
     @Test
-    @DisplayName("should throw EntityNotFoundException if role not found")
+    @DisplayName("should throw IgrpResponseStatusException if role not found")
     void testHandle_whenRoleNotFound_shouldThrowException() {
         // Arrange
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(roleRepository.findById(ROLE_ID)).thenReturn(Optional.empty());
 
         // Act
-        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () ->
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
                 addRolesToUserCommandHandler.handle(command));
 
         // Assert
         assertNotNull(exception);
-        assertEquals("Role not found with id: " + ROLE_ID, exception.getMessage());
+        assertEquals("Role not found with id: " + ROLE_ID, exception.getProblem().getDetails());
 
         // Verify
         verify(userRepository, times(1)).findById(USER_ID);

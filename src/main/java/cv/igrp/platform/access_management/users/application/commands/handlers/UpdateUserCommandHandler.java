@@ -2,13 +2,16 @@ package cv.igrp.platform.access_management.users.application.commands.handlers;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
 import jakarta.persistence.EntityNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.users.application.commands.commands.UpdateUserCommand;
-
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
@@ -37,6 +40,9 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRP
 @Service
 public class UpdateUserCommandHandler implements CommandHandler<UpdateUserCommand, ResponseEntity<IGRPUserDTO>> {
 
+    private static final Logger logger =
+            LoggerFactory.getLogger(UpdateUserCommandHandler.class);
+
     private final IGRPUserRepository userRepository;
     private final IGRPUserMapper userMapper;
 
@@ -46,7 +52,9 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
      * @param userRepository the repository to retrieve and save user entities
      * @param userMapper     the mapper used to convert entities to DTOs
      */
-    public UpdateUserCommandHandler(IGRPUserRepository userRepository, IGRPUserMapper userMapper) {
+    public UpdateUserCommandHandler(
+            IGRPUserRepository userRepository,
+            IGRPUserMapper userMapper) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
     }
@@ -60,9 +68,18 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
      */
     @IgrpCommandHandler
     public ResponseEntity<IGRPUserDTO> handle(UpdateUserCommand command) {
+        Integer userId = command.getId();
+
+        logger.info("Updating user with id={}", userId);
 
         IGRPUser user = userRepository.findById(command.getId())
-                .orElseThrow(() -> new EntityNotFoundException("User not found with id: " + command.getId()));
+                .orElseThrow(() -> {
+                    logger.warn("User with id={} not found", userId);
+                    return new IgrpResponseStatusException(
+                            new IgrpProblem<>(HttpStatus.NOT_FOUND,
+                                    "Invalid User Id",
+                                    "User not found with id: " + userId));
+                    });
 
         IGRPUserDTO dto = command.getIgrpuserdto();
 
@@ -77,6 +94,8 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
         }
 
         var updatedUser = userRepository.save(user);
+
+        logger.info("User updated successfully: id={}, username={}", updatedUser.getId(), updatedUser.getUsername());
 
         return ResponseEntity.ok(userMapper.toDto(updatedUser));
     }

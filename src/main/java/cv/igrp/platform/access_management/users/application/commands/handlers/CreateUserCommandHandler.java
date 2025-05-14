@@ -2,14 +2,13 @@ package cv.igrp.platform.access_management.users.application.commands.handlers;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-
 import java.util.ArrayList;
-
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.users.application.commands.commands.CreateUserCommand;
-
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
@@ -38,6 +37,9 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRP
 @Service
 public class CreateUserCommandHandler implements CommandHandler<CreateUserCommand, ResponseEntity<?>> {
 
+    private static final Logger logger =
+            LoggerFactory.getLogger(CreateUserCommandHandler.class);
+
     private final IGRPUserRepository userRepository;
     private final IGRPUserMapper userMapper;
 
@@ -47,7 +49,9 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
      * @param userRepository the repository used to persist the user entity
      * @param userMapper the mapper used to convert between entities and DTOs
      */
-    public CreateUserCommandHandler(IGRPUserRepository userRepository, IGRPUserMapper userMapper) {
+    public CreateUserCommandHandler(
+            IGRPUserRepository userRepository,
+            IGRPUserMapper userMapper) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
     }
@@ -60,6 +64,10 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
      */
     @IgrpCommandHandler
     public ResponseEntity<IGRPUserDTO> handle(CreateUserCommand command) {
+        var dto =command.getIgrpuserdto();
+
+        logger.info("Creating new user: username={}, email={}", dto.getUsername(), dto.getEmail());
+
         IGRPUser user = new IGRPUser();
         user.setName(command.getIgrpuserdto().getName());
         user.setUsername(command.getIgrpuserdto().getUsername());
@@ -67,6 +75,8 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
         user.setRoles(new ArrayList<>());
 
         var savedUser = userRepository.save(user);
+
+        logger.info("User created successfully with id={}", savedUser.getId());
 
         return ResponseEntity.ok(userMapper.toDto(savedUser));
     }

@@ -5,10 +5,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
-import jakarta.persistence.EntityNotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -36,8 +36,6 @@ public class GetUserRolesQueryHandlerTest {
     @InjectMocks
     private GetUserRolesQueryHandler getUserRolesQueryHandler;
 
-    // Note: applicationId never used
-    // Note: any comment why the roles of user is a list and not a set ?
     private GetUserRolesQuery getUserRolesQuery(Integer applicationId, Integer id){
      return new GetUserRolesQuery(1, id);
     }
@@ -124,7 +122,7 @@ public class GetUserRolesQueryHandlerTest {
     }
 
     @Test
-    @DisplayName("should throw EntityNotFoundException when user is not found")
+    @DisplayName("should throw IgrpResponseStatusException when user is not found")
     void testHandle_whenUserNotFound_shouldThrowEntityNotFoundException() {
         // Arrange
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
@@ -132,11 +130,11 @@ public class GetUserRolesQueryHandlerTest {
         query = getUserRolesQuery(1,USER_ID);
 
         // Act
-        EntityNotFoundException exception = assertThrows(EntityNotFoundException.class, () ->
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
                 getUserRolesQueryHandler.handle(query));
         // Assert
         assertNotNull(exception);
-        assertEquals("User not found with id: " + USER_ID, exception.getMessage());
+        assertEquals("User not found with id: " + USER_ID, exception.getProblem().getDetails());
 
         // Verify
         verify(userRepository, times(1)).findById(USER_ID);
