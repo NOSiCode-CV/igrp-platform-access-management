@@ -40,8 +40,8 @@ public class ResourceMapper {
         dto.setId(item.getId());
         dto.setName(item.getName());
         dto.setUrl(item.getUrl());
-        dto.setResourceId(item.getResourceId().getId());
-        dto.setPermissionId(item.getPermissionId().getId());
+        dto.setResourceId(item.getResourceId() != null ? item.getResourceId().getId() : null);
+        dto.setPermissionId(item.getPermissionId() != null ? item.getPermissionId().getId() : null);
         dto.setCreatedBy(item.getCreatedBy());
         if(item.getCreatedDate() != null)
             dto.setCreatedDate(item.getCreatedDate().toString());

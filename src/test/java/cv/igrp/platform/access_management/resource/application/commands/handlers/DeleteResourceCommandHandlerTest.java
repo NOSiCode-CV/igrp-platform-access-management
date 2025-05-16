@@ -9,7 +9,7 @@ import cv.igrp.platform.access_management.shared.domain.models.CustomField;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -18,16 +18,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import cv.igrp.platform.access_management.resource.application.commands.commands.*;
-import cv.igrp.platform.access_management.resource.application.commands.handlers.*;
-import cv.igrp.platform.access_management.resource.application.dto.*;
 
 import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("DeleteResourceCommandHandler Tests")
 public class DeleteResourceCommandHandlerTest {
-
-    @InjectMocks
-    private DeleteResourceCommandHandler deleteResourceCommandHandler;
 
     @Mock
     private ResourceRepository resourceRepository;
@@ -35,7 +31,11 @@ public class DeleteResourceCommandHandlerTest {
     @Mock
     private CustomFieldRepository customFieldRepository;
 
+    @InjectMocks
+    private DeleteResourceCommandHandler deleteResourceCommandHandler;
+
     @Test
+    @DisplayName("should delete resource Resource and return NO_CONTENT when resource exist")
     void testHandle_ShouldDeleteResourceAndReturnNoContent_WhenResourceExists() {
         // Given
         Integer resourceId = 1;
@@ -69,6 +69,7 @@ public class DeleteResourceCommandHandlerTest {
     }
 
     @Test
+    @DisplayName("should throw exception when resource not found")
     void testHandle_ShouldThrowException_WhenResourceNotFound() {
         // Given
         DeleteResourceCommand command = new DeleteResourceCommand();
@@ -85,6 +86,7 @@ public class DeleteResourceCommandHandlerTest {
     }
 
     @Test
+    @DisplayName("should not delete custom field when not found")
     void testHandle_ShouldNotDeleteCustomField_WhenCustomFieldNotFound() {
         // Given
         Integer resourceId = 1;
@@ -109,6 +111,6 @@ public class DeleteResourceCommandHandlerTest {
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
 
         verify(resourceRepository, times(1)).delete(resource);
-        verify(customFieldRepository, times(0)).delete(any(CustomField.class)); // Ensure no delete was called for custom field
+        verify(customFieldRepository, times(0)).delete(any(CustomField.class));
     }
 }

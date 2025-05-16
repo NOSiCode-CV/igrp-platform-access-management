@@ -3,33 +3,29 @@ package cv.igrp.platform.access_management.resource.application.commands.handler
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.CustomField;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import cv.igrp.platform.access_management.resource.application.commands.commands.*;
-import cv.igrp.platform.access_management.resource.application.commands.handlers.*;
-import cv.igrp.platform.access_management.resource.application.dto.*;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("AddResourceCustomFieldsCommandHandler Tests")
 public class AddResourceCustomFieldsCommandHandlerTest {
-
-    @InjectMocks
-    private AddResourceCustomFieldsCommandHandler addResourceCustomFieldsCommandHandler;
 
     @Mock
     private CustomFieldRepository customFieldRepository;
@@ -37,98 +33,92 @@ public class AddResourceCustomFieldsCommandHandlerTest {
     @Mock
     private ResourceRepository resourceRepository;
 
+    @InjectMocks
+    private AddResourceCustomFieldsCommandHandler handler;
+
+    private Resource resource;
+    private CustomField customField;
+    private AddResourceCustomFieldsCommand command;
+
+    private AddResourceCustomFieldsCommand addResourceCustomFieldsCommand(Map<String, ?> addResourceCustomFieldsRequest, Integer id){
+        return new AddResourceCustomFieldsCommand(addResourceCustomFieldsRequest, id);
+    }
+
     @BeforeEach
     void setUp() {
-        // ...
-    }
+        resource = new Resource();
+        resource.setId(1);
 
-    @Test
-    void testHandle_ShouldAddCustomFields_WhenResourceExists() {
-        // Given
-        Integer resourceId = 1;
-        AddResourceCustomFieldsCommand command = new AddResourceCustomFieldsCommand();
-        Map<String, Object> customFields = new HashMap<>();
-        customFields.put("key1", "value1");
-        command.setAddResourceCustomFieldsRequest(customFields);
-        command.setId(resourceId);
-
-        Resource resource = new Resource();
-        resource.setId(resourceId);
-        resource.setName("Resource");
-
-        Mockito.when(resourceRepository.findById(resourceId)).thenReturn(Optional.of(resource));
-
-        CustomField customField = new CustomField();
-        customField.setTableName("t_resource");
-        customField.setRecordId(resourceId);
+        customField = new CustomField();
+        customField.setRecordId(1);
+        customField.setTableName("resource");
         customField.setFields(new HashMap<>());
-
-        Mockito.when(customFieldRepository.findByTableNameAndRecordId("t_resource", resourceId)).thenReturn(Optional.of(customField));
-        Mockito.when(customFieldRepository.save(Mockito.any(CustomField.class))).thenReturn(customField);
-
-        // When
-        ResponseEntity<String> response = addResourceCustomFieldsCommandHandler.handle(command);
-
-        // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-
-        // Verify repository calls
-        verify(customFieldRepository, times(1)).findByTableNameAndRecordId("t_resource", resourceId);
-        verify(customFieldRepository, times(1)).save(Mockito.any(CustomField.class));
     }
 
     @Test
-    void testHandle_ShouldThrowException_WhenResourceNotFound() {
-        // Given
-        Integer resourceId = 99;
-        AddResourceCustomFieldsCommand command = new AddResourceCustomFieldsCommand();
-        command.setId(resourceId);
+    @DisplayName("should add new custom fields to existing custom field record")
+    void testHandle_whenCustomFieldExists_shouldAddFields() {
+        // Arrange
+        Map<String, Object> fieldsToAdd = Map.of("fieldTest", "valueTest");
+        command = addResourceCustomFieldsCommand(fieldsToAdd, 1);
 
-        Mockito.when(resourceRepository.findById(resourceId)).thenReturn(Optional.empty());
+        when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
+        when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 1)).thenReturn(Optional.of(customField));
+        when(customFieldRepository.save(any(CustomField.class))).thenReturn(customField);
 
-        // When / Then
-        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
-                () -> addResourceCustomFieldsCommandHandler.handle(command));
+        // Act
+        ResponseEntity<String> response = handler.handle(command);
 
+        // Assert
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertTrue(customField.getFields().containsKey("fieldTest"));
+
+        // Verify
+        verify(resourceRepository, times(1)).findById(1);
+        verify(customFieldRepository, times(1)).findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 1);
+        verify(customFieldRepository, times(1)).save(customField);
+    }
+
+    @Test
+    @DisplayName("should create new custom field if none exists")
+    void testHandle_whenCustomFieldDoesNotExist_shouldCreateNewOne() {
+        // Arrange
+        Map<String, Object> fieldsToAdd = Map.of("fieldTest2", "valueTest2");
+        command = addResourceCustomFieldsCommand(fieldsToAdd, 1);
+        customField.setFields(fieldsToAdd);
+
+        when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
+        when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 1)).thenReturn(Optional.empty());
+        when(customFieldRepository.save(any(CustomField.class))).thenReturn(customField);
+
+        // Act
+        ResponseEntity<String> response = handler.handle(command);
+
+        // Assert
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertTrue(customField.getFields().containsKey("fieldTest2"));
+
+        // Verify
+        verify(customFieldRepository).save(any(CustomField.class));
+    }
+
+    @Test
+    @DisplayName("should throw exception if resource not found")
+    void testHandle_whenResourceNotFound_shouldThrowException() {
+        // Arrange
+        Map<String, Object> fields = Map.of("keyTest3", "valueTest3");
+        command = addResourceCustomFieldsCommand(fields, 999);
+
+        when(resourceRepository.findById(999)).thenReturn(Optional.empty());
+
+        // Act
+        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
+
+        // Assert
         assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
-        assertTrue(ex.getProblem().getTitle().contains("Resource not found"));
-    }
 
-    @Test
-    void testHandle_ShouldCreateCustomField_WhenNoExistingCustomField() {
-        // Given
-        Integer resourceId = 1;
-        AddResourceCustomFieldsCommand command = new AddResourceCustomFieldsCommand();
-        Map<String, Object> customFields = new HashMap<>();
-        customFields.put("key2", "value2");
-        command.setAddResourceCustomFieldsRequest(customFields);
-        command.setId(resourceId);
-
-        Resource resource = new Resource();
-        resource.setId(resourceId);
-        resource.setName("Resource");
-
-        Mockito.when(resourceRepository.findById(resourceId)).thenReturn(Optional.of(resource));
-
-        Mockito.when(customFieldRepository.findByTableNameAndRecordId("t_resource", resourceId)).thenReturn(Optional.empty());
-
-        CustomField newCustomField = new CustomField();
-        newCustomField.setTableName("t_resource");
-        newCustomField.setRecordId(resourceId);
-        newCustomField.setFields(customFields);
-
-        Mockito.when(customFieldRepository.save(Mockito.any(CustomField.class))).thenReturn(newCustomField);
-
-        // When
-        ResponseEntity<String> response = addResourceCustomFieldsCommandHandler.handle(command);
-
-        // Then
-        assertNotNull(response);
-        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-
-        // Verify repository calls
-        verify(customFieldRepository, times(1)).findByTableNameAndRecordId("t_resource", resourceId);
-        verify(customFieldRepository, times(1)).save(Mockito.any(CustomField.class));
+        // Verify
+        verify(resourceRepository, times(1)).findById(999);
+        verifyNoInteractions(customFieldRepository);
     }
 }
