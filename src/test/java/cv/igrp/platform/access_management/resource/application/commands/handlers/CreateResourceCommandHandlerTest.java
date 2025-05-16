@@ -15,6 +15,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.Appl
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.PermissionRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -23,17 +24,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import cv.igrp.platform.access_management.resource.application.commands.commands.*;
-import cv.igrp.platform.access_management.resource.application.commands.handlers.*;
 import cv.igrp.platform.access_management.resource.application.dto.*;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("CreateResourceCommandHandler Unit Tests")
 public class CreateResourceCommandHandlerTest {
-
-    private CreateResourceCommandHandler createResourceCommandHandler;
 
     @Mock
     private ResourceRepository resourceRepository;
@@ -44,137 +41,150 @@ public class CreateResourceCommandHandlerTest {
     @Mock
     private PermissionRepository permissionRepository;
 
+    @Mock
     private ResourceMapper resourceMapper;
+
+    @InjectMocks
+    private CreateResourceCommandHandler handler;
+
+    private ResourceDTO resourceDTO;
+    private Resource resource;
+    private Application application;
+    private Permission permission;
+    private ResourceItemDTO itemDTO;
+    private ResourceItem resourceItem;
+    private CreateResourceCommand command;
+
+    private CreateResourceCommand createResourceCommand(ResourceDTO resourceDTO) {
+        return new CreateResourceCommand(resourceDTO);
+    }
 
     @BeforeEach
     void setUp() {
-        resourceMapper = new ResourceMapper();
-        this.createResourceCommandHandler = new CreateResourceCommandHandler(resourceRepository, applicationRepository, resourceMapper, permissionRepository);
-    }
+        resourceDTO = new ResourceDTO();
+        resourceDTO.setApplicationId(1);
 
-    @Test
-    void testHandle_ShouldCreateResource_WhenApplicationExists() {
-        // Given
-        Integer applicationId = 1;
-        Integer permissionId = 1;
+        itemDTO = new ResourceItemDTO();
+        itemDTO.setPermissionId(10);
+        itemDTO.setName("Item1");
+        itemDTO.setUrl("url1");
 
-        ResourceDTO resourceDTO = new ResourceDTO();
-        resourceDTO.setApplicationId(applicationId);
+        resourceDTO.setId(1);
+        resourceDTO.setItems(List.of(itemDTO));
         resourceDTO.setName("Test Resource");
         resourceDTO.setType(ResourceType.API);
 
-        ResourceItemDTO resourceItemDTO = new ResourceItemDTO();
-        resourceItemDTO.setName("Item1");
-        resourceItemDTO.setUrl("url1");
-        resourceItemDTO.setPermissionId(permissionId); // Set this to match the stub
-        resourceDTO.setItems(List.of(resourceItemDTO));
+        resource = new Resource();
+        resource.setStatus(Status.ACTIVE);
 
-        CreateResourceCommand command = new CreateResourceCommand();
-        command.setResourcedto(resourceDTO);
+        application = new Application();
+        application.setId(1);
 
-        Application application = new Application();
-        application.setId(applicationId);
+        permission = new Permission();
+        permission.setId(10);
 
-        Permission permission = new Permission();
-        permission.setId(permissionId);
+        resourceItem = new ResourceItem();
+    }
 
-        Resource savedResource = new Resource();
-        savedResource.setId(1);
-        savedResource.setName("Test Resource");
-        savedResource.setType(ResourceType.API);
-        savedResource.setStatus(Status.ACTIVE);
-        savedResource.setApplicationId(application);
+    @Test
+    @DisplayName("should create and return resource when input is valid")
+    void testHandle_whenValidInput_shouldCreateResource() {
+        // Arrange
+        command = createResourceCommand(resourceDTO);
+        when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
+        when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
+        when(permissionRepository.findById(10)).thenReturn(Optional.of(permission));
+        when(resourceMapper.toItemEntity(itemDTO, resource, permission)).thenReturn(resourceItem);
+        when(resourceRepository.save(resource)).thenReturn(resource);
+        when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
-        ResourceItem resourceItem = new ResourceItem();
-        resourceItem.setName("Item1");
-        resourceItem.setUrl("url1");
-        resourceItem.setPermissionId(permission);
-        resourceItem.setResourceId(savedResource);
-        savedResource.setItems(List.of(resourceItem));
+        // Act
+        ResponseEntity<ResourceDTO> response = handler.handle(command);
 
-        // Stubs
-        when(applicationRepository.findById(applicationId)).thenReturn(Optional.of(application));
-        when(permissionRepository.findById(permissionId)).thenReturn(Optional.of(permission));
-        when(resourceRepository.save(any(Resource.class))).thenReturn(savedResource);
-
-        // When
-        ResponseEntity<ResourceDTO> response = createResourceCommandHandler.handle(command);
-
-        // Then
-        assertNotNull(response);
+        // Assert
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Test Resource", response.getBody().getName());
+        assertEquals(resourceDTO, response.getBody());
+        assertEquals("Test Resource", Objects.requireNonNull(response.getBody()).getName());
         assertEquals(1, response.getBody().getId());
 
-        ResourceItemDTO itemR = response.getBody().getItems().getFirst();
-        assertEquals(1, itemR.getResourceId());
-        assertEquals(1, itemR.getPermissionId());
-
-        verify(applicationRepository, times(1)).findById(applicationId);
-        verify(permissionRepository, times(1)).findById(permissionId);
-        verify(resourceRepository, times(1)).save(any(Resource.class));
-    }
-
-
-    @Test
-    void testHandle_ShouldThrowException_WhenApplicationNotFound() {
-        // Given
-        Integer applicationId = 1;
-        ResourceDTO resourceDTO = new ResourceDTO();
-        resourceDTO.setApplicationId(applicationId);
-        CreateResourceCommand command = new CreateResourceCommand();
-        command.setResourcedto(resourceDTO);
-
-        when(applicationRepository.findById(applicationId)).thenReturn(Optional.empty());
-
-        // When / Then
-        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
-                () -> createResourceCommandHandler.handle(command));
-
-        // Assert the exception message and status
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
-        assertTrue(ex.getProblem().getTitle().contains("Application not found"));
+        // Verify
+        verify(resourceMapper).toEntity(resourceDTO);
+        verify(applicationRepository,times(1)).findById(1);
+        verify(permissionRepository, times(1)).findById(10);
+        verify(resourceMapper, times(1)).toItemEntity(itemDTO, resource, permission);
+        verify(resourceRepository, times(1)).save(resource);
+        verify(resourceMapper, times(1)).toDto(resource);
     }
 
     @Test
-    void testHandle_ShouldThrowException_WhenPermissionNotFound() {
-        // Given
-        Integer applicationId = 1;
-        Integer permissionId = 999;
+    @DisplayName("should throw IgrpResponseStatusException if application not found")
+    void testHandle_whenApplicationNotFound_shouldThrow() {
+        // Arrange
+        command = createResourceCommand(resourceDTO);
+        when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
+        when(applicationRepository.findById(1)).thenReturn(Optional.empty());
 
-        ResourceDTO resourceDTO = new ResourceDTO();
-        resourceDTO.setApplicationId(applicationId);
-        resourceDTO.setName("Test Resource");
+        // Act
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> {
+            handler.handle(command);
+        });
 
-        ResourceItemDTO resourceItemDTO = new ResourceItemDTO();
-        resourceItemDTO.setName("Item1");
-        resourceItemDTO.setUrl("url1");
-        resourceItemDTO.setPermissionId(permissionId);
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, exception.getProblem().getStatus());
+        assertTrue(exception.getProblem().getDetails().toString().contains("Application not found with id: 1"));
 
-        resourceDTO.setItems(List.of(resourceItemDTO));
-
-        CreateResourceCommand command = new CreateResourceCommand();
-        command.setResourcedto(resourceDTO);
-
-        Application application = new Application();
-        application.setId(applicationId);
-
-        // Stubs
-        when(applicationRepository.findById(applicationId)).thenReturn(Optional.of(application));
-        when(permissionRepository.findById(permissionId)).thenReturn(Optional.empty());
-
-        // When / Then
-        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
-                () -> createResourceCommandHandler.handle(command));
-
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
-        assertTrue(ex.getProblem().getTitle().contains("Permission not found"));
-
-        // Verifications
-        verify(applicationRepository, times(1)).findById(applicationId);
-        verify(permissionRepository, times(1)).findById(permissionId);
-        verify(resourceRepository, never()).save(any());
+        // Verify
+        verify(resourceMapper, times(1)).toEntity(resourceDTO);
+        verify(applicationRepository, times(1)).findById(1);
+        verifyNoMoreInteractions(permissionRepository, resourceRepository);
     }
 
+    @Test
+    @DisplayName("should throw IgrpResponseStatusException if permission not found")
+    void testHandle_whenPermissionNotFound_shouldThrow() {
+        // Arrange
+        command = createResourceCommand(resourceDTO);
+        when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
+        when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
+        when(permissionRepository.findById(10)).thenReturn(Optional.empty());
+
+        // Act
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> {
+            handler.handle(command);
+        });
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, exception.getProblem().getStatus());
+        assertTrue(exception.getProblem().getDetails().toString().contains("Permission not found with id: 10"));
+
+        // Verify
+        verify(resourceMapper, times(1)).toEntity(resourceDTO);
+        verify(applicationRepository, times(1)).findById(1);
+        verify(permissionRepository, times(1)).findById(10);
+        verifyNoMoreInteractions(permissionRepository, resourceRepository, resourceMapper);
+    }
+
+    @Test
+    @DisplayName("should not throw if items list is empty")
+    void testHandle_whenItemsListIsEmpty_shouldCreateResource() {
+        // Arrange
+        resourceDTO.setItems(Collections.emptyList());
+        command = createResourceCommand(resourceDTO);
+        when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
+        when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
+        when(resourceRepository.save(resource)).thenReturn(resource);
+        when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
+
+        // Act
+        ResponseEntity<ResourceDTO> response = handler.handle(command);
+
+        // Assert
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(resourceDTO, response.getBody());
+
+        // Verify
+        verify(applicationRepository, times(1)).findById(1);
+        verify(resourceRepository, times(1)).save(resource);
+        verifyNoInteractions(permissionRepository);
+    }
 }
