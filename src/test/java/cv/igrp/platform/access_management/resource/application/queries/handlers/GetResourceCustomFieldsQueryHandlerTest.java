@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.CustomField;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -14,10 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import cv.igrp.platform.access_management.resource.application.dto.*;
 import cv.igrp.platform.access_management.resource.application.queries.queries.*;
-import cv.igrp.platform.access_management.resource.application.queries.handlers.*;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;

@@ -5,6 +5,7 @@ import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
@@ -12,6 +13,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.Appl
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -22,107 +24,179 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("UpdateMenuCommandHandler Tests")
 public class UpdateMenuCommandHandlerTest {
-
-    private UpdateMenuCommandHandler updateMenuCommandHandler;
 
     @Mock
     private MenuEntryRepository menuEntryRepository;
 
     @Mock
+    private ResourceRepository resourceRepository;
+
+    @Mock
     private ApplicationRepository applicationRepository;
 
     @Mock
-    private ResourceRepository resourceRepository;
-
     private MenuEntryMapper menuEntryMapper;
+
+    @InjectMocks
+    private UpdateMenuCommandHandler updateMenuCommandHandler;
+
+    private UpdateMenuCommand updateMenuCommand(MenuEntryDTO menuentrydto, Integer id) {
+        return new UpdateMenuCommand(menuentrydto, id);
+    }
+
+    private MenuEntry existingMenu;
+    private MenuEntry updatedMenu;
+    private MenuEntryDTO dto;
+    private UpdateMenuCommand command;
+    private Resource resource;
+    private Application application;
+    private MenuEntry parentMenu;
 
     @BeforeEach
     void setUp() {
-        this.menuEntryMapper = new MenuEntryMapper();
-        updateMenuCommandHandler = new UpdateMenuCommandHandler(
-                menuEntryRepository,
-                menuEntryMapper,
-                applicationRepository,
-                resourceRepository
-        );
+        existingMenu = new MenuEntry();
+        existingMenu.setId(1);
+
+        updatedMenu = new MenuEntry();
+        updatedMenu.setId(1);
+
+        dto = new MenuEntryDTO();
+        dto.setName("Updated Name");
+        dto.setType(MenuEntryType.MENU_PAGE);
+        dto.setPosition((short) 1);
+        dto.setIcon("fa-icon");
+        dto.setStatus(Status.ACTIVE);
+        dto.setTarget("_self");
+        dto.setUrl("/new-url");
+        dto.setApplicationId(100);
+        dto.setResourceId(200);
+        dto.setParentId(300);
+
+        resource = new Resource();
+        application = new Application();
+        parentMenu = new MenuEntry();
+
+        command = updateMenuCommand(dto, 1);
     }
 
     @Test
-    void testHandle() {
-        // Given
-        Integer menuId = 1;
-        Integer parentId = 2;
-        Integer appId = 3;
-        Integer resId = 4;
+    @DisplayName("should update menu entry and return 200 OK")
+    void testHandle_shouldUpdateMenuAndReturnOk() {
+        // Arrange
+        when(menuEntryRepository.findById(1)).thenReturn(Optional.of(existingMenu));
+        when(applicationRepository.findById(100)).thenReturn(Optional.of(application));
+        when(resourceRepository.findById(200)).thenReturn(Optional.of(resource));
+        when(menuEntryRepository.findById(300)).thenReturn(Optional.of(parentMenu));
+        when(menuEntryRepository.save(existingMenu)).thenReturn(updatedMenu);
+        when(menuEntryMapper.toDTO(updatedMenu)).thenReturn(dto);
 
-        MenuEntryDTO dto = new MenuEntryDTO();
-        dto.setId(menuId);
-        dto.setName("Updated Menu");
-        dto.setType(MenuEntryType.MENU_PAGE);
-        dto.setPosition((short) 1);
-        dto.setIcon("icon.png");
-        dto.setStatus(Status.ACTIVE);
-        dto.setTarget("_blank");
-        dto.setUrl("/updated-url");
-        dto.setParentId(parentId);
-        dto.setApplicationId(appId);
-        dto.setResourceId(resId);
-
-        UpdateMenuCommand command = new UpdateMenuCommand();
-        command.setId(menuId);
-        command.setMenuentrydto(dto);
-
-        MenuEntry existingMenu = new MenuEntry();
-        existingMenu.setId(menuId);
-
-        MenuEntry parentMenu = new MenuEntry();
-        parentMenu.setId(parentId);
-
-        Application app = new Application();
-        app.setId(appId);
-
-        Resource res = new Resource();
-        res.setId(resId);
-
-        MenuEntry savedMenu = new MenuEntry();
-        savedMenu.setId(menuId);
-        savedMenu.setName("Updated Menu");
-        savedMenu.setType(MenuEntryType.MENU_PAGE);
-        savedMenu.setPosition((short) 1);
-        savedMenu.setIcon("icon.png");
-        savedMenu.setStatus(Status.ACTIVE);
-        savedMenu.setTarget("_blank");
-        savedMenu.setUrl("/updated-url");
-        savedMenu.setParentId(parentMenu);
-        savedMenu.setApplicationId(app);
-        savedMenu.setResourceId(res);
-
-        when(menuEntryRepository.findById(menuId)).thenReturn(Optional.of(existingMenu));
-        when(menuEntryRepository.findById(parentId)).thenReturn(Optional.of(parentMenu));
-        when(applicationRepository.findById(appId)).thenReturn(Optional.of(app));
-        when(resourceRepository.findById(resId)).thenReturn(Optional.of(res));
-        when(menuEntryRepository.save(any(MenuEntry.class))).thenReturn(savedMenu);
-
-        // When
+        // Act
         ResponseEntity<MenuEntryDTO> response = updateMenuCommandHandler.handle(command);
 
-        // Then
-        assertNotNull(response);
+        // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertEquals("Updated Menu", response.getBody().getName());
-        assertEquals(parentId, response.getBody().getParentId());
-        assertEquals(appId, response.getBody().getApplicationId());
-        assertEquals(resId, response.getBody().getResourceId());
+        assertEquals(dto, response.getBody());
 
-        verify(menuEntryRepository).save(any(MenuEntry.class));
+        // Verify interactions
+        verify(menuEntryRepository, times(1)).findById(1);
+        verify(applicationRepository, times(1)).findById(100);
+        verify(resourceRepository, times(1)).findById(200);
+        verify(menuEntryRepository, times(1)).findById(300);
+        verify(menuEntryRepository, times(1)).save(existingMenu);
+        verify(menuEntryMapper).toDTO(updatedMenu);
+        verifyNoMoreInteractions(menuEntryRepository, applicationRepository, menuEntryMapper);
+    }
+
+    @Test
+    @DisplayName("should throw exception when menu entry is not found")
+    void testHandle_whenMenuNotFound_shouldThrow() {
+        // Arrange
+        when(menuEntryRepository.findById(1)).thenReturn(Optional.empty());
+
+        // Act
+        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
+                updateMenuCommandHandler.handle(command));
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertTrue(ex.getProblem().getDetails().toString().contains("Menu not found"));
+
+        // Verify
+        verify(menuEntryRepository, times(1)).findById(1);
+        verifyNoMoreInteractions(menuEntryMapper);
+    }
+
+    @Test
+    @DisplayName("should throw exception when parent menu is not found")
+    void testHandle_whenParentNotFound_shouldThrow() {
+        // Arrange
+        when(menuEntryRepository.findById(1)).thenReturn(Optional.of(existingMenu));
+        when(menuEntryRepository.findById(300)).thenReturn(Optional.empty());
+
+        // Act
+        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
+                updateMenuCommandHandler.handle(command));
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertTrue(ex.getProblem().getDetails().toString().contains("Parent MenuEntry not found"));
+
+        // Verify
+        verify(menuEntryRepository, times(1)).findById(1);
+        verify(menuEntryRepository, times(1)).findById(300);
+        verifyNoMoreInteractions(menuEntryMapper);
+    }
+
+    @Test
+    @DisplayName("should throw exception when application is not found")
+    void testHandle_whenApplicationNotFound_shouldThrow() {
+        // Arrange
+        when(menuEntryRepository.findById(1)).thenReturn(Optional.of(existingMenu));
+        when(menuEntryRepository.findById(300)).thenReturn(Optional.of(parentMenu));
+        when(resourceRepository.findById(200)).thenReturn(Optional.of(resource));
+        when(applicationRepository.findById(100)).thenReturn(Optional.empty());
+
+        // Act
+        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
+                updateMenuCommandHandler.handle(command));
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertTrue(ex.getProblem().getDetails().toString().contains("Application not found"));
+
+        // Verify
+        verify(menuEntryRepository, times(1)).findById(1);
+        verify(menuEntryRepository, times(1)).findById(300);
+        verify(resourceRepository, times(1)).findById(200);
+        verifyNoMoreInteractions(menuEntryMapper);
+    }
+
+    @Test
+    @DisplayName("should throw exception when resource is not found")
+    void testHandle_whenResourceNotFound_shouldThrow() {
+        // Arrange
+        when(menuEntryRepository.findById(1)).thenReturn(Optional.of(existingMenu));
+        when(menuEntryRepository.findById(300)).thenReturn(Optional.of(parentMenu));
+        when(resourceRepository.findById(200)).thenReturn(Optional.empty());
+
+        // Act
+        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
+                updateMenuCommandHandler.handle(command));
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertTrue(ex.getProblem().getDetails().toString().contains("Resource not found"));
+
+        // Verify
+        verify(menuEntryRepository, times(1)).findById(1);
+        verify(menuEntryRepository, times(1)).findById(300);
+        verify(resourceRepository, times(1)).findById(200);
+        verifyNoMoreInteractions(menuEntryMapper);
     }
 }

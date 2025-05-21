@@ -14,18 +14,50 @@ import cv.igrp.platform.access_management.app.application.queries.queries.GetApp
 
 import java.util.List;
 
-
+/**
+ * Handles the retrieval of {@link Application} entities filtered by optional code and/or name.
+ *
+ * <p>
+ * This query handler processes a {@link GetApplicationsQuery} request and builds a dynamic {@link Specification}
+ * to filter applications based on:
+ * <ul>
+ *   <li>{@code code} - exact match</li>
+ *   <li>{@code name} - case-insensitive substring match</li>
+ * </ul>
+ *
+ * <p>
+ * The resulting applications are mapped to {@link ApplicationDTO}s and returned in a {@link ResponseEntity}
+ * with status {@code 200 OK}.
+ * </p>
+ *
+ * @see GetApplicationsQuery
+ * @see ApplicationRepository
+ * @see ApplicationMapper
+ * @see ApplicationDTO
+ */
 @Service
 public class GetApplicationsQueryHandler implements QueryHandler<GetApplicationsQuery, ResponseEntity<List<ApplicationDTO>>>{
 
    private ApplicationRepository applicationRepository;
    private ApplicationMapper applicationMapper;
 
+   /**
+    * Constructs the handler with required dependencies.
+    *
+    * @param applicationRepository the repository used to fetch applications
+    * @param applicationMapper     mapper to convert {@link Application} entities to {@link ApplicationDTO}
+    */
    public GetApplicationsQueryHandler(ApplicationRepository applicationRepository, ApplicationMapper applicationMapper) {
       this.applicationRepository = applicationRepository;
       this.applicationMapper = applicationMapper;
    }
 
+   /**
+    * Handles the {@link GetApplicationsQuery}, building a dynamic specification to filter by code and/or name.
+    *
+    * @param applicationsQuery the query object containing optional filter parameters
+    * @return a {@link ResponseEntity} with the list of filtered {@link ApplicationDTO}s
+    */
    @IgrpQueryHandler
    public ResponseEntity<List<ApplicationDTO>> handle(GetApplicationsQuery applicationsQuery) {
       Specification<Application> spec = buildSpecification(applicationsQuery.getCode(), applicationsQuery.getName());
@@ -36,6 +68,13 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
       return ResponseEntity.ok(applications);
    }
 
+   /**
+    * Builds a dynamic JPA {@link Specification} based on optional code and name filters.
+    *
+    * @param code the exact code to match (optional)
+    * @param name the name substring to search for, case-insensitive (optional)
+    * @return a {@link Specification} representing the composed query filters
+    */
    private Specification<Application> buildSpecification(final String code, final String name) {
       Specification<Application> spec = Specification.where(null);
       if (code != null && !code.isEmpty()) {
