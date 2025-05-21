@@ -4,7 +4,6 @@ import cv.igrp.framework.core.domain.Query;
 import jakarta.validation.constraints.*;
 
 
-
 public class GetCurrentUserQuery implements Query {
 
 

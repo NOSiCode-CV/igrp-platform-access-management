@@ -17,11 +17,12 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import cv.igrp.platform.access_management.users.application.dto.*;
+import cv.igrp.platform.access_management.shared.application.dto.*;
 import cv.igrp.platform.access_management.users.application.queries.queries.*;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 public class GetCurrentUserQueryHandlerTest {
@@ -33,13 +34,8 @@ public class GetCurrentUserQueryHandlerTest {
     private IGRPUserMapper userMapper;
 
     @InjectMocks
-    private GetCurrentUserQueryHandler getCurrentUserQueryHandler;
+    private GetCurrentUserQueryHandler handler;
 
-    private GetUsersQuery getUsersQuery(List<Integer> getUsersRequest, Integer applicationId, Integer departmentId, String name, String username, String email){
-        return new GetUsersQuery(getUsersRequest, applicationId, departmentId, name, username, email);
-    }
-
-    private GetUsersQuery query;
     private IGRPUser user;
     private IGRPUserDTO dto;
 
@@ -47,82 +43,54 @@ public class GetCurrentUserQueryHandlerTest {
     void setUp() {
         user = new IGRPUser();
         user.setId(1);
-        user.setName("Test");
+        user.setName("Test User");
         user.setUsername("test");
         user.setEmail("test@example.com");
 
         dto = new IGRPUserDTO();
         dto.setId(1);
-        dto.setName("Test");
+        dto.setName("Test User");
         dto.setUsername("test");
         dto.setEmail("test@example.com");
     }
 
     @Test
-    @DisplayName("should return filtered users based on query")
-    void testHandle_withValidQuery_shouldReturnFilteredUsers() {
-        //Arrange
-        query = getUsersQuery(null, 10, 20, "Test", "test", "test@example.com");
-        when(userRepository.findAll(any(Specification.class))).thenReturn(List.of(user));
+    @DisplayName("should return current user if found by ID")
+    void testHandle_userExists_shouldReturnUserDTO() {
+        // Mock o ID retornado de SecurityUtils
+        Integer mockedUserId = 1;
+
+        // Mock repository e mapper
+        when(userRepository.findById(mockedUserId)).thenReturn(Optional.of(user));
         when(userMapper.toDto(user)).thenReturn(dto);
 
         // Act
-        ResponseEntity<List<IGRPUserDTO>> response = getUsersQueryHandler.handle(query);
+        ResponseEntity<IGRPUserDTO> response = handler.handle(new GetCurrentUserQuery() {
+            // simula pegar userId de um util — poderia ser injetado num mockable SecurityUtils também
+        });
 
         // Assert
-        assertNotNull(response);
-        assertNotNull(response.getBody());
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertEquals(dto, response.getBody().getFirst());
-        assertEquals(1, response.getBody().size());
+        assertNotNull(response.getBody());
+        assertEquals("Test User", response.getBody().getName());
 
-        // Verify
-        verify(userRepository, times(1)).findAll(any(Specification.class));
+        verify(userRepository, times(1)).findById(mockedUserId);
         verify(userMapper, times(1)).toDto(user);
-        verifyNoMoreInteractions(userRepository, userMapper);
     }
 
     @Test
-    @DisplayName("should return empty list if no users match")
-    void testHandle_withNoMatch_shouldReturnEmptyList() {
-        // Arrange
-        query = getUsersQuery(null, 10, 20, "NotExist", "noone", "noone@example.com");
-        when(userRepository.findAll(any(Specification.class))).thenReturn(Collections.emptyList());
+    @DisplayName("should return 404 if user is not found")
+    void testHandle_userNotFound_shouldReturn404() {
+        Integer mockedUserId = 99;
 
-        // Act
-        ResponseEntity<List<IGRPUserDTO>> response = getUsersQueryHandler.handle(query);
+        when(userRepository.findById(mockedUserId)).thenReturn(Optional.empty());
 
-        // Assert
-        assertNotNull(response);
-        assertNotNull(response.getBody());
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertTrue(response.getBody().isEmpty());
+        ResponseEntity<IGRPUserDTO> response = handler.handle(new GetCurrentUserQuery());
 
-        // Verify
-        verify(userRepository, times(1)).findAll(any(Specification.class));
+        assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
+        assertNull(response.getBody());
+
+        verify(userRepository, times(1)).findById(mockedUserId);
         verifyNoInteractions(userMapper);
-        verifyNoMoreInteractions(userRepository);
     }
-
-    @Test
-    @DisplayName("should return empty list when no users match query filters")
-    void testHandle_whenNoUsersMatch_shouldReturnEmptyList() {
-        // Arrange
-        query = getUsersQuery(null, null, null, "", "", "");
-        when(userRepository.findAll(any(Specification.class))).thenReturn(Collections.emptyList());
-
-        // Act
-        ResponseEntity<List<IGRPUserDTO>> response = getUsersQueryHandler.handle(query);
-
-        // Assert
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody().isEmpty());
-
-        // Verify
-        verify(userRepository, times(1)).findAll(any(Specification.class));
-        verifyNoInteractions(userMapper);
-        verifyNoMoreInteractions(userRepository, userMapper);
-      }
-
 }

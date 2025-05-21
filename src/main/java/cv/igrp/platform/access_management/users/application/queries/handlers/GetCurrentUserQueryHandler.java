@@ -4,7 +4,6 @@ import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 
 import java.util.Optional;
-
 import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +13,7 @@ import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
+import cv.igrp.platform.access_management.shared.security.SecurityUtils;
 
 @Service
 public class GetCurrentUserQueryHandler implements QueryHandler<GetCurrentUserQuery, ResponseEntity<IGRPUserDTO>>{
@@ -29,9 +29,9 @@ public class GetCurrentUserQueryHandler implements QueryHandler<GetCurrentUserQu
    @IgrpQueryHandler
     public ResponseEntity<IGRPUserDTO> handle(GetCurrentUserQuery query) {
         // Recupera o ID do usuário autenticado
-        Long userId = SecurityUtils.getCurrentUserId(); // adapte conforme sua segurança
+        Integer userId = SecurityUtils.getCurrentUserId();
 
-        Optional<IGRPUser> optionalUser = igrpUserRepository.findById(query.getId());
+        Optional<IGRPUser> optionalUser = igrpUserRepository.findById(userId);
         if (optionalUser.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
