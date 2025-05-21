@@ -278,6 +278,16 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*DTO.class</exclude>
+                        <exclude>**/*Command.class</exclude>
+                        <exclude>**/*Query.class</exclude>
+                        <exclude>**/controller/**</exclude>
+                        <exclude>**/config/**</exclude>
+                        <exclude>**/spring/**</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>
