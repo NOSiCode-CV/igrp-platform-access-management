@@ -8,6 +8,7 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -18,6 +19,26 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+/**
+ * Query handler responsible for retrieving all active (non-deleted) {@link PermissionDTO}s associated with a specific {@link Role} ID.
+ *
+ * <p>This handler performs the following operations:</p>
+ * <ul>
+ *   <li>Validates that the {@link Role} exists and is not marked as {@link Status#DELETED}</li>
+ *   <li>Filters out permissions that are marked as {@link Status#DELETED}</li>
+ *   <li>Maps the remaining {@link Permission} entities to {@link PermissionDTO} instances</li>
+ *   <li>Returns the result wrapped in a {@link ResponseEntity} with status {@link HttpStatus#OK}</li>
+ * </ul>
+ *
+ * <p>If the role is not found or is marked as deleted, an {@link IgrpResponseStatusException} is thrown.</p>
+ *
+ * @see GetPermissionsByRoleIdQuery
+ * @see PermissionDTO
+ * @see RoleRepository
+ * @see PermissionMapper
+ * @see Status
+ * @see IgrpResponseStatusException
+ */
 @Slf4j
 @Service
 public class GetPermissionsByRoleIdQueryHandler implements QueryHandler<GetPermissionsByRoleIdQuery, ResponseEntity<List<PermissionDTO>>> {
@@ -25,12 +46,25 @@ public class GetPermissionsByRoleIdQueryHandler implements QueryHandler<GetPermi
     private final RoleRepository roleRepository;
     private final PermissionMapper permissionMapper;
 
+    /**
+     * Constructs the handler with necessary dependencies.
+     *
+     * @param roleRepository   repository to retrieve roles from the database
+     * @param permissionMapper mapper to convert permission entities to DTOs
+     */
     public GetPermissionsByRoleIdQueryHandler(RoleRepository roleRepository, PermissionMapper permissionMapper) {
 
         this.roleRepository = roleRepository;
         this.permissionMapper = permissionMapper;
     }
 
+    /**
+     * Handles the query to fetch permissions for a given role ID.
+     *
+     * @param query the query containing the role ID
+     * @return a list of mapped {@link PermissionDTO} objects excluding those with status {@link Status#DELETED}
+     * @throws IgrpResponseStatusException if the role is not found or is marked as deleted
+     */
     @IgrpQueryHandler
     @Transactional(readOnly = true)
     public ResponseEntity<List<PermissionDTO>> handle(GetPermissionsByRoleIdQuery query) {
@@ -49,5 +83,4 @@ public class GetPermissionsByRoleIdQueryHandler implements QueryHandler<GetPermi
                 .toList();
         return new ResponseEntity<>(permissionList, HttpStatus.OK);
     }
-
 }

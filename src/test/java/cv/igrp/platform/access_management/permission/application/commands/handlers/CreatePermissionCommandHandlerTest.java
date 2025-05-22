@@ -1,40 +1,208 @@
 package cv.igrp.platform.access_management.permission.application.commands.handlers;
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import org.junit.jupiter.api.BeforeEach;
+import cv.igrp.platform.access_management.permission.application.commands.commands.CreatePermissionCommand;
+import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.domain.models.Application;
+import cv.igrp.platform.access_management.shared.domain.models.Permission;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.PermissionRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Captor;
 import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import cv.igrp.platform.access_management.permission.application.commands.commands.*;
-import cv.igrp.platform.access_management.permission.application.commands.handlers.*;
+
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class CreatePermissionCommandHandlerTest {
 
     @InjectMocks
-    private CreatePermissionCommandHandler createPermissionCommandHandler;
+    private CreatePermissionCommandHandler underTest;
+    @Mock
+    private ApplicationRepository applicationRepository;
+    @Mock
+    private PermissionRepository permissionRepository;
+    @Mock
+    private PermissionMapper permissionMapper;
+    @Captor
+    private ArgumentCaptor<Permission> permissionCaptor;
 
-    @BeforeEach
-    void setUp() {
-      // TODO: initialize mock dependencies if needed
+    @Test
+    void itShouldStartContext() {
+        assertNotNull(underTest);
     }
 
     @Test
-    void testHandle() {
-        // TODO: Implement unit test for handle method
-        // Example:
+    void itShouldThrowNotFoundException_WhenApplicationDoesNotExist() {
+        //... Given
+        int applicationId = 1;
+        String permissionName = "permissionName";
+        String permissionDescription = "permissionDescription";
+        PermissionDTO permissiondto = new PermissionDTO(null, permissionName, permissionDescription, null, applicationId);
+        CreatePermissionCommand command = new CreatePermissionCommand(permissiondto);
+
+        when(applicationRepository.findById(applicationId))
+                .thenReturn(Optional.empty());
+        //... When
+        IgrpResponseStatusException response = assertThrows(IgrpResponseStatusException.class, () -> underTest.handle(command));
+        //... Then
+
+        assertEquals(HttpStatus.NOT_FOUND, response.getProblem().getStatus());
+    }
+
+    @Test
+    void itShouldCreatePermission_WhenApplicationExists() {
         // Given
-        // CreatePermissionCommand command = new CreatePermissionCommand(...);
-        //
+        int appId = 1;
+        String permissionName = "READ_USERS";
+        PermissionDTO dto = new PermissionDTO();
+        dto.setName(permissionName);
+        dto.setApplicationId(appId);
+        dto.setStatus(Status.ACTIVE);
+
+        CreatePermissionCommand command = new CreatePermissionCommand(dto);
+
+        Application application = new Application();
+        application.setId(appId);
+
+        Permission permissionToSave = new Permission();
+        permissionToSave.setName(permissionName);
+        permissionToSave.setApplication(application);
+        permissionToSave.setStatus(Status.ACTIVE);
+
+        Permission savedPermission = new Permission();
+        savedPermission.setId(10);
+        savedPermission.setName(permissionName);
+        savedPermission.setApplication(application);
+        savedPermission.setStatus(Status.ACTIVE);
+
+        PermissionDTO expectedResponse = new PermissionDTO();
+        expectedResponse.setId(10);
+        expectedResponse.setName(permissionName);
+        expectedResponse.setStatus(Status.ACTIVE);
+
         // When
-        // ResponseEntity<[object Object]> response = createPermissionCommandHandler.handle(command);
-        //
+        when(applicationRepository.findById(appId)).thenReturn(Optional.of(application));
+        when(permissionMapper.mapDtoToEntity(dto, application)).thenReturn(permissionToSave);
+        when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
+        when(permissionMapper.mapToDTO(savedPermission)).thenReturn(expectedResponse);
+
+        ResponseEntity<PermissionDTO> response = underTest.handle(command);
+
         // Then
-        // assertNotNull(response);
-        // assertEquals(..., response.getBody());
+        verify(permissionRepository).save(permissionCaptor.capture());
+        Permission capturedPermission = permissionCaptor.getValue();
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(expectedResponse, response.getBody());
+
+        assertEquals(permissionName, capturedPermission.getName());
+        assertEquals(appId, capturedPermission.getApplication().getId());
+        assertEquals(Status.ACTIVE, capturedPermission.getStatus());
+    }
+
+    @Test
+    void itShouldUseDefaultStatus_WhenStatusIsNotProvided() {
+        // Given
+        int appId = 1;
+        String permissionName = "READ_USERS";
+        PermissionDTO dto = new PermissionDTO();
+        dto.setName(permissionName);
+        dto.setApplicationId(appId);
+
+        CreatePermissionCommand command = new CreatePermissionCommand(dto);
+
+        Application application = new Application();
+        application.setId(appId);
+
+        Permission permissionToSave = new Permission();
+        permissionToSave.setName(permissionName);
+        permissionToSave.setApplication(application);
+
+        Permission savedPermission = new Permission();
+        savedPermission.setId(10);
+        savedPermission.setName(permissionName);
+        savedPermission.setApplication(application);
+
+        PermissionDTO expectedResponse = new PermissionDTO();
+        expectedResponse.setId(10);
+        expectedResponse.setName(permissionName);
+
+        // When
+        when(applicationRepository.findById(appId)).thenReturn(Optional.of(application));
+        when(permissionMapper.mapDtoToEntity(dto, application)).thenReturn(permissionToSave);
+        when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
+        when(permissionMapper.mapToDTO(savedPermission)).thenReturn(expectedResponse);
+
+        ResponseEntity<PermissionDTO> response = underTest.handle(command);
+
+        // Then
+        verify(permissionRepository).save(permissionCaptor.capture());
+        Permission capturedPermission = permissionCaptor.getValue();
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(expectedResponse, response.getBody());
+
+        assertEquals(permissionName, capturedPermission.getName());
+        assertEquals(appId, capturedPermission.getApplication().getId());
+        assertNull(capturedPermission.getStatus());
+    }
+
+    @Test
+    void itShouldMapSavedPermissionToDTO() {
+        // Given
+        int appId = 1;
+        String permissionName = "MANAGE_ROLES";
+
+        PermissionDTO dto = new PermissionDTO();
+        dto.setName(permissionName);
+        dto.setApplicationId(appId);
+
+        CreatePermissionCommand command = new CreatePermissionCommand(dto);
+
+        Application application = new Application();
+        application.setId(appId);
+
+        Permission permissionToSave = new Permission();
+        permissionToSave.setName(permissionName);
+        permissionToSave.setApplication(application);
+
+        Permission savedPermission = new Permission();
+        savedPermission.setId(20);
+        savedPermission.setName(permissionName);
+        savedPermission.setApplication(application);
+
+        PermissionDTO mappedDTO = new PermissionDTO();
+        mappedDTO.setId(20);
+        mappedDTO.setName(permissionName);
+
+        // When
+        when(applicationRepository.findById(appId)).thenReturn(Optional.of(application));
+        when(permissionMapper.mapDtoToEntity(dto, application)).thenReturn(permissionToSave);
+        when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
+        when(permissionMapper.mapToDTO(savedPermission)).thenReturn(mappedDTO);
+
+        ResponseEntity<PermissionDTO> response = underTest.handle(command);
+
+        // Then
+        verify(permissionMapper).mapToDTO(savedPermission);
+        assertNotNull(response);
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+        assertEquals(mappedDTO, response.getBody());
     }
 }

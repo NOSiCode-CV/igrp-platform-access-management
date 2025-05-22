@@ -2,10 +2,12 @@ package cv.igrp.platform.access_management.menu.application.commands.handlers;
 
 import cv.igrp.platform.access_management.menu.application.commands.commands.DeleteMenuCommand;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -20,57 +22,102 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("DeleteMenuCommandHandler Tests")
 public class DeleteMenuCommandHandlerTest {
+
+    @Mock
+    private MenuEntryRepository menuEntryRepository;
 
     @InjectMocks
     private DeleteMenuCommandHandler deleteMenuCommandHandler;
 
-    @Mock
-    private MenuEntryRepository menuEntryRepository; // Mock the repository
+    private DeleteMenuCommand deleteMenuCommand(Integer id){
+        return new DeleteMenuCommand(id);
+    }
+
+    private MenuEntry menuEntry;
+    private DeleteMenuCommand command;
 
     @BeforeEach
     void setUp() {
-        // ...
+        menuEntry = new MenuEntry();
+        menuEntry.setId(1);
+        menuEntry.setStatus(Status.ACTIVE);
     }
 
     @Test
-    void testHandle_whenMenuFound() {
-        // Given
-        Integer menuId = 1;
-        DeleteMenuCommand command = new DeleteMenuCommand(menuId);
+    @DisplayName("should soft delete menu and return 204 No Content")
+    void testHandle_whenMenuExists_shouldSoftDeleteAndReturnNoContent() {
+        // Arrange
+        command = deleteMenuCommand(1);
+        when(menuEntryRepository.findById(1)).thenReturn(Optional.of(menuEntry));
+        when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
 
-        MenuEntry mockMenu = new MenuEntry();
-        mockMenu.setId(menuId);
-        mockMenu.setStatus(Status.ACTIVE);
+        // Act
+        ResponseEntity<Void> response = deleteMenuCommandHandler.handle(command);
 
-        when(menuEntryRepository.findById(menuId)).thenReturn(Optional.of(mockMenu));
-
-        // When
-        ResponseEntity<String> response = deleteMenuCommandHandler.handle(command);
-
-        // Then
+        // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertEquals(Status.DELETED, menuEntry.getStatus());
 
-        verify(menuEntryRepository, times(1)).save(mockMenu);
-        assertEquals(Status.DELETED, mockMenu.getStatus());
+        // Verify
+        verify(menuEntryRepository, times(1)).findById(1);
+        verify(menuEntryRepository, times(1)).save(menuEntry);
+        verifyNoMoreInteractions(menuEntryRepository);
+
     }
 
     @Test
-    void testHandle_whenMenuNotFound() {
-        // Given
-        Integer menuId = 999;
-        DeleteMenuCommand command = new DeleteMenuCommand(menuId);
+    @DisplayName("should throw IgrpResponseStatusException when menu not found")
+    void testHandle_whenMenuNotFound_shouldThrowException() {
+        // Arrange
+        command = deleteMenuCommand(99);
+        when(menuEntryRepository.findById(99)).thenReturn(Optional.empty());
 
-        // When
-        when(menuEntryRepository.findById(menuId)).thenReturn(Optional.empty());
-
-        // Then
-        IgrpResponseStatusException thrown = assertThrows(IgrpResponseStatusException.class, () -> {
+        // Act & Assert
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> {
             deleteMenuCommandHandler.handle(command);
         });
 
-        assertEquals(HttpStatus.NOT_FOUND, thrown.getProblem().getStatus());
-        assertTrue(thrown.getProblem().getTitle().contains("Menu not found"));
+        IgrpProblem<?> problem = exception.getProblem();
+        assertEquals(HttpStatus.NOT_FOUND, problem.getStatus());
+        assertTrue(problem.getDetails().toString().contains("Menu not found with id: 99"));
+
+        verify(menuEntryRepository, times(1)).findById(99);
+        verifyNoMoreInteractions(menuEntryRepository);
+    }
+
+    @Test
+    @DisplayName("should throw IgrpResponseStatusException if command ID is null")
+    void testHandle_whenCommandIdIsNull_shouldThrowCustomException() {
+        // Arrange
+        command = deleteMenuCommand(null);
+        when(menuEntryRepository.findById(null)).thenReturn(Optional.empty());
+
+        // Act & Assert
+        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> {
+            deleteMenuCommandHandler.handle(command);
+        });
+
+        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+    }
+
+    @Test
+    @DisplayName("should still return 204 if menu is already marked as DELETED")
+    void testHandle_whenMenuAlreadyDeleted_shouldStillReturnNoContent() {
+        // Arrange
+        menuEntry.setStatus(Status.DELETED);
+        command = deleteMenuCommand(1);
+
+        when(menuEntryRepository.findById(1)).thenReturn(Optional.of(menuEntry));
+        when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
+
+        // Act
+        ResponseEntity<Void> response = deleteMenuCommandHandler.handle(command);
+
+        // Assert
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(menuEntryRepository).save(menuEntry);
     }
 }

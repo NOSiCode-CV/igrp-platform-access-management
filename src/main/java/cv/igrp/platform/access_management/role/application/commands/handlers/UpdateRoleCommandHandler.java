@@ -18,7 +18,34 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
+/**
+ * Handles the update of a {@link Role} entity.
+ *
+ * <p>
+ * This handler performs the update of a role based on the data provided in the {@link UpdateRoleCommand}.
+ * It ensures the role exists and optionally resolves and validates the new department and parent role (if provided).
+ * </p>
+ *
+ * <p>
+ * The role's name, description, department, parent, and status are updated accordingly.
+ * If any of the referenced entities (department or parent role) are not found, an {@link IgrpResponseStatusException} is thrown.
+ * </p>
+ *
+ * <p>
+ * The updated role is saved to the database and returned as a {@link RoleDTO} wrapped in a {@link ResponseEntity}.
+ * </p>
+ *
+ * @see UpdateRoleCommand
+ * @see Role
+ * @see RoleDTO
+ * @see RoleRepository
+ * @see Department
+ * @see DepartmentRepository
+ * @see RoleMapper
+ * @see IgrpResponseStatusException
+ * @see IgrpProblem
+ * @see Status
+ */
 @Slf4j
 @Service
 public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleCommand, ResponseEntity<RoleDTO>> {
@@ -27,6 +54,13 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
     private final DepartmentRepository departmentRepository;
     private final RoleMapper roleMapper;
 
+    /**
+     * Constructs an {@code UpdateRoleCommandHandler} with the required dependencies.
+     *
+     * @param roleRepository        the repository used to fetch and persist roles
+     * @param departmentRepository  the repository used to retrieve departments by ID
+     * @param roleMapper            the mapper used to convert {@link Role} to {@link RoleDTO}
+     */
     public UpdateRoleCommandHandler(RoleRepository roleRepository, DepartmentRepository departmentRepository, RoleMapper roleMapper) {
 
         this.roleRepository = roleRepository;
@@ -34,6 +68,20 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
         this.roleMapper = roleMapper;
     }
 
+    /**
+     * Handles the update operation for a role.
+     *
+     * <ul>
+     *     <li>Fetches the target role by ID and validates it is not deleted.</li>
+     *     <li>If provided, validates and loads the new department and parent role.</li>
+     *     <li>Updates the role's properties (name, description, department, parent, status).</li>
+     *     <li>Saves the updated role to the repository.</li>
+     * </ul>
+     *
+     * @param command the command containing the role ID and the updated role data
+     * @return a {@link ResponseEntity} containing the updated {@link RoleDTO}
+     * @throws IgrpResponseStatusException if the role, department, or parent role is not found
+     */
     @IgrpCommandHandler
     @Transactional
     public ResponseEntity<RoleDTO> handle(UpdateRoleCommand command) {

@@ -31,6 +31,7 @@ This module provides identity, authentication, and authorization services to app
 - [IAM Provider Integration](#iam-provider-integration)
 - [Configuration](#configuration)
 - [Running the Project](#running-the-project)
+- [Code Quality & Reports](#code-quality--reports)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -532,6 +533,168 @@ Associates a new user to the department.
 | POST   | /api/roles/{id}/removePermissions | List&lt;Integer&gt; | List&lt;PermissionDTO&gt; | 200 OK, 404 Not Found         |
 
 
+
+#### Schemas
+##### RoleDTO
+```json
+{
+  "id": 1073741824,
+  "name": "string",
+  "description": "string",
+  "departmentId": 1073741824,
+  "parentId": 1073741824,
+  "status": "ACTIVE"
+}
+```
+#### Create Role
+- **POST** `/api/roles/:id`
+##### Request & Response
+```json
+{
+  "id": 1073741824,
+  "name": "string",
+  "description": "string",
+  "departmentId": 1073741824,
+  "parentId": 1073741824,
+  "status": "ACTIVE"
+}
+```
+
+#### Get Roles
+##### Response
+```json
+[
+    {
+        "id": 355,
+        "name": "Parent",
+        "description": "Create Role Create Role",
+        "departmentId": 1,
+        "parentId": null,
+        "status": "ACTIVE"
+    },
+    {
+        "id": 356,
+        "name": "Create Child2",
+        "description": "Create Role Create Role",
+        "departmentId": 1,
+        "parentId": 355,
+        "status": "ACTIVE"
+    }
+]
+```
+
+#### Get Roles by ID
+##### Request
+- **GET** `/api/roles/:id`
+
+##### 200 OK Response
+```json
+ {
+  "id": 204,
+  "name": "Role1: New Name",
+  "description": "Role1: New Name Description",
+  "departmentId": 1,
+  "parentId": null,
+  "status": "ACTIVE"
+}
+```
+##### 404 Not Found Response
+```json
+{
+  "status": "NOT_FOUND",
+  "title": "Get Role By Id",
+  "details": "Role with id: 2041 not found."
+}
+```
+
+#### Get Permissions By Role ID
+- **POST** `/api/roles/:id/permissions`
+##### Response
+```json
+[
+  {
+    "id": 4,
+    "name": "Create Resource Level 3",
+    "description": "Create Resource Level 3 - description",
+    "status": "ACTIVE",
+    "applicationId": 1
+  },
+  {
+    "id": 1,
+    "name": "Create Resource Level 1",
+    "description": "Create Resource Level 1 - description",
+    "status": "ACTIVE",
+    "applicationId": 1
+  },
+  {
+    "id": 2,
+    "name": "Create Resource Level 2",
+    "description": "Create Resource Level 2 - description",
+    "status": "ACTIVE",
+    "applicationId": 1
+  }
+]
+```
+
+#### Add Permissions
+- **POST** `/api/roles/:id/addPermissions`
+##### Request Body
+```json
+[1,2,3,4]
+```
+##### Response
+```json
+[
+    {
+        "id": 2,
+        "name": "Create Resource Level 2",
+        "description": "Create Resource Level 2 - description",
+        "status": "ACTIVE",
+        "applicationId": 1
+    },
+    {
+        "id": 1,
+        "name": "Create Resource Level 1",
+        "description": "Create Resource Level 1 - description",
+        "status": "ACTIVE",
+        "applicationId": 1
+    },
+    {
+        "id": 4,
+        "name": "Create Resource Level 3",
+        "description": "Create Resource Level 3 - description",
+        "status": "ACTIVE",
+        "applicationId": 1
+    }
+]
+```
+
+
+#### Remove Permissions
+- **POST** `/api/roles/:id/removePermissions`
+##### Request Body
+```json
+[2, 4]
+```
+##### Response
+```json
+[
+  {
+    "id": 2,
+    "name": "Create Resource Level 2",
+    "description": "Create Resource Level 2 - description",
+    "status": "ACTIVE",
+    "applicationId": 1
+  },
+  {
+    "id": 4,
+    "name": "Create Resource Level 3",
+    "description": "Create Resource Level 3 - description",
+    "status": "ACTIVE",
+    "applicationId": 1
+  }
+]
+```
 ### 🛂 Permission Management
 
 | Method | Endpoint                            | Request       | Response                  | Status Code                   |
@@ -542,6 +705,39 @@ Associates a new user to the department.
 | PUT    | /api/permissions/{id}               | PermissionDTO | PermissionDTO             | 200 OK, 404 Not Found         |
 | DELETE | /api/permissions/{id}               | —             | —                         | 204 No Content, 404 Not Found |
 | GET    | /api/permissions/{id}/roles         | —             | List&lt;RoleDTO&gt;       | 200 OK, 404 Not Found         |
+
+#### Schemas
+##### PermissionDTO
+```json
+{
+  "id": 1073741824,
+  "name": "string",
+  "description": "string",
+  "status": "ACTIVE",
+  "applicationId": 1073741824
+}
+```
+
+#### Create Permission
+- **POST** `/api/permissions`
+##### Request & Response
+```json
+{
+  "id": null,
+  "name": "string",
+  "description": "string",
+  "status": "ACTIVE",
+  "applicationId": 5
+}
+```
+##### 404 Not Found Response
+```json
+{
+    "status": "NOT_FOUND",
+    "title": "Create Permission",
+    "details": "Application with id: 5 not found."
+}
+```
 
 ### 👤 User Management
 
@@ -1073,6 +1269,60 @@ Supports:
 # Run the Spring Boot app
 mvn spring-boot:run
 ```
+---
+
+## 📊 Code Quality & Reports
+
+This project integrates the following tools to ensure code quality and maintainability:
+
+### ✅ Generate JaCoCo Code Coverage Report
+
+Runs the tests and generates a coverage report:
+```bash
+# Run the following command
+mvn clean verify
+```
+
+The coverage report will be available at:
+
+```target/site/jacoco/index.html```
+
+
+### 📚 Generate Javadoc Documentation
+
+Generates the Javadoc API documentation:
+
+```bash
+# Run the following command
+mvn javadoc:javadoc
+```
+
+The documentation can be found at:
+
+```target/reports/apidocs/index.html```
+
+The maven-javadoc-plugin is configured to attach a JAR with docs, also check:
+
+```target/access-management-*-javadoc.jar```
+
+### 🛡 Run OWASP Dependency Check
+
+Checks for known vulnerabilities in the dependencies:
+
+```bash
+# Using Maven verify phase
+mvn verify
+```
+
+```bash
+# Invoke directly
+mvn dependency-check:check
+```
+
+The generated report will be available at:
+
+```target/reports/dependency-check-report.html```
+
 
 ---
 
