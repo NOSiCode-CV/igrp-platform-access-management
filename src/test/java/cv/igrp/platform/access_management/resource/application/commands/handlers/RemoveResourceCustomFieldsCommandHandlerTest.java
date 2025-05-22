@@ -3,10 +3,12 @@ package cv.igrp.platform.access_management.resource.application.commands.handler
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.CustomField;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,112 +17,121 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import cv.igrp.platform.access_management.resource.application.commands.commands.*;
-import cv.igrp.platform.access_management.resource.application.commands.handlers.*;
-import cv.igrp.platform.access_management.resource.application.dto.*;
-
 import java.util.*;
 
 @ExtendWith(MockitoExtension.class)
+@DisplayName("RemoveResourceCustomFieldsCommandHandler Tests")
 public class RemoveResourceCustomFieldsCommandHandlerTest {
-
-    @InjectMocks
-    private RemoveResourceCustomFieldsCommandHandler removeResourceCustomFieldsCommandHandler;
 
     @Mock
     private CustomFieldRepository customFieldRepository;
 
+    @InjectMocks
+    private RemoveResourceCustomFieldsCommandHandler handler;
+
+    private RemoveResourceCustomFieldsCommand removeResourceCustomFieldsCommand(
+            List<String> removeResourceCustomFieldsRequest,
+            Integer resourceId){
+        return new RemoveResourceCustomFieldsCommand(removeResourceCustomFieldsRequest, resourceId);
+    }
+
+    private RemoveResourceCustomFieldsCommand command;
+    private CustomField customField;
+
     @BeforeEach
     void setUp() {
-        // ...
+        command = removeResourceCustomFieldsCommand(List.of("field1","field2"), 123);
+
+        Map<String, Object> existingFields = new HashMap<>();
+        existingFields.put("field1", "value1");
+        existingFields.put("field2", "value2");
+        existingFields.put("field3", "value3");
+
+        customField = new CustomField();
+        customField.setRecordId(123);
+        customField.setTableName(CustomFieldTableName.RESOURCE.getName());
+        customField.setFields(existingFields);
     }
 
     @Test
-    void testHandle_ShouldRemoveCustomFields_WhenResourceExists() {
-        // Given
-        Integer resourceId = 1;
-        RemoveResourceCustomFieldsCommand command = new RemoveResourceCustomFieldsCommand();
-        command.setId(resourceId);
-        List<String> fieldsToRemove = Arrays.asList("key1", "key2");
-        command.setRemoveResourceCustomFieldsRequest(fieldsToRemove);
-
-        Map<String, Object> customFields = new HashMap<>();
-        customFields.put("key1", "value1");
-        customFields.put("key2", "value2");
-        CustomField customField = new CustomField();
-        customField.setTableName("t_resource");
-        customField.setRecordId(resourceId);
-        customField.setFields(customFields);
-
-        when(customFieldRepository.findByTableNameAndRecordId("t_resource", resourceId))
+    @DisplayName("should remove specified fields and persist updated custom field")
+    void testHandle_whenValidRequest_shouldRemoveFieldsAndSave() {
+        // Arrange
+        when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123))
                 .thenReturn(Optional.of(customField));
 
-        when(customFieldRepository.save(any(CustomField.class))).thenReturn(customField);
+        // Act
+        ResponseEntity<String> response = handler.handle(command);
 
-        // When
-        ResponseEntity<String> response = removeResourceCustomFieldsCommandHandler.handle(command);
-
-        // Then
-        assertNotNull(response);
+        // Assert
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertFalse(customField.getFields().containsKey("field1"));
+        assertFalse(customField.getFields().containsKey("field2"));
+        assertTrue(customField.getFields().containsKey("field3"));
 
-        // Verify repository calls
-        verify(customFieldRepository, times(1)).findByTableNameAndRecordId("t_resource", resourceId);
-        verify(customFieldRepository, times(1)).save(any(CustomField.class));
-
-        assertFalse(customField.getFields().containsKey("key1"));
-        assertFalse(customField.getFields().containsKey("key2"));
+        verify(customFieldRepository, times(1)).findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123);
+        verify(customFieldRepository, times(1)).save(customField);
+        verifyNoMoreInteractions(customFieldRepository);
     }
 
     @Test
-    void testHandle_ShouldThrowException_WhenCustomFieldNotFound() {
-        // Given
-        Integer resourceId = 99;
-        RemoveResourceCustomFieldsCommand command = new RemoveResourceCustomFieldsCommand();
-        command.setId(resourceId);
-
-        when(customFieldRepository.findByTableNameAndRecordId("t_resource", resourceId)).thenReturn(Optional.empty());
-
-        // When / Then
-        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
-                () -> removeResourceCustomFieldsCommandHandler.handle(command));
-
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
-        assertTrue(ex.getProblem().getTitle().contains("CustomField not found"));
-    }
-
-    @Test
-    void testHandle_ShouldSaveUpdatedCustomField_WhenFieldsRemoved() {
-        // Given
-        Integer resourceId = 1;
-        RemoveResourceCustomFieldsCommand command = new RemoveResourceCustomFieldsCommand();
-        List<String> fieldsToRemove = List.of("key1");
-        command.setRemoveResourceCustomFieldsRequest(fieldsToRemove);
-        command.setId(resourceId);
-
-        Map<String, Object> customFields = new HashMap<>();
-        customFields.put("key1", "value1");
-        customFields.put("key2", "value2");
-        CustomField customField = new CustomField();
-        customField.setTableName("t_resource");
-        customField.setRecordId(resourceId);
-        customField.setFields(customFields);
-
-        when(customFieldRepository.findByTableNameAndRecordId("t_resource", resourceId))
+    @DisplayName("should skip removal if keys list is null")
+    void testHandle_whenRemoveKeysIsNull_shouldSkipRemoval() {
+        // Arrange
+        command = removeResourceCustomFieldsCommand(null, 123);
+        when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123))
                 .thenReturn(Optional.of(customField));
 
-        when(customFieldRepository.save(any(CustomField.class))).thenReturn(customField);
+        // Act
+        ResponseEntity<String> response = handler.handle(command);
 
-        // When
-        ResponseEntity<String> response = removeResourceCustomFieldsCommandHandler.handle(command);
-
-        // Then
-        assertNotNull(response);
+        // Assert
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertEquals(3, customField.getFields().size());
 
-        verify(customFieldRepository, times(1)).findByTableNameAndRecordId("t_resource", resourceId);
-        verify(customFieldRepository, times(1)).save(any(CustomField.class));
+        // Verify
+        verify(customFieldRepository, times(1)).findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123);
+        verify(customFieldRepository, times(1)).save(customField);
+    }
 
-        assertFalse(customField.getFields().containsKey("key1"));
-        assertTrue(customField.getFields().containsKey("key2"));
+    @Test
+    @DisplayName("should skip removal if field map is null")
+    void testHandle_whenFieldsMapIsNull_shouldNotFail() {
+        // Arrange
+        customField.setFields(null);
+        when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123))
+                .thenReturn(Optional.of(customField));
+
+        // Act
+        ResponseEntity<String> response = handler.handle(command);
+
+        // Assert
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertNotNull(customField.getFields());
+        assertFalse(customField.getFields().containsKey("field1"));
+
+        // Verify
+        verify(customFieldRepository).findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123);
+        verify(customFieldRepository).save(customField);
+    }
+
+    @Test
+    @DisplayName("should throw IgrpResponseStatusException if custom field not found")
+    void testHandle_whenCustomFieldNotFound_shouldThrowException() {
+        // Arrange
+        when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123))
+                .thenReturn(Optional.empty());
+
+        // Act
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class,
+                () -> handler.handle(command));
+
+        // Assert
+        assertEquals(HttpStatus.NOT_FOUND, exception.getProblem().getStatus());
+        assertEquals("CustomField not found", exception.getProblem().getTitle());
+
+        // Verify
+        verify(customFieldRepository).findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123);
+        verifyNoMoreInteractions(customFieldRepository);
     }
 }

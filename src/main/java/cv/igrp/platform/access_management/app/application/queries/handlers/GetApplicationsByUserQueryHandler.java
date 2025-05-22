@@ -14,17 +14,50 @@ import cv.igrp.platform.access_management.app.application.queries.queries.GetApp
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Handles the query to retrieve all {@link Application} entities accessible by a specific user.
+ *
+ * <p>
+ * This query handler:
+ * <ul>
+ *   <li>Uses the {@link ApplicationRepository} to find distinct applications where the given user is associated via roles and departments.</li>
+ *   <li>Maps each {@link Application} entity to an {@link ApplicationDTO} using {@link ApplicationMapper}.</li>
+ *   <li>Returns the list of applications in a {@link ResponseEntity} with HTTP status {@code 200 OK}.</li>
+ * </ul>
+ *
+ * <p>
+ * The user is matched by both their username and email address.
+ * </p>
+ *
+ * @see GetApplicationsByUserQuery
+ * @see ApplicationRepository
+ * @see ApplicationMapper
+ * @see ApplicationDTO
+ */
 @Service
 public class GetApplicationsByUserQueryHandler implements QueryHandler<GetApplicationsByUserQuery, ResponseEntity<List<ApplicationDTO>>>{
 
    private ApplicationRepository applicationRepository;
    private ApplicationMapper applicationMapper;
 
+   /**
+    * Constructs the query handler with required dependencies.
+    *
+    * @param applicationRepository repository used to query applications
+    * @param applicationMapper     mapper to convert {@link Application} to {@link ApplicationDTO}
+    */
    public GetApplicationsByUserQueryHandler(ApplicationRepository applicationRepository, ApplicationMapper applicationMapper) {
       this.applicationRepository = applicationRepository;
       this.applicationMapper = applicationMapper;
    }
 
+   /**
+    * Handles the incoming {@link GetApplicationsByUserQuery} by retrieving applications
+    * associated with the given user (matched by username or email).
+    *
+    * @param query the query containing the user identifier
+    * @return a {@link ResponseEntity} containing a list of {@link ApplicationDTO}
+    */
    @IgrpQueryHandler
    public ResponseEntity<List<ApplicationDTO>> handle(GetApplicationsByUserQuery query) {
       List<Application> applications = applicationRepository
