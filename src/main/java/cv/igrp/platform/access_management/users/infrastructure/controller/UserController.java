@@ -171,7 +171,7 @@ public class UserController {
   }
 
   @PostMapping(
-    value = "users"
+    value = "getUsers"
   )
   @Operation(
     summary = "POST method to handle operations for getUsers",
