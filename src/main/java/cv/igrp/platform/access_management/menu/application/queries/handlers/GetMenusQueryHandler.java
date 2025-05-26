@@ -7,8 +7,10 @@ import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
+import jakarta.persistence.criteria.Join;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
@@ -84,8 +86,11 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
          );
       }
       if (applicationId != null) {
-         spec = spec.and((root, query, cb) ->
-                 cb.equal(root.get("applicationId").get("id"), applicationId)
+
+         spec = spec.and((root, query, cb) -> {
+               Join<MenuEntry, Application> applicationJoin = root.join("applicationId");
+               return cb.equal(applicationJoin.get("id"), applicationId);
+            }
          );
       }
       return spec;
