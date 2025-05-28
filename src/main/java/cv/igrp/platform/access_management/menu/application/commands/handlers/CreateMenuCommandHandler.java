@@ -96,7 +96,6 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
         }
 
         MenuEntry menuEntry = menuEntryMapper.toEntity(menuEntryDTO);
-        menuEntry.setStatus(Status.ACTIVE);
 
         if (menuEntryDTO.getApplicationId() != null) {
             menuEntry.setApplicationId(applicationRepository.findById(menuEntryDTO.getApplicationId())
