@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.resource.mapper;
 
 import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.resource.application.dto.ResourceItemDTO;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
 import cv.igrp.platform.access_management.shared.domain.models.ResourceItem;
@@ -57,7 +58,7 @@ public class ResourceMapper {
         Resource resource = new Resource();
         resource.setName(dto.getName());
         resource.setType(dto.getType());
-        resource.setStatus(dto.getStatus());
+        resource.setStatus(dto.getStatus() != null ? dto.getStatus() : Status.ACTIVE);
         resource.setExternalId(dto.getExternalId());
 
         return resource;
