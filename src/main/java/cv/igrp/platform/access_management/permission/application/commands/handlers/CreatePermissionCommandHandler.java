@@ -4,12 +4,14 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.permission.application.commands.commands.CreatePermissionCommand;
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.permission.domain.service.PermissionValidator;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
+import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.PermissionRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -86,6 +88,12 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
                             new IgrpProblem<>(HttpStatus.NOT_FOUND, "Create Permission", "Application with id: " + command.getPermissiondto().getApplicationId() + " not found.")
                     );
                 });
+        ResourceValidationResponse validationResponse = PermissionValidator.validatePermissionName(command.getPermissiondto(), foundApplication);
+        if (!validationResponse.isValid()) {
+            log.warn("Invalid Permission Dto with name {}.", command.getPermissiondto().getName());
+            throw new IgrpResponseStatusException(
+                    new IgrpProblem<>(HttpStatus.CONFLICT, "Create Permission", validationResponse.getFailureMessage()));
+        }
         Permission newPermission = permissionMapper.mapDtoToEntity(request, foundApplication);
         Permission savedPermission = repository.save(newPermission);
         PermissionDTO permissionDTO = permissionMapper.mapToDTO(savedPermission);

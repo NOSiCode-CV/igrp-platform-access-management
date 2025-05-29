@@ -4,12 +4,14 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.permission.application.commands.commands.UpdatePermissionCommand;
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.permission.domain.service.PermissionValidator;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
+import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.PermissionRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -96,7 +98,12 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
                             new IgrpProblem<>(HttpStatus.NOT_FOUND, "Update Permission", "Application with id: " + command.getId() + " not found.")
                     );
                 });
-
+        ResourceValidationResponse validationResponse = PermissionValidator.validatePermissionName(command.getPermissiondto(), application);
+        if (!validationResponse.isValid()) {
+            log.warn("Invalid Permission Dto with id {}.", command.getId());
+            throw new IgrpResponseStatusException(
+                    new IgrpProblem<>(HttpStatus.CONFLICT, "Update Permission", validationResponse.getFailureMessage()));
+        }
         PermissionDTO newData = command.getPermissiondto();
         foundPermission.setName(newData.getName());
         if (newData.getDescription() != null && !newData.getDescription().trim().isEmpty()) {
