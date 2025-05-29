@@ -17,5 +17,7 @@ public class GetApplicationsQuery implements Query {
   private String code;
   @NotBlank(message = "The field <name> is required.")
   private String name;
+  @NotBlank(message = "The field <slug> is required.")
+  private String slug;
 
 }

@@ -41,12 +41,14 @@ public class GetApplicationsQueryHandlerTest {
         // Given
         String code = "APP001";
         String name = "MyApp";
-        GetApplicationsQuery query = new GetApplicationsQuery(code, name);
+        String slug = "my-app-one";
+        GetApplicationsQuery query = new GetApplicationsQuery(code, name, slug);
 
         Application app1 = new Application();
         app1.setId(1);
         app1.setCode("APP001");
         app1.setName("MyApp One");
+        app1.setSlug("my-app-one");
         app1.setType(AppType.INTERNAL);
         app1.setStatus(Status.ACTIVE);
 
@@ -74,13 +76,14 @@ public class GetApplicationsQueryHandlerTest {
 
         assertEquals("MyApp One", result.get(0).getName());
         assertEquals("APP001", result.get(0).getCode());
+        assertEquals("my-app-one", result.get(0).getSlug());
     }
 
     @Test
     void testHandleGetApplicationsQuery_shouldReturnMatchesByNameOnly() {
         // Given
         String name = "portal";
-        GetApplicationsQuery query = new GetApplicationsQuery(null, name); // code is null
+        GetApplicationsQuery query = new GetApplicationsQuery(null, name, null); // code is null
 
         Application app1 = new Application();
         app1.setId(1);
@@ -120,7 +123,7 @@ public class GetApplicationsQueryHandlerTest {
     @Test
     void testHandleGetApplicationsQuery_shouldReturnAllWhenNoFiltersProvided() {
         // Given
-        GetApplicationsQuery query = new GetApplicationsQuery(null, null); // No filters
+        GetApplicationsQuery query = new GetApplicationsQuery(null, null, null); // No filters
 
         Application app1 = new Application();
         app1.setId(1);

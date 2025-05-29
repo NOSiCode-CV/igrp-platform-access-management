@@ -60,7 +60,7 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
     */
    @IgrpQueryHandler
    public ResponseEntity<List<ApplicationDTO>> handle(GetApplicationsQuery applicationsQuery) {
-      Specification<Application> spec = buildSpecification(applicationsQuery.getCode(), applicationsQuery.getName());
+      Specification<Application> spec = buildSpecification(applicationsQuery.getCode(), applicationsQuery.getName(), applicationsQuery.getSlug());
       List<ApplicationDTO> applications = applicationRepository.findAll(spec)
               .stream()
               .map(applicationMapper::toDto)
@@ -75,7 +75,7 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
     * @param name the name substring to search for, case-insensitive (optional)
     * @return a {@link Specification} representing the composed query filters
     */
-   private Specification<Application> buildSpecification(final String code, final String name) {
+   private Specification<Application> buildSpecification(final String code, final String name, final String slug) {
       Specification<Application> spec = Specification.where(null);
       if (code != null && !code.isEmpty()) {
          spec = spec.and((root, query, cb) ->
@@ -87,6 +87,12 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
                  cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%")
          );
       }
+      if (slug != null && !slug.isEmpty()) {
+         spec = spec.and((root, query, cb) ->
+                 cb.equal(cb.lower(root.get("slug")), slug.toLowerCase())
+         );
+      }
+
       return spec;
    }
 
