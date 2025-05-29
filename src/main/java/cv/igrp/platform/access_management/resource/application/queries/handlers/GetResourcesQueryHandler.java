@@ -4,8 +4,11 @@ import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
 import cv.igrp.platform.access_management.shared.application.constants.ResourceType;
+import cv.igrp.platform.access_management.shared.domain.models.Application;
+import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
+import jakarta.persistence.criteria.Join;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
@@ -90,8 +93,11 @@ public class GetResourcesQueryHandler implements
          );
       }
       if (applicationId != null) {
-         spec = spec.and((root, query, cb) ->
-                 cb.equal(root.get("applicationId").get("id"), applicationId)
+
+         spec = spec.and((root, query, cb) -> {
+                    Join<MenuEntry, Application> applicationJoin = root.join("applicationId");
+                    return cb.equal(applicationJoin.get("id"), applicationId);
+                 }
          );
       }
       if (type != null) {

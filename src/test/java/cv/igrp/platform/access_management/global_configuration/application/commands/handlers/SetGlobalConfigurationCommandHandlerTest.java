@@ -1,4 +1,4 @@
-package cv.igrp.platform.access_management.users.application.commands.handlers;
+package cv.igrp.platform.access_management.global_configuration.application.commands.handlers;
 
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -9,15 +9,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
-import cv.igrp.platform.access_management.users.application.commands.commands.*;
-import cv.igrp.platform.access_management.users.application.commands.handlers.*;
-import cv.igrp.platform.access_management.users.application.dto.*;
+import cv.igrp.platform.access_management.global_configuration.application.commands.commands.*;
+import cv.igrp.platform.access_management.global_configuration.application.commands.handlers.*;
 
 @ExtendWith(MockitoExtension.class)
-public class GetUsersCommandHandlerTest {
+public class SetGlobalConfigurationCommandHandlerTest {
 
     @InjectMocks
-    private GetUsersCommandHandler getUsersCommandHandler;
+    private SetGlobalConfigurationCommandHandler setGlobalConfigurationCommandHandler;
 
     @BeforeEach
     void setUp() {
@@ -29,10 +28,10 @@ public class GetUsersCommandHandlerTest {
         // TODO: Implement unit test for handle method
         // Example:
         // Given
-        // GetUsersCommand command = new GetUsersCommand(...);
+        // SetGlobalConfigurationCommand command = new SetGlobalConfigurationCommand(...);
         //
         // When
-        // ResponseEntity<List<IGRPUserDTO>> response = getUsersCommandHandler.handle(command);
+        // ResponseEntity<GlobalConfigurationDTO> response = setGlobalConfigurationCommandHandler.handle(command);
         //
         // Then
         // assertNotNull(response);
