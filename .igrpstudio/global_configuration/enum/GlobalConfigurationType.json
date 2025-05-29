@@ -1,0 +1,1 @@
+{"type":"enum","module":"global_configuration","name":"GlobalConfigurationType","values":[{"name":"CLUSTER","attributes":["CLUSTER","Cluster"]},{"name":"ORGANIZATION","attributes":["ORGANIZATION","Organization"]}],"attributes":[{"type":"string","name":"Code"},{"type":"string","name":"Description"}]}
