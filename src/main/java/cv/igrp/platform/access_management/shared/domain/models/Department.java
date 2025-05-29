@@ -52,7 +52,7 @@ public class Department extends AuditEntity {
     private Application applicationId;
 
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "parent_id", referencedColumnName = "id")
     private Department parentId;   @OneToMany(mappedBy = "parentId")
 private List<Department> childrenids;

@@ -45,7 +45,7 @@ public class Permission extends AuditEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application", referencedColumnName = "id")
-    private Application application;   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
+    private Application application;   @ManyToMany(mappedBy = "permissions", fetch = FetchType.EAGER)
 private Set<Role> roles;
 
 

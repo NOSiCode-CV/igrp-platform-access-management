@@ -45,18 +45,18 @@ public class Role extends AuditEntity {
   
 
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "department", referencedColumnName = "id")
     private Department department;
 
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "parent", referencedColumnName = "id")
     private Role parent;
 
 
   
-    @ManyToMany(fetch = FetchType.LAZY, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
+    @ManyToMany(fetch = FetchType.EAGER, cascade = { CascadeType.PERSIST, CascadeType.MERGE })
     @JoinTable(
             name = "t_role_permission",
             joinColumns = @JoinColumn(name = "role_id"),
@@ -64,10 +64,4 @@ public class Role extends AuditEntity {
     )
     @OnDelete(action = OnDeleteAction.SET_NULL)
 private Set<Permission> permissions;
-
-
-  
-    @ManyToMany(fetch = FetchType.LAZY)
-private Set<IGRPUser> users;
-
 }
