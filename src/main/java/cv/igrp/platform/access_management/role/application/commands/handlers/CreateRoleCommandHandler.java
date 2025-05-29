@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.role.application.commands.handlers;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.application.commands.commands.CreateRoleCommand;
-import cv.igrp.platform.access_management.role.domain.models.RoleValidationResponse;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -12,6 +11,7 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Department;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
+import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.DepartmentRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -19,8 +19,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Optional;
 
 /**
  * Command handler responsible for processing the {@link CreateRoleCommand}
@@ -86,10 +84,10 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
                             new IgrpProblem<>(HttpStatus.NOT_FOUND, "Create Role", "Department with id: " + command.getRoledto().getDepartmentId() + " not found.")
                     );
                 });
-        RoleValidationResponse roleValidationResponse = RoleValidator.validateRoleDto(command.getRoledto(), department);
+        ResourceValidationResponse roleValidationResponse = RoleValidator.validateRoleDto(command.getRoledto(), department);
         if(!roleValidationResponse.isValid()){
             throw new IgrpResponseStatusException(
-                    new IgrpProblem<>(HttpStatus.BAD_REQUEST, "Create Role", roleValidationResponse.getFailureMessage())
+                    new IgrpProblem<>(HttpStatus.CONFLICT, "Create Role", roleValidationResponse.getFailureMessage())
             );
         }
 

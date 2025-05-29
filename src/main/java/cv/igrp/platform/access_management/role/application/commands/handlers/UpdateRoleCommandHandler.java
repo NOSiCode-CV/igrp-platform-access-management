@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.role.application.commands.handlers;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.application.commands.commands.UpdateRoleCommand;
-import cv.igrp.platform.access_management.role.domain.models.RoleValidationResponse;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -12,6 +11,7 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Department;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
+import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.DepartmentRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -107,10 +107,10 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
                                 new IgrpProblem<>(HttpStatus.NOT_FOUND, ERROR_TITLE, "Department with id: " + newData.getDepartmentId() + " not found.")
                         );
                     });
-            RoleValidationResponse roleValidationResponse = RoleValidator.validateRoleDto(command.getRoledto(), department);
+            ResourceValidationResponse roleValidationResponse = RoleValidator.validateRoleDto(command.getRoledto(), department);
             if(!roleValidationResponse.isValid()){
                 throw new IgrpResponseStatusException(
-                        new IgrpProblem<>(HttpStatus.BAD_REQUEST, ERROR_TITLE, roleValidationResponse.getFailureMessage())
+                        new IgrpProblem<>(HttpStatus.CONFLICT, ERROR_TITLE, roleValidationResponse.getFailureMessage())
                 );
             }
         }

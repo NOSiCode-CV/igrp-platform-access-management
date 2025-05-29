@@ -1,22 +1,23 @@
-package cv.igrp.platform.access_management.role.domain.models;
+package cv.igrp.platform.access_management.shared.domain.validation;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Represents the result of validating a role creation or update operation.
+ * Represents the result of validating a resource.
  *
  * <p>This model holds a validation status and a list of failure messages in case the validation
  * fails. It is typically used to communicate the outcome of business rule checks before persisting
  * a {@code Role} entity.
  */
-public class RoleValidationResponse {
+public class ResourceValidationResponse {
+
     /** Indicates whether the validation passed successfully. */
     private boolean isValid;
     /** Contains messages describing validation failures, if any. */
     private List<String> failureMessage;
 
-    public RoleValidationResponse() {
+    public ResourceValidationResponse() {
     }
 
     public boolean isValid() {

@@ -1,9 +1,9 @@
 package cv.igrp.platform.access_management.role.domain.service;
 
-import cv.igrp.platform.access_management.role.domain.models.RoleValidationResponse;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.models.Department;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
+import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -27,7 +27,7 @@ class RoleValidatorTest {
         department.setRoles(List.of());
 
         // When
-        RoleValidationResponse response = RoleValidator.validateRoleDto(newRole, department);
+        ResourceValidationResponse response = RoleValidator.validateRoleDto(newRole, department);
 
         // Then
         assertTrue(response.isValid());
@@ -49,7 +49,7 @@ class RoleValidatorTest {
         newRole.setName(roleName);
 
         // When
-        RoleValidationResponse response = RoleValidator.validateRoleDto(newRole, department);
+        ResourceValidationResponse response = RoleValidator.validateRoleDto(newRole, department);
 
         // Then
         assertFalse(response.isValid());

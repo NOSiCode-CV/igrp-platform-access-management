@@ -1,9 +1,9 @@
 package cv.igrp.platform.access_management.role.domain.service;
 
-import cv.igrp.platform.access_management.role.domain.models.RoleValidationResponse;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.models.Department;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
+import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -15,7 +15,7 @@ import java.util.Optional;
  * Utility class responsible for validating {@link RoleDTO} instances against business rules.
  *
  * <p>This validator checks for conditions such as duplicate role names within a department.
- * Validation results are encapsulated in a {@link RoleValidationResponse} object, which includes
+ * Validation results are encapsulated in a {@link ResourceValidationResponse} object, which includes
  * status and detailed failure messages.
  */
 public class RoleValidator {
@@ -28,10 +28,10 @@ public class RoleValidator {
      *
      * @param roleDTO the role data to be validated
      * @param department the department in which the role is being created
-     * @return a {@link RoleValidationResponse} containing validation status and failure messages
+     * @return a {@link ResourceValidationResponse} containing validation status and failure messages
      */
-    public static RoleValidationResponse validateRoleDto(RoleDTO roleDTO, Department department){
-        RoleValidationResponse response = new RoleValidationResponse();
+    public static ResourceValidationResponse validateRoleDto(RoleDTO roleDTO, Department department){
+        ResourceValidationResponse response = new ResourceValidationResponse();
         response.setValid(true);
         response.setFailureMessage(new ArrayList<>());
         validateRoleName(roleDTO, department, response);
@@ -46,7 +46,7 @@ public class RoleValidator {
      * @param department the department in which the role is being created
      * @param response the validation response object to be updated with failure messages if any
      */
-    private static void validateRoleName(RoleDTO roleDTO, Department department, RoleValidationResponse response) {
+    private static void validateRoleName(RoleDTO roleDTO, Department department, ResourceValidationResponse response) {
         if(department != null && department.getRoles() != null){
             Optional<Role> optionalRoleSameName = department.getRoles()
                     .stream()
