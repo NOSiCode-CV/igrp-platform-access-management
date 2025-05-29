@@ -76,7 +76,7 @@ public class GetApplicationsQueryHandlerTest {
 
         assertEquals("MyApp One", result.get(0).getName());
         assertEquals("APP001", result.get(0).getCode());
-        assertEquals("my-slug-one", result.get(0).getSlug());
+        assertEquals("my-app-one", result.get(0).getSlug());
     }
 
     @Test
