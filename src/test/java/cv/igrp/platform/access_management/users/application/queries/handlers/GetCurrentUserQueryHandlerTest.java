@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.*;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
+import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,7 +20,8 @@ import cv.igrp.platform.access_management.users.application.queries.queries.*;
 import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
-public class GetCurrentUserQueryHandlerTest {
+@DisplayName("GetCurrentUserQueryHandler Test")
+class GetCurrentUserQueryHandlerTest {
 
     @Mock
     private IGRPUserRepository userRepository;
@@ -28,66 +29,71 @@ public class GetCurrentUserQueryHandlerTest {
     @Mock
     private IGRPUserMapper userMapper;
 
+    @Mock
+    private AuthenticationHelper authenticationHelper;
+
     @InjectMocks
     private GetCurrentUserQueryHandler handler;
 
-    private IGRPUser user;
-    private IGRPUserDTO dto;
+    private IGRPUser mockUser;
+    private IGRPUserDTO mockDto;
+    private final String mockUsername = "john.doe";
 
     @BeforeEach
     void setUp() {
-        user = new IGRPUser();
-        user.setId(1);
-        user.setName("Test User");
-        user.setUsername("test");
-        user.setEmail("test@example.com");
+        mockUser = new IGRPUser();
+        mockUser.setId(1);
+        mockUser.setUsername(mockUsername);
+        mockUser.setName("John Doe");
+        mockUser.setEmail("john@example.com");
 
-        dto = new IGRPUserDTO();
-        dto.setId(1);
-        dto.setName("Test User");
-        dto.setUsername("test");
-        dto.setEmail("test@example.com");
+        mockDto = new IGRPUserDTO();
+        mockDto.setId(1);
+        mockDto.setUsername(mockUsername);
+        mockDto.setName("John Doe");
+        mockDto.setEmail("john@example.com");
     }
 
     @Test
-    @DisplayName("should return current user if found by ID")
-    @Disabled
-    void testHandle_userExists_shouldReturnUserDTO() {
-        // Mock o ID retornado de SecurityUtils
-        Integer mockedUserId = 1;
-
-        // Mock repository e mapper
-        when(userRepository.findById(mockedUserId)).thenReturn(Optional.of(user));
-        when(userMapper.toDto(user)).thenReturn(dto);
+    @DisplayName("Should return user DTO when authenticated user is found")
+    void testHandle_whenUserExists_shouldReturnUserDTO() {
+        // Arrange
+        when(authenticationHelper.getPreferredUsername()).thenReturn(mockUsername);
+        when(userRepository.findByUsername(mockUsername)).thenReturn(Optional.of(mockUser));
+        when(userMapper.toDto(mockUser)).thenReturn(mockDto);
 
         // Act
-        ResponseEntity<IGRPUserDTO> response = handler.handle(new GetCurrentUserQuery() {
-            // simula pegar userId de um util — poderia ser injetado num mockable SecurityUtils também
-        });
+        ResponseEntity<IGRPUserDTO> response = handler.handle(new GetCurrentUserQuery());
 
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals("Test User", response.getBody().getName());
+        assertEquals(mockDto.getUsername(), response.getBody().getUsername());
+        assertEquals(mockDto.getEmail(), response.getBody().getEmail());
 
-        verify(userRepository, times(1)).findById(mockedUserId);
-        verify(userMapper, times(1)).toDto(user);
+        // Verify
+        verify(authenticationHelper, times(1)).getPreferredUsername();
+        verify(userRepository, times(1)).findByUsername(mockUsername);
+        verify(userMapper, times(1)).toDto(mockUser);
     }
 
     @Test
-    @DisplayName("should return 404 if user is not found")
-    @Disabled
-    void testHandle_userNotFound_shouldReturn404() {
-        Integer mockedUserId = 99;
+    @DisplayName("Should return 404 when authenticated user is not found")
+    void testHandle_whenUserNotFound_shouldReturnNotFound() {
+        // Arrange
+        when(authenticationHelper.getPreferredUsername()).thenReturn(mockUsername);
+        when(userRepository.findByUsername(mockUsername)).thenReturn(Optional.empty());
 
-        when(userRepository.findById(mockedUserId)).thenReturn(Optional.empty());
-
+        // Act
         ResponseEntity<IGRPUserDTO> response = handler.handle(new GetCurrentUserQuery());
 
+        // Assert
         assertEquals(HttpStatus.NOT_FOUND, response.getStatusCode());
         assertNull(response.getBody());
 
-        verify(userRepository, times(1)).findById(mockedUserId);
+        // Verify
+        verify(authenticationHelper, times(1)).getPreferredUsername();
+        verify(userRepository, times(1)).findByUsername(mockUsername);
         verifyNoInteractions(userMapper);
     }
 }
