@@ -5,6 +5,7 @@ import cv.igrp.platform.access_management.global_configuration.infrastructure.pe
 import cv.igrp.platform.access_management.global_configuration.mapper.GlobalConfigurationMapper;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
@@ -30,6 +31,7 @@ private GlobalConfigurationMapper mapper;
    }
 
    @IgrpQueryHandler
+   @Transactional
    public ResponseEntity<GlobalConfigurationDTO> handle(GetGlobalConfigurationQuery query) {
 
        var globalConfigurationType = GlobalConfigurationType.fromCode(query.getType());
