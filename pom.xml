@@ -31,6 +31,10 @@
             <id>igrp-framework-releases</id>
             <url>https://sonatype.nosi.cv/repository/igrp-framework-releases/</url>
         </repository>
+        <repository>
+            <id>igrp-framework</id>
+            <url>https://sonatype.nosi.cv/repository/igrp-framework/</url>
+        </repository>
     </repositories>
     <properties>
         <java.version>21</java.version>
@@ -142,7 +146,12 @@
             <artifactId>file-manager-minio</artifactId>
             <version>0.0.1-alpha</version>
         </dependency>
-
+        <!-- IGRP Notification Libraries -->
+        <dependency>
+            <groupId>cv.igrp.framework</groupId>
+            <artifactId>notification-email-smtp</artifactId>
+            <version>0.0.1-alpha-20250529.184648-2</version>
+        </dependency>
 
         <!-- OpenTelemetry SDK Nativo -->
         <dependency>
