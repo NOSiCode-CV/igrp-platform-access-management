@@ -1,12 +1,12 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: spring-engine-service
+  name: access-management-service
   labels:
-    app: spring-engine
+    app: access-management
 spec:
   selector:
-    app: spring-engine
+    app: access-management
   ports:
     - protocol: TCP
       port: 8080

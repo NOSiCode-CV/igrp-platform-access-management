@@ -1,16 +1,41 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: iam-cnpg-superuser
+type: Opaque
+stringData:
+  username: postgres
+  password: postgres
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: iam-cnpg-app-secret
+type: Opaque
+stringData:
+  username: iam_db_user
+  password: mypassword
+---
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
-  name: my-cnpg-cluster
+  name: iam-cnpg-cluster
 spec:
   instances: 3
-  image: ghcr.io/cloudnative-pg/postgresql:16.2
-  storage:
-    size: 10Gi
-  bootstrap:
-    initdb:
-      database: mydatabase
-      owner: myuser
-  postgresql:
+  configuration:
+    image: ghcr.io/cloudnative-pg/postgresql:16.2
     parameters:
       shared_preload_libraries: 'pgaudit'
+  storage:
+    size: 10Gi 
+  
+  superuserSecret:
+    name: iam-cnpg-superuser
+
+  bootstrap:
+    initdb:
+      database: db_igrp_iam
+      owner: postgres
+      secret:
+        name: iam-cnpg-superuser
+
