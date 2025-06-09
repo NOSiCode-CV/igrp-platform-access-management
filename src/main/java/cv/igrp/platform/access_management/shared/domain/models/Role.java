@@ -64,4 +64,10 @@ public class Role extends AuditEntity {
     )
     @OnDelete(action = OnDeleteAction.SET_NULL)
 private Set<Permission> permissions;
+
+
+  
+    @ManyToMany(fetch = FetchType.EAGER)
+private Set<IGRPUser> users;
+
 }
