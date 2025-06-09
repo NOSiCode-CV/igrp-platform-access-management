@@ -47,7 +47,7 @@ public class Department extends AuditEntity {
   
 
 
-  @ManyToOne(fetch = FetchType.LAZY)
+  @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "application_id", referencedColumnName = "id")
     private Application applicationId;
 
