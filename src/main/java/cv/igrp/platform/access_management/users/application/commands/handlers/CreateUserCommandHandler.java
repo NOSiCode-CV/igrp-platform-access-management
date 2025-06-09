@@ -3,9 +3,15 @@ package cv.igrp.platform.access_management.users.application.commands.handlers;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import java.util.ArrayList;
+
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
+import cv.igrp.platform.iam.core.adapter.IAdapter;
+import cv.igrp.platform.iam.core.exception.IAMException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.users.application.commands.commands.CreateUserCommand;
@@ -42,6 +48,7 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
 
     private final IGRPUserRepository userRepository;
     private final IGRPUserMapper userMapper;
+    private final IAdapter adapter;
 
     /**
      * Constructs the CreateUserCommandHandler with the required dependencies.
@@ -51,9 +58,10 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
      */
     public CreateUserCommandHandler(
             IGRPUserRepository userRepository,
-            IGRPUserMapper userMapper) {
+            IGRPUserMapper userMapper, IAdapter adapter) {
         this.userRepository = userRepository;
         this.userMapper = userMapper;
+        this.adapter = adapter;
     }
 
     /**
@@ -73,6 +81,17 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
         user.setUsername(command.getIgrpuserdto().getUsername());
         user.setEmail(command.getIgrpuserdto().getEmail());
         user.setRoles(new ArrayList<>());
+
+        try {
+            adapter.createUser(user);
+        } catch (IAMException e) {
+            logger.error(e.getMessage(), e);
+            throw new IgrpResponseStatusException(new IgrpProblem<>(
+                    HttpStatus.INTERNAL_SERVER_ERROR,
+                    "User Creation Failed",
+                    e.getMessage()
+            ));
+        }
 
         var savedUser = userRepository.save(user);
 
