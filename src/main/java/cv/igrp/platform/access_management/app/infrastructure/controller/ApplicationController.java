@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.app.application.commands.commands.*;
@@ -26,6 +28,8 @@ import java.util.Map;
 @RequestMapping(path = "api")
 @Tag(name = "Application", description = "Application Management")
 public class ApplicationController {
+
+   private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationController.class);
 
   
   private final CommandBus commandBus;
@@ -62,8 +66,10 @@ public class ApplicationController {
   public ResponseEntity<ApplicationDTO> createApplication(@Valid @RequestBody ApplicationDTO createApplicationRequest
     )
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ApplicationController", "createApplication");
       final var command = new CreateApplicationCommand(createApplicationRequest);
        ResponseEntity<ApplicationDTO> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ApplicationController", "createApplication");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -91,11 +97,14 @@ public class ApplicationController {
   
   public ResponseEntity<List<ApplicationDTO>> getApplications(
     @RequestParam(value = "code", required = false) String code,
-    @RequestParam(value = "name", required = false) String name)
+    @RequestParam(value = "name", required = false) String name,
+    @RequestParam(value = "slug", required = false) String slug)
   {
-      final var query = new GetApplicationsQuery(code, name);
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ApplicationController", "getApplications");
+      final var query = new GetApplicationsQuery(code, name, slug);
       ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
-       return ResponseEntity.status(response.getStatusCode())
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ApplicationController", "getApplications");
+      return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }
@@ -123,9 +132,11 @@ public class ApplicationController {
   public ResponseEntity<ApplicationDTO> getApplicationById(
     @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ApplicationController", "getApplicationById");
       final var query = new GetApplicationByIdQuery(id);
       ResponseEntity<ApplicationDTO> response = queryBus.handle(query);
-       return ResponseEntity.status(response.getStatusCode())
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ApplicationController", "getApplicationById");
+      return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }
@@ -153,8 +164,10 @@ public class ApplicationController {
   public ResponseEntity<ApplicationDTO> updateApplication(@Valid @RequestBody ApplicationDTO updateApplicationRequest
     , @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ApplicationController", "updateApplication");
       final var command = new UpdateApplicationCommand(updateApplicationRequest, id);
        ResponseEntity<ApplicationDTO> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ApplicationController", "updateApplication");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -183,8 +196,10 @@ public class ApplicationController {
   public ResponseEntity<String> deleteApplication(
     @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ApplicationController", "deleteApplication");
       final var command = new DeleteApplicationCommand(id);
        ResponseEntity<String> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ApplicationController", "deleteApplication");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -213,8 +228,10 @@ public class ApplicationController {
   public ResponseEntity<List<ApplicationDTO>> getApplicationsByIds(@RequestBody List<Integer> getApplicationsByIdsRequest
     )
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ApplicationController", "getApplicationsByIds");
       final var command = new GetApplicationsByIdsCommand(getApplicationsByIdsRequest);
        ResponseEntity<List<ApplicationDTO>> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ApplicationController", "getApplicationsByIds");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -243,9 +260,11 @@ public class ApplicationController {
   public ResponseEntity<List<ApplicationDTO>> getApplicationsByUser(
     @PathVariable(value = "uid") String uid)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ApplicationController", "getApplicationsByUser");
       final var query = new GetApplicationsByUserQuery(uid);
       ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
-       return ResponseEntity.status(response.getStatusCode())
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ApplicationController", "getApplicationsByUser");
+      return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }
@@ -273,9 +292,11 @@ public class ApplicationController {
   public ResponseEntity<List<ApplicationDTO>> getApplicationDeniedToUser(
     @PathVariable(value = "uid") String uid)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ApplicationController", "getApplicationDeniedToUser");
       final var query = new GetApplicationDeniedToUserQuery(uid);
       ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
-       return ResponseEntity.status(response.getStatusCode())
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ApplicationController", "getApplicationDeniedToUser");
+      return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }
@@ -303,8 +324,10 @@ public class ApplicationController {
   public ResponseEntity<String> addApplicationCustomFields(@RequestBody Map<String, ?> addApplicationCustomFieldsRequest
     , @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ApplicationController", "addApplicationCustomFields");
       final var command = new AddApplicationCustomFieldsCommand(addApplicationCustomFieldsRequest, id);
        ResponseEntity<String> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ApplicationController", "addApplicationCustomFields");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -333,8 +356,10 @@ public class ApplicationController {
   public ResponseEntity<String> removeApplicationCustomFields(@RequestBody List<String> removeApplicationCustomFieldsRequest
     , @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ApplicationController", "removeApplicationCustomFields");
       final var command = new RemoveApplicationCustomFieldsCommand(removeApplicationCustomFieldsRequest, id);
        ResponseEntity<String> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ApplicationController", "removeApplicationCustomFields");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -363,9 +388,11 @@ public class ApplicationController {
   public ResponseEntity<Map<String, ?>> getApplicationCustomFields(
     @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ApplicationController", "getApplicationCustomFields");
       final var query = new GetApplicationCustomFieldsQuery(id);
       ResponseEntity<Map<String, ?>> response = queryBus.handle(query);
-       return ResponseEntity.status(response.getStatusCode())
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ApplicationController", "getApplicationCustomFields");
+      return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }

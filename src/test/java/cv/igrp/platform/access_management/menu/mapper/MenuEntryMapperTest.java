@@ -50,6 +50,32 @@ class MenuEntryMapperTest {
     }
 
     @Test
+    @DisplayName("toEntity(): should Set Status to Active When not Provided")
+    void toEntity_shouldSetStatusToActive_When_NotProvided() {
+        MenuEntryDTO dto = new MenuEntryDTO();
+        dto.setId(1);
+        dto.setName("Dashboard");
+        dto.setType(MenuEntryType.MENU_PAGE);
+        dto.setPosition((short) 1);
+        dto.setIcon("fa-home");
+        dto.setStatus(null);
+        dto.setTarget("_blank");
+        dto.setUrl("/dashboard");
+
+        MenuEntry entity = mapper.toEntity(dto);
+
+        assertNotNull(entity);
+        assertEquals(1, entity.getId());
+        assertEquals("Dashboard", entity.getName());
+        assertEquals(MenuEntryType.MENU_PAGE, entity.getType());
+        assertEquals(1, entity.getPosition());
+        assertEquals("fa-home", entity.getIcon());
+        assertEquals(Status.ACTIVE, entity.getStatus());
+        assertEquals("_blank", entity.getTarget());
+        assertEquals("/dashboard", entity.getUrl());
+    }
+
+    @Test
     @DisplayName("toDTO(): should map entity to DTO including nested IDs")
     void toDTO_shouldMapEntityAndNestedObjectsToFlatDTO() {
         MenuEntry entity = getMenuEntry();

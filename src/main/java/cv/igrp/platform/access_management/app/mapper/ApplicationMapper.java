@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.app.mapper;
 
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import org.springframework.stereotype.Component;
 
@@ -70,7 +71,7 @@ public class ApplicationMapper {
         entity.setCode(dto.getCode());
         entity.setName(dto.getName());
         entity.setDescription(dto.getDescription());
-        entity.setStatus(dto.getStatus());
+        entity.setStatus(dto.getStatus() != null ? dto.getStatus() : Status.ACTIVE);
         entity.setType(dto.getType());
         entity.setOwner(dto.getOwner());
         entity.setPicture(dto.getPicture());

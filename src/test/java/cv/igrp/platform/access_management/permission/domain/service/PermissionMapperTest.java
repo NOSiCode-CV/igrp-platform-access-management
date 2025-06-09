@@ -52,6 +52,33 @@ class PermissionMapperTest {
     }
 
     @Test
+    void itShouldSetStatusToActive_When_NotProvided() {
+        // Given
+        int applicationId = 10;
+        String name = "ACCESS_DASHBOARD";
+        String description = "Allows dashboard access";
+
+        PermissionDTO dto = new PermissionDTO();
+        dto.setName(name);
+        dto.setDescription(description);
+        dto.setStatus(null);
+        dto.setApplicationId(applicationId);
+
+        Application application = new Application();
+        application.setId(applicationId);
+
+        // When
+        Permission permission = underTest.mapDtoToEntity(dto, application);
+
+        // Then
+        assertNotNull(permission);
+        assertEquals(name, permission.getName());
+        assertEquals(description, permission.getDescription());
+        assertEquals(Status.ACTIVE, permission.getStatus());
+        assertEquals(application, permission.getApplication());
+    }
+
+    @Test
     void itShouldMapAllFieldsCorrectly_FromDTOToPermission() {
         // Given
         int applicationId = 10;

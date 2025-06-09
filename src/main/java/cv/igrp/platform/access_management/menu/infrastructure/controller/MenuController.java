@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.menu.application.commands.commands.*;
@@ -25,6 +27,8 @@ import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 @RequestMapping(path = "api")
 @Tag(name = "Menu", description = "Menu Management")
 public class MenuController {
+
+   private static final Logger LOGGER = LoggerFactory.getLogger(MenuController.class);
 
   
   private final CommandBus commandBus;
@@ -61,11 +65,16 @@ public class MenuController {
   public ResponseEntity<List<MenuEntryDTO>> getMenus(
     @RequestParam(value = "applicationId", required = false) Integer applicationId,
     @RequestParam(value = "name", required = false) String name,
-    @RequestParam(value = "type", required = false) String type)
+    @RequestParam(value = "type", required = false) String type,
+    @RequestParam(value = "status", required = false) String status)
   {
-      final var query = new GetMenusQuery(applicationId, name, type);
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "MenuController", "getMenus");
+      final var query = new GetMenusQuery(applicationId, name, type, status);
       ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "MenuController", "getMenus");
+      return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @GetMapping(
@@ -82,7 +91,7 @@ public class MenuController {
               mediaType = "application/json",
               schema = @Schema(
                   implementation = MenuEntryDTO.class,
-                  type = "MenuEntryDTO")
+                  type = "")
           )
       )
     }
@@ -91,9 +100,13 @@ public class MenuController {
   public ResponseEntity<MenuEntryDTO> getMenuById(
     @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "MenuController", "getMenuById");
       final var query = new GetMenuByIdQuery(id);
       ResponseEntity<MenuEntryDTO> response = queryBus.handle(query);
-      return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "MenuController", "getMenuById");
+      return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @PostMapping(
@@ -110,18 +123,22 @@ public class MenuController {
               mediaType = "application/json",
               schema = @Schema(
                   implementation = MenuEntryDTO.class,
-                  type = "MenuEntryDTO")
+                  type = "")
           )
       )
     }
   )
   
-  public ResponseEntity<MenuEntryDTO> createMenu( @Valid @RequestBody MenuEntryDTO createMenuRequest
+  public ResponseEntity<MenuEntryDTO> createMenu(@Valid @RequestBody MenuEntryDTO createMenuRequest
     )
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "MenuController", "createMenu");
       final var command = new CreateMenuCommand(createMenuRequest);
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "MenuController", "createMenu");
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @PutMapping(
@@ -138,18 +155,22 @@ public class MenuController {
               mediaType = "application/json",
               schema = @Schema(
                   implementation = MenuEntryDTO.class,
-                  type = "MenuEntryDTO")
+                  type = "")
           )
       )
     }
   )
   
-  public ResponseEntity<MenuEntryDTO> updateMenu( @Valid @RequestBody MenuEntryDTO updateMenuRequest
+  public ResponseEntity<MenuEntryDTO> updateMenu(@Valid @RequestBody MenuEntryDTO updateMenuRequest
     , @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "MenuController", "updateMenu");
       final var command = new UpdateMenuCommand(updateMenuRequest, id);
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "MenuController", "updateMenu");
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
   @DeleteMapping(
@@ -175,9 +196,13 @@ public class MenuController {
   public ResponseEntity<String> deleteMenu(
     @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "MenuController", "deleteMenu");
       final var command = new DeleteMenuCommand(id);
        ResponseEntity<String> response = commandBus.send(command);
-       return ResponseEntity.status(response.getStatusCode()).body(response.getBody());
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "MenuController", "deleteMenu");
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
   }
 
 }
