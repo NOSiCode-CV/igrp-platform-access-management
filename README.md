@@ -521,17 +521,20 @@ Associates a new user to the department.
 
 ### 🔐 Role Management
 
-| Method | Endpoint                          | Request             | Response                  | Status Code                   |
-|--------|-----------------------------------|---------------------|---------------------------|-------------------------------|
-| POST   | /api/roles                        | RoleDTO             | RoleDTO                   | 201 Created, 404 Not Found    |
-| GET    | /api/roles                        | —                   | List&lt;RoleDTO&gt;       | 200 OK                        |
-| GET    | /api/roles/{id}                   | —                   | RoleDTO                   | 200 OK, 404 Not Found         |
-| PUT    | /api/roles/{id}                   | RoleDTO             | RoleDTO                   | 200 OK, 404 Not Found         |
-| DELETE | /api/roles/{id}                   | —                   | —                         | 204 No Content, 404 Not Found |
-| GET    | /api/roles/{id}/permissions       | —                   | List&lt;PermissionDTO&gt; | 200 OK, 404 Not Found         |
-| POST   | /api/roles/{id}/addPermissions    | List&lt;Integer&gt; | List&lt;PermissionDTO&gt; | 200 OK, 404 Not Found         |
-| POST   | /api/roles/{id}/removePermissions | List&lt;Integer&gt; | List&lt;PermissionDTO&gt; | 200 OK, 404 Not Found         |
+| Method | Endpoint                          | Request             | Response                  | Status Code                                 |
+|--------|-----------------------------------|---------------------|---------------------------|---------------------------------------------|
+| POST   | /api/roles                        | RoleDTO             | RoleDTO                   | 201 Created, 404 Not Found, 400 Bad Request |
+| GET    | /api/roles                        | —                   | List&lt;RoleDTO&gt;       | 200 OK                                      |
+| GET    | /api/roles/{id}                   | —                   | RoleDTO                   | 200 OK, 404 Not Found                       |
+| PUT    | /api/roles/{id}                   | RoleDTO             | RoleDTO                   | 200 OK, 404 Not Found                       |
+| DELETE | /api/roles/{id}                   | —                   | —                         | 204 No Content, 404 Not Found               |
+| GET    | /api/roles/{id}/permissions       | —                   | List&lt;PermissionDTO&gt; | 200 OK, 404 Not Found                       |
+| POST   | /api/roles/{id}/addPermissions    | List&lt;Integer&gt; | List&lt;PermissionDTO&gt; | 200 OK, 404 Not Found                       |
+| POST   | /api/roles/{id}/removePermissions | List&lt;Integer&gt; | List&lt;PermissionDTO&gt; | 200 OK, 404 Not Found                       |
 
+#### Rules
+- Permission `name` must be unique within the same Department.
+- Names are **case-insensitive** (e.g., `role_delete_user` and `ROLE_DELETE_USER` are considered duplicates).
 
 
 #### Schemas
@@ -706,6 +709,10 @@ Associates a new user to the department.
 | DELETE | /api/permissions/{id}               | —             | —                         | 204 No Content, 404 Not Found |
 | GET    | /api/permissions/{id}/roles         | —             | List&lt;RoleDTO&gt;       | 200 OK, 404 Not Found         |
 
+#### Rules
+- Permission `name` must be unique within the same Application.
+- Names are **case-insensitive** (e.g., `permission_create_user` and `PERMISSION_CREATE_USER` are considered duplicates).
+- 
 #### Schemas
 ##### PermissionDTO
 ```json

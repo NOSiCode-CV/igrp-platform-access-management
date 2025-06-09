@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.menu.mapper;
 
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import org.springframework.stereotype.Component;
 
@@ -48,7 +49,7 @@ public class MenuEntryMapper {
         entity.setType(dto.getType());
         entity.setPosition(dto.getPosition());
         entity.setIcon(dto.getIcon());
-        entity.setStatus(dto.getStatus());
+        entity.setStatus(dto.getStatus() != null ? dto.getStatus() : Status.ACTIVE);
         entity.setTarget(dto.getTarget());
         entity.setUrl(dto.getUrl());
 

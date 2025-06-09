@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
@@ -88,6 +89,44 @@ public class UpdateRoleCommandHandlerTest {
                 () -> underTest.handle(command));
         //... Then
         assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        verify(roleRepository, never()).save(any(Role.class));
+    }
+
+    @Test
+    void itShouldThrowNotBadException_RoleName_Exists_InProvidedDepartment() {
+        //... Given
+        int roleIdToUpdate = 100;
+        int savedRoleId = 100;
+        int departmentId = 100;
+        RoleDTO roleData = new RoleDTO();
+        String roleName = "New RoleName";
+        roleData.setName(roleName);
+        roleData.setDepartmentId(departmentId);
+        UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleIdToUpdate);
+
+        Role existingRole = new Role();
+        existingRole.setId(roleIdToUpdate);
+        existingRole.setStatus(Status.ACTIVE);
+
+        Department foundDepartment = new Department();
+        foundDepartment.setId(departmentId);
+        ArrayList<Role> persistedRoles = new ArrayList<>();
+        Role savedRole = new Role();
+        savedRole.setId(savedRoleId);
+        savedRole.setName(roleName);
+        persistedRoles.add(savedRole);
+        foundDepartment.setRoles(persistedRoles);
+
+        when(roleRepository.findByIdAndStatusNot(roleIdToUpdate, Status.DELETED))
+                .thenReturn(Optional.of(existingRole));
+        when(departmentRepository.findById(departmentId))
+                .thenReturn(Optional.of(foundDepartment));
+
+        //... When
+        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
+                () -> underTest.handle(command));
+        //... Then
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getProblem().getStatus());
         verify(roleRepository, never()).save(any(Role.class));
     }
 
