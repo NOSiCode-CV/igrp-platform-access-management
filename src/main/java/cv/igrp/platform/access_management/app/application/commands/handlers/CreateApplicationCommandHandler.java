@@ -66,7 +66,6 @@ public class CreateApplicationCommandHandler implements CommandHandler<CreateApp
    public ResponseEntity<ApplicationDTO> handle(CreateApplicationCommand command) {
       Application application = applicationMapper.toEntity(command.getApplicationdto());
       application.setId(null);
-      application.setStatus(Status.ACTIVE);
       Application savedApplication = applicationRepository.save(application);
       ApplicationDTO applicationDTO =  applicationMapper.toDto(savedApplication);
       return ResponseEntity.status(HttpStatus.CREATED).body(applicationDTO);

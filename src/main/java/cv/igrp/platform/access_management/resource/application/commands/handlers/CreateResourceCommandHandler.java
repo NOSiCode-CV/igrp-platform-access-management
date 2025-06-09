@@ -90,7 +90,6 @@ public class CreateResourceCommandHandler implements
        logger.info("Creating resource with applicationId: {}", resourceDTO.getApplicationId());
 
        Resource resource = resourceMapper.toEntity(resourceDTO);
-       resource.setStatus(Status.ACTIVE);
 
       Application application = applicationRepository.findById(resourceDTO.getApplicationId())
               .orElseThrow(() -> {

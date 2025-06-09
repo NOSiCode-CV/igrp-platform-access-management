@@ -5,6 +5,7 @@ import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
@@ -62,7 +63,7 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
     */
    @IgrpQueryHandler
    public ResponseEntity<List<MenuEntryDTO>> handle(GetMenusQuery query) {
-      Specification<MenuEntry> spec = buildMenuEntrySpecification(query.getName(), query.getApplicationId(), query.getType());
+      Specification<MenuEntry> spec = buildMenuEntrySpecification(query.getName(), query.getApplicationId(), query.getType(), query.getStatus());
       List<MenuEntry> menus =  menuEntryRepository.findAll(spec);
       List<MenuEntryDTO> menuEntryDTOs = menus.stream()
               .map(menuEntryMapper::toDTO)
@@ -72,7 +73,7 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
       return ResponseEntity.ok(menuEntryDTOs);
    }
 
-   private Specification<MenuEntry> buildMenuEntrySpecification(String name, Integer applicationId, String type) {
+   private Specification<MenuEntry> buildMenuEntrySpecification(String name, Integer applicationId, String type, String status) {
       Specification<MenuEntry> spec = Specification.where(null);
       if (name != null && !name.isEmpty()) {
          spec = spec.and((root, query, cb) ->
@@ -83,6 +84,12 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
          MenuEntryType menuEntryType = resolveMenuEntryType(type);
          spec = spec.and((root, query, cb) ->
                  cb.equal(root.get("type"), menuEntryType)
+         );
+      }
+      if (status != null) {
+         Status menuEntryStatus = resolveMenuEntryStatus(status);
+         spec = spec.and((root, query, cb) ->
+                 cb.equal(root.get("status"), menuEntryStatus)
          );
       }
       if (applicationId != null) {
@@ -113,6 +120,27 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
                  new IgrpProblem<>(HttpStatus.BAD_REQUEST,
                          "Invalid menu type",
                          "No menu type found with name: " + type)
+         );
+      }
+   }
+
+   /**
+    * Resolves the string type to a {@link Status}.
+    * <p>Throws {@link IgrpResponseStatusException} if the type is invalid.</p>
+    *
+    * @param status the raw string representation of the enum value
+    * @return the resolved {@link Status}
+    * @throws IgrpResponseStatusException if the type is invalid
+    */
+   private Status resolveMenuEntryStatus(String status) {
+      try {
+         return Status.valueOf(status);
+      } catch (IllegalArgumentException ex) {
+         logger.warn("Invalid menu status provided: '{}'", status);
+         throw new IgrpResponseStatusException(
+                 new IgrpProblem<>(HttpStatus.BAD_REQUEST,
+                         "Invalid menu status",
+                         "No menu status found with name: " + status)
          );
       }
    }

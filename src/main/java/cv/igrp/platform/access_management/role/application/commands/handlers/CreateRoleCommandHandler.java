@@ -4,12 +4,14 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.application.commands.commands.CreateRoleCommand;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Department;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
+import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.DepartmentRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -82,6 +84,13 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
                             new IgrpProblem<>(HttpStatus.NOT_FOUND, "Create Role", "Department with id: " + command.getRoledto().getDepartmentId() + " not found.")
                     );
                 });
+        ResourceValidationResponse roleValidationResponse = RoleValidator.validateRoleDto(command.getRoledto(), department);
+        if(!roleValidationResponse.isValid()){
+            throw new IgrpResponseStatusException(
+                    new IgrpProblem<>(HttpStatus.CONFLICT, "Create Role", roleValidationResponse.getFailureMessage())
+            );
+        }
+
         if (command.getRoledto().getParentId() != null) {
             Integer parentRoleId = command.getRoledto().getParentId();
             parentRole = roleRepository.findByIdAndStatusNot(parentRoleId, Status.DELETED)
