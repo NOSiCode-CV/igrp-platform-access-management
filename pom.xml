@@ -149,7 +149,7 @@
         <dependency>
             <groupId>cv.igrp.platform</groupId>
             <artifactId>file-manager-minio</artifactId>
-            <version>0.0.1-alpha</version>
+            <version>0.0.4-alpha</version>
         </dependency>
         <!-- IGRP Notification Libraries -->
         <dependency>
