@@ -157,6 +157,34 @@ class RoleMapperTest {
     }
 
     @Test
+    void itShouldSetStatusToActive_WhenNotProvided() {
+        // Given
+        int departmentId = 10;
+        Department department = new Department();
+        department.setId(departmentId);
+
+        RoleDTO dto = new RoleDTO();
+        String roleName = "Developer";
+        dto.setName(roleName);
+        String roleDescription = "Responsible for coding";
+        dto.setDescription(roleDescription);
+        dto.setStatus(null);
+        dto.setDepartmentId(department.getId());
+        dto.setParentId(null);
+
+        // When
+        Role result = underTest.mapToEntity(dto, department, null);
+
+        // Then
+        assertNotNull(result);
+        assertEquals(roleName, result.getName());
+        assertEquals(roleDescription, result.getDescription());
+        assertEquals(Status.ACTIVE, result.getStatus());
+        assertEquals(department, result.getDepartment());
+        assertNull(result.getParent(), "Expected parent to be null");
+    }
+
+    @Test
     void itShouldMapDtoToEntity_WithAllFields() {
         // Given
         int departmentId = 10;

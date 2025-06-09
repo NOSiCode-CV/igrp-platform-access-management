@@ -129,6 +129,11 @@
             <artifactId>iam-core</artifactId>
             <version>0.0.2-alpha</version>
         </dependency>
+        <dependency>
+            <groupId>cv.igrp.platform</groupId>
+            <artifactId>iam-keycloak-spring-boot</artifactId>
+            <version>0.0.2-alpha</version>
+        </dependency>
         <!-- IGRP Mail Libraries -->
         <dependency>
             <groupId>cv.igrp.platform</groupId>
@@ -287,6 +292,16 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <excludes>
+                        <exclude>**/*DTO.class</exclude>
+                        <exclude>**/*Command.class</exclude>
+                        <exclude>**/*Query.class</exclude>
+                        <exclude>**/controller/**</exclude>
+                        <exclude>**/config/**</exclude>
+                        <exclude>**/spring/**</exclude>
+                    </excludes>
+                </configuration>
             </plugin>
         </plugins>
     </build>

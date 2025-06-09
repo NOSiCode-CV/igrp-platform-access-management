@@ -44,7 +44,7 @@ public class IGRPUser extends AuditEntity implements UserIdentity {
     @Column(name = "email_verified")
     private boolean emailVerified;
 
-    @ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
+    @ManyToMany(mappedBy = "users", fetch = FetchType.EAGER)
     private List<Role> roles;
 
     @ElementCollection

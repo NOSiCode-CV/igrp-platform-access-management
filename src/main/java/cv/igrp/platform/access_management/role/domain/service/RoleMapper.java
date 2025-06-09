@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.role.domain.service;
 
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.models.Department;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
@@ -45,7 +46,7 @@ public class RoleMapper {
         Role newRole = new Role();
         newRole.setName(request.getName());
         newRole.setDescription(request.getDescription());
-        newRole.setStatus(request.getStatus());
+        newRole.setStatus(request.getStatus() != null ? request.getStatus() : Status.ACTIVE);
         newRole.setDepartment(department);
         if (parentRole != null) {
             newRole.setParent(parentRole);

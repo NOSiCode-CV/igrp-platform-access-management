@@ -195,6 +195,26 @@ class ResourceMapperTest {
     }
 
     @Test
+    void toEntity_shouldSetStatusToActive_When_NotProvided() {
+        // Arrange - already done in setUp()
+        testResourceDTO.setStatus(null);
+
+        // Act
+        Resource result = mapper.toEntity(testResourceDTO);
+
+        // Assert
+        assertNotNull(result);
+        assertEquals(testResourceDTO.getName(), result.getName());
+        assertEquals(testResourceDTO.getType(), result.getType());
+        assertEquals(Status.ACTIVE, result.getStatus());
+        assertEquals(testResourceDTO.getExternalId(), result.getExternalId());
+
+        // Assert - fields that should not be mapped
+        assertNull(result.getId(), "ID should not be mapped");
+        assertNull(result.getApplicationId(), "ApplicationId should not be mapped");
+    }
+
+    @Test
     void toEntity_shouldReturnNullForNullInput() {
         // Arrange - null input
 

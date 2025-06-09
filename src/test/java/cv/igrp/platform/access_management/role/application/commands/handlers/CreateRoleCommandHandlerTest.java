@@ -19,6 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
@@ -89,6 +90,115 @@ public class CreateRoleCommandHandlerTest {
                 () -> underTest.handle(command));
         //... Then
         assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+    }
+
+    @Test
+    void itShouldHandle_WhenDepartment_HasNoRolesAssociated() {
+        // Given
+        RoleDTO role = new RoleDTO();
+        int departmentId = 1;
+        String roleName = "Role Name";
+        String roleDescription = "Role Description";
+
+        role.setDepartmentId(departmentId);
+        role.setName(roleName);
+        role.setDescription(roleDescription);
+        role.setParentId(null);
+
+        CreateRoleCommand command = new CreateRoleCommand(role);
+
+        Department department = new Department();
+        department.setId(departmentId);
+        department.setName("Department Name");
+
+        Role roleEntity = new Role();
+        Role savedRole = new Role();
+        RoleDTO expectedResponse = new RoleDTO();
+
+        // When
+        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(department));
+        when(roleMapper.mapToEntity(role, department, null)).thenReturn(roleEntity);
+        when(roleRepository.save(roleEntity)).thenReturn(savedRole);
+        when(roleMapper.mapToDto(savedRole)).thenReturn(expectedResponse);
+
+        ResponseEntity<RoleDTO> response = underTest.handle(command);
+
+        // Then
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
+    }
+
+    @Test
+    void itShouldThrowBadRequestException_WhenNewRoleName_Exists_InThe_SameDepartment() {
+        // Given
+        RoleDTO role = new RoleDTO();
+        int departmentId = 1;
+        String roleName = "create_resource";
+        String roleDescription = "Role Description";
+
+        role.setDepartmentId(departmentId);
+        role.setName(roleName.toUpperCase());
+        role.setDescription(roleDescription);
+        role.setParentId(null);
+
+        CreateRoleCommand command = new CreateRoleCommand(role);
+
+        Department department = new Department();
+        department.setId(departmentId);
+        department.setName("Department Name");
+        ArrayList<Role> persistedRoles = new ArrayList<>();
+        Role savedRole = new Role();
+        savedRole.setName(roleName);
+        persistedRoles.add(savedRole);
+        department.setRoles(persistedRoles);
+
+        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(department));
+
+        // When
+
+        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
+                () -> underTest.handle(command));
+
+        //... Then
+        assertEquals(HttpStatus.BAD_REQUEST, ex.getProblem().getStatus());
+        verify(roleRepository, never()).findByIdAndStatusNot(any(), any());
+        verify(roleRepository, never()).save(any());
+    }
+
+    @Test
+    void itShouldCreateRole_WhenDepartment_HasRolesAssociated() {
+        // Given
+        RoleDTO role = new RoleDTO();
+        int departmentId = 1;
+        String roleName = "update_resource";
+        String savedRoleName = "create_resource";
+        String roleDescription = "Role Description";
+
+        role.setDepartmentId(departmentId);
+        role.setName(roleName);
+        role.setDescription(roleDescription);
+        role.setParentId(null);
+
+        CreateRoleCommand command = new CreateRoleCommand(role);
+
+        Department department = new Department();
+        department.setId(departmentId);
+        department.setName("Department Name");
+
+        Role roleEntity = new Role();
+        Role savedRole = new Role();
+        savedRole.setName(savedRoleName);
+        RoleDTO expectedResponse = new RoleDTO();
+
+        // When
+        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(department));
+        when(roleMapper.mapToEntity(role, department, null)).thenReturn(roleEntity);
+        when(roleRepository.save(roleEntity)).thenReturn(savedRole);
+        when(roleMapper.mapToDto(savedRole)).thenReturn(expectedResponse);
+
+        ResponseEntity<RoleDTO> response = underTest.handle(command);
+
+        // Then
+        assertEquals(HttpStatus.CREATED, response.getStatusCode());
     }
 
     @Test
