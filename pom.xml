@@ -38,7 +38,7 @@
     </repositories>
     <properties>
         <java.version>21</java.version>
-        <spring-cloud.version>2025.0.0</spring-cloud.version>
+        <spring-cloud.version>2024.0.1</spring-cloud.version>
     </properties>
     <dependencies>
 
@@ -134,12 +134,6 @@
             <groupId>cv.igrp.platform</groupId>
             <artifactId>iam-keycloak-spring-boot</artifactId>
             <version>0.0.2-alpha</version>
-        </dependency>
-        <!-- IGRP Mail Libraries -->
-        <dependency>
-            <groupId>cv.igrp.platform</groupId>
-            <artifactId>mail-smtp</artifactId>
-            <version>0.0.1-alpha</version>
         </dependency>
         <!-- IGRP File Libraries -->
         <dependency>
