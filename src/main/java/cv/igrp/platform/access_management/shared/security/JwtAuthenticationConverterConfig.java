@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.shared.security;
 
-
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,7 +10,7 @@ public class JwtAuthenticationConverterConfig {
 
     @Bean
     @ConditionalOnMissingBean
-    public JwtAuthenticationConverter jwtAuthenticationConverter() {
+    public JwtAuthenticationConverter defaultJwtAuthenticationConverter() {
         return new JwtAuthenticationConverter();
     }
 

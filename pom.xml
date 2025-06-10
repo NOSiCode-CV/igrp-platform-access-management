@@ -31,9 +31,14 @@
             <id>igrp-framework-releases</id>
             <url>https://sonatype.nosi.cv/repository/igrp-framework-releases/</url>
         </repository>
+        <repository>
+            <id>igrp-framework</id>
+            <url>https://sonatype.nosi.cv/repository/igrp-framework/</url>
+        </repository>
     </repositories>
     <properties>
         <java.version>21</java.version>
+        <spring-cloud.version>2025.0.0</spring-cloud.version>
     </properties>
     <dependencies>
 
@@ -125,6 +130,11 @@
             <artifactId>iam-core</artifactId>
             <version>0.0.2-alpha</version>
         </dependency>
+        <dependency>
+            <groupId>cv.igrp.platform</groupId>
+            <artifactId>iam-keycloak-spring-boot</artifactId>
+            <version>0.0.2-alpha</version>
+        </dependency>
         <!-- IGRP Mail Libraries -->
         <dependency>
             <groupId>cv.igrp.platform</groupId>
@@ -140,9 +150,14 @@
         <dependency>
             <groupId>cv.igrp.platform</groupId>
             <artifactId>file-manager-minio</artifactId>
-            <version>0.0.1-alpha</version>
+            <version>0.0.4-alpha</version>
         </dependency>
-
+        <!-- IGRP Notification Libraries -->
+        <dependency>
+            <groupId>cv.igrp.framework</groupId>
+            <artifactId>notification-email-smtp</artifactId>
+            <version>0.0.1-alpha-20250529.184648-2</version>
+        </dependency>
 
         <!-- OpenTelemetry SDK Nativo -->
         <dependency>
@@ -174,8 +189,26 @@
             <artifactId>opentelemetry-exporter-zipkin</artifactId>
         </dependency>
 
+        <!-- Spring Cloud -->
+        <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-kubernetes-client</artifactId>
+        </dependency>
 
     </dependencies>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <build>
         <pluginManagement>
             <plugins>
