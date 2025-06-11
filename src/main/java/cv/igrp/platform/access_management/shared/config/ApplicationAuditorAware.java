@@ -13,10 +13,14 @@ public class ApplicationAuditorAware implements AuditorAware<String> {
     @Override
     public Optional<String> getCurrentAuditor() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated() || authentication.getPrincipal().equals("anonymousUser")) {
-            return Optional.empty();
+
+        if (authentication == null || !authentication.isAuthenticated()
+                || "anonymousUser".equals(authentication.getPrincipal())) {
+            // Fallback when no user is authenticated (e.g., server-generated records)
+            return Optional.of("system");
         }
-        return Optional.of(authentication.getName());
+
+        return Optional.ofNullable(authentication.getName());
     }
 
 }
