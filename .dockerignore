@@ -1,1 +1,251 @@
-your files here
+# ==================================================================
+# .dockerignore for Spring Boot GraalVM Native Image Project
+# ==================================================================
+
+# Build outputs and target directories
+target/
+build/
+out/
+bin/
+dist/
+*.jar
+*.war
+*.ear
+
+# Maven specific
+.mvn/
+mvnw
+mvnw.cmd
+dependency-reduced-pom.xml
+
+# Gradle specific (if applicable)
+.gradle/
+gradle/
+gradlew
+gradlew.bat
+
+# IDE files and configurations
+.idea/
+.vscode/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+.metadata/
+.recommenders/
+.loadpath
+.externalToolBuilders/
+
+# Eclipse specific
+.apt_generated
+.apt_generated_test
+.factorypath
+.buildpath
+.target
+.tern-project
+.texlipse
+.springBeans
+.sts4-cache
+
+# IntelliJ IDEA specific
+*.iml
+*.ipr
+*.iws
+.idea/
+out/
+
+# NetBeans specific
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+# Visual Studio Code
+.vscode/
+*.code-workspace
+
+# Version control
+.git/
+.gitignore
+.gitattributes
+.gitmodules
+.hg/
+.hgignore
+.svn/
+
+# Operating System files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+.#*
+#*#
+
+# Log files
+*.log
+logs/
+log/
+*.log.*
+*.out
+
+# Spring Boot specific
+spring.log
+application-local.properties
+application-dev.properties
+application-secret.properties
+
+# Test outputs
+target/test-classes/
+target/surefire-reports/
+target/failsafe-reports/
+target/jacoco-reports/
+target/coverage-reports/
+
+# Documentation and README files (optional - remove if needed in image)
+README.md
+README.txt
+CHANGELOG.md
+CONTRIBUTING.md
+LICENSE
+LICENSE.txt
+docs/
+documentation/
+*.md
+
+# Docker related files (don't include in build context)
+Dockerfile
+docker-compose.yml
+docker-compose.yaml
+docker-compose.*.yml
+docker-compose.*.yaml
+.dockerignore
+
+# Environment and configuration files
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+.env.staging
+*.env
+secrets/
+config/local/
+
+# Node.js dependencies (if frontend assets)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+package-lock.json
+yarn.lock
+
+# Frontend build artifacts
+frontend/dist/
+frontend/build/
+static/dist/
+assets/dist/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+h2/
+hsqldb/
+
+# Cache directories
+.cache/
+.npm/
+.yarn/
+.m2/repository/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# JVM crash logs
+hs_err_pid*
+core.*
+
+# Application specific exclusions
+uploads/
+temp/
+tmp/
+data/
+storage/
+
+# Performance and profiling
+*.hprof
+*.prof
+*.jfr
+
+# Security sensitive files
+*.key
+*.pem
+*.p12
+*.jks
+*.keystore
+*.truststore
+keystore/
+certificates/
+
+# Local Spring profiles
+application-local.yml
+application-local.yaml
+application-dev.yml
+application-dev.yaml
+
+# Test data and fixtures
+test-data/
+fixtures/
+mock-data/
+
+# Scripts and utilities (optional - include if needed)
+scripts/
+utils/
+tools/
+
+# Kubernetes and deployment files (optional)
+k8s/
+kubernetes/
+helm/
+deployment/
+manifests/
+
+# CI/CD files (optional - remove if needed for build info)
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+Jenkinsfile
+azure-pipelines.yml
+
+# Archive files
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.rar
+*.7z
+
+# Keep essential files (use ! to negate ignore)
+!src/
+!pom.xml
+!*.properties
+!*.yml
+!*.yaml
+!*.xmlyour files here
