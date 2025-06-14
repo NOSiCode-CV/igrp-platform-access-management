@@ -253,13 +253,6 @@
             <plugin>
                 <groupId>org.graalvm.buildtools</groupId>
                 <artifactId>native-maven-plugin</artifactId>
-                <configuration>
-                    <buildArgs>
-                        <buildArg>--gc=G1</buildArg>
-                        <buildArg>--enable-preview</buildArg>
-                        <buildArg>-march=armv8-a</buildArg>
-                    </buildArgs>
-                </configuration>
             </plugin>
 
             <plugin>
