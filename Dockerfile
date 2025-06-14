@@ -80,4 +80,4 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
 USER nonroot
 
 # Execute native binary with optimal settings
-ENTRYPOINT ["./app"]
+ENTRYPOINT ["./app/app"]
