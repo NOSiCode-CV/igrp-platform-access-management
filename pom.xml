@@ -134,6 +134,12 @@
             <groupId>cv.igrp.platform</groupId>
             <artifactId>iam-keycloak-spring-boot</artifactId>
             <version>0.0.2-alpha</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- IGRP File Libraries -->
         <dependency>
@@ -247,6 +253,13 @@
             <plugin>
                 <groupId>org.graalvm.buildtools</groupId>
                 <artifactId>native-maven-plugin</artifactId>
+                <configuration>
+                    <buildArgs>
+                        <buildArg>--gc=G1</buildArg>
+                        <buildArg>--enable-preview</buildArg>
+                        <buildArg>-march=armv8-a</buildArg>
+                    </buildArgs>
+                </configuration>
             </plugin>
 
             <plugin>
