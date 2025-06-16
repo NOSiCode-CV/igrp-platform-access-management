@@ -44,9 +44,9 @@ WORKDIR /app
 
 
 # Copiar executável nativo do estágio de build
-COPY --from=build /app/target/{{baseConfig.artifact}} /app/{{baseConfig.artifact}}
+COPY --from=build /app/target/access-management /app/access-management
 
 
 # Expor porta e executar aplicação
 EXPOSE ${SERVICE_PORT}
-CMD ["/app/{{baseConfig.artifact}}"]
+CMD ["/app/access-management"]
