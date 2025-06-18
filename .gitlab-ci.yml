@@ -28,7 +28,7 @@ build_docker_image_base_dev:
     - deploy/base
   script:
     - docker login $REGISTRY_URL -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD"
-    - docker buildx --platform $TARGETPLATFORMS -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID .
+    - docker buildx build --platform $TARGETPLATFORMS -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID .
     - docker tag $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:latest
     - docker push $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID
     - docker push $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:latest
