@@ -19,7 +19,7 @@ WORKDIR app
 
 # Copiar código fonte e configurações Maven
 COPY mvnw ./mvnw
-COPY .mvn .mvn
+COPY .mvn ./.mvn
 COPY src ./src
 COPY pom.xml ./pom.xml
 RUN chmod +x mvnw
