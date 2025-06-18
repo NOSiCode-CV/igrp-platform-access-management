@@ -15,8 +15,6 @@ ARG SERVICE_PROFILE
 # Configuração do diretório e ambiente
 ENV SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILE}
 
-WORKDIR app
-
 # Copiar código fonte e configurações Maven
 COPY mvnw ./mvnw
 COPY .mvn ./.mvn
