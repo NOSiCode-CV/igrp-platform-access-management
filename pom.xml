@@ -143,14 +143,15 @@
         </dependency>
         <!-- IGRP File Libraries -->
         <dependency>
-            <groupId>cv.igrp.platform</groupId>
-            <artifactId>file-manager-core</artifactId>
-            <version>0.0.1-alpha</version>
+            <groupId>cv.igrp.framework</groupId>
+            <artifactId>filemanager</artifactId>
+            <version>0.0.2-alpha</version>
         </dependency>
+
         <dependency>
-            <groupId>cv.igrp.platform</groupId>
-            <artifactId>file-manager-minio</artifactId>
-            <version>0.0.4-alpha</version>
+            <groupId>cv.igrp.platform.filemanager</groupId>
+            <artifactId>minio</artifactId>
+            <version>0.0.2-alpha</version>
         </dependency>
         <!-- IGRP Notification Libraries -->
         <dependency>
