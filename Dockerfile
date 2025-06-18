@@ -1,5 +1,5 @@
-# =================================================================== 
-# Build stage using vegardit/graalvm-maven (includes GraalVM + Maven)
+# ===================================================================
+# Build stage: GraalVM 23 + Native Image with Maven Wrapper
 # ===================================================================
 FROM --platform=$BUILDPLATFORM ghcr.io/graalvm/native-image-community:23 AS build
 
