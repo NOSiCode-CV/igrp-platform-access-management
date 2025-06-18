@@ -28,12 +28,7 @@ build_docker_image_base_dev:
     - deploy/base
   script:
     - docker login $REGISTRY_URL -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD"
-    - docker buildx build \
-        --platform $TARGETPLATFORMS \
-        -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID \
-        -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:latest \
-        --push \
-        .
+    - docker buildx build --platform $TARGETPLATFORMS -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID \ -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:latest --push .
 
 build_docker_image_inss_dev:
   stage: build
@@ -41,9 +36,4 @@ build_docker_image_inss_dev:
     - deploy-inss
   script:
     - docker login $REGISTRY_URL -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD"
-    - docker buildx build \
-        --platform $TARGETPLATFORMS \
-        -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID \
-        -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api-dev:latest \
-        --push \
-        .
+    - docker buildx build --platform $TARGETPLATFORMS -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID \ -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:latest --push .
