@@ -28,7 +28,7 @@ RUN ./mvnw -Pnative clean native:compile -DskipTests -Dnative-image.options="--s
 # ===================================================================
 # Runtime stage: minimal distroless with C/C++ runtimes
 # ===================================================================
-FROM gcr.io/distroless/cc-debian12:nonroot AS runtime
+FROM --platform=$BUILDPLATFORM gcr.io/distroless/cc-debian12:nonroot AS runtime
 
 # Variáveis de ambiente do OpenTelemetry (ajuste conforme necessidade)
 ENV OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME}
