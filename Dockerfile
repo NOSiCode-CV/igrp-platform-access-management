@@ -42,7 +42,7 @@ WORKDIR /app
 
 
 # Copiar executável nativo do estágio de build
-COPY --from=build /app/target/access-management /app/access-management
+COPY --from=build /app/target/access-management /access-management
 
 
 # Expor porta e executar aplicação
