@@ -7,10 +7,20 @@ variables:
   DOCKER_DRIVER: overlay2
   DOCKER_TLS_CERTDIR: ""
   DOCKER_HOST: tcp://docker:2375
+  TARGETPLATFORMS: "linux/amd64,linux/arm64"
 
 stages:
   - build
 #  - deploy
+
+before_script:
+  # Show Docker info (helpful for debugging)
+  - docker info
+  # Register QEMU emulation for cross-building
+  - docker run --privileged --rm tonistiigi/binfmt --install all
+  # Create and switch to a new Buildx builder
+  - docker buildx create --name multiarch --driver docker-container --bootstrap
+  - docker buildx use multiarch
 
 build_docker_image_dev:
   stage: build
@@ -18,7 +28,7 @@ build_docker_image_dev:
     - deploy-inss
   script:
     - docker login $REGISTRY_URL -u "$REGISTRY_USERNAME" -p "$REGISTRY_PASSWORD" 
-    - docker build -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID .
+    - docker build --platform $TARGETPLATFORMS -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID .
     - docker tag $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:latest
     - docker push $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID
     - docker push $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:latest
