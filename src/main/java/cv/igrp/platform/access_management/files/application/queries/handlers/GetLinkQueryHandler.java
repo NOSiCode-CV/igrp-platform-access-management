@@ -1,12 +1,11 @@
 package cv.igrp.platform.access_management.files.application.queries.handlers;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.file_manager_core.service.FileManagerService;
+import cv.igrp.platform.filemanager.StorageService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
-import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -18,9 +17,9 @@ public class GetLinkQueryHandler implements QueryHandler<GetLinkQuery, ResponseE
 
   private static final Logger LOGGER = LoggerFactory.getLogger(GetLinkQueryHandler.class);
 
-  private final FileManagerService fileManagerService;
+  private final StorageService fileManagerService;
 
-   public GetLinkQueryHandler(FileManagerService fileManagerService) {
+   public GetLinkQueryHandler(StorageService fileManagerService) {
        this.fileManagerService = fileManagerService;
    }
 
@@ -37,7 +36,7 @@ public class GetLinkQueryHandler implements QueryHandler<GetLinkQuery, ResponseE
            ));
        }
 
-       return ResponseEntity.ok(fileManagerService.getPresignedFileUrl(file));
+       return ResponseEntity.ok(fileManagerService.getFileUrl(file));
 
    }
 
