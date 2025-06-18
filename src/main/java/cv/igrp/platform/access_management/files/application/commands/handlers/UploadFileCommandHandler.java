@@ -1,10 +1,10 @@
 package cv.igrp.platform.access_management.files.application.commands.handlers;
 
 import cv.igrp.framework.core.domain.CommandHandler;
+import cv.igrp.platform.filemanager.StorageService;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.file_manager_core.service.FileManagerService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -21,9 +21,9 @@ public class UploadFileCommandHandler implements CommandHandler<UploadFileComman
 
    private static final Logger LOGGER = LoggerFactory.getLogger(UploadFileCommandHandler.class);
 
-   private final FileManagerService fileManagerService;
+   private final StorageService fileManagerService;
 
-   public UploadFileCommandHandler(FileManagerService fileManagerService) {
+   public UploadFileCommandHandler(StorageService fileManagerService) {
       this.fileManagerService = fileManagerService;
    }
 

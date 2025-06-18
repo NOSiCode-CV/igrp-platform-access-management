@@ -143,13 +143,13 @@
         </dependency>
         <!-- IGRP File Libraries -->
         <dependency>
-            <groupId>cv.igrp.framework</groupId>
+            <groupId>cv.igrp.platform</groupId>
             <artifactId>filemanager</artifactId>
             <version>0.0.2-alpha</version>
         </dependency>
 
         <dependency>
-            <groupId>cv.igrp.platform.filemanager</groupId>
+            <groupId>cv.igrp.framework.filemanager</groupId>
             <artifactId>minio</artifactId>
             <version>0.0.2-alpha</version>
         </dependency>
