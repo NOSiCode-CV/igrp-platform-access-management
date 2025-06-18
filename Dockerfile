@@ -1,7 +1,7 @@
 # =================================================================== 
 # Build stage using vegardit/graalvm-maven (includes GraalVM + Maven)
 # ===================================================================
-FROM --platform=$BUILDPLATFORM vegardit/graalvm-maven:latest-java21 AS build
+FROM --platform=$BUILDPLATFORM ghcr.io/graalvm/native-image-community:21 AS build
 
 # Argumentos de build (OpenTelemetry e perfil)
 ARG OTEL_TRACES_EXPORTER
@@ -13,25 +13,25 @@ ARG OTEL_ENABLED
 ARG SERVICE_PROFILE
 
 # Configuração do diretório e ambiente
-ENV APP_HOME=/app
 ENV SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILE}
 
-# Copiar código fonte e configurações Maven
-COPY src $APP_HOME/src
-COPY pom.xml $APP_HOME/pom.xml
-WORKDIR $APP_HOME
+WORKDIR app
 
-# Instalar Maven (caso não esteja presente na imagem)
-# RUN microdnf install -y maven 
+# Copiar código fonte e configurações Maven
+COPY mvnw ./mvnw
+COPY .mvn .mvn
+COPY src ./src
+COPY pom.xml ./pom.xml
+RUN chmod +x mvnw
 
 # Compilar aplicação e gerar executável nativo
-RUN mvn -Pnative clean native:compile -DskipTests
+RUN ./mvnw -Pnative clean native:compile -DskipTests
 RUN ls -l /app/target
 
 # ===================================================================
-# Runtime stage - Ultra-minimal distroless image
+# Runtime stage: minimal distroless with C/C++ runtimes
 # ===================================================================
-FROM gcr.io/distroless/base-debian12:nonroot AS runtime
+FROM gcr.io/distroless/cc-debian12:nonroot AS runtime
 
 # Variáveis de ambiente do OpenTelemetry (ajuste conforme necessidade)
 ENV OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME}
@@ -40,7 +40,6 @@ ENV SPRING_ACTIVE_PROFILE=${SPRING_ACTIVE_PROFILE}
 
 # Diretório de trabalho
 WORKDIR /app
-
 
 
 # Copiar executável nativo do estágio de build
