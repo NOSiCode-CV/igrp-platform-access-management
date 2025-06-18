@@ -1,7 +1,7 @@
 # ===================================================================
 # Build stage: GraalVM 23 + Native Image with Maven Wrapper
 # ===================================================================
-FROM --platform=$BUILDPLATFORM ghcr.io/graalvm/native-image-community:23 AS build
+FROM --platform=$BUILDPLATFORM ghcr.io/graalvm/native-image-community:21 AS build
 
 # Argumentos de build (OpenTelemetry e perfil)
 ARG OTEL_TRACES_EXPORTER
