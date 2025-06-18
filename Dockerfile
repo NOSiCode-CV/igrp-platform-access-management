@@ -25,8 +25,7 @@ COPY pom.xml ./pom.xml
 RUN chmod +x mvnw
 
 # Compilar aplicação e gerar executável nativo
-RUN ./mvnw -Pnative clean native:compile -DskipTests
-RUN ls -l /app/target
+RUN ./mvnw -Pnative clean native:compile -DskipTests -Dnative-image.options="--strict-image-heap --gc=G1 -H:MaxHeapSizePercent=25 -march=native"
 
 # ===================================================================
 # Runtime stage: minimal distroless with C/C++ runtimes
