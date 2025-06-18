@@ -28,18 +28,22 @@ build_docker_image_base_dev:
     - deploy/base
   script:
     - docker login $REGISTRY_URL -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD"
-    - docker buildx build --platform $TARGETPLATFORMS -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID .
-    - docker tag $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:latest
-    - docker push $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID
-    - docker push $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:latest
+    - docker buildx build \
+        --platform $TARGETPLATFORMS \
+        -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID \
+        -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:latest \
+        --push \
+        .
 
 build_docker_image_inss_dev:
   stage: build
   only:
     - deploy-inss
   script:
-    - docker login $REGISTRY_URL -u "$REGISTRY_USERNAME" -p "$REGISTRY_PASSWORD"
-    - docker buildx build --platform $TARGETPLATFORMS -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID .
-    - docker tag $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:latest
-    - docker push $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID
-    - docker push $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:latest
+    - docker login $REGISTRY_URL -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD"
+    - docker buildx build \
+        --platform $TARGETPLATFORMS \
+        -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID \
+        -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api-dev:latest \
+        --push \
+        .
