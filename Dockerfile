@@ -1,7 +1,11 @@
 # ===================================================================
 # Build stage: GraalVM 23 + Native Image with Maven Wrapper
 # ===================================================================
-FROM ghcr.io/graalvm/native-image-community:21 AS build
+FROM ghcr.io/graalvm/native-image-community:23 AS build
+
+# Install musl toolchain for static linking
+USER root
+RUN microdnf install musl-dev && microdnf clean all
 
 # Configuração do diretório e ambiente
 ARG SPRING_ACTIVE_PROFILE
@@ -11,16 +15,16 @@ ENV SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILE}
 COPY mvnw ./mvnw
 COPY .mvn ./.mvn
 COPY pom.xml ./pom.xml
-RUN chmod +x mvnw && ./mvnw dependency:go-offline
+RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
 COPY src ./src
 # Compilar aplicação e gerar executável nativo completo e statico
-RUN ./mvnw --no-transfer-progress clean package -Dpackaging=native-image -DbuildArgs="--static --libc=musl,-Os"
+RUN ./mvnw --no-transfer-progress clean package -Dpackaging=native-image -DbuildArgs="--static --libc=musl,-Os"  -DskipTests
 
 # ===================================================================
 # Runtime stage: minimal distroless with C/C++ runtimes
 # ===================================================================
-FROM scratch
+FROM gcr.io/distroless/cc-debian12:nonroot
 
 # Variáveis de ambiente do OpenTelemetry (ajuste conforme necessidade)
 ARG SPRING_ACTIVE_PROFILE
