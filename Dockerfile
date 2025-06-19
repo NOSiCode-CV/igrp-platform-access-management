@@ -15,7 +15,7 @@ RUN chmod +x mvnw && ./mvnw dependency:go-offline
 
 COPY src ./src
 # Compilar aplicação e gerar executável nativo completo e statico
-RUN ./mvnw -Dmaven.test.skip=true -Pnative,static native:compile
+RUN ./mvnw --no-transfer-progress clean package -Dpackaging=native-image -DbuildArgs="--static --libc=musl,-Os"
 
 # ===================================================================
 # Runtime stage: minimal distroless with C/C++ runtimes
