@@ -62,7 +62,7 @@ public class GetResourcesQueryHandler implements
               query.getName(), query.getApplicationId(), query.getType(), query.getExternalID());
 
       Specification<Resource> spec = buildSpecification(
-              query.getName(), query.getApplicationId(), query.getType(), query.getExternalID());
+              query.getName(), query.getApplicationId(), query.getType(), query.getExternalID(), query.getApplicationCode());
 
       List<ResourceDTO> resources = resourceRepository.findAll(spec)
               .stream()
@@ -84,7 +84,9 @@ public class GetResourcesQueryHandler implements
     */
    private Specification<Resource> buildSpecification(
            String name, Integer applicationId,
-           String type, String externalId) {
+           String type, String externalId,
+           String applicationCode
+   ) {
 
       Specification<Resource> spec = Specification.where(null);
       if (name != null && !name.isBlank()) {
@@ -100,6 +102,16 @@ public class GetResourcesQueryHandler implements
                  }
          );
       }
+
+      if (applicationCode != null) {
+
+         spec = spec.and((root, query, cb) -> {
+                    Join<MenuEntry, Application> applicationJoin = root.join("applicationId");
+                    return cb.equal(applicationJoin.get("code"), applicationCode);
+                 }
+         );
+      }
+
       if (type != null) {
          spec = spec.and((root, query, cb) ->
                  cb.equal(root.get("type"), ResourceType.valueOf(type))

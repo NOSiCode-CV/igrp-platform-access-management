@@ -63,7 +63,7 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
     */
    @IgrpQueryHandler
    public ResponseEntity<List<MenuEntryDTO>> handle(GetMenusQuery query) {
-      Specification<MenuEntry> spec = buildMenuEntrySpecification(query.getName(), query.getApplicationId(), query.getType(), query.getStatus());
+      Specification<MenuEntry> spec = buildMenuEntrySpecification(query.getName(), query.getApplicationId(), query.getType(), query.getStatus(), query.getApplicationCode());
       List<MenuEntry> menus =  menuEntryRepository.findAll(spec);
       List<MenuEntryDTO> menuEntryDTOs = menus.stream()
               .map(menuEntryMapper::toDTO)
@@ -73,7 +73,7 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
       return ResponseEntity.ok(menuEntryDTOs);
    }
 
-   private Specification<MenuEntry> buildMenuEntrySpecification(String name, Integer applicationId, String type, String status) {
+   private Specification<MenuEntry> buildMenuEntrySpecification(String name, Integer applicationId, String type, String status, String applicationCode) {
       Specification<MenuEntry> spec = Specification.where(null);
       if (name != null && !name.isEmpty()) {
          spec = spec.and((root, query, cb) ->
@@ -100,6 +100,16 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
             }
          );
       }
+
+      if (applicationCode != null) {
+
+         spec = spec.and((root, query, cb) -> {
+               Join<MenuEntry, Application> applicationJoin = root.join("applicationId");
+               return cb.equal(applicationJoin.get("code"), applicationCode);
+            }
+         );
+      }
+
       return spec;
    }
 

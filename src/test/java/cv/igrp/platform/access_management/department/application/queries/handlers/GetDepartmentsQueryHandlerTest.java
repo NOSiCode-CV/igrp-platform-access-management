@@ -37,8 +37,8 @@ public class GetDepartmentsQueryHandlerTest {
     private Department departmentA, departmentB;
     private DepartmentDTO departmentDTOA, departmentDTOB;
 
-    private GetDepartmentsQuery getDepartmentsQuery(Integer applicationId, String name, String status){
-        return new GetDepartmentsQuery(applicationId, name, status);
+    private GetDepartmentsQuery getDepartmentsQuery(Integer applicationId, String applicationCode, Integer parentId, String name, String status, String code){
+        return new GetDepartmentsQuery(applicationId, applicationCode, parentId, name, status, code);
     }
 
     @BeforeEach
@@ -79,7 +79,7 @@ public class GetDepartmentsQueryHandlerTest {
     @DisplayName("should return list of DepartmentDTOs when departments match criteria")
     void testHandle_shouldReturnListOfDepartmentDTOs() {
         // Arrange
-        GetDepartmentsQuery query = getDepartmentsQuery(1001,"finance",DepartmentStatus.ACTIVE.name());
+        GetDepartmentsQuery query = getDepartmentsQuery(1001,null, null, "finance", DepartmentStatus.ACTIVE.name(), null);
 
         when(departmentRepository.findAll(any(Specification.class))).thenReturn(List.of(departmentA, departmentB));
         when(departmentMapper.toDto(departmentA)).thenReturn(departmentDTOA);
@@ -110,7 +110,7 @@ public class GetDepartmentsQueryHandlerTest {
     @DisplayName("should return empty list when no departments match")
     void testHandle_whenNoDepartmentsMatch_shouldReturnEmptyList() {
         // Arrange
-        GetDepartmentsQuery query = getDepartmentsQuery(9999, "nonexistent",DepartmentStatus.ACTIVE.name());
+        GetDepartmentsQuery query = getDepartmentsQuery(9999, null, null, "nonexistent",DepartmentStatus.ACTIVE.name(), null);
         when(departmentRepository.findAll(any(Specification.class))).thenReturn(List.of());
 
         // Act
@@ -132,7 +132,7 @@ public class GetDepartmentsQueryHandlerTest {
     @DisplayName("should return all departments when no filters are provided")
     void testHandle_whenQueryIsEmpty_shouldReturnAllDepartments() {
         // Arrange
-        GetDepartmentsQuery query = getDepartmentsQuery(null, null, null);
+        GetDepartmentsQuery query = getDepartmentsQuery(null, null, null, null, null, null);
 
         when(departmentRepository.findAll(any(Specification.class))).thenReturn(List.of(departmentA, departmentB));
         when(departmentMapper.toDto(departmentA)).thenReturn(departmentDTOA);

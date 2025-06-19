@@ -81,7 +81,7 @@ public class GetPermissionByApplicationIdQueryHandlerTest {
         when(permissionMapper.mapToDTO(p1)).thenReturn(dto1);
         when(permissionMapper.mapToDTO(p3)).thenReturn(dto3);
 
-        GetPermissionByApplicationIdQuery query = new GetPermissionByApplicationIdQuery(targetAppId);
+        GetPermissionByApplicationIdQuery query = new GetPermissionByApplicationIdQuery(targetAppId, null);
 
         // When
         ResponseEntity<List<PermissionDTO>> response = underTest.handle(query);
@@ -139,7 +139,7 @@ public class GetPermissionByApplicationIdQueryHandlerTest {
         when(permissionMapper.mapToDTO(p1)).thenReturn(dto1);
         when(permissionMapper.mapToDTO(p3)).thenReturn(dto3);
 
-        GetPermissionByApplicationIdQuery query = new GetPermissionByApplicationIdQuery(targetAppId);
+        GetPermissionByApplicationIdQuery query = new GetPermissionByApplicationIdQuery(targetAppId, null);
 
         // When
         ResponseEntity<List<PermissionDTO>> response = underTest.handle(query);
@@ -198,7 +198,7 @@ public class GetPermissionByApplicationIdQueryHandlerTest {
         when(permissionMapper.mapToDTO(activePermission)).thenReturn(dto1);
         when(permissionMapper.mapToDTO(inactivePermission)).thenReturn(dto2);
 
-        GetPermissionByApplicationIdQuery query = new GetPermissionByApplicationIdQuery(applicationId);
+        GetPermissionByApplicationIdQuery query = new GetPermissionByApplicationIdQuery(applicationId, null);
 
         // When
         ResponseEntity<List<PermissionDTO>> response = underTest.handle(query);

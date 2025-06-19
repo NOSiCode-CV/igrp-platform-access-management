@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.resource.application.commands.commands;
 
 import cv.igrp.framework.core.domain.Command;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -11,6 +12,7 @@ import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
 @AllArgsConstructor
 public class CreateResourceCommand implements Command {
 
+  
   private ResourceDTO resourcedto;
 
 }

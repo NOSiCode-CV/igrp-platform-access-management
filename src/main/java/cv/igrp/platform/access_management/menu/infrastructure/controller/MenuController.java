@@ -66,10 +66,11 @@ public class MenuController {
     @RequestParam(value = "applicationId", required = false) Integer applicationId,
     @RequestParam(value = "name", required = false) String name,
     @RequestParam(value = "type", required = false) String type,
-    @RequestParam(value = "status", required = false) String status)
+    @RequestParam(value = "status", required = false) String status,
+    @RequestParam(value = "applicationCode", required = false) String applicationCode)
   {
       LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "MenuController", "getMenus");
-      final var query = new GetMenusQuery(applicationId, name, type, status);
+      final var query = new GetMenusQuery(applicationId, name, type, status, applicationCode);
       ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "MenuController", "getMenus");
       return ResponseEntity.status(response.getStatusCode())
