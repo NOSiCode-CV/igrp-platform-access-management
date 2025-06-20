@@ -1,33 +1,29 @@
 package cv.igrp.platform.access_management.department.application.queries.queries;
 
 import cv.igrp.framework.core.domain.Query;
+import jakarta.validation.constraints.*;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 
-
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class GetDepartmentsQuery implements Query {
 
-    private Integer applicationId;
-    private String name;
-    private String status;
+  @NotNull(message = "The field <applicationId> is required.")
+  private Integer applicationId;
+  @NotBlank(message = "The field <applicationCode> is required.")
+  private String applicationCode;
+  @NotNull(message = "The field <parentId> is required.")
+  private Integer parentId;
+  @NotBlank(message = "The field <name> is required.")
+  private String name;
+  @NotBlank(message = "The field <status> is required.")
+  private String status;
+  @NotBlank(message = "The field <code> is required.")
+  private String code;
 
-    public GetDepartmentsQuery() {
-    }
-
-    public GetDepartmentsQuery(Integer applicationId, String name, String status) {
-        this.applicationId = applicationId;
-        this.name = name;
-        this.status = status;
-    }
-
-    public Integer getApplicationId() {
-        return applicationId;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getStatus() {
-        return status;
-    }
 }

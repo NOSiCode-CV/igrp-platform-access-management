@@ -2,13 +2,20 @@ package cv.igrp.platform.access_management.department.application.queries.handle
 
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.domain.models.Application;
+import jakarta.persistence.criteria.Join;
 import org.springframework.data.jpa.domain.Specification;
 import jakarta.persistence.criteria.Predicate;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.department.application.queries.queries.GetDepartmentsQuery;
@@ -30,7 +37,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.Depa
  * </ul>
  *
  * <p>Logging is included to aid in query debugging and traceability.</p>
- *
  */
 @Service
 public class GetDepartmentsQueryHandler implements QueryHandler<GetDepartmentsQuery, ResponseEntity<List<DepartmentDTO>>> {
@@ -45,7 +51,7 @@ public class GetDepartmentsQueryHandler implements QueryHandler<GetDepartmentsQu
      * Constructs the query handler with necessary dependencies.
      *
      * @param departmentRepository the repository to retrieve department data
-     * @param departmentMapper the mapper to convert department entities to DTOs
+     * @param departmentMapper     the mapper to convert department entities to DTOs
      */
     public GetDepartmentsQueryHandler(
             DepartmentRepository departmentRepository,
@@ -61,33 +67,63 @@ public class GetDepartmentsQueryHandler implements QueryHandler<GetDepartmentsQu
      * @return a {@link ResponseEntity} with a list of {@link DepartmentDTO}s and HTTP status 200 OK
      */
     @IgrpQueryHandler
-public ResponseEntity<List<DepartmentDTO>> handle(GetDepartmentsQuery query) {
-    logger.info("Handling GetDepartmentsQuery: applicationId={}, name={}, status={}",
-            query.getApplicationId(), query.getName(), query.getStatus());
+    public ResponseEntity<List<DepartmentDTO>> handle(GetDepartmentsQuery query) {
+        logger.info("Handling GetDepartmentsQuery: applicationId={}, name={}, status={}, applicationCode={}, parentId={}",
+                query.getApplicationId(), query.getName(), query.getStatus(), query.getApplicationCode(), query.getParentId());
 
-    Specification<Department> spec = (root, q, cb) -> {
-        List<Predicate> predicates = new ArrayList<>();
+        Specification<Department> spec = (root, q, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
 
-        if (query.getApplicationId() != null) {
-            predicates.add(cb.equal(root.get("application").get("id"), query.getApplicationId()));
+            if (query.getApplicationId() != null) {
+                Join<Department, Application> applicationJoin = root.join("applicationId");
+                predicates.add(cb.equal(applicationJoin.get("id"), query.getApplicationId()));
+            }
+
+            if (query.getApplicationCode() != null) {
+                Join<Department, Application> applicationJoin = root.join("applicationId");
+                predicates.add(cb.equal(applicationJoin.get("code"), query.getApplicationCode()));
+            }
+
+            if (query.getName() != null && !query.getName().isEmpty()) {
+                predicates.add(cb.like(cb.lower(root.get("name")), "%" + query.getName().toLowerCase() + "%"));
+            }
+
+            if (query.getStatus() != null) {
+                DepartmentStatus departmentStatus = resolveDepartmentStatus(query.getStatus());
+                predicates.add(cb.equal(root.get("status"), departmentStatus));
+            }
+
+            if (query.getCode() != null) {
+                predicates.add(cb.equal(root.get("code"), query.getCode()));
+            }
+
+            if (query.getParentId() != null) {
+                Join<Department, Department> parentJoin = root.join("parentId");
+                predicates.add(cb.equal(parentJoin.get("id"), query.getParentId()));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        List<Department> departments = departmentRepository.findAll(spec);
+        List<DepartmentDTO> dtos = departments.stream()
+                .map(departmentMapper::toDto)
+                .toList();
+
+        return ResponseEntity.ok(dtos);
+    }
+
+    private DepartmentStatus resolveDepartmentStatus(String status) {
+        try {
+            return DepartmentStatus.valueOf(status);
+        } catch (IllegalArgumentException ex) {
+            logger.warn("Invalid status provided: '{}'", status);
+            throw new IgrpResponseStatusException(
+                    new IgrpProblem<>(HttpStatus.BAD_REQUEST,
+                            "Invalid department status",
+                            "No department status found with name: " + status)
+            );
         }
+    }
 
-        if (query.getName() != null && !query.getName().isEmpty()) {
-            predicates.add(cb.like(cb.lower(root.get("name")), "%" + query.getName().toLowerCase() + "%"));
-        }
-
-        if (query.getStatus() != null) {
-            predicates.add(cb.equal(root.get("status"), query.getStatus()));
-        }
-
-        return cb.and(predicates.toArray(new Predicate[0]));
-    };
-
-    List<Department> departments = departmentRepository.findAll(spec);
-    List<DepartmentDTO> dtos = departments.stream()
-        .map(departmentMapper::toDto)
-        .toList();
-
-    return ResponseEntity.ok(dtos);
-}
 }

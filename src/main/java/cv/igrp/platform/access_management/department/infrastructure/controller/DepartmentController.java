@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.department.application.commands.commands.*;
@@ -25,6 +27,8 @@ import java.util.List;
 @RequestMapping(path = "api")
 @Tag(name = "Department", description = "postDepartment")
 public class DepartmentController {
+
+   private static final Logger LOGGER = LoggerFactory.getLogger(DepartmentController.class);
 
   
   private final CommandBus commandBus;
@@ -61,8 +65,10 @@ public class DepartmentController {
   public ResponseEntity<DepartmentDTO> postDepartment(@Valid @RequestBody DepartmentDTO postDepartmentRequest
     )
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "DepartmentController", "postDepartment");
       final var command = new PostDepartmentCommand(postDepartmentRequest);
        ResponseEntity<DepartmentDTO> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "DepartmentController", "postDepartment");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -82,18 +88,25 @@ public class DepartmentController {
               mediaType = "application/json",
               schema = @Schema(
                   implementation = DepartmentDTO.class,
-                  type = "DepartmentDTO")
+                  type = "")
           )
       )
     }
   )
   
   public ResponseEntity<List<DepartmentDTO>> getDepartments(
-    )
+    @RequestParam(value = "applicationId", required = false) Integer applicationId,
+    @RequestParam(value = "applicationCode", required = false) String applicationCode,
+    @RequestParam(value = "parentId", required = false) Integer parentId,
+    @RequestParam(value = "name", required = false) String name,
+    @RequestParam(value = "status", required = false) String status,
+    @RequestParam(value = "code", required = false) String code)
   {
-      final var query = new GetDepartmentsQuery();
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "DepartmentController", "getDepartments");
+      final var query = new GetDepartmentsQuery(applicationId, applicationCode, parentId, name, status, code);
       ResponseEntity<List<DepartmentDTO>> response = queryBus.handle(query);
-       return ResponseEntity.status(response.getStatusCode())
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "DepartmentController", "getDepartments");
+      return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }
@@ -121,9 +134,11 @@ public class DepartmentController {
   public ResponseEntity<DepartmentDTO> getDepartmentById(
     @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "DepartmentController", "getDepartmentById");
       final var query = new GetDepartmentByIdQuery(id);
       ResponseEntity<DepartmentDTO> response = queryBus.handle(query);
-       return ResponseEntity.status(response.getStatusCode())
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "DepartmentController", "getDepartmentById");
+      return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }
@@ -151,8 +166,10 @@ public class DepartmentController {
   public ResponseEntity<DepartmentDTO> updateDepartment(@Valid @RequestBody DepartmentDTO updateDepartmentRequest
     , @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "DepartmentController", "updateDepartment");
       final var command = new UpdateDepartmentCommand(updateDepartmentRequest, id);
        ResponseEntity<DepartmentDTO> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "DepartmentController", "updateDepartment");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -181,8 +198,10 @@ public class DepartmentController {
   public ResponseEntity<?> deleteDepartment(
     @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "DepartmentController", "deleteDepartment");
       final var command = new DeleteDepartmentCommand(id);
        ResponseEntity<?> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "DepartmentController", "deleteDepartment");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());

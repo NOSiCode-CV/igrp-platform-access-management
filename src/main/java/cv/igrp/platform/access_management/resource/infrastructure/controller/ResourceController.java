@@ -11,6 +11,8 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.resource.application.commands.commands.*;
@@ -27,6 +29,8 @@ import java.util.Map;
 @RequestMapping(path = "api")
 @Tag(name = "Resource", description = "Resource Management")
 public class ResourceController {
+
+   private static final Logger LOGGER = LoggerFactory.getLogger(ResourceController.class);
 
   
   private final CommandBus commandBus;
@@ -64,11 +68,14 @@ public class ResourceController {
     @RequestParam(value = "applicationId", required = false) Integer applicationId,
     @RequestParam(value = "name", required = false) String name,
     @RequestParam(value = "type", required = false) String type,
-    @RequestParam(value = "externalID", required = false) String externalID)
+    @RequestParam(value = "externalID", required = false) String externalID,
+    @RequestParam(value = "applicationCode", required = false) String applicationCode)
   {
-      final var query = new GetResourcesQuery(applicationId, name, type, externalID);
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ResourceController", "getResources");
+      final var query = new GetResourcesQuery(applicationId, name, type, externalID, applicationCode);
       ResponseEntity<List<ResourceDTO>> response = queryBus.handle(query);
-       return ResponseEntity.status(response.getStatusCode())
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ResourceController", "getResources");
+      return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }
@@ -96,9 +103,11 @@ public class ResourceController {
   public ResponseEntity<ResourceDTO> getResourceById(
     @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ResourceController", "getResourceById");
       final var query = new GetResourceByIdQuery(id);
       ResponseEntity<ResourceDTO> response = queryBus.handle(query);
-       return ResponseEntity.status(response.getStatusCode())
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ResourceController", "getResourceById");
+      return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }
@@ -126,8 +135,10 @@ public class ResourceController {
   public ResponseEntity<ResourceDTO> createResource(@Valid @RequestBody ResourceDTO createResourceRequest
     )
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ResourceController", "createResource");
       final var command = new CreateResourceCommand(createResourceRequest);
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ResourceController", "createResource");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -156,8 +167,10 @@ public class ResourceController {
   public ResponseEntity<ResourceDTO> updateResource(@Valid @RequestBody ResourceDTO updateResourceRequest
     , @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ResourceController", "updateResource");
       final var command = new UpdateResourceCommand(updateResourceRequest, id);
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ResourceController", "updateResource");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -186,8 +199,10 @@ public class ResourceController {
   public ResponseEntity<String> deleteResource(
     @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ResourceController", "deleteResource");
       final var command = new DeleteResourceCommand(id);
        ResponseEntity<String> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ResourceController", "deleteResource");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -213,11 +228,13 @@ public class ResourceController {
     }
   )
   
-  public ResponseEntity<ResourceDTO> addItems(@RequestBody List<ResourceItemDTO> addItemsRequest
+  public ResponseEntity<ResourceDTO> addItems(@Valid @RequestBody List<ResourceItemDTO> addItemsRequest
     , @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ResourceController", "addItems");
       final var command = new AddItemsCommand(addItemsRequest, id);
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ResourceController", "addItems");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -246,8 +263,10 @@ public class ResourceController {
   public ResponseEntity<ResourceDTO> removeItems(@RequestBody List<Integer> removeItemsRequest
     , @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ResourceController", "removeItems");
       final var command = new RemoveItemsCommand(removeItemsRequest, id);
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ResourceController", "removeItems");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -276,8 +295,10 @@ public class ResourceController {
   public ResponseEntity<String> addResourceCustomFields(@RequestBody Map<String, ?> addResourceCustomFieldsRequest
     , @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ResourceController", "addResourceCustomFields");
       final var command = new AddResourceCustomFieldsCommand(addResourceCustomFieldsRequest, id);
        ResponseEntity<String> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ResourceController", "addResourceCustomFields");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -306,8 +327,10 @@ public class ResourceController {
   public ResponseEntity<String> removeResourceCustomFields(@RequestBody List<String> removeResourceCustomFieldsRequest
     , @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ResourceController", "removeResourceCustomFields");
       final var command = new RemoveResourceCustomFieldsCommand(removeResourceCustomFieldsRequest, id);
        ResponseEntity<String> response = commandBus.send(command);
+       LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ResourceController", "removeResourceCustomFields");
         return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
@@ -336,9 +359,11 @@ public class ResourceController {
   public ResponseEntity<Map<String, ?>> getResourceCustomFields(
     @PathVariable(value = "id") Integer id)
   {
+      LOGGER.debug("Operation started - Endpoint: {}, Action: {}", "ResourceController", "getResourceCustomFields");
       final var query = new GetResourceCustomFieldsQuery(id);
       ResponseEntity<Map<String, ?>> response = queryBus.handle(query);
-       return ResponseEntity.status(response.getStatusCode())
+      LOGGER.debug("Operation finished - Endpoint: {}, Action: {}", "ResourceController", "getResourceCustomFields");
+      return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }

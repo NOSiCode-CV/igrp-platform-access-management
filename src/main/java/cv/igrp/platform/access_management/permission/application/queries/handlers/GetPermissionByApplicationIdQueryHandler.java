@@ -6,6 +6,8 @@ import cv.igrp.platform.access_management.permission.application.queries.queries
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.PermissionRepository;
@@ -66,7 +68,7 @@ public class GetPermissionByApplicationIdQueryHandler implements QueryHandler<Ge
         log.info("Get Permission with Application ID {}", query.getApplicationId());
         Set<Permission> permissionList = permissionRepository.findAll()
                 .stream()
-                .filter(permission -> permission.getApplication().getId().equals(query.getApplicationId())
+                .filter(permission -> resolveCondition(permission, query)
                         && (permission.getStatus().equals(Status.ACTIVE) || permission.getStatus().equals(Status.INACTIVE)))
                 .collect(Collectors.toSet());
 
@@ -74,6 +76,24 @@ public class GetPermissionByApplicationIdQueryHandler implements QueryHandler<Ge
                 .map(permissionMapper::mapToDTO)
                 .toList();
         return new ResponseEntity<>(permissionDTO, HttpStatus.OK);
+    }
+
+    private boolean resolveCondition(Permission permission, GetPermissionByApplicationIdQuery query) {
+
+        if(query.getApplicationId() != null && query.getApplicationId() > 0) {
+            return permission.getApplication().getId().equals(query.getApplicationId());
+        }
+
+        if(query.getApplicationCode() != null && !query.getApplicationCode().isEmpty()) {
+            return permission.getApplication().getCode().equals(query.getApplicationCode());
+        }
+
+        throw new IgrpResponseStatusException(
+                new IgrpProblem<>(HttpStatus.BAD_REQUEST,
+                        "No application filter provided",
+                        "No application filter provided in the request. Must either be <applicationId> or <applicationCode>")
+        );
+
     }
 
 }
