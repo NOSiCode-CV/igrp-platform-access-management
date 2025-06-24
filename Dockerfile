@@ -11,7 +11,8 @@ ARG SPRING_ACTIVE_PROFILE
 ENV SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILE}
 
 # Copiar código fonte e configurações Maven
-COPY mvnw .mvn pom.xml ./
+COPY mvnw mvnw.cmd pom.xml ./
+COPY .mvn/ .mvn/
 RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
 COPY src ./src
