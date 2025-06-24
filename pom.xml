@@ -30,7 +30,7 @@
         <dependency-check.version>12.1.1</dependency-check.version>
         <javadoc.plugin.version>3.11.2</javadoc.plugin.version>
 
-        <!-- IGRP modules -->
+        <!-- IGRP module versions -->
         <igrp.framework.version>0.0.1-alpha</igrp.framework.version>
         <platform.iam.version>0.0.2-alpha</platform.iam.version>
         <filemanager.version>0.0.2-alpha</filemanager.version>
@@ -209,13 +209,28 @@
         </dependency>
     </dependencies>
 
-    <repositories>
+        <repositories>
+        <!-- IGRP Releases -->
         <repository>
-            <id>igrp-framework-releases</noprojecthttps://sonatype.nosi.cv/repository/igrp-framework-releases/</url>
+            <id>igrp-releases</id>
+            <url>https://sonatype.nosi.cv/repository/igrp-framework-releases/</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
         </repository>
+        <!-- IGRP Snapshots -->
         <repository>
-            <id>igrp-framework</id>
+            <id>igrp-snapshots</id>
             <url>https://sonatype.nosi.cv/repository/igrp-framework/</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
     </repositories>
 
@@ -227,27 +242,23 @@
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                 </plugin>
-
                 <!-- GraalVM Native Image Plugin -->
                 <plugin>
                     <groupId>org.graalvm.buildtools</groupId>
                     <artifactId>native-maven-plugin</artifactId>
                 </plugin>
-
                 <!-- JaCoCo Code Coverage -->
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
                     <version>${jacoco.version}</version>
                 </plugin>
-
                 <!-- Javadoc Generation -->
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
                     <version>${javadoc.plugin.version}</version>
                 </plugin>
-
                 <!-- OWASP Dependency-Check -->
                 <plugin>
                     <groupId>org.owasp</groupId>
@@ -256,7 +267,6 @@
                 </plugin>
             </plugins>
         </pluginManagement>
-
         <plugins>
             <plugin>
                 <groupId>org.springframework.boot</groupId>
@@ -269,24 +279,26 @@
                     </execution>
                 </executions>
             </plugin>
-
             <plugin>
                 <groupId>org.graalvm.buildtools</groupId>
                 <artifactId>native-maven-plugin</artifactId>
             </plugin>
-
             <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>prepare-agent</execution>
-                        <goals><goal>prepare-agent</goal></goals>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
                     </execution>
                     <execution>
                         <id>report</id>
                         <phase>verify</phase>
-                        <goals><goal>report</goal></goals>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
                     </execution>
                 </executions>
                 <configuration>
@@ -300,14 +312,15 @@
                     </excludes>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>attach-javadocs</execution>
-                        <goals><goal>jar</goal></goals>
+                        <id>attach-javadocs</id>
+                        <goals>
+                            <goal>jar</goal>
+                        </goals>
                     </execution>
                 </executions>
                 <configuration>
@@ -315,13 +328,14 @@
                     <additionalJOption>-Xdoclint:none</additionalJOption>
                 </configuration>
             </plugin>
-
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
                 <executions>
                     <execution>
-                        <goals><goal>check</goal></goals>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
                     </execution>
                 </executions>
                 <configuration>
