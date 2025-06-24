@@ -29,8 +29,8 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /app
 
 # Copy the native executable (artifactId assumed "access-management")
-COPY --from=build /app/app/target/access-management /app/access-management
+COPY --from=build /app/target/access-management /app/access-management
 
 # Expor porta e executar aplicação
 EXPOSE 8080
-CMD ["./access-management"]
+CMD ["./app/access-management"]
