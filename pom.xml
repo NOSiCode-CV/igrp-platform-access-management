@@ -299,6 +299,13 @@
                 </executions>
                 <configuration>
                     <imageName>access-management</imageName>  <!-- optional: override binary name -->
+                    <compileNoFork>true</compileNoFork>
+                   <options>
+                           <option>--enable-all-security-services</option>
+                    </options>
+                  <javaOptions>
+                            <javaOption>-J-Xmx6G</javaOption>
+                  </javaOptions>
                     <buildArgs>
                         <buildArg>--static</buildArg>
                         <buildArg>--libc=musl</buildArg>
