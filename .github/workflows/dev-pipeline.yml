@@ -30,8 +30,8 @@ jobs:
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY_URL }}
-          username: ${{ secrets.BASE_REGISTRY_USERNAME }}
-          password: ${{ secrets.BASE_REGISTRY_PASSWORD }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
 
       - name: Build & push multi-arch image
         uses: docker/build-push-action@v3
