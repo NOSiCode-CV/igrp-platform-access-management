@@ -5,50 +5,38 @@ on:
     branches:
       - deploy/base
 env:
-  DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: ""
-  DOCKER_HOST: tcp://docker:2375
   TARGETPLATFORMS: linux/amd64,linux/arm64
+  # common registry info
+  REGISTRY_URL: ${{ secrets.REGISTRY_URL }}
 
 jobs:
   build-base:
-    name: Build Docker Image Base Dev
     if: github.ref == 'refs/heads/deploy/base'
     runs-on: ubuntu-latest
-    container:
-      image: docker:28.1.1
-    services:
-      docker:
-        image: ghcr.io/your-org/docker-dind:mtu-1240
-        options: --privileged --env DOCKER_TLS_CERTDIR=""
     env:
-      REGISTRY_URL: ${{ secrets.REGISTRY_URL }}
-      BASE_REGISTRY_USERNAME: ${{ secrets.BASE_REGISTRY_USERNAME }}
-      BASE_REGISTRY_PASSWORD: ${{ secrets.BASE_REGISTRY_PASSWORD }}
-      BASE_REGISTRY_PROJECT: ${{ secrets.BASE_REGISTRY_PROJECT }}
-      CI_PIPELINE_ID: ${{ github.run_id }}
+      PROJECT: ${{ secrets.BASE_REGISTRY_PROJECT }}
+      IMAGE: access-management-api
+      TAG: ${{ github.run_id }}
     steps:
       - uses: actions/checkout@v3
 
-      - name: Show Docker info
-        run: docker info
-
-      - name: Register QEMU emulation
-        run: docker run --privileged --rm tonistiigi/binfmt --install all
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v2
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v2
 
-      - name: Log in to Docker registry
+      - name: Log in to registry
         uses: docker/login-action@v2
         with:
           registry: ${{ env.REGISTRY_URL }}
-          username: ${{ env.BASE_REGISTRY_USERNAME }}
-          password: ${{ env.BASE_REGISTRY_PASSWORD }}
+          username: ${{ secrets.BASE_REGISTRY_USERNAME }}
+          password: ${{ secrets.BASE_REGISTRY_PASSWORD }}
 
-      - name: Build and push multi-arch image
-        run: |
-          docker buildx build \
-            --platform ${{ env.TARGETPLATFORMS }} \
-            -t ${{ env.REGISTRY_URL }}/${{ env.BASE_REGISTRY_PROJECT }}/access-management-api:${{ env.CI_PIPELINE_ID }} \
-            --push .
+      - name: Build & push multi-arch image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          platforms: ${{ env.TARGETPLATFORMS }}
+          push: true
+          tags: ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}
