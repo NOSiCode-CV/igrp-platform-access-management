@@ -11,14 +11,12 @@ ARG SPRING_ACTIVE_PROFILE
 ENV SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILE}
 
 # Copiar código fonte e configurações Maven
-COPY mvnw ./mvnw
-COPY .mvn ./.mvn
-COPY pom.xml ./pom.xml
+COPY mvnw .mvn pom.xml ./
 RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
 COPY src ./src
 # Compilar aplicação e gerar executável nativo completo e statico
-RUN ./mvnw -Pnative spring-boot:native-image -DskipTests -Dnative-image.options="--static --libc=musl -O2 --no-fallback"
+RUN ./mvnw -Pnative clean package -DskipTests
 
 # ===================================================================
 # Runtime stage: minimal static binary
