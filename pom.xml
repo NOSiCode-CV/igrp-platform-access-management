@@ -286,9 +286,9 @@
                 <extensions>true</extensions>
                 <executions>
                     <execution>
-                        <id>build-native-image</id>
+                        <id>build-native</id>
                         <goals>
-                            <goal>build</goal>                   <!-- this is the native-image builder goal -->
+                            <goal>compile-no-fork</goal>                   <!-- this is the native-image builder goal -->
                         </goals>
                         <phase>package</phase>                <!-- run during mvn package -->
                     </execution>
