@@ -1,47 +1,65 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.4.3</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
+
     <groupId>cv.igrp.platform</groupId>
     <artifactId>access-management</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>igrp_platform_access_management</name>
     <description>IGRP Platform Access Management</description>
-    <url/>
-    <licenses>
-        <license/>
-    </licenses>
-    <developers>
-        <developer/>
-    </developers>
-    <scm>
-        <connection/>
-        <developerConnection/>
-        <tag/>
-        <url/>
-    </scm>
-    <repositories>
-        <repository>
-            <id>igrp-framework-releases</id>
-            <url>https://sonatype.nosi.cv/repository/igrp-framework-releases/</url>
-        </repository>
-        <repository>
-            <id>igrp-framework</id>
-            <url>https://sonatype.nosi.cv/repository/igrp-framework/</url>
-        </repository>
-    </repositories>
+
     <properties>
+        <!-- Java & Spring versions -->
         <java.version>21</java.version>
         <spring-cloud.version>2024.0.1</spring-cloud.version>
-    </properties>
-    <dependencies>
 
+        <!-- Third-party versions -->
+        <springdoc.version>2.8.5</springdoc.version>
+        <otel.version>1.32.0</otel.version>
+        <jacoco.version>0.8.13</jacoco.version>
+        <dependency-check.version>12.1.1</dependency-check.version>
+        <javadoc.plugin.version>3.11.2</javadoc.plugin.version>
+
+        <!-- IGRP modules -->
+        <igrp.framework.version>0.0.1-alpha</igrp.framework.version>
+        <platform.iam.version>0.0.2-alpha</platform.iam.version>
+        <filemanager.version>0.0.2-alpha</filemanager.version>
+        <notification.email.version>0.0.1-alpha-20250529.184648-2</notification.email.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Spring Cloud BOM -->
+            <dependency>
+                <groupId>org.springframework.cloud</groupId>
+                <artifactId>spring-cloud-dependencies</artifactId>
+                <version>${spring-cloud.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- OpenTelemetry BOM -->
+            <dependency>
+                <groupId>io.opentelemetry</groupId>
+                <artifactId>opentelemetry-bom</artifactId>
+                <version>${otel.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
+    <dependencies>
+        <!-- Spring Boot Starters -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
@@ -51,131 +69,60 @@
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-validation</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springdoc</groupId>
-            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-            <version>2.8.5</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
-            <scope>test</scope>
+            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-test</artifactId>
-            <scope>test</scope>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        <!-- OpenAPI / Swagger UI -->
+        <dependency>
+            <groupId>org.springdoc</groupId>
+            <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
+            <version>${springdoc.version}</version>
+        </dependency>
+
+        <!-- Data Formats & Utilities -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <artifactId>jackson-dataformat-xml</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <scope>provided</scope>
+        </dependency>
+
+        <!-- Database & Auditing -->
+        <dependency>
+            <groupId>org.postgresql</groupId>
+            <artifactId>postgresql</artifactId>
+            <scope>runtime</scope>
         </dependency>
         <dependency>
             <groupId>org.springframework.data</groupId>
             <artifactId>spring-data-envers</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>org.postgresql</groupId>
-            <artifactId>postgresql</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-
-        <!-- Security Dependencies -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
-        </dependency>
-
-
-        <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
-            <artifactId>jackson-dataformat-xml</artifactId>
-        </dependency>
-
-
-        <!-- Email -->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
-
-
-        <!-- IGRP dependencies -->
-        <dependency>
-            <groupId>cv.igrp.framework</groupId>
-            <artifactId>core</artifactId>
-            <version>0.0.1-alpha</version>
-        </dependency>
-        <dependency>
-            <groupId>cv.igrp.framework</groupId>
-            <artifactId>stereotype</artifactId>
-            <version>0.0.1-alpha</version>
-        </dependency>
-        <dependency>
-            <groupId>cv.igrp.platform</groupId>
-            <artifactId>iam-core</artifactId>
-            <version>0.0.2-alpha</version>
-        </dependency>
-        <dependency>
-            <groupId>cv.igrp.platform</groupId>
-            <artifactId>iam-keycloak-spring-boot</artifactId>
-            <version>0.0.2-alpha</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-simple</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <!-- IGRP File Libraries -->
-        <dependency>
-            <groupId>cv.igrp.platform</groupId>
-            <artifactId>filemanager</artifactId>
-            <version>0.0.2-alpha</version>
-        </dependency>
-
-        <dependency>
-            <groupId>cv.igrp.framework.filemanager</groupId>
-            <artifactId>minio</artifactId>
-            <version>0.0.2-alpha</version>
-        </dependency>
-        <!-- IGRP Notification Libraries -->
-        <dependency>
-            <groupId>cv.igrp.framework</groupId>
-            <artifactId>notification-email-smtp</artifactId>
-            <version>0.0.1-alpha-20250529.184648-2</version>
-        </dependency>
-
-        <!-- OpenTelemetry SDK Nativo -->
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk</artifactId>
-            <version>1.32.0</version>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-otlp</artifactId>
-            <version>1.32.0</version>
-        </dependency>
-        <!--Observability dependencies-->
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-actuator</artifactId>
-        </dependency>
+        <!-- Observability -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-prometheus</artifactId>
@@ -185,71 +132,143 @@
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-tracing-bridge-otel</artifactId>
         </dependency>
-        <!--<dependency>
+        <dependency>
             <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-zipkin</artifactId>
-        </dependency>-->
+            <artifactId>opentelemetry-sdk</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry</groupId>
+            <artifactId>opentelemetry-exporter-otlp</artifactId>
+        </dependency>
 
-        <!-- Spring Cloud -->
+        <!-- Kubernetes Integration -->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-kubernetes-client</artifactId>
         </dependency>
 
+        <!-- IGRP Framework Dependencies -->
+        <dependency>
+            <groupId>cv.igrp.framework</groupId>
+            <artifactId>core</artifactId>
+            <version>${igrp.framework.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cv.igrp.framework</groupId>
+            <artifactId>stereotype</artifactId>
+            <version>${igrp.framework.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cv.igrp.platform</groupId>
+            <artifactId>iam-core</artifactId>
+            <version>${platform.iam.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cv.igrp.platform</groupId>
+            <artifactId>iam-keycloak-spring-boot</artifactId>
+            <version>${platform.iam.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.slf4j</groupId>
+                    <artifactId>slf4j-simple</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>cv.igrp.platform</groupId>
+            <artifactId>filemanager</artifactId>
+            <version>${filemanager.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cv.igrp.framework.filemanager</groupId>
+            <artifactId>minio</artifactId>
+            <version>${filemanager.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>cv.igrp.framework</groupId>
+            <artifactId>notification-email-smtp</artifactId>
+            <version>${notification.email.version}</version>
+        </dependency>
+
+        <!-- Testing -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.junit.vintage</groupId>
+                    <artifactId>junit-vintage-engine</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-test</artifactId>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
+    <repositories>
+        <repository>
+            <id>igrp-framework-releases</noprojecthttps://sonatype.nosi.cv/repository/igrp-framework-releases/</url>
+        </repository>
+        <repository>
+            <id>igrp-framework</id>
+            <url>https://sonatype.nosi.cv/repository/igrp-framework/</url>
+        </repository>
+    </repositories>
 
     <build>
         <pluginManagement>
             <plugins>
-                <!-- GraalVM Native Plugin -->
-                <plugin>
-                    <groupId>org.graalvm.buildtools</groupId>
-                    <artifactId>native-maven-plugin</artifactId>
-                </plugin>
-
                 <!-- Spring Boot Plugin -->
                 <plugin>
                     <groupId>org.springframework.boot</groupId>
                     <artifactId>spring-boot-maven-plugin</artifactId>
                 </plugin>
 
-                <!-- Javadoc Plugin -->
+                <!-- GraalVM Native Image Plugin -->
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>3.11.2</version>
+                    <groupId>org.graalvm.buildtools</groupId>
+                    <artifactId>native-maven-plugin</artifactId>
                 </plugin>
 
-                <!-- Jacoco Plugin -->
+                <!-- JaCoCo Code Coverage -->
                 <plugin>
                     <groupId>org.jacoco</groupId>
                     <artifactId>jacoco-maven-plugin</artifactId>
-                    <version>0.8.13</version>
+                    <version>${jacoco.version}</version>
                 </plugin>
 
-                <!-- OWASP Dependency Check -->
+                <!-- Javadoc Generation -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-javadoc-plugin</artifactId>
+                    <version>${javadoc.plugin.version}</version>
+                </plugin>
+
+                <!-- OWASP Dependency-Check -->
                 <plugin>
                     <groupId>org.owasp</groupId>
                     <artifactId>dependency-check-maven</artifactId>
-                    <version>12.1.1</version>
+                    <version>${dependency-check.version}</version>
                 </plugin>
-
             </plugins>
         </pluginManagement>
 
         <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
 
             <plugin>
                 <groupId>org.graalvm.buildtools</groupId>
@@ -257,59 +276,17 @@
             </plugin>
 
             <plugin>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-maven-plugin</artifactId>
-            </plugin>
-
-            <plugin>
-                <groupId>org.owasp</groupId>
-                <artifactId>dependency-check-maven</artifactId>
-                <configuration>
-                    <outputDirectory>${project.build.directory}/reports</outputDirectory>
-                    <failBuildOnCVSS>10</failBuildOnCVSS>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>check</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>attach-javadocs</id>
-                        <goals>
-                            <goal>jar</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <failOnError>false</failOnError>
-                    <additionalJOption>-Xdoclint:none</additionalJOption>
-                </configuration>
-            </plugin>
-
-            <plugin>
                 <groupId>org.jacoco</groupId>
                 <artifactId>jacoco-maven-plugin</artifactId>
                 <executions>
                     <execution>
-                        <id>prepare-agent</id>
-                        <goals>
-                            <goal>prepare-agent</goal>
-                        </goals>
+                        <id>prepare-agent</execution>
+                        <goals><goal>prepare-agent</goal></goals>
                     </execution>
                     <execution>
                         <id>report</id>
                         <phase>verify</phase>
-                        <goals>
-                            <goal>report</goal>
-                        </goals>
+                        <goals><goal>report</goal></goals>
                     </execution>
                 </executions>
                 <configuration>
@@ -323,6 +300,36 @@
                     </excludes>
                 </configuration>
             </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-javadoc-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>attach-javadocs</execution>
+                        <goals><goal>jar</goal></goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <failOnError>false</failOnError>
+                    <additionalJOption>-Xdoclint:none</additionalJOption>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <executions>
+                    <execution>
+                        <goals><goal>check</goal></goals>
+                    </execution>
+                </executions>
+                <configuration>
+                    <outputDirectory>${project.build.directory}/reports</outputDirectory>
+                    <failBuildOnCVSS>10</failBuildOnCVSS>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
+
 </project>
