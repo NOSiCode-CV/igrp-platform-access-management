@@ -17,7 +17,7 @@ RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
 COPY src ./src
 # Compilar aplicação e gerar executável nativo completo e statico
-RUN ./mvnw -Pnative clean package -DskipTests
+RUN ./mvnw -Pnative clean package -DskipTests -Dnative-image.args="--enable-all-security-services"
 
 # ===================================================================
 # Runtime stage: minimal static binary
