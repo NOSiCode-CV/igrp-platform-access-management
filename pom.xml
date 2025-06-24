@@ -282,6 +282,26 @@
             <plugin>
                 <groupId>org.graalvm.buildtools</groupId>
                 <artifactId>native-maven-plugin</artifactId>
+                <version>0.10.6</version>                 <!-- choose a recent version -->
+                <extensions>true</extensions>
+                <executions>
+                    <execution>
+                        <id>build-native-image</id>
+                        <goals>
+                            <goal>build</goal>                   <!-- this is the native-image builder goal -->
+                        </goals>
+                        <phase>package</phase>                <!-- run during mvn package -->
+                    </execution>
+                </executions>
+                <configuration>
+                    <imageName>access-management</imageName>  <!-- optional: override binary name -->
+                    <buildArgs>
+                        <buildArg>--static</buildArg>
+                        <buildArg>--libc=musl</buildArg>
+                        <buildArg>-O2</buildArg>
+                        <buildArg>--no-fallback</buildArg>
+                    </buildArgs>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.jacoco</groupId>
