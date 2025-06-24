@@ -1,1 +1,5 @@
-
+{
+  "resources": [
+    { "pattern": "META-INF/services/org.apache.logging.log4j.spi.Provider" }
+  ]
+}
