@@ -19,8 +19,8 @@ jobs:
       image: docker:28.1.1
     services:
       docker:
-        image: docker:28.1.1-dind
-        options: --privileged --env DOCKER_TLS_CERTDIR="" --mtu=1240
+        image: ghcr.io/your-org/docker-dind:mtu-1240
+        options: --privileged --env DOCKER_TLS_CERTDIR=""
     env:
       REGISTRY_URL: ${{ secrets.REGISTRY_URL }}
       BASE_REGISTRY_USERNAME: ${{ secrets.BASE_REGISTRY_USERNAME }}
