@@ -11,14 +11,13 @@ ARG SPRING_ACTIVE_PROFILE
 ENV SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILE}
 
 # Copiar código fonte e configurações Maven
-COPY mvnw ./mvnw
-COPY .mvn ./.mvn
-COPY pom.xml ./pom.xml
+COPY mvnw mvnw.cmd pom.xml ./
+COPY .mvn/ .mvn/
 RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
 COPY src ./src
 # Compilar aplicação e gerar executável nativo completo e statico
-RUN ./mvnw -Pnative clean package -DskipTests -Dnative-image.options="--static --libc=musl -O2 --no-fallback"
+RUN ./mvnw -Pnative clean package -DskipTests
 
 # ===================================================================
 # Runtime stage: minimal static binary
@@ -29,7 +28,7 @@ FROM gcr.io/distroless/static:nonroot
 WORKDIR /app
 
 # Copy the native executable (artifactId assumed "access-management")
-COPY --from=build /app/target/access-management /app/access-management
+COPY --from=build /app/target/*-runner /app/access-management
 
 # Expor porta e executar aplicação
 EXPOSE 8080
