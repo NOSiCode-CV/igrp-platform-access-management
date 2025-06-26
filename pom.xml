@@ -64,6 +64,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -87,10 +88,6 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
-        <dependency>
-             <groupId>org.springframework.boot</groupId>
-             <artifactId>spring-boot-starter-logging</artifactId>
         </dependency>
 
         <!-- OpenAPI / Swagger UI -->
@@ -213,7 +210,7 @@
         </dependency>
     </dependencies>
 
-        <repositories>
+    <repositories>
         <!-- IGRP Releases -->
         <repository>
             <id>igrp-releases</id>
@@ -273,6 +270,23 @@
         </pluginManagement>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>21</source>
+                    <encoding>UTF-8</encoding>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
+                    </annotationProcessorPaths>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <executions>
@@ -292,25 +306,47 @@
                     <execution>
                         <id>build-native</id>
                         <goals>
-                            <goal>compile-no-fork</goal>                   <!-- this is the native-image builder goal -->
+                            <goal>compile-no-fork
+                            </goal>                   <!-- this is the native-image builder goal -->
                         </goals>
                         <phase>package</phase>                <!-- run during mvn package -->
                     </execution>
                 </executions>
                 <configuration>
-                    <imageName>access-management</imageName>  <!-- optional: override binary name -->
-                    <compileNoFork>true</compileNoFork>
-                   <options>
-                           <option>--enable-all-security-services</option>
-                    </options>
-                  <javaOptions>
-                            <javaOption>-J-Xmx6G</javaOption>
-                  </javaOptions>
+                    <imageName>access-management</imageName>
                     <buildArgs>
+                        <!-- musl compatibility -->
                         <buildArg>--static</buildArg>
                         <buildArg>--libc=musl</buildArg>
-                        <buildArg>-O2</buildArg>
+                        <buildArg>-H:-CheckToolchain</buildArg>
+                        <buildArg>-H:+ReportUnsupportedElementsAtRuntime</buildArg>
+                        <buildArg>--allow-incomplete-classpath</buildArg>
+
+                        <!-- Core GraalVM settings -->
                         <buildArg>--no-fallback</buildArg>
+                        <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                        <buildArg>--enable-url-protocols=http,https</buildArg>
+
+                        <!-- Optimization settings -->
+                        <buildArg>-O1</buildArg>
+                        <buildArg>--gc=serial</buildArg>
+
+                        <!-- Memory settings -->
+                        <buildArg>-J-Xmx8g</buildArg>
+                        <buildArg>-J-Xms2g</buildArg>
+                        <buildArg>-R:MaxHeapSize=2G</buildArg>
+                        <buildArg>-H:NumberOfThreads=4</buildArg>
+
+                        <!-- Complete SLF4J and Logback initialization -->
+                        <buildArg>--initialize-at-build-time=org.slf4j</buildArg>
+                        <buildArg>--initialize-at-build-time=org.slf4j.helpers</buildArg>
+                        <buildArg>--initialize-at-build-time=ch.qos.logback</buildArg>
+
+                        <!-- Micrometer metrics (Spring Boot Actuator) -->
+                        <buildArg>--initialize-at-build-time=io.micrometer.core.instrument.binder.logging</buildArg>
+
+                        <!-- Verbose output for debugging -->
+                        <buildArg>--verbose</buildArg>
                     </buildArgs>
                 </configuration>
             </plugin>
