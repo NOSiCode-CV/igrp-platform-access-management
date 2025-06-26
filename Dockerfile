@@ -16,8 +16,12 @@ COPY .mvn/ .mvn/
 RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
 COPY src ./src
+
+# Set memory-optimized environment variables
+ENV MAVEN_OPTS="-Xmx12g -Xms4g -XX:+UseG1GC -XX:+UseStringDeduplication"
+ENV JAVA_TOOL_OPTIONS="-Xmx12g -Xms4g"
+
 # Compilar aplicação e gerar executável nativo completo e statico
-ENV MAVEN_OPTS="-Xmx8G"
 RUN ./mvnw -Pnative clean package -DskipTests
 
 # ===================================================================
