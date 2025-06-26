@@ -1,7 +1,15 @@
 # ===================================================================
 # Build stage: GraalVM 21 + Native Image with Maven Wrapper
 # ===================================================================
-FROM ghcr.io/graalvm/native-image-community:23-muslib-ol9 AS build
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+
+FROM --platform=$BUILDPLATFORM  ghcr.io/graalvm/native-image-community:23-muslib-ol9 AS build
+
+# Platform information for debugging
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+RUN echo "Building on: $BUILDPLATFORM, targeting: $TARGETPLATFORM"
 
 # Diretório de trabalho
 WORKDIR /app
@@ -21,19 +29,35 @@ COPY src ./src
 ENV MAVEN_OPTS="-Xmx12g -Xms4g -XX:+UseG1GC -XX:+UseStringDeduplication"
 ENV JAVA_TOOL_OPTIONS="-Xmx12g -Xms4g"
 
-# Compilar aplicação e gerar executável nativo completo e statico
-RUN ./mvnw -Pnative clean package -DskipTests
-
+# Compilar aplicação com flags específicos por plataforma
+RUN case "${TARGETPLATFORM}" in \
+      "linux/arm64") MARCH_FLAG="-march=armv8-a" ;; \
+      "linux/amd64") MARCH_FLAG="-march=x86-64" ;; \
+      *) MARCH_FLAG="" ;; \
+    esac && \
+    echo "Using march flag: $MARCH_FLAG" && \
+    if [ -n "$MARCH_FLAG" ]; then \
+      ./mvnw -Pnative clean package -DskipTests -Dgraalvm.native.additional-build-args="$MARCH_FLAG"; \
+    else \
+      ./mvnw -Pnative clean package -DskipTests; \
+    fi
 # ===================================================================
 # Runtime stage: minimal static binary
 # ===================================================================
-FROM gcr.io/distroless/static:nonroot
+FROM --platform=$TARGETPLATFORM gcr.io/distroless/static:nonroot
+
+# Platform information
+ARG TARGETPLATFORM
+LABEL platform=$TARGETPLATFORM
 
 # Diretório de trabalho
 WORKDIR /app
 
 # Copy the native executable (artifactId assumed "access-management")
 COPY --from=build /app/target/access-management /app/access-management
+
+# Set proper ownership and permissions
+USER nonroot:nonroot
 
 # Expor porta e executar aplicação
 EXPOSE 8080
