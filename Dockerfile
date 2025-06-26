@@ -67,7 +67,7 @@ LABEL platform=$TARGETPLATFORM
 WORKDIR /app
 
 # Copy the native executable (artifactId assumed "access-management")
-COPY --from=build /app/target/access-management /app/access-management
+COPY --from=build /app/target/access-management-upx /app/access-management
 
 # Set proper ownership and permissions
 USER nonroot:nonroot
