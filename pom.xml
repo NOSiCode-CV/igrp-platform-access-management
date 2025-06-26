@@ -318,7 +318,6 @@
 
                         <!-- Multi-platform -->
                         <buildArg>${native.march}</buildArg>
-                        <buildArg>${native.gc}</buildArg>
 
                         <!-- musl compatibility -->
                         <buildArg>--static</buildArg>
@@ -430,7 +429,6 @@
             </activation>
             <properties>
                 <native.march>-march=native</native.march>
-                <native.gc>--gc=G1</native.gc>
             </properties>
         </profile>
 
@@ -445,7 +443,6 @@
             </activation>
             <properties>
                 <native.march>-march=armv8-a</native.march>
-                <native.gc>--gc=G1</native.gc>
             </properties>
         </profile>
 
@@ -460,7 +457,6 @@
             </activation>
             <properties>
                 <native.march>-march=x86-64</native.march>
-                <native.gc>--gc=G1</native.gc>
             </properties>
         </profile>
 
@@ -474,7 +470,6 @@
             </activation>
             <properties>
                 <native.march>-march=x86-64</native.march>
-                <native.gc>--gc=serial</native.gc>
             </properties>
         </profile>
     </profiles>
