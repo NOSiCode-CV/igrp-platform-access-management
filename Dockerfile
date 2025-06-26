@@ -31,7 +31,7 @@ ENV JAVA_TOOL_OPTIONS="-Xmx12g -Xms4g"
 
 # Compilar aplicação com flags específicos por plataforma
 RUN case "${TARGETPLATFORM}" in \
-      "linux/arm64") MARCH_FLAG="-march=armv8-a" ;; \
+      "linux/arm64") MARCH_FLAG="-march=armv8.1-a" ;; \
       "linux/amd64") MARCH_FLAG="-march=x86-64" ;; \
       *) MARCH_FLAG="" ;; \
     esac && \
@@ -41,6 +41,19 @@ RUN case "${TARGETPLATFORM}" in \
     else \
       ./mvnw -Pnative clean package -DskipTests; \
     fi
+
+# Install and use UPX
+ARG UPX_VERSION=4.2.2
+ARG UPX_ARCHIVE=upx-${UPX_VERSION}-amd64_linux.tar.xz
+RUN microdnf -y install wget xz && \
+    wget -q https://github.com/upx/upx/releases/download/v${UPX_VERSION}/${UPX_ARCHIVE} && \
+    tar -xJf ${UPX_ARCHIVE} && \
+    rm -rf ${UPX_ARCHIVE} && \
+    mv upx-${UPX_VERSION}-amd64_linux/upx . && \
+    rm -rf upx-${UPX_VERSION}-amd64_linux
+RUN ./upx --lzma --best -o /app/target/access-management-upx  /app/target/access-management
+RUN ls -lh /app/target/access-management-upx
+
 # ===================================================================
 # Runtime stage: minimal static binary
 # ===================================================================
