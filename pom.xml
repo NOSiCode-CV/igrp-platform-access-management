@@ -315,6 +315,11 @@
                 <configuration>
                     <imageName>access-management</imageName>
                     <buildArgs>
+
+                        <!-- Multi-platform -->
+                        <buildArg>${native.march}</buildArg>
+                        <buildArg>${native.gc}</buildArg>
+
                         <!-- musl compatibility -->
                         <buildArg>--static</buildArg>
                         <buildArg>--libc=musl</buildArg>
@@ -412,5 +417,66 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Apple Silicon (M1/M2/M3/M4) -->
+        <profile>
+            <id>apple-silicon</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <properties>
+                <native.march>-march=native</native.march>
+                <native.gc>--gc=G1</native.gc>
+            </properties>
+        </profile>
+
+        <!-- Linux ARM64 (for containers) -->
+        <profile>
+            <id>linux-arm64</id>
+            <activation>
+                <property>
+                    <name>target.platform</name>
+                    <value>linux-arm64</value>
+                </property>
+            </activation>
+            <properties>
+                <native.march>-march=armv8-a</native.march>
+                <native.gc>--gc=G1</native.gc>
+            </properties>
+        </profile>
+
+        <!-- Linux AMD64 (for containers) -->
+        <profile>
+            <id>linux-amd64</id>
+            <activation>
+                <property>
+                    <name>target.platform</name>
+                    <value>linux-amd64</value>
+                </property>
+            </activation>
+            <properties>
+                <native.march>-march=x86-64</native.march>
+                <native.gc>--gc=G1</native.gc>
+            </properties>
+        </profile>
+
+        <!-- Default fallback -->
+        <profile>
+            <id>native-default</id>
+            <activation>
+                <property>
+                    <name>!target.platform</name>
+                </property>
+            </activation>
+            <properties>
+                <native.march>-march=x86-64</native.march>
+                <native.gc>--gc=serial</native.gc>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>
