@@ -29,15 +29,15 @@ COPY src ./src
 ENV MAVEN_OPTS="-Xmx12g -Xms4g -XX:+UseG1GC -XX:+UseStringDeduplication"
 ENV JAVA_TOOL_OPTIONS="-Xmx12g -Xms4g"
 
-# Compilar aplicação com flags específicos por plataforma
+# Compilar aplicação - Maven profiles handle platform-specific flags
 RUN case "${TARGETPLATFORM}" in \
-      "linux/arm64") MARCH_FLAG="-march=armv8.1-a" ;; \
-      "linux/amd64") MARCH_FLAG="-march=x86-64" ;; \
-      *) MARCH_FLAG="" ;; \
+      "linux/arm64") TARGET_PLATFORM="linux-arm64" ;; \
+      "linux/amd64") TARGET_PLATFORM="linux-amd64" ;; \
+      *) TARGET_PLATFORM="" ;; \
     esac && \
-    echo "Using march flag: $MARCH_FLAG" && \
-    if [ -n "$MARCH_FLAG" ]; then \
-      ./mvnw -Pnative clean package -DskipTests -Dgraalvm.native.additional-build-args="$MARCH_FLAG"; \
+    echo "Building for platform: $TARGET_PLATFORM" && \
+    if [ -n "$TARGET_PLATFORM" ]; then \
+      ./mvnw -Pnative clean package -DskipTests -Dtarget.platform=$TARGET_PLATFORM; \
     else \
       ./mvnw -Pnative clean package -DskipTests; \
     fi
