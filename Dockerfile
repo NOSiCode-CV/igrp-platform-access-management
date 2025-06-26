@@ -37,9 +37,9 @@ RUN case "${TARGETPLATFORM}" in \
     esac && \
     echo "Building for platform: $TARGET_PLATFORM" && \
     if [ -n "$TARGET_PLATFORM" ]; then \
-      ./mvnw -Pnative clean package -DskipTests -Dtarget.platform=$TARGET_PLATFORM; \
+      ./mvnw --no-transfer-progress -Pnative clean package -DskipTests -Dtarget.platform=$TARGET_PLATFORM; \
     else \
-      ./mvnw -Pnative clean package -DskipTests; \
+      ./mvnw --no-transfer-progress -Pnative clean package -DskipTests; \
     fi
 
 # Install and use UPX
