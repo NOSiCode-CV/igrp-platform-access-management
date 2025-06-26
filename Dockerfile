@@ -1,7 +1,7 @@
 # ===================================================================
 # Build stage: GraalVM 21 + Native Image with Maven Wrapper
 # ===================================================================
-FROM ghcr.io/graalvm/native-image-community:21-muslib-ol9 AS build
+FROM ghcr.io/graalvm/native-image-community:23-muslib-ol9 AS build
 
 # Diretório de trabalho
 WORKDIR /app
@@ -17,6 +17,7 @@ RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
 
 COPY src ./src
 # Compilar aplicação e gerar executável nativo completo e statico
+ENV MAVEN_OPTS="-Xmx8G"
 RUN ./mvnw -Pnative clean package -DskipTests
 
 # ===================================================================

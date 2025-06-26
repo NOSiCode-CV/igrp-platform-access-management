@@ -119,7 +119,10 @@ services:
     deploy:
       resources:
         limits:
-          memory: 700m
+          memory: 16G
+          cpus: '4.0'
+        reservations:
+          memory: 8G
     labels:
       logging: "promtail"
 
