@@ -332,7 +332,7 @@
                         <buildArg>--gc=serial</buildArg>
 
                         <!-- Memory settings -->
-                        <buildArg>-J-Xmx8g</buildArg>
+                        <buildArg>-J-Xmx10g</buildArg>
                         <buildArg>-J-Xms2g</buildArg>
                         <buildArg>-R:MaxHeapSize=2G</buildArg>
                         <buildArg>-H:NumberOfThreads=4</buildArg>
