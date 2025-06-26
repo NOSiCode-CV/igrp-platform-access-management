@@ -38,7 +38,5 @@ jobs:
           platforms: ${{ env.TARGETPLATFORMS }}
           push: true
           tags: ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}
-          build-args: |
-            SPRING_ACTIVE_PROFILE=development
           cache-from: type=gha
           cache-to: type=gha,mode=max
