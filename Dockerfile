@@ -31,16 +31,24 @@ ENV JAVA_TOOL_OPTIONS="-Xmx12g -Xms4g"
 # Compilar aplicação - Maven profiles handle platform-specific flags
 RUN case "${TARGETPLATFORM}" in \
       "linux/arm64") \
-        echo "Building ARM64 binary with armv8-a optimization" && \
-        ./mvnw --no-transfer-progress -Pnative clean package -DskipTests -Dbuild.target=arm64 \
+        echo "🏗️  Building ARM64 binary with armv8-a optimization" && \
+        ./mvnw --no-transfer-progress \
+          -Ptarget-arm64 \
+          clean package \
+          -DskipTests \
         ;; \
       "linux/amd64") \
-        echo "Building AMD64 binary with x86-64 optimization" && \
-        ./mvnw --no-transfer-progress -Pnative clean package -DskipTests -Dbuild.target=amd64 \
+        echo "🏗️  Building AMD64 binary with x86-64 optimization" && \
+        ./mvnw --no-transfer-progress \
+          -Ptarget-amd64 \
+          clean package \
+          -DskipTests \
         ;; \
       *) \
-        echo "Building with default settings for ${TARGETPLATFORM}" && \
-        ./mvnw --no-transfer-progress -Pnative clean package -DskipTests \
+        echo "🏗️  Building default/native" && \
+        ./mvnw --no-transfer-progress \
+          clean package \
+          -DskipTests \
         ;; \
     esac
 
