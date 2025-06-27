@@ -54,8 +54,8 @@ RUN set -eux; \
 
 # ===================================================================
 # Runtime stage: minimal static binary
-# ===================================================================
-FROM gcr.io/distroless/static:nonroot
+# =================================================================== # gcr.io/distroless/static:nonroot
+FROM gcr.io/distroless/base-nossl:nonroot
 
 ARG TARGETPLATFORM
 LABEL platform=${TARGETPLATFORM}
