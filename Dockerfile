@@ -3,23 +3,12 @@ ARG TARGETPLATFORM
 #===================================================================
 # Build stage: GraalVM 24 + Native Image
 # ===================================================================
-FROM --platform=${BUILDPLATFORM} ghcr.io/graalvm/native-image-community:24-ol9 AS build
+FROM --platform=${BUILDPLATFORM} container-registry.oracle.com/graalvm/native-image:24-muslib AS build
 
 # show platforms
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 RUN echo "Building on: ${BUILDPLATFORM}, targeting: ${TARGETPLATFORM}"
-
-# as root, enable EPEL and install musl-tools + download tools
-USER root
-# 1) grab the EPEL release RPM and install it
-# 2) then install musl-tools + helpers
-# 3) clean up metadata
-RUN microdnf install -y wget rpm xz && \
-    wget -q https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
-    rpm -Uvh epel-release-latest-9.noarch.rpm && \
-    microdnf install -y musl-tools && \
-    microdnf clean all
 
 WORKDIR /app
 
