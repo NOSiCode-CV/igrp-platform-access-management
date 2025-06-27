@@ -12,9 +12,14 @@ RUN echo "Building on: ${BUILDPLATFORM}, targeting: ${TARGETPLATFORM}"
 
 # as root, enable EPEL and install musl-tools + download tools
 USER root
-RUN dnf install -y epel-release && \
-    dnf install -y musl-tools wget xz && \
-    dnf clean all
+# 1) grab the EPEL release RPM and install it
+# 2) then install musl-tools + helpers
+# 3) clean up metadata
+RUN microdnf install -y wget rpm xz && \
+    wget -q https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm && \
+    rpm -Uvh epel-release-latest-9.noarch.rpm && \
+    microdnf install -y musl-tools && \
+    microdnf clean all
 
 WORKDIR /app
 
