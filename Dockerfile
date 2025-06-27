@@ -12,6 +12,13 @@ RUN echo "Building on: ${BUILDPLATFORM}, targeting: ${TARGETPLATFORM}"
 
 WORKDIR /app
 
+# 1) Install helper tools in one layer
+USER root
+RUN microdnf update -y && \
+    microdnf install --nodocs -y wget xz && \
+    microdnf clean all && \
+    rm -rf /var/cache/yum
+
 # copy only what's needed for mvnw bootstrap
 COPY mvnw ./
 COPY .mvn/ .mvn/
