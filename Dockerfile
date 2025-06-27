@@ -4,7 +4,7 @@
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
-FROM --platform=$BUILDPLATFORM  ghcr.io/graalvm/native-image-community:23-muslib-ol9 AS build
+FROM --platform=$BUILDPLATFORM ghcr.io/graalvm/native-image-community:23 AS build
 
 # Platform information for debugging
 ARG BUILDPLATFORM
