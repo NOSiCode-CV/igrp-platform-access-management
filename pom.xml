@@ -314,6 +314,8 @@
                 </executions>
                 <configuration>
                     <imageName>access-management</imageName>
+                    <!-- Point to your Spring Boot main class -->
+                    <mainClass>cv.igrp.platform.access_management.IgrpPlatformAccessManagementApplication</mainClass>
                     <buildArgs>
 
                         <!-- Multi-platform -->
