@@ -3,7 +3,7 @@ ARG TARGETPLATFORM
 #===================================================================
 # Build stage: GraalVM 24 + Native Image
 # ===================================================================
-FROM --platform=${BUILDPLATFORM} ghcr.io/graalvm/native-image-community:23 AS build
+FROM --platform=${BUILDPLATFORM} ghcr.io/graalvm/native-image-community:23-muslib-ol9 AS build
 
 # show platforms
 ARG BUILDPLATFORM

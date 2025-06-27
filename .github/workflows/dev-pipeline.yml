@@ -48,10 +48,10 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           tags: ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-${{ matrix.arch }}
-          #build-args: |
-            #SPRING_ACTIVE_PROFILE=dev
-          #cache-from: type=gha
-          #cache-to: type=gha,mode=max
+          build-args: |
+            SPRING_ACTIVE_PROFILE=cicd
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   create-manifest:
     needs: build-base
