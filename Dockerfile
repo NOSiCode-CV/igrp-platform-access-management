@@ -1,13 +1,12 @@
 # ===================================================================
 # Build stage: GraalVM 21 + Native Image with Maven Wrapper
 # ===================================================================
-ARG BUILDPLATFORM
+
 ARG TARGETPLATFORM
 
-FROM --platform=$BUILDPLATFORM  ghcr.io/graalvm/native-image-community:23-muslib-ol9 AS build
+FROM --platform=$TARGETPLATFORM  ghcr.io/graalvm/native-image-community:23-muslib-ol9 AS build
 
 # Platform information for debugging
-ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
 # Diretório de trabalho
@@ -17,10 +16,20 @@ WORKDIR /app
 ARG SPRING_ACTIVE_PROFILE
 ENV SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILE}
 
+# 1) Install curl & download Maven
+ARG MAVEN_VERSION=3.9.4
+RUN microdnf install -y curl tar gzip && \
+    mkdir -p /opt/maven && \
+    curl -fsSL https://archive.apache.org/dist/maven/maven-3/${MAVEN_VERSION}/binaries/apache-maven-${MAVEN_VERSION}-bin.tar.gz \
+      | tar -xz -C /opt/maven --strip-components=1 && \
+    ln -s /opt/maven/bin/mvn /usr/local/bin/mvn
+
 # Copiar código fonte e configurações Maven
-COPY mvnw mvnw.cmd pom.xml ./
-COPY .mvn/ .mvn/
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+#COPY mvnw mvnw.cmd pom.xml ./
+#COPY .mvn/ .mvn/
+COPY pom.xml ./
+#RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+RUN mvn --batch-mode dependency:go-offline
 
 COPY src ./src
 
@@ -32,21 +41,21 @@ ENV JAVA_TOOL_OPTIONS="-Xmx12g -Xms4g"
 RUN case "${TARGETPLATFORM}" in \
       "linux/arm64") \
         echo "🏗️  Building ARM64 binary with armv8-a optimization" && \
-        ./mvnw --no-transfer-progress \
+        ./mvnw --no-transfer-progress --batch-mode \
           -Ptarget-arm64 \
           clean package \
           -DskipTests \
         ;; \
       "linux/amd64") \
         echo "🏗️  Building AMD64 binary with x86-64 optimization" && \
-        ./mvnw --no-transfer-progress \
+        ./mvnw --no-transfer-progress --batch-mode \
           -Ptarget-amd64 \
           clean package \
           -DskipTests \
         ;; \
       *) \
         echo "🏗️  Building default/native" && \
-        ./mvnw --no-transfer-progress \
+        ./mvnw --no-transfer-progress --batch-mode \
           clean package \
           -DskipTests \
         ;; \
