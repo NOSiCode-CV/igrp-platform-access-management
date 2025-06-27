@@ -444,7 +444,7 @@
                 </property>
             </activation>
             <properties>
-                <native.march>-march=armv8-a</native.march>
+                <native.march>--target-arch=arm64</native.march>
             </properties>
         </profile>
 
