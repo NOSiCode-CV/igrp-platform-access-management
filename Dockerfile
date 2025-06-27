@@ -9,7 +9,6 @@ FROM --platform=$BUILDPLATFORM  ghcr.io/graalvm/native-image-community:23-muslib
 # Platform information for debugging
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
-RUN echo "Building on: $BUILDPLATFORM, targeting: $TARGETPLATFORM"
 
 # Diretório de trabalho
 WORKDIR /app
@@ -60,7 +59,7 @@ RUN ls -lh /app/target/access-management-upx
 # ===================================================================
 # Runtime stage: minimal static binary
 # ===================================================================
-FROM --platform=$TARGETPLATFORM gcr.io/distroless/static:nonroot
+FROM gcr.io/distroless/static:nonroot
 
 # Platform information
 ARG TARGETPLATFORM
