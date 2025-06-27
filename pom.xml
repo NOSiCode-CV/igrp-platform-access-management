@@ -289,10 +289,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <configuration>
-                    <mainClass>cv.igrp.platform.access_management.IgrpPlatformAccessManagementApplication</mainClass>
-                    <executable>true</executable>
-                </configuration>
                 <executions>
                     <execution>
                         <goals>
@@ -318,8 +314,6 @@
                 </executions>
                 <configuration>
                     <imageName>access-management</imageName>
-                    <!-- Point to your Spring Boot main class -->
-                    <mainClass>cv.igrp.platform.access_management.IgrpPlatformAccessManagementApplication</mainClass>
                     <buildArgs>
 
                         <!-- Multi-platform -->
