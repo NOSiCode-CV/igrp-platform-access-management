@@ -42,21 +42,21 @@ ENV JAVA_TOOL_OPTIONS="-Xmx12g -Xms4g"
 RUN case "${TARGETPLATFORM}" in \
       "linux/arm64") \
         echo "🏗️  Building ARM64 binary with armv8-a optimization" && \
-        ./mvn --no-transfer-progress --batch-mode \
+        mvn --no-transfer-progress --batch-mode \
           -Ptarget-arm64 \
           clean package \
           -DskipTests \
         ;; \
       "linux/amd64") \
         echo "🏗️  Building AMD64 binary with x86-64 optimization" && \
-        ./mvn --no-transfer-progress --batch-mode \
+        mvn --no-transfer-progress --batch-mode \
           -Ptarget-amd64 \
           clean package \
           -DskipTests \
         ;; \
       *) \
         echo "🏗️  Building default/native" && \
-        ./mvn --no-transfer-progress --batch-mode \
+        mvn --no-transfer-progress --batch-mode \
           clean package \
           -DskipTests \
         ;; \
