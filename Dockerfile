@@ -31,16 +31,19 @@ ENV JAVA_TOOL_OPTIONS="-Xmx12g -Xms4g"
 
 # Compilar aplicação - Maven profiles handle platform-specific flags
 RUN case "${TARGETPLATFORM}" in \
-      "linux/arm64") TARGET_PLATFORM="linux-arm64" ;; \
-      "linux/amd64") TARGET_PLATFORM="linux-amd64" ;; \
-      *) TARGET_PLATFORM="" ;; \
-    esac && \
-    echo "Building for platform: $TARGET_PLATFORM" && \
-    if [ -n "$TARGET_PLATFORM" ]; then \
-      ./mvnw --no-transfer-progress -Pnative clean package -DskipTests -Dtarget.platform=$TARGET_PLATFORM; \
-    else \
-      ./mvnw --no-transfer-progress -Pnative clean package -DskipTests; \
-    fi
+      "linux/arm64") \
+        echo "Building ARM64 binary with armv8-a optimization" && \
+        ./mvnw --no-transfer-progress -Pnative clean package -DskipTests -Dbuild.target=arm64 \
+        ;; \
+      "linux/amd64") \
+        echo "Building AMD64 binary with x86-64 optimization" && \
+        ./mvnw --no-transfer-progress -Pnative clean package -DskipTests -Dbuild.target=amd64 \
+        ;; \
+      *) \
+        echo "Building with default settings for ${TARGETPLATFORM}" && \
+        ./mvnw --no-transfer-progress -Pnative clean package -DskipTests \
+        ;; \
+    esac
 
 # Install and use UPX
 ARG UPX_VERSION=4.2.2
