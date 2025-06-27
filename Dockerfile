@@ -33,13 +33,13 @@ ARG UPX_VERSION=5.0.1
 RUN set -eux; \
     # pick arch/profile based on target
     case "${TARGETPLATFORM}" in \
-      "linux/arm64") ARCH=arm64; PROFILE=target-arm64 ;; \
-      "linux/amd64") ARCH=amd64; PROFILE=target-amd64 ;; \
-      *)              ARCH=amd64; PROFILE=native-default ;; \
+      "linux/arm64") ARCH=arm64; ;; \
+      "linux/amd64") ARCH=amd64; ;; \
+      *)              ARCH=amd64; ;; \
     esac; \
-    echo "→ Building for ${ARCH} (profile ${PROFILE})"; \
+    echo "→ Building for ${ARCH}"; \
     ./mvnw --batch-mode \
-      -Pnative,${PROFILE} \
+      -Pnative \
       -Dbuild.target=${ARCH} \
       clean package -DskipTests; \
     \
