@@ -43,14 +43,14 @@ RUN case "${TARGETPLATFORM}" in \
       "linux/arm64") \
         echo "🏗️  Building ARM64 binary with armv8-a optimization" && \
         ./mvnw --no-transfer-progress --batch-mode -Pnative \
-          -P target-arm64 \
+          -Dbuild.target=arm64 \
           clean package \
           -DskipTests \
         ;; \
       "linux/amd64") \
         echo "🏗️  Building AMD64 binary with x86-64 optimization" && \
         ./mvnw --no-transfer-progress --batch-mode -Pnative \
-          -P target-amd64 \
+          -Dbuild.target=amd64 \
           clean package \
           -DskipTests \
         ;; \
