@@ -319,12 +319,13 @@
                         <!-- Multi-platform -->
                         <buildArg>${native.march}</buildArg>
 
+                        <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
+
                         <!-- musl compatibility -->
                         <buildArg>--static</buildArg>
                         <buildArg>--libc=musl</buildArg>
                         <buildArg>-H:-CheckToolchain</buildArg>
                         <buildArg>-H:+ReportUnsupportedElementsAtRuntime</buildArg>
-                        <buildArg>--allow-incomplete-classpath</buildArg>
 
                         <!-- Core GraalVM settings -->
                         <buildArg>--no-fallback</buildArg>
@@ -418,7 +419,7 @@
     </build>
 
     <profiles>
-        <!-- Apple Silicon (M1/M2/M3/M4) -->
+        <!-- Apple Silicon (M1/M2/M3/M4)-->
         <profile>
             <id>apple-silicon</id>
             <activation>
