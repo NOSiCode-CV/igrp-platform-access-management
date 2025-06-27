@@ -4,12 +4,17 @@
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 
-FROM --platform=$BUILDPLATFORM ghcr.io/graalvm/native-image-community:23 AS build
+FROM --platform=$BUILDPLATFORM ghcr.io/graalvm/native-image-community:24-ol9 AS build
 
 # Platform information for debugging
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 RUN echo "Building on: $BUILDPLATFORM, targeting: $TARGETPLATFORM"
+
+# install the musl cross-compiler
+USER root
+RUN microdnf install -y musl-tools
+
 # Diretório de trabalho
 WORKDIR /app
 
