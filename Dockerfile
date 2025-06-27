@@ -13,7 +13,9 @@ RUN echo "Building on: $BUILDPLATFORM, targeting: $TARGETPLATFORM"
 
 # install the musl cross-compiler
 USER root
-RUN microdnf install -y musl-tools
+# enable EPEL and then install musl-tools
+RUN microdnf install -y oracle-epel-release-el9 && \
+    microdnf install -y musl-tools \
 
 # Diretório de trabalho
 WORKDIR /app
@@ -67,17 +69,50 @@ RUN case "${TARGETPLATFORM}" in \
         ;; \
     esac
 
-# Install and use UPX
-ARG UPX_VERSION=4.2.2
-ARG UPX_ARCHIVE=upx-${UPX_VERSION}-amd64_linux.tar.xz
-RUN microdnf -y install wget xz && \
-    wget -q https://github.com/upx/upx/releases/download/v${UPX_VERSION}/${UPX_ARCHIVE} && \
-    tar -xJf ${UPX_ARCHIVE} && \
-    rm -rf ${UPX_ARCHIVE} && \
-    mv upx-${UPX_VERSION}-amd64_linux/upx . && \
-    rm -rf upx-${UPX_VERSION}-amd64_linux
-RUN ./upx --lzma --best -o /app/target/access-management-upx  /app/target/access-management
-RUN ls -lh /app/target/access-management-upx
+ARG UPX_VERSION=5.0.1
+# Install and use UPX handle platform-specific flags
+RUN case "${TARGETPLATFORM}" in \
+      "linux/arm64") \
+        echo "🏗️ Install and use UPX ARM64 for binary optimization" && \
+        # Install and use UPX
+        ARG UPX_ARCHIVE=upx-${UPX_VERSION}-arm64_linux.tar.xz \
+        RUN microdnf -y install wget xz && \
+            wget -q https://github.com/upx/upx/releases/download/v${UPX_VERSION}/${UPX_ARCHIVE} && \
+            tar -xJf ${UPX_ARCHIVE} && \
+            rm -rf ${UPX_ARCHIVE} && \
+            mv upx-${UPX_VERSION}-arm64_linux/upx . && \
+            rm -rf upx-${UPX_VERSION}-arm64_linux \
+        RUN ./upx --lzma --best -o /app/target/access-management-upx  /app/target/access-management \
+        RUN ls -lh /app/target/access-management-upx \
+        ;; \
+      "linux/amd64") \
+        echo "🏗️ Install and use UPX AMD64 for binary optimization" && \
+        # Install and use UPX
+        ARG UPX_ARCHIVE=upx-${UPX_VERSION}-amd64_linux.tar.xz \
+        RUN microdnf -y install wget xz && \
+            wget -q https://github.com/upx/upx/releases/download/v${UPX_VERSION}/${UPX_ARCHIVE} && \
+            tar -xJf ${UPX_ARCHIVE} && \
+            rm -rf ${UPX_ARCHIVE} && \
+            mv upx-${UPX_VERSION}-amd64_linux/upx . && \
+            rm -rf upx-${UPX_VERSION}-amd64_linux \
+        RUN ./upx --lzma --best -o /app/target/access-management-upx  /app/target/access-management \
+        RUN ls -lh /app/target/access-management-upx \
+        ;; \
+      *) \
+        echo "🏗️  Building default/native" && \
+        # Install and use UPX
+        ARG UPX_ARCHIVE=upx-${UPX_VERSION}-amd64_linux.tar.xz \
+        RUN microdnf -y install wget xz && \
+            wget -q https://github.com/upx/upx/releases/download/v${UPX_VERSION}/${UPX_ARCHIVE} && \
+            tar -xJf ${UPX_ARCHIVE} && \
+            rm -rf ${UPX_ARCHIVE} && \
+            mv upx-${UPX_VERSION}-amd64_linux/upx . && \
+            rm -rf upx-${UPX_VERSION}-amd64_linux \
+        RUN ./upx --lzma --best -o /app/target/access-management-upx  /app/target/access-management \
+        RUN ls -lh /app/target/access-management-upx \
+        ;; \
+    esac
+
 
 # ===================================================================
 # Runtime stage: minimal static binary
