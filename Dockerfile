@@ -17,8 +17,6 @@ USER root
 # Install only wget & xz, allowing removals to fix glibc conflicts
 RUN microdnf install --nodocs -y \
       wget xz \
-      --allowerasing \
-      --nobest \
     && microdnf clean all
 
 
