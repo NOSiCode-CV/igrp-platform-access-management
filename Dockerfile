@@ -3,7 +3,7 @@ ARG TARGETPLATFORM
 #===================================================================
 # Build stage: GraalVM 24 + Native Image
 # ===================================================================
-FROM --platform=${BUILDPLATFORM} ghcr.io/graalvm/native-image-community:23 AS build
+FROM --platform=${BUILDPLATFORM} ghcr.io/graalvm/native-image-community:23-ol9 AS build
 
 # show platforms
 ARG BUILDPLATFORM
@@ -14,10 +14,13 @@ WORKDIR /app
 
 # 1) Install helper tools in one layer
 USER root
-RUN microdnf update -y && \
-    microdnf install --nodocs -y wget xz && \
-    microdnf clean all && \
-    rm -rf /var/cache/yum
+# Install only wget & xz, allowing removals to fix glibc conflicts
+RUN microdnf install --nodocs -y \
+      wget xz \
+      --allowerasing \
+      --nobest \
+    && microdnf clean all
+
 
 # copy only what's needed for mvnw bootstrap
 COPY mvnw ./
