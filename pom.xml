@@ -322,7 +322,7 @@
                         <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
 
                         <!-- musl compatibility -->
-                        <buildArg>--static</buildArg>
+                        <buildArg>--static-nolibc</buildArg>
                         <buildArg>--libc=musl</buildArg>
                         <buildArg>-H:-CheckToolchain</buildArg>
                         <buildArg>-H:+ReportUnsupportedElementsAtRuntime</buildArg>
@@ -444,7 +444,7 @@
                 </property>
             </activation>
             <properties>
-                <native.march>--target-arch=arm64</native.march>
+                <native.march>-march=armv8-a</native.march>
             </properties>
         </profile>
 
