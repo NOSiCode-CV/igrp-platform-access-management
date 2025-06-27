@@ -333,7 +333,7 @@
 
                         <!-- Optimization settings -->
                         <buildArg>-O1</buildArg>
-                        <buildArg>--gc=G1</buildArg>
+                        <buildArg>--gc=serial</buildArg>
 
                         <!-- Memory settings -->
                         <buildArg>-J-Xmx10g</buildArg>
