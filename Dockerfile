@@ -12,9 +12,9 @@ RUN echo "Building on: ${BUILDPLATFORM}, targeting: ${TARGETPLATFORM}"
 
 # as root, enable EPEL and install musl-tools + download tools
 USER root
-RUN microdnf install -y oracle-epel-release-el9 && \
-    microdnf install -y musl-tools wget xz && \
-    microdnf clean all
+RUN dnf install -y epel-release && \
+    dnf install -y musl-tools wget xz && \
+    dnf clean all
 
 WORKDIR /app
 
