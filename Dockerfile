@@ -35,21 +35,25 @@ RUN wget -q https://musl.libc.org/releases/musl-1.2.5.tar.gz \
 RUN ln -sf /usr/local/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc && \
     ln -sf /usr/local/bin/musl-gcc /usr/local/bin/aarch64-linux-musl-gcc
 
-# 1) Choose the labs-openjdk release tag you want:
+
+# Download the correct JDK static libs for each arch
 ARG JDK_TAG=26+3-jvmci-b01
-
-# 2) Download the AArch64 musl JDK bundle
-RUN wget -q \
-      "https://github.com/graalvm/labs-openjdk/releases/download/${JDK_TAG}/labsjdk-ce-${JDK_TAG}-linux-aarch64.tar.gz" \
-      -O /tmp/jdk-musl-aarch64.tar.gz
-
-# 3) Extract only the static JDK libs into GraalVM’s musl directory
-RUN mkdir -p /usr/lib64/graalvm/graalvm-community-java23/lib/static/linux-aarch64/musl && \
-    tar -xzf /tmp/jdk-musl-aarch64.tar.gz \
+RUN set -eux; \
+    if [ "${TARGETPLATFORM}" = "linux/arm64" ]; then \
+      ASSET="labsjdk-ce-${JDK_TAG}-linux-aarch64.tar.gz"; \
+      STATIC_DIR="lib/static/linux-aarch64/musl"; \
+    else \
+      ASSET="labsjdk-ce-${JDK_TAG}-linux-amd64.tar.gz"; \
+      STATIC_DIR="lib/static/linux-amd64/musl"; \
+    fi; \
+    wget -q "https://github.com/graalvm/labs-openjdk/releases/download/${JDK_TAG}/${ASSET}" \
+      -O "/tmp/${ASSET}"; \
+    mkdir -p "/usr/lib64/graalvm/graalvm-community-java23/${STATIC_DIR}"; \
+    tar -xzf "/tmp/${ASSET}" \
       --strip-components=1 \
-      -C /usr/lib64/graalvm/graalvm-community-java23/lib/static/linux-aarch64/musl \
-      "labsjdk-ce-${JDK_TAG}/lib/static/linux-aarch64/musl" && \
-    rm /tmp/jdk-musl-aarch64.tar.gz
+      -C "/usr/lib64/graalvm/graalvm-community-java23/${STATIC_DIR}" \
+      "labsjdk-ce-${JDK_TAG}/${STATIC_DIR}"; \
+    rm "/tmp/${ASSET}"
 
 # copy only what's needed for mvnw bootstrap
 COPY mvnw ./
