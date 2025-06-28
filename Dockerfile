@@ -19,13 +19,21 @@ RUN microdnf install --nodocs -y \
       wget xz make gcc \
     && microdnf clean all
 
-# Install musl
+# -----------------------------
+# 1) Install & build musl from source
+# -----------------------------
 RUN wget -q https://musl.libc.org/releases/musl-1.2.5.tar.gz \
-     -O /tmp/musl-1.2.5.tar.gz && \
+      -O /tmp/musl-1.2.5.tar.gz && \
     tar -xzf /tmp/musl-1.2.5.tar.gz -C /tmp && \
     cd /tmp/musl-1.2.5 && \
-    ./configure --prefix=/usr/local/musl && \
+    ./configure --prefix=/usr/local/musl --exec-prefix=/usr/local && \
     make && make install
+
+# -----------------------------
+# 2) Symlink the single musl-gcc into the two names GraalVM expects
+# -----------------------------
+RUN ln -sf /usr/local/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc && \
+    ln -sf /usr/local/bin/musl-gcc /usr/local/bin/aarch64-linux-musl-gcc
 
 # copy only what's needed for mvnw bootstrap
 COPY mvnw ./
