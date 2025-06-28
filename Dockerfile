@@ -16,7 +16,7 @@ WORKDIR /app
 # Install only wget & xz
 USER root
 RUN microdnf install --nodocs -y \
-      wget xz make gcc \
+      wget xz make gcc findutils \
     && microdnf clean all
 
 # -----------------------------
@@ -59,10 +59,6 @@ RUN set -eux; \
     mkdir -p "${DEST}"; \
     cp -r "${STATIC_SRC}/." "${DEST}/"; \
     rm -rf /tmp/jdk
-
-
-
-
 
 # copy only what's needed for mvnw bootstrap
 COPY mvnw ./
