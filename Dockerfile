@@ -47,14 +47,13 @@ RUN set -eux; \
     fi; \
     wget -q "https://github.com/graalvm/labs-openjdk/releases/download/${JDK_TAG}/${ASSET}" \
       -O "/tmp/${ASSET}"; \
-    # Create destination dir
     mkdir -p "/usr/lib64/graalvm/graalvm-community-java23/lib/static/${STATIC_SUBPATH}/musl"; \
-    # Extract only the musl static libs
     tar -xzf "/tmp/${ASSET}" \
       --strip-components=2 \
       -C "/usr/lib64/graalvm/graalvm-community-java23/lib/static/${STATIC_SUBPATH}/musl" \
-      "labsjdk-ce-${JDK_TAG}-linux-${STATIC_SUBPATH}/lib/static/${STATIC_SUBPATH}/musl"; \
+      "labsjdk-ce-${JDK_TAG}-${STATIC_SUBPATH}/lib/static/${STATIC_SUBPATH}/musl"; \
     rm "/tmp/${ASSET}"
+
 
 # copy only what's needed for mvnw bootstrap
 COPY mvnw ./
