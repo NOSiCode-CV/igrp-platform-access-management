@@ -35,6 +35,22 @@ RUN wget -q https://musl.libc.org/releases/musl-1.2.5.tar.gz \
 RUN ln -sf /usr/local/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc && \
     ln -sf /usr/local/bin/musl-gcc /usr/local/bin/aarch64-linux-musl-gcc
 
+# 1) Choose the labs-openjdk release tag you want:
+ARG JDK_TAG=26+3-jvmci-b01
+
+# 2) Download the AArch64 musl JDK bundle
+RUN wget -q \
+      "https://github.com/graalvm/labs-openjdk/releases/download/${JDK_TAG}/labsjdk-ce-${JDK_TAG}-linux-aarch64.tar.gz" \
+      -O /tmp/jdk-musl-aarch64.tar.gz
+
+# 3) Extract only the static JDK libs into GraalVM’s musl directory
+RUN mkdir -p /usr/lib64/graalvm/graalvm-community-java23/lib/static/linux-aarch64/musl && \
+    tar -xzf /tmp/jdk-musl-aarch64.tar.gz \
+      --strip-components=1 \
+      -C /usr/lib64/graalvm/graalvm-community-java23/lib/static/linux-aarch64/musl \
+      "labsjdk-ce-${JDK_TAG}/lib/static/linux-aarch64/musl" && \
+    rm /tmp/jdk-musl-aarch64.tar.gz
+
 # copy only what's needed for mvnw bootstrap
 COPY mvnw ./
 COPY .mvn/ .mvn/
