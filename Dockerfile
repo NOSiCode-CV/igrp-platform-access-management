@@ -37,13 +37,8 @@ RUN ln -sf /usr/local/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc && \
 
 # Download the proper JDK static-lib bundle
 ARG JDK_TAG=26+3-jvmci-b01
-#  Download the correct debug bundle for each arch
-ARG TARGETPLATFORM
-ARG JDK_TAG=26+3-jvmci-b01
-
-# Download, unpack, locate and install the debug JDK’s musl static libs all in one go
 RUN set -eux; \
-    # 1) Choose asset & subpath based on arch
+    # 1) Pick the right debug bundle & subpath
     if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
       ASSET="labsjdk-ce-${JDK_TAG}-debug-linux-aarch64.tar.gz"; \
       SUBPATH="linux-aarch64"; \
@@ -51,20 +46,20 @@ RUN set -eux; \
       ASSET="labsjdk-ce-${JDK_TAG}-debug-linux-amd64.tar.gz"; \
       SUBPATH="linux-amd64"; \
     fi; \
-    # 2) Download and unpack into /tmp/jdk
-    wget -q "https://github.com/graalvm/labs-openjdk/releases/download/${JDK_TAG}/${ASSET}" \
-      -O "/tmp/${ASSET}"; \
-    mkdir -p /tmp/jdk; \
-    tar -xzf "/tmp/${ASSET}" -C /tmp/jdk; \
-    rm "/tmp/${ASSET}"; \
-    # 3) Identify the extracted JDK directory
-    JDK_DIR="$(ls -d /tmp/jdk/*/)"; \
-    # 4) Copy the musl static libs into GraalVM’s static folder
+    # 2) Download & extract directly into the destination, stripping off
+    #    everything up through “lib/static/<arch>/musl”
     DEST="/usr/lib64/graalvm/graalvm-community-java23/lib/static/${SUBPATH}/musl"; \
     mkdir -p "${DEST}"; \
-    cp -r "${JDK_DIR}lib/static/${SUBPATH}/musl/." "${DEST}/"; \
-    # 5) Clean up
-    rm -rf /tmp/jdk
+    wget -q \
+      "https://github.com/graalvm/labs-openjdk/releases/download/${JDK_TAG}/${ASSET}" \
+      -O "/tmp/${ASSET}"; \
+    tar -xzf "/tmp/${ASSET}" \
+        --strip-components="$(tar -tzf /tmp/${ASSET} | \
+           head -n1 | sed 's|[^/]*/||; s|[^/]*/||; s|[^/]*/||; s|[^/]*/||; =')" \
+        -C "${DEST}" \
+        --wildcards "*/lib/static/${SUBPATH}/musl/*"; \
+    rm "/tmp/${ASSET}"
+
 
 
 # copy only what's needed for mvnw bootstrap
