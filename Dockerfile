@@ -35,24 +35,25 @@ RUN wget -q https://musl.libc.org/releases/musl-1.2.5.tar.gz \
 RUN ln -sf /usr/local/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc && \
     ln -sf /usr/local/bin/musl-gcc /usr/local/bin/aarch64-linux-musl-gcc
 
-
-# Download the correct JDK static libs for each arch
+# Download the proper JDK static-lib bundle
 ARG JDK_TAG=26+3-jvmci-b01
 RUN set -eux; \
     if [ "${TARGETPLATFORM}" = "linux/arm64" ]; then \
       ASSET="labsjdk-ce-${JDK_TAG}-linux-aarch64.tar.gz"; \
-      STATIC_DIR="lib/static/linux-aarch64/musl"; \
+      STATIC_SUBPATH="linux-aarch64"; \
     else \
       ASSET="labsjdk-ce-${JDK_TAG}-linux-amd64.tar.gz"; \
-      STATIC_DIR="lib/static/linux-amd64/musl"; \
+      STATIC_SUBPATH="linux-amd64"; \
     fi; \
     wget -q "https://github.com/graalvm/labs-openjdk/releases/download/${JDK_TAG}/${ASSET}" \
       -O "/tmp/${ASSET}"; \
-    mkdir -p "/usr/lib64/graalvm/graalvm-community-java23/${STATIC_DIR}"; \
+    # Create destination dir
+    mkdir -p "/usr/lib64/graalvm/graalvm-community-java23/lib/static/${STATIC_SUBPATH}/musl"; \
+    # Extract only the musl static libs
     tar -xzf "/tmp/${ASSET}" \
-      --strip-components=1 \
-      -C "/usr/lib64/graalvm/graalvm-community-java23/${STATIC_DIR}" \
-      "labsjdk-ce-${JDK_TAG}/${STATIC_DIR}"; \
+      --strip-components=2 \
+      -C "/usr/lib64/graalvm/graalvm-community-java23/lib/static/${STATIC_SUBPATH}/musl" \
+      "labsjdk-ce-${JDK_TAG}-linux-${STATIC_SUBPATH}/lib/static/${STATIC_SUBPATH}/musl"; \
     rm "/tmp/${ASSET}"
 
 # copy only what's needed for mvnw bootstrap
@@ -97,8 +98,8 @@ RUN set -eux; \
 
 # ===================================================================
 # Runtime stage: minimal static binary
-# =================================================================== # gcr.io/distroless/static:nonroot
-FROM gcr.io/distroless/base-nossl:nonroot
+# =================================================================== #  gcr.io/distroless/base-nossl:nonroot #(for --static-nolibc )
+FROM gcr.io/distroless/static:nonroot
 
 ARG TARGETPLATFORM
 LABEL platform=${TARGETPLATFORM}
