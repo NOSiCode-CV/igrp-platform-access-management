@@ -16,7 +16,7 @@ WORKDIR /app
 # Install only wget & xz
 USER root
 RUN microdnf install --nodocs -y \
-      wget xz make gcc glibc-devel \
+      wget xz make gcc \
     && microdnf clean all
 
 # Install musl

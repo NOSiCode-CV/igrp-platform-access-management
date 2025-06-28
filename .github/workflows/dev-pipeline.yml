@@ -68,6 +68,18 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
+      - name: Remove old manifests
+        run: |
+          docker manifest rm \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-amd64 \
+            || echo "No existing amd64 manifest"
+          docker manifest rm \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-arm64 \
+            || echo "No existing arm64 manifest"
+          docker manifest rm \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }} \
+            || echo "No existing root manifest"
+
       - name: Create multi-arch manifest
         run: |
           docker manifest create \
