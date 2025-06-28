@@ -39,20 +39,21 @@ RUN ln -sf /usr/local/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc && \
 ARG JDK_TAG=26+3-jvmci-b01
 RUN set -eux; \
     if [ "${TARGETPLATFORM}" = "linux/arm64" ]; then \
-      ASSET="labsjdk-ce-${JDK_TAG}-linux-aarch64.tar.gz"; \
-      STATIC_SUBPATH="linux-aarch64"; \
+      ASSET="labsjdk-ce-${JDK_TAG}-debug-linux-aarch64.tar.gz"; \
+      SUBPATH="linux-aarch64"; \
     else \
-      ASSET="labsjdk-ce-${JDK_TAG}-linux-amd64.tar.gz"; \
-      STATIC_SUBPATH="linux-amd64"; \
+      ASSET="labsjdk-ce-${JDK_TAG}-debug-linux-amd64.tar.gz"; \
+      SUBPATH="linux-amd64"; \
     fi; \
     wget -q "https://github.com/graalvm/labs-openjdk/releases/download/${JDK_TAG}/${ASSET}" \
       -O "/tmp/${ASSET}"; \
-    mkdir -p "/usr/lib64/graalvm/graalvm-community-java23/lib/static/${STATIC_SUBPATH}/musl"; \
+    mkdir -p "/usr/lib64/graalvm/graalvm-community-java23/lib/static/${SUBPATH}/musl"; \
     tar -xzf "/tmp/${ASSET}" \
       --strip-components=2 \
-      -C "/usr/lib64/graalvm/graalvm-community-java23/lib/static/${STATIC_SUBPATH}/musl" \
-      "labsjdk-ce-${JDK_TAG}-${STATIC_SUBPATH}/lib/static/${STATIC_SUBPATH}/musl"; \
+      -C "/usr/lib64/graalvm/graalvm-community-java23/lib/static/${SUBPATH}/musl" \
+      "labsjdk-ce-${JDK_TAG}-debug-linux-${SUBPATH}/lib/static/${SUBPATH}/musl"; \
     rm "/tmp/${ASSET}"
+
 
 
 # copy only what's needed for mvnw bootstrap
