@@ -12,13 +12,19 @@ RUN echo "Building on: ${BUILDPLATFORM}, targeting: ${TARGETPLATFORM}"
 
 WORKDIR /app
 
-# 1) Install helper tools in one layer
+
+# Install only wget & xz
 USER root
-# Install only wget & xz, allowing removals to fix glibc conflicts
 RUN microdnf install --nodocs -y \
-      wget xz \
+      wget xz make gcc glibc-devel \
     && microdnf clean all
 
+# Install musl
+RUN wget -q https://musl.libc.org/releases/musl-1.2.5.tar.gz -O /tmp/musl-1.2.5.tar.gz \
+    && tar -xJf /tmp/musl-1.2.5.tar.gz -C /tmp \
+    && cd /tmp/musl-1.2.5 \
+    && ./configure --prefix=/usr/local/musl \
+    && make && make install
 
 # copy only what's needed for mvnw bootstrap
 COPY mvnw ./
