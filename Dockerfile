@@ -20,11 +20,12 @@ RUN microdnf install --nodocs -y \
     && microdnf clean all
 
 # Install musl
-RUN wget -q https://musl.libc.org/releases/musl-1.2.5.tar.gz -O /tmp/musl-1.2.5.tar.gz \
-    && tar -xJf /tmp/musl-1.2.5.tar.gz -C /tmp \
-    && cd /tmp/musl-1.2.5 \
-    && ./configure --prefix=/usr/local/musl \
-    && make && make install
+RUN wget -q https://musl.libc.org/releases/musl-1.2.5.tar.gz \
+     -O /tmp/musl-1.2.5.tar.gz && \
+    tar -xzf /tmp/musl-1.2.5.tar.gz -C /tmp && \
+    cd /tmp/musl-1.2.5 && \
+    ./configure --prefix=/usr/local/musl && \
+    make && make install
 
 # copy only what's needed for mvnw bootstrap
 COPY mvnw ./
