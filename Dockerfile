@@ -37,6 +37,8 @@ RUN ln -sf /usr/local/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc && \
 
 # Download the proper JDK static-lib bundle
 ARG JDK_TAG=26+3-jvmci-b01
+
+# 1. Decide which debug asset to pull
 RUN set -eux; \
     if [ "${TARGETPLATFORM}" = "linux/arm64" ]; then \
       ASSET="labsjdk-ce-${JDK_TAG}-debug-linux-aarch64.tar.gz"; \
@@ -45,14 +47,23 @@ RUN set -eux; \
       ASSET="labsjdk-ce-${JDK_TAG}-debug-linux-amd64.tar.gz"; \
       SUBPATH="linux-amd64"; \
     fi; \
+    # 2. Download it
     wget -q "https://github.com/graalvm/labs-openjdk/releases/download/${JDK_TAG}/${ASSET}" \
       -O "/tmp/${ASSET}"; \
-    mkdir -p "/usr/lib64/graalvm/graalvm-community-java23/lib/static/${SUBPATH}/musl"; \
+    # 3. Compute the top-level directory inside the tarball
+    DIR_NAME="${ASSET%.tar.gz}"; \
+    # 4. Create the destination for the static musl libs
+    DEST="/usr/lib64/graalvm/graalvm-community-java23/lib/static/${SUBPATH}/musl"; \
+    mkdir -p "${DEST}"; \
+    # 5. Extract only that subfolder, stripping the first two components
+    #    so that e.g. `.../${DIR_NAME}/lib/static/${SUBPATH}/musl/*.a`
+    #    lands directly in ${DEST}
     tar -xzf "/tmp/${ASSET}" \
       --strip-components=2 \
-      -C "/usr/lib64/graalvm/graalvm-community-java23/lib/static/${SUBPATH}/musl" \
-      "labsjdk-ce-${JDK_TAG}-debug-linux-${SUBPATH}/lib/static/${SUBPATH}/musl"; \
+      -C "${DEST}" \
+      "${DIR_NAME}/lib/static/${SUBPATH}/musl"; \
     rm "/tmp/${ASSET}"
+
 
 
 
