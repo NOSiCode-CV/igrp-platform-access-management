@@ -260,13 +260,6 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>repackage</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
 
             <!-- GraalVM native-image plugin, using properties for config -->
@@ -390,16 +383,6 @@
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.springframework.boot</groupId>
-                        <artifactId>spring-boot-maven-plugin</artifactId>
-                        <executions>
-                            <execution>
-                                <id>repackage</id>
-                                <phase>none</phase>  <!-- disable repackage during native build -->
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
                         <groupId>org.graalvm.buildtools</groupId>
                         <artifactId>native-maven-plugin</artifactId>
                         <configuration>
@@ -413,7 +396,7 @@
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
                             </buildArgs>
                             <classpath>
-                                <element>${project.build.directory}/${project.build.finalName}.jar</element>
+                                <element>${project.build.directory}/${project.build.finalName}.jar.original</element>
                             </classpath>
                         </configuration>
                     </plugin>
