@@ -23,7 +23,7 @@ WORKDIR $APP_HOME
 RUN microdnf install -y maven
 
 # Compilar aplicação e gerar executável nativo
-RUN mvn -Pnative clean native:compile -DskipTests
+RUN mvn -Ptemp clean native:compile -DskipTests
 RUN ls -l /app/target
 
 # --- Estágio de Runtime (Imagem Minimalista) ---
