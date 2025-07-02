@@ -30,8 +30,47 @@ RUN native-image \
     -H:+UnlockExperimentalVMOptions \
     -H:ServiceLoaderFeatureExcludeServices=org.hibernate.bytecode.spi.BytecodeProvider \
     -H:ClassInitialization=org.hibernate.validator.internal.engine:build_time \
-    -H:+ReportExceptionStackTraces
-
+    -H:+ReportExceptionStackTraces \
+    -H:ClassInitialization=org.jboss.logging.Logger:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.util.ProviderUtil:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.Level:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.spi.AbstractLogger:run_time \
+    -H:ClassInitialization=ch.qos.logback.core.util.StatusPrinter2:run_time \
+    -H:ClassInitialization=org.apache.logging.slf4j.SLF4JLogger:run_time \
+    -H:ClassInitialization=ch.qos.logback.core.util.StatusPrinter:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.spi.Provider:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.spi.StandardLevel:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.util.PropertiesUtil:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.util.EnvironmentPropertySource:run_time \
+    -H:ClassInitialization=org.jboss.logging.LoggerProviders:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.util.PropertyFilePropertySource:run_time \
+    -H:ClassInitialization=org.apache.logging.slf4j.SLF4JLoggerContextFactory:run_time \
+    -H:ClassInitialization=ch.qos.logback.classic.Logger:run_time \
+    -H:ClassInitialization=org.apache.logging.slf4j.MDCContextMap:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.status.StatusLogger$Config:run_time \
+    -H:ClassInitialization=org.apache.logging.slf4j.SLF4JLoggerContext:run_time \
+    -H:ClassInitialization=org.apache.logging.slf4j.SLF4JLogger$1:run_time \
+    -H:ClassInitialization=org.slf4j.helpers.Reporter:run_time \
+    -H:ClassInitialization=org.apache.commons.logging.LogFactory:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.LogManager:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.status.StatusLogger:run_time \
+    -H:ClassInitialization=org.jboss.logging.Log4j2Logger:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.status.StatusLogger$InstanceHolder:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.util.SortedArrayStringMap:run_time \
+    -H:ClassInitialization=org.slf4j.LoggerFactory:run_time \
+    -H:ClassInitialization=ch.qos.logback.core.util.Loader:run_time \
+    -H:ClassInitialization=ch.qos.logback.core.status.StatusBase:run_time \
+    -H:ClassInitialization=org.apache.logging.slf4j.SLF4JProvider:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.util.StackLocator:run_time \
+    -H:ClassInitialization=ch.qos.logback.classic.Level:run_time \
+    -H:ClassInitialization=org.apache.commons.logging.impl.JBossLogFactory:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.util.SystemPropertiesPropertySource:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.util.Strings:run_time \
+    -H:ClassInitialization=ch.qos.logback.core.status.InfoStatus:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.util.LoaderUtil:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.util.PropertySource$Util:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.util.OsgiServiceLocator:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.util.StackLocatorUtil:run_time \
 
 # --- Runtime stage using scratch ---
 FROM scratch
