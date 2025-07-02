@@ -1,7 +1,7 @@
-# Estágio de construção com GraalVM e Maven para gerar a imagem nativa
+# Stage 1: Build with GraalVM and Maven
 FROM ghcr.io/graalvm/native-image-community:21-ol9 AS build
 
-# Argumentos de build (OpenTelemetry e perfil)
+# Build arguments
 ARG OTEL_TRACES_EXPORTER
 ARG OTEL_METRICS_EXPORTER
 ARG OTEL_LOGS_EXPORTER
@@ -10,39 +10,44 @@ ARG OTEL_SERVICE_NAME
 ARG OTEL_ENABLED
 ARG SERVICE_PROFILE
 
-# Configuração do diretório e ambiente
+# Environment setup
 ENV APP_HOME=/app
-ENV SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILE}
-
-# Copiar código fonte e configurações Maven
-COPY src $APP_HOME/src
-COPY pom.xml $APP_HOME/pom.xml
+ENV MAVEN_OPTS="-XX:+UseContainerSupport -XX:MaxRAMPercentage=75.0"
 WORKDIR $APP_HOME
 
-# Instalar Maven (caso não esteja presente na imagem)
-RUN microdnf install -y maven
+# Copy only what's needed for build
+COPY pom.xml .
+COPY src ./src
 
-# Compilar aplicação e gerar executável nativo
-RUN mvn -Ptemp clean native:compile -DskipTests
-RUN ls -l /app/target
+# Install Maven and build
+RUN microdnf install -y maven && \
+    mvn -Ptemp clean package -DskipTests && \
+    ls -la /app/target && \
+    mvn -Ptemp native:compile -DskipTests && \
+    ls -la /app/target
 
-# --- Estágio de Runtime (Imagem Minimalista) ---
+# Stage 2: Runtime image
 FROM ubuntu:22.04
 
-# Variáveis de ambiente do OpenTelemetry (ajuste conforme necessidade)
+# Environment variables
 ENV OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME}
 ENV OTEL_COLLECTOR_ENDPOINT=${OTEL_COLLECTOR_ENDPOINT}
 ENV SPRING_ACTIVE_PROFILE=${SPRING_ACTIVE_PROFILE}
 
-# Diretório de trabalho
+# Install minimal dependencies
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    libstdc++6 \
+    zlib1g \
+    && rm -rf /var/lib/apt/lists/*
+
 WORKDIR /app
 
-
-
-# Copiar executável nativo do estágio de build
+# Copy native executable
 COPY --from=build /app/target/access-management /app/access-management
 
+# Set permissions
+RUN chmod +x /app/access-management
 
-# Expor porta e executar aplicação
 EXPOSE ${SERVICE_PORT}
-CMD ["/app/access-management"]
+ENTRYPOINT ["/app/access-management"]
