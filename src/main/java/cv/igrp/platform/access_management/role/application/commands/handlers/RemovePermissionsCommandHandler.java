@@ -38,7 +38,6 @@ import java.util.List;
  * @see PermissionDTO
  * @see Status
  * @see IgrpResponseStatusException
- * @see IgrpProblem
  *
  */
 @Slf4j

@@ -28,7 +28,6 @@ import java.util.Optional;
  * @see CustomField
  * @see CustomFieldRepository
  * @see IgrpResponseStatusException
- * @see IgrpProblem
  */
 @Service
 public class GetResourceCustomFieldsQueryHandler implements

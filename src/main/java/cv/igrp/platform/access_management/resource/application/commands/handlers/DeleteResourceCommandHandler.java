@@ -23,8 +23,7 @@ import java.util.Optional;
  * the database. Additionally, any associated {@link CustomField} records will also be removed.
  *
  * <p>This handler ensures consistency between the resource and its related metadata.
- * In case the resource is not found, a {@link IgrpResponseStatusException} is thrown with an
- * appropriate {@link IgrpProblem}.
+ * In case the resource is not found, a {@link IgrpResponseStatusException} is thrown
  *
  * <p>Logging is provided for all major operations (resource lookup, deletion,
  * and custom field cleanup).

@@ -19,8 +19,7 @@ import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
  * <p>
  * This handler uses the {@link ResourceRepository} to fetch the {@link Resource} entity,
  * and converts it to a DTO using {@link ResourceMapper}. If the resource is not found,
- * it throws a structured {@link IgrpResponseStatusException} with a {@link IgrpProblem}
- * describing the error.
+ * it throws a structured {@link IgrpResponseStatusException} describing the error.
  * </p>
  *
  * @see Resource

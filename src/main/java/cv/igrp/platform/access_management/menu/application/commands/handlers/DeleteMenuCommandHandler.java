@@ -20,8 +20,7 @@ import cv.igrp.platform.access_management.menu.application.commands.commands.Del
  * to {@code DELETED} instead of physically removing it from the database.
  * </p>
  *
- * It throws an {@link IgrpResponseStatusException} with an {@link IgrpProblem} if the specified
- * menu entry is not found.
+ * It throws an {@link IgrpResponseStatusException} if menu entry is not found.
  *
  */
 @Service

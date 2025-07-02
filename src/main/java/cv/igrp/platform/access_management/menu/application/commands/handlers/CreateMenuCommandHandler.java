@@ -32,7 +32,6 @@ import cv.igrp.platform.access_management.menu.application.commands.commands.Cre
  * <p>
  * If any of the referenced foreign key relationships (application, resource, or parent menu) are invalid,
  * the handler throws a {@link cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException}
- * with a descriptive {@link cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem} payload.
  * </p>
  *
  */

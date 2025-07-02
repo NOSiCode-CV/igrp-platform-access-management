@@ -44,7 +44,6 @@ import org.springframework.transaction.annotation.Transactional;
  * @see DepartmentRepository
  * @see RoleMapper
  * @see IgrpResponseStatusException
- * @see IgrpProblem
  * @see Status
  */
 @Slf4j

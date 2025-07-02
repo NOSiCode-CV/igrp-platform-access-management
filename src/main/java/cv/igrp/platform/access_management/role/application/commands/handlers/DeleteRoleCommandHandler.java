@@ -31,7 +31,6 @@ import java.util.List;
  * @see RoleRepository
  * @see Status
  * @see IgrpResponseStatusException
- * @see IgrpProblem
  */
 @Slf4j
 @Service
