@@ -11,7 +11,7 @@ COPY pom.xml $APP_HOME
 RUN microdnf install -y maven unzip
 
 # Build fat jar
-RUN mvn -Ptemp clean package -DskipTests
+RUN mvn -q -Ptemp clean package -DskipTests
 
 # Unpack fat jar to extract classes + libs
 RUN mkdir unpacked && \
