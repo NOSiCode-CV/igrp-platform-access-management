@@ -1,48 +1,58 @@
-# Estágio de construção com GraalVM e Maven para gerar a imagem nativa
+# --- Build stage ---
 FROM ghcr.io/graalvm/native-image-community:21-ol9 AS build
 
-# Argumentos de build (OpenTelemetry e perfil)
-ARG OTEL_TRACES_EXPORTER
-ARG OTEL_METRICS_EXPORTER
-ARG OTEL_LOGS_EXPORTER
-ARG OTEL_COLLECTOR_ENDPOINT
-ARG OTEL_SERVICE_NAME
-ARG OTEL_ENABLED
 ARG SERVICE_PROFILE
-
-# Configuração do diretório e ambiente
 ENV APP_HOME=/app
-ENV SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILE}
-
-# Copiar código fonte e configurações Maven
-COPY src $APP_HOME/src
-COPY pom.xml $APP_HOME/pom.xml
 WORKDIR $APP_HOME
 
-# Instalar Maven (caso não esteja presente na imagem)
-RUN microdnf install -y maven
+COPY src $APP_HOME/src
+COPY pom.xml $APP_HOME
 
-# Compilar aplicação e gerar executável nativo
-RUN mvn -Ptemp clean native:compile -DskipTests
-RUN ls -l /app/target
+RUN microdnf install -y maven unzip
 
-# --- Estágio de Runtime (Imagem Minimalista) ---
-FROM ubuntu:22.04
+# Build fat jar
+RUN mvn -Ptemp clean package -DskipTests
 
-# Variáveis de ambiente do OpenTelemetry (ajuste conforme necessidade)
+# Unpack fat jar to extract classes + libs
+RUN mkdir unpacked && \
+    cd unpacked && \
+    unzip ../target/access-management-0.0.1-SNAPSHOT.jar && \
+    mkdir -p lib && \
+    cp -r BOOT-INF/classes . && \
+    cp BOOT-INF/lib/*.jar lib/
+
+# Build native image with proper classpath
+RUN native-image \
+    --no-fallback \
+    -cp "unpacked/classes:$(echo unpacked/lib/*.jar | tr ' ' ':')" \
+    -H:Name=access-management \
+    -H:Class=cv.igrp.platform.access_management.IgrpPlatformAccessManagementApplication \
+    -H:+UnlockExperimentalVMOptions \
+    -H:ServiceLoaderFeatureExcludeServices=org.hibernate.bytecode.spi.BytecodeProvider \
+    -H:ClassInitialization=org.hibernate.validator.internal.engine:build_time \
+    -H:+ReportExceptionStackTraces
+
+
+# --- Runtime stage using scratch ---
+FROM scratch
+
+# Set working directory
+WORKDIR /app
+
+# Copy native binary from build stage
+COPY --from=build /app/target/access-management /app/access-management
+
+# Copy any additional resources your app may need (if any)
+# COPY --from=build /app/target/classes /app/classes
+
+# Expose service port
+EXPOSE ${SERVICE_PORT}
+
+# Set environment variables
 ENV OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME}
 ENV OTEL_COLLECTOR_ENDPOINT=${OTEL_COLLECTOR_ENDPOINT}
 ENV SPRING_ACTIVE_PROFILE=${SPRING_ACTIVE_PROFILE}
 
-# Diretório de trabalho
-WORKDIR /app
+# Run the native binary
+ENTRYPOINT ["/app/access-management"]
 
-
-
-# Copiar executável nativo do estágio de build
-COPY --from=build /app/target/access-management /app/access-management
-
-
-# Expor porta e executar aplicação
-EXPOSE ${SERVICE_PORT}
-CMD ["/app/access-management"]

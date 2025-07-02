@@ -385,20 +385,11 @@
                     <plugin>
                         <groupId>org.graalvm.buildtools</groupId>
                         <artifactId>native-maven-plugin</artifactId>
-                        <configuration>
-                            <mainClass>cv.igrp.platform.access_management.IgrpPlatformAccessManagementApplication</mainClass>
-                            <imageName>${project.artifactId}</imageName>
-                            <buildArgs>
-                                <!-- Non-multiplatform arguments -->
-                                <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
-                                <buildArg>-H:ServiceLoaderFeatureExcludeServices=org.hibernate.bytecode.spi.BytecodeProvider</buildArg>
-                                <buildArg>-H:ClassInitialization=org.hibernate.validator.internal.engine:build_time</buildArg>
-                                <buildArg>-H:+ReportExceptionStackTraces</buildArg>
-                            </buildArgs>
-                            <classpath>
-                                <element>${project.build.directory}/${project.build.finalName}.jar.original</element>
-                            </classpath>
-                        </configuration>
+                        <executions>
+                            <execution>
+                                <phase>none</phase>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
