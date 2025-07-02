@@ -127,7 +127,7 @@ public class UpdateRoleCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
         //... Then
-        assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getBody().getStatus());
+        assertEquals(HttpStatus.CONFLICT.value(), ex.getBody().getStatus());
         verify(roleRepository, never()).save(any(Role.class));
     }
 

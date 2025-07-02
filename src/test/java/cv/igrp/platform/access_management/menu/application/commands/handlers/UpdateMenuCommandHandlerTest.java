@@ -125,8 +125,9 @@ public class UpdateMenuCommandHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
-        assertNotNull(ex.getBody().getDetail());
-        assertTrue(ex.getBody().getDetail().contains("Menu not found"));
+
+        assertNotNull(ex.getBody().getProperties());
+        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Menu not found"));
 
         // Verify
         verify(menuEntryRepository, times(1)).findById(1);
@@ -146,8 +147,9 @@ public class UpdateMenuCommandHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
-        assertNotNull(ex.getBody().getDetail());
-        assertTrue(ex.getBody().getDetail().contains("Parent MenuEntry not found"));
+
+        assertNotNull(ex.getBody().getProperties());
+        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Parent MenuEntry not found"));
 
         // Verify
         verify(menuEntryRepository, times(1)).findById(1);
@@ -170,8 +172,9 @@ public class UpdateMenuCommandHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
-        assertNotNull(ex.getBody().getDetail());
-        assertTrue(ex.getBody().getDetail().contains("Application not found"));
+
+        assertNotNull(ex.getBody().getProperties());
+        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Application not found"));
 
         // Verify
         verify(menuEntryRepository, times(1)).findById(1);
@@ -194,8 +197,9 @@ public class UpdateMenuCommandHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
-        assertNotNull(ex.getBody().getDetail());
-        assertTrue(ex.getBody().getDetail().contains("Resource not found"));
+
+        assertNotNull(ex.getBody().getProperties());
+        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Resource not found"));
 
         // Verify
         verify(menuEntryRepository, times(1)).findById(1);

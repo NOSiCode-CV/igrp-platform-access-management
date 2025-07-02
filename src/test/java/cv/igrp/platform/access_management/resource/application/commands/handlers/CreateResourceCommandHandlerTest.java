@@ -129,8 +129,9 @@ public class CreateResourceCommandHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
-        assertNotNull(exception.getBody().getDetail());
-        assertTrue(exception.getBody().getDetail().contains("Application not found with id: 1"));
+
+        assertNotNull(exception.getBody().getProperties());
+        assertTrue(exception.getBody().getProperties().getOrDefault("details", "").toString().contains("Application not found with id: 1"));
 
         // Verify
         verify(resourceMapper, times(1)).toEntity(resourceDTO);
@@ -152,8 +153,8 @@ public class CreateResourceCommandHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
-        assertNotNull(exception.getBody().getDetail());
-        assertTrue(exception.getBody().getDetail().contains("Permission not found with id: 10"));
+        assertNotNull(exception.getBody().getProperties());
+        assertTrue(exception.getBody().getProperties().getOrDefault("details", "").toString().contains("Permission not found with id: 10"));
 
         // Verify
         verify(resourceMapper, times(1)).toEntity(resourceDTO);

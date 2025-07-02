@@ -85,7 +85,7 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
                 .orElseThrow(() -> {
                     logger.warn("Invalid application ID: {}", departmentDto.getApplication_id());
                     return IgrpResponseStatusException.of(
-                            HttpStatus.BAD_REQUEST, "Invalid application ID", null);
+                            HttpStatus.BAD_REQUEST, "Invalid application ID", "No application found with ID: " + departmentDto.getApplication_id());
                 }));
 
         if(departmentDto.getParent_id() != null) {
@@ -93,7 +93,7 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
                     .orElseThrow(() -> {
                         logger.warn("Invalid parent ID: {}", departmentDto.getParent_id());
                         return IgrpResponseStatusException.of(
-                                HttpStatus.BAD_REQUEST, "Invalid department ID", null);
+                                HttpStatus.BAD_REQUEST, "Invalid department ID", "No parent department found with ID: " + departmentDto.getParent_id());
                     });
             department.setParentId(parent);
         }

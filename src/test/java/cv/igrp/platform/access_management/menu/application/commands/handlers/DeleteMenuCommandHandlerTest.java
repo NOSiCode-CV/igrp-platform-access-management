@@ -80,8 +80,8 @@ public class DeleteMenuCommandHandlerTest {
 
         ProblemDetail problem = exception.getBody();
         assertEquals(HttpStatus.NOT_FOUND.value(), problem.getStatus());
-        assertNotNull(problem.getDetail());
-        assertTrue(problem.getDetail().contains("Menu not found with id: 99"));
+        assertNotNull(problem.getProperties());
+        assertTrue(problem.getProperties().getOrDefault("details", "").toString().contains("Menu not found with id: 99"));
 
         verify(menuEntryRepository, times(1)).findById(99);
         verifyNoMoreInteractions(menuEntryRepository);
@@ -92,7 +92,8 @@ public class DeleteMenuCommandHandlerTest {
     void testHandle_whenCommandIdIsNull_shouldThrowCustomException() {
         // Arrange
         command = deleteMenuCommand(null);
-        when(menuEntryRepository.findById(0)).thenReturn(Optional.empty());
+        //noinspection DataFlowIssue
+        when(menuEntryRepository.findById(null)).thenReturn(Optional.empty());
 
         // Act & Assert
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> deleteMenuCommandHandler.handle(command));

@@ -157,7 +157,7 @@ public class CreateRoleCommandHandlerTest {
                 () -> underTest.handle(command));
 
         //... Then
-        assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getBody().getStatus());
+        assertEquals(HttpStatus.CONFLICT.value(), ex.getBody().getStatus());
         verify(roleRepository, never()).findByIdAndStatusNot(any(), any());
         verify(roleRepository, never()).save(any());
     }

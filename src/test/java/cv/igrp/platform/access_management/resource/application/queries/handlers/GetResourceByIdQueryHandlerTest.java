@@ -84,8 +84,9 @@ class GetResourceByIdQueryHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
-        assertNotNull(ex.getBody().getDetail());
-        assertTrue(ex.getBody().getDetail().contains("999"));
+
+        assertNotNull(ex.getBody().getProperties());
+        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("999"));
 
         // Verify
         verify(resourceRepository, times(1)).findById(999);

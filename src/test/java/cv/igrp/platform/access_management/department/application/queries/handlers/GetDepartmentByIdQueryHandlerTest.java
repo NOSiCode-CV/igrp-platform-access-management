@@ -94,7 +94,9 @@ public class GetDepartmentByIdQueryHandlerTest {
 
         // Assert
         assertNotNull(exception);
-        assertEquals("Department not found with id: " + DEPARTMENT_ID, exception.getBody().getDetail());
+
+        assertNotNull(exception.getBody().getProperties());
+        assertEquals("Department not found with id: " + DEPARTMENT_ID, exception.getBody().getProperties().get("details"));
 
         // Verify
         verify(departmentRepository, times(1)).findById(DEPARTMENT_ID);
