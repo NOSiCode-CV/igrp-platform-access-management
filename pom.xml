@@ -365,8 +365,8 @@
                     <plugin>
                         <groupId>org.graalvm.buildtools</groupId>
                         <artifactId>native-maven-plugin</artifactId>
+                        <extensions>true</extensions>
                         <configuration>
-                            <mainClass>cv.igrp.platform.access_management.IgrpPlatformAccessManagementApplication</mainClass>
                             <buildArgs>
                                 <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
                                 <buildArg>-H:ServiceLoaderFeatureExcludeServices=org.hibernate.bytecode.spi.BytecodeProvider</buildArg>
@@ -374,9 +374,11 @@
                         </configuration>
                         <executions>
                             <execution>
+                                <id>build-native-image</id>
                                 <goals>
                                     <goal>build</goal>
                                 </goals>
+                                <phase>package</phase>
                             </execution>
                         </executions>
                     </plugin>
