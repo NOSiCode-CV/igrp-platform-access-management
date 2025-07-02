@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.department.application.commands.handl
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.department.application.commands.commands.UpdateDepartmentCommand;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.DepartmentRepository;
 import cv.igrp.platform.access_management.shared.domain.models.Department;
@@ -65,8 +64,8 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
         Department department = departmentRepository.findById(departmentId)
                 .orElseThrow(() -> {
                     logger.warn("Department with id={} not found", departmentId);
-                    return new IgrpResponseStatusException(new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                        "Invalid Department ID", "Department not found with id: " + departmentId));
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Invalid Department ID", "Department not found with id: " + departmentId);
                 });
 
         departmentMapper.updateEntityFromDto(command.getDepartmentdto(), department);

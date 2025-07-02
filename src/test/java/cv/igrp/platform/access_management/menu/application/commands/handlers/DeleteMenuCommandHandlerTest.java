@@ -2,7 +2,6 @@ package cv.igrp.platform.access_management.menu.application.commands.handlers;
 
 import cv.igrp.platform.access_management.menu.application.commands.commands.DeleteMenuCommand;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
@@ -14,6 +13,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Optional;
@@ -76,13 +76,12 @@ public class DeleteMenuCommandHandlerTest {
         when(menuEntryRepository.findById(99)).thenReturn(Optional.empty());
 
         // Act & Assert
-        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> {
-            deleteMenuCommandHandler.handle(command);
-        });
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> deleteMenuCommandHandler.handle(command));
 
-        IgrpProblem<?> problem = exception.getProblem();
-        assertEquals(HttpStatus.NOT_FOUND, problem.getStatus());
-        assertTrue(problem.getDetails().toString().contains("Menu not found with id: 99"));
+        ProblemDetail problem = exception.getBody();
+        assertEquals(HttpStatus.NOT_FOUND.value(), problem.getStatus());
+        assertNotNull(problem.getDetail());
+        assertTrue(problem.getDetail().contains("Menu not found with id: 99"));
 
         verify(menuEntryRepository, times(1)).findById(99);
         verifyNoMoreInteractions(menuEntryRepository);
@@ -93,14 +92,12 @@ public class DeleteMenuCommandHandlerTest {
     void testHandle_whenCommandIdIsNull_shouldThrowCustomException() {
         // Arrange
         command = deleteMenuCommand(null);
-        when(menuEntryRepository.findById(null)).thenReturn(Optional.empty());
+        when(menuEntryRepository.findById(0)).thenReturn(Optional.empty());
 
         // Act & Assert
-        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> {
-            deleteMenuCommandHandler.handle(command);
-        });
+        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> deleteMenuCommandHandler.handle(command));
 
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
     }
 
     @Test

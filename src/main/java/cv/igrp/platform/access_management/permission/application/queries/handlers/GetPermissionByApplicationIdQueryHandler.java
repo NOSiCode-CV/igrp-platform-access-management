@@ -6,7 +6,6 @@ import cv.igrp.platform.access_management.permission.application.queries.queries
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
@@ -88,10 +87,10 @@ public class GetPermissionByApplicationIdQueryHandler implements QueryHandler<Ge
             return permission.getApplication().getCode().equals(query.getApplicationCode());
         }
 
-        throw new IgrpResponseStatusException(
-                new IgrpProblem<>(HttpStatus.BAD_REQUEST,
+        throw IgrpResponseStatusException.of(
+                HttpStatus.BAD_REQUEST,
                         "No application filter provided",
-                        "No application filter provided in the request. Must either be <applicationId> or <applicationCode>")
+                        "No application filter provided in the request. Must either be <applicationId> or <applicationCode>"
         );
 
     }

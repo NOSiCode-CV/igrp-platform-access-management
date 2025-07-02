@@ -4,7 +4,6 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
@@ -71,10 +70,10 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
         MenuEntry menuEntry = menuEntryRepository.findById(command.getId())
                 .orElseThrow(() -> {
                     logger.warn("Menu not found with ID: {}", command.getId());
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND,
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND,
                                     "Menu not found",
-                                    "Menu not found with id: " + command.getId()));
+                                    "Menu not found with id: " + command.getId());
                 });
 
         MenuEntryDTO menuDto = command.getMenuentrydto();
@@ -91,10 +90,10 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
             menuEntry.setParentId(menuEntryRepository.findById(menuDto.getParentId())
                     .orElseThrow(() -> {
                         logger.warn("Parent Menu not found with ID: {}", menuDto.getParentId());
-                        return new IgrpResponseStatusException(
-                                new IgrpProblem<>(HttpStatus.NOT_FOUND,
+                        return IgrpResponseStatusException.of(
+                                HttpStatus.NOT_FOUND,
                                 "Parent MenuEntry not found",
-                                "Parent MenuEntry not found with id: " + menuDto.getParentId()));
+                                "Parent MenuEntry not found with id: " + menuDto.getParentId());
                     }));
         }
 
@@ -102,10 +101,10 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
             menuEntry.setResourceId(resourceRepository.findById(menuDto.getResourceId())
                     .orElseThrow(() -> {
                         logger.warn("Resource not found with ID: {}", menuDto.getResourceId());
-                        return new IgrpResponseStatusException
-                            (new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                                    "Resource not found",
-                                    "Resource not found with id: " + menuDto.getResourceId()));
+                        return IgrpResponseStatusException.of(
+                                HttpStatus.NOT_FOUND,
+                                "Resource not found",
+                                "Resource not found with id: " + menuDto.getResourceId());
                     }));
         }
 
@@ -113,10 +112,10 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
             menuEntry.setApplicationId(applicationRepository.findById(menuDto.getApplicationId())
                     .orElseThrow(() -> {
                         logger.warn("Application not found with ID: {}", menuDto.getApplicationId());
-                        return new IgrpResponseStatusException
-                            (new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                                    "Application not found",
-                                    "Application not found with id: " + menuDto.getApplicationId()));
+                        return IgrpResponseStatusException.of(
+                                HttpStatus.NOT_FOUND,
+                                "Application not found",
+                                "Application not found with id: " + menuDto.getApplicationId());
                     }));
             }
 

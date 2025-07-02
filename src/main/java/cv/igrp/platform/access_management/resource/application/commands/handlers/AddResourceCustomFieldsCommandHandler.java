@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.resource.application.commands.handler
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.CustomField;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
@@ -89,10 +88,10 @@ public class AddResourceCustomFieldsCommandHandler implements
        Resource resource = resourceRepository.findById(command.getId())
               .orElseThrow(() -> {
                   logger.warn("Resource not found with ID: {}", resourceId);
-                  return new IgrpResponseStatusException(
-                         new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                                 "Resource not found",
-                                 "Resource not found for ID: " + resourceId));
+                  return IgrpResponseStatusException.of(
+                         HttpStatus.NOT_FOUND,
+                          "Resource not found",
+                          "Resource not found for ID: " + resourceId);
               });
 
       CustomField customField = customFieldRepository.findByTableNameAndRecordId(

@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
-import java.util.Optional;
+
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 
+@SuppressWarnings("unchecked")
 @ExtendWith(MockitoExtension.class)
 public class GetUsersCommandHandlerTest {
 
@@ -70,8 +71,9 @@ public class GetUsersCommandHandlerTest {
 
         // Then
         assertNotNull(response);
+        assertNotNull(response.getBody());
         assertEquals(1, response.getBody().size());
-        assertEquals("John Doe", response.getBody().get(0).getName());
+        assertEquals("John Doe", response.getBody().getFirst().getName());
         verify(userRepository, times(1)).findAll(any(Specification.class));
         verify(userMapper, times(1)).toDto(mockUser);
     }

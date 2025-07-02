@@ -6,7 +6,6 @@ import cv.igrp.platform.access_management.role.application.queries.queries.GetRo
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
@@ -70,8 +69,8 @@ public class GetRoleByIdQueryHandler implements QueryHandler<GetRoleByIdQuery, R
         Role foundRole = roleRepository.findByIdAndStatusNot(query.getId(), Status.DELETED)
                 .orElseThrow(() -> {
                     log.warn("Role with id {} not found.", query.getId());
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Get Role By Id", "Role with id: " + query.getId() + " not found.")
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Get Role By Id", "Role with id: " + query.getId() + " not found."
                     );
                 });
         RoleDTO response = roleMapper.mapToDto(foundRole);

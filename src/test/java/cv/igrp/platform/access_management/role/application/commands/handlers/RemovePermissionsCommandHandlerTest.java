@@ -18,7 +18,6 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.*;
 
-import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -53,7 +52,7 @@ public class RemovePermissionsCommandHandlerTest {
                 () -> underTest.handle(command));
 
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, response.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatus());
     }
 
     @Test
@@ -183,7 +182,7 @@ public class RemovePermissionsCommandHandlerTest {
         List<PermissionDTO> responseBody = result.getBody();
         assertNotNull(responseBody);
         assertEquals(1, responseBody.size());
-        assertEquals(permissionToRemoveId, responseBody.get(0).getId());
+        assertEquals(permissionToRemoveId, responseBody.getFirst().getId());
 
         assertFalse(role.getPermissions().contains(permissionToRemove));
         assertTrue(role.getPermissions().contains(permissionToKeep));
@@ -254,7 +253,7 @@ public class RemovePermissionsCommandHandlerTest {
         List<PermissionDTO> responseBody = result.getBody();
         assertNotNull(responseBody);
         assertEquals(1, responseBody.size());
-        assertEquals(duplicatedPermissionId, responseBody.get(0).getId());
+        assertEquals(duplicatedPermissionId, responseBody.getFirst().getId());
 
         assertFalse(role.getPermissions().contains(permission));
 
@@ -300,7 +299,7 @@ public class RemovePermissionsCommandHandlerTest {
         List<PermissionDTO> responseBody = result.getBody();
         assertNotNull(responseBody);
         assertEquals(1, responseBody.size());
-        assertEquals(dtoToRemove, responseBody.get(0));
+        assertEquals(dtoToRemove, responseBody.getFirst());
 
         verify(permissionMapper).mapToDTO(permissionToRemove);
         verify(permissionMapper, never()).mapToDTO(permissionToKeep);

@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.files.application.commands.handlers;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.platform.filemanager.StorageService;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.platform.access_management.files.application.commands.commands.UploadFileCommand;
 
-import java.io.IOException;
 import java.util.UUID;
 
 
@@ -33,11 +31,11 @@ public class UploadFileCommandHandler implements CommandHandler<UploadFileComman
       var file = command.getFile();
 
       if(file == null) {
-         throw new IgrpResponseStatusException(new IgrpProblem<>(
+         throw IgrpResponseStatusException.of(
                  HttpStatus.BAD_REQUEST,
                  "No file uploaded",
                  "There's no file uploaded. Please check and try again."
-         ));
+         );
       }
 
        try {

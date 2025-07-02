@@ -127,7 +127,7 @@ public class RemoveRolesFromUserCommandHandlerTest {
                 () -> removeRolesFromUserCommandHandler.handle(command));
 
         // Assert
-        assertEquals("User not found with id: " + USER_ID, exception.getProblem().getDetails());
+        assertEquals("User not found with id: " + USER_ID, exception.getBody().getDetail());
 
         // Verify
         verify(userRepository, times(1)).findById(USER_ID);

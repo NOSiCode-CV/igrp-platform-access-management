@@ -10,6 +10,7 @@ import cv.igrp.platform.access_management.shared.domain.models.Department;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.DepartmentRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -59,7 +60,7 @@ public class UpdateRoleCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
 
         verify(roleRepository, never()).save(any(Role.class));
     }
@@ -88,7 +89,7 @@ public class UpdateRoleCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
         verify(roleRepository, never()).save(any(Role.class));
     }
 
@@ -126,7 +127,7 @@ public class UpdateRoleCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
         //... Then
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getBody().getStatus());
         verify(roleRepository, never()).save(any(Role.class));
     }
 
@@ -160,7 +161,7 @@ public class UpdateRoleCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
         verify(roleRepository, never()).save(any(Role.class));
     }
 
@@ -216,6 +217,7 @@ public class UpdateRoleCommandHandlerTest {
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
+        Assertions.assertNotNull(result.getBody());
         assertEquals(roleNewName, result.getBody().getName());
         assertEquals(roleNewDescription, existingRole.getDescription());
         assertEquals(Status.ACTIVE, existingRole.getStatus());
@@ -276,6 +278,7 @@ public class UpdateRoleCommandHandlerTest {
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
+        Assertions.assertNotNull(result.getBody());
         assertEquals(roleNewName, result.getBody().getName());
 
         verify(roleRepository).save(existingRole);

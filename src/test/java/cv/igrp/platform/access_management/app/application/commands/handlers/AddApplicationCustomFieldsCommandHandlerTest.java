@@ -17,8 +17,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import cv.igrp.platform.access_management.app.application.commands.commands.*;
-import cv.igrp.platform.access_management.app.application.commands.handlers.*;
-import cv.igrp.platform.access_management.app.application.dto.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -113,10 +111,8 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
         when(applicationRepository.findById(applicationId)).thenReturn(Optional.empty());
 
         // When & Then
-        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> {
-            addApplicationCustomFieldsCommandHandler.handle(command);
-        });
+        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> addApplicationCustomFieldsCommandHandler.handle(command));
 
-        assertEquals("Application not found", ex.getProblem().getTitle());
+        assertEquals("Application not found", ex.getBody().getTitle());
     }
 }

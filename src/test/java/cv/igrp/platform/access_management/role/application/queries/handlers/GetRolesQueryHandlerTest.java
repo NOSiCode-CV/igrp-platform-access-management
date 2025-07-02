@@ -17,9 +17,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -48,6 +46,7 @@ public class GetRolesQueryHandlerTest {
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertNotNull(result);
+        assertNotNull(result.getBody());
         assertTrue(result.getBody().isEmpty());
     }
 

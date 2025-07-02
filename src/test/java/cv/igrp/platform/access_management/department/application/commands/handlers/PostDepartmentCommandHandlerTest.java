@@ -165,8 +165,8 @@ public class PostDepartmentCommandHandlerTest {
                 -> postDepartmentCommandHandler.handle(command));
 
         // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getProblem().getStatus());
-        assertEquals("Invalid application ID", exception.getProblem().getTitle());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getBody().getStatus());
+        assertEquals("Invalid application ID", exception.getBody().getTitle());
 
         // Verify
         verify(departmentMapper).toEntity(departmentDTO);
@@ -195,8 +195,8 @@ public class PostDepartmentCommandHandlerTest {
                 () -> postDepartmentCommandHandler.handle(command));
 
         // Assert
-        assertEquals(HttpStatus.BAD_REQUEST, exception.getProblem().getStatus());
-        assertEquals("Invalid department ID", exception.getProblem().getTitle());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getBody().getStatus());
+        assertEquals("Invalid department ID", exception.getBody().getTitle());
 
         // Verify
         verify(departmentMapper).toEntity(departmentDTO);

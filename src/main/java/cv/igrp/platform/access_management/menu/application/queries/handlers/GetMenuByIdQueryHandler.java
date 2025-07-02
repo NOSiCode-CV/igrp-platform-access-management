@@ -4,7 +4,6 @@ import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
@@ -60,10 +59,10 @@ public class GetMenuByIdQueryHandler implements QueryHandler<GetMenuByIdQuery, R
       MenuEntry menu = menuEntryRepository.findById(query.getId())
               .orElseThrow(() -> {
                  logger.warn("Menu not found with ID: {}", query.getId());
-                 return new IgrpResponseStatusException
-                      (new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                              "Menu not found",
-                              "Menu not found with id: " + query.getId()));
+                 return IgrpResponseStatusException.of(
+                         HttpStatus.NOT_FOUND,
+                         "Menu not found",
+                         "Menu not found with id: " + query.getId());
               });
 
       logger.info("Menu with ID: {} successfully retrieved", query.getId());

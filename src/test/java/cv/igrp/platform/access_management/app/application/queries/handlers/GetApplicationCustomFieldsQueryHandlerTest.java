@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.CustomField;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -14,9 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import cv.igrp.platform.access_management.app.application.dto.*;
 import cv.igrp.platform.access_management.app.application.queries.queries.*;
-import cv.igrp.platform.access_management.app.application.queries.handlers.*;
 
 import java.util.Map;
 import java.util.Optional;
@@ -66,12 +63,11 @@ public class GetApplicationCustomFieldsQueryHandlerTest {
         GetApplicationCustomFieldsQuery query = new GetApplicationCustomFieldsQuery(applicationId);
 
         // When & Then
-        IgrpResponseStatusException thrown = assertThrows(IgrpResponseStatusException.class, () -> {
-            getApplicationCustomFieldsQueryHandler.handle(query);
-        });
+        IgrpResponseStatusException thrown = assertThrows(IgrpResponseStatusException.class, () -> getApplicationCustomFieldsQueryHandler.handle(query));
 
-        assertEquals(HttpStatus.NOT_FOUND, thrown.getProblem().getStatus());
-        assertTrue(thrown.getProblem().getTitle().contains("CustomField not found"));
+        assertEquals(HttpStatus.NOT_FOUND.value(), thrown.getBody().getStatus());
+        assertNotNull(thrown.getBody().getTitle());
+        assertTrue(thrown.getBody().getTitle().contains("CustomField not found"));
     }
 
 }

@@ -6,7 +6,6 @@ import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
@@ -126,10 +125,10 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
          return MenuEntryType.valueOf(type);
       } catch (IllegalArgumentException ex) {
          logger.warn("Invalid menu type provided: '{}'", type);
-         throw new IgrpResponseStatusException(
-                 new IgrpProblem<>(HttpStatus.BAD_REQUEST,
-                         "Invalid menu type",
-                         "No menu type found with name: " + type)
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.BAD_REQUEST,
+                 "Invalid menu type",
+                 "No menu type found with name: " + type
          );
       }
    }
@@ -147,10 +146,10 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
          return Status.valueOf(status);
       } catch (IllegalArgumentException ex) {
          logger.warn("Invalid menu status provided: '{}'", status);
-         throw new IgrpResponseStatusException(
-                 new IgrpProblem<>(HttpStatus.BAD_REQUEST,
-                         "Invalid menu status",
-                         "No menu status found with name: " + status)
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.BAD_REQUEST,
+                 "Invalid menu status",
+                 "No menu status found with name: " + status
          );
       }
    }

@@ -95,7 +95,7 @@ public class GetUserQueryHandlerTest {
 
         // Assert
         assertNotNull(exception);
-        assertEquals("User not found with id: " + USER_ID, exception.getProblem().getDetails());
+        assertEquals("User not found with id: " + USER_ID, exception.getBody().getDetail());
 
         // Verify
         verify(userRepository, times(1)).findById(USER_ID);

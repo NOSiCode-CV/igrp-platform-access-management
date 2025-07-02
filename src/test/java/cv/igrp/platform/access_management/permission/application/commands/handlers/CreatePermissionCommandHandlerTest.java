@@ -22,7 +22,6 @@ import org.springframework.http.ResponseEntity;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -60,7 +59,7 @@ public class CreatePermissionCommandHandlerTest {
         IgrpResponseStatusException response = assertThrows(IgrpResponseStatusException.class, () -> underTest.handle(command));
         //... Then
 
-        assertEquals(HttpStatus.NOT_FOUND, response.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatus());
     }
 
     @Test

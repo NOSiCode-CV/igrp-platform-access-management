@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.resource.application.queries.handlers
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.CustomField;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
@@ -70,10 +69,10 @@ public class GetResourceCustomFieldsQueryHandler implements
               .findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), query.getId())
               .orElseThrow(() -> {
                  logger.warn("No custom field found for resource ID: {}", resourceId);
-                 return new IgrpResponseStatusException(
-                         new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                                 "CustomField not found",
-                                 "CustomField not found for Resource ID: " + resourceId));
+                 return IgrpResponseStatusException.of(
+                         HttpStatus.NOT_FOUND,
+                         "CustomField not found",
+                         "CustomField not found for Resource ID: " + resourceId);
               });
 
       logger.info("Custom fields successfully retrieved for resource ID: {}", resourceId);

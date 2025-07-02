@@ -43,8 +43,8 @@ class AddItemsCommandHandlerTest {
 
     private AddItemsCommand command;
 
-    private AddItemsCommand addItemsCommand(List<ResourceItemDTO> resourceItemDTOS, Integer resourceId) {
-        return new AddItemsCommand(resourceItemDTOS, resourceId);
+    private AddItemsCommand addItemsCommand(List<ResourceItemDTO> resourceItemDTOS) {
+        return new AddItemsCommand(resourceItemDTOS, 1);
     }
 
     private Resource resource;
@@ -80,7 +80,7 @@ class AddItemsCommandHandlerTest {
 
 
         // Act
-        command = addItemsCommand(List.of(itemDTO), 1);
+        command = addItemsCommand(List.of(itemDTO));
         ResponseEntity<ResourceDTO> response = handler.handle(command);
 
         // Assert

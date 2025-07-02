@@ -6,7 +6,6 @@ import cv.igrp.platform.access_management.permission.application.queries.queries
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
@@ -78,8 +77,8 @@ public class GetRolesByPermissionIDQueryHandler implements QueryHandler<GetRoles
                 .filter(permission -> permission.getStatus().equals(Status.ACTIVE) || permission.getStatus().equals(Status.INACTIVE))
                 .orElseThrow(() -> {
                     log.warn("Get Roles with Permission ID {}", query.getId());
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Get Role By Permission ID", "Permission with id: " + query.getId() + " not found.")
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Get Role By Permission ID", "Permission with id: " + query.getId() + " not found."
                     );
                 });
         Set<Role> roles = Optional.ofNullable(permissionFound.getRoles())

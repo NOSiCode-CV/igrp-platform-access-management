@@ -32,9 +32,9 @@
 
         <!-- IGRP module versions -->
         <igrp.framework.version>0.0.1-alpha</igrp.framework.version>
-        <platform.iam.version>0.0.2-alpha</platform.iam.version>
+        <framework.auth.version>0.0.1-alpha</framework.auth.version>
         <filemanager.version>0.0.2-alpha</filemanager.version>
-        <notification.email.version>0.0.1-alpha-20250529.184648-2</notification.email.version>
+        <notification.email.version>0.0.1-alpha</notification.email.version>
     </properties>
 
     <dependencyManagement>
@@ -159,14 +159,14 @@
             <version>${igrp.framework.version}</version>
         </dependency>
         <dependency>
-            <groupId>cv.igrp.platform</groupId>
-            <artifactId>iam-core</artifactId>
-            <version>${platform.iam.version}</version>
+            <groupId>cv.igrp.framework.auth</groupId>
+            <artifactId>core</artifactId>
+            <version>${framework.auth.version}</version>
         </dependency>
         <dependency>
-            <groupId>cv.igrp.platform</groupId>
-            <artifactId>iam-keycloak-spring-boot</artifactId>
-            <version>${platform.iam.version}</version>
+            <groupId>cv.igrp.framework.auth</groupId>
+            <artifactId>keycloak-spring-boot</artifactId>
+            <version>${framework.auth.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -209,28 +209,11 @@
         </dependency>
     </dependencies>
 
-        <repositories>
+    <repositories>
         <!-- IGRP Releases -->
         <repository>
             <id>igrp-releases</id>
             <url>https://sonatype.nosi.cv/repository/igrp-framework-releases/</url>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <!-- IGRP Snapshots -->
-        <repository>
-            <id>igrp-snapshots</id>
-            <url>https://sonatype.nosi.cv/repository/igrp-framework/</url>
-            <releases>
-                <enabled>false</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
         </repository>
     </repositories>
 

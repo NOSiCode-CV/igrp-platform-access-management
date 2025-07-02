@@ -115,7 +115,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
 
         // Verify
         verify(resourceRepository, times(1)).findById(999);

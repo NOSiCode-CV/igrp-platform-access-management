@@ -125,13 +125,12 @@ public class CreateResourceCommandHandlerTest {
         when(applicationRepository.findById(1)).thenReturn(Optional.empty());
 
         // Act
-        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> {
-            handler.handle(command);
-        });
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, exception.getProblem().getStatus());
-        assertTrue(exception.getProblem().getDetails().toString().contains("Application not found with id: 1"));
+        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
+        assertNotNull(exception.getBody().getDetail());
+        assertTrue(exception.getBody().getDetail().contains("Application not found with id: 1"));
 
         // Verify
         verify(resourceMapper, times(1)).toEntity(resourceDTO);
@@ -149,13 +148,12 @@ public class CreateResourceCommandHandlerTest {
         when(permissionRepository.findById(10)).thenReturn(Optional.empty());
 
         // Act
-        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> {
-            handler.handle(command);
-        });
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, exception.getProblem().getStatus());
-        assertTrue(exception.getProblem().getDetails().toString().contains("Permission not found with id: 10"));
+        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
+        assertNotNull(exception.getBody().getDetail());
+        assertTrue(exception.getBody().getDetail().contains("Permission not found with id: 10"));
 
         // Verify
         verify(resourceMapper, times(1)).toEntity(resourceDTO);

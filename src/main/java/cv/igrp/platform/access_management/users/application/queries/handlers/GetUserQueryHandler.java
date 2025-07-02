@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.users.application.queries.handlers;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
@@ -74,10 +73,10 @@ public class GetUserQueryHandler implements QueryHandler<GetUserQuery, ResponseE
       IGRPUser user = igrpUserRepository.findById(query.getId())
               .orElseThrow(() -> {
                  logger.warn("User not found with id={}", userId);
-                 return new IgrpResponseStatusException(
-                         new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                                 "Invalida User id",
-                                 "User not found with id: " + userId));
+                 return IgrpResponseStatusException.of(
+                         HttpStatus.NOT_FOUND,
+                         "Invalida User id",
+                         "User not found with id: " + userId);
               });
 
       IGRPUserDTO dto = igrpUserMapper.toDto(user);

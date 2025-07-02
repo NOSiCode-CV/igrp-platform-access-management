@@ -22,6 +22,7 @@ import cv.igrp.platform.access_management.department.application.queries.queries
 
 import java.util.List;
 
+@SuppressWarnings("unchecked")
 @ExtendWith(MockitoExtension.class)
 public class GetDepartmentsQueryHandlerTest {
 
@@ -37,8 +38,8 @@ public class GetDepartmentsQueryHandlerTest {
     private Department departmentA, departmentB;
     private DepartmentDTO departmentDTOA, departmentDTOB;
 
-    private GetDepartmentsQuery getDepartmentsQuery(Integer applicationId, String applicationCode, Integer parentId, String name, String status, String code){
-        return new GetDepartmentsQuery(applicationId, applicationCode, parentId, name, status, code);
+    private GetDepartmentsQuery getDepartmentsQuery(Integer applicationId, String name, String status){
+        return new GetDepartmentsQuery(applicationId, null, null, name, status, null);
     }
 
     @BeforeEach
@@ -79,7 +80,7 @@ public class GetDepartmentsQueryHandlerTest {
     @DisplayName("should return list of DepartmentDTOs when departments match criteria")
     void testHandle_shouldReturnListOfDepartmentDTOs() {
         // Arrange
-        GetDepartmentsQuery query = getDepartmentsQuery(1001,null, null, "finance", DepartmentStatus.ACTIVE.name(), null);
+        GetDepartmentsQuery query = getDepartmentsQuery(1001, "finance", DepartmentStatus.ACTIVE.name());
 
         when(departmentRepository.findAll(any(Specification.class))).thenReturn(List.of(departmentA, departmentB));
         when(departmentMapper.toDto(departmentA)).thenReturn(departmentDTOA);
@@ -110,7 +111,7 @@ public class GetDepartmentsQueryHandlerTest {
     @DisplayName("should return empty list when no departments match")
     void testHandle_whenNoDepartmentsMatch_shouldReturnEmptyList() {
         // Arrange
-        GetDepartmentsQuery query = getDepartmentsQuery(9999, null, null, "nonexistent",DepartmentStatus.ACTIVE.name(), null);
+        GetDepartmentsQuery query = getDepartmentsQuery(9999, "nonexistent",DepartmentStatus.ACTIVE.name());
         when(departmentRepository.findAll(any(Specification.class))).thenReturn(List.of());
 
         // Act
@@ -120,6 +121,7 @@ public class GetDepartmentsQueryHandlerTest {
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         List<DepartmentDTO> departmentDTOS = response.getBody();
+        assertNotNull(departmentDTOS);
         assertTrue(departmentDTOS.isEmpty());
 
         // Verify
@@ -132,7 +134,7 @@ public class GetDepartmentsQueryHandlerTest {
     @DisplayName("should return all departments when no filters are provided")
     void testHandle_whenQueryIsEmpty_shouldReturnAllDepartments() {
         // Arrange
-        GetDepartmentsQuery query = getDepartmentsQuery(null, null, null, null, null, null);
+        GetDepartmentsQuery query = getDepartmentsQuery(null, null, null);
 
         when(departmentRepository.findAll(any(Specification.class))).thenReturn(List.of(departmentA, departmentB));
         when(departmentMapper.toDto(departmentA)).thenReturn(departmentDTOA);

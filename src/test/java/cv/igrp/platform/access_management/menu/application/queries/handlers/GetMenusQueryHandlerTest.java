@@ -27,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
+@SuppressWarnings("unchecked")
 @ExtendWith(MockitoExtension.class)
 @DisplayName("GetMenusQueryHandler Tests")
 public class GetMenusQueryHandlerTest {
@@ -40,8 +41,8 @@ public class GetMenusQueryHandlerTest {
     @InjectMocks
     private GetMenusQueryHandler getMenusQueryHandler;
 
-    private GetMenusQuery getMenusQuery(Integer applicationId, String name, String type, String status, String applicationCode){
-        return new GetMenusQuery(applicationId, name, type, status, applicationCode);
+    private GetMenusQuery getMenusQuery(Integer applicationId, String name, String type, String status){
+        return new GetMenusQuery(applicationId, name, type, status, null);
     }
 
     private MenuEntry menuEntry;
@@ -75,7 +76,7 @@ public class GetMenusQueryHandlerTest {
     @DisplayName("should return filtered list when name is provided")
     void testHandle_withNameFilter_shouldReturnMatchingMenus() {
         // Arrange
-        query = getMenusQuery(null, "Dashboard", null, null, null);
+        query = getMenusQuery(null, "Dashboard", null, null);
         when(menuEntryRepository.findAll(any(Specification.class))).thenReturn(List.of(menuEntry));
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(menuEntryDTO);
 
@@ -85,7 +86,7 @@ public class GetMenusQueryHandlerTest {
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(1, Objects.requireNonNull(response.getBody()).size());
-        assertEquals("Dashboard", response.getBody().get(0).getName());
+        assertEquals("Dashboard", response.getBody().getFirst().getName());
 
         // Verify
         verify(menuEntryRepository, times(1)).findAll(any(Specification.class));
@@ -97,7 +98,7 @@ public class GetMenusQueryHandlerTest {
     @DisplayName("should return filtered list when type is provided")
     void testHandle_withTypeFilter_shouldReturnMatchingMenus() {
         // Arrange
-        query = getMenusQuery(null, null, "MENU_PAGE", null, null);
+        query = getMenusQuery(null, null, "MENU_PAGE", null);
         when(menuEntryRepository.findAll(any(Specification.class))).thenReturn(List.of(menuEntry));
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(menuEntryDTO);
 
@@ -107,7 +108,7 @@ public class GetMenusQueryHandlerTest {
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(1, Objects.requireNonNull(response.getBody()).size());
-        assertEquals("Dashboard", response.getBody().get(0).getName());
+        assertEquals("Dashboard", response.getBody().getFirst().getName());
 
         // Verify
         verify(menuEntryRepository, times(1)).findAll(any(Specification.class));
@@ -119,7 +120,7 @@ public class GetMenusQueryHandlerTest {
     @DisplayName("should return filtered list when status is provided")
     void testHandle_withStatusFilter_shouldReturnMatchingMenus() {
         // Arrange
-        query = getMenusQuery(null, null, null, "ACTIVE", null);
+        query = getMenusQuery(null, null, null, "ACTIVE");
         when(menuEntryRepository.findAll(any(Specification.class))).thenReturn(List.of(menuEntry));
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(menuEntryDTO);
 
@@ -129,7 +130,7 @@ public class GetMenusQueryHandlerTest {
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(1, Objects.requireNonNull(response.getBody()).size());
-        assertEquals("Dashboard", response.getBody().get(0).getName());
+        assertEquals("Dashboard", response.getBody().getFirst().getName());
 
         // Verify
         verify(menuEntryRepository, times(1)).findAll(any(Specification.class));
@@ -141,7 +142,7 @@ public class GetMenusQueryHandlerTest {
     @DisplayName("should return filtered list when applicationId is provided")
     void testHandle_withApplicationIdFilter_shouldReturnMatchingMenus() {
         // Arrange
-        query = getMenusQuery(1, null, null, null, null);
+        query = getMenusQuery(1, null, null, null);
         when(menuEntryRepository.findAll(any(Specification.class))).thenReturn(List.of(menuEntry));
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(menuEntryDTO);
 
@@ -151,7 +152,7 @@ public class GetMenusQueryHandlerTest {
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(1, Objects.requireNonNull(response.getBody()).size());
-        assertEquals("Dashboard", response.getBody().get(0).getName());
+        assertEquals("Dashboard", response.getBody().getFirst().getName());
 
         // Verify
         verify(menuEntryRepository, times(1)).findAll(any(Specification.class));
@@ -163,7 +164,7 @@ public class GetMenusQueryHandlerTest {
     @DisplayName("should return all when no filters are provided")
     void testHandle_withNoFilters_shouldReturnAllMenus() {
         // Arrange
-        query = getMenusQuery(null, null, null, null, null);
+        query = getMenusQuery(null, null, null, null);
         when(menuEntryRepository.findAll(any(Specification.class))).thenReturn(List.of(menuEntry));
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(menuEntryDTO);
 
@@ -183,7 +184,7 @@ public class GetMenusQueryHandlerTest {
     @DisplayName("should return empty list when no match found")
     void testHandle_withNoResults_shouldReturnEmptyList() {
         // Arrange
-        query = getMenusQuery(999, null, null, null, null);
+        query = getMenusQuery(999, null, null, null);
         when(menuEntryRepository.findAll(any(Specification.class))).thenReturn(List.of());
 
         // Act
@@ -202,7 +203,7 @@ public class GetMenusQueryHandlerTest {
     @DisplayName("should return exception when type doesnt match MenuEntryType")
     void testHandle_withNotCorrectTypeFilter_shouldReturnException() {
         // Arrange
-        query = getMenusQuery(null, null, "NON_EXISTENT_TYPE", null, null);
+        query = getMenusQuery(null, null, "NON_EXISTENT_TYPE", null);
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
@@ -210,8 +211,9 @@ public class GetMenusQueryHandlerTest {
 
         // Assert
         assertNotNull(ex);
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getProblem().getStatus());
-        assertTrue(ex.getProblem().getTitle().toString().contains("Invalid menu type"));
+        assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getBody().getStatus());
+        assertNotNull(ex.getBody().getTitle());
+        assertTrue(ex.getBody().getTitle().contains("Invalid menu type"));
 
         // Verify
         verifyNoInteractions(menuEntryRepository);
@@ -222,7 +224,7 @@ public class GetMenusQueryHandlerTest {
     @DisplayName("should return exception when status doesnt match Status")
     void testHandle_withNotCorrectStatusFilter_shouldReturnException() {
         // Arrange
-        query = getMenusQuery(null, null, null,"NON_EXISTENT_STATUS", null);
+        query = getMenusQuery(null, null, null,"NON_EXISTENT_STATUS");
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
@@ -230,8 +232,9 @@ public class GetMenusQueryHandlerTest {
 
         // Assert
         assertNotNull(ex);
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getProblem().getStatus());
-        assertTrue(ex.getProblem().getTitle().toString().contains("Invalid menu status"));
+        assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getBody().getStatus());
+        assertNotNull(ex.getBody().getTitle());
+        assertTrue(ex.getBody().getTitle().contains("Invalid menu status"));
 
         // Verify
         verifyNoInteractions(menuEntryRepository);

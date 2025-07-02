@@ -23,6 +23,7 @@ import cv.igrp.platform.access_management.resource.application.queries.queries.*
 import java.util.List;
 import java.util.Objects;
 
+@SuppressWarnings("unchecked")
 @ExtendWith(MockitoExtension.class)
 @DisplayName("GetResourcesQueryHandler Unit Tests")
 public class GetResourcesQueryHandlerTest {
@@ -71,7 +72,7 @@ public class GetResourcesQueryHandlerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(1, response.getBody().size());
-        assertEquals("Sample Resource", response.getBody().get(0).getName());
+        assertEquals("Sample Resource", response.getBody().getFirst().getName());
 
         // Verify
         verify(resourceRepository, times(1)).findAll(any(Specification.class));

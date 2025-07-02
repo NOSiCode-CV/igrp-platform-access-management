@@ -6,7 +6,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.CustomField;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -15,8 +14,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import cv.igrp.platform.access_management.app.application.commands.commands.*;
-import cv.igrp.platform.access_management.app.application.commands.handlers.*;
-import cv.igrp.platform.access_management.app.application.dto.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -86,8 +83,9 @@ public class RemoveApplicationCustomFieldsCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> removeApplicationCustomFieldsCommandHandler.handle(command));
 
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
-        assertTrue(ex.getProblem().getTitle().contains("CustomField not found"));
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
+        assertNotNull(ex.getBody().getTitle());
+        assertTrue(ex.getBody().getTitle().contains("CustomField not found"));
 
         verify(customFieldRepository, never()).save(any());
     }

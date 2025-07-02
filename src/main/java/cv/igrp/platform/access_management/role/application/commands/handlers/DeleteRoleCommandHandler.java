@@ -4,7 +4,6 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.application.commands.commands.DeleteRoleCommand;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
@@ -70,8 +69,8 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
         Role role = roleRepository.findById(command.getId())
                 .orElseThrow(() -> {
                     log.warn("Role with id: {} not found.", command.getId());
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Delete Role", "Role with id: " + command.getId() + " not found.")
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Delete Role", "Role with id: " + command.getId() + " not found."
                     );
                 });
         role.setStatus(Status.DELETED);

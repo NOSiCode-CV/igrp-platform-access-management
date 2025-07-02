@@ -4,7 +4,6 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.department.application.commands.commands.PostDepartmentCommand;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Department;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
@@ -85,16 +84,16 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
         department.setApplicationId(applicationRepository.findById(command.getDepartmentdto().getApplication_id())
                 .orElseThrow(() -> {
                     logger.warn("Invalid application ID: {}", departmentDto.getApplication_id());
-                    return new IgrpResponseStatusException(new IgrpProblem<String>
-                            (HttpStatus.BAD_REQUEST, "Invalid application ID", null));
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.BAD_REQUEST, "Invalid application ID", null);
                 }));
 
         if(departmentDto.getParent_id() != null) {
             Department parent = departmentRepository.findById(command.getDepartmentdto().getParent_id())
                     .orElseThrow(() -> {
                         logger.warn("Invalid parent ID: {}", departmentDto.getParent_id());
-                        return new IgrpResponseStatusException(new IgrpProblem<String>
-                                (HttpStatus.BAD_REQUEST, "Invalid department ID", null));
+                        return IgrpResponseStatusException.of(
+                                HttpStatus.BAD_REQUEST, "Invalid department ID", null);
                     });
             department.setParentId(parent);
         }

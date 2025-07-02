@@ -48,7 +48,7 @@ public class GetPermissionByIDQueryHandlerTest {
         IgrpResponseStatusException response = assertThrows(IgrpResponseStatusException.class, () -> underTest.handle(query));
 
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, response.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatus());
         verifyNoInteractions(permissionMapper);
     }
 

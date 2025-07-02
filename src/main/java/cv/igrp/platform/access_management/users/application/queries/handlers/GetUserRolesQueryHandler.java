@@ -2,7 +2,6 @@ package cv.igrp.platform.access_management.users.application.queries.handlers;
 
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
@@ -77,10 +76,10 @@ public class GetUserRolesQueryHandler implements QueryHandler<GetUserRolesQuery,
         IGRPUser user = userRepository.findById(query.getId())
                 .orElseThrow(() -> {
                     logger.warn("User not found with id={}", userId);
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                                    "Invalid User id",
-                                    "User not found with id: " + userId));
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND,
+                            "Invalid User id",
+                            "User not found with id: " + userId);
                 });
 
         List<Role> roles = Optional.ofNullable(user.getRoles()).orElse(Collections.emptyList());

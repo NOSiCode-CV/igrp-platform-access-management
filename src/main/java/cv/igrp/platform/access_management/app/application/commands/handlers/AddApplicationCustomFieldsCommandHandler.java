@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.app.application.commands.handlers;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.CustomField;
@@ -68,9 +67,7 @@ public class AddApplicationCustomFieldsCommandHandler implements CommandHandler<
    @IgrpCommandHandler
    public ResponseEntity<String> handle(AddApplicationCustomFieldsCommand command) {
       Application application = applicationRepository.findById(command.getId())
-              .orElseThrow(() -> {
-                 return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "Application not found", "Application not found for ID: " + command.getId()));
-              });
+              .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found for ID: " + command.getId()));
 
       CustomField customField = customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.APPLICATION.getName(), application.getId())
               .orElseGet(() -> {

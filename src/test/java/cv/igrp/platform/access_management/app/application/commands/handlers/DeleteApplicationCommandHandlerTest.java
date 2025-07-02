@@ -7,7 +7,6 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -16,8 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import cv.igrp.platform.access_management.app.application.commands.commands.*;
-import cv.igrp.platform.access_management.app.application.commands.handlers.*;
-import cv.igrp.platform.access_management.app.application.dto.*;
 
 import java.util.Optional;
 
@@ -63,10 +60,8 @@ public class DeleteApplicationCommandHandlerTest {
         when(applicationRepository.findById(applicationId)).thenReturn(Optional.empty());
 
         // Then
-        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> {
-            deleteApplicationCommandHandler.handle(command);
-        });
-        assertEquals(HttpStatus.NOT_FOUND, exception.getProblem().getStatus());
-        assertEquals("Application not found with id: 999", exception.getProblem().getDetails());
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> deleteApplicationCommandHandler.handle(command));
+        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
+        assertEquals("Application not found with id: 999", exception.getBody().getDetail());
     }
 }

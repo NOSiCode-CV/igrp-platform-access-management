@@ -46,7 +46,7 @@ public class DeleteRoleCommandHandlerTest {
                 () -> underTest.handle(command));
 
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
     }
 
     @Test
@@ -69,7 +69,8 @@ public class DeleteRoleCommandHandlerTest {
 
         // Then
         assertEquals(HttpStatus.NO_CONTENT, result.getStatusCode());
-        assertTrue(result.getBody());
+        assertNotNull(result);
+        assertEquals(true, result.getBody());
         assertEquals(Status.DELETED, role.getStatus());
         verify(roleRepository).save(role);
     }

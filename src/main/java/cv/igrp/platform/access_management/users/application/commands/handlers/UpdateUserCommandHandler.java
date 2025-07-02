@@ -2,7 +2,6 @@ package cv.igrp.platform.access_management.users.application.commands.handlers;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
 import jakarta.persistence.EntityNotFoundException;
@@ -75,10 +74,10 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
         IGRPUser user = userRepository.findById(command.getId())
                 .orElseThrow(() -> {
                     logger.warn("User with id={} not found", userId);
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                                    "Invalid User Id",
-                                    "User not found with id: " + userId));
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND,
+                            "Invalid User Id",
+                            "User not found with id: " + userId);
                     });
 
         IGRPUserDTO dto = command.getIgrpuserdto();

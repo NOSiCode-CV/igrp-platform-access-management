@@ -6,12 +6,10 @@ import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
-import org.springframework.context.event.EventListener;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import cv.igrp.platform.access_management.app.application.queries.queries.GetApplicationsByUserQuery;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**

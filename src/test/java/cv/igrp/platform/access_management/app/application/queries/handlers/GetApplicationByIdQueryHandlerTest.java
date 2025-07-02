@@ -11,7 +11,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.Appl
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,7 +29,7 @@ public class GetApplicationByIdQueryHandlerTest {
 
     private GetApplicationByIdQueryHandler getApplicationByIdQueryHandler;
 
-    private ApplicationMapper applicationMapper = new ApplicationMapper();
+    private final ApplicationMapper applicationMapper = new ApplicationMapper();
 
     @BeforeEach
     void setUp() {
@@ -59,6 +58,7 @@ public class GetApplicationByIdQueryHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertEquals(id, response.getBody().getId());
         assertEquals("Sample App", response.getBody().getName());
         assertEquals("APP001", response.getBody().getCode());
@@ -78,7 +78,7 @@ public class GetApplicationByIdQueryHandlerTest {
                 () -> getApplicationByIdQueryHandler.handle(query)
         );
 
-        assertEquals(HttpStatus.NOT_FOUND, exception.getProblem().getStatus());
-        assertEquals("Application not found", exception.getProblem().getTitle());
+        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
+        assertEquals("Application not found", exception.getBody().getTitle());
     }
 }

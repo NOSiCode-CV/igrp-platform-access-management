@@ -8,7 +8,7 @@ import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
-//import cv.igrp.platform.iam.core.adapter.IAdapter;
+import cv.igrp.framework.auth.core.adapter.IAdapter;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.slf4j.Logger;
@@ -30,17 +30,17 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
    private final NotificationAdapter<SendNotificationResponseDTO> notificationAdapter;
    private final IGRPUserRepository userRepository;
    private final IGRPUserMapper userMapper;
-   //private final IAdapter adapter;
+   private final IAdapter adapter;
 
    public InviteUserCommandHandler(NotificationAdapter<SendNotificationResponseDTO> notificationAdapter,
                                    IGRPUserRepository userRepository,
-                                   IGRPUserMapper userMapper
-                                   /*IAdapter adapter*/
+                                   IGRPUserMapper userMapper,
+                                   IAdapter adapter
    ) {
       this.notificationAdapter = notificationAdapter;
       this.userRepository = userRepository;
       this.userMapper = userMapper;
-      //this.adapter = adapter;
+      this.adapter = adapter;
    }
 
    @IgrpCommandHandler
@@ -58,10 +58,9 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
       var savedUser = userRepository.save(user);
 
-      // TODO: wait create user implementation in Adapter
-      //adapter.createUser(user);
-
       try {
+
+         adapter.createUser(user);
 
          LOGGER.info("Inviting new user: username={}, email={}", dto.getUsername(), dto.getEmail());
 

@@ -83,8 +83,9 @@ class GetResourceByIdQueryHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(query));
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
-        assertTrue(ex.getProblem().getDetails().toString().contains("999"));
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
+        assertNotNull(ex.getBody().getDetail());
+        assertTrue(ex.getBody().getDetail().contains("999"));
 
         // Verify
         verify(resourceRepository, times(1)).findById(999);

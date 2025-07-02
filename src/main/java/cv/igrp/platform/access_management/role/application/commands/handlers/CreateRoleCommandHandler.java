@@ -7,7 +7,6 @@ import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Department;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
@@ -80,14 +79,14 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
         Department department = departmentRepository.findById(command.getRoledto().getDepartmentId())
                 .orElseThrow(() -> {
                     log.warn("Department with id: {} not found.", command.getRoledto().getDepartmentId());
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Create Role", "Department with id: " + command.getRoledto().getDepartmentId() + " not found.")
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Create Role", "Department with id: " + command.getRoledto().getDepartmentId() + " not found."
                     );
                 });
         ResourceValidationResponse roleValidationResponse = RoleValidator.validateRoleDto(command.getRoledto(), department);
         if(!roleValidationResponse.isValid()){
-            throw new IgrpResponseStatusException(
-                    new IgrpProblem<>(HttpStatus.CONFLICT, "Create Role", roleValidationResponse.getFailureMessage())
+            throw IgrpResponseStatusException.of(
+                    HttpStatus.CONFLICT, "Create Role", roleValidationResponse.getFailureMessage()
             );
         }
 
@@ -96,8 +95,8 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
             parentRole = roleRepository.findByIdAndStatusNot(parentRoleId, Status.DELETED)
                     .orElseThrow(() -> {
                         log.warn("Parent Role with id: {} not found.", command.getRoledto().getParentId());
-                        return new IgrpResponseStatusException(
-                                new IgrpProblem<>(HttpStatus.NOT_FOUND, "Create Role", "Parent Role with id: " + parentRoleId + " not found.")
+                        return IgrpResponseStatusException.of(
+                                HttpStatus.NOT_FOUND, "Create Role", "Parent Role with id: " + parentRoleId + " not found."
                         );
                     });
         }

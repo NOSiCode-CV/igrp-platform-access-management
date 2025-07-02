@@ -9,12 +9,10 @@ import cv.igrp.platform.access_management.shared.domain.models.Department;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.DepartmentRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -61,7 +59,7 @@ public class CreateRoleCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
     }
 
     @Test
@@ -89,7 +87,7 @@ public class CreateRoleCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
     }
 
     @Test
@@ -159,7 +157,7 @@ public class CreateRoleCommandHandlerTest {
                 () -> underTest.handle(command));
 
         //... Then
-        assertEquals(HttpStatus.BAD_REQUEST, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getBody().getStatus());
         verify(roleRepository, never()).findByIdAndStatusNot(any(), any());
         verify(roleRepository, never()).save(any());
     }

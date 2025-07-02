@@ -1,7 +1,6 @@
 package cv.igrp.platform.access_management.app.application.commands.handlers;
 
 import cv.igrp.framework.core.domain.CommandHandler;
-import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.domain.models.Application;

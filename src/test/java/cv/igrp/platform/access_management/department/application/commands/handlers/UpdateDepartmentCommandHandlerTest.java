@@ -109,7 +109,7 @@ public class UpdateDepartmentCommandHandlerTest {
 
         // Assert
         assertNotNull(exception);
-        assertEquals("Department not found with id: " + command.getId(), exception.getProblem().getDetails());
+        assertEquals("Department not found with id: " + command.getId(), exception.getBody().getDetail());
 
         // Verify
         verify(departmentRepository, times(1)).findById(DEPARTMENT_ID);

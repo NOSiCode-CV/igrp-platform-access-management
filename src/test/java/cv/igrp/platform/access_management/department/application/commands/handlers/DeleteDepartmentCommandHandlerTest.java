@@ -69,7 +69,7 @@ public class DeleteDepartmentCommandHandlerTest {
                 deleteDepartmentCommandHandler.handle(command));
 
         // Assert
-        assertEquals("Department not found with id: " + DEPARTMENT_ID, exception.getProblem().getDetails());
+        assertEquals("Department not found with id: " + DEPARTMENT_ID, exception.getBody().getDetail());
 
         // Verify
         verify(departmentRepository).existsById(DEPARTMENT_ID);

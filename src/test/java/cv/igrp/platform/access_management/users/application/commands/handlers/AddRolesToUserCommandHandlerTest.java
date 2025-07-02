@@ -112,7 +112,7 @@ public class AddRolesToUserCommandHandlerTest {
 
         // Assert
         assertNotNull(exception);
-        assertEquals("User not found with id: " + USER_ID, exception.getProblem().getDetails());
+        assertEquals("User not found with id: " + USER_ID, exception.getBody().getDetail());
 
         // Verify
         verify(userRepository, times(1)).findById(USER_ID);
@@ -133,7 +133,7 @@ public class AddRolesToUserCommandHandlerTest {
 
         // Assert
         assertNotNull(exception);
-        assertEquals("Role not found with id: " + ROLE_ID, exception.getProblem().getDetails());
+        assertEquals("Role not found with id: " + ROLE_ID, exception.getBody().getDetail());
 
         // Verify
         verify(userRepository, times(1)).findById(USER_ID);

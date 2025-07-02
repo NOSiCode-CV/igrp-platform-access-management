@@ -63,7 +63,7 @@ public class AddPermissionsCommandHandlerTest {
                 () -> underTest.handle(command));
 
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
     }
 
     @Test
@@ -87,7 +87,7 @@ public class AddPermissionsCommandHandlerTest {
                 () -> underTest.handle(command));
 
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
     }
 
     @Test
@@ -130,8 +130,9 @@ public class AddPermissionsCommandHandlerTest {
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertNotNull(result.getBody());
         assertEquals(1, result.getBody().size());
-        assertEquals(activePermissionId, result.getBody().get(0).getId());
+        assertEquals(activePermissionId, result.getBody().getFirst().getId());
 
         assertTrue(role.getPermissions().contains(activePermission));
         assertFalse(role.getPermissions().contains(deletedPermission));
@@ -184,9 +185,10 @@ public class AddPermissionsCommandHandlerTest {
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
+        assertNotNull(result.getBody());
         assertEquals(1, result.getBody().size());
-        assertEquals(permissionDTO, result.getBody().get(0));
-        assertEquals(activePermissionId, result.getBody().get(0).getId());
+        assertEquals(permissionDTO, result.getBody().getFirst());
+        assertEquals(activePermissionId, result.getBody().getFirst().getId());
 
         verify(roleRepository).save(savedRole);
         verify(roleRepository, times(1)).save(savedRole);
@@ -223,8 +225,9 @@ public class AddPermissionsCommandHandlerTest {
         ResponseEntity<List<PermissionDTO>> result = underTest.handle(command);
 
         // Then
+        assertNotNull(result.getBody());
         assertEquals(1, result.getBody().size());
-        assertEquals(permissionDTO, result.getBody().get(0));
+        assertEquals(permissionDTO, result.getBody().getFirst());
         assertEquals(1, savedRole.getPermissions().size());
 
         verify(roleRepository).save(savedRole);
