@@ -23,15 +23,15 @@ RUN mkdir unpacked && \
 
 # Build native image with proper classpath
 RUN native-image \
-    --no-fallback \
-    -cp "unpacked/classes:$(echo unpacked/lib/*.jar | tr ' ' ':')" \
-    -H:Name=access-management \
-    -H:Class=cv.igrp.platform.access_management.IgrpPlatformAccessManagementApplication \
-    -H:+UnlockExperimentalVMOptions \
-    -H:ServiceLoaderFeatureExcludeServices=org.hibernate.bytecode.spi.BytecodeProvider \
-    -H:ClassInitialization=org.hibernate.validator.internal.engine:build_time \
-    -H:+ReportExceptionStackTraces \
-    --initialize-at-run-time=org.apache.logging.log4j.*,ch.qos.logback.*,org.jboss.logging.*,org.apache.commons.logging.*
+      --no-fallback \
+      -cp "unpacked/classes:$(echo unpacked/lib/*.jar | tr ' ' ':')" \
+      -H:Name=access-management \
+      -H:Class=cv.igrp.platform.access_management.IgrpPlatformAccessManagementApplication \
+      -H:+UnlockExperimentalVMOptions \
+      -H:ServiceLoaderFeatureExcludeServices=org.hibernate.bytecode.spi.BytecodeProvider \
+      -H:ClassInitialization=org.hibernate.validator.internal.engine:build_time \
+      -H:+ReportExceptionStackTraces \
+      --initialize-at-run-time=org.apache.logging.log4j,org.apache.logging.log4j.status,org.apache.logging.log4j.spi,ch.qos.logback.classic,org.jboss.logging,org.apache.commons.logging
 
 # --- Runtime stage using scratch ---
 FROM scratch
