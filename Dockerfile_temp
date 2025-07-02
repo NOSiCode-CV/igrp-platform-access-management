@@ -21,7 +21,7 @@ RUN mkdir unpacked && \
     cp -r BOOT-INF/classes . && \
     cp BOOT-INF/lib/*.jar lib/
 
-# Build native image with proper classpath
+# Build native image with proper classpath (last line no trailing backslash)
 RUN native-image \
     --no-fallback \
     -cp "unpacked/classes:$(echo unpacked/lib/*.jar | tr ' ' ':')" \
@@ -70,28 +70,19 @@ RUN native-image \
     -H:ClassInitialization=org.apache.logging.log4j.util.LoaderUtil:run_time \
     -H:ClassInitialization=org.apache.logging.log4j.util.PropertySource$Util:run_time \
     -H:ClassInitialization=org.apache.logging.log4j.util.OsgiServiceLocator:run_time \
-    -H:ClassInitialization=org.apache.logging.log4j.util.StackLocatorUtil:run_time \
+    -H:ClassInitialization=org.apache.logging.log4j.util.StackLocatorUtil:run_time
 
 # --- Runtime stage using scratch ---
 FROM scratch
 
-# Set working directory
 WORKDIR /app
 
-# Copy native binary from build stage
-COPY --from=build /app/target/access-management /app/access-management
+COPY --from=build /app/access-management /app/access-management
 
-# Copy any additional resources your app may need (if any)
-# COPY --from=build /app/target/classes /app/classes
-
-# Expose service port
 EXPOSE ${SERVICE_PORT}
 
-# Set environment variables
 ENV OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME}
 ENV OTEL_COLLECTOR_ENDPOINT=${OTEL_COLLECTOR_ENDPOINT}
 ENV SPRING_ACTIVE_PROFILE=${SPRING_ACTIVE_PROFILE}
 
-# Run the native binary
 ENTRYPOINT ["/app/access-management"]
-
