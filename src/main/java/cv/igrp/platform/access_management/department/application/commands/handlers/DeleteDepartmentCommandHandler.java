@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.department.application.commands.handl
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.department.application.commands.commands.DeleteDepartmentCommand;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.DepartmentRepository;
 import org.slf4j.Logger;
@@ -59,8 +58,8 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
 
         if (!departmentRepository.existsById(id)) {
             logger.warn("Department with id={} not found", id);
-            throw new IgrpResponseStatusException(new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                    "Invalid Department ID", "Department not found with id: " + id));
+            throw IgrpResponseStatusException.of(HttpStatus.NOT_FOUND,
+                    "Invalid Department ID", "Department not found with id: " + id);
         }
 
         departmentRepository.deleteById(id);

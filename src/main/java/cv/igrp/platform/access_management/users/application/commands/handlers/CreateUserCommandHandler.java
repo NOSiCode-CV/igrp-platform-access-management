@@ -4,11 +4,10 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import java.util.ArrayList;
 
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
-import cv.igrp.platform.iam.core.adapter.IAdapter;
-import cv.igrp.platform.iam.core.exception.IAMException;
+import cv.igrp.framework.auth.core.adapter.IAdapter;
+import cv.igrp.framework.auth.core.exception.IAMException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -86,11 +85,11 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
             adapter.createUser(user);
         } catch (IAMException e) {
             logger.error(e.getMessage(), e);
-            throw new IgrpResponseStatusException(new IgrpProblem<>(
+            throw IgrpResponseStatusException.of(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "User Creation Failed",
                     e.getMessage()
-            ));
+            );
         }
 
         var savedUser = userRepository.save(user);

@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.resource.application.commands.handler
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.CustomField;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
@@ -77,10 +76,10 @@ public class RemoveResourceCustomFieldsCommandHandler implements
               .findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resourceId)
               .orElseThrow(() -> {
                  logger.warn("CustomField not found for resource ID: {}", resourceId);
-                 return new IgrpResponseStatusException(
-                         new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                                 "CustomField not found",
-                                 "CustomField not found for Resource ID: " + resourceId));
+                 return IgrpResponseStatusException.of(
+                         HttpStatus.NOT_FOUND,
+                         "CustomField not found",
+                         "CustomField not found for Resource ID: " + resourceId);
               });
 
       Map<String, Object> fields = Optional.ofNullable(customField.getFields()).orElse(new HashMap<>());

@@ -20,7 +20,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
-import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -52,7 +51,7 @@ public class GetRolesByPermissionIDQueryHandlerTest {
         IgrpResponseStatusException response = assertThrows(IgrpResponseStatusException.class, () -> underTest.handle(query));
 
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, response.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatus());
     }
 
     @Test
@@ -72,7 +71,7 @@ public class GetRolesByPermissionIDQueryHandlerTest {
 
         //... Then
         verifyNoInteractions(roleMapper);
-        assertEquals(HttpStatus.NOT_FOUND, response.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatus());
     }
 
     @Test

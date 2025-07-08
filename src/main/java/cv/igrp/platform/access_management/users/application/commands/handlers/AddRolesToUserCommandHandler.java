@@ -2,7 +2,6 @@ package cv.igrp.platform.access_management.users.application.commands.handlers;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.RoleRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
@@ -82,17 +81,17 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
         IGRPUser user = userRepository.findById(userId)
                 .orElseThrow(() -> {
                     logger.warn("User not found with id={}", userId);
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND,"Invalid User id",
-                                    "User not found with id: " + userId));
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND,"Invalid User id",
+                            "User not found with id: " + userId);
                 });
 
         Role roleToAdd = roleRepository.findById(roleId)
                 .orElseThrow(() -> {
                     logger.warn("Role not found with id={}", roleId);
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Invalid Role id",
-                                    "Role not found with id: " + roleId));
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Invalid Role id",
+                            "Role not found with id: " + roleId);
                     });
 
         Set<IGRPUser> users = roleToAdd.getUsers();

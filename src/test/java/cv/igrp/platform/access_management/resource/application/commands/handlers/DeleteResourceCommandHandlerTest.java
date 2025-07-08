@@ -81,8 +81,9 @@ public class DeleteResourceCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> deleteResourceCommandHandler.handle(command));
 
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
-        assertTrue(ex.getProblem().getTitle().contains("Resource not found"));
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
+        assertNotNull(ex.getBody().getTitle());
+        assertTrue(ex.getBody().getTitle().contains("Resource not found"));
     }
 
     @Test

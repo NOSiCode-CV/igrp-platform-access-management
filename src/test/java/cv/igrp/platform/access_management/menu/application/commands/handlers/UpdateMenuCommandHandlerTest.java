@@ -46,8 +46,8 @@ public class UpdateMenuCommandHandlerTest {
     @InjectMocks
     private UpdateMenuCommandHandler updateMenuCommandHandler;
 
-    private UpdateMenuCommand updateMenuCommand(MenuEntryDTO menuentrydto, Integer id) {
-        return new UpdateMenuCommand(menuentrydto, id);
+    private UpdateMenuCommand updateMenuCommand(MenuEntryDTO menuentrydto) {
+        return new UpdateMenuCommand(menuentrydto, 1);
     }
 
     private MenuEntry existingMenu;
@@ -82,7 +82,7 @@ public class UpdateMenuCommandHandlerTest {
         application = new Application();
         parentMenu = new MenuEntry();
 
-        command = updateMenuCommand(dto, 1);
+        command = updateMenuCommand(dto);
     }
 
     @Test
@@ -124,8 +124,10 @@ public class UpdateMenuCommandHandlerTest {
                 updateMenuCommandHandler.handle(command));
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
-        assertTrue(ex.getProblem().getDetails().toString().contains("Menu not found"));
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
+
+        assertNotNull(ex.getBody().getProperties());
+        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Menu not found"));
 
         // Verify
         verify(menuEntryRepository, times(1)).findById(1);
@@ -144,8 +146,10 @@ public class UpdateMenuCommandHandlerTest {
                 updateMenuCommandHandler.handle(command));
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
-        assertTrue(ex.getProblem().getDetails().toString().contains("Parent MenuEntry not found"));
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
+
+        assertNotNull(ex.getBody().getProperties());
+        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Parent MenuEntry not found"));
 
         // Verify
         verify(menuEntryRepository, times(1)).findById(1);
@@ -167,8 +171,10 @@ public class UpdateMenuCommandHandlerTest {
                 updateMenuCommandHandler.handle(command));
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
-        assertTrue(ex.getProblem().getDetails().toString().contains("Application not found"));
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
+
+        assertNotNull(ex.getBody().getProperties());
+        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Application not found"));
 
         // Verify
         verify(menuEntryRepository, times(1)).findById(1);
@@ -190,8 +196,10 @@ public class UpdateMenuCommandHandlerTest {
                 updateMenuCommandHandler.handle(command));
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
-        assertTrue(ex.getProblem().getDetails().toString().contains("Resource not found"));
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
+
+        assertNotNull(ex.getBody().getProperties());
+        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Resource not found"));
 
         // Verify
         verify(menuEntryRepository, times(1)).findById(1);

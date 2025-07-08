@@ -7,7 +7,6 @@ import cv.igrp.platform.access_management.permission.domain.service.PermissionMa
 import cv.igrp.platform.access_management.permission.domain.service.PermissionValidator;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
@@ -84,15 +83,15 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
         Application foundApplication = applicationRepository.findById(command.getPermissiondto().getApplicationId())
                 .orElseThrow(() -> {
                     log.warn("Application with id {} not found.", command.getPermissiondto().getApplicationId());
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Create Permission", "Application with id: " + command.getPermissiondto().getApplicationId() + " not found.")
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Create Permission", "Application with id: " + command.getPermissiondto().getApplicationId() + " not found."
                     );
                 });
         ResourceValidationResponse validationResponse = PermissionValidator.validatePermissionName(command.getPermissiondto(), foundApplication);
         if (!validationResponse.isValid()) {
             log.warn("Invalid Permission Dto with name {}.", command.getPermissiondto().getName());
-            throw new IgrpResponseStatusException(
-                    new IgrpProblem<>(HttpStatus.CONFLICT, "Create Permission", validationResponse.getFailureMessage()));
+            throw IgrpResponseStatusException.of(
+                    HttpStatus.CONFLICT, "Create Permission", validationResponse.getFailureMessage());
         }
         Permission newPermission = permissionMapper.mapDtoToEntity(request, foundApplication);
         Permission savedPermission = repository.save(newPermission);

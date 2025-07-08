@@ -2,7 +2,6 @@ package cv.igrp.platform.access_management.users.application.commands.handlers;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
@@ -72,10 +71,10 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
       IGRPUser user = userRepository.findById(command.getId())
               .orElseThrow(() -> {
                  logger.warn("User not found with id={}", userId);
-                 return new IgrpResponseStatusException(
-                         new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                                 "Invalid User id",
-                                 "User not found with id: " + userId));
+                 return IgrpResponseStatusException.of(
+                         HttpStatus.NOT_FOUND,
+                         "Invalid User id",
+                         "User not found with id: " + userId);
                    });
 
       if (roleIdsToRemove != null && !roleIdsToRemove.isEmpty()) {

@@ -30,9 +30,8 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
     private RemoveResourceCustomFieldsCommandHandler handler;
 
     private RemoveResourceCustomFieldsCommand removeResourceCustomFieldsCommand(
-            List<String> removeResourceCustomFieldsRequest,
-            Integer resourceId){
-        return new RemoveResourceCustomFieldsCommand(removeResourceCustomFieldsRequest, resourceId);
+            List<String> removeResourceCustomFieldsRequest){
+        return new RemoveResourceCustomFieldsCommand(removeResourceCustomFieldsRequest, 123);
     }
 
     private RemoveResourceCustomFieldsCommand command;
@@ -40,7 +39,7 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
 
     @BeforeEach
     void setUp() {
-        command = removeResourceCustomFieldsCommand(List.of("field1","field2"), 123);
+        command = removeResourceCustomFieldsCommand(List.of("field1","field2"));
 
         Map<String, Object> existingFields = new HashMap<>();
         existingFields.put("field1", "value1");
@@ -78,7 +77,7 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
     @DisplayName("should skip removal if keys list is null")
     void testHandle_whenRemoveKeysIsNull_shouldSkipRemoval() {
         // Arrange
-        command = removeResourceCustomFieldsCommand(null, 123);
+        command = removeResourceCustomFieldsCommand(null);
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123))
                 .thenReturn(Optional.of(customField));
 
@@ -127,8 +126,8 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
                 () -> handler.handle(command));
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, exception.getProblem().getStatus());
-        assertEquals("CustomField not found", exception.getProblem().getTitle());
+        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
+        assertEquals("CustomField not found", exception.getBody().getTitle());
 
         // Verify
         verify(customFieldRepository).findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123);

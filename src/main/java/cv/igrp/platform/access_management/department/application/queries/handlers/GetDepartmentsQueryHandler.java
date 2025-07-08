@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.department.application.queries.handle
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import jakarta.persistence.criteria.Join;
@@ -118,10 +117,10 @@ public class GetDepartmentsQueryHandler implements QueryHandler<GetDepartmentsQu
             return DepartmentStatus.valueOf(status);
         } catch (IllegalArgumentException ex) {
             logger.warn("Invalid status provided: '{}'", status);
-            throw new IgrpResponseStatusException(
-                    new IgrpProblem<>(HttpStatus.BAD_REQUEST,
+            throw IgrpResponseStatusException.of(
+                    HttpStatus.BAD_REQUEST,
                             "Invalid department status",
-                            "No department status found with name: " + status)
+                            "No department status found with name: " + status
             );
         }
     }

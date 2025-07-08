@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.resource.application.queries.handlers
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
@@ -20,8 +19,7 @@ import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
  * <p>
  * This handler uses the {@link ResourceRepository} to fetch the {@link Resource} entity,
  * and converts it to a DTO using {@link ResourceMapper}. If the resource is not found,
- * it throws a structured {@link IgrpResponseStatusException} with a {@link IgrpProblem}
- * describing the error.
+ * it throws a structured {@link IgrpResponseStatusException} describing the error.
  * </p>
  *
  * @see Resource
@@ -67,10 +65,10 @@ public class GetResourceByIdQueryHandler implements
       Resource resource = resourceRepository.findById(resourceId)
               .orElseThrow(() -> {
                  logger.warn("Resource not found with ID: {}", resourceId);
-                 return new IgrpResponseStatusException(
-                         new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                                 "Resource not found",
-                                 "Resource not found with id: " + resourceId));
+                 return IgrpResponseStatusException.of(
+                         HttpStatus.NOT_FOUND,
+                         "Resource not found",
+                         "Resource not found with id: " + resourceId);
               });
 
       logger.info("Resource found with ID: {}", resourceId);

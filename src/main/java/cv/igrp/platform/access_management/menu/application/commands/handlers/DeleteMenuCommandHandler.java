@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.menu.application.commands.handlers;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
@@ -21,8 +20,7 @@ import cv.igrp.platform.access_management.menu.application.commands.commands.Del
  * to {@code DELETED} instead of physically removing it from the database.
  * </p>
  *
- * It throws an {@link IgrpResponseStatusException} with an {@link IgrpProblem} if the specified
- * menu entry is not found.
+ * It throws an {@link IgrpResponseStatusException} if menu entry is not found.
  *
  */
 @Service
@@ -57,8 +55,8 @@ public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuComman
         MenuEntry menuEntry = menuEntryRepository.findById(command.getId())
                 .orElseThrow(() -> {
                         logger.warn("Menu entry with id {} not found", command.getId());
-                        return new IgrpResponseStatusException(
-                        new IgrpProblem<>(HttpStatus.NOT_FOUND, "Menu not found", "Menu not found with id: " + command.getId()));
+                        return IgrpResponseStatusException.of(
+                        HttpStatus.NOT_FOUND, "Menu not found", "Menu not found with id: " + command.getId());
                 });
 
         menuEntry.setStatus(Status.DELETED);

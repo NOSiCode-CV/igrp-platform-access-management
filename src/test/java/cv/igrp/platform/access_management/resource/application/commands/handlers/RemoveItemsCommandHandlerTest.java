@@ -129,7 +129,7 @@ public class RemoveItemsCommandHandlerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(resourceDTO, response.getBody());
         assertEquals(2, resource.getItems().size());
-        assertEquals(1, resource.getItems().get(0).getId());
+        assertEquals(1, resource.getItems().getFirst().getId());
 
         // Verify
         verify(resourceRepository, times(1)).findById(1);
@@ -149,7 +149,7 @@ public class RemoveItemsCommandHandlerTest {
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, exception.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
 
         // Verify
         verify(resourceRepository, times(1)).findById(999);

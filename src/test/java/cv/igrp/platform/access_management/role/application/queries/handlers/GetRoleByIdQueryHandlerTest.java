@@ -48,7 +48,7 @@ public class GetRoleByIdQueryHandlerTest {
         IgrpResponseStatusException response = assertThrows(IgrpResponseStatusException.class, () -> underTest.handle(query));
 
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, response.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatus());
     }
 
     @Test
@@ -73,7 +73,7 @@ public class GetRoleByIdQueryHandlerTest {
         IgrpResponseStatusException response = assertThrows(IgrpResponseStatusException.class, () -> underTest.handle(query));
 
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, response.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatus());
 
         verify(roleRepository, times(1)).findByIdAndStatusNot(roleId, Status.DELETED);
         verify(roleMapper, times(0)).mapToDto(savedRole);
@@ -104,6 +104,7 @@ public class GetRoleByIdQueryHandlerTest {
 
         //... Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertNotNull(response.getBody());
         assertEquals(roleId, response.getBody().getId());
         assertNotNull(response.getBody());
         assertEquals(expectedDto.getName(), response.getBody().getName());

@@ -67,7 +67,8 @@ class GetResourceCustomFieldsQueryHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> handler.handle(query));
 
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
-        assertTrue(ex.getProblem().getTitle().contains("CustomField not found"));
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
+        assertNotNull(ex.getBody().getTitle());
+        assertTrue(ex.getBody().getTitle().contains("CustomField not found"));
     }
 }

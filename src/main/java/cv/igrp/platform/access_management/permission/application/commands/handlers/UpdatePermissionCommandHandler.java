@@ -7,7 +7,6 @@ import cv.igrp.platform.access_management.permission.domain.service.PermissionMa
 import cv.igrp.platform.access_management.permission.domain.service.PermissionValidator;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
@@ -87,22 +86,22 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
         Permission foundPermission = permissionRepository.findByIdAndStatusNot(command.getId(), DELETED)
                 .orElseThrow(() -> {
                     log.warn("Permission with id: {} not found", command.getId());
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Update Permission", "Permission with id: " + command.getId() + " not found.")
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Update Permission", "Permission with id: " + command.getId() + " not found."
                     );
                 });
         Application application = applicationRepository.findById(command.getPermissiondto().getApplicationId())
                 .orElseThrow(() -> {
                     log.warn("Application with id: {} not found", command.getPermissiondto().getApplicationId());
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Update Permission", "Application with id: " + command.getId() + " not found.")
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Update Permission", "Application with id: " + command.getId() + " not found."
                     );
                 });
         ResourceValidationResponse validationResponse = PermissionValidator.validatePermissionName(command.getPermissiondto(), application);
         if (!validationResponse.isValid()) {
             log.warn("Invalid Permission Dto with id {}.", command.getId());
-            throw new IgrpResponseStatusException(
-                    new IgrpProblem<>(HttpStatus.CONFLICT, "Update Permission", validationResponse.getFailureMessage()));
+            throw IgrpResponseStatusException.of(
+                    HttpStatus.CONFLICT, "Update Permission", validationResponse.getFailureMessage());
         }
         PermissionDTO newData = command.getPermissiondto();
         foundPermission.setName(newData.getName());

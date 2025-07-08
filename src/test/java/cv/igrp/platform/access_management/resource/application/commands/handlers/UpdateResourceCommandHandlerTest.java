@@ -102,8 +102,10 @@ public class UpdateResourceCommandHandlerTest {
                 () -> handler.handle(command));
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, exception.getProblem().getStatus());
-        assertTrue(exception.getProblem().getDetails().toString().contains("Resource not found"));
+        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
+
+        assertNotNull(exception.getBody().getProperties());
+        assertTrue(exception.getBody().getProperties().getOrDefault("details", "").toString().contains("Resource not found"));
 
         // Verify
         verify(resourceRepository, times(1)).findById(99);

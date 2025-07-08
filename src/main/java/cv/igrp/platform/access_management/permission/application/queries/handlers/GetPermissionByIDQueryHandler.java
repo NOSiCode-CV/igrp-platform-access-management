@@ -6,7 +6,6 @@ import cv.igrp.platform.access_management.permission.application.queries.queries
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.PermissionRepository;
@@ -66,8 +65,8 @@ public class GetPermissionByIDQueryHandler implements QueryHandler<GetPermission
         Permission foundPermission = permissionRepository.findByIdAndStatusNot(query.getId(), Status.DELETED)
                 .orElseThrow(() -> {
                     log.warn("Permission with ID {} not found.", query.getId());
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Get Permission By ID", "Permission with id: " + query.getId() + " not found.")
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Get Permission By ID", "Permission with id: " + query.getId() + " not found."
                     );
                 });
         PermissionDTO responseDto = permissionMapper.mapToDTO(foundPermission);

@@ -48,12 +48,12 @@ public class UpdateUserCommandHandlerTest {
         user = new IGRPUser();
         user.setId(USER_ID);
         user.setName("Old Name");
-        user.setUsername("olduser");
+        user.setUsername("oldUser");
         user.setEmail("old@example.com");
 
         dto = new IGRPUserDTO();
         dto.setName("New Name");
-        dto.setUsername("newuser");
+        dto.setUsername("newUser");
         dto.setEmail("new@example.com");
 
         command = updateUserCommand(dto, USER_ID);
@@ -76,7 +76,7 @@ public class UpdateUserCommandHandlerTest {
         assertEquals(dto, response.getBody());
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("New Name", user.getName());
-        assertEquals("newuser", user.getUsername());
+        assertEquals("newUser", user.getUsername());
         assertEquals("new@example.com", user.getEmail());
 
         // Verify
@@ -98,8 +98,8 @@ public class UpdateUserCommandHandlerTest {
                 updateUserCommandHandler.handle(command));
 
         // Assert
-        assertNotNull(exception);
-        assertEquals("User not found with id: " + USER_ID, exception.getProblem().getDetails());
+        assertNotNull(exception.getBody().getProperties());
+        assertEquals("User not found with id: " + USER_ID, exception.getBody().getProperties().get("details"));
 
         // Verify
         verify(userRepository, times(1)).findById(USER_ID);
@@ -129,7 +129,7 @@ public class UpdateUserCommandHandlerTest {
         assertNotNull(response);
         assertNotNull(response.getBody());
         assertEquals("updated@example.com", user.getEmail());
-        assertEquals("olduser", user.getUsername());
+        assertEquals("oldUser", user.getUsername());
         assertEquals("Old Name", user.getName());
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
@@ -158,7 +158,7 @@ public class UpdateUserCommandHandlerTest {
 
         // Assert
         assertEquals("Old Name", user.getName());
-        assertEquals("olduser", user.getUsername());
+        assertEquals("oldUser", user.getUsername());
         assertEquals("old@example.com", user.getEmail());
         assertEquals(HttpStatus.OK, response.getStatusCode());
 

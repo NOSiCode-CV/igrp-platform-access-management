@@ -36,7 +36,7 @@ public class GetUserRolesQueryHandlerTest {
     @InjectMocks
     private GetUserRolesQueryHandler getUserRolesQueryHandler;
 
-    private GetUserRolesQuery getUserRolesQuery(Integer applicationId, Integer id){
+    private GetUserRolesQuery getUserRolesQuery(Integer id){
      return new GetUserRolesQuery(1, id);
     }
 
@@ -77,7 +77,7 @@ public class GetUserRolesQueryHandlerTest {
         when(roleMapper.mapToDto(role1)).thenReturn(roleDto1);
         when(roleMapper.mapToDto(role2)).thenReturn(roleDto2);
 
-        query = getUserRolesQuery(1,USER_ID);
+        query = getUserRolesQuery(USER_ID);
 
         // Act
         ResponseEntity<List<RoleDTO>> response = getUserRolesQueryHandler.handle(query);
@@ -105,7 +105,7 @@ public class GetUserRolesQueryHandlerTest {
         user.setRoles(Collections.unmodifiableList(new ArrayList<>()));
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
-        query = getUserRolesQuery(1,USER_ID);
+        query = getUserRolesQuery(USER_ID);
 
         // Act
         ResponseEntity<List<RoleDTO>> response = getUserRolesQueryHandler.handle(query);
@@ -127,14 +127,14 @@ public class GetUserRolesQueryHandlerTest {
         // Arrange
         when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
-        query = getUserRolesQuery(1,USER_ID);
+        query = getUserRolesQuery(USER_ID);
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
                 getUserRolesQueryHandler.handle(query));
         // Assert
-        assertNotNull(exception);
-        assertEquals("User not found with id: " + USER_ID, exception.getProblem().getDetails());
+        assertNotNull(exception.getBody().getProperties());
+        assertEquals("User not found with id: " + USER_ID, exception.getBody().getProperties().get("details"));
 
         // Verify
         verify(userRepository, times(1)).findById(USER_ID);
@@ -151,7 +151,7 @@ public class GetUserRolesQueryHandlerTest {
         when(roleMapper.mapToDto(role1)).thenReturn(roleDto1);
         when(roleMapper.mapToDto(role2)).thenReturn(null);
 
-        query = getUserRolesQuery(1,USER_ID);
+        query = getUserRolesQuery(USER_ID);
 
         // Act
         ResponseEntity<List<RoleDTO>> response = getUserRolesQueryHandler.handle(query);

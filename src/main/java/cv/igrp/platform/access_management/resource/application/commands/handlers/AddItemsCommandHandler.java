@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.resource.application.commands.handler
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
@@ -80,20 +79,20 @@ public class AddItemsCommandHandler implements CommandHandler<AddItemsCommand, R
 
        Resource resource = resourceRepository.findById(command.getId())
               .orElseThrow(() -> {logger.warn("Resource not found with id: {}", command.getId());
-                 return new IgrpResponseStatusException(
-                         new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                                 "Resource not found",
-                                 "Resource not found with id: " + command.getId()));
+                 return IgrpResponseStatusException.of(
+                         HttpStatus.NOT_FOUND,
+                         "Resource not found",
+                         "Resource not found with id: " + command.getId());
               });
       List<ResourceItem> items = command.getResourceitemdto().stream()
               .map(dto -> {
                   Permission permission = permissionRepository.findById(dto.getPermissionId())
                           .orElseThrow(() -> {
                               logger.warn("Permission not found with id: {}", dto.getPermissionId());
-                              return new IgrpResponseStatusException(
-                                      new IgrpProblem<>(HttpStatus.NOT_FOUND,
-                                              "Permission not found",
-                                              "Permission not found with id: " + dto.getPermissionId()));
+                              return IgrpResponseStatusException.of(
+                                      HttpStatus.NOT_FOUND,
+                                      "Permission not found",
+                                      "Permission not found with id: " + dto.getPermissionId());
                           });
                   return resourceMapper.toItemEntity(dto, resource, permission);
               })

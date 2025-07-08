@@ -4,8 +4,6 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
-import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
@@ -34,7 +32,6 @@ import cv.igrp.platform.access_management.menu.application.commands.commands.Cre
  * <p>
  * If any of the referenced foreign key relationships (application, resource, or parent menu) are invalid,
  * the handler throws a {@link cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException}
- * with a descriptive {@link cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem} payload.
  * </p>
  *
  */
@@ -91,8 +88,8 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
         MenuEntryDTO menuEntryDTO = command.getMenuentrydto();
         if (menuEntryDTO == null) {
             logger.warn("Create menu failed: Menu Entry DTO is missing");
-            throw new IgrpResponseStatusException(
-                    new IgrpProblem<>(HttpStatus.BAD_REQUEST, "Menu", "Menu Entry DTO Missing"));
+            throw IgrpResponseStatusException.of(
+                    HttpStatus.BAD_REQUEST, "Menu", "Menu Entry DTO Missing");
         }
 
         MenuEntry menuEntry = menuEntryMapper.toEntity(menuEntryDTO);
@@ -101,27 +98,27 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
             menuEntry.setApplicationId(applicationRepository.findById(menuEntryDTO.getApplicationId())
                     .orElseThrow(() -> {
                         logger.warn("Application not found with ID: {}", menuEntryDTO.getApplicationId());
-                        return new IgrpResponseStatusException(
-                                new IgrpProblem<>(HttpStatus.NOT_FOUND, "Application not found",
-                                        "Application not found with id: " + menuEntryDTO.getApplicationId()));
+                        return IgrpResponseStatusException.of(
+                                HttpStatus.NOT_FOUND, "Application not found",
+                                        "Application not found with id: " + menuEntryDTO.getApplicationId());
                     }));
         }
         if (menuEntryDTO.getResourceId() != null) {
             menuEntry.setResourceId(resourceRepository.findById(menuEntryDTO.getResourceId())
                     .orElseThrow(() -> {
                         logger.warn("Resource not found with ID: {}", menuEntryDTO.getResourceId());
-                        return new IgrpResponseStatusException(
-                                new IgrpProblem<>(HttpStatus.NOT_FOUND, "Resource not found",
-                                        "Resource not found with id: " + menuEntryDTO.getResourceId()));
+                        return IgrpResponseStatusException.of(
+                                HttpStatus.NOT_FOUND, "Resource not found",
+                                        "Resource not found with id: " + menuEntryDTO.getResourceId());
                     }));
         }
         if (menuEntryDTO.getParentId() != null) {
             menuEntry.setParentId(menuEntryRepository.findById(menuEntryDTO.getParentId())
                     .orElseThrow(() -> {
                         logger.warn("Parent menu not found with ID: {}", menuEntryDTO.getParentId());
-                        return new IgrpResponseStatusException(
-                                new IgrpProblem<>(HttpStatus.NOT_FOUND, "ParentMenu not found",
-                                        "ParentMenu not found with id: " + menuEntryDTO.getParentId()));
+                        return IgrpResponseStatusException.of(
+                                HttpStatus.NOT_FOUND, "ParentMenu not found",
+                                        "ParentMenu not found with id: " + menuEntryDTO.getParentId());
                     }));
         }
 

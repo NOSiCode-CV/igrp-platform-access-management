@@ -15,7 +15,6 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 import java.net.URI;
 import java.util.Optional;
@@ -50,7 +49,7 @@ public class UpdateApplicationCommandHandlerTest {
         //... When
         IgrpResponseStatusException response = assertThrows(IgrpResponseStatusException.class, () -> underTest.handle(command));
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, response.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatus());
     }
 
     @Test
@@ -64,7 +63,7 @@ public class UpdateApplicationCommandHandlerTest {
         String applicationNewSlug = "new-slug";
         String applicationOwner = "admin";
         String applicationPreviousPicture = "logo.png";
-        String applicationPreviousUrl = "http://old-url.com";
+        String applicationPreviousUrl = "https://old-url.com";
         String applicationPreviousSlug = "old-slug";
 
         Application existingApp = new Application();
@@ -108,7 +107,7 @@ public class UpdateApplicationCommandHandlerTest {
         });
 
         // When
-        ResponseEntity<ApplicationDTO> response = underTest.handle(command);
+        underTest.handle(command);
 
         // Then
         verify(applicationRepository).save(appCaptor.capture());

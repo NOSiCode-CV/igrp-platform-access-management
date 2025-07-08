@@ -46,7 +46,7 @@ public class DeletePermissionCommandHandlerTest {
                 () -> underTest.handle(command));
 
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, response.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatus());
     }
 
     @Test

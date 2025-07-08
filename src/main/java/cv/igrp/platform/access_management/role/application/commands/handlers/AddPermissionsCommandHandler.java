@@ -6,7 +6,6 @@ import cv.igrp.platform.access_management.permission.domain.service.PermissionMa
 import cv.igrp.platform.access_management.role.application.commands.commands.AddPermissionsCommand;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
@@ -85,14 +84,14 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
 
         if (permissionList.isEmpty()) {
             log.warn("No permission available from given set: {} ", command.getAddPermissionsRequest().stream().toList());
-            throw new IgrpResponseStatusException(new IgrpProblem<>(HttpStatus.NOT_FOUND, "Permissions not found", permissionIdList));
+            throw IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Permissions not found", permissionIdList);
         }
 
         Role foundRole = roleRepository.findByIdAndStatusNot(command.getId(), Status.DELETED)
                 .orElseThrow(() -> {
                     log.warn("Role with id: {} not found.", command.getId());
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Add Permission", "Role with id: " + command.getId() + " not found.")
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Add Permission", "Role with id: " + command.getId() + " not found."
                     );
                 });
         foundRole.getPermissions().addAll(permissionList);

@@ -6,7 +6,6 @@ import cv.igrp.platform.access_management.permission.domain.service.PermissionMa
 import cv.igrp.platform.access_management.role.application.commands.commands.RemovePermissionsCommand;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.domain.models.Role;
@@ -39,7 +38,6 @@ import java.util.List;
  * @see PermissionDTO
  * @see Status
  * @see IgrpResponseStatusException
- * @see IgrpProblem
  *
  */
 @Slf4j
@@ -80,8 +78,8 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
         Role foundRole = roleRepository.findByIdAndStatusNot(command.getId(), Status.DELETED)
                 .orElseThrow(() -> {
                     log.warn("Role with id: {} not found.", command.getId());
-                    return new IgrpResponseStatusException(
-                            new IgrpProblem<>(HttpStatus.NOT_FOUND, "Remove Permission By Role ID", "Role with id: " + command.getId() + " not found.")
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Remove Permission By Role ID", "Role with id: " + command.getId() + " not found."
                     );
                 });
         for (Integer permissionId : command.getRemovePermissionsRequest()) {

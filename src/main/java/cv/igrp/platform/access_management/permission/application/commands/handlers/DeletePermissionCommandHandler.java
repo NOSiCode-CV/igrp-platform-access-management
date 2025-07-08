@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.permission.application.commands.handl
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.PermissionRepository;
@@ -70,8 +69,8 @@ public class DeletePermissionCommandHandler implements CommandHandler<DeletePerm
       Permission permission = permissionRepository.findById(command.getId())
               .orElseThrow(() -> {
                  log.warn("Permission with id {} not found", command.getId());
-                 return new IgrpResponseStatusException(
-                         new IgrpProblem<>(HttpStatus.NOT_FOUND, "Delete Permission", "Permission with id: " + command.getId() + " not found.")
+                 return IgrpResponseStatusException.of(
+                        HttpStatus.NOT_FOUND, "Delete Permission", "Permission with id: " + command.getId() + " not found."
                  );
               });
       permission.setStatus(Status.DELETED);

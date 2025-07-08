@@ -32,9 +32,9 @@
 
         <!-- IGRP module versions -->
         <igrp.framework.version>0.0.1-alpha</igrp.framework.version>
-        <platform.iam.version>0.0.2-alpha</platform.iam.version>
+        <framework.auth.version>0.0.1-alpha</framework.auth.version>
         <filemanager.version>0.0.2-alpha</filemanager.version>
-        <notification.email.version>0.0.1-alpha-20250529.184648-2</notification.email.version>
+        <notification.email.version>0.0.1-alpha</notification.email.version>
     </properties>
 
     <dependencyManagement>
@@ -64,6 +64,7 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
@@ -159,14 +160,14 @@
             <version>${igrp.framework.version}</version>
         </dependency>
         <dependency>
-            <groupId>cv.igrp.platform</groupId>
-            <artifactId>iam-core</artifactId>
-            <version>${platform.iam.version}</version>
+            <groupId>cv.igrp.framework.auth</groupId>
+            <artifactId>core</artifactId>
+            <version>${framework.auth.version}</version>
         </dependency>
         <dependency>
-            <groupId>cv.igrp.platform</groupId>
-            <artifactId>iam-keycloak-spring-boot</artifactId>
-            <version>${platform.iam.version}</version>
+            <groupId>cv.igrp.framework.auth</groupId>
+            <artifactId>keycloak-spring-boot</artifactId>
+            <version>${framework.auth.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -209,7 +210,7 @@
         </dependency>
     </dependencies>
 
-        <repositories>
+    <repositories>
         <!-- IGRP Releases -->
         <repository>
             <id>igrp-releases</id>
@@ -269,6 +270,23 @@
         </pluginManagement>
         <plugins>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>21</source>
+                    <encoding>UTF-8</encoding>
+                    <annotationProcessorPaths>
+                        <path>
+                            <groupId>org.projectlombok</groupId>
+                            <artifactId>lombok</artifactId>
+                        </path>
+                    </annotationProcessorPaths>
+                    <compilerArgs>
+                        <arg>-parameters</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <executions>
@@ -286,20 +304,55 @@
                 <extensions>true</extensions>
                 <executions>
                     <execution>
-                        <id>build-native-image</id>
+                        <id>build-native</id>
                         <goals>
-                            <goal>build</goal>                   <!-- this is the native-image builder goal -->
+                            <goal>compile-no-fork
+                            </goal>                   <!-- this is the native-image builder goal -->
                         </goals>
                         <phase>package</phase>                <!-- run during mvn package -->
                     </execution>
                 </executions>
                 <configuration>
-                    <imageName>access-management</imageName>  <!-- optional: override binary name -->
+                    <imageName>${project.artifactId}</imageName>
                     <buildArgs>
-                        <buildArg>--static</buildArg>
-                        <buildArg>--libc=musl</buildArg>
-                        <buildArg>-O2</buildArg>
+
+                        <!-- Multi-platform -->
+                        <buildArg>${native.march}</buildArg>
+
+                        <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
+
+                        <!-- musl compatibility -->
+                        <!--<buildArg>-static</buildArg>-->
+                        <buildArg>--static-nolibc</buildArg>
+                        <!--<buildArg>-libc=musl</buildArg>-->
+                        <buildArg>-H:-CheckToolchain</buildArg>
+                        <buildArg>-H:+ReportUnsupportedElementsAtRuntime</buildArg>
+
+                        <!-- Core GraalVM settings -->
                         <buildArg>--no-fallback</buildArg>
+                        <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                        <buildArg>--enable-url-protocols=http,https</buildArg>
+
+                        <!-- Optimization settings -->
+                        <buildArg>-O1</buildArg>
+                        <buildArg>--gc=serial</buildArg>
+
+                        <!-- Memory settings -->
+                        <buildArg>-J-Xmx10g</buildArg>
+                        <buildArg>-J-Xms2g</buildArg>
+                        <buildArg>-R:MaxHeapSize=2G</buildArg>
+                        <buildArg>-H:NumberOfThreads=4</buildArg>
+
+                        <!-- Complete SLF4J and Logback initialization -->
+                        <buildArg>--initialize-at-build-time=org.slf4j</buildArg>
+                        <buildArg>--initialize-at-build-time=org.slf4j.helpers</buildArg>
+                        <buildArg>--initialize-at-build-time=ch.qos.logback</buildArg>
+
+                        <!-- Micrometer metrics (Spring Boot Actuator) -->
+                        <buildArg>--initialize-at-build-time=io.micrometer.core.instrument.binder.logging</buildArg>
+
+                        <!-- Verbose output for debugging -->
+                        <buildArg>--verbose</buildArg>
                     </buildArgs>
                 </configuration>
             </plugin>
@@ -365,5 +418,63 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <!-- Apple Silicon (M1/M2/M3/M4)-->
+        <profile>
+            <id>apple-silicon</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                    <arch>aarch64</arch>
+                </os>
+            </activation>
+            <properties>
+                <native.march>-march=native</native.march>
+            </properties>
+        </profile>
+
+        <!-- Linux & Mac ARM64 (builds for containers & cross-compiling) -->
+        <!-- This need to be built with a Mac Runner -->
+        <profile>
+            <id>target-arm64</id>
+            <activation>
+                <property>
+                    <name>build.target</name>
+                    <value>arm64</value>
+                </property>
+            </activation>
+            <properties>
+                <native.march>-march=armv8-a</native.march>
+            </properties>
+        </profile>
+
+        <!-- Linux AMD64 (builds for containers) -->
+        <profile>
+            <id>target-amd64</id>
+            <activation>
+                <property>
+                    <name>build.target</name>
+                    <value>amd64</value>
+                </property>
+            </activation>
+            <properties>
+                <native.march>-march=x86-64</native.march>
+            </properties>
+        </profile>
+
+        <!-- Default fallback -->
+        <profile>
+            <id>native-default</id>
+            <activation>
+                <property>
+                    <name>!build.target</name>
+                </property>
+            </activation>
+            <properties>
+                <native.march>-march=native</native.march>
+            </properties>
+        </profile>
+    </profiles>
 
 </project>

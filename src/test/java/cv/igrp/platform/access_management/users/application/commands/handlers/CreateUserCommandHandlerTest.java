@@ -2,6 +2,8 @@ package cv.igrp.platform.access_management.users.application.commands.handlers;
 
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
+
+import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
@@ -27,6 +29,10 @@ public class CreateUserCommandHandlerTest {
 
     @Mock
     IGRPUserMapper userMapper;
+
+    @Mock
+    @SuppressWarnings("unused")
+    IAdapter iAdapter;
 
     @InjectMocks
     private CreateUserCommandHandler createUserCommandHandler;

@@ -11,12 +11,10 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.Appl
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import cv.igrp.platform.access_management.app.application.commands.commands.*;
-import cv.igrp.platform.access_management.app.application.commands.handlers.*;
 import cv.igrp.platform.access_management.app.application.dto.*;
 
 import java.util.Arrays;
@@ -73,7 +71,7 @@ public class GetApplicationsByIdsCommandHandlerTest {
         assertNotNull(dtoList);
         assertEquals(2, dtoList.size());
 
-        ApplicationDTO dto1 = dtoList.get(0);
+        ApplicationDTO dto1 = dtoList.getFirst();
         assertEquals(app1.getId(), dto1.getId());
         assertEquals(app1.getName(), dto1.getName());
         assertEquals(app1.getUrl(), dto1.getUrl().toString());

@@ -144,7 +144,7 @@ public class CreateMenuCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> createMenuCommandHandler.handle(command));
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
     }
 
     @Test
@@ -160,7 +160,7 @@ public class CreateMenuCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> createMenuCommandHandler.handle(command));
 
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
     }
 
     @Test
@@ -175,6 +175,6 @@ public class CreateMenuCommandHandlerTest {
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> createMenuCommandHandler.handle(command));
         // Assert
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
     }
 }

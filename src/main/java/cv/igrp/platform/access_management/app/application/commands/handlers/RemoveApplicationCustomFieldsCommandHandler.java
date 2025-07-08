@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.app.application.commands.handlers;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
 import cv.igrp.platform.access_management.shared.domain.models.CustomField;
@@ -62,9 +61,7 @@ public class RemoveApplicationCustomFieldsCommandHandler implements CommandHandl
    public ResponseEntity<String> handle(RemoveApplicationCustomFieldsCommand command) {
       CustomField customField = customFieldRepository
               .findByTableNameAndRecordId(CustomFieldTableName.APPLICATION.getName(), command.getId())
-              .orElseThrow(() -> {
-                 return new IgrpResponseStatusException(new IgrpProblem<String>(HttpStatus.NOT_FOUND, "CustomField not found", "CustomField not found for Application ID: " + command.getId()));
-              });
+              .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "CustomField not found", "CustomField not found for Application ID: " + command.getId()));
       Map<String, Object> fields = customField.getFields();
       if (fields != null)
          command.getRemoveApplicationCustomFieldsRequest().forEach(fields::remove);

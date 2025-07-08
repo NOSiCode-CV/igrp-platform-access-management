@@ -55,7 +55,7 @@ public class GetPermissionsByRoleIdQueryHandlerTest {
                 () -> underTest.handle(query));
 
         //... Then
-        assertEquals(HttpStatus.NOT_FOUND, ex.getProblem().getStatus());
+        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
     }
 
     @Test
@@ -91,8 +91,9 @@ public class GetPermissionsByRoleIdQueryHandlerTest {
         ResponseEntity<List<PermissionDTO>> result = underTest.handle(query);
 
         // Then
+        assertNotNull(result.getBody());
         assertEquals(1, result.getBody().size());
-        assertEquals(activePermissionDTO, result.getBody().get(0));
+        assertEquals(activePermissionDTO, result.getBody().getFirst());
 
         verify(permissionMapper).mapToDTO(activePermission);
         verify(permissionMapper, never()).mapToDTO(deletedPermission);

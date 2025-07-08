@@ -5,7 +5,6 @@ import cv.igrp.platform.access_management.menu.application.queries.queries.GetMe
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.MenuEntryRepository;
@@ -17,12 +16,12 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 
 import java.util.Objects;
 import java.util.Optional;
 
-import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -105,9 +104,11 @@ public class GetMenuByIdQueryHandlerTest {
                 getMenuByIdQueryHandler.handle(query));
 
         // Assert
-        IgrpProblem<?> problem = ex.getProblem();
-        assertEquals(HttpStatus.NOT_FOUND, problem.getStatus());
-        assertTrue(problem.getDetails().toString().contains("Menu not found with id: 999"));
+        ProblemDetail problem = ex.getBody();
+        assertEquals(HttpStatus.NOT_FOUND.value(), problem.getStatus());
+
+        assertNotNull(problem.getProperties());
+        assertTrue(problem.getProperties().getOrDefault("details", "").toString().contains("Menu not found with id: 999"));
 
         // Verify
         verify(menuEntryRepository, times(1)).findById(999);

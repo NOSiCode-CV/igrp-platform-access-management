@@ -1,5 +1,4 @@
 package cv.igrp.platform.access_management.files.application.queries.handlers;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpProblem;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.filemanager.StorageService;
 import org.slf4j.Logger;
@@ -29,11 +28,11 @@ public class GetLinkQueryHandler implements QueryHandler<GetLinkQuery, ResponseE
        var file = query.getId();
 
        if(file == null) {
-           throw new IgrpResponseStatusException(new IgrpProblem<>(
+           throw IgrpResponseStatusException.of(
                    HttpStatus.BAD_REQUEST,
                    "No ID provided",
                    "There's no ID provided. Please check and try again."
-           ));
+           );
        }
 
        return ResponseEntity.ok(fileManagerService.getFileUrl(file));

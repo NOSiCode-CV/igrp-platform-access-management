@@ -2,7 +2,7 @@ package cv.igrp.platform.access_management.shared.domain.models;
 
 import cv.igrp.platform.access_management.shared.config.AuditEntity;
 import cv.igrp.framework.stereotype.IgrpEntity;
-import cv.igrp.platform.iam.core.model.UserIdentity;
+import cv.igrp.framework.auth.core.model.UserIdentity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
