@@ -1,0 +1,169 @@
+name: DEV Pipeline
+
+on:
+  push:
+    branches:
+      - deploy/base
+
+env:
+  REGISTRY_URL: ${{ secrets.REGISTRY_URL }}
+
+jobs:
+  build-base:
+    if: github.ref == 'refs/heads/deploy/base'
+    strategy:
+      matrix:
+        include:
+          - platform: linux/arm64
+            runner: ubuntu-24.04-arm
+            arch: arm64
+          - platform: linux/amd64
+            runner: ubuntu-latest
+            arch: amd64
+    runs-on: ${{ matrix.runner }}
+    env:
+      PROJECT: ${{ secrets.BASE_REGISTRY_PROJECT }}
+      IMAGE: access-management-api
+      TAG: ${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_URL }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          push: false
+          load: true
+          tags: ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-${{ matrix.arch }}
+          build-args: |
+            SPRING_ACTIVE_PROFILE=cicd
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Push individual architecture image
+        run: |
+          echo "Pushing image: ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-${{ matrix.arch }}"
+          docker push ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-${{ matrix.arch }}
+          echo "Push completed for ${{ matrix.arch }}"
+
+      - name: Verify image was pushed
+        run: |
+          echo "Verifying image exists in registry..."
+          docker pull ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-${{ matrix.arch }}
+          echo "Image successfully pulled back from registry"
+
+  create-manifest:
+    needs: build-base
+    runs-on: ubuntu-latest
+    env:
+      PROJECT: ${{ secrets.BASE_REGISTRY_PROJECT }}
+      IMAGE: access-management-api
+      TAG: ${{ github.run_id }}
+    steps:
+      - name: Log in to registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY_URL }}
+          username: ${{ secrets.REGISTRY_USERNAME }}
+          password: ${{ secrets.REGISTRY_PASSWORD }}
+
+      - name: Debug environment variables
+        run: |
+          echo "Registry URL: ${{ env.REGISTRY_URL }}"
+          echo "Project: ${{ env.PROJECT }}"
+          echo "Image: ${{ env.IMAGE }}"
+          echo "Tag: ${{ env.TAG }}"
+          echo "Full AMD64 image: ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-amd64"
+          echo "Full ARM64 image: ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-arm64"
+
+      - name: Verify individual images exist
+        run: |
+          echo "Checking if individual architecture images exist..."
+          echo "Checking AMD64 image..."
+          docker manifest inspect ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-amd64
+          echo "Checking ARM64 image..."
+          docker manifest inspect ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-arm64
+          echo "Both individual images exist!"
+
+      - name: Create multi-arch manifest
+        run: |
+          # Enable experimental features for manifest commands
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          
+          echo "Creating multi-arch manifest..."
+          docker manifest create \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }} \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-amd64 \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-arm64
+          
+          # Annotate the manifest with architecture info
+          docker manifest annotate \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }} \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-amd64 \
+            --arch amd64
+          
+          docker manifest annotate \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }} \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-arm64 \
+            --arch arm64
+          
+          # Inspect the manifest before pushing
+          echo "Manifest contents:"
+          docker manifest inspect ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}
+          
+          # Push the manifest
+          echo "Pushing multi-arch manifest..."
+          docker manifest push ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}
+          
+          # Verify the push worked
+          echo "Manifest pushed successfully! Final verification:"
+          docker manifest inspect ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}
+          
+          # Test pulling the multi-arch image
+          echo "Testing multi-arch pull..."
+          docker pull ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}
+          echo "Multi-arch image pulled successfully!"
+          
+          # Show final image info
+          docker images ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}
+
+      - name: Create and push latest tag
+        run: |
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          
+          echo "Creating latest tag manifest..."
+          docker manifest create \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:latest \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-amd64 \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-arm64
+          
+          # Annotate the latest manifest with architecture info
+          docker manifest annotate \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:latest \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-amd64 \
+            --arch amd64
+          
+          docker manifest annotate \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:latest \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-arm64 \
+            --arch arm64
+          
+          # Push the latest manifest
+          echo "Pushing latest tag..."
+          docker manifest push ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:latest
+          
+          # Verify latest tag works
+          echo "Verifying latest tag..."
+          docker manifest inspect ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:latest
+          echo "Latest tag created successfully!"
