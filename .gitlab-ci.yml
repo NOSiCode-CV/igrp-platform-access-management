@@ -23,11 +23,7 @@ build_docker_image_base_dev:
   only:
     - deploy/base
   script:
-    - docker buildx build \
-      --platform linux/amd64,linux/arm64 \
-      --push \
-      -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID \
-      -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:latest .
+    - docker buildx build --platform linux/amd64,linux/arm64 --push -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:latest .
 
 build_docker_image_base_temp_dev:
   stage: build
