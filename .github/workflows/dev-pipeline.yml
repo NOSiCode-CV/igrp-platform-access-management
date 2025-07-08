@@ -53,7 +53,15 @@ jobs:
 
       - name: Push individual architecture image
         run: |
+          echo "Pushing image: ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-${{ matrix.arch }}"
           docker push ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-${{ matrix.arch }}
+          echo "Push completed for ${{ matrix.arch }}"
+
+      - name: Verify image was pushed
+        run: |
+          echo "Verifying image exists in registry..."
+          docker pull ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-${{ matrix.arch }}
+          echo "Image successfully pulled back from registry"
 
   create-manifest:
     needs: build-base
@@ -70,10 +78,54 @@ jobs:
           username: ${{ secrets.REGISTRY_USERNAME }}
           password: ${{ secrets.REGISTRY_PASSWORD }}
 
+      - name: Debug environment variables
+        run: |
+          echo "Registry URL: ${{ env.REGISTRY_URL }}"
+          echo "Project: ${{ env.PROJECT }}"
+          echo "Image: ${{ env.IMAGE }}"
+          echo "Tag: ${{ env.TAG }}"
+          echo "Full AMD64 image: ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-amd64"
+          echo "Full ARM64 image: ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-arm64"
+
+      - name: Verify individual images exist
+        run: |
+          echo "Checking if individual architecture images exist..."
+          echo "Checking AMD64 image..."
+          docker manifest inspect ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-amd64
+          echo "Checking ARM64 image..."
+          docker manifest inspect ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-arm64
+          echo "Both individual images exist!"
+
       - name: Create multi-arch manifest
         run: |
+          # Enable experimental features for manifest commands
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          
+          echo "Creating multi-arch manifest..."
           docker manifest create \
             ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }} \
             ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-amd64 \
             ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-arm64
+          
+          # Annotate the manifest with architecture info
+          docker manifest annotate \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }} \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-amd64 \
+            --arch amd64
+          
+          docker manifest annotate \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }} \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-arm64 \
+            --arch arm64
+          
+          # Inspect the manifest before pushing
+          echo "Manifest contents:"
+          docker manifest inspect ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}
+          
+          # Push the manifest
+          echo "Pushing multi-arch manifest..."
           docker manifest push ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}
+          
+          # Verify the push worked
+          echo "Manifest pushed successfully! Final verification:"
+          docker manifest inspect ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}
