@@ -32,9 +32,9 @@
 
         <!-- IGRP module versions -->
         <igrp.framework.version>0.0.1-alpha</igrp.framework.version>
-        <platform.iam.version>0.0.2-alpha</platform.iam.version>
+        <framework.auth.version>0.0.1-alpha</framework.auth.version>
         <filemanager.version>0.0.2-alpha</filemanager.version>
-        <notification.email.version>0.0.1-alpha-20250529.184648-2</notification.email.version>
+        <notification.email.version>0.0.1-alpha</notification.email.version>
     </properties>
 
     <dependencyManagement>
@@ -160,14 +160,14 @@
             <version>${igrp.framework.version}</version>
         </dependency>
         <dependency>
-            <groupId>cv.igrp.platform</groupId>
-            <artifactId>iam-core</artifactId>
-            <version>${platform.iam.version}</version>
+            <groupId>cv.igrp.framework.auth</groupId>
+            <artifactId>core</artifactId>
+            <version>${framework.auth.version}</version>
         </dependency>
         <dependency>
-            <groupId>cv.igrp.platform</groupId>
-            <artifactId>iam-keycloak-spring-boot</artifactId>
-            <version>${platform.iam.version}</version>
+            <groupId>cv.igrp.framework.auth</groupId>
+            <artifactId>keycloak-spring-boot</artifactId>
+            <version>${framework.auth.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
