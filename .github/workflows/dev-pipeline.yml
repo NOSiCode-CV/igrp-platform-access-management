@@ -129,3 +129,41 @@ jobs:
           # Verify the push worked
           echo "Manifest pushed successfully! Final verification:"
           docker manifest inspect ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}
+          
+          # Test pulling the multi-arch image
+          echo "Testing multi-arch pull..."
+          docker pull ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}
+          echo "Multi-arch image pulled successfully!"
+          
+          # Show final image info
+          docker images ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}
+
+      - name: Create and push latest tag
+        run: |
+          export DOCKER_CLI_EXPERIMENTAL=enabled
+          
+          echo "Creating latest tag manifest..."
+          docker manifest create \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:latest \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-amd64 \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-arm64
+          
+          # Annotate the latest manifest with architecture info
+          docker manifest annotate \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:latest \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-amd64 \
+            --arch amd64
+          
+          docker manifest annotate \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:latest \
+            ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:${{ env.TAG }}-arm64 \
+            --arch arm64
+          
+          # Push the latest manifest
+          echo "Pushing latest tag..."
+          docker manifest push ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:latest
+          
+          # Verify latest tag works
+          echo "Verifying latest tag..."
+          docker manifest inspect ${{ env.REGISTRY_URL }}/${{ env.PROJECT }}/${{ env.IMAGE }}:latest
+          echo "Latest tag created successfully!"
