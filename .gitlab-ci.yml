@@ -12,23 +12,23 @@ variables:
 stages:
   - build
 #  - deploy
-
-before_script:
-  # Show Docker info (helpful for debugging)
-  - docker info
-  # Register QEMU emulation for cross-building
-  - docker run --privileged --rm tonistiigi/binfmt --install all
-  # Create and switch to a new Buildx builder
-  - docker buildx create --name multiarch --driver docker-container --bootstrap
-  - docker buildx use multiarch
-
 build_docker_image_base_dev:
+  before_script:
+    - apk add --no-cache bash curl git qemu-user-static
+    - docker login -u "$REGISTRY_USERNAME" -p "$REGISTRY_PASSWORD" "$REGISTRY_URL"
+    - docker run --privileged --rm tonistiigi/binfmt --install all
+    - docker buildx create --name mybuilder --use
+    - docker buildx inspect --bootstrap
   stage: build
   only:
     - deploy/base
   script:
-    - docker login $REGISTRY_URL -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD"
-    - docker buildx build --platform $TARGETPLATFORMS -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID --push .
+    - docker buildx build \
+      --platform linux/amd64,linux/arm64 \
+      --push \
+      -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID \
+      -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:latest \
+      .
 
 build_docker_image_base_temp_dev:
   stage: build
