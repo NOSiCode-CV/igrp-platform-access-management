@@ -322,8 +322,8 @@
                         <buildArg>-H:+UnlockExperimentalVMOptions</buildArg>
 
                         <!-- musl compatibility -->
-                        <buildArg>--static</buildArg>
-                        <!--<buildArg>-static-nolibc</buildArg>-->
+                        <!--<buildArg>-static</buildArg>-->
+                        <buildArg>--static-nolibc</buildArg>
                         <buildArg>--libc=musl</buildArg>
                         <buildArg>-H:-CheckToolchain</buildArg>
                         <buildArg>-H:+ReportUnsupportedElementsAtRuntime</buildArg>

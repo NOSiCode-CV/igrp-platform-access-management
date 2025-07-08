@@ -35,33 +35,6 @@ RUN wget -q https://musl.libc.org/releases/musl-1.2.5.tar.gz \
 RUN ln -sf /usr/local/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc && \
     ln -sf /usr/local/bin/musl-gcc /usr/local/bin/aarch64-linux-musl-gcc
 
-# Download the proper JDK static-lib bundle
-ARG JDK_TAG=26+3-jvmci-b01
-RUN set -eux; \
-    # 1) Pick the right debug bundle & subpath
-    if [ "$TARGETPLATFORM" = "linux/arm64" ]; then \
-      ASSET="labsjdk-ce-${JDK_TAG}-debug-linux-aarch64.tar.gz"; \
-      SUBPATH="linux-aarch64"; \
-    else \
-      ASSET="labsjdk-ce-${JDK_TAG}-debug-linux-amd64.tar.gz"; \
-      SUBPATH="linux-amd64"; \
-    fi; \
-    # 2) Download & extract directly into the destination, stripping off
-    #    everything up through “lib/static/<arch>/musl”
-    DEST="/usr/lib64/graalvm/graalvm-community-java23/lib/static/${SUBPATH}/musl"; \
-    mkdir -p "${DEST}"; \
-    wget -q \
-      "https://github.com/graalvm/labs-openjdk/releases/download/${JDK_TAG}/${ASSET}" \
-      -O "/tmp/${ASSET}"; \
-    tar -xzf "/tmp/${ASSET}" \
-        --strip-components="$(tar -tzf /tmp/${ASSET} | \
-           head -n1 | sed 's|[^/]*/||; s|[^/]*/||; s|[^/]*/||; s|[^/]*/||; =')" \
-        -C "${DEST}" \
-        --wildcards "*/lib/static/${SUBPATH}/musl/*"; \
-    rm "/tmp/${ASSET}"
-
-
-
 # copy only what's needed for mvnw bootstrap
 COPY mvnw ./
 COPY .mvn/ .mvn/
@@ -103,9 +76,9 @@ RUN set -eux; \
     ls -lh target/access-management-upx
 
 # ===================================================================
-# Runtime stage: minimal static binary
-# =================================================================== #  gcr.io/distroless/base-nossl:nonroot #(for --static-nolibc )
-FROM gcr.io/distroless/static:nonroot
+# Runtime stage: minimal --static-nolibc binary
+# =================================================================== # gcr.io/distroless/static:nonroot  #(for --static )
+FROM gcr.io/distroless/base-nossl:nonroot
 
 ARG TARGETPLATFORM
 LABEL platform=${TARGETPLATFORM}
