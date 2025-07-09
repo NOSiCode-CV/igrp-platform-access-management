@@ -51,6 +51,9 @@ ENV JAVA_TOOL_OPTIONS="-Xmx12g -Xms4g"
 
 # version for UPX
 ARG UPX_VERSION=5.0.1
+ARG SPRING_ACTIVE_PROFILE=cicd
+
+ENV SPRING_ACTIVE_PROFILE=${SPRING_ACTIVE_PROFILE}
 
 # build native image and then UPX-compress it
 RUN set -eux; \
