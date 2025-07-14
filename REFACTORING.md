@@ -4,7 +4,7 @@
 
 | Version | Author            | Date       | Changes               |
 |---------|-------------------|------------|-----------------------|
-| 1.0.0   | @Marcelo.Monteiro | 2025-07-15 | Initial documentation |
+| 1.0.0   | @Marcelo.Monteiro | 2025-07-11 | Initial documentation |
 | ...     | ...               | ...        | ...                   |
 
 ## Table of Contents
@@ -34,7 +34,7 @@ graph TD
 2. Enhanced security for sensitive files
 3. Optimized CDN usage patterns
 
-## 2. Menu-Resource Relationship Changes
+## 2. Menu-Resource Relationship Changes, Default app and menus
 
 ```mermaid
 erDiagram
@@ -47,6 +47,29 @@ erDiagram
     PERMISSION {
         string name
     }
+```
+
+### Changes to Applications:
+```java
+public enum AppType {
+
+   // New: System type for default app 
+   SYSTEM(
+           "SYSTEM",
+           "System"
+   );
+
+   // keep the other types the same
+
+   private final String code;
+   private final String description;
+
+   AppType(String code, String description) {
+      this.code = code;
+      this.description = description;
+   }
+
+}
 ```
 
 ### Changes to MenuEntry:
@@ -66,7 +89,7 @@ public class MenuEntry {
 ```java
 public enum MenuEntryType {
 
-   // New: System Page for default pages 
+   // New: System Page for default menus 
    SYSTEM_PAGE(
            "SYSTEM_PAGE",
            "System Page"
@@ -93,14 +116,14 @@ public enum MenuEntryType {
 | `EXTERNAL_PAGE` | url             | Permission  |
 | `FOLDER`        | -               | Child menus |
 
-### Default system pages generation
-In a server running, check if all the default system menus are created, if not it will be created.
+### Default app and system pages generation
+In a server running, check if all the default system app and menus are created, if not they will be created.
 
 ### Benefits:
 1. Decouples menu structure from resources
 2. Simplifies menu management
 3. Allows more flexible navigation structures
-4. Allows the system menus to be managed by the API like the other menus instead of statically in App Center project
+4. Allows the system app and menus to be managed by the API like the other apps instead of statically in App Center project
 
 ## 3. Department-Centric Hierarchy
 
@@ -165,7 +188,7 @@ public class RoleDTO {
 -   private Integer departmentId;
 +   private String departmentCode;
 -   private Integer parentId;
-+   private String parentCode;
++   private String parentName;
 }
 
 public class DepartmentDTO {
