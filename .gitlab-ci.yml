@@ -21,7 +21,7 @@ build_docker_image_base_arm64_dev:
   only:
     - deploy/base
   script:
-    - docker buildx build --platform linux/arm64 --build-arg SPRING_ACTIVE_PROFILE=cicd --push -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api:arm64-latest .
+    - docker buildx build --platform linux/arm64 --build-arg SPRING_ACTIVE_PROFILE=cicd --push -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:arm64-latest .
 
 
 build_docker_image_base_dev:
