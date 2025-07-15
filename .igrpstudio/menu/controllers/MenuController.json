@@ -1,1 +1,189 @@
-{"type":"controller","name":"Menu","module":"menu","description":"Menu Management","basePath":"api","actions":[{"actionName":"getMenus","path":"menus","method":"GET","responses":{"200":{"description":"The List of the Menus","content":{"application/json":{"schema":{"type":"MenuEntryDTO","objectType":"dto","name":"data","collectionType":"list","module":"menu"}}}}},"requestParams":[{"type":"integer","name":"applicationId","description":"ID of the Application","isRequired":false},{"type":"string","name":"name","description":"Menu Name","isRequired":false},{"type":"string","name":"type","description":"Menu Type","isRequired":false},{"type":"string","name":"status","description":"Menu Status","isRequired":false},{"type":"string","name":"applicationCode","description":"Application Code","isRequired":false}]},{"actionName":"getMenuById","path":"menus/{id}","method":"GET","responses":{"200":{"description":"The Menu Data","content":{"application/json":{"schema":{"type":"MenuEntryDTO","name":"data","collectionType":"none"}}}}},"pathVariables":[{"name":"id","type":"integer","isRequired":true,"description":"The ID of  Menu"}]},{"actionName":"createMenu","path":"menus","method":"POST","requestBody":{"content":{"application/json":{"schema":{"type":"MenuEntryDTO","name":"menuEntry","objectType":"dto","module":"menu","description":"The Menu Entry Data"}}}},"responses":{"201":{"description":"The Persisted Menu","content":{"application/json":{"schema":{"type":"MenuEntryDTO","name":"data","collectionType":"none"}}}}}},{"actionName":"updateMenu","path":"menus/{id}","method":"PUT","requestBody":{"content":{"application/json":{"schema":{"type":"MenuEntryDTO","name":"undefined","objectType":"dto","module":"menu","description":"The Menu Data"}}}},"responses":{"200":{"description":"The Updated Menu","content":{"application/json":{"schema":{"type":"MenuEntryDTO","name":"data","collectionType":"none"}}}}},"pathVariables":[{"name":"id","type":"integer","isRequired":true,"description":"The ID of the Menu"}]},{"actionName":"deleteMenu","path":"menus/{id}","method":"DELETE","responses":{"204":{"description":"No Content","content":{"application/json":{"schema":{"type":"string","name":"data","collectionType":"none"}}}}},"pathVariables":[{"name":"id","type":"integer","isRequired":true,"description":"The ID of the Menu"}]}],"id":"tw5fo7aoed-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"}
+{
+  "type": "controller",
+  "name": "Menu",
+  "module": "menu",
+  "description": "Menu Management",
+  "basePath": "api",
+  "actions": [
+    {
+      "actionName": "getMenus",
+      "path": "menus",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "description": "The List of the Menus",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "menu"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "integer",
+          "name": "applicationId",
+          "description": "ID of the Application",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "name",
+          "description": "Menu Name",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "type",
+          "description": "Menu Type",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "status",
+          "description": "Menu Status",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "actionName": "getMenuById",
+      "path": "menus/{id}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "description": "The Menu Data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true,
+          "description": "The ID of  Menu"
+        }
+      ]
+    },
+    {
+      "actionName": "createMenu",
+      "path": "menus",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "MenuEntryDTO",
+              "name": "menuEntry",
+              "objectType": "dto",
+              "module": "menu",
+              "description": "The Menu Entry Data"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "The Persisted Menu",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "updateMenu",
+      "path": "menus/{id}",
+      "method": "PUT",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "MenuEntryDTO",
+              "name": "undefined",
+              "objectType": "dto",
+              "module": "menu",
+              "description": "The Menu Data"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The Updated Menu",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true,
+          "description": "The ID of the Menu"
+        }
+      ]
+    },
+    {
+      "actionName": "deleteMenu",
+      "path": "menus/{id}",
+      "method": "DELETE",
+      "responses": {
+        "204": {
+          "description": "No Content",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true,
+          "description": "The ID of the Menu"
+        }
+      ]
+    }
+  ],
+  "id": "tw5fo7aoed-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"
+}

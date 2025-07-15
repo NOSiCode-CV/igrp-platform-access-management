@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -35,4 +36,7 @@ public interface PermissionEntityRepository extends
      */
     Optional<PermissionEntity> findByIdAndStatusNot(Integer id, Status status);
 
+    Optional<PermissionEntity> findByName(String name);
+
+    List<PermissionEntity> findByMenuEntryId(MenuEntryEntity menuEntryId);
 }

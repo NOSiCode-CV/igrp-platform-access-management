@@ -2,13 +2,13 @@ package cv.igrp.platform.access_management.menu.mapper;
 
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import org.springframework.stereotype.Component;
 
 @Component
 public class MenuEntryMapper {
 
-    public MenuEntryDTO toDTO(MenuEntry entity) {
+    public MenuEntryDTO toDTO(MenuEntryEntity entity) {
         if (entity == null) return null;
 
         MenuEntryDTO dto = new MenuEntryDTO();
@@ -27,9 +27,6 @@ public class MenuEntryMapper {
         if (entity.getApplicationId() != null)
             dto.setApplicationId(entity.getApplicationId().getId());
 
-        if (entity.getResourceId() != null)
-            dto.setResourceId(entity.getResourceId().getId());
-
         dto.setCreatedBy(entity.getCreatedBy());
         if(entity.getCreatedDate() != null)
             dto.setCreatedDate(entity.getCreatedDate().toString());
@@ -40,10 +37,10 @@ public class MenuEntryMapper {
         return dto;
     }
 
-    public MenuEntry toEntity(MenuEntryDTO dto) {
+    public MenuEntryEntity toEntity(MenuEntryDTO dto) {
         if (dto == null) return null;
 
-        MenuEntry entity = new MenuEntry();
+        MenuEntryEntity entity = new MenuEntryEntity();
         entity.setId(dto.getId());
         entity.setName(dto.getName());
         entity.setType(dto.getType());
@@ -54,7 +51,7 @@ public class MenuEntryMapper {
         entity.setUrl(dto.getUrl());
 
         // parentId, applicationId, and resourceId should be set in the service layer using repositories
-        // like menuEntry.setParentId(menuRepo.findById(dto.getParentId()).orElse(null))
+        // like MenuEntryEntity.setParentId(menuRepo.findById(dto.getParentId()).orElse(null))
 
         return entity;
     }
