@@ -14,14 +14,14 @@ stages:
 #  - deploy
 build_docker_image_base_arm64_dev:
   before_script:
-    - docker login -u "$REGISTRY_USERNAME" -p "$REGISTRY_PASSWORD" "$REGISTRY_URL"
+    - docker login -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD" "$REGISTRY_URL"
   stage: build
   tags:
     - arm64
   only:
     - deploy/base
   script:
-    - docker buildx build --platform linux/arm64 --build-arg SPRING_ACTIVE_PROFILE=cicd --push -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:arm64-latest .
+    - docker buildx build --platform linux/arm64 --build-arg SPRING_ACTIVE_PROFILE=cicd --push -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api:arm64-latest .
 
 
 build_docker_image_base_dev:
@@ -29,11 +29,11 @@ build_docker_image_base_dev:
   only:
     - deploy/base
   script:
-    - docker login $REGISTRY_URL -u "$REGISTRY_USERNAME" -p "$REGISTRY_PASSWORD"
-    - docker build -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID .
-    - docker tag $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api:latest
-    - docker push $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID
-    - docker push $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api:latest
+    - docker login $REGISTRY_URL -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD"
+    - docker build -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID .
+    - docker tag $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:latest
+    - docker push $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID
+    - docker push $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:latest
 
 build_docker_image_base_temp_dev:
   stage: build
