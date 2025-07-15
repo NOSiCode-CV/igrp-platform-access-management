@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.models.Application;
-import cv.igrp.platform.access_management.shared.domain.models.CustomField;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ApplicationRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,7 +29,7 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
     private AddApplicationCustomFieldsCommandHandler addApplicationCustomFieldsCommandHandler;
 
     @Mock
-    private CustomFieldRepository customFieldRepository;
+    private CustomFieldEntityRepository customFieldRepository;
 
     @Mock
     private ApplicationRepository applicationRepository;
@@ -51,7 +51,7 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
         application.setId(applicationId);
         application.setName("Test Application");
 
-        CustomField newCustomField = new CustomField();
+        CustomFieldEntity newCustomField = new CustomFieldEntity();
         newCustomField.setTableName("t_application");
         newCustomField.setRecordId(applicationId);
         newCustomField.setFields(new HashMap<>());
@@ -66,7 +66,7 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
         // Then
         assertNotNull(response);
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
-        verify(customFieldRepository).save(any(CustomField.class));
+        verify(customFieldRepository).save(any(CustomFieldEntity.class));
     }
 
     @Test
@@ -81,7 +81,7 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
         application.setId(applicationId);
         application.setName("Test Application");
 
-        CustomField existingCustomField = new CustomField();
+        CustomFieldEntity existingCustomField = new CustomFieldEntity();
         existingCustomField.setTableName("t_application");
         existingCustomField.setRecordId(applicationId);
         existingCustomField.setFields(new HashMap<>(Map.of("field2", "value2")));

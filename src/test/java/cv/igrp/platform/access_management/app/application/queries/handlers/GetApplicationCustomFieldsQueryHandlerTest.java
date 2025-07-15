@@ -4,8 +4,8 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.domain.models.CustomField;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,7 +25,7 @@ public class GetApplicationCustomFieldsQueryHandlerTest {
     private GetApplicationCustomFieldsQueryHandler getApplicationCustomFieldsQueryHandler;
 
     @Mock
-    private CustomFieldRepository customFieldRepository;
+    private CustomFieldEntityRepository customFieldRepository;
 
     @Test
     void testHandleGetApplicationCustomFieldsQuery_Success() {
@@ -33,7 +33,7 @@ public class GetApplicationCustomFieldsQueryHandlerTest {
         Integer applicationId = 1;
         Map<String, Object> expectedFields = Map.of("key1", "value1", "key2", "value2");
 
-        CustomField customField = new CustomField();
+        CustomFieldEntity customField = new CustomFieldEntity();
         customField.setTableName("t_application");
         customField.setRecordId(applicationId);
         customField.setFields(expectedFields);
@@ -67,7 +67,7 @@ public class GetApplicationCustomFieldsQueryHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND.value(), thrown.getBody().getStatus());
         assertNotNull(thrown.getBody().getTitle());
-        assertTrue(thrown.getBody().getTitle().contains("CustomField not found"));
+        assertTrue(thrown.getBody().getTitle().contains("CustomFieldEntity not found"));
     }
 
 }

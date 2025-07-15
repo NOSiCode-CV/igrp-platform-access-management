@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.domain.models.CustomField;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -28,7 +28,7 @@ import java.util.Optional;
 public class AddResourceCustomFieldsCommandHandlerTest {
 
     @Mock
-    private CustomFieldRepository customFieldRepository;
+    private CustomFieldEntityRepository customFieldRepository;
 
     @Mock
     private ResourceRepository resourceRepository;
@@ -37,7 +37,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
     private AddResourceCustomFieldsCommandHandler handler;
 
     private Resource resource;
-    private CustomField customField;
+    private CustomFieldEntity customField;
     private AddResourceCustomFieldsCommand command;
 
     private AddResourceCustomFieldsCommand addResourceCustomFieldsCommand(Map<String, ?> addResourceCustomFieldsRequest, Integer id){
@@ -49,7 +49,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
         resource = new Resource();
         resource.setId(1);
 
-        customField = new CustomField();
+        customField = new CustomFieldEntity();
         customField.setRecordId(1);
         customField.setTableName("resource");
         customField.setFields(new HashMap<>());
@@ -64,7 +64,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
 
         when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 1)).thenReturn(Optional.of(customField));
-        when(customFieldRepository.save(any(CustomField.class))).thenReturn(customField);
+        when(customFieldRepository.save(any(CustomFieldEntity.class))).thenReturn(customField);
 
         // Act
         ResponseEntity<String> response = handler.handle(command);
@@ -89,7 +89,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
 
         when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 1)).thenReturn(Optional.empty());
-        when(customFieldRepository.save(any(CustomField.class))).thenReturn(customField);
+        when(customFieldRepository.save(any(CustomFieldEntity.class))).thenReturn(customField);
 
         // Act
         ResponseEntity<String> response = handler.handle(command);
@@ -99,7 +99,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
         assertTrue(customField.getFields().containsKey("fieldTest2"));
 
         // Verify
-        verify(customFieldRepository).save(any(CustomField.class));
+        verify(customFieldRepository).save(any(CustomFieldEntity.class));
     }
 
     @Test

@@ -4,9 +4,9 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.domain.models.CustomField;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,10 +22,10 @@ import java.util.Optional;
  * {@code AddResourceCustomFieldsCommandHandler} is responsible for handling the command
  * to add or update custom fields associated with a specific {@link Resource}.
  * <p>
- * This command handler ensures that a {@link CustomField} entity exists for the given resource.
+ * This command handler ensures that a {@link CustomFieldEntity} entity exists for the given resource.
  * If it does not exist, the handler creates and initializes it with an empty field map. Then, it updates
  * or adds the key-value pairs provided in the {@link AddResourceCustomFieldsCommand} to the custom field entity.
- * The result is persisted using the {@link CustomFieldRepository}.
+ * The result is persisted using the {@link CustomFieldEntityRepository}.
  * </p>
  * <p>
  * Custom fields are stored in a generic map structure and associated via a combination of table name
@@ -35,14 +35,14 @@ import java.util.Optional;
  * <p><b>Expected behavior:</b></p>
  * <ul>
  *   <li>If the resource ID is invalid, throws {@link IgrpResponseStatusException} with 404.</li>
- *   <li>If the {@code CustomField} for the resource does not exist, a new one is created.</li>
+ *   <li>If the {@code CustomFieldEntity} for the resource does not exist, a new one is created.</li>
  *   <li>The new fields provided in the command are merged with any existing fields.</li>
  * </ul>
  *
  * @see AddResourceCustomFieldsCommand
- * @see CustomFieldRepository
+ * @see CustomFieldEntityRepository
  * @see ResourceRepository
- * @see CustomField
+ * @see CustomFieldEntity
  * @see Resource
  */
 @Service
@@ -52,27 +52,27 @@ public class AddResourceCustomFieldsCommandHandler implements
     private static final Logger logger =
             LoggerFactory.getLogger(AddResourceCustomFieldsCommandHandler.class);
 
-   private final CustomFieldRepository customFieldRepository;
+   private final CustomFieldEntityRepository customFieldRepository;
    private final ResourceRepository resourceRepository;
 
     /**
      * Constructs a new {@code AddResourceCustomFieldsCommandHandler} with the required dependencies.
      *
-     * @param customFieldRepository the repository used to retrieve and persist {@link CustomField} entities
+     * @param customFieldRepository the repository used to retrieve and persist {@link CustomFieldEntity} entities
      * @param resourceRepository the repository used to retrieve {@link Resource} entities by ID
      */
    public AddResourceCustomFieldsCommandHandler(
-           CustomFieldRepository customFieldRepository,
+           CustomFieldEntityRepository customFieldRepository,
            ResourceRepository resourceRepository) {
       this.customFieldRepository = customFieldRepository;
       this.resourceRepository = resourceRepository;
    }
 
     /**
-     * Handles the {@link AddResourceCustomFieldsCommand} by updating or initializing a {@link CustomField}
+     * Handles the {@link AddResourceCustomFieldsCommand} by updating or initializing a {@link CustomFieldEntity}
      * record linked to the given {@link Resource} ID and storing the provided custom field values.
      *
-     * <p>If no {@code CustomField} is found for the given resource, a new one is created.
+     * <p>If no {@code CustomFieldEntity} is found for the given resource, a new one is created.
      * All provided fields are merged with existing values (if any).</p>
      *
      * @param command the command object containing the resource ID and custom field values to add
@@ -94,12 +94,12 @@ public class AddResourceCustomFieldsCommandHandler implements
                           "Resource not found for ID: " + resourceId);
               });
 
-      CustomField customField = customFieldRepository.findByTableNameAndRecordId(
+      CustomFieldEntity customField = customFieldRepository.findByTableNameAndRecordId(
               CustomFieldTableName.RESOURCE.getName(), resource.getId())
               .orElseGet(() -> {
                   logger.info("No custom field found for resource ID: {}. " +
-                          "Creating new CustomField entry.", resourceId);
-                  CustomField cf = new CustomField();
+                          "Creating new CustomFieldEntity entry.", resourceId);
+                  CustomFieldEntity cf = new CustomFieldEntity();
                   cf.setTableName(CustomFieldTableName.RESOURCE.getName());
                   cf.setRecordId(resource.getId());
                   cf.setFields(new HashMap<>());

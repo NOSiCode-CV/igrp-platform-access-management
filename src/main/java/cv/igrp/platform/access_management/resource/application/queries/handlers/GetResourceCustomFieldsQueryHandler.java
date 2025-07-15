@@ -4,8 +4,8 @@ import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.domain.models.CustomField;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -19,14 +19,14 @@ import java.util.Optional;
  * Query handler that retrieves custom fields associated with a specific ID.
  * <p>
  * This handler processes {@link GetResourceCustomFieldsQuery} queries by using the provided
- *  ID to fetch custom field metadata from the {@link CustomFieldRepository}.
+ *  ID to fetch custom field metadata from the {@link CustomFieldEntityRepository}.
  * If the record is found, the custom fields are returned as a key-value map. If not,
  * a {@link IgrpResponseStatusException} is thrown with a 404 NOT FOUND status.
  * </p>
  *
  * @see GetResourceCustomFieldsQuery
- * @see CustomField
- * @see CustomFieldRepository
+ * @see CustomFieldEntity
+ * @see CustomFieldEntityRepository
  * @see IgrpResponseStatusException
  */
 @Service
@@ -36,16 +36,16 @@ public class GetResourceCustomFieldsQueryHandler implements
    private static final Logger logger =
            LoggerFactory.getLogger(GetResourceCustomFieldsQueryHandler.class);
 
-   private final CustomFieldRepository customFieldRepository;
+   private final CustomFieldEntityRepository customFieldRepository;
 
    /**
     * Constructs the {@code GetResourceCustomFieldsQueryHandler} with the required dependency.
     *
-    * @param customFieldRepository the repository used to fetch {@link CustomField}
+    * @param customFieldRepository the repository used to fetch {@link CustomFieldEntity}
     *                              entries based on table name and record ID
     */
    public GetResourceCustomFieldsQueryHandler(
-           CustomFieldRepository customFieldRepository) {
+           CustomFieldEntityRepository customFieldRepository) {
       this.customFieldRepository = customFieldRepository;
    }
 
@@ -56,7 +56,7 @@ public class GetResourceCustomFieldsQueryHandler implements
     * @param query the query object containing the resource ID
     * @return a {@link ResponseEntity} containing the custom fields as a map of keys and values,
     *         or an empty map if no fields exist
-    * @throws IgrpResponseStatusException if no {@link CustomField} entry exists for the given ID
+    * @throws IgrpResponseStatusException if no {@link CustomFieldEntity} entry exists for the given ID
     */
    @IgrpQueryHandler
    public ResponseEntity<Map<String, ?>> handle(GetResourceCustomFieldsQuery query) {
@@ -64,14 +64,14 @@ public class GetResourceCustomFieldsQueryHandler implements
 
       logger.info("Fetching custom fields for resource ID: {}", resourceId);
 
-      CustomField customField = customFieldRepository
+      CustomFieldEntity customField = customFieldRepository
               .findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), query.getId())
               .orElseThrow(() -> {
                  logger.warn("No custom field found for resource ID: {}", resourceId);
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
-                         "CustomField not found",
-                         "CustomField not found for Resource ID: " + resourceId);
+                         "CustomFieldEntity not found",
+                         "CustomFieldEntity not found for Resource ID: " + resourceId);
               });
 
       logger.info("Custom fields successfully retrieved for resource ID: {}", resourceId);

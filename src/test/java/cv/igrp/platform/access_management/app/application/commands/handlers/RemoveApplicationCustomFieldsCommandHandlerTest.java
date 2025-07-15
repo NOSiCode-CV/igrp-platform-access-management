@@ -4,8 +4,8 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.domain.models.CustomField;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -24,7 +24,7 @@ import java.util.Optional;
 public class RemoveApplicationCustomFieldsCommandHandlerTest {
 
     @Mock
-    private CustomFieldRepository customFieldRepository;
+    private CustomFieldEntityRepository customFieldRepository;
 
     @InjectMocks
     private RemoveApplicationCustomFieldsCommandHandler removeApplicationCustomFieldsCommandHandler;
@@ -40,7 +40,7 @@ public class RemoveApplicationCustomFieldsCommandHandlerTest {
         existingFields.put("custom2", "value2");
         existingFields.put("custom3", "value3");
 
-        CustomField customField = new CustomField();
+        CustomFieldEntity customField = new CustomFieldEntity();
         customField.setId(10);
         customField.setTableName("t_application");
         customField.setRecordId(appId);
@@ -85,7 +85,7 @@ public class RemoveApplicationCustomFieldsCommandHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
         assertNotNull(ex.getBody().getTitle());
-        assertTrue(ex.getBody().getTitle().contains("CustomField not found"));
+        assertTrue(ex.getBody().getTitle().contains("CustomFieldEntity not found"));
 
         verify(customFieldRepository, never()).save(any());
     }

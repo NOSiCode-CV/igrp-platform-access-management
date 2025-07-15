@@ -5,9 +5,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.domain.models.CustomField;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -29,7 +29,7 @@ public class DeleteResourceCommandHandlerTest {
     private ResourceRepository resourceRepository;
 
     @Mock
-    private CustomFieldRepository customFieldRepository;
+    private CustomFieldEntityRepository customFieldRepository;
 
     @InjectMocks
     private DeleteResourceCommandHandler deleteResourceCommandHandler;
@@ -46,7 +46,7 @@ public class DeleteResourceCommandHandlerTest {
         resource.setId(resourceId);
         resource.setName("Resource 1");
 
-        CustomField customField = new CustomField();
+        CustomFieldEntity customField = new CustomFieldEntity();
         customField.setRecordId(resourceId);
 
         // Mocks
@@ -112,6 +112,6 @@ public class DeleteResourceCommandHandlerTest {
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
 
         verify(resourceRepository, times(1)).delete(resource);
-        verify(customFieldRepository, times(0)).delete(any(CustomField.class));
+        verify(customFieldRepository, times(0)).delete(any(CustomFieldEntity.class));
     }
 }

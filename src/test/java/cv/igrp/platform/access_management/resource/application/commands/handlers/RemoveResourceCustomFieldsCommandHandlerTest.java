@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.domain.models.CustomField;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -24,7 +24,7 @@ import java.util.*;
 public class RemoveResourceCustomFieldsCommandHandlerTest {
 
     @Mock
-    private CustomFieldRepository customFieldRepository;
+    private CustomFieldEntityRepository customFieldRepository;
 
     @InjectMocks
     private RemoveResourceCustomFieldsCommandHandler handler;
@@ -35,7 +35,7 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
     }
 
     private RemoveResourceCustomFieldsCommand command;
-    private CustomField customField;
+    private CustomFieldEntity customField;
 
     @BeforeEach
     void setUp() {
@@ -46,7 +46,7 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
         existingFields.put("field2", "value2");
         existingFields.put("field3", "value3");
 
-        customField = new CustomField();
+        customField = new CustomFieldEntity();
         customField.setRecordId(123);
         customField.setTableName(CustomFieldTableName.RESOURCE.getName());
         customField.setFields(existingFields);
@@ -127,7 +127,7 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
-        assertEquals("CustomField not found", exception.getBody().getTitle());
+        assertEquals("CustomFieldEntity not found", exception.getBody().getTitle());
 
         // Verify
         verify(customFieldRepository).findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123);

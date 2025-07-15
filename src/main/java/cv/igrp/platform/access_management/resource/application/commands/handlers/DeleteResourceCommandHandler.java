@@ -4,9 +4,9 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.domain.models.CustomField;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.domain.models.Resource;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.CustomFieldRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.ResourceRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,7 +20,7 @@ import java.util.Optional;
 /**
  * {@code DeleteResourceCommandHandler} is responsible for handling the deletion of a
  * {@link Resource} entity identified by its ID. If the resource exists, it will be removed from
- * the database. Additionally, any associated {@link CustomField} records will also be removed.
+ * the database. Additionally, any associated {@link CustomFieldEntity} records will also be removed.
  *
  * <p>This handler ensures consistency between the resource and its related metadata.
  * In case the resource is not found, a {@link IgrpResponseStatusException} is thrown
@@ -37,17 +37,17 @@ public class DeleteResourceCommandHandler implements
            LoggerFactory.getLogger(DeleteResourceCommandHandler.class);
 
    private final ResourceRepository resourceRepository;
-   private final CustomFieldRepository customFieldRepository;
+   private final CustomFieldEntityRepository customFieldRepository;
 
    /**
     * Constructs the {@code DeleteResourceCommandHandler} with the required repositories.
     *
     * @param resourceRepository      the repository used to access and delete {@link Resource} entities
-    * @param customFieldRepository   the repository used to access and delete {@link CustomField} entries
+    * @param customFieldRepository   the repository used to access and delete {@link CustomFieldEntity} entries
     */
    public DeleteResourceCommandHandler(
            ResourceRepository resourceRepository,
-           CustomFieldRepository customFieldRepository) {
+           CustomFieldEntityRepository customFieldRepository) {
       this.resourceRepository = resourceRepository;
       this.customFieldRepository = customFieldRepository;
    }
@@ -79,7 +79,7 @@ public class DeleteResourceCommandHandler implements
       resourceRepository.delete(resource);
       logger.info("Deleted resource with ID: {}", resourceId);
 
-      Optional<CustomField> customField = customFieldRepository
+      Optional<CustomFieldEntity> customField = customFieldRepository
               .findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resourceId);
 
       customField.ifPresent(field -> {
