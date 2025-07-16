@@ -46,11 +46,11 @@ public class FilesController {
   }
 
   @GetMapping(
-    value = "files/{id}/url"
+    value = "files/url"
   )
   @Operation(
-    summary = "GET method to handle operations for getFileUrl",
-    description = "GET method to handle operations for getFileUrl",
+    summary = "GET method to handle operations for getPrivateFileUrl",
+    description = "GET method to handle operations for getPrivateFileUrl",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -65,13 +65,13 @@ public class FilesController {
     }
   )
   
-  public ResponseEntity<FileUrlDTO> getFileUrl(
-    @PathVariable(value = "id") String id)
+  public ResponseEntity<FileUrlDTO> getPrivateFileUrl(
+    @RequestParam(value = "privateFilePath") String privateFilePath)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetFileUrlQuery(id);
+      final var query = new GetPrivateFileUrlQuery(privateFilePath);
 
       ResponseEntity<FileUrlDTO> response = queryBus.handle(query);
 

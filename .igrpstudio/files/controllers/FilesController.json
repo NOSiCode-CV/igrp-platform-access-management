@@ -6,8 +6,8 @@
   "basePath": "api",
   "actions": [
     {
-      "actionName": "getFileUrl",
-      "path": "files/{id}/url",
+      "actionName": "getPrivateFileUrl",
+      "path": "files/url",
       "method": "GET",
       "responses": {
         "200": {
@@ -25,10 +25,10 @@
           }
         }
       },
-      "pathVariables": [
+      "requestParams": [
         {
-          "name": "id",
           "type": "string",
+          "name": "privateFilePath",
           "isRequired": true
         }
       ]
