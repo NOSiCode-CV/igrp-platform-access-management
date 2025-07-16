@@ -1,7 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.service;
 
-import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,16 +19,16 @@ import static org.mockito.Mockito.*;
 public class ConfigurationServiceTest {
 
     @Mock
-    IGRPUserRepository userRepository;
+    IGRPUserEntityRepository userRepository;
 
     @InjectMocks
     private ConfigurationService configurationService;
 
-    private IGRPUser userEntity;
+    private IGRPUserEntity userEntity;
 
     @BeforeEach
     void setUp() {
-        userEntity = new IGRPUser();
+        userEntity = new IGRPUserEntity();
         userEntity.setId(1);
         userEntity.setName("iGRP Super Admin");
         userEntity.setUsername("superadmin");
@@ -41,14 +41,14 @@ public class ConfigurationServiceTest {
     void testHandle_whenValidCommand_shouldCreateSuperadminUser() {
         // Arrange: simulate that the user does not exist yet
         when(userRepository.findByUsername("superadmin")).thenReturn(Optional.empty());
-        when(userRepository.save(any(IGRPUser.class))).thenReturn(userEntity);
+        when(userRepository.save(any(IGRPUserEntity.class))).thenReturn(userEntity);
 
         // Act
         configurationService.createSuperAdminUser();
 
         // Assert
         verify(userRepository, times(1)).findByUsername("superadmin");
-        verify(userRepository, times(1)).save(any(IGRPUser.class));
+        verify(userRepository, times(1)).save(any(IGRPUserEntity.class));
         verifyNoMoreInteractions(userRepository); // removed userMapper
     }
 }

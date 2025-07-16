@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.global_configuration.application.comm
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.global_configuration.application.dto.GlobalConfigurationDTO;
 import cv.igrp.platform.access_management.global_configuration.infrastructure.persistence.entity.GlobalConfigurationEntity;
 import cv.igrp.platform.access_management.global_configuration.infrastructure.persistence.repository.GlobalConfigurationEntityRepository;
 import cv.igrp.platform.access_management.global_configuration.mapper.GlobalConfigurationMapper;
@@ -11,7 +12,6 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cv.igrp.platform.access_management.global_configuration.application.dto.GlobalConfigurationDTO;
 
 @Component
 public class SetGlobalConfigurationCommandHandler implements CommandHandler<SetGlobalConfigurationCommand, ResponseEntity<GlobalConfigurationDTO>> {
@@ -27,7 +27,7 @@ public class SetGlobalConfigurationCommandHandler implements CommandHandler<SetG
    }
 
    @IgrpCommandHandler
-   public ResponseEntity<GlobalConfigurationDTO> handle(cv.igrp.platform.access_management.global_configuration.application.commands.commands.SetGlobalConfigurationCommand command) {
+   public ResponseEntity<GlobalConfigurationDTO> handle(SetGlobalConfigurationCommand command) {
 
       GlobalConfigurationEntity globalConfiguration = mapper.toEntity(command.getGlobalconfiguration());
 

@@ -4,10 +4,10 @@ import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.resource.application.dto.ResourceItemDTO;
 import cv.igrp.platform.access_management.shared.application.constants.ResourceType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.models.Application;
-import cv.igrp.platform.access_management.shared.domain.models.Permission;
-import cv.igrp.platform.access_management.shared.domain.models.Resource;
-import cv.igrp.platform.access_management.shared.domain.models.ResourceItem;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.util.Arrays;
@@ -18,12 +18,12 @@ import static org.junit.jupiter.api.Assertions.*;
 class ResourceMapperTest {
 
     private ResourceMapper mapper;
-    private Resource testResource;
+    private ResourceEntity testResource;
     private ResourceDTO testResourceDTO;
-    private ResourceItem testResourceItem;
+    private ResourceItemEntity testResourceItem;
     private ResourceItemDTO testResourceItemDTO;
-    private Permission testPermission;
-    private Application testApplication;
+    private PermissionEntity testPermission;
+    private ApplicationEntity testApplication;
 
     @BeforeEach
     void setUp() {
@@ -31,14 +31,14 @@ class ResourceMapperTest {
         mapper = new ResourceMapper();
 
 
-        testApplication = new Application();
+        testApplication = new ApplicationEntity();
         testApplication.setId(123);
 
 
-        testPermission = new Permission();
+        testPermission = new PermissionEntity();
         testPermission.setId(123);
 
-        testResource = new Resource();
+        testResource = new ResourceEntity();
         testResource.setId(123);
         testResource.setName("Test Resource");
         testResource.setType(ResourceType.API);
@@ -47,12 +47,12 @@ class ResourceMapperTest {
         testResource.setApplicationId(testApplication);
 
 
-        testResourceItem = new ResourceItem();
+        testResourceItem = new ResourceItemEntity();
         testResourceItem.setId(123);
         testResourceItem.setName("Test Item");
         testResourceItem.setUrl("/api/test");
         testResourceItem.setResourceId(testResource);
-        testResourceItem.setPermissionId(testPermission);
+        testResourceItem.setPermissionId(testPermission.getId());
 
         // Set up test resource with items
         testResource.setItems(Collections.singletonList(testResourceItem));
@@ -96,7 +96,7 @@ class ResourceMapperTest {
     @Test
     void toDto_shouldHandleNullValues() {
         // Arrange
-        Resource resource = new Resource();
+        ResourceEntity resource = new ResourceEntity();
         resource.setId(1);
         // All other fields are null
 
@@ -142,13 +142,13 @@ class ResourceMapperTest {
         assertEquals(testResourceItem.getName(), result.getName());
         assertEquals(testResourceItem.getUrl(), result.getUrl());
         assertEquals(testResourceItem.getResourceId().getId(), result.getResourceId());
-        assertEquals(testResourceItem.getPermissionId().getId(), result.getPermissionId());
+        assertEquals(testResourceItem.getPermissionId(), result.getPermissionId());
     }
 
     @Test
     void toItemDto_shouldHandleNullValues() {
         // Arrange
-        ResourceItem item = new ResourceItem();
+        ResourceItemEntity item = new ResourceItemEntity();
         item.setId(1);
         // All other fields are null
 
@@ -180,7 +180,7 @@ class ResourceMapperTest {
         // Arrange - already done in setUp()
 
         // Act
-        Resource result = mapper.toEntity(testResourceDTO);
+        ResourceEntity result = mapper.toEntity(testResourceDTO);
 
         // Assert
         assertNotNull(result);
@@ -200,7 +200,7 @@ class ResourceMapperTest {
         testResourceDTO.setStatus(null);
 
         // Act
-        Resource result = mapper.toEntity(testResourceDTO);
+        ResourceEntity result = mapper.toEntity(testResourceDTO);
 
         // Assert
         assertNotNull(result);
@@ -219,7 +219,7 @@ class ResourceMapperTest {
         // Arrange - null input
 
         // Act
-        Resource result = mapper.toEntity(null);
+        ResourceEntity result = mapper.toEntity(null);
 
         // Assert
         assertNull(result);
@@ -230,14 +230,14 @@ class ResourceMapperTest {
         // Arrange - already done in setUp()
 
         // Act
-        ResourceItem result = mapper.toItemEntity(testResourceItemDTO, testResource, testPermission);
+        ResourceItemEntity result = mapper.toItemEntity(testResourceItemDTO, testResource, testPermission);
 
         // Assert
         assertNotNull(result);
         assertEquals(testResourceItemDTO.getName(), result.getName());
         assertEquals(testResourceItemDTO.getUrl(), result.getUrl());
         assertSame(testResource, result.getResourceId(), "Resource reference should be the same object");
-        assertSame(testPermission, result.getPermissionId(), "Permission reference should be the same object");
+        assertSame(testPermission.getId(), result.getPermissionId(), "Permission reference should be the same object");
 
         // Assert - fields that should not be mapped
         assertNull(result.getId(), "ID should not be mapped");
@@ -248,7 +248,7 @@ class ResourceMapperTest {
         // Arrange - null input
 
         // Act
-        ResourceItem result = mapper.toItemEntity(null, testResource, testPermission);
+        ResourceItemEntity result = mapper.toItemEntity(null, testResource, testPermission);
 
         // Assert
         assertNull(result);
@@ -257,17 +257,17 @@ class ResourceMapperTest {
     @Test
     void toDto_shouldHandleMultipleItems() {
         // Arrange
-        ResourceItem item1 = new ResourceItem();
+        ResourceItemEntity item1 = new ResourceItemEntity();
         item1.setId(1);
         item1.setName("Item 1");
         item1.setResourceId(testResource);
-        item1.setPermissionId(testPermission);
+        item1.setPermissionId(testPermission.getId());
 
-        ResourceItem item2 = new ResourceItem();
+        ResourceItemEntity item2 = new ResourceItemEntity();
         item2.setId(2);
         item2.setName("Item 2");
         item2.setResourceId(testResource);
-        item2.setPermissionId(testPermission);
+        item2.setPermissionId(testPermission.getId());
 
         testResource.setItems(Arrays.asList(item1, item2));
 

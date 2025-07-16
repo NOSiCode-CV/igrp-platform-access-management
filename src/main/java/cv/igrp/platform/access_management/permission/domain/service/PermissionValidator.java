@@ -1,9 +1,9 @@
 package cv.igrp.platform.access_management.permission.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import cv.igrp.platform.access_management.shared.domain.models.Application;
-import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +13,7 @@ import java.util.Optional;
 /**
  * Validator class responsible for applying business rules related to {@link PermissionDTO}.
  *
- * <p>This class currently validates permission name uniqueness within a given {@link Application}.
+ * <p>This class currently validates permission name uniqueness within a given {@link ApplicationEntity}.
  * It returns a {@link ResourceValidationResponse} indicating whether the validation passed or failed.
  *
  * <p>Designed to be extended with additional validation rules as needed.
@@ -30,11 +30,11 @@ public class PermissionValidator {
      * @param application the application to check against
      * @return a {@link ResourceValidationResponse} indicating the result of the validation
      */
-    public static ResourceValidationResponse validatePermissionName(PermissionDTO permissionDTO, Application application) {
+    public static ResourceValidationResponse validatePermissionName(PermissionDTO permissionDTO, ApplicationEntity application) {
         ResourceValidationResponse result = new ResourceValidationResponse();
         result.setValid(true);
         if (application.getPermissions() != null) {
-            Optional<Permission> optionalPermission = application.getPermissions().stream()
+            Optional<PermissionEntity> optionalPermission = application.getPermissions().stream()
                     .filter(permission -> permission.getName().equalsIgnoreCase(permissionDTO.getName()))
                     .findFirst();
 

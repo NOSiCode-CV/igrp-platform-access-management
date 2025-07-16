@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.shared.infrastructure.persistence.ent
 import cv.igrp.platform.access_management.shared.config.AuditEntity;
 import cv.igrp.framework.stereotype.IgrpEntity;
 import cv.igrp.framework.auth.core.model.UserIdentity;
-import cv.igrp.platform.access_management.shared.domain.models.Role;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
@@ -46,7 +45,7 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     private boolean emailVerified;
 
     @ManyToMany(mappedBy = "users", fetch = FetchType.EAGER)
-    private List<Role> roles;
+    private List<RoleEntity> roles;
 
     @ElementCollection
     @CollectionTable(name = "t_user_custom_fields", joinColumns = @JoinColumn(name = "user_id"))

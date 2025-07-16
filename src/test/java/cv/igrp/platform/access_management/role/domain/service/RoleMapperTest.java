@@ -2,8 +2,8 @@ package cv.igrp.platform.access_management.role.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
-import cv.igrp.platform.access_management.shared.domain.models.Department;
-import cv.igrp.platform.access_management.shared.domain.models.Role;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -25,7 +25,7 @@ class RoleMapperTest {
     @Test
     void itShouldMapRoleToDto_WhenParentIsNull() {
         // Given
-        Role role = new Role();
+        RoleEntity role = new RoleEntity();
         int roleId = 1;
         role.setId(roleId);
         String roleName = "Developer";
@@ -34,7 +34,7 @@ class RoleMapperTest {
         role.setDescription(roleDescription);
         role.setStatus(Status.ACTIVE);
 
-        Department department = new Department();
+        DepartmentEntity department = new DepartmentEntity();
         int departmentId = 10;
         department.setId(departmentId);
         role.setDepartment(department);
@@ -61,8 +61,8 @@ class RoleMapperTest {
         int parentRoleId = 1;
         int departmentId = 10;
 
-        Role role = new Role();
-        Role parentRole = new Role();
+        RoleEntity role = new RoleEntity();
+        RoleEntity parentRole = new RoleEntity();
         parentRole.setId(parentRoleId);
         role.setId(roleId);
         String roleName = "Developer";
@@ -71,7 +71,7 @@ class RoleMapperTest {
         role.setDescription(roleDescription);
         role.setStatus(Status.ACTIVE);
 
-        Department department = new Department();
+        DepartmentEntity department = new DepartmentEntity();
         department.setId(departmentId);
         role.setDepartment(department);
 
@@ -98,12 +98,12 @@ class RoleMapperTest {
         int departmentId = 20;
         int parentRoleId = 99;
 
-        Department department = new Department();
+        DepartmentEntity department = new DepartmentEntity();
         department.setId(departmentId);
 
-        Role parentRole = new Role();
+        RoleEntity parentRole = new RoleEntity();
         parentRole.setId(parentRoleId);
-        Role role = new Role();
+        RoleEntity role = new RoleEntity();
 
         role.setId(roleId);
         String roleName = "Team Lead";
@@ -132,7 +132,7 @@ class RoleMapperTest {
     void itShouldMapDtoToEntity_WithoutParentRole() {
         // Given
         int departmentId = 10;
-        Department department = new Department();
+        DepartmentEntity department = new DepartmentEntity();
         department.setId(departmentId);
 
         RoleDTO dto = new RoleDTO();
@@ -145,7 +145,7 @@ class RoleMapperTest {
         dto.setParentId(null);
 
         // When
-        Role result = underTest.mapToEntity(dto, department, null);
+        RoleEntity result = underTest.mapToEntity(dto, department, null);
 
         // Then
         assertNotNull(result);
@@ -160,7 +160,7 @@ class RoleMapperTest {
     void itShouldSetStatusToActive_WhenNotProvided() {
         // Given
         int departmentId = 10;
-        Department department = new Department();
+        DepartmentEntity department = new DepartmentEntity();
         department.setId(departmentId);
 
         RoleDTO dto = new RoleDTO();
@@ -173,7 +173,7 @@ class RoleMapperTest {
         dto.setParentId(null);
 
         // When
-        Role result = underTest.mapToEntity(dto, department, null);
+        RoleEntity result = underTest.mapToEntity(dto, department, null);
 
         // Then
         assertNotNull(result);
@@ -189,10 +189,10 @@ class RoleMapperTest {
         // Given
         int departmentId = 10;
         int parentRoleId = 99;
-        Department department = new Department();
+        DepartmentEntity department = new DepartmentEntity();
         department.setId(departmentId);
 
-        Role parentRole = new Role();
+        RoleEntity parentRole = new RoleEntity();
         parentRole.setId(parentRoleId);
         String parentRoleName = "Manager";
         parentRole.setName(parentRoleName);
@@ -207,7 +207,7 @@ class RoleMapperTest {
         dto.setParentId(parentRole.getId());
 
         // When
-        Role result = underTest.mapToEntity(dto, department, parentRole);
+        RoleEntity result = underTest.mapToEntity(dto, department, parentRole);
 
         // Then
         assertNotNull(result);

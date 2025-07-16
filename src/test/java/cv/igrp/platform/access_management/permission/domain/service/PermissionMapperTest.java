@@ -2,8 +2,8 @@ package cv.igrp.platform.access_management.permission.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import cv.igrp.platform.access_management.shared.domain.models.Application;
-import cv.igrp.platform.access_management.shared.domain.models.Permission;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -29,10 +29,10 @@ class PermissionMapperTest {
         String permissionDescription = "Allows dashboard access";
         Status permissionStatus = Status.ACTIVE;
 
-        Application application = new Application();
+        ApplicationEntity application = new ApplicationEntity();
         application.setId(10);
 
-        Permission permission = new Permission();
+        PermissionEntity permission = new PermissionEntity();
         permission.setId(permissionId);
         permission.setName(permissionName);
         permission.setDescription(permissionDescription);
@@ -64,11 +64,11 @@ class PermissionMapperTest {
         dto.setStatus(null);
         dto.setApplicationId(applicationId);
 
-        Application application = new Application();
+        ApplicationEntity application = new ApplicationEntity();
         application.setId(applicationId);
 
         // When
-        Permission permission = underTest.mapDtoToEntity(dto, application);
+        PermissionEntity permission = underTest.mapDtoToEntity(dto, application);
 
         // Then
         assertNotNull(permission);
@@ -92,11 +92,11 @@ class PermissionMapperTest {
         dto.setStatus(status);
         dto.setApplicationId(applicationId);
 
-        Application application = new Application();
+        ApplicationEntity application = new ApplicationEntity();
         application.setId(applicationId);
 
         // When
-        Permission permission = underTest.mapDtoToEntity(dto, application);
+        PermissionEntity permission = underTest.mapDtoToEntity(dto, application);
 
         // Then
         assertNotNull(permission);

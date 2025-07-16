@@ -14,7 +14,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 
 @Configuration
-@EnableWebSecurity
+//@EnableWebSecurity
 public class SecurityConfiguration {
 
     private final JwtAuthenticationConverter jwtAuthenticationConverter;
@@ -44,8 +44,10 @@ public class SecurityConfiguration {
 
         http.sessionManagement(t -> t.sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
-        http.oauth2ResourceServer(oauth2 -> oauth2
-                .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)));
+  //      http.oauth2ResourceServer(oauth2 -> oauth2
+    //            .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)));
+
+        http.httpBasic(Customizer.withDefaults());
 
         // Cors
         http.cors(cors -> cors.configurationSource(request -> {

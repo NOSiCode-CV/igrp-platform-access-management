@@ -1,9 +1,9 @@
 package cv.igrp.platform.access_management.permission.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import cv.igrp.platform.access_management.shared.domain.models.Application;
-import cv.igrp.platform.access_management.shared.domain.models.Permission;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -20,10 +20,10 @@ class PermissionValidatorTest {
     void shouldReturnInvalidWhenPermissionNameAlreadyExists() {
         // Given
         String existingPermissionName = "READ_USER";
-        Permission existingPermission = new Permission();
+        PermissionEntity existingPermission = new PermissionEntity();
         existingPermission.setName(existingPermissionName);
 
-        Application application = new Application();
+        ApplicationEntity application = new ApplicationEntity();
         application.setId(1);
         application.setPermissions(List.of(existingPermission));
 
@@ -43,7 +43,7 @@ class PermissionValidatorTest {
     @Test
     void shouldReturnValidWhenPermissionNameDoesNotExist() {
         // Given
-        Application application = new Application();
+        ApplicationEntity application = new ApplicationEntity();
         application.setPermissions(Collections.emptyList());
 
         PermissionDTO dto = new PermissionDTO();

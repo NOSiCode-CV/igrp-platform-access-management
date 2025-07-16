@@ -1,7 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.service;
 
-import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.IGRPUserRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -13,9 +13,9 @@ public class ConfigurationService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationService.class);
 
-    private IGRPUserRepository userRepository;
+    private IGRPUserEntityRepository userRepository;
 
-    public ConfigurationService(IGRPUserRepository userRepository) {
+    public ConfigurationService(IGRPUserEntityRepository userRepository) {
         this.userRepository = userRepository;
     }
 
@@ -25,7 +25,7 @@ public class ConfigurationService {
 
         if(admin.isEmpty()) {
 
-            var newAdmin = new IGRPUser();
+            var newAdmin = new IGRPUserEntity();
 
             newAdmin.setName("iGRP Super Admin");
             newAdmin.setUsername("superadmin");

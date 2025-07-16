@@ -1,7 +1,7 @@
 package cv.igrp.platform.access_management.users.mapper;
 
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
-import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,7 +22,7 @@ class IGRPUserMapperTest {
     @DisplayName("toDto(): should map IGRPUser to IGRPUserDTO")
     void toDto_shouldMapAllFields() {
         // Arrange
-        IGRPUser user = new IGRPUser();
+        IGRPUserEntity user = new IGRPUserEntity();
         user.setId(1);
         user.setName("Jane Doe");
         user.setUsername("janedoe");
@@ -50,7 +50,7 @@ class IGRPUserMapperTest {
         dto.setEmail("john@example.com");
 
         // Act
-        IGRPUser user = mapper.toEntity(dto);
+        IGRPUserEntity user = mapper.toEntity(dto);
 
         // Assert
         assertNotNull(user);
