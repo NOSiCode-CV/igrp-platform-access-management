@@ -5,7 +5,6 @@ import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -32,9 +31,6 @@ public class PostDepartmentCommandHandlerTest {
 
     @Mock
     private DepartmentEntityRepository departmentRepository;
-
-    @Mock
-    private ApplicationEntityRepository applicationRepository;
 
     @Mock
     private DepartmentMapper departmentMapper;
@@ -93,7 +89,6 @@ public class PostDepartmentCommandHandlerTest {
     void testHandle_whenValidInput_shouldCreateDepartmentAndReturn201() {
         // Arrange
         when(departmentMapper.toEntity(departmentDTO)).thenReturn(department);
-        when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
         when(departmentRepository.save(any(DepartmentEntity.class))).thenReturn(savedDepartment);
         when(departmentMapper.toDto(savedDepartment)).thenReturn(resultDTO);
 
@@ -107,10 +102,9 @@ public class PostDepartmentCommandHandlerTest {
 
         // Verify
         verify(departmentMapper).toEntity(departmentDTO);
-        verify(applicationRepository).findById(1);
         verify(departmentRepository).save(department);
         verify(departmentMapper).toDto(savedDepartment);
-        verifyNoMoreInteractions(departmentMapper, applicationRepository, departmentRepository);
+        verifyNoMoreInteractions(departmentMapper, departmentRepository);
     }
 
 
@@ -123,7 +117,6 @@ public class PostDepartmentCommandHandlerTest {
         command = postDepartmentCommand(departmentDTO);
 
         when(departmentMapper.toEntity(departmentDTO)).thenReturn(department);
-        when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
         when(departmentRepository.findById(2)).thenReturn(Optional.of(parentDepartment));
         when(departmentRepository.save(any(DepartmentEntity.class))).thenReturn(savedDepartment);
         when(departmentMapper.toDto(savedDepartment)).thenReturn(resultDTO);
@@ -138,11 +131,10 @@ public class PostDepartmentCommandHandlerTest {
 
         // Verify
         verify(departmentMapper).toEntity(departmentDTO);
-        verify(applicationRepository).findById(1);
         verify(departmentRepository).findById(2);
         verify(departmentRepository).save(department);
         verify(departmentMapper).toDto(savedDepartment);
-        verifyNoMoreInteractions(departmentMapper, applicationRepository, departmentRepository);
+        verifyNoMoreInteractions(departmentMapper, departmentRepository);
 
     }
 
@@ -169,7 +161,7 @@ public class PostDepartmentCommandHandlerTest {
         // Verify
         verify(departmentMapper).toEntity(departmentDTO);
         verify(departmentRepository).findById(departmentDTO.getParent_id());
-        verifyNoMoreInteractions(departmentMapper, applicationRepository, departmentRepository);
+        verifyNoMoreInteractions(departmentMapper, departmentRepository);
     }
 
 

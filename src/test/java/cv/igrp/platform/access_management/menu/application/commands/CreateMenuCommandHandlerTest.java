@@ -6,10 +6,8 @@ import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,9 +36,6 @@ public class CreateMenuCommandHandlerTest {
     private ApplicationEntityRepository applicationRepository;
 
     @Mock
-    private ResourceEntityRepository resourceRepository;
-
-    @Mock
     private MenuEntryMapper menuEntryMapper;
 
     @InjectMocks
@@ -54,7 +49,6 @@ public class CreateMenuCommandHandlerTest {
     private MenuEntryEntity menuEntry;
     private MenuEntryDTO dto;
     private ApplicationEntity application;
-    private ResourceEntity resource;
     private MenuEntryEntity parentMenu;
 
     @BeforeEach
@@ -67,7 +61,6 @@ public class CreateMenuCommandHandlerTest {
 
         menuEntry = new MenuEntryEntity();
         application = new ApplicationEntity();
-        resource = new ResourceEntity();
         parentMenu = new MenuEntryEntity();
     }
 
@@ -77,7 +70,6 @@ public class CreateMenuCommandHandlerTest {
         // Arrange
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
         when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
-        when(resourceRepository.findById(2)).thenReturn(Optional.of(resource));
         when(menuEntryRepository.findById(3)).thenReturn(Optional.of(parentMenu));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(dto);
@@ -93,11 +85,10 @@ public class CreateMenuCommandHandlerTest {
 
         // Verify
         verify(applicationRepository, times(1)).findById(1);
-        verify(resourceRepository, times(1)).findById(2);
         verify(menuEntryRepository, times(1)).findById(3);
         verify(menuEntryRepository, times(1)).save(menuEntry);
         verify(menuEntryMapper, times(1)).toDTO(menuEntry);
-        verifyNoMoreInteractions(menuEntryRepository, applicationRepository, resourceRepository, menuEntryMapper);
+        verifyNoMoreInteractions(menuEntryRepository, applicationRepository, menuEntryMapper);
     }
 
     @Test
@@ -121,12 +112,10 @@ public class CreateMenuCommandHandlerTest {
 
         // Verify
         verify(applicationRepository, times(1)).findById(1);
-        verify(resourceRepository, never()).findById(anyInt());
         verify(menuEntryRepository, never()).findById(anyInt());
         verify(menuEntryRepository,times(1)).save(menuEntry);
         verify(menuEntryMapper, times(1)).toDTO(menuEntry);
         verify(menuEntryMapper,times(1)).toEntity(dto);
-        verifyNoInteractions(resourceRepository);
         verifyNoMoreInteractions(menuEntryRepository);
     }
 
@@ -151,7 +140,6 @@ public class CreateMenuCommandHandlerTest {
         // Arrange
         when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
-        when(resourceRepository.findById(2)).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> createMenuCommandHandler.handle(command));
@@ -166,7 +154,6 @@ public class CreateMenuCommandHandlerTest {
         // Arrange
         when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
-        when(resourceRepository.findById(2)).thenReturn(Optional.of(resource));
         when(menuEntryRepository.findById(3)).thenReturn(Optional.empty());
 
         // Act

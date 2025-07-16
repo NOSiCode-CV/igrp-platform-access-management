@@ -7,10 +7,9 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,10 +33,10 @@ public class UpdateMenuCommandHandlerTest {
     private MenuEntryEntityRepository menuEntryRepository;
 
     @Mock
-    private ResourceEntityRepository resourceRepository;
+    private ApplicationEntityRepository applicationRepository;
 
     @Mock
-    private ApplicationEntityRepository applicationRepository;
+    private PermissionEntityRepository permissionRepository;
 
     @Mock
     private MenuEntryMapper menuEntryMapper;
@@ -101,7 +100,6 @@ public class UpdateMenuCommandHandlerTest {
         // Verify interactions
         verify(menuEntryRepository, times(1)).findById(1);
         verify(applicationRepository, times(1)).findById(100);
-        verify(resourceRepository, times(1)).findById(200);
         verify(menuEntryRepository, times(1)).findById(300);
         verify(menuEntryRepository, times(1)).save(existingMenu);
         verify(menuEntryMapper).toDTO(updatedMenu);
@@ -173,32 +171,6 @@ public class UpdateMenuCommandHandlerTest {
         // Verify
         verify(menuEntryRepository, times(1)).findById(1);
         verify(menuEntryRepository, times(1)).findById(300);
-        verify(resourceRepository, times(1)).findById(200);
-        verifyNoMoreInteractions(menuEntryMapper);
-    }
-
-    @Test
-    @DisplayName("should throw exception when resource is not found")
-    void testHandle_whenResourceNotFound_shouldThrow() {
-        // Arrange
-        when(menuEntryRepository.findById(1)).thenReturn(Optional.of(existingMenu));
-        when(menuEntryRepository.findById(300)).thenReturn(Optional.of(parentMenu));
-        when(resourceRepository.findById(200)).thenReturn(Optional.empty());
-
-        // Act
-        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
-                updateMenuCommandHandler.handle(command));
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
-
-        assertNotNull(ex.getBody().getProperties());
-        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Resource not found"));
-
-        // Verify
-        verify(menuEntryRepository, times(1)).findById(1);
-        verify(menuEntryRepository, times(1)).findById(300);
-        verify(resourceRepository, times(1)).findById(200);
         verifyNoMoreInteractions(menuEntryMapper);
     }
 }
