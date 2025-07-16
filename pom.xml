@@ -31,7 +31,8 @@
         <javadoc.plugin.version>3.11.2</javadoc.plugin.version>
 
         <!-- IGRP module versions -->
-        <igrp.framework.version>0.0.1-alpha</igrp.framework.version>
+        <igrp.framework.version.stereotype>0.0.1-alpha</igrp.framework.version.stereotype>
+        <igrp.framework.version.core>0.0.3-alpha</igrp.framework.version.core>
         <framework.auth.version>0.0.1-alpha</framework.auth.version>
         <filemanager.version>0.0.3-alpha</filemanager.version>
         <notification.email.version>0.0.1-alpha</notification.email.version>
@@ -152,12 +153,12 @@
         <dependency>
             <groupId>cv.igrp.framework</groupId>
             <artifactId>core</artifactId>
-            <version>${igrp.framework.version}</version>
+            <version>${igrp.framework.version.core}</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework</groupId>
             <artifactId>stereotype</artifactId>
-            <version>${igrp.framework.version}</version>
+            <version>${igrp.framework.version.stereotype}</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
