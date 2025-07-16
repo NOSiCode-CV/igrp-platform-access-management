@@ -51,6 +51,9 @@ public class MenuEntryDTO {
   private String url ;
   
   
+  private String pageSlug ;
+  
+  
   private Integer parentId ;
   
   

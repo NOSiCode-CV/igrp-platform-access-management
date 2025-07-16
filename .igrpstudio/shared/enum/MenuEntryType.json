@@ -1,1 +1,45 @@
-{"type":"enum","module":"shared","name":"MenuEntryType","values":[{"name":"MENU_PAGE","attributes":["MENU_PAGE","Menu Page"]},{"name":"EXTERNAL_PAGE","attributes":["EXTERNAL_PAGE","External Page"]},{"name":"FOLDER","attributes":["FOLDER","Folder"]}],"attributes":[{"type":"string","name":"Code"},{"type":"string","name":"Description"}]}
+{
+  "type": "enum",
+  "module": "shared",
+  "name": "MenuEntryType",
+  "values": [
+    {
+      "name": "SYSTEM_PAGE",
+      "attributes": [
+        "SYSTEM_PAGE",
+        "System Page"
+      ]
+    },
+    {
+      "name": "MENU_PAGE",
+      "attributes": [
+        "MENU_PAGE",
+        "Menu Page"
+      ]
+    },
+    {
+      "name": "EXTERNAL_PAGE",
+      "attributes": [
+        "EXTERNAL_PAGE",
+        "External Page"
+      ]
+    },
+    {
+      "name": "FOLDER",
+      "attributes": [
+        "FOLDER",
+        "Folder"
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "type": "string",
+      "name": "Code"
+    },
+    {
+      "type": "string",
+      "name": "Description"
+    }
+  ]
+}

@@ -44,4 +44,8 @@ public class ConfigurationService {
 
     }
 
+    public void createDefaultApp() {}
+
+    public void createDefaultMenus() {}
+
 }

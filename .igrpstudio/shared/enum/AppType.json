@@ -1,1 +1,38 @@
-{"type":"enum","module":"shared","name":"AppType","values":[{"name":"EXTERNAL","attributes":["EXTERNAL","External"]},{"name":"INTERNAL","attributes":["INTERNAL","Internal"]}],"attributes":[{"type":"string","name":"Code"},{"type":"string","name":"Description"}]}
+{
+  "type": "enum",
+  "module": "shared",
+  "name": "AppType",
+  "values": [
+    {
+      "name": "EXTERNAL",
+      "attributes": [
+        "EXTERNAL",
+        "External"
+      ]
+    },
+    {
+      "name": "INTERNAL",
+      "attributes": [
+        "INTERNAL",
+        "Internal"
+      ]
+    },
+    {
+      "name": "SYSTEM",
+      "attributes": [
+        "SYSTEM",
+        "System"
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "type": "string",
+      "name": "Code"
+    },
+    {
+      "type": "string",
+      "name": "Description"
+    }
+  ]
+}
