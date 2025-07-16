@@ -46,7 +46,7 @@ public class UploadFileCommandHandler implements CommandHandler<UploadFileComman
 
           var fileUrl = uuid + "_" + file.getOriginalFilename();
 
-          fileManagerService.uploadFile(compressedImage, fileUrl, file.getContentType());
+          fileManagerService.uploadPublicFile(compressedImage, fileUrl, file.getContentType());
 
           return ResponseEntity.ok(fileUrl);
 

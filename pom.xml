@@ -33,7 +33,7 @@
         <!-- IGRP module versions -->
         <igrp.framework.version>0.0.1-alpha</igrp.framework.version>
         <framework.auth.version>0.0.1-alpha</framework.auth.version>
-        <filemanager.version>0.0.2-alpha</filemanager.version>
+        <filemanager.version>0.0.3-alpha</filemanager.version>
         <notification.email.version>0.0.1-alpha</notification.email.version>
     </properties>
 
