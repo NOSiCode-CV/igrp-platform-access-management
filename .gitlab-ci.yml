@@ -9,6 +9,7 @@ variables:
   REGISTRY_URL: "registry.nosi.cv"
   IMAGE_NAME: "access-management-api"
   CI_PROJECT: "igrp"
+  VERSION_TAG: "$CI_COMMIT_SHORT_SHA"
 
 
 stages:
