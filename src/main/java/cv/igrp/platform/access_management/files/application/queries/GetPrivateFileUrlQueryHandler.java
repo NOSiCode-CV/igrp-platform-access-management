@@ -7,19 +7,19 @@ import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import cv.igrp.platform.access_management.files.application.dto.FileUrlDTO;
 
-import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Component
 public class GetPrivateFileUrlQueryHandler implements QueryHandler<GetPrivateFileUrlQuery, ResponseEntity<FileUrlDTO>>{
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(GetPrivateFileUrlQueryHandler.class);
+  //private static final Logger LOGGER = LoggerFactory.getLogger(GetPrivateFileUrlQueryHandler.class);
 
   private final StorageService fileManagerService;
 
@@ -42,8 +42,12 @@ public class GetPrivateFileUrlQueryHandler implements QueryHandler<GetPrivateFil
        );
      }
 
-   Instant expirationInstant = Instant.now().plusSeconds(urlExpirationTimeInSeconds);
-   String expirationIso = expirationInstant.toString();
+
+     LocalDateTime localExpiration = LocalDateTime.now()
+               .plusSeconds(urlExpirationTimeInSeconds);
+
+     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+     String expirationIso = localExpiration.format(formatter);
 
      var fileUrlDto = new FileUrlDTO();
      fileUrlDto.setUrl(fileManagerService.getFileUrl(privateFilePath));

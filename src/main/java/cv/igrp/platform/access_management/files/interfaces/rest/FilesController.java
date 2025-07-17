@@ -4,6 +4,7 @@
 package cv.igrp.platform.access_management.files.interfaces.rest;
 
 import cv.igrp.framework.stereotype.IgrpController;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
@@ -83,7 +84,8 @@ public class FilesController {
   }
 
   @PostMapping(
-    value = "files/public"
+          value = "files/public",
+          consumes = MediaType.MULTIPART_FORM_DATA_VALUE
   )
   @Operation(
     summary = "POST method to handle operations for uploadPublicFile",
@@ -121,7 +123,8 @@ public class FilesController {
   }
 
   @PostMapping(
-    value = "files/private"
+            value = "files/private",
+          consumes = MediaType.MULTIPART_FORM_DATA_VALUE
   )
   @Operation(
     summary = "POST method to handle operations for uploadPrivateFile",
