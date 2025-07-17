@@ -51,9 +51,7 @@ create-manifest:
   stage: manifest
   script:
     - docker login -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD" "$REGISTRY_URL"
-    - docker manifest create $IMAGE_NAME_FULL:$IMAGE_TAG \
-        $IMAGE_NAME_FULL:amd64 \
-        $IMAGE_NAME_FULL:arm64
+    - docker manifest create "$IMAGE_NAME_FULL:$IMAGE_TAG" "$IMAGE_NAME_FULL:amd64" "$IMAGE_NAME_FULL:arm64"
     - docker manifest push $IMAGE_NAME_FULL:$IMAGE_TAG
   needs:
     - build-amd64
