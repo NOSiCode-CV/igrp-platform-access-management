@@ -30,6 +30,9 @@ stages:
         --build-arg SPRING_ACTIVE_PROFILE=cicd \
         --push \
         .
+    - |
+      echo "Verifying pushed image exists:"
+      docker pull "$REGISTRY_URL/$CI_PROJECT:$VERSION_TAG-$ARCH"
   cache:
     key: "docker-cache-$ARCH"
     paths:
