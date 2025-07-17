@@ -50,7 +50,7 @@ public class GetApplicationsByUserQueryHandlerTest {
 
         List<ApplicationEntity> applications = List.of(app1, app2);
 
-        when(applicationRepository.findDistinctByDepartments_Roles_Users_UsernameOrDepartments_Roles_Users_Email(uid, uid))
+        when(applicationRepository.findDistinctByDepartmentId_Roles_Users_UsernameOrDepartmentId_Roles_Users_Email(uid, uid))
                 .thenReturn(applications);
 
         // When

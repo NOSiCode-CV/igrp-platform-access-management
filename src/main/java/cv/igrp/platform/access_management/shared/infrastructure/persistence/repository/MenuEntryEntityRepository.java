@@ -1,9 +1,13 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
+import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.repository.history.RevisionRepository;
@@ -14,5 +18,7 @@ public interface MenuEntryEntityRepository extends
     JpaSpecificationExecutor<MenuEntryEntity>,
     RevisionRepository<MenuEntryEntity, Integer, Integer>
 {
+
+    List<MenuEntryEntity> findByApplicationIdAndType(ApplicationEntity applicationId, MenuEntryType type);
 
 }

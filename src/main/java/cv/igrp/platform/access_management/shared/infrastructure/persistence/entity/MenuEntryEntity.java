@@ -1,3 +1,6 @@
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.entity;
 
 import cv.igrp.platform.access_management.shared.config.AuditEntity;
@@ -58,8 +61,7 @@ public class MenuEntryEntity extends AuditEntity {
     private String target;
 
   
-    @NotBlank(message = "pageSlug is mandatory")
-    @Column(name="page_slug", unique = true, nullable = false)
+    @Column(name="page_slug", unique = true)
     private String pageSlug;
 
   

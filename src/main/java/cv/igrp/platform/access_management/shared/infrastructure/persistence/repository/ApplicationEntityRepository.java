@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
+import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -19,7 +20,7 @@ public interface ApplicationEntityRepository extends
     RevisionRepository<ApplicationEntity, Integer, Integer>
 {
 
-    List<ApplicationEntity> findDistinctByDepartments_Roles_Users_UsernameOrDepartments_Roles_Users_Email(String username, String email);
+    List<ApplicationEntity> findDistinctByDepartmentId_Roles_Users_UsernameOrDepartmentId_Roles_Users_Email(String username, String email);
 
     @Query("""
         SELECT a FROM ApplicationEntity a
@@ -33,4 +34,5 @@ public interface ApplicationEntityRepository extends
     """)
     List<ApplicationEntity> findDeniedApplications(@Param("uid") String uid);
 
+    Optional<ApplicationEntity> findFirstByType(AppType type);
 }
