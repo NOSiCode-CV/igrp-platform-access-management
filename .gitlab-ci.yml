@@ -10,7 +10,7 @@ variables:
   IMAGE_NAME: "access-management-api"
   CI_PROJECT: "igrp"
   VERSION_TAG: "$CI_COMMIT_SHORT_SHA"
-  FULL_IMAGE_PATH: "$FULL_IMAGE_PATH"
+  FULL_IMAGE_PATH: "$REGISTRY_URL/$CI_PROJECT/$IMAGE_NAME"
 
 
 stages:
