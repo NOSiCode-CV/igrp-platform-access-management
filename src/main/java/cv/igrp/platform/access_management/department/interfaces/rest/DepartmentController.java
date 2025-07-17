@@ -1,3 +1,6 @@
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+
 package cv.igrp.platform.access_management.department.interfaces.rest;
 
 import cv.igrp.framework.stereotype.IgrpController;
@@ -228,6 +231,43 @@ public class DepartmentController {
        LOGGER.debug("Operation finished");
 
         return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+  @GetMapping(
+    value = "by-code/{code}"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getDepartmentByCode",
+    description = "GET method to handle operations for getDepartmentByCode",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = DepartmentDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<DepartmentDTO> getDepartmentByCode(
+    @PathVariable(value = "code") String code)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var query = new GetDepartmentByCodeQuery(code);
+
+      ResponseEntity<DepartmentDTO> response = queryBus.handle(query);
+
+      LOGGER.debug("Operation finished");
+
+      return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }

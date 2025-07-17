@@ -33,4 +33,6 @@ public interface ApplicationEntityRepository extends
     """)
     List<ApplicationEntity> findDeniedApplications(@Param("uid") String uid);
 
+    Optional<ApplicationEntity> findByCode(String code);
+
 }

@@ -15,4 +15,6 @@ public interface DepartmentEntityRepository extends
     RevisionRepository<DepartmentEntity, Integer, Integer>
 {
 
+
+    Optional<DepartmentEntity> findByCode(String code);
 }

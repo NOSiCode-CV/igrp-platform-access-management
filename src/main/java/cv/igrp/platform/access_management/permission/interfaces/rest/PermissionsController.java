@@ -1,3 +1,6 @@
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+
 package cv.igrp.platform.access_management.permission.interfaces.rest;
 
 import cv.igrp.framework.stereotype.IgrpController;
@@ -258,6 +261,43 @@ public class PermissionsController {
       final var query = new GetPermissionByApplicationIdQuery(applicationId, applicationCode);
 
       ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
+
+      LOGGER.debug("Operation finished");
+
+      return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+  @GetMapping(
+    value = "permissions/by-name/{name}"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getPermissionByName",
+    description = "GET method to handle operations for getPermissionByName",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = PermissionDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<PermissionDTO> getPermissionByName(
+    @PathVariable(value = "name") String name)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var query = new GetPermissionByNameQuery(name);
+
+      ResponseEntity<PermissionDTO> response = queryBus.handle(query);
 
       LOGGER.debug("Operation finished");
 

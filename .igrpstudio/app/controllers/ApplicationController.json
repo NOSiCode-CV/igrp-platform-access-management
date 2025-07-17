@@ -361,6 +361,34 @@
           "description": "Application ID"
         }
       ]
+    },
+    {
+      "actionName": "getApplicationByCode",
+      "path": "by-code/{code}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "app"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
     }
   ],
   "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"

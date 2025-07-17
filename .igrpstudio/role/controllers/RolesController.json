@@ -267,6 +267,34 @@
           "description": "Role ID"
         }
       ]
+    },
+    {
+      "actionName": "getRolesByName",
+      "path": "roles/by-name/{name}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "name",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
     }
   ],
   "id": "2b75ptbxyv-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"
