@@ -32,7 +32,7 @@ stages:
         .
     - |
       echo "Verifying pushed image exists:"
-      docker pull "$REGISTRY_URL/$CI_PROJECT:$VERSION_TAG-$ARCH"
+      docker pull "$REGISTRY_URL/$CI_PROJECT/$IMAGE_NAME:$VERSION_TAG-$ARCH"
   cache:
     key: "docker-cache-$ARCH"
     paths:
