@@ -31,9 +31,7 @@ build-arm64:
   script:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
-    - docker buildx build --platform linux/arm64 \
-        -t $IMAGE_NAME_FULL:arm64 \
-        --push .
+    - docker buildx build --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push .
   tags:
     - arm64
   only:
@@ -45,9 +43,7 @@ build-amd64:
   script:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
-    - docker buildx build --platform linux/amd64 \
-        -t $IMAGE_NAME_FULL:amd64 \
-        --push .
+    - docker buildx build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --push .
   only:
     - deploy/base
 
