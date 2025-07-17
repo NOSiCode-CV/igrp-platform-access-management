@@ -19,7 +19,7 @@ public interface ApplicationEntityRepository extends
     RevisionRepository<ApplicationEntity, Integer, Integer>
 {
 
-    List<ApplicationEntity> findDistinctByDepartments_Roles_Users_UsernameOrDepartments_Roles_Users_Email(String username, String email);
+    List<ApplicationEntity> findDistinctByDepartmentId_Roles_Users_UsernameOrDepartmentId_Roles_Users_Email(String username, String email);
 
     @Query("""
         SELECT a FROM ApplicationEntity a
