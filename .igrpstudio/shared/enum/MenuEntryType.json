@@ -30,6 +30,13 @@
         "FOLDER",
         "Folder"
       ]
+    },
+    {
+      "name": "GROUP",
+      "attributes": [
+        "GROUP",
+        "Group"
+      ]
     }
   ],
   "attributes": [

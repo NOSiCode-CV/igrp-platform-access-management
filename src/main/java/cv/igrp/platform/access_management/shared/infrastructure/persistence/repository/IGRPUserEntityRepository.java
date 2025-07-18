@@ -17,4 +17,6 @@ public interface IGRPUserEntityRepository extends
 
     Optional<IGRPUserEntity> findByUsername(String username);
 
+    boolean existsByUsername(String username);
+
 }

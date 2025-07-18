@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
+import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -32,5 +33,9 @@ public interface ApplicationEntityRepository extends
         )
     """)
     List<ApplicationEntity> findDeniedApplications(@Param("uid") String uid);
+
+    Optional<ApplicationEntity> findFirstByType(AppType type);
+
+    boolean existsByType(AppType type);
 
 }

@@ -1,3 +1,6 @@
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+
 package cv.igrp.platform.access_management.shared.application.constants;
 
 import cv.igrp.framework.core.domain.IgrpEnum;
@@ -13,7 +16,8 @@ public enum MenuEntryType implements IgrpEnum<String> {
   SYSTEM_PAGE("SYSTEM_PAGE", "System Page"),
     MENU_PAGE("MENU_PAGE", "Menu Page"),
     EXTERNAL_PAGE("EXTERNAL_PAGE", "External Page"),
-    FOLDER("FOLDER", "Folder")
+    FOLDER("FOLDER", "Folder"),
+    GROUP("GROUP", "Group")
   ;
 
   private final String code;
