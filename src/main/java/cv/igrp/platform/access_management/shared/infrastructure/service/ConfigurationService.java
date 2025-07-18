@@ -200,9 +200,7 @@ public class ConfigurationService {
                 menuEntryRepository.deleteAll(existingSystemMenus);
                 menuEntryRepository.saveAll(newMenus);
 
-                Map<String, Object> fields = new HashMap<>();
-
-                fields.put("menus_hash", currentJsonHash);
+                Map<String, Object> fields;
 
                 Optional<CustomFieldEntity> customFieldsOpt = propertyRepository.findByTableNameAndRecordId("t_application", app.getId());
 
@@ -210,12 +208,15 @@ public class ConfigurationService {
 
                 if (customFieldsOpt.isPresent()) {
                     customFields = customFieldsOpt.get();
+                    fields = customFields.getFields();
                 } else {
+                    fields = new HashMap<>();
                     customFields = new CustomFieldEntity();
                     customFields.setTableName("t_application");
                     customFields.setRecordId(app.getId());
                 }
 
+                fields.put("menus_hash", currentJsonHash);
                 customFields.setFields(fields);
 
                 // Store the new hash
