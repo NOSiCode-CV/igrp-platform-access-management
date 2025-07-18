@@ -16,4 +16,7 @@ public interface DepartmentEntityRepository extends
 {
 
     Optional<DepartmentEntity> findByCode(String code);
+
+    boolean existsByCode(String code);
+
 }

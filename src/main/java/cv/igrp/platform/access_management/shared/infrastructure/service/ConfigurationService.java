@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Service;
-import java.io.IOException;
+
 import java.util.*;
 
 @Service
@@ -26,6 +26,7 @@ public class ConfigurationService {
     private final MenuEntryEntityRepository menuEntryRepository;
     private final PermissionEntityRepository permissionRepository;
     private final RoleEntityRepository roleRepository;
+    private final CustomFieldEntityRepository propertyRepository;
     private final ObjectMapper objectMapper;
 
     public ConfigurationService(
@@ -34,30 +35,60 @@ public class ConfigurationService {
             DepartmentEntityRepository departmentRepository,
             MenuEntryEntityRepository menuEntryRepository,
             PermissionEntityRepository permissionRepository,
-            RoleEntityRepository roleRepository
-    ) {
+            RoleEntityRepository roleRepository,
+            CustomFieldEntityRepository propertyRepository,
+            ObjectMapper objectMapper) {
         this.userRepository = userRepository;
         this.applicationRepository = applicationRepository;
         this.departmentRepository = departmentRepository;
         this.menuEntryRepository = menuEntryRepository;
         this.permissionRepository = permissionRepository;
         this.roleRepository = roleRepository;
-        this.objectMapper = new ObjectMapper();
+        this.propertyRepository = propertyRepository;
+        this.objectMapper = objectMapper;
     }
 
-    @Transactional(dontRollbackOn = Exception.class)
+    @Transactional
     public void initializeSystemConfiguration() {
-        try {
-            createSuperAdminUser();
+        long startTime = System.currentTimeMillis();
+        LOGGER.info("[Startup Config] Starting system initialization...");
 
-            var department = createDefaultDepartment();
-            var app = createDefaultApp(department);
-            var permission = createDefaultPermission(app);
-            var role = createDefaultRole(department, permission);
+        try {
+            // 1. Bulk check existence of all default entities first
+            boolean superAdminExists = userRepository.existsByUsername("superadmin");
+            boolean departmentExists = departmentRepository.existsByCode("DEPT_IGRP");
+            boolean appExists = applicationRepository.existsByType(AppType.SYSTEM);
+            boolean permissionExists = permissionRepository.existsByName("manage_access");
+            boolean roleExists = roleRepository.existsByName("superadmin");
+
+            // 2. Create missing entities in optimized order
+            DepartmentEntity department = departmentExists ?
+                    departmentRepository.findByCode("DEPT_IGRP").get() :
+                    createDefaultDepartment();
+
+            ApplicationEntity app = appExists ?
+                    applicationRepository.findFirstByType(AppType.SYSTEM).get() :
+                    createDefaultApp(department);
+
+            PermissionEntity permission = permissionExists ?
+                    permissionRepository.findByName("manage_access").get() :
+                    createDefaultPermission(app);
+
+            RoleEntity role = roleExists ?
+                    roleRepository.findByName("superadmin").get() :
+                    createDefaultRole(department, permission);
+
+            // 3. Handle user and role assignment
+            if (!superAdminExists) {
+                createSuperAdminUser();
+            }
             assignRoleToSuperAdminUser(role);
 
+            // 4. Optimized menu handling
             createDefaultMenus(app);
 
+            LOGGER.info("[Startup Config] System initialization completed in {} ms",
+                    System.currentTimeMillis() - startTime);
         } catch (Exception e) {
             LOGGER.error("[Startup Config] Error initializing system: {}", e.getMessage(), e);
         }
@@ -65,120 +96,136 @@ public class ConfigurationService {
 
     @Transactional
     public DepartmentEntity createDefaultDepartment() {
-        return departmentRepository.findByCode("DEPT_IGRP").orElseGet(() -> {
-            var newDept = new DepartmentEntity();
-            newDept.setName("iGRP");
-            newDept.setCode("DEPT_IGRP");
-            newDept.setDescription("iGRP Department");
-            var dept = departmentRepository.save(newDept);
-            LOGGER.info("[Startup Config] Default Department created");
-            return dept;
-        });
+        var newDept = new DepartmentEntity();
+        newDept.setName("iGRP");
+        newDept.setCode("DEPT_IGRP");
+        newDept.setDescription("iGRP Department");
+        var dept = departmentRepository.save(newDept);
+        LOGGER.info("[Startup Config] Default Department created");
+        return dept;
     }
 
     @Transactional
     public ApplicationEntity createDefaultApp(DepartmentEntity dept) {
-        return applicationRepository.findFirstByType(AppType.SYSTEM).orElseGet(() -> {
-            var newApp = new ApplicationEntity();
-            newApp.setName("iGRP");
-            newApp.setDescription("iGRP Application");
-            newApp.setCode("APP_IGRP");
-            newApp.setOwner("superadmin");
-            newApp.setDepartmentId(dept);
-            newApp.setStatus(Status.ACTIVE);
-            newApp.setType(AppType.SYSTEM);
-            var app = applicationRepository.save(newApp);
-            LOGGER.info("[Startup Config] Default App created");
-            return app;
-        });
+        var newApp = new ApplicationEntity();
+        newApp.setName("iGRP");
+        newApp.setDescription("iGRP Application");
+        newApp.setCode("APP_IGRP");
+        newApp.setOwner("superadmin");
+        newApp.setDepartmentId(dept);
+        newApp.setStatus(Status.ACTIVE);
+        newApp.setType(AppType.SYSTEM);
+        var app = applicationRepository.save(newApp);
+        LOGGER.info("[Startup Config] Default App created");
+        return app;
     }
 
     @Transactional
     public PermissionEntity createDefaultPermission(ApplicationEntity app) {
-        return permissionRepository.findByName("manage_access").orElseGet(() -> {
-            var newPerm = new PermissionEntity();
-            newPerm.setName("manage_access");
-            newPerm.setApplication(app);
-            newPerm.setDescription("iGRP Manage Access Permission");
-            newPerm.setStatus(Status.ACTIVE);
-            var perm = permissionRepository.save(newPerm);
-            LOGGER.info("[Startup Config] Default Permission created");
-            return perm;
-        });
+        var newPerm = new PermissionEntity();
+        newPerm.setName("manage_access");
+        newPerm.setApplication(app);
+        newPerm.setDescription("iGRP Manage Access Permission");
+        newPerm.setStatus(Status.ACTIVE);
+        var perm = permissionRepository.save(newPerm);
+        LOGGER.info("[Startup Config] Default Permission created");
+        return perm;
     }
 
     @Transactional
     public RoleEntity createDefaultRole(DepartmentEntity dept, PermissionEntity perm) {
-        return roleRepository.findByName("superadmin").orElseGet(() -> {
-            var newRole = new RoleEntity();
-            newRole.setName("superadmin");
-            newRole.setDepartment(dept);
-            newRole.setDescription("iGRP Superadmin");
-            newRole.setPermissions(Set.of(perm));
-            newRole.setStatus(Status.ACTIVE);
-            var role = roleRepository.save(newRole);
-            LOGGER.info("[Startup Config] Default Role created");
-            return role;
-        });
+        var newRole = new RoleEntity();
+        newRole.setName("superadmin");
+        newRole.setDepartment(dept);
+        newRole.setDescription("iGRP Superadmin");
+        newRole.setPermissions(Set.of(perm));
+        newRole.setStatus(Status.ACTIVE);
+        var role = roleRepository.save(newRole);
+        LOGGER.info("[Startup Config] Default Role created");
+        return role;
     }
 
     @Transactional
     public void assignRoleToSuperAdminUser(RoleEntity role) {
-        var adminOpt = userRepository.findByUsername("superadmin");
-        if (adminOpt.isPresent()) {
-            var admin = adminOpt.get();
-            if (admin.getRoles() == null) {
-                admin.setRoles(new ArrayList<>());
-            }
-            if (!admin.getRoles().contains(role)) {
-                admin.getRoles().add(role);
-                userRepository.save(admin);
-                LOGGER.info("[Startup Config] Superadmin user linked to role");
-            }
-        } else {
-            LOGGER.warn("[Startup Config] Superadmin user not found when assigning role");
+        var admin = userRepository.findByUsername("superadmin").orElseThrow();
+        if (admin.getRoles() == null) {
+            admin.setRoles(new ArrayList<>());
+        }
+        if (!admin.getRoles().contains(role)) {
+            admin.getRoles().add(role);
+            userRepository.save(admin);
+            LOGGER.info("[Startup Config] Superadmin user linked to role");
         }
     }
 
     @Transactional
     public void createSuperAdminUser() {
-        var admin = userRepository.findByUsername("superadmin");
-        if (admin.isEmpty()) {
-            var newAdmin = new IGRPUserEntity();
-            newAdmin.setName("iGRP Super Admin");
-            newAdmin.setUsername("superadmin");
-            newAdmin.setEmail("superadmin@igrp.cv");
-            newAdmin.setRoles(new ArrayList<>());
-            userRepository.save(newAdmin);
-            LOGGER.info("[Startup Config] Super admin user created");
-        } else {
-            LOGGER.info("[Startup Config] Super admin user already exists");
-        }
+        var newAdmin = new IGRPUserEntity();
+        newAdmin.setName("iGRP Super Admin");
+        newAdmin.setUsername("superadmin");
+        newAdmin.setEmail("superadmin@igrp.cv");
+        newAdmin.setRoles(new ArrayList<>());
+        userRepository.save(newAdmin);
+        LOGGER.info("[Startup Config] Super admin user created");
     }
 
     @Transactional
     public void createDefaultMenus(ApplicationEntity app) {
+        long startTime = System.currentTimeMillis();
         try {
+            // 1. First check if we even need to process menus
             JsonNode root = objectMapper.readTree(new ClassPathResource("menus.json").getInputStream());
-            List<MenuEntryEntity> newMenus = new ArrayList<>();
-            buildMenuHierarchy(root, null, (short) 0, app, newMenus);
-            // Step 1: Fetch existing SYSTEM menus for this app
-            List<MenuEntryEntity> systemMenus = menuEntryRepository.findByApplicationIdAndType(app, MenuEntryType.SYSTEM_PAGE);
+            String currentJsonHash = String.valueOf(root.hashCode());
 
-            // Step 2: Optionally include their parent menus if needed (to avoid orphans)
-            Set<MenuEntryEntity> menusToDelete = new HashSet<>(systemMenus);
-            for (MenuEntryEntity menu : systemMenus) {
-                collectParentMenus(menu, menusToDelete);
+            // Check if we have a stored hash that matches
+            Optional<CustomFieldEntity> menuHashProp = propertyRepository.findByTableNameAndRecordId(
+                    "t_application", app.getId());
+
+            if (menuHashProp.isPresent() && menuHashProp.get().getFields().getOrDefault("menus_hash", "<no_data>").equals(currentJsonHash)) {
+                LOGGER.info("[Startup Config] Menu JSON unchanged. Skipping menu processing.");
+                return;
             }
 
-            // Step 3: Delete only collected system menus and parents
-            menuEntryRepository.deleteAll(menusToDelete);
-            menuEntryRepository.saveAll(newMenus);
-            LOGGER.info("[Startup Config] System menus created successfully.");
-        } catch (IOException e) {
-            LOGGER.error("[Startup Config] Failed to parse menu JSON: {}", e.getMessage());
-        } catch (Exception ex) {
-            LOGGER.error("[Startup Config] Unexpected error while creating menus: {}", ex.getMessage());
+            // 2. Only proceed with full processing if JSON changed
+            List<MenuEntryEntity> newMenus = new ArrayList<>();
+            buildMenuHierarchy(root, null, (short) 0, app, newMenus);
+
+            // 3. Fetch existing system menus with their hierarchy in one query
+            List<MenuEntryEntity> existingSystemMenus = menuEntryRepository
+                    .findSystemMenuHierarchy(app);
+
+            // 4. Compare and update if needed
+            if (!menusAreEqual(existingSystemMenus, newMenus)) {
+                LOGGER.info("[Startup Config] Menu changes detected. Updating...");
+                menuEntryRepository.deleteAll(existingSystemMenus);
+                menuEntryRepository.saveAll(newMenus);
+
+                Map<String, Object> fields = new HashMap<>();
+
+                fields.put("menus_hash", currentJsonHash);
+
+                Optional<CustomFieldEntity> customFieldsOpt = propertyRepository.findByTableNameAndRecordId("t_application", app.getId());
+
+                CustomFieldEntity customFields;
+
+                if (customFieldsOpt.isPresent()) {
+                    customFields = customFieldsOpt.get();
+                } else {
+                    customFields = new CustomFieldEntity();
+                    customFields.setTableName("t_application");
+                    customFields.setRecordId(app.getId());
+                }
+
+                customFields.setFields(fields);
+
+                // Store the new hash
+                propertyRepository.save(customFields);
+            }
+
+            LOGGER.info("[Startup Config] Menu processing completed in {} ms",
+                    System.currentTimeMillis() - startTime);
+        } catch (Exception e) {
+            LOGGER.error("[Startup Config] Menu processing error: {}", e.getMessage(), e);
         }
     }
 
@@ -225,14 +272,46 @@ public class ConfigurationService {
         }
     }
 
-    /**
-     * Recursively collects all parent menus of a given menu.
-     */
-    private void collectParentMenus(MenuEntryEntity menu, Set<MenuEntryEntity> result) {
-        MenuEntryEntity parent = menu.getParentId();
-        if (parent != null && result.add(parent)) {
-            collectParentMenus(parent, result);
+    private boolean menusAreEqual(List<MenuEntryEntity> existingMenus, List<MenuEntryEntity> newMenus) {
+        if (existingMenus.size() != newMenus.size()) {
+            return false;
         }
+
+        Map<String, MenuEntryEntity> existingMap = createMenuMap(existingMenus);
+        Map<String, MenuEntryEntity> newMap = createMenuMap(newMenus);
+
+        for (Map.Entry<String, MenuEntryEntity> entry : newMap.entrySet()) {
+            MenuEntryEntity existing = existingMap.get(entry.getKey());
+            MenuEntryEntity newMenu = entry.getValue();
+
+            if (existing == null || !menuEntriesEqual(existing, newMenu)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
+    private Map<String, MenuEntryEntity> createMenuMap(List<MenuEntryEntity> menus) {
+        Map<String, MenuEntryEntity> map = new HashMap<>();
+        for (MenuEntryEntity menu : menus) {
+            String parentName = menu.getParentId() != null ? menu.getParentId().getName() : "null";
+            String key = menu.getName() + "|" + menu.getType() + "|" + parentName;
+            map.put(key, menu);
+        }
+        return map;
+    }
+
+    private boolean menuEntriesEqual(MenuEntryEntity a, MenuEntryEntity b) {
+        return Objects.equals(a.getName(), b.getName()) &&
+                a.getType() == b.getType() &&
+                Objects.equals(a.getIcon(), b.getIcon()) &&
+                Objects.equals(a.getUrl(), b.getUrl()) &&
+                Objects.equals(a.getPageSlug(), b.getPageSlug()) &&
+                Objects.equals(a.getTarget(), b.getTarget()) &&
+                a.getStatus() == b.getStatus() &&
+                (a.getParentId() == null && b.getParentId() == null ||
+                        (a.getParentId() != null && b.getParentId() != null &&
+                                Objects.equals(a.getParentId().getName(), b.getParentId().getName())));
+    }
 }

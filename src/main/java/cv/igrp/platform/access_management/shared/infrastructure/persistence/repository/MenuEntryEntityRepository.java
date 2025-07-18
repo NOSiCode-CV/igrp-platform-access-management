@@ -3,6 +3,8 @@ package cv.igrp.platform.access_management.shared.infrastructure.persistence.rep
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -19,6 +21,9 @@ public interface MenuEntryEntityRepository extends
     RevisionRepository<MenuEntryEntity, Integer, Integer>
 {
 
-    List<MenuEntryEntity> findByApplicationIdAndType(ApplicationEntity applicationId, MenuEntryType type);
+    @Query("SELECT m FROM MenuEntryEntity m WHERE m.applicationId = :appId " +
+            "AND (m.type = 'SYSTEM_PAGE' OR m.id IN " +
+            "(SELECT DISTINCT p.parentId.id FROM MenuEntryEntity p WHERE p.type = 'SYSTEM_PAGE' AND p.applicationId = :appId))")
+    List<MenuEntryEntity> findSystemMenuHierarchy(@Param("appId") ApplicationEntity appId);
 
 }
