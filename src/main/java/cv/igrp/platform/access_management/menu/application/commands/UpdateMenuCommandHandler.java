@@ -2,17 +2,16 @@ package cv.igrp.platform.access_management.menu.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.menu.application.domain.service.MenuEntryValidator;
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -20,7 +19,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.Optional;
 
 
 @Component
@@ -31,7 +29,6 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
    private final MenuEntryEntityRepository menuEntryRepository;
    private final MenuEntryMapper menuEntryMapper;
    private final ApplicationEntityRepository applicationRepository;
-   private final ResourceEntityRepository resourceRepository;
    private final PermissionEntityRepository permissionEntityRepository;
 
    /**
@@ -40,12 +37,10 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
     * @param menuEntryRepository the repository used to access and persist {@link MenuEntryEntity} entities
     * @param menuEntryMapper the mapper used to convert between {@link MenuEntryEntity} and {@link MenuEntryDTO}
     * @param applicationRepository the repository used to validate and retrieve associated {@link ApplicationEntity} entities
-    * @param resourceRepository the repository used to validate and retrieve associated {@link ResourceEntity} entities
     */
-   public UpdateMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository, MenuEntryMapper menuEntryMapper, ApplicationEntityRepository applicationRepository, ResourceEntityRepository resourceRepository, PermissionEntityRepository permissionEntityRepository) {
+   public UpdateMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository, MenuEntryMapper menuEntryMapper, ApplicationEntityRepository applicationRepository, PermissionEntityRepository permissionEntityRepository) {
       this.menuEntryRepository = menuEntryRepository;
       this.applicationRepository = applicationRepository;
-      this.resourceRepository = resourceRepository;
       this.menuEntryMapper = menuEntryMapper;
       this.permissionEntityRepository = permissionEntityRepository;
    }
@@ -75,6 +70,8 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
               });
 
       MenuEntryDTO menuDto = command.getMenuentrydto();
+
+      MenuEntryValidator.validateRequiredFields(menuDto);
 
       menuEntry.setName(menuDto.getName());
       menuEntry.setType(menuDto.getType());

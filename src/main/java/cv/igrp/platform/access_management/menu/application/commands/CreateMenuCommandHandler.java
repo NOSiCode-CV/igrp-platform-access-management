@@ -2,17 +2,16 @@ package cv.igrp.platform.access_management.menu.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.menu.application.domain.service.MenuEntryValidator;
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -46,7 +45,6 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
    private final MenuEntryEntityRepository menuEntryRepository;
    private final MenuEntryMapper menuEntryMapper;
    private final ApplicationEntityRepository applicationRepository;
-   private final ResourceEntityRepository resourceRepository;
    private final PermissionEntityRepository permissionRepository;
 
    /**
@@ -55,20 +53,18 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
     * @param menuEntryRepository the repository used to persist {@link MenuEntryEntity} entities
     * @param menuEntryMapper the mapper used to convert between entity and DTO
     * @param applicationRepository repository to resolve associated {@link ApplicationEntity}
-    * @param resourceRepository repository to resolve associated {@link ResourceEntity}
     */
    public CreateMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository, MenuEntryMapper menuEntryMapper,
-                                   ApplicationEntityRepository applicationRepository, ResourceEntityRepository resourceRepository,
+                                   ApplicationEntityRepository applicationRepository,
                                    PermissionEntityRepository permissionRepository) {
       this.menuEntryRepository = menuEntryRepository;
       this.menuEntryMapper = menuEntryMapper;
       this.applicationRepository = applicationRepository;
-      this.resourceRepository = resourceRepository;
       this.permissionRepository = permissionRepository;
    }
 
    /**
-    * Handles the creation of a new {@link MenuEntryEntity} from the data provided in the {@link cv.igrp.platform.access_management.menu.application.commands.commands.CreateMenuCommand}.
+    * Handles the creation of a new {@link MenuEntryEntity} from the data provided in the {@link CreateMenuCommand}.
     * <p>
     * This method performs the following steps:
     * <ul>
@@ -98,6 +94,8 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
          throw IgrpResponseStatusException.of(
                  HttpStatus.BAD_REQUEST, "Menu", "Menu Entry DTO Missing");
       }
+
+      MenuEntryValidator.validateRequiredFields(menuEntryDTO);
 
       MenuEntryEntity menuEntry = menuEntryMapper.toEntity(menuEntryDTO);
 
@@ -158,4 +156,5 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
 
       return ResponseEntity.status(HttpStatus.CREATED).body(menuEntryMapper.toDTO(savedMenuEntry));
    }
+
 }

@@ -58,6 +58,11 @@ public class MenuEntryEntity extends AuditEntity {
     private String target;
 
   
+    @NotBlank(message = "pageSlug is mandatory")
+    @Column(name="page_slug", unique = true, nullable = false)
+    private String pageSlug;
+
+  
     @Column(name="url")
     private String url;
 
