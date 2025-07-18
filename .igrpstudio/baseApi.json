@@ -9,7 +9,6 @@
   "projectStructureStyle": "domain",
   "enableObservability": true,
   "enableEntityRevision": true,
-  "igrpCoreVersion": "0.0.1-alpha",
-  "springBootVersion": "3.4.3",
+  "version": "0.1.0-beta.1",
   "enableGraalVm": true
 }
