@@ -2,8 +2,9 @@ package cv.igrp.platform.access_management.files.application.queries;
 
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.filemanager.StorageService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.Setter;
+//import org.slf4j.Logger;
+//import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import org.springframework.beans.factory.annotation.Value;
@@ -23,6 +24,7 @@ public class GetPrivateFileUrlQueryHandler implements QueryHandler<GetPrivateFil
 
   private final StorageService fileManagerService;
 
+  @Setter
   @Value("${igrp.minio.url-expiration-time}")
   private int urlExpirationTimeInSeconds;
 
@@ -34,14 +36,13 @@ public class GetPrivateFileUrlQueryHandler implements QueryHandler<GetPrivateFil
   public ResponseEntity<FileUrlDTO> handle(GetPrivateFileUrlQuery query) {
      var privateFilePath = query.getPrivateFilePath();
 
-     if(privateFilePath == null || privateFilePath.isEmpty()) {
+     if(privateFilePath == null || privateFilePath.isBlank()) {
        throw IgrpResponseStatusException.of(
                HttpStatus.BAD_REQUEST,
                "No path provided",
                "There's no path provided. Please check and try again."
        );
      }
-
 
      LocalDateTime localExpiration = LocalDateTime.now()
                .plusSeconds(urlExpirationTimeInSeconds);
@@ -55,5 +56,4 @@ public class GetPrivateFileUrlQueryHandler implements QueryHandler<GetPrivateFil
 
      return ResponseEntity.ok(fileUrlDto);
   }
-
 }
