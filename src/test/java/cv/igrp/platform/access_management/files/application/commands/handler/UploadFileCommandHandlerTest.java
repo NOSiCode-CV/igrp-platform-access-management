@@ -47,7 +47,7 @@ public class UploadFileCommandHandlerTest {
 
     @BeforeEach
     void setup() throws Exception {
-        when(authenticationHelper.getPreferredUsername()).thenReturn(USER);
+
     }
 
     @Test
@@ -84,7 +84,7 @@ public class UploadFileCommandHandlerTest {
         MultipartFile file = mock(MultipartFile.class);
         when(file.isEmpty()).thenReturn(false);
         when(file.getBytes()).thenThrow(new IOException("Falha na leitura do arquivo"));
-
+        when(authenticationHelper.getPreferredUsername()).thenReturn(USER);
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
@@ -100,15 +100,13 @@ public class UploadFileCommandHandlerTest {
 
     @Test
     void testUploadFile_shouldUploadPrivateFileSuccessfully() throws Exception {
-        String userName = "testUser";
         String folder = "documents";
         String originalFilename = "contract.pdf";
         String contentType = "application/pdf";
         String content = "Test content";
 
         mockFile(originalFilename, contentType, content);
-
-        when(authenticationHelper.getPreferredUsername()).thenReturn(userName);
+        when(authenticationHelper.getPreferredUsername()).thenReturn(USER);
 
         try (MockedStatic<UUID> mockedUuid = mockStatic(UUID.class)) {
             mockedUuid.when(UUID::randomUUID).thenReturn(FIXED_UUID);
@@ -138,14 +136,13 @@ public class UploadFileCommandHandlerTest {
     @Test
     void testUploadFile_shouldUploadPublicFileSuccessfully() throws Exception {
         // Arrange
-        String userName = "testUser";
         String folder = "public_docs";
         String originalFilename = "document.pdf";
         String contentType = "application/pdf";
         String content = "Public file content";
         mockFile(originalFilename, contentType, content);
 
-        when(authenticationHelper.getPreferredUsername()).thenReturn(userName);
+        when(authenticationHelper.getPreferredUsername()).thenReturn(USER);
 
 
         try (MockedStatic<UUID> mockedUuid = mockStatic(UUID.class)) {
