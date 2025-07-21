@@ -79,10 +79,9 @@ public class ConfigurationService {
                     createDefaultRole(department, permission);
 
             // 3. Handle user and role assignment
-            if (!superAdminExists) {
-                createSuperAdminUser();
-            }
-            assignRoleToSuperAdminUser(role);
+            IGRPUserEntity user = superAdminExists? userRepository.findByUsername("superadmin").get() : createSuperAdminUser();
+
+            assignRoleToSuperAdminUser(role, user);
 
             // 4. Optimized menu handling
             createDefaultMenus(app);
@@ -146,27 +145,36 @@ public class ConfigurationService {
     }
 
     @Transactional
-    public void assignRoleToSuperAdminUser(RoleEntity role) {
-        var admin = userRepository.findByUsername("superadmin").orElseThrow();
-        if (admin.getRoles() == null) {
-            admin.setRoles(new ArrayList<>());
+    public void assignRoleToSuperAdminUser(RoleEntity role, IGRPUserEntity user) {
+
+        Set<IGRPUserEntity> users = role.getUsers();
+
+        if (users == null) {
+            users = new HashSet<>();
+            role.setUsers(users);
         }
-        if (!admin.getRoles().contains(role)) {
-            admin.getRoles().add(role);
-            userRepository.save(admin);
-            LOGGER.info("[Startup Config] Superadmin user linked to role");
+        boolean isRoleAdded = users.add(user);
+
+        if (isRoleAdded) {
+            LOGGER.info("Superadmin successfully added to role");
+        } else {
+            LOGGER.info("Superadmin was already associated with role");
         }
+
+        roleRepository.save(role);
+
+        LOGGER.info("[Startup Config] Superadmin user linked to role");
     }
 
     @Transactional
-    public void createSuperAdminUser() {
+    public IGRPUserEntity createSuperAdminUser() {
         var newAdmin = new IGRPUserEntity();
         newAdmin.setName("iGRP Super Admin");
         newAdmin.setUsername("superadmin");
         newAdmin.setEmail("superadmin@igrp.cv");
         newAdmin.setRoles(new ArrayList<>());
-        userRepository.save(newAdmin);
         LOGGER.info("[Startup Config] Super admin user created");
+        return userRepository.save(newAdmin);
     }
 
     @Transactional
