@@ -42,5 +42,6 @@ public interface RoleEntityRepository extends
      * @return an {@link Optional} containing the {@link RoleEntity}, if found and not having the excluded status
      */
     Optional<RoleEntity> findByIdAndStatusNot(Integer id, Status status);
+    Optional<RoleEntity> findByName(String name);
 
 }
