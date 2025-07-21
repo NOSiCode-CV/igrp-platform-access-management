@@ -13,17 +13,23 @@ Permission Management alternative to Google Zanzibar/Permify using only database
 
 ```mermaid
 graph TD
-    A[Client Applications] --> B[Access Management API]
-    B --> C[(Access Management DB)]
-    C --> D[Authorization Service]
-    D --> C
-    B --> D
-    D --> B
+   A[Client Applications] --> B[Access Management API]
+   B -->|Check Cache| E{Cache Present?}
+   E -- Yes --> F[Return Cached Permissions]
+   E -- No --> C[(Access Management DB)]
+   C --> D[Authorization Service]
+   D --> C
+   D -->|Permissions| G[Update Cache]
+   G --> F
+   B --> D
+   D --> B
+   F --> B
+
 ```
 
-**Key Changes from Permify Version**:
-1. **Direct Database Authorization**: Permission checks directly against access management DB
-2. **Materialized View Cache**: Precomputed permission sets for fast lookups
+**Key Changes from Permify permission logic**:
+1. **Direct Database Authorization**: Permission checks directly against cached permission data or access management DB
+2. **Materialized View Cache**: Precomputed permission sets for fast lookups and build cache data
 3. **Hierarchy-aware Queries**: Optimized recursive CTEs for role/department inheritance
 4. **Event-driven Updates**: Real-time cache invalidation on configuration changes
 
@@ -34,29 +40,29 @@ graph TD
 ```mermaid
 sequenceDiagram
     participant Client
-    participant AppServer
-    participant AuthService
-    participant AccessDB
+    participant App Server
+    participant Auth Service
+    participant Database
 
-    Client->>AppServer: API Request
-    AppServer->>AuthService: checkPermission(user, resource, action)
-    AuthService->>AccessDB: Query materialized view
+    Client->>App Server: API Request
+    App Server->>Auth Service: checkPermission(user, resource, action)
+    Auth Service->>Database: Query materialized view
     alt Has Permission
-        AccessDB-->>AuthService: Permission granted
-        AuthService-->>AppServer: true
-        AppServer->>AppServer: Process request
-        AppServer-->>Client: 200 OK
+        Database-->>Auth Service: Permission granted
+        Auth Service-->>App Server: true
+        App Server->>App Server: Process request
+        App Server-->>Client: 200 OK
     else No Permission
-        AccessDB-->>AuthService: Permission denied
-        AuthService-->>AppServer: false
-        AppServer-->>Client: 403 Forbidden
+        Database-->>Auth Service: Permission denied
+        Auth Service-->>App Server: false
+        App Server-->>Client: 403 Forbidden
     end
 ```
 
 **Performance Optimizations**:
 - 90% of checks served from materialized views
 - Hierarchical checks via optimized CTEs
-- Redis cache for frequent permission sets
+- Cache for frequent permission sets
 - Batch permission checking API
 
 ---
@@ -160,8 +166,7 @@ CREATE INDEX idx_user_perms ON user_effective_permissions (user_id);
     - Role/permission changes
     - User role assignments
     - Department restructuring
-2. Time-based fallback (every 15 min)
-3. Partial refresh by user/department
+2. Time-based fallback (every 15 min) (_Optional_)
 
 ---
 
@@ -218,10 +223,9 @@ CREATE INDEX idx_user_perms ON user_effective_permissions (user_id);
 | **Hybrid Approach**    | **1.8ms**   | **4.2ms**   | **14,000 req/s** | **99.7%**  |
 
 **Hybrid Caching Strategy**:
-1. L1: Local in-memory cache (Caffeine)
-2. L2: Redis cluster
-3. L3: Materialized views
-4. L4: On-demand CTE queries
+1. L1: Redis cache
+2. L2: Materialized views
+3. L3: On-demand CTE queries
 
 ---
 
@@ -394,17 +398,17 @@ Authorization: Bearer <operator_token>
 
 ```mermaid
 sequenceDiagram
-    participant ConfigService
+    participant Config Service
     participant Spring Event
-    participant AuthService
-    participant DB
+    participant Auth Service
+    participant Database
 
-    ConfigService->>DB: Update role permissions
-    DB->>Spring Event: Emit PermissionChangeEvent
-   Spring Event->>AuthService: Receive event
-    AuthService->>AuthService: Invalidate L1/L2 caches
-    AuthService->>DB: Refresh materialized view
-    DB-->>AuthService: Refresh complete
+    Config Service->>Database: Update role permissions
+    Database->>Spring Event: Emit PermissionChangeEvent
+   Spring Event->>Auth Service: Receive event
+    Auth Service->>Auth Service: Invalidate L1 cache
+    Auth Service->>Database: Refresh materialized view
+    Database-->>Auth Service: Refresh complete
 ```
 
 **Event Types**:
