@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.4.3</version>
+        <version>3.5.3</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
 
@@ -26,7 +26,7 @@
 
         <!-- Third-party versions -->
         <springdoc.version>2.8.9</springdoc.version>
-        <otel.version>1.32.0</otel.version>
+        <otel.version>1.52.0</otel.version>
         <jacoco.version>0.8.13</jacoco.version>
         <dependency-check.version>12.1.1</dependency-check.version>
         <javadoc.plugin.version>3.11.2</javadoc.plugin.version>
