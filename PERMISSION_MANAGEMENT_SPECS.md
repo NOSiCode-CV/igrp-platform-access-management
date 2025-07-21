@@ -410,7 +410,7 @@ sequenceDiagram
     participant Database
 
     Config Service->>Database: Update role permissions
-    Database->>Spring Event: Emit PermissionChangeEvent
+    Database->>Spring Event: Emit AuthorizationChangedEvent
    Spring Event->>Auth Service: Receive event
     Auth Service->>Auth Service: Invalidate L1 cache
     Auth Service->>Database: Refresh materialized view
