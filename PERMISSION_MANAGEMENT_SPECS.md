@@ -229,7 +229,11 @@ CREATE INDEX idx_user_perms ON user_effective_permissions (user_id);
 
 ---
 
-## Java Implementation (Simplified)
+## Java Implementation (Simplified just for reference)
+
+```
+NOTE: This is not the actual implementation, it is just code samples for reference
+```
 
 ### Authorization Service
 
@@ -272,7 +276,7 @@ public class AuthorizationService {
 
     @CacheEvict(value = "permissionCache", allEntries = true)
     @EventListener
-    public void handlePermissionChange(PermissionChangeEvent event) {
+    public void handlePermissionChange(PermissionsChangedEvent event) {
         // Refresh materialized view incrementally
         refreshMaterializedView(event.getAffectedUsers());
     }
@@ -317,6 +321,11 @@ public ResponseEntity<?> updateVehicle(@PathVariable String id, @RequestBody Veh
 }
 ```
 
+In iGRP Studio Spring Engine the annotation must be mapped the following way:
+```handlebars
+@PreAuthorize("@igrpAuthorization.checkPermission(authentication, '{{extractPathName path}}:' + #{{params}}, '{{permission}}')")
+```
+
 ---
 
 ## Scenario: Maintenance Technician Access
@@ -341,7 +350,7 @@ graph LR
 
 2. **Permission Check**:
    ```java
-   authService.checkPermission("user456", "vehicle:ABC123", "maintain_vehicle")
+   authorizeApi.checkPermission("user456", "vehicle:ABC123", "maintain_vehicle");
    ```
 
 3. **Database Query Path**:
@@ -409,10 +418,7 @@ sequenceDiagram
 ```
 
 **Event Types**:
-1. `RolePermissionChangedEvent`
-2. `UserRoleAssignmentEvent`
-3. `DepartmentRestructureEvent`
-4. `ResourcePermissionUpdateEvent`
+1. `PermissionsChangedEvent`
 
 **Throughput Handling**:
 - Batch processing of events
