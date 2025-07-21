@@ -66,6 +66,7 @@ public class UpdateMenuCommandHandlerTest {
         dto = new MenuEntryDTO();
         dto.setName("Updated Name");
         dto.setType(MenuEntryType.MENU_PAGE);
+        dto.setPageSlug("edited-page");
         dto.setPosition((short) 1);
         dto.setIcon("fa-icon");
         dto.setStatus(Status.ACTIVE);
