@@ -276,7 +276,7 @@ public class AuthorizationService {
 
     @CacheEvict(value = "permissionCache", allEntries = true)
     @EventListener
-    public void handlePermissionChange(PermissionsChangedEvent event) {
+    public void handlePermissionChange(AuthorizationChangedEvent event) {
         // Refresh materialized view incrementally
         refreshMaterializedView(event.getAffectedUsers());
     }
@@ -418,10 +418,4 @@ sequenceDiagram
 ```
 
 **Event Types**:
-1. `PermissionsChangedEvent`
-
-**Throughput Handling**:
-- Batch processing of events
-- Deduplication by change ID
-- Parallel materialized view refresh
-- Graceful degradation during high load
+1. `AuthorizationChangedEvent`
