@@ -33,8 +33,8 @@ import java.util.List;
 @Component
 public class GetApplicationsByUserQueryHandler implements QueryHandler<GetApplicationsByUserQuery, ResponseEntity<List<ApplicationDTO>>>{
 
-  private ApplicationEntityRepository applicationRepository;
-  private ApplicationMapper applicationMapper;
+  private final ApplicationEntityRepository applicationRepository;
+  private final ApplicationMapper applicationMapper;
 
   /**
    * Constructs the query handler with required dependencies.

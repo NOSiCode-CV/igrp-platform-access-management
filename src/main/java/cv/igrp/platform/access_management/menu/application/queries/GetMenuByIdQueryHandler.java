@@ -42,7 +42,7 @@ public class GetMenuByIdQueryHandler implements QueryHandler<GetMenuByIdQuery, R
   }
 
   /**
-   * Handles the {@link cv.igrp.platform.access_management.menu.application.queries.queries.GetMenuByIdQuery} by retrieving the specified {@link MenuEntryEntity}
+   * Handles the {@link cv.igrp.platform.access_management.menu.application.queries.GetMenuByIdQuery} by retrieving the specified {@link MenuEntryEntity}
    * and returning it as a {@link MenuEntryDTO}.
    * <p>
    * If no menu entry is found for the provided ID, an {@link IgrpResponseStatusException}

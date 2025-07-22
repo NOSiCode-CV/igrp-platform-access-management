@@ -59,24 +59,6 @@
       },
       "requestParams": [
         {
-          "type": "integer",
-          "name": "applicationId",
-          "description": "Application ID",
-          "isRequired": false
-        },
-        {
-          "type": "string",
-          "name": "applicationCode",
-          "description": "Application Code",
-          "isRequired": false
-        },
-        {
-          "type": "integer",
-          "name": "parentId",
-          "description": "Parent Department ID",
-          "isRequired": false
-        },
-        {
           "type": "string",
           "name": "name",
           "description": "Department Name",
@@ -92,6 +74,12 @@
           "type": "string",
           "name": "code",
           "description": "Department Code",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "parentCode",
+          "description": "Parent Code",
           "isRequired": false
         }
       ]
@@ -127,7 +115,7 @@
     },
     {
       "actionName": "updateDepartment",
-      "path": "departments/{id}",
+      "path": "departments/{code}",
       "method": "PUT",
       "requestBody": {
         "content": {
@@ -160,16 +148,15 @@
       },
       "pathVariables": [
         {
-          "type": "integer",
-          "name": "id",
-          "description": "ID of the Department",
+          "name": "code",
+          "type": "string",
           "isRequired": true
         }
       ]
     },
     {
       "actionName": "deleteDepartment",
-      "path": "departments/{id}",
+      "path": "departments/{code}",
       "method": "DELETE",
       "responses": {
         "204": {
@@ -186,9 +173,8 @@
       },
       "pathVariables": [
         {
-          "type": "integer",
-          "name": "id",
-          "description": "ID of the Department",
+          "name": "code",
+          "type": "string",
           "isRequired": true
         }
       ]

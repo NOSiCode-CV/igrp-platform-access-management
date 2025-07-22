@@ -7,6 +7,7 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -44,6 +45,7 @@ public class RemoveResourceCustomFieldsCommandHandler implements CommandHandler<
            LoggerFactory.getLogger(RemoveResourceCustomFieldsCommandHandler.class);
 
    private final CustomFieldEntityRepository customFieldRepository;
+   private final ResourceEntityRepository resourceRepository;
 
    /**
     * Constructs a new instance of {@code RemoveResourceCustomFieldsCommandHandler}.
@@ -51,8 +53,9 @@ public class RemoveResourceCustomFieldsCommandHandler implements CommandHandler<
     * @param customFieldRepository the repository used to retrieve and update custom field entries
     */
    public RemoveResourceCustomFieldsCommandHandler(
-           CustomFieldEntityRepository customFieldRepository) {
+           CustomFieldEntityRepository customFieldRepository, ResourceEntityRepository resourceRepository) {
       this.customFieldRepository = customFieldRepository;
+      this.resourceRepository = resourceRepository;
    }
 
    /**
@@ -68,31 +71,40 @@ public class RemoveResourceCustomFieldsCommandHandler implements CommandHandler<
     */
    @IgrpCommandHandler
    public ResponseEntity<String> handle(RemoveResourceCustomFieldsCommand command) {
-      Integer resourceId = command.getId();
+      String resourceName = command.getName();
 
-      logger.info("Processing removal of custom fields for resource ID: {}", resourceId);
+      logger.info("Processing removal of custom fields for resource name: {}", resourceName);
+
+      ResourceEntity resource = resourceRepository.findByName(resourceName)
+              .orElseThrow(() -> {
+                 logger.warn("Resource not found with name: {}", resourceName);
+                 return IgrpResponseStatusException.of(
+                         HttpStatus.NOT_FOUND,
+                         "Resource not found",
+                         "Resource not found with name: " + resourceName);
+              });
 
       CustomFieldEntity customField = customFieldRepository
-              .findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resourceId)
+              .findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resource.getId())
               .orElseThrow(() -> {
-                 logger.warn("CustomFieldEntity not found for resource ID: {}", resourceId);
+                 logger.warn("CustomFieldEntity not found for resource name: {}", resourceName);
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
                          "CustomFieldEntity not found",
-                         "CustomFieldEntity not found for Resource ID: " + resourceId);
+                         "CustomFieldEntity not found for Resource name: " + resourceName);
               });
 
       Map<String, Object> fields = Optional.ofNullable(customField.getFields()).orElse(new HashMap<>());
       List<String> keysToRemove = Optional.ofNullable(command.getRemoveResourceCustomFieldsRequest()).orElse(List.of());
 
-      logger.info("Removing {} custom field(s) from resource ID: {}", keysToRemove.size(), resourceId);
+      logger.info("Removing {} custom field(s) from resource name: {}", keysToRemove.size(), resourceName);
 
       keysToRemove.forEach(fields::remove);
 
       customField.setFields(fields);
       customFieldRepository.save(customField);
 
-      logger.info("Successfully removed custom fields from resource ID: {}", resourceId);
+      logger.info("Successfully removed custom fields from resource name: {}", resourceName);
       return ResponseEntity.noContent().build();
    }
 

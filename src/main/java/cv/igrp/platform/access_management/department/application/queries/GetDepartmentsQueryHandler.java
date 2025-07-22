@@ -4,7 +4,6 @@ import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import jakarta.persistence.criteria.Join;
@@ -13,7 +12,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
-import org.springframework.context.event.EventListener;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -66,21 +64,11 @@ public class GetDepartmentsQueryHandler implements QueryHandler<GetDepartmentsQu
    */
   @IgrpQueryHandler
   public ResponseEntity<List<DepartmentDTO>> handle(GetDepartmentsQuery query) {
-    logger.info("Handling GetDepartmentsQuery: applicationId={}, name={}, status={}, applicationCode={}, parentId={}",
-            query.getApplicationId(), query.getName(), query.getStatus(), query.getApplicationCode(), query.getParentId());
+    logger.info("Handling GetDepartmentsQuery: name={}, status={}, parentCode={}",
+            query.getName(), query.getStatus(), query.getParentCode());
 
-    Specification<DepartmentEntity> spec = (root, q, cb) -> {
+    Specification<DepartmentEntity> spec = (root, _, cb) -> {
       List<Predicate> predicates = new ArrayList<>();
-
-      if (query.getApplicationId() != null) {
-        Join<DepartmentEntity, ApplicationEntity> applicationJoin = root.join("applicationId");
-        predicates.add(cb.equal(applicationJoin.get("id"), query.getApplicationId()));
-      }
-
-      if (query.getApplicationCode() != null) {
-        Join<DepartmentEntity, ApplicationEntity> applicationJoin = root.join("applicationId");
-        predicates.add(cb.equal(applicationJoin.get("code"), query.getApplicationCode()));
-      }
 
       if (query.getName() != null && !query.getName().isEmpty()) {
         predicates.add(cb.like(cb.lower(root.get("name")), "%" + query.getName().toLowerCase() + "%"));
@@ -95,9 +83,9 @@ public class GetDepartmentsQueryHandler implements QueryHandler<GetDepartmentsQu
         predicates.add(cb.equal(root.get("code"), query.getCode()));
       }
 
-      if (query.getParentId() != null) {
+      if (query.getParentCode() != null) {
         Join<DepartmentEntity, DepartmentEntity> parentJoin = root.join("parentId");
-        predicates.add(cb.equal(parentJoin.get("id"), query.getParentId()));
+        predicates.add(cb.equal(parentJoin.get("code"), query.getParentCode()));
       }
 
       return cb.and(predicates.toArray(new Predicate[0]));

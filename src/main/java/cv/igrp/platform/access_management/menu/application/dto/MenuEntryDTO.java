@@ -1,3 +1,6 @@
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+
 package cv.igrp.platform.access_management.menu.application.dto;
 
 import cv.igrp.framework.stereotype.IgrpDTO;
@@ -8,7 +11,6 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -23,6 +25,9 @@ public class MenuEntryDTO {
   
   
   private Integer id ;
+  
+  
+  private String code ;
   @NotBlank(message = "The field <name> is required.")
 	@Size(min = 3, message = "The field length <name> must be at least 3 characters.")
 	@Size(max = 100, message = "The field length <name> cannot be more than 100 characters.")
@@ -54,10 +59,10 @@ public class MenuEntryDTO {
   private String pageSlug ;
   
   
-  private Integer parentId ;
+  private String parentCode ;
   
   
-  private Integer applicationId ;
+  private String applicationCode ;
   
   
   private String createdBy ;

@@ -63,27 +63,27 @@ public class DeleteResourceCommandHandler implements CommandHandler<DeleteResour
     */
    @IgrpCommandHandler
    public ResponseEntity<String> handle(DeleteResourceCommand command) {
-      Integer resourceId = command.getId();
+      String resourceName = command.getName();
 
-      logger.info("Attempting to delete resource with ID: {}", resourceId);
+      logger.info("Attempting to delete resource with name: {}", resourceName);
 
-      ResourceEntity resource = resourceRepository.findById(command.getId())
+      ResourceEntity resource = resourceRepository.findByName(command.getName())
               .orElseThrow(() -> {
-                 logger.warn("Resource not found with ID: {}", resourceId);
+                 logger.warn("Resource not found with name: {}", resourceName);
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
                          "Resource not found",
-                         "Resource not found with id: " + resourceId);
+                         "Resource not found with name: " + resourceName);
               });
       resourceRepository.delete(resource);
-      logger.info("Deleted resource with ID: {}", resourceId);
+      logger.info("Deleted resource with name: {}", resourceName);
 
       Optional<CustomFieldEntity> customField = customFieldRepository
-              .findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resourceId);
+              .findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resource.getId());
 
       customField.ifPresent(field -> {
          customFieldRepository.delete(field);
-         logger.info("Deleted associated custom field for resource ID: {}", resourceId);
+         logger.info("Deleted associated custom field for resource name: {}", resourceName);
       });
 
       return ResponseEntity.noContent().build();

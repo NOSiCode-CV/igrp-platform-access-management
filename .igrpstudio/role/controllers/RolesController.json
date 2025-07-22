@@ -58,7 +58,21 @@
             }
           }
         }
-      }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "description": "Department Code",
+          "isRequired": true
+        },
+        {
+          "type": "string",
+          "name": "username",
+          "description": "Username",
+          "isRequired": true
+        }
+      ]
     },
     {
       "actionName": "getRoleById",
@@ -91,7 +105,7 @@
     },
     {
       "actionName": "updateRole",
-      "path": "roles/{id}",
+      "path": "roles/{name}",
       "method": "PUT",
       "requestBody": {
         "content": {
@@ -124,16 +138,15 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "Role ID"
+          "name": "name",
+          "type": "string",
+          "isRequired": true
         }
       ]
     },
     {
       "actionName": "deleteRole",
-      "path": "roles/{id}",
+      "path": "roles/{name}",
       "method": "DELETE",
       "responses": {
         "204": {
@@ -151,30 +164,16 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "Role ID"
+          "name": "name",
+          "type": "string",
+          "isRequired": true
         }
       ]
     },
     {
       "actionName": "RemovePermissions",
-      "path": "roles/{id}/removePermissions",
+      "path": "roles/{name}/removePermissions",
       "method": "POST",
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "integer",
-              "name": "RemovePermissions",
-              "description": "Remove Permissions Request",
-              "collectionType": "list",
-              "isRequired": true
-            }
-          }
-        }
-      },
       "responses": {
         "200": {
           "name": "OK",
@@ -193,16 +192,28 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "Role ID"
+          "name": "name",
+          "type": "string",
+          "isRequired": true
         }
-      ]
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "integer",
+              "name": "RemovePermissions",
+              "description": "Remove Permissions Request",
+              "collectionType": "list",
+              "isRequired": true
+            }
+          }
+        }
+      }
     },
     {
       "actionName": "GetPermissionsByRoleId",
-      "path": "roles/{id}/permissions",
+      "path": "roles/{name}/permissions",
       "method": "GET",
       "responses": {
         "200": {
@@ -222,29 +233,16 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "Role ID"
+          "name": "name",
+          "type": "string",
+          "isRequired": true
         }
       ]
     },
     {
       "actionName": "addPermissions",
-      "path": "roles/{id}/addPermissions",
+      "path": "roles/{name}/addPermissions",
       "method": "POST",
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "integer",
-              "name": "AddPermission",
-              "collectionType": "list",
-              "description": "Add Permission Request"
-            }
-          }
-        }
-      },
       "responses": {
         "200": {
           "name": "OK",
@@ -261,12 +259,23 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "Role ID"
+          "name": "name",
+          "type": "string",
+          "isRequired": true
         }
-      ]
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "integer",
+              "name": "AddPermission",
+              "collectionType": "list",
+              "description": "Add Permission Request"
+            }
+          }
+        }
+      }
     },
     {
       "actionName": "getRolesByName",

@@ -30,6 +30,7 @@ public class GetApplicationCustomFieldsQueryHandlerTest {
     void testHandleGetApplicationCustomFieldsQuery_Success() {
         // Given
         Integer applicationId = 1;
+        String applicationCode = "APP";
         Map<String, Object> expectedFields = Map.of("key1", "value1", "key2", "value2");
 
         CustomFieldEntity customField = new CustomFieldEntity();
@@ -40,7 +41,7 @@ public class GetApplicationCustomFieldsQueryHandlerTest {
         when(customFieldRepository.findByTableNameAndRecordId("t_application", applicationId))
                 .thenReturn(Optional.of(customField));
 
-        GetApplicationCustomFieldsQuery query = new GetApplicationCustomFieldsQuery(applicationId);
+        GetApplicationCustomFieldsQuery query = new GetApplicationCustomFieldsQuery(applicationCode);
 
         // When
         ResponseEntity<Map<String, ?>> response = getApplicationCustomFieldsQueryHandler.handle(query);
@@ -55,11 +56,12 @@ public class GetApplicationCustomFieldsQueryHandlerTest {
     void testHandleGetApplicationCustomFieldsQuery_NotFound() {
         // Given
         Integer applicationId = 1;
+        String applicationCode = "APP";
 
         when(customFieldRepository.findByTableNameAndRecordId("t_application", applicationId))
                 .thenReturn(Optional.empty());
 
-        GetApplicationCustomFieldsQuery query = new GetApplicationCustomFieldsQuery(applicationId);
+        GetApplicationCustomFieldsQuery query = new GetApplicationCustomFieldsQuery(applicationCode);
 
         // When & Then
         IgrpResponseStatusException thrown = assertThrows(IgrpResponseStatusException.class, () -> getApplicationCustomFieldsQueryHandler.handle(query));

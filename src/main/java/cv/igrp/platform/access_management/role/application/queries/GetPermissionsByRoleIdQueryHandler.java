@@ -32,7 +32,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p>If the role is not found or is marked as deleted, an {@link IgrpResponseStatusException} is thrown.</p>
  *
- * @see cv.igrp.platform.access_management.role.application.queries.queries.GetPermissionsByRoleIdQuery
+ * @see cv.igrp.platform.access_management.role.application.queries.GetPermissionsByRoleIdQuery
  * @see PermissionDTO
  * @see RoleEntityRepository
  * @see PermissionMapper
@@ -68,12 +68,12 @@ public class GetPermissionsByRoleIdQueryHandler implements QueryHandler<GetPermi
   @IgrpQueryHandler
   @Transactional(readOnly = true)
   public ResponseEntity<List<PermissionDTO>> handle(GetPermissionsByRoleIdQuery query) {
-    log.info("Get Permissions from Role with id {}.", query.getId());
-    RoleEntity foundRole = roleRepository.findByIdAndStatusNot(query.getId(), Status.DELETED)
+    log.info("Get Permissions from Role with name {}.", query.getName());
+    RoleEntity foundRole = roleRepository.findByNameAndStatusNot(query.getName(), Status.DELETED)
             .orElseThrow(() -> {
-              log.warn("Role with id {} not found.", query.getId());
+              log.warn("Role with name {} not found.", query.getName());
               return IgrpResponseStatusException.of(
-                      HttpStatus.NOT_FOUND, "Get Permission By Role ID", "Role with id: " + query.getId() + " not found."
+                      HttpStatus.NOT_FOUND, "Get Permission By Role name", "Role with name: " + query.getName() + " not found."
               );
             });
     List<PermissionDTO> permissionList = foundRole.getPermissions()

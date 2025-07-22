@@ -40,8 +40,8 @@ public class GetMenusQueryHandlerTest {
     @InjectMocks
     private GetMenusQueryHandler getMenusQueryHandler;
 
-    private GetMenusQuery getMenusQuery(Integer applicationId, String name, String type, String status){
-        return new GetMenusQuery(applicationId, name, type, status, null);
+    private GetMenusQuery getMenusQuery(String applicationCode, String name, String type, String status){
+        return new GetMenusQuery(applicationCode, name, type, status, null);
     }
 
     private MenuEntryEntity menuEntry;
@@ -141,7 +141,7 @@ public class GetMenusQueryHandlerTest {
     @DisplayName("should return filtered list when applicationId is provided")
     void testHandle_withApplicationIdFilter_shouldReturnMatchingMenus() {
         // Arrange
-        query = getMenusQuery(1, null, null, null);
+        query = getMenusQuery("APP", null, null, null);
         when(menuEntryRepository.findAll(any(Specification.class))).thenReturn(List.of(menuEntry));
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(menuEntryDTO);
 
@@ -183,7 +183,7 @@ public class GetMenusQueryHandlerTest {
     @DisplayName("should return empty list when no match found")
     void testHandle_withNoResults_shouldReturnEmptyList() {
         // Arrange
-        query = getMenusQuery(999, null, null, null);
+        query = getMenusQuery("APP", null, null, null);
         when(menuEntryRepository.findAll(any(Specification.class))).thenReturn(List.of());
 
         // Act

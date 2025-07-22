@@ -13,17 +13,13 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetDepartmentsQuery implements Query {
 
-  @NotNull(message = "The field <applicationId> is required.")
-  private Integer applicationId;
-  @NotBlank(message = "The field <applicationCode> is required.")
-  private String applicationCode;
-  @NotNull(message = "The field <parentId> is required.")
-  private Integer parentId;
   @NotBlank(message = "The field <name> is required.")
   private String name;
   @NotBlank(message = "The field <status> is required.")
   private String status;
   @NotBlank(message = "The field <code> is required.")
   private String code;
+  @NotBlank(message = "The field <parentCode> is required.")
+  private String parentCode;
 
 }

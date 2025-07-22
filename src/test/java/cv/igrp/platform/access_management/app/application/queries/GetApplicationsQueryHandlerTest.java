@@ -6,6 +6,7 @@ import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,20 +30,30 @@ public class GetApplicationsQueryHandlerTest {
 
     private GetApplicationsQueryHandler getApplicationsQueryHandler;
 
-    private final ApplicationMapper applicationMapper = new ApplicationMapper();
+    @Mock
+    private final ApplicationMapper applicationMapper = Mockito.mock(ApplicationMapper.class);
 
     @BeforeEach
     void setUp() {
         getApplicationsQueryHandler = new GetApplicationsQueryHandler(applicationRepository, applicationMapper);
     }
 
+    DepartmentEntity department;
+
     @Test
     void testHandleGetApplicationsQuery_shouldReturnFilteredList() {
+
+        department = new DepartmentEntity();
+        department.setName("Test Department");
+        department.setDescription("Test Description");
+        department.setCode("HR");
+
         // Given
         String code = "APP001";
         String name = "MyApp";
         String slug = "my-app-one";
-        GetApplicationsQuery query = new GetApplicationsQuery(code, name, slug);
+        String department = "HR";
+        GetApplicationsQuery query = new GetApplicationsQuery(code, name, slug, department);
 
         ApplicationEntity app1 = new ApplicationEntity();
         app1.setId(1);
@@ -83,7 +94,7 @@ public class GetApplicationsQueryHandlerTest {
     void testHandleGetApplicationsQuery_shouldReturnMatchesByNameOnly() {
         // Given
         String name = "portal";
-        GetApplicationsQuery query = new GetApplicationsQuery(null, name, null); // code is null
+        GetApplicationsQuery query = new GetApplicationsQuery(null, name, null, "HR"); // code is null
 
         ApplicationEntity app1 = new ApplicationEntity();
         app1.setId(1);
@@ -91,6 +102,7 @@ public class GetApplicationsQueryHandlerTest {
         app1.setName("Portal Admin");
         app1.setType(AppType.INTERNAL);
         app1.setStatus(Status.ACTIVE);
+        app1.setDepartmentId(department);
 
         ApplicationEntity app2 = new ApplicationEntity();
         app2.setId(2);
@@ -98,6 +110,7 @@ public class GetApplicationsQueryHandlerTest {
         app2.setName("User Portal");
         app2.setType(AppType.EXTERNAL);
         app2.setStatus(Status.INACTIVE);
+        app2.setDepartmentId(department);
 
         List<ApplicationEntity> matchingApps = List.of(app1, app2);
 
@@ -123,7 +136,7 @@ public class GetApplicationsQueryHandlerTest {
     @Test
     void testHandleGetApplicationsQuery_shouldReturnAllWhenNoFiltersProvided() {
         // Given
-        GetApplicationsQuery query = new GetApplicationsQuery(null, null, null); // No filters
+        GetApplicationsQuery query = new GetApplicationsQuery(null, null, null, "HR"); // No filters
 
         ApplicationEntity app1 = new ApplicationEntity();
         app1.setId(1);
@@ -131,6 +144,7 @@ public class GetApplicationsQueryHandlerTest {
         app1.setName("Admin Console");
         app1.setType(AppType.INTERNAL);
         app1.setStatus(Status.ACTIVE);
+        app1.setDepartmentId(department);
 
         ApplicationEntity app2 = new ApplicationEntity();
         app2.setId(2);
@@ -138,6 +152,7 @@ public class GetApplicationsQueryHandlerTest {
         app2.setName("Public Portal");
         app2.setType(AppType.EXTERNAL);
         app2.setStatus(Status.ACTIVE);
+        app2.setDepartmentId(department);
 
         List<ApplicationEntity> allApps = List.of(app1, app2);
 

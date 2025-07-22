@@ -27,12 +27,6 @@
       },
       "requestParams": [
         {
-          "type": "integer",
-          "name": "applicationId",
-          "description": "ID of the Application",
-          "isRequired": false
-        },
-        {
           "type": "string",
           "name": "name",
           "description": "Menu Name",
@@ -54,6 +48,12 @@
           "type": "string",
           "name": "applicationCode",
           "description": "Application Code",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "code",
+          "description": "Menu Code",
           "isRequired": false
         }
       ]
@@ -119,7 +119,7 @@
     },
     {
       "actionName": "updateMenu",
-      "path": "menus/{id}",
+      "path": "menus/{code}",
       "method": "PUT",
       "requestBody": {
         "content": {
@@ -150,16 +150,15 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "The ID of the Menu"
+          "name": "code",
+          "type": "string",
+          "isRequired": true
         }
       ]
     },
     {
       "actionName": "deleteMenu",
-      "path": "menus/{id}",
+      "path": "menus/{code}",
       "method": "DELETE",
       "responses": {
         "204": {
@@ -177,10 +176,9 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "The ID of the Menu"
+          "name": "code",
+          "type": "string",
+          "isRequired": true
         }
       ]
     }

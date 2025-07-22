@@ -10,14 +10,21 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import java.util.Arrays;
 import java.util.Collections;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(MockitoExtension.class)
 class ResourceMapperTest {
 
+    @Mock
     private ResourceMapper mapper;
+
     private ResourceEntity testResource;
     private ResourceDTO testResourceDTO;
     private ResourceItemEntity testResourceItem;
@@ -28,7 +35,6 @@ class ResourceMapperTest {
     @BeforeEach
     void setUp() {
         // Arrange
-        mapper = new ResourceMapper();
 
 
         testApplication = new ApplicationEntity();
@@ -63,14 +69,14 @@ class ResourceMapperTest {
         testResourceDTO.setType(ResourceType.UI);
         testResourceDTO.setStatus(Status.INACTIVE);
         testResourceDTO.setExternalId("ext-456");
-        testResourceDTO.setApplicationId(456);
+        testResourceDTO.setApplicationCode("APP");
 
         // Set up test resource item DTO
         testResourceItemDTO = new ResourceItemDTO();
         testResourceItemDTO.setName("Test Item DTO");
         testResourceItemDTO.setUrl("/api/test-dto");
-        testResourceItemDTO.setResourceId(456);
-        testResourceItemDTO.setPermissionId(456);
+        testResourceItemDTO.setResourceName("resource456");
+        testResourceItemDTO.setPermissionName("permission456");
     }
 
     @Test
@@ -87,7 +93,7 @@ class ResourceMapperTest {
         assertEquals(testResource.getType(), result.getType());
         assertEquals(testResource.getStatus(), result.getStatus());
         assertEquals(testResource.getExternalId(), result.getExternalId());
-        assertEquals(testResource.getApplicationId().getId(), result.getApplicationId());
+        assertEquals(testResource.getApplicationId().getCode(), result.getApplicationCode());
         assertEquals(testResource.getCreatedBy(), result.getCreatedBy());
         assertNotNull(result.getItems());
         assertEquals(1, result.getItems().size());
@@ -110,7 +116,7 @@ class ResourceMapperTest {
         assertNull(result.getType());
         assertNull(result.getStatus());
         assertNull(result.getExternalId());
-        assertNull(result.getApplicationId());
+        assertNull(result.getApplicationCode());
         assertNull(result.getItems());
         assertNull(result.getCreatedBy());
         assertNull(result.getCreatedDate());
@@ -141,8 +147,7 @@ class ResourceMapperTest {
         assertEquals(testResourceItem.getId(), result.getId());
         assertEquals(testResourceItem.getName(), result.getName());
         assertEquals(testResourceItem.getUrl(), result.getUrl());
-        assertEquals(testResourceItem.getResourceId().getId(), result.getResourceId());
-        assertEquals(testResourceItem.getPermissionId(), result.getPermissionId());
+        assertEquals(testResourceItem.getResourceId().getName(), result.getResourceName());
     }
 
     @Test
@@ -160,8 +165,8 @@ class ResourceMapperTest {
         assertEquals(1, result.getId());
         assertNull(result.getName());
         assertNull(result.getUrl());
-        assertNull(result.getResourceId());
-        assertNull(result.getPermissionId());
+        assertNull(result.getResourceName());
+        assertNull(result.getPermissionName());
     }
 
     @Test
@@ -259,13 +264,13 @@ class ResourceMapperTest {
         // Arrange
         ResourceItemEntity item1 = new ResourceItemEntity();
         item1.setId(1);
-        item1.setName("Item 1");
+        item1.setName("Item1");
         item1.setResourceId(testResource);
         item1.setPermissionId(testPermission.getId());
 
         ResourceItemEntity item2 = new ResourceItemEntity();
         item2.setId(2);
-        item2.setName("Item 2");
+        item2.setName("Item2");
         item2.setResourceId(testResource);
         item2.setPermissionId(testPermission.getId());
 

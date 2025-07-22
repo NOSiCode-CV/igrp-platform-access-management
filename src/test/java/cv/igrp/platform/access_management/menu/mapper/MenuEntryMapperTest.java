@@ -90,8 +90,8 @@ class MenuEntryMapperTest {
         assertEquals(Status.INACTIVE, dto.getStatus());
         assertEquals("_self", dto.getTarget());
         assertEquals("/settings", dto.getUrl());
-        assertEquals(99, dto.getParentId());
-        assertEquals(5, dto.getApplicationId());
+        assertEquals("MENU0", dto.getParentCode());
+        assertEquals("APP", dto.getApplicationCode());
     }
 
     @NotNull
@@ -108,10 +108,12 @@ class MenuEntryMapperTest {
 
         MenuEntryEntity parent = new MenuEntryEntity();
         parent.setId(99);
+        parent.setCode("MENU0");
         entity.setParentId(parent);
 
         ApplicationEntity app = new ApplicationEntity();
         app.setId(5);
+        app.setCode("APP");
         entity.setApplicationId(app);
 
         return entity;
@@ -141,8 +143,8 @@ class MenuEntryMapperTest {
         MenuEntryDTO dto = mapper.toDTO(entity);
 
         assertEquals(1, dto.getId());
-        assertNull(dto.getApplicationId());
-        assertNull(dto.getParentId());
+        assertNull(dto.getApplicationCode());
+        assertNull(dto.getParentCode());
     }
 
 }

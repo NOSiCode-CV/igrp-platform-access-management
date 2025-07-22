@@ -71,7 +71,7 @@
     },
     {
       "actionName": "updatePermission",
-      "path": "permissions/{id}",
+      "path": "permissions/{name}",
       "method": "PUT",
       "requestBody": {
         "content": {
@@ -105,16 +105,15 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "Permission ID"
+          "name": "name",
+          "type": "string",
+          "isRequired": true
         }
       ]
     },
     {
       "actionName": "deletePermission",
-      "path": "permissions/{id}",
+      "path": "permissions/{name}",
       "method": "DELETE",
       "responses": {
         "204": {
@@ -132,16 +131,15 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "Permission ID"
+          "name": "name",
+          "type": "string",
+          "isRequired": true
         }
       ]
     },
     {
       "actionName": "getRolesByPermissionID",
-      "path": "permissions/{id}/roles",
+      "path": "permissions/{name}/roles",
       "method": "GET",
       "responses": {
         "200": {
@@ -161,10 +159,9 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "Role ID"
+          "name": "name",
+          "type": "string",
+          "isRequired": true
         }
       ]
     },

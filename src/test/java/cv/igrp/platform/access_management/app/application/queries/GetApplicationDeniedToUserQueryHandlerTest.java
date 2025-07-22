@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +24,8 @@ public class GetApplicationDeniedToUserQueryHandlerTest {
     @Mock
     private ApplicationEntityRepository applicationRepository;
 
-    private final ApplicationMapper applicationMapper = new ApplicationMapper();
+    @Mock
+    private final ApplicationMapper applicationMapper = Mockito.mock(ApplicationMapper.class);
 
     private GetApplicationDeniedToUserQueryHandler handler;
 

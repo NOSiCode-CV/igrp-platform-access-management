@@ -15,7 +15,7 @@ public class GetUserRolesQuery implements Query {
 
   @NotNull(message = "The field <applicationId> is required.")
   private Integer applicationId;
-  @NotNull(message = "The field <id> is required.")
-  private Integer id;
+  @NotBlank(message = "The field <username> is required.")
+  private String username;
 
 }

@@ -43,26 +43,25 @@ public class AddRolesToUserCommandHandlerTest {
     private RoleEntity role;
     private RoleDTO roleDTO;
     private AddRolesToUserCommand command;
-    private final Integer USER_ID = 1;
-    private final Integer ROLE_ID = 100;
+    private final String USER_ID = "johndoe";
+    private final String ROLE_ID = "admin";
 
-    private AddRolesToUserCommand addRolesToUserCommand(RoleUserDTO roleUserDTO, Integer id) {
-       return command = new AddRolesToUserCommand(roleUserDTO, id);
+    private AddRolesToUserCommand addRolesToUserCommand(RoleUserDTO roleUserDTO, String username) {
+       return command = new AddRolesToUserCommand(roleUserDTO, username);
     }
 
 
     @BeforeEach
     void setUp() {
         user = new IGRPUserEntity();
-        user.setId(USER_ID);
+        user.setUsername(USER_ID);
 
         role = new RoleEntity();
-        role.setId(ROLE_ID);
+        role.setName(ROLE_ID);
         role.setUsers(null);
 
         roleDTO = new RoleDTO();
-        roleDTO.setId(ROLE_ID);
-        roleDTO.setName("ADMIN");
+        roleDTO.setName(ROLE_ID);
 
         RoleUserDTO dto = new RoleUserDTO(USER_ID,ROLE_ID);
 
@@ -73,11 +72,11 @@ public class AddRolesToUserCommandHandlerTest {
     @DisplayName("should add role to user and return 201 with RoleDTO")
     void testHandle_whenValidCommand_shouldReturnCreatedRoleDTO() {
         // Arrange
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        when(roleRepository.findById(ROLE_ID)).thenReturn(Optional.of(role));
+        when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
+        when(roleRepository.findByName(ROLE_ID)).thenReturn(Optional.of(role));
 
         RoleEntity updatedRole = new RoleEntity();
-        updatedRole.setId(ROLE_ID);
+        updatedRole.setName(ROLE_ID);
         updatedRole.setUsers(Set.of(user));
         when(roleRepository.save(any())).thenReturn(updatedRole);
         when(roleMapper.mapToDto(updatedRole)).thenReturn(roleDTO);
@@ -92,8 +91,8 @@ public class AddRolesToUserCommandHandlerTest {
         assertEquals(roleDTO, response.getBody().getFirst());
 
         // Verify
-        verify(userRepository, times(1)).findById(USER_ID);
-        verify(roleRepository, times(1)).findById(ROLE_ID);
+        verify(userRepository, times(1)).findByUsername(USER_ID);
+        verify(roleRepository, times(1)).findByName(ROLE_ID);
         verify(roleRepository, times(1)).save(any(RoleEntity.class));
         verify(roleMapper, times(1)).mapToDto(updatedRole);
         verifyNoMoreInteractions(userRepository, roleRepository, roleMapper);
@@ -103,7 +102,7 @@ public class AddRolesToUserCommandHandlerTest {
     @DisplayName("should throw IgrpResponseStatusException if user not found")
     void testHandle_whenUserNotFound_shouldThrowException() {
         // Arrange
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
+        when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
@@ -115,7 +114,7 @@ public class AddRolesToUserCommandHandlerTest {
         assertEquals("User not found with id: " + USER_ID, exception.getBody().getProperties().get("details"));
 
         // Verify
-        verify(userRepository, times(1)).findById(USER_ID);
+        verify(userRepository, times(1)).findByUsername(USER_ID);
         verifyNoMoreInteractions(userRepository);
         verifyNoInteractions(roleRepository, roleMapper);
     }
@@ -124,8 +123,8 @@ public class AddRolesToUserCommandHandlerTest {
     @DisplayName("should throw IgrpResponseStatusException if role not found")
     void testHandle_whenRoleNotFound_shouldThrowException() {
         // Arrange
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        when(roleRepository.findById(ROLE_ID)).thenReturn(Optional.empty());
+        when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
+        when(roleRepository.findByName(ROLE_ID)).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
@@ -136,8 +135,8 @@ public class AddRolesToUserCommandHandlerTest {
         assertEquals("Role not found with id: " + ROLE_ID, exception.getBody().getProperties().get("details"));
 
         // Verify
-        verify(userRepository, times(1)).findById(USER_ID);
-        verify(roleRepository, times(1)).findById(ROLE_ID);
+        verify(userRepository, times(1)).findByUsername(USER_ID);
+        verify(roleRepository, times(1)).findByName(ROLE_ID);
         verifyNoMoreInteractions(userRepository,roleRepository);
         verifyNoInteractions(roleMapper);
 
@@ -149,8 +148,8 @@ public class AddRolesToUserCommandHandlerTest {
         // Arrange
         role.setUsers(new HashSet<>(List.of(user)));
 
-        when(roleRepository.findById(ROLE_ID)).thenReturn(Optional.of(role));
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(roleRepository.findByName(ROLE_ID)).thenReturn(Optional.of(role));
+        when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
         when(roleRepository.save(role)).thenReturn(role);
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
@@ -165,8 +164,8 @@ public class AddRolesToUserCommandHandlerTest {
         assertTrue(role.getUsers().contains(user));
 
         // Verify
-        verify(userRepository, times(1)).findById(USER_ID);
-        verify(roleRepository, times(1)).findById(ROLE_ID);
+        verify(userRepository, times(1)).findByUsername(USER_ID);
+        verify(roleRepository, times(1)).findByName(ROLE_ID);
         verify(roleMapper, times(1)).mapToDto(role);
         verify(roleRepository, times(1)).save(role);
         verifyNoMoreInteractions(userRepository,roleRepository,roleMapper);
@@ -180,8 +179,8 @@ public class AddRolesToUserCommandHandlerTest {
         anotherUser.setId(50);
         role.setUsers(new HashSet<>(List.of(anotherUser)));
 
-        when(roleRepository.findById(ROLE_ID)).thenReturn(Optional.of(role));
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(roleRepository.findByName(ROLE_ID)).thenReturn(Optional.of(role));
+        when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
         when(roleRepository.save(role)).thenReturn(role);
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
@@ -196,8 +195,8 @@ public class AddRolesToUserCommandHandlerTest {
         assertTrue(role.getUsers().contains(user));
 
         // Verify
-        verify(userRepository, times(1)).findById(USER_ID);
-        verify(roleRepository, times(1)).findById(ROLE_ID);
+        verify(userRepository, times(1)).findByUsername(USER_ID);
+        verify(roleRepository, times(1)).findByName(ROLE_ID);
         verify(roleMapper, times(1)).mapToDto(role);
         verify(roleRepository, times(1)).save(role);
         verifyNoMoreInteractions(userRepository,roleRepository,roleMapper);
@@ -209,8 +208,8 @@ public class AddRolesToUserCommandHandlerTest {
         // Arrange
         role.setUsers(null);
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        when(roleRepository.findById(ROLE_ID)).thenReturn(Optional.of(role));
+        when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
+        when(roleRepository.findByName(ROLE_ID)).thenReturn(Optional.of(role));
         when(roleRepository.save(any(RoleEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
@@ -224,8 +223,8 @@ public class AddRolesToUserCommandHandlerTest {
         assertTrue(role.getUsers().contains(user));
 
         // Verify
-        verify(userRepository, times(1)).findById(USER_ID);
-        verify(roleRepository, times(1)).findById(ROLE_ID);
+        verify(userRepository, times(1)).findByUsername(USER_ID);
+        verify(roleRepository, times(1)).findByName(ROLE_ID);
         verify(roleMapper, times(1)).mapToDto(role);
         verify(roleRepository, times(1)).save(role);
         verifyNoMoreInteractions(userRepository,roleRepository,roleMapper);

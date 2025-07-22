@@ -16,7 +16,7 @@ public class AddItemsCommand implements Command {
 
   
   private List<ResourceItemDTO> resourceitemdto;
-  @NotNull(message = "The field <id> is required.")
-  private Integer id;
+  @NotBlank(message = "The field <name> is required.")
+  private String name;
 
 }

@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.app.application.commands;
 
-import cv.igrp.platform.access_management.app.application.commands.UpdateApplicationCommand;
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
@@ -41,8 +40,9 @@ public class UpdateApplicationCommandHandlerTest {
     void itShouldThrowRecordNotFoundException_When_ProvidedApplicationId_DoesNotExist() {
         //... Given
         int applicationId = 100;
+        String appCode = "APP";
         ApplicationDTO applicationDTO = new ApplicationDTO();
-        UpdateApplicationCommand command = new UpdateApplicationCommand(applicationDTO, applicationId);
+        UpdateApplicationCommand command = new UpdateApplicationCommand(applicationDTO, appCode);
         when(applicationRepository.findById(applicationId))
                 .thenReturn(Optional.empty());
 
@@ -93,7 +93,7 @@ public class UpdateApplicationCommandHandlerTest {
         dto.setUrl(URI.create(applicationPreviousUrl));
         dto.setSlug(applicationNewSlug);
 
-        UpdateApplicationCommand command = new UpdateApplicationCommand(dto, applicationId);
+        UpdateApplicationCommand command = new UpdateApplicationCommand(dto, applicationCode);
 
         ArgumentCaptor<ApplicationEntity> appCaptor = ArgumentCaptor.forClass(ApplicationEntity.class);
         when(applicationRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));

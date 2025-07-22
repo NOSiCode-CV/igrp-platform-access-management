@@ -41,9 +41,10 @@ public class GetRolesByPermissionIDQueryHandlerTest {
     void itShouldThrowRecordNotFoundException_When_ProvidedPermissionId_DoesNotExist() {
         //... Given
         int permissionId = 100;
-        GetRolesByPermissionIDQuery query = new GetRolesByPermissionIDQuery(permissionId);
+        String permissionName = "test";
+        GetRolesByPermissionIDQuery query = new GetRolesByPermissionIDQuery(permissionName);
 
-        when(permissionRepository.findById(permissionId))
+        when(permissionRepository.findByName(permissionName))
                 .thenReturn(Optional.empty());
 
         //... When
@@ -57,14 +58,16 @@ public class GetRolesByPermissionIDQueryHandlerTest {
     void itShouldThrowException_WhenPermissionIsDeleted() {
         //... Given
         int permissionId = 100;
+        String permissionName = "test";
         PermissionEntity deletedPermission = new PermissionEntity();
         deletedPermission.setId(permissionId);
+        deletedPermission.setName(permissionName);
         deletedPermission.setStatus(Status.DELETED);
 
-        when(permissionRepository.findById(permissionId))
+        when(permissionRepository.findByName(permissionName))
                 .thenReturn(Optional.of(deletedPermission));
 
-        GetRolesByPermissionIDQuery query = new GetRolesByPermissionIDQuery(permissionId);
+        GetRolesByPermissionIDQuery query = new GetRolesByPermissionIDQuery(permissionName);
         //... When
         IgrpResponseStatusException response = assertThrows(IgrpResponseStatusException.class, () -> underTest.handle(query));
 
@@ -77,14 +80,16 @@ public class GetRolesByPermissionIDQueryHandlerTest {
     void itShouldReturnEmptyList_WhenPermissionHasNoRoles() {
         // Given
         int permissionId = 300;
-        GetRolesByPermissionIDQuery query = new GetRolesByPermissionIDQuery(permissionId);
+        String permissionName = "test";
+        GetRolesByPermissionIDQuery query = new GetRolesByPermissionIDQuery(permissionName);
 
         PermissionEntity permission = new PermissionEntity();
         permission.setId(permissionId);
+        permission.setName(permissionName);
         permission.setStatus(Status.ACTIVE);
         permission.setRoles(null);
 
-        when(permissionRepository.findById(permissionId)).thenReturn(Optional.of(permission));
+        when(permissionRepository.findByName(permissionName)).thenReturn(Optional.of(permission));
 
         // When
         ResponseEntity<List<RoleDTO>> response = underTest.handle(query);
@@ -102,32 +107,39 @@ public class GetRolesByPermissionIDQueryHandlerTest {
     void itShouldReturnOnlyActiveOrInactiveRoles() {
         // Given
         int permissionId = 101;
-        GetRolesByPermissionIDQuery query = new GetRolesByPermissionIDQuery(permissionId);
+        String permissionName = "test";
+        GetRolesByPermissionIDQuery query = new GetRolesByPermissionIDQuery(permissionName);
 
         PermissionEntity permission = new PermissionEntity();
         permission.setId(permissionId);
+        permission.setName(permissionName);
         permission.setStatus(Status.ACTIVE);
 
         RoleEntity activeRole = new RoleEntity();
         activeRole.setId(1);
+        activeRole.setName("admin");
         activeRole.setStatus(Status.ACTIVE);
 
         RoleEntity inactiveRole = new RoleEntity();
         inactiveRole.setId(2);
+        inactiveRole.setName("inactive");
         inactiveRole.setStatus(Status.INACTIVE);
 
         RoleEntity deletedRole = new RoleEntity();
         deletedRole.setId(3);
+        deletedRole.setName("deleted");
         deletedRole.setStatus(Status.DELETED);
 
         permission.setRoles(Set.of(activeRole, inactiveRole, deletedRole));
 
         RoleDTO activeDTO = new RoleDTO();
         activeDTO.setId(1);
+        activeDTO.setName("active");
         RoleDTO inactiveDTO = new RoleDTO();
         inactiveDTO.setId(2);
+        inactiveDTO.setName("inactive");
 
-        when(permissionRepository.findById(permissionId)).thenReturn(Optional.of(permission));
+        when(permissionRepository.findByName(permissionName)).thenReturn(Optional.of(permission));
         when(roleMapper.mapToDto(activeRole)).thenReturn(activeDTO);
         when(roleMapper.mapToDto(inactiveRole)).thenReturn(inactiveDTO);
 
@@ -151,29 +163,35 @@ public class GetRolesByPermissionIDQueryHandlerTest {
     void itShouldReturnMappedRoles_WhenPermissionIsFoundAndActive() {
         // Given
         int permissionId = 200;
-        GetRolesByPermissionIDQuery query = new GetRolesByPermissionIDQuery(permissionId);
+        String permissionName = "test";
+        GetRolesByPermissionIDQuery query = new GetRolesByPermissionIDQuery(permissionName);
 
         PermissionEntity permission = new PermissionEntity();
         permission.setId(permissionId);
+        permission.setName(permissionName);
         permission.setStatus(Status.ACTIVE);
 
         RoleEntity role1 = new RoleEntity();
         role1.setId(1);
+        role1.setName("admin");
         role1.setStatus(Status.ACTIVE);
 
         RoleEntity role2 = new RoleEntity();
         role2.setId(2);
+        role2.setName("inactive");
         role2.setStatus(Status.INACTIVE);
 
         permission.setRoles(Set.of(role1, role2));
 
         RoleDTO dto1 = new RoleDTO();
         dto1.setId(1);
+        dto1.setName("admin");
 
         RoleDTO dto2 = new RoleDTO();
         dto2.setId(2);
+        dto2.setName("inactive");
 
-        when(permissionRepository.findById(permissionId)).thenReturn(Optional.of(permission));
+        when(permissionRepository.findByName(permissionName)).thenReturn(Optional.of(permission));
         when(roleMapper.mapToDto(role1)).thenReturn(dto1);
         when(roleMapper.mapToDto(role2)).thenReturn(dto2);
 

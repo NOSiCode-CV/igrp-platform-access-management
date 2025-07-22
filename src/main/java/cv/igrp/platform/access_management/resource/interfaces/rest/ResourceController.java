@@ -1,3 +1,6 @@
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+
 package cv.igrp.platform.access_management.resource.interfaces.rest;
 
 import cv.igrp.framework.stereotype.IgrpController;
@@ -65,16 +68,16 @@ public class ResourceController {
   )
   
   public ResponseEntity<List<ResourceDTO>> getResources(
-    @RequestParam(value = "applicationId", required = false) Integer applicationId,
     @RequestParam(value = "name", required = false) String name,
     @RequestParam(value = "type", required = false) String type,
     @RequestParam(value = "externalID", required = false) String externalID,
-    @RequestParam(value = "applicationCode", required = false) String applicationCode)
+    @RequestParam(value = "applicationCode", required = false) String applicationCode,
+    @RequestParam(value = "description") String description)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetResourcesQuery(applicationId, name, type, externalID, applicationCode);
+      final var query = new GetResourcesQuery(name, type, externalID, applicationCode, description);
 
       ResponseEntity<List<ResourceDTO>> response = queryBus.handle(query);
 
@@ -160,7 +163,7 @@ public class ResourceController {
   }
 
   @PutMapping(
-    value = "resources/{id}"
+    value = "resources/{name}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateResource",
@@ -180,12 +183,12 @@ public class ResourceController {
   )
   
   public ResponseEntity<ResourceDTO> updateResource(@Valid @RequestBody ResourceDTO updateResourceRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new UpdateResourceCommand(updateResourceRequest, id);
+      final var command = new UpdateResourceCommand(updateResourceRequest, name);
 
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
 
@@ -197,7 +200,7 @@ public class ResourceController {
   }
 
   @DeleteMapping(
-    value = "resources/{id}"
+    value = "resources/{name}"
   )
   @Operation(
     summary = "DELETE method to handle operations for deleteResource",
@@ -217,12 +220,12 @@ public class ResourceController {
   )
   
   public ResponseEntity<String> deleteResource(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new DeleteResourceCommand(id);
+      final var command = new DeleteResourceCommand(name);
 
        ResponseEntity<String> response = commandBus.send(command);
 
@@ -234,7 +237,7 @@ public class ResourceController {
   }
 
   @PostMapping(
-    value = "resources/{id}/add-items"
+    value = "resources/{name}/add-items"
   )
   @Operation(
     summary = "POST method to handle operations for addItems",
@@ -254,12 +257,12 @@ public class ResourceController {
   )
   
   public ResponseEntity<ResourceDTO> addItems(@Valid @RequestBody List<ResourceItemDTO> addItemsRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new AddItemsCommand(addItemsRequest, id);
+      final var command = new AddItemsCommand(addItemsRequest, name);
 
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
 
@@ -271,7 +274,7 @@ public class ResourceController {
   }
 
   @PostMapping(
-    value = "resources/{id}/remove-items"
+    value = "resources/{name}/remove-items"
   )
   @Operation(
     summary = "POST method to handle operations for removeItems",
@@ -291,12 +294,12 @@ public class ResourceController {
   )
   
   public ResponseEntity<ResourceDTO> removeItems(@RequestBody List<Integer> removeItemsRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new RemoveItemsCommand(removeItemsRequest, id);
+      final var command = new RemoveItemsCommand(removeItemsRequest, name);
 
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
 
@@ -308,7 +311,7 @@ public class ResourceController {
   }
 
   @PostMapping(
-    value = "resources/{id}/custom-fields"
+    value = "resources/{name}/custom-fields"
   )
   @Operation(
     summary = "POST method to handle operations for addResourceCustomFields",
@@ -328,12 +331,12 @@ public class ResourceController {
   )
   
   public ResponseEntity<String> addResourceCustomFields(@RequestBody Map<String, ?> addResourceCustomFieldsRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new AddResourceCustomFieldsCommand(addResourceCustomFieldsRequest, id);
+      final var command = new AddResourceCustomFieldsCommand(addResourceCustomFieldsRequest, name);
 
        ResponseEntity<String> response = commandBus.send(command);
 
@@ -345,7 +348,7 @@ public class ResourceController {
   }
 
   @PostMapping(
-    value = "resources/{id}/custom-fields/remove"
+    value = "resources/{name}/custom-fields/remove"
   )
   @Operation(
     summary = "POST method to handle operations for removeResourceCustomFields",
@@ -365,12 +368,12 @@ public class ResourceController {
   )
   
   public ResponseEntity<String> removeResourceCustomFields(@RequestBody List<String> removeResourceCustomFieldsRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new RemoveResourceCustomFieldsCommand(removeResourceCustomFieldsRequest, id);
+      final var command = new RemoveResourceCustomFieldsCommand(removeResourceCustomFieldsRequest, name);
 
        ResponseEntity<String> response = commandBus.send(command);
 
@@ -382,7 +385,7 @@ public class ResourceController {
   }
 
   @GetMapping(
-    value = "/resources/{id}/custom-fields"
+    value = "/resources/{name}/custom-fields"
   )
   @Operation(
     summary = "GET method to handle operations for getResourceCustomFields",
@@ -402,12 +405,12 @@ public class ResourceController {
   )
   
   public ResponseEntity<Map<String, ?>> getResourceCustomFields(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetResourceCustomFieldsQuery(id);
+      final var query = new GetResourceCustomFieldsQuery(name);
 
       ResponseEntity<Map<String, ?>> response = queryBus.handle(query);
 

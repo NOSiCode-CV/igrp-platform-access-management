@@ -27,6 +27,7 @@ class GetResourceByIdQueryHandlerTest {
     @Mock
     private ResourceEntityRepository resourceRepository;
 
+    @Mock
     private ResourceMapper resourceMapper;
 
     @InjectMocks
@@ -36,7 +37,6 @@ class GetResourceByIdQueryHandlerTest {
 
     @BeforeEach
     void setUp() {
-        resourceMapper = new ResourceMapper();
         handler = new GetResourceByIdQueryHandler(resourceRepository, resourceMapper);
 
         resource = new ResourceEntity();

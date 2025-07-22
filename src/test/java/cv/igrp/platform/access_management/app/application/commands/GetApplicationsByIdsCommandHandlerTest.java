@@ -25,13 +25,13 @@ public class GetApplicationsByIdsCommandHandlerTest {
     @Mock
     private ApplicationEntityRepository applicationRepository;
 
+    @Mock
     private ApplicationMapper applicationMapper;
 
     private GetApplicationsByIdsCommandHandler getApplicationsByIdsCommandHandler;
 
     @BeforeEach
     void setUp() {
-        applicationMapper = new ApplicationMapper();
         getApplicationsByIdsCommandHandler = new GetApplicationsByIdsCommandHandler(applicationRepository, applicationMapper);
     }
 

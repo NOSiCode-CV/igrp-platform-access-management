@@ -15,4 +15,6 @@ public interface ResourceEntityRepository extends
     RevisionRepository<ResourceEntity, Integer, Integer>
 {
 
+    Optional<ResourceEntity> findByName(String name);
+
 }

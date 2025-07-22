@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * {@link CommandHandler} implementation responsible for handling the {@link cv.igrp.platform.access_management.department.application.commands.commands.DeleteDepartmentCommand}.
+ * {@link CommandHandler} implementation responsible for handling the {@link cv.igrp.platform.access_management.department.application.commands.DeleteDepartmentCommand}.
  * <p>
  * This handler verifies if a department with the provided ID exists.
  * If it does, the department is deleted. If not, an {@link IgrpResponseStatusException} is thrown.
@@ -51,19 +51,19 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
     */
    @IgrpCommandHandler
    public ResponseEntity<Void> handle(DeleteDepartmentCommand command) {
-      Integer id = command.getId();
+      String code = command.getCode();
 
-      logger.info("Attempting to delete department with id={}", id);
+      logger.info("Attempting to delete department with code={}", code);
 
-      if (!departmentRepository.existsById(id)) {
-         logger.warn("Department with id={} not found", id);
+      if (!departmentRepository.existsByCode(code)) {
+         logger.warn("Department with code={} not found", code);
          throw IgrpResponseStatusException.of(HttpStatus.NOT_FOUND,
-                 "Invalid Department ID", "Department not found with id: " + id);
+                 "Invalid Department Code", "Department not found with code: " + code);
       }
 
-      departmentRepository.deleteById(id);
+      departmentRepository.deleteByCode(code);
 
-      logger.info("Successfully deleted department with id={}", id);
+      logger.info("Successfully deleted department with code={}", code);
       return ResponseEntity.noContent().build();
    }
 

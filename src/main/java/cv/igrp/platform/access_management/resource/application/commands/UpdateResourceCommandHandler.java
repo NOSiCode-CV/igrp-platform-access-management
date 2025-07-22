@@ -47,7 +47,7 @@ public class UpdateResourceCommandHandler implements CommandHandler<UpdateResour
    }
 
    /**
-    * Handles the update of a resource by applying the values from the {@link cv.igrp.platform.access_management.resource.application.commands.commands.UpdateResourceCommand}.
+    * Handles the update of a resource by applying the values from the {@link cv.igrp.platform.access_management.resource.application.commands.UpdateResourceCommand}.
     * <p>
     * If the resource is not found by the given ID, an {@link IgrpResponseStatusException} is thrown
     * with a 404 status code.
@@ -62,17 +62,17 @@ public class UpdateResourceCommandHandler implements CommandHandler<UpdateResour
     */
    @IgrpCommandHandler
    public ResponseEntity<ResourceDTO> handle(UpdateResourceCommand command) {
-      Integer resourceId = command.getId();
+      String resourceName = command.getName();
 
-      logger.info("Updating resource with ID: {}", resourceId);
+      logger.info("Updating resource with name: {}", resourceName);
 
-      ResourceEntity resource = resourceRepository.findById(command.getId())
+      ResourceEntity resource = resourceRepository.findByName(command.getName())
               .orElseThrow(() -> {
-                 logger.warn("Resource not found with ID: {}", resourceId);
+                 logger.warn("Resource not found with name: {}", resourceName);
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
                          "Resource not found",
-                         "Resource not found with id: " + resourceId);
+                         "Resource not found with name: " + resourceName);
               });
 
       ResourceDTO dto = command.getResourcedto();
@@ -81,7 +81,7 @@ public class UpdateResourceCommandHandler implements CommandHandler<UpdateResour
       resource.setType(dto.getType());
 
       var resourceUpdated = resourceRepository.save(resource);
-      logger.info("Resource with ID {} successfully updated.", resourceId);
+      logger.info("Resource with name {} successfully updated.", resourceName);
 
       return ResponseEntity.ok(resourceMapper.toDto(resourceUpdated));
    }

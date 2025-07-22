@@ -1,3 +1,6 @@
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.entity;
 
 import cv.igrp.platform.access_management.shared.config.AuditEntity;
@@ -26,8 +29,13 @@ public class ResourceItemEntity extends AuditEntity {
 
   
     @NotBlank(message = "name is mandatory")
-    @Column(name="name", nullable = false, length=100)
+    @Column(name="name", unique = true, nullable = false, length=100)
     private String name;
+
+  
+    @NotBlank(message = "description is mandatory")
+    @Column(name="description", nullable = false)
+    private String description;
 
   
     @Column(name="url")

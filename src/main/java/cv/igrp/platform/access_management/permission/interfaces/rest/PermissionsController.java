@@ -121,7 +121,7 @@ public class PermissionsController {
   }
 
   @PutMapping(
-    value = "permissions/{id}"
+    value = "permissions/{name}"
   )
   @Operation(
     summary = "PUT method to handle operations for updatePermission",
@@ -141,12 +141,12 @@ public class PermissionsController {
   )
   
   public ResponseEntity<PermissionDTO> updatePermission(@Valid @RequestBody PermissionDTO updatePermissionRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new UpdatePermissionCommand(updatePermissionRequest, id);
+      final var command = new UpdatePermissionCommand(updatePermissionRequest, name);
 
        ResponseEntity<PermissionDTO> response = commandBus.send(command);
 
@@ -158,7 +158,7 @@ public class PermissionsController {
   }
 
   @DeleteMapping(
-    value = "permissions/{id}"
+    value = "permissions/{name}"
   )
   @Operation(
     summary = "DELETE method to handle operations for deletePermission",
@@ -178,12 +178,12 @@ public class PermissionsController {
   )
   
   public ResponseEntity<Boolean> deletePermission(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new DeletePermissionCommand(id);
+      final var command = new DeletePermissionCommand(name);
 
        ResponseEntity<Boolean> response = commandBus.send(command);
 
@@ -195,7 +195,7 @@ public class PermissionsController {
   }
 
   @GetMapping(
-    value = "permissions/{id}/roles"
+    value = "permissions/{name}/roles"
   )
   @Operation(
     summary = "GET method to handle operations for getRolesByPermissionID",
@@ -215,12 +215,12 @@ public class PermissionsController {
   )
   
   public ResponseEntity<List<RoleDTO>> getRolesByPermissionID(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetRolesByPermissionIDQuery(id);
+      final var query = new GetRolesByPermissionIDQuery(name);
 
       ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
 

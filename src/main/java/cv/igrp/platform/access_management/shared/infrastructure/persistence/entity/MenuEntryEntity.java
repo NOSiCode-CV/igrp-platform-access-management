@@ -31,6 +31,10 @@ public class MenuEntryEntity extends AuditEntity {
     private Integer id;
 
   
+    @Column(name="code", unique = true)
+    private String code;
+
+  
     @NotBlank(message = "name is mandatory")
     @Column(name="name", nullable = false)
     private String name;
@@ -61,7 +65,8 @@ public class MenuEntryEntity extends AuditEntity {
     private String target;
 
   
-    @Column(name="page_slug", unique = true)
+    @NotBlank(message = "pageSlug is mandatory")
+    @Column(name="page_slug", unique = true, nullable = false)
     private String pageSlug;
 
   

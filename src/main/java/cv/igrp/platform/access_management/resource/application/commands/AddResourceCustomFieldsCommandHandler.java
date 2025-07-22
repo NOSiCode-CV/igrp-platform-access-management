@@ -82,24 +82,24 @@ public class AddResourceCustomFieldsCommandHandler implements CommandHandler<Add
    @IgrpCommandHandler
    public ResponseEntity<String> handle(AddResourceCustomFieldsCommand command) {
 
-      Integer resourceId = command.getId();
+      String resourceName = command.getName();
 
-      logger.info("Handling AddResourceCustomFieldsCommand for resource ID: {}", resourceId);
+      logger.info("Handling AddResourceCustomFieldsCommand for resource name: {}", resourceName);
 
-      ResourceEntity resource = resourceRepository.findById(command.getId())
+      ResourceEntity resource = resourceRepository.findByName(command.getName())
               .orElseThrow(() -> {
-                 logger.warn("Resource not found with ID: {}", resourceId);
+                 logger.warn("Resource not found with name: {}", resourceName);
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
                          "Resource not found",
-                         "Resource not found for ID: " + resourceId);
+                         "Resource not found for name: " + resourceName);
               });
 
       CustomFieldEntity customField = customFieldRepository.findByTableNameAndRecordId(
                       CustomFieldTableName.RESOURCE.getName(), resource.getId())
               .orElseGet(() -> {
-                 logger.info("No custom field found for resource ID: {}. " +
-                         "Creating new CustomFieldEntity entry.", resourceId);
+                 logger.info("No custom field found for resource name: {}. " +
+                         "Creating new CustomFieldEntity entry.", resourceName);
                  CustomFieldEntity cf = new CustomFieldEntity();
                  cf.setTableName(CustomFieldTableName.RESOURCE.getName());
                  cf.setRecordId(resource.getId());
@@ -113,7 +113,7 @@ public class AddResourceCustomFieldsCommandHandler implements CommandHandler<Add
       customField.setFields(existingFields);
 
       customFieldRepository.save(customField);
-      logger.info("Successfully updated custom fields for resource ID: {}", resourceId);
+      logger.info("Successfully updated custom fields for resource name: {}", resourceName);
 
       return ResponseEntity.noContent().build();
    }

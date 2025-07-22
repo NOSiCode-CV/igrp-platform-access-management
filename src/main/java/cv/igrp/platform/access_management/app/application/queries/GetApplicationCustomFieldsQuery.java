@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetApplicationCustomFieldsQuery implements Query {
 
-  @NotNull(message = "The field <id> is required.")
-  private Integer id;
+  @NotBlank(message = "The field <code> is required.")
+  private String code;
 
 }

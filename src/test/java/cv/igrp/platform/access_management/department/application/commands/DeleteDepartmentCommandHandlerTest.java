@@ -27,14 +27,15 @@ public class DeleteDepartmentCommandHandlerTest {
 
     private DeleteDepartmentCommand command;
     private final Integer DEPARTMENT_ID = 1;
+    private final String DEPARTMENT_CODE = "HR";
 
-    private DeleteDepartmentCommand createCommand(Integer id) {
-        return new DeleteDepartmentCommand(id);
+    private DeleteDepartmentCommand createCommand(String code) {
+        return new DeleteDepartmentCommand(code);
     }
 
     @BeforeEach
     void setUp() {
-        command = createCommand(DEPARTMENT_ID);
+        command = createCommand(DEPARTMENT_CODE);
     }
 
     @Test

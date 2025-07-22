@@ -35,11 +35,11 @@ public class DeleteRoleCommandHandlerTest {
     @Test
     void itShouldThrowNotFoundException_WhenProvidedRoleId_NotFound() {
         //... Given
-        int roleId = 1;
-        DeleteRoleCommand command = new DeleteRoleCommand(roleId);
+        String roleName = "admin";
+        DeleteRoleCommand command = new DeleteRoleCommand(roleName);
 
         //... When
-        when(roleRepository.findById(roleId))
+        when(roleRepository.findByName(roleName))
                 .thenReturn(Optional.empty());
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
@@ -51,17 +51,18 @@ public class DeleteRoleCommandHandlerTest {
     @Test
     void itShouldDeleteRole_WhenRoleIsFound() {
         // Given
-        int roleId = 1;
+        String roleName = "admin";
         RoleEntity role = new RoleEntity();
-        role.setId(roleId);
+        role.setId(1);
+        role.setName(roleName);
         role.setStatus(Status.ACTIVE);
         RoleEntity parenteRole = new RoleEntity();
         role.setParent(parenteRole);
 
-        when(roleRepository.findById(roleId)).thenReturn(Optional.of(role));
+        when(roleRepository.findByName(roleName)).thenReturn(Optional.of(role));
         when(roleRepository.save(role)).thenReturn(role);
 
-        DeleteRoleCommand command = new DeleteRoleCommand(roleId);
+        DeleteRoleCommand command = new DeleteRoleCommand(roleName);
 
         // When
         ResponseEntity<Boolean> result = underTest.handle(command);
@@ -78,8 +79,10 @@ public class DeleteRoleCommandHandlerTest {
     void itShouldDeleteChildren_WhenRoleIsRoot() {
         // Given
         int roleId = 1;
+        String roleName = "admin";
         RoleEntity parenteRole = new RoleEntity();
         parenteRole.setId(roleId);
+        parenteRole.setName(roleName);
         parenteRole.setStatus(Status.ACTIVE);
         parenteRole.setParent(null);
 
@@ -93,10 +96,10 @@ public class DeleteRoleCommandHandlerTest {
         child3.setStatus(Status.INACTIVE);
         child3.setParent(parenteRole);
 
-        when(roleRepository.findById(roleId)).thenReturn(Optional.of(parenteRole));
+        when(roleRepository.findByName(roleName)).thenReturn(Optional.of(parenteRole));
         when(roleRepository.findByParent(parenteRole)).thenReturn(List.of(child1, child2, child3));
 
-        DeleteRoleCommand command = new DeleteRoleCommand(roleId);
+        DeleteRoleCommand command = new DeleteRoleCommand(roleName);
 
         // When
         underTest.handle(command);
@@ -113,15 +116,17 @@ public class DeleteRoleCommandHandlerTest {
     void itShouldDeleteRole_WhenRoleIsNotRoot() {
         // Given
         int roleId = 1;
+        String roleName = "admin";
         RoleEntity role = new RoleEntity();
         role.setId(roleId);
+        role.setName(roleName);
         role.setStatus(Status.ACTIVE);
         role.setParent(null);
 
-        when(roleRepository.findById(roleId)).thenReturn(Optional.of(role));
+        when(roleRepository.findByName(roleName)).thenReturn(Optional.of(role));
         when(roleRepository.findByParent(role)).thenReturn(List.of());
 
-        DeleteRoleCommand command = new DeleteRoleCommand(roleId);
+        DeleteRoleCommand command = new DeleteRoleCommand(roleName);
 
         // When
         underTest.handle(command);
@@ -135,15 +140,17 @@ public class DeleteRoleCommandHandlerTest {
     void itShouldHandleNullChildListSafely() {
         // Given
         int roleId = 1;
+        String roleName = "admin";
         RoleEntity role = new RoleEntity();
         role.setId(roleId);
+        role.setName(roleName);
         role.setStatus(Status.ACTIVE);
         role.setParent(null);
 
-        when(roleRepository.findById(roleId)).thenReturn(Optional.of(role));
+        when(roleRepository.findByName(roleName)).thenReturn(Optional.of(role));
         when(roleRepository.findByParent(role)).thenReturn(null);
 
-        DeleteRoleCommand command = new DeleteRoleCommand(roleId);
+        DeleteRoleCommand command = new DeleteRoleCommand(roleName);
 
         // When
         assertDoesNotThrow(() -> underTest.handle(command));
@@ -158,6 +165,7 @@ public class DeleteRoleCommandHandlerTest {
         // Given
         RoleEntity parent = new RoleEntity();
         parent.setId(1);
+        parent.setName("admin");
         parent.setStatus(Status.ACTIVE);
         parent.setParent(null);
 
@@ -165,11 +173,11 @@ public class DeleteRoleCommandHandlerTest {
         child.setStatus(Status.ACTIVE);
         child.setParent(parent);
 
-        when(roleRepository.findById(1)).thenReturn(Optional.of(parent));
+        when(roleRepository.findByName("admin")).thenReturn(Optional.of(parent));
         when(roleRepository.findByParent(parent)).thenReturn(List.of(child));
 
         // When
-        underTest.handle(new DeleteRoleCommand(1));
+        underTest.handle(new DeleteRoleCommand("admin"));
 
         // Then
         verify(roleRepository, times(1)).save(parent);

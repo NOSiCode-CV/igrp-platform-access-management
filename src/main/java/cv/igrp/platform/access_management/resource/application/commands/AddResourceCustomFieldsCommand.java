@@ -5,6 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import java.util.HashMap;
 import java.util.Map;
 
 @Data
@@ -14,7 +15,7 @@ public class AddResourceCustomFieldsCommand implements Command {
 
   
   private Map<String, ?> addResourceCustomFieldsRequest;
-  @NotNull(message = "The field <id> is required.")
-  private Integer id;
+  @NotBlank(message = "The field <name> is required.")
+  private String name;
 
 }

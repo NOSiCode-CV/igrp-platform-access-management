@@ -15,7 +15,7 @@ public class RemovePermissionsCommand implements Command {
 
   
   private List<Integer> removePermissionsRequest;
-  @NotNull(message = "The field <id> is required.")
-  private Integer id;
+  @NotBlank(message = "The field <name> is required.")
+  private String name;
 
 }

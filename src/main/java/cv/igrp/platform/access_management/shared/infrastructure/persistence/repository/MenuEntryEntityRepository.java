@@ -26,4 +26,6 @@ public interface MenuEntryEntityRepository extends
             "(SELECT DISTINCT p.parentId.id FROM MenuEntryEntity p WHERE p.type = 'SYSTEM_PAGE' AND p.applicationId = :appId))")
     List<MenuEntryEntity> findSystemMenuHierarchy(@Param("appId") ApplicationEntity appId);
 
+    Optional<MenuEntryEntity> findByCode(String code);
+
 }

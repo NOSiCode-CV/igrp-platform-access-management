@@ -72,13 +72,13 @@ public class GetRolesByPermissionIDQueryHandler implements QueryHandler<GetRoles
   @IgrpQueryHandler
   @Transactional(readOnly = true)
   public ResponseEntity<List<RoleDTO>> handle(GetRolesByPermissionIDQuery query) {
-    log.info("Get Roles with Permission ID {}", query.getId());
-    PermissionEntity permissionFound = permissionRepository.findById(query.getId())
+    log.info("Get Roles with Permission name {}", query.getName());
+    PermissionEntity permissionFound = permissionRepository.findByName(query.getName())
             .filter(permission -> permission.getStatus().equals(Status.ACTIVE) || permission.getStatus().equals(Status.INACTIVE))
             .orElseThrow(() -> {
-              log.warn("Get Roles with Permission ID {}", query.getId());
+              log.warn("Get Roles with Permission name {}", query.getName());
               return IgrpResponseStatusException.of(
-                      HttpStatus.NOT_FOUND, "Get Role By Permission ID", "Permission with id: " + query.getId() + " not found."
+                      HttpStatus.NOT_FOUND, "Get Role By Permission name", "Permission with name: " + query.getName() + " not found."
               );
             });
     Set<RoleEntity> roles = Optional.ofNullable(permissionFound.getRoles())

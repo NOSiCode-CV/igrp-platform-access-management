@@ -43,7 +43,7 @@ class AddItemsCommandHandlerTest {
     private AddItemsCommand command;
 
     private AddItemsCommand addItemsCommand(List<ResourceItemDTO> resourceItemDTOS) {
-        return new AddItemsCommand(resourceItemDTOS, 1);
+        return new AddItemsCommand(resourceItemDTOS, "resource1");
     }
 
     private ResourceEntity resource;
@@ -58,7 +58,7 @@ class AddItemsCommandHandlerTest {
         permission = new PermissionEntity();
         permission.setId(1);
         itemDTO = new ResourceItemDTO();
-        itemDTO.setPermissionId(1);
+        itemDTO.setPermissionName("test");
         itemDTO.setName("Dashboard");
         itemDTO.setUrl("/dashboard");
         item = new ResourceItemEntity();
@@ -108,7 +108,7 @@ class AddItemsCommandHandlerTest {
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
         // Act
-        AddItemsCommand command = new AddItemsCommand(List.of(itemDTO), 1);
+        AddItemsCommand command = new AddItemsCommand(List.of(itemDTO), "resource1");
         ResponseEntity<ResourceDTO> response = handler.handle(command);
 
         // Assert
@@ -129,7 +129,7 @@ class AddItemsCommandHandlerTest {
         when(resourceRepository.findById(1)).thenReturn(Optional.empty());
 
         // Act
-        AddItemsCommand command = new AddItemsCommand(List.of(itemDTO), 1);
+        AddItemsCommand command = new AddItemsCommand(List.of(itemDTO), "resource1");
 
         // Assert
         assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
@@ -147,7 +147,7 @@ class AddItemsCommandHandlerTest {
         when(permissionRepository.findById(1)).thenReturn(Optional.empty());
 
         // Act
-        AddItemsCommand command = new AddItemsCommand(List.of(itemDTO), 1);
+        AddItemsCommand command = new AddItemsCommand(List.of(itemDTO), "resource1");
 
         // Assert
         assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
@@ -166,7 +166,7 @@ class AddItemsCommandHandlerTest {
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
         // Act
-        AddItemsCommand command = new AddItemsCommand(Collections.emptyList(), 1);
+        AddItemsCommand command = new AddItemsCommand(Collections.emptyList(), "resource1");
         ResponseEntity<ResourceDTO> response = handler.handle(command);
 
         // Assert

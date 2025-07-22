@@ -6,6 +6,8 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -13,7 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ExtendWith(MockitoExtension.class)
 class ApplicationMapperTest {
 
-    private final ApplicationMapper underTest = new ApplicationMapper();
+    @Mock
+    private final ApplicationMapper underTest = Mockito.mock(ApplicationMapper.class);
 
 
     @Test

@@ -36,8 +36,8 @@ public class UpdateResourceCommandHandlerTest {
     private UpdateResourceCommandHandler handler;
 
     private UpdateResourceCommand updateResourceCommand(ResourceDTO resourcedto,
-                                                        Integer resourceId){
-        return new UpdateResourceCommand(resourcedto, resourceId);
+                                                        String resourceName){
+        return new UpdateResourceCommand(resourcedto, resourceName);
     }
 
     private ResourceDTO dto;
@@ -53,12 +53,14 @@ public class UpdateResourceCommandHandlerTest {
 
         resource = new ResourceEntity();
         resource.setId(1);
-        resource.setName("Old Name");
+        resource.setName("resource1");
+        resource.setDescription("Old Name");
         resource.setType(ResourceType.UI);
 
         updatedResource = new ResourceEntity();
         updatedResource.setId(1);
-        updatedResource.setName("Updated Name");
+        updatedResource.setName("resource1");
+        updatedResource.setDescription("Updated Name");
         updatedResource.setType(ResourceType.API);
     }
 
@@ -67,9 +69,9 @@ public class UpdateResourceCommandHandlerTest {
     @DisplayName("Should update resource when valid ID and data are provided")
     void testHandle_shouldUpdateResourceSuccessfully() {
         // Arrange
-        command = updateResourceCommand(dto, 1);
+        command = updateResourceCommand(dto, "resource1");
 
-        when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
         when(resourceRepository.save(resource)).thenReturn(updatedResource);
         when(resourceMapper.toDto(updatedResource)).thenReturn(dto);
 
@@ -82,7 +84,7 @@ public class UpdateResourceCommandHandlerTest {
         assertEquals(ResourceType.API, Objects.requireNonNull(response.getBody()).getType());
 
         // Verify
-        verify(resourceRepository, times(1)).findById(1);
+        verify(resourceRepository, times(1)).findByName("resource1");
         verify(resourceRepository, times(1)).save(resource);
         verify(resourceMapper,times(1)).toDto(updatedResource);
         verifyNoMoreInteractions(resourceMapper,resourceRepository);
@@ -92,9 +94,9 @@ public class UpdateResourceCommandHandlerTest {
     @DisplayName("Should throw exception when resource ID does not exist")
     void testHandle_whenResourceNotFound_shouldThrowException() {
         // Arrange
-        command = updateResourceCommand(dto, 99);
+        command = updateResourceCommand(dto, "resource99");
 
-        when(resourceRepository.findById(99)).thenReturn(Optional.empty());
+        when(resourceRepository.findByName("resource99")).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class,
@@ -107,7 +109,7 @@ public class UpdateResourceCommandHandlerTest {
         assertTrue(exception.getBody().getProperties().getOrDefault("details", "").toString().contains("Resource not found"));
 
         // Verify
-        verify(resourceRepository, times(1)).findById(99);
+        verify(resourceRepository, times(1)).findByName("resource99");
         verifyNoMoreInteractions(resourceRepository);
     }
 

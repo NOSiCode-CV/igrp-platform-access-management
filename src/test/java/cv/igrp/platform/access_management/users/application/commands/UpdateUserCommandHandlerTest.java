@@ -35,23 +35,22 @@ public class UpdateUserCommandHandlerTest {
     private IGRPUserDTO dto;
     private UpdateUserCommand command;
 
-    private final Integer USER_ID = 1;
+    private final String USER_ID = "johndoe";
 
-    private UpdateUserCommand updateUserCommand(IGRPUserDTO igrpuserdto, Integer id){
-        return new UpdateUserCommand(igrpuserdto,id);
+    private UpdateUserCommand updateUserCommand(IGRPUserDTO igrpuserdto, String username){
+        return new UpdateUserCommand(igrpuserdto,username);
     }
 
     @BeforeEach
     void setUp() {
         user = new IGRPUserEntity();
-        user.setId(USER_ID);
         user.setName("Old Name");
-        user.setUsername("oldUser");
+        user.setUsername(USER_ID);
         user.setEmail("old@example.com");
 
         dto = new IGRPUserDTO();
         dto.setName("New Name");
-        dto.setUsername("newUser");
+        dto.setUsername(USER_ID);
         dto.setEmail("new@example.com");
 
         command = updateUserCommand(dto, USER_ID);
@@ -61,7 +60,7 @@ public class UpdateUserCommandHandlerTest {
     @DisplayName("should update user and return updated DTO")
     void testHandle_whenUserExists_shouldUpdateAndReturnDto() {
         // Arrange
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
         when(userMapper.toDto(user)).thenReturn(dto);
 
@@ -78,7 +77,7 @@ public class UpdateUserCommandHandlerTest {
         assertEquals("new@example.com", user.getEmail());
 
         // Verify
-        verify(userRepository, times(1)).findById(USER_ID);
+        verify(userRepository, times(1)).findByUsername(USER_ID);
         verify(userRepository, times(1)).save(user);
         verify(userMapper, times(1)).toDto(user);
         verifyNoMoreInteractions(userMapper, userRepository);
@@ -89,7 +88,7 @@ public class UpdateUserCommandHandlerTest {
     @DisplayName("should throw IgrpResponseStatusException if user does not exist")
     void testHandle_whenUserNotFound_shouldThrowException() {
         // Arrange
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
+        when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
@@ -100,7 +99,7 @@ public class UpdateUserCommandHandlerTest {
         assertEquals("User not found with id: " + USER_ID, exception.getBody().getProperties().get("details"));
 
         // Verify
-        verify(userRepository, times(1)).findById(USER_ID);
+        verify(userRepository, times(1)).findByUsername(USER_ID);
         verifyNoMoreInteractions(userRepository);
         verifyNoInteractions(userMapper);
     }
@@ -116,7 +115,7 @@ public class UpdateUserCommandHandlerTest {
 
         command = updateUserCommand(dto, USER_ID);
 
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
         when(userMapper.toDto(user)).thenReturn(dto);
 
@@ -132,7 +131,7 @@ public class UpdateUserCommandHandlerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
         // Verify
-        verify(userRepository, times(1)).findById(USER_ID);
+        verify(userRepository, times(1)).findByUsername(USER_ID);
         verify(userRepository, times(1)).save(user);
         verifyNoMoreInteractions(userRepository);
     }
@@ -161,7 +160,7 @@ public class UpdateUserCommandHandlerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
         // Verify
-        verify(userRepository, times(1)).findById(USER_ID);
+        verify(userRepository, times(1)).findByUsername(USER_ID);
         verify(userRepository, times(1)).save(user);
         verifyNoMoreInteractions(userRepository);
     }

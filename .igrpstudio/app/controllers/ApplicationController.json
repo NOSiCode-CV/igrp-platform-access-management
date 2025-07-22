@@ -72,6 +72,12 @@
           "name": "slug",
           "description": "The Application Slug",
           "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "description": "The Department Code",
+          "isRequired": false
         }
       ]
     },
@@ -104,21 +110,8 @@
     },
     {
       "actionName": "updateApplication",
-      "path": "applications/{id}",
+      "path": "applications/{code}",
       "method": "PUT",
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "ApplicationDTO",
-              "name": "Application",
-              "objectType": "dto",
-              "module": "app",
-              "description": "The Application Data"
-            }
-          }
-        }
-      },
       "responses": {
         "200": {
           "description": "The Updated Application",
@@ -135,16 +128,28 @@
       },
       "pathVariables": [
         {
-          "type": "integer",
-          "name": "id",
-          "description": "The Application ID",
+          "name": "code",
+          "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "ApplicationDTO",
+              "name": "Application",
+              "objectType": "dto",
+              "module": "app",
+              "description": "The Application Data"
+            }
+          }
+        }
+      }
     },
     {
       "actionName": "deleteApplication",
-      "path": "applications/{id}",
+      "path": "applications/{code}",
       "method": "DELETE",
       "responses": {
         "204": {
@@ -162,9 +167,8 @@
       },
       "pathVariables": [
         {
-          "type": "integer",
-          "name": "id",
-          "description": "The Application ID",
+          "name": "code",
+          "type": "string",
           "isRequired": true
         }
       ]
@@ -258,8 +262,29 @@
     },
     {
       "actionName": "addApplicationCustomFields",
-      "path": "/applications/{id}/custom-fields",
+      "path": "/applications/{code}/custom-fields",
       "method": "POST",
+      "responses": {
+        "204": {
+          "description": "No Content",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
       "requestBody": {
         "content": {
           "application/json": {
@@ -271,7 +296,12 @@
             }
           }
         }
-      },
+      }
+    },
+    {
+      "actionName": "removeApplicationCustomFields",
+      "path": "/applications/{code}/custom-fields/remove",
+      "method": "POST",
       "responses": {
         "204": {
           "description": "No Content",
@@ -288,17 +318,11 @@
       },
       "pathVariables": [
         {
-          "type": "integer",
-          "name": "id",
-          "description": "Application ID",
+          "name": "code",
+          "type": "string",
           "isRequired": true
         }
-      ]
-    },
-    {
-      "actionName": "removeApplicationCustomFields",
-      "path": "/applications/{id}/custom-fields/remove",
-      "method": "POST",
+      ],
       "requestBody": {
         "content": {
           "application/json": {
@@ -310,33 +334,11 @@
             }
           }
         }
-      },
-      "responses": {
-        "204": {
-          "description": "No Content",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "string",
-                "name": "data",
-                "collectionType": "none"
-              }
-            }
-          }
-        }
-      },
-      "pathVariables": [
-        {
-          "type": "integer",
-          "name": "id",
-          "description": "Application ID",
-          "isRequired": true
-        }
-      ]
+      }
     },
     {
       "actionName": "getApplicationCustomFields",
-      "path": "/applications/{id}/custom-fields",
+      "path": "/applications/{code}/custom-fields",
       "method": "GET",
       "responses": {
         "200": {
@@ -355,10 +357,9 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "Application ID"
+          "name": "code",
+          "type": "string",
+          "isRequired": true
         }
       ]
     },

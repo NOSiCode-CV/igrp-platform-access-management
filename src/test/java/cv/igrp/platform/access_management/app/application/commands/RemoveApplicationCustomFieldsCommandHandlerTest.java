@@ -32,6 +32,7 @@ public class RemoveApplicationCustomFieldsCommandHandlerTest {
     void testHandle_shouldRemoveFieldsAndReturnNoContent() {
         // Given
         Integer appId = 1;
+        String appCode = "APP";
         List<String> fieldsToRemove = List.of("custom1", "custom2");
 
         Map<String, Object> existingFields = new HashMap<>();
@@ -46,7 +47,7 @@ public class RemoveApplicationCustomFieldsCommandHandlerTest {
         customField.setFields(new HashMap<>(existingFields));
 
         RemoveApplicationCustomFieldsCommand command = new RemoveApplicationCustomFieldsCommand();
-        command.setId(appId);
+        command.setCode(appCode);
         command.setRemoveApplicationCustomFieldsRequest(fieldsToRemove);
 
         when(customFieldRepository.findByTableNameAndRecordId("t_application", appId))
@@ -71,8 +72,9 @@ public class RemoveApplicationCustomFieldsCommandHandlerTest {
     void testHandle_shouldThrowNotFoundIfCustomFieldDoesNotExist() {
         // Given
         Integer appId = 99;
+        String appCode = "APP";
         RemoveApplicationCustomFieldsCommand command = new RemoveApplicationCustomFieldsCommand();
-        command.setId(appId);
+        command.setCode(appCode);
         command.setRemoveApplicationCustomFieldsRequest(List.of("field1"));
 
         when(customFieldRepository.findByTableNameAndRecordId("t_application", appId))

@@ -39,8 +39,8 @@ public class AddResourceCustomFieldsCommandHandlerTest {
     private CustomFieldEntity customField;
     private AddResourceCustomFieldsCommand command;
 
-    private AddResourceCustomFieldsCommand addResourceCustomFieldsCommand(Map<String, ?> addResourceCustomFieldsRequest, Integer id){
-        return new AddResourceCustomFieldsCommand(addResourceCustomFieldsRequest, id);
+    private AddResourceCustomFieldsCommand addResourceCustomFieldsCommand(Map<String, ?> addResourceCustomFieldsRequest, String name){
+        return new AddResourceCustomFieldsCommand(addResourceCustomFieldsRequest, name);
     }
 
     @BeforeEach
@@ -59,7 +59,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
     void testHandle_whenCustomFieldExists_shouldAddFields() {
         // Arrange
         Map<String, Object> fieldsToAdd = Map.of("fieldTest", "valueTest");
-        command = addResourceCustomFieldsCommand(fieldsToAdd, 1);
+        command = addResourceCustomFieldsCommand(fieldsToAdd, "resource1");
 
         when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 1)).thenReturn(Optional.of(customField));
@@ -83,7 +83,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
     void testHandle_whenCustomFieldDoesNotExist_shouldCreateNewOne() {
         // Arrange
         Map<String, Object> fieldsToAdd = Map.of("fieldTest2", "valueTest2");
-        command = addResourceCustomFieldsCommand(fieldsToAdd, 1);
+        command = addResourceCustomFieldsCommand(fieldsToAdd, "resource1");
         customField.setFields(fieldsToAdd);
 
         when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
@@ -106,9 +106,9 @@ public class AddResourceCustomFieldsCommandHandlerTest {
     void testHandle_whenResourceNotFound_shouldThrowException() {
         // Arrange
         Map<String, Object> fields = Map.of("keyTest3", "valueTest3");
-        command = addResourceCustomFieldsCommand(fields, 999);
+        command = addResourceCustomFieldsCommand(fields, "resource1");
 
-        when(resourceRepository.findById(999)).thenReturn(Optional.empty());
+        when(resourceRepository.findByName("resource1")).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
@@ -117,7 +117,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
 
         // Verify
-        verify(resourceRepository, times(1)).findById(999);
+        verify(resourceRepository, times(1)).findByName("resource1");
         verifyNoInteractions(customFieldRepository);
     }
 }

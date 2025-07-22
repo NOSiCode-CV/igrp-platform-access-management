@@ -1,12 +1,17 @@
 package cv.igrp.platform.access_management.app.application.commands;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +23,7 @@ import org.springframework.http.ResponseEntity;
 import cv.igrp.platform.access_management.app.application.dto.*;
 
 import java.net.URI;
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateApplicationCommandHandlerTest {
@@ -25,18 +31,28 @@ public class CreateApplicationCommandHandlerTest {
     @Mock
     private ApplicationEntityRepository applicationRepository;
 
+    @Mock
+    private DepartmentEntityRepository departmentRepository;
+
+    @Mock
     private ApplicationMapper applicationMapper;
 
     private CreateApplicationCommandHandler createApplicationCommandHandler;
 
     @BeforeEach
     void setUp() {
-        applicationMapper = new ApplicationMapper(); // Real mapper
         createApplicationCommandHandler = new CreateApplicationCommandHandler(applicationRepository, applicationMapper);
     }
 
     @Test
     void testHandle() {
+
+        DepartmentEntity department = new DepartmentEntity();
+        department.setName("Test Department");
+        department.setCode("HR");
+        department.setDescription("Test Description");
+        department.setStatus(DepartmentStatus.ACTIVE);
+
         // Given
         ApplicationDTO applicationDTO = new ApplicationDTO(
                 null,
@@ -52,7 +68,8 @@ public class CreateApplicationCommandHandlerTest {
                 "admin",
                 "2024-04-15T12:00:00",
                 null,
-                null
+                null,
+                "HR"
         );
         CreateApplicationCommand command = new CreateApplicationCommand(applicationDTO);
 
@@ -71,8 +88,10 @@ public class CreateApplicationCommandHandlerTest {
         savedApplication.setPicture("pic.png");
         savedApplication.setUrl("http://localhost:8080");
         savedApplication.setSlug("test-app");
+        savedApplication.setDepartmentId(department);
 
-        Mockito.when(applicationRepository.save(Mockito.any(ApplicationEntity.class))).thenReturn(savedApplication);
+        when(departmentRepository.findByCode("HR")).thenReturn(Optional.of(department));
+        when(applicationRepository.save(Mockito.any(ApplicationEntity.class))).thenReturn(savedApplication);
 
         // When
         ResponseEntity<ApplicationDTO> response = createApplicationCommandHandler.handle(command);
@@ -84,8 +103,9 @@ public class CreateApplicationCommandHandlerTest {
         assertEquals(1, response.getBody().getId());
         assertEquals("APP001", response.getBody().getCode());
         assertEquals("Test Application", response.getBody().getName());
+        assertEquals("HR", response.getBody().getDepartmentCode());
         assertEquals(Status.ACTIVE, response.getBody().getStatus());
 
-        Mockito.verify(applicationRepository).save(Mockito.any(ApplicationEntity.class));
+        verify(applicationRepository).save(Mockito.any(ApplicationEntity.class));
     }
 }

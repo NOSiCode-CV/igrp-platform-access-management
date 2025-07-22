@@ -76,38 +76,38 @@ public class AddItemsCommandHandler implements CommandHandler<AddItemsCommand, R
     */
    @IgrpCommandHandler
    public ResponseEntity<ResourceDTO> handle(AddItemsCommand command) {
-      logger.info("Handling AddItemsCommand for resource ID: {}", command.getId());
+      logger.info("Handling AddItemsCommand for resource name: {}", command.getName());
 
-      ResourceEntity resource = resourceRepository.findById(command.getId())
-              .orElseThrow(() -> {logger.warn("Resource not found with id: {}", command.getId());
+      ResourceEntity resource = resourceRepository.findByName(command.getName())
+              .orElseThrow(() -> {logger.warn("Resource not found with name: {}", command.getName());
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
                          "Resource not found",
-                         "Resource not found with id: " + command.getId());
+                         "Resource not found with name: " + command.getName());
               });
       List<ResourceItemEntity> items = command.getResourceitemdto().stream()
               .map(dto -> {
-                 PermissionEntity permission = permissionRepository.findById(dto.getPermissionId())
+                 PermissionEntity permission = permissionRepository.findByName(dto.getPermissionName())
                          .orElseThrow(() -> {
-                            logger.warn("Permission not found with id: {}", dto.getPermissionId());
+                            logger.warn("Permission not found with name: {}", dto.getPermissionName());
                             return IgrpResponseStatusException.of(
                                     HttpStatus.NOT_FOUND,
                                     "Permission not found",
-                                    "Permission not found with id: " + dto.getPermissionId());
+                                    "Permission not found with name: " + dto.getPermissionName());
                          });
                  return resourceMapper.toItemEntity(dto, resource, permission);
               })
               .toList();
 
       if (resource.getItems() == null) {
-         logger.warn("Resource with id={} has null item list. Initializing new list.", resource.getId());
+         logger.warn("Resource with name={} has null item list. Initializing new list.", resource.getName());
          resource.setItems(new ArrayList<>());
       }
 
       resource.getItems().addAll(items);
       var resourceSaved = resourceRepository.save(resource);
 
-      logger.info("Added {} item(s) to resource id={}", items.size(), resource.getId());
+      logger.info("Added {} item(s) to resource name={}", items.size(), resource.getName());
 
       return ResponseEntity.ok(resourceMapper.toDto(resourceSaved));
    }

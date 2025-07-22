@@ -63,8 +63,8 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
     */
    @IgrpCommandHandler
    public ResponseEntity<ApplicationDTO> handle(UpdateApplicationCommand command) {
-      ApplicationEntity application = applicationRepository.findById(command.getId())
-              .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found with id: " + command.getId()));
+      ApplicationEntity application = applicationRepository.findByCode(command.getCode())
+              .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found with code: " + command.getCode()));
 
       ApplicationDTO appDto = command.getApplicationdto();
       application.setCode(appDto.getCode());

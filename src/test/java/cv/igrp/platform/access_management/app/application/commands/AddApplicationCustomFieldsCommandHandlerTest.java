@@ -42,8 +42,9 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
     void testHandle_WhenApplicationExists_AndCustomFieldNotExists() {
         // Given
         Integer applicationId = 1;
+        String applicationCode = "APP";
         AddApplicationCustomFieldsCommand command = new AddApplicationCustomFieldsCommand();
-        command.setId(applicationId);
+        command.setCode(applicationCode);
         command.setAddApplicationCustomFieldsRequest(Map.of("field1", "value1"));
 
         ApplicationEntity application = new ApplicationEntity();
@@ -72,8 +73,9 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
     void testHandle_WhenApplicationExists_AndCustomFieldExists() {
         // Given
         Integer applicationId = 1;
+        String applicationCode = "APP";
         AddApplicationCustomFieldsCommand command = new AddApplicationCustomFieldsCommand();
-        command.setId(applicationId);
+        command.setCode(applicationCode);
         command.setAddApplicationCustomFieldsRequest(Map.of("field1", "value1"));
 
         ApplicationEntity application = new ApplicationEntity();
@@ -103,8 +105,9 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
     void testHandle_WhenApplicationDoesNotExist() {
         // Given
         Integer applicationId = 1;
+        String applicationCode = "APP";
         AddApplicationCustomFieldsCommand command = new AddApplicationCustomFieldsCommand();
-        command.setId(applicationId);
+        command.setCode(applicationCode);
         command.setAddApplicationCustomFieldsRequest(Map.of("field1", "value1"));
 
         when(applicationRepository.findById(applicationId)).thenReturn(Optional.empty());

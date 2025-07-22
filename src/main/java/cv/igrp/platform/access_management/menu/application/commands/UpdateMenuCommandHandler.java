@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
-
 @Component
 public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuCommand, ResponseEntity<MenuEntryDTO>> {
 
@@ -60,13 +59,13 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
    @IgrpCommandHandler
    public ResponseEntity<MenuEntryDTO> handle(UpdateMenuCommand command) {
 
-      MenuEntryEntity menuEntry = menuEntryRepository.findById(command.getId())
+      MenuEntryEntity menuEntry = menuEntryRepository.findByCode(command.getCode())
               .orElseThrow(() -> {
-                 logger.warn("Menu not found with ID: {}", command.getId());
+                 logger.warn("Menu not found with code: {}", command.getCode());
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
                          "Menu not found",
-                         "Menu not found with id: " + command.getId());
+                         "Menu not found with code: " + command.getCode());
               });
 
       MenuEntryDTO menuDto = command.getMenuentrydto();
@@ -81,25 +80,25 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
       menuEntry.setTarget(menuDto.getTarget());
       menuEntry.setUrl(menuDto.getUrl());
 
-      if (menuDto.getParentId() != null) {
-         menuEntry.setParentId(menuEntryRepository.findById(menuDto.getParentId())
+      if (menuDto.getParentCode() != null) {
+         menuEntry.setParentId(menuEntryRepository.findByCode(menuDto.getParentCode())
                  .orElseThrow(() -> {
-                    logger.warn("Parent Menu not found with ID: {}", menuDto.getParentId());
+                    logger.warn("Parent Menu not found with code: {}", menuDto.getParentCode());
                     return IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND,
-                            "Parent MenuEntry not found",
-                            "Parent MenuEntry not found with id: " + menuDto.getParentId());
+                            "Parent Menu Entry not found",
+                            "Parent Menu Entry not found with code: " + menuDto.getParentCode());
                  }));
       }
 
-      if (menuDto.getApplicationId() != null){
-         menuEntry.setApplicationId(applicationRepository.findById(menuDto.getApplicationId())
+      if (menuDto.getApplicationCode() != null){
+         menuEntry.setApplicationId(applicationRepository.findByCode(menuDto.getApplicationCode())
                  .orElseThrow(() -> {
-                    logger.warn("Application not found with ID: {}", menuDto.getApplicationId());
+                    logger.warn("Application not found with code: {}", menuDto.getApplicationCode());
                     return IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND,
                             "Application not found",
-                            "Application not found with id: " + menuDto.getApplicationId());
+                            "Application not found with code: " + menuDto.getApplicationCode());
                  }));
       }
 
@@ -130,9 +129,9 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
       }
 
       logger.info("""
-                    Menu updated: id={}, name={}, type={}
+                    Menu updated: code={}, name={}, type={}
                     """,
-              savedMenuEntry.getId(),
+              savedMenuEntry.getCode(),
               savedMenuEntry.getName(),
               savedMenuEntry.getType());
 

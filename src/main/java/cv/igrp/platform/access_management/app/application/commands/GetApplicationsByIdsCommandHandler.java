@@ -1,15 +1,12 @@
 package cv.igrp.platform.access_management.app.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
-import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
@@ -35,8 +32,8 @@ import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 @Component
 public class GetApplicationsByIdsCommandHandler implements CommandHandler<GetApplicationsByIdsCommand, ResponseEntity<List<ApplicationDTO>>> {
 
-   private ApplicationEntityRepository applicationRepository;
-   private ApplicationMapper applicationMapper;
+   private final ApplicationEntityRepository applicationRepository;
+   private final ApplicationMapper applicationMapper;
 
    /**
     * Constructs the handler with the required dependencies.

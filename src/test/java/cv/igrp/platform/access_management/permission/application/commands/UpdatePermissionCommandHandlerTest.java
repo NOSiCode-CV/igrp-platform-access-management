@@ -48,15 +48,14 @@ public class UpdatePermissionCommandHandlerTest {
     void itShouldThrowRecordNotFound_When_ProvidedPermissionId_NotFound() {
         //... Given
         int permissionId = 100;
-        String permissionNewName = "Permission New Name";
+        String permissionName = "manage";
         String permissionNewDescription = "PermissionNewId";
 
         PermissionDTO permissionNewData = new PermissionDTO();
 
-        permissionNewData.setName(permissionNewName);
         permissionNewData.setDescription(permissionNewDescription);
         permissionNewData.setStatus(Status.INACTIVE);
-        UpdatePermissionCommand command = new UpdatePermissionCommand(permissionNewData, permissionId);
+        UpdatePermissionCommand command = new UpdatePermissionCommand(permissionNewData, permissionName);
 
         when(permissionRepository.findByIdAndStatusNot(permissionId, Status.DELETED))
                 .thenReturn(Optional.empty());
@@ -72,26 +71,25 @@ public class UpdatePermissionCommandHandlerTest {
     void itShouldThrowRecordNotFound_When_ProvidedApplicationId_NotFound() {
         //... Given
         int permissionId = 100;
-        int applicationId = 100;
-        String permissionNewName = "Permission New Name";
+        String permissionName = "manage";
+        String applicationCode = "APP";
         String permissionNewDescription = "PermissionNewId";
         String permissionPreviousName = "Permission PreviousName";
 
         PermissionDTO permissionNewData = new PermissionDTO();
 
-        permissionNewData.setName(permissionNewName);
         permissionNewData.setDescription(permissionNewDescription);
         permissionNewData.setStatus(Status.INACTIVE);
-        permissionNewData.setApplicationId(applicationId);
-        UpdatePermissionCommand command = new UpdatePermissionCommand(permissionNewData, permissionId);
+        permissionNewData.setApplicationCode(applicationCode);
+        UpdatePermissionCommand command = new UpdatePermissionCommand(permissionNewData, permissionName);
 
         PermissionEntity foundPermission = new PermissionEntity();
         foundPermission.setId(permissionId);
-        foundPermission.setName(permissionPreviousName);
+        foundPermission.setDescription(permissionPreviousName);
 
-        when(permissionRepository.findByIdAndStatusNot(permissionId, Status.DELETED))
+        when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED))
                 .thenReturn(Optional.of(foundPermission));
-        when(applicationRepository.findById(applicationId))
+        when(applicationRepository.findByCode(applicationCode))
                 .thenReturn(Optional.empty());
 
         //... When
@@ -105,14 +103,19 @@ public class UpdatePermissionCommandHandlerTest {
     void itShouldUpdateApplication_WhenProvidedApplicationIdIsDifferent() {
         // Given
         int permissionId = 1;
+        String permissionName = "manage";
         int previousAppId = 10;
+        String previousAppCode = "PREV_APP";
         int newAppId = 20;
+        String newAppCode = "APP";
 
         ApplicationEntity previousApp = new ApplicationEntity();
         previousApp.setId(previousAppId);
+        previousApp.setCode(previousAppCode);
 
         ApplicationEntity newApp = new ApplicationEntity();
         newApp.setId(newAppId);
+        newApp.setCode(newAppCode);
 
         PermissionEntity existingPermission = new PermissionEntity();
         existingPermission.setId(permissionId);
@@ -121,18 +124,18 @@ public class UpdatePermissionCommandHandlerTest {
         existingPermission.setApplication(previousApp);
 
         PermissionDTO updateDTO = new PermissionDTO();
-        updateDTO.setApplicationId(newAppId);
+        updateDTO.setApplicationCode(newAppCode);
         updateDTO.setName("READ_DATA");
         updateDTO.setDescription("Updated Description");
         updateDTO.setStatus(Status.ACTIVE);
 
-        UpdatePermissionCommand command = new UpdatePermissionCommand(updateDTO, permissionId);
+        UpdatePermissionCommand command = new UpdatePermissionCommand(updateDTO, permissionName);
 
         PermissionEntity savedPermission = new PermissionEntity();
         PermissionDTO mappedDTO = new PermissionDTO();
 
-        when(permissionRepository.findByIdAndStatusNot(permissionId, Status.DELETED)).thenReturn(Optional.of(existingPermission));
-        when(applicationRepository.findById(newAppId)).thenReturn(Optional.of(newApp));
+        when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED)).thenReturn(Optional.of(existingPermission));
+        when(applicationRepository.findByCode(newAppCode)).thenReturn(Optional.of(newApp));
         when(permissionRepository.save(any(PermissionEntity.class))).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(mappedDTO);
 
@@ -151,6 +154,8 @@ public class UpdatePermissionCommandHandlerTest {
         // Given
         int permissionId = 1;
         int applicationId = 100;
+        String permissionName = "manage";
+        String appCode = "APP";
         String permissionPreviousName = "OLD_NAME";
         String permissionPreviousDescription = "Old Description";
         String permissionNewName = "NEW_NAME";
@@ -158,6 +163,7 @@ public class UpdatePermissionCommandHandlerTest {
 
         ApplicationEntity application = new ApplicationEntity();
         application.setId(applicationId);
+        application.setCode(appCode);
 
         PermissionEntity existingPermission = new PermissionEntity();
         existingPermission.setId(permissionId);
@@ -171,16 +177,16 @@ public class UpdatePermissionCommandHandlerTest {
         dto.setName(permissionNewName);
         dto.setDescription(permissionNewDescription);
         dto.setStatus(Status.ACTIVE);
-        dto.setApplicationId(applicationId);
+        dto.setApplicationCode(appCode);
 
-        UpdatePermissionCommand command = new UpdatePermissionCommand(dto, permissionId);
+        UpdatePermissionCommand command = new UpdatePermissionCommand(dto, permissionName);
 
         PermissionEntity updatedPermission = new PermissionEntity();
         PermissionDTO mappedDTO = new PermissionDTO();
 
         // When
-        when(permissionRepository.findByIdAndStatusNot(permissionId, Status.DELETED)).thenReturn(Optional.of(existingPermission));
-        when(applicationRepository.findById(applicationId)).thenReturn(Optional.of(application));
+        when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED)).thenReturn(Optional.of(existingPermission));
+        when(applicationRepository.findByCode(appCode)).thenReturn(Optional.of(application));
         when(permissionRepository.save(any(PermissionEntity.class))).thenReturn(updatedPermission);
         when(permissionMapper.mapToDTO(updatedPermission)).thenReturn(mappedDTO);
 
@@ -193,7 +199,7 @@ public class UpdatePermissionCommandHandlerTest {
         assertEquals(permissionNewName, savedPermission.getName());
         assertEquals(permissionNewDescription, savedPermission.getDescription());
         assertEquals(Status.ACTIVE, savedPermission.getStatus());
-        assertEquals(applicationId, savedPermission.getApplication().getId());
+        assertEquals(appCode, savedPermission.getApplication().getCode());
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(mappedDTO, response.getBody());

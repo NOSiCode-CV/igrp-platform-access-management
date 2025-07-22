@@ -10,8 +10,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -36,8 +34,8 @@ import org.slf4j.LoggerFactory;
 @Component
 public class CreateApplicationCommandHandler implements CommandHandler<CreateApplicationCommand, ResponseEntity<ApplicationDTO>> {
 
-   private ApplicationEntityRepository applicationRepository;
-   private ApplicationMapper applicationMapper;
+   private final ApplicationEntityRepository applicationRepository;
+   private final ApplicationMapper applicationMapper;
 
    /**
     * Constructs the handler with the required dependencies.
@@ -54,7 +52,7 @@ public class CreateApplicationCommandHandler implements CommandHandler<CreateApp
     * Handles the creation of a new application.
     *
     * <ul>
-    *   <li>Maps the DTO from the command to a new {@link Application} entity.</li>
+    *   <li>Maps the DTO from the command to a new {@link ApplicationEntity} entity.</li>
     *   <li>Sets the entity's ID to {@code null} to enforce insertion.</li>
     *   <li>Sets the default status to {@link Status#ACTIVE}.</li>
     *   <li>Saves the entity and maps it back to a DTO.</li>

@@ -45,7 +45,7 @@ public class UpdateMenuCommandHandlerTest {
     private UpdateMenuCommandHandler updateMenuCommandHandler;
 
     private UpdateMenuCommand updateMenuCommand(MenuEntryDTO menuentrydto) {
-        return new UpdateMenuCommand(menuentrydto, 1);
+        return new UpdateMenuCommand(menuentrydto, "MENU1");
     }
 
     private MenuEntryEntity existingMenu;
@@ -59,9 +59,11 @@ public class UpdateMenuCommandHandlerTest {
     void setUp() {
         existingMenu = new MenuEntryEntity();
         existingMenu.setId(1);
+        existingMenu.setCode("MENU1");
 
         updatedMenu = new MenuEntryEntity();
         updatedMenu.setId(1);
+        updatedMenu.setCode("MENU1");
 
         dto = new MenuEntryDTO();
         dto.setName("Updated Name");
@@ -72,8 +74,8 @@ public class UpdateMenuCommandHandlerTest {
         dto.setStatus(Status.ACTIVE);
         dto.setTarget("_self");
         dto.setUrl("/new-url");
-        dto.setApplicationId(100);
-        dto.setParentId(300);
+        dto.setApplicationCode("APP");
+        dto.setParentCode("MENU0");
 
         application = new ApplicationEntity();
         parentMenu = new MenuEntryEntity();
@@ -85,9 +87,9 @@ public class UpdateMenuCommandHandlerTest {
     @DisplayName("should update menu entry and return 200 OK")
     void testHandle_shouldUpdateMenuAndReturnOk() {
         // Arrange
-        when(menuEntryRepository.findById(1)).thenReturn(Optional.of(existingMenu));
-        when(applicationRepository.findById(100)).thenReturn(Optional.of(application));
-        when(menuEntryRepository.findById(300)).thenReturn(Optional.of(parentMenu));
+        when(menuEntryRepository.findByCode("MENU1")).thenReturn(Optional.of(existingMenu));
+        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
+        when(menuEntryRepository.findByCode("MENU0")).thenReturn(Optional.of(parentMenu));
         when(menuEntryRepository.save(existingMenu)).thenReturn(updatedMenu);
         when(menuEntryMapper.toDTO(updatedMenu)).thenReturn(dto);
 
@@ -99,9 +101,9 @@ public class UpdateMenuCommandHandlerTest {
         assertEquals(dto, response.getBody());
 
         // Verify interactions
-        verify(menuEntryRepository, times(1)).findById(1);
-        verify(applicationRepository, times(1)).findById(100);
-        verify(menuEntryRepository, times(1)).findById(300);
+        verify(menuEntryRepository, times(1)).findByCode("MENU1");
+        verify(applicationRepository, times(1)).findByCode("APP");
+        verify(menuEntryRepository, times(1)).findByCode("MENU0");
         verify(menuEntryRepository, times(1)).save(existingMenu);
         verify(menuEntryMapper).toDTO(updatedMenu);
         verifyNoMoreInteractions(menuEntryRepository, applicationRepository, menuEntryMapper);
@@ -111,7 +113,7 @@ public class UpdateMenuCommandHandlerTest {
     @DisplayName("should throw exception when menu entry is not found")
     void testHandle_whenMenuNotFound_shouldThrow() {
         // Arrange
-        when(menuEntryRepository.findById(1)).thenReturn(Optional.empty());
+        when(menuEntryRepository.findByCode("MENU1")).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
@@ -124,7 +126,7 @@ public class UpdateMenuCommandHandlerTest {
         assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Menu not found"));
 
         // Verify
-        verify(menuEntryRepository, times(1)).findById(1);
+        verify(menuEntryRepository, times(1)).findByCode("MENU1");
         verifyNoMoreInteractions(menuEntryMapper);
     }
 
@@ -132,8 +134,8 @@ public class UpdateMenuCommandHandlerTest {
     @DisplayName("should throw exception when parent menu is not found")
     void testHandle_whenParentNotFound_shouldThrow() {
         // Arrange
-        when(menuEntryRepository.findById(1)).thenReturn(Optional.of(existingMenu));
-        when(menuEntryRepository.findById(300)).thenReturn(Optional.empty());
+        when(menuEntryRepository.findByCode("MENU1")).thenReturn(Optional.of(existingMenu));
+        when(menuEntryRepository.findByCode("MENU0")).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
@@ -146,8 +148,8 @@ public class UpdateMenuCommandHandlerTest {
         assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Parent MenuEntry not found"));
 
         // Verify
-        verify(menuEntryRepository, times(1)).findById(1);
-        verify(menuEntryRepository, times(1)).findById(300);
+        verify(menuEntryRepository, times(1)).findByCode("MENU1");
+        verify(menuEntryRepository, times(1)).findByCode("MENU0");
         verifyNoMoreInteractions(menuEntryMapper);
     }
 
@@ -155,9 +157,9 @@ public class UpdateMenuCommandHandlerTest {
     @DisplayName("should throw exception when application is not found")
     void testHandle_whenApplicationNotFound_shouldThrow() {
         // Arrange
-        when(menuEntryRepository.findById(1)).thenReturn(Optional.of(existingMenu));
-        when(menuEntryRepository.findById(300)).thenReturn(Optional.of(parentMenu));
-        when(applicationRepository.findById(100)).thenReturn(Optional.empty());
+        when(menuEntryRepository.findByCode("MENU1")).thenReturn(Optional.of(existingMenu));
+        when(menuEntryRepository.findByCode("MENU0")).thenReturn(Optional.of(parentMenu));
+        when(applicationRepository.findByCode("APP")).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
@@ -170,8 +172,8 @@ public class UpdateMenuCommandHandlerTest {
         assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Application not found"));
 
         // Verify
-        verify(menuEntryRepository, times(1)).findById(1);
-        verify(menuEntryRepository, times(1)).findById(300);
+        verify(menuEntryRepository, times(1)).findByCode("MENU1");
+        verify(menuEntryRepository, times(1)).findByCode("MENU0");
         verifyNoMoreInteractions(menuEntryMapper);
     }
 }

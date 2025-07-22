@@ -18,6 +18,18 @@
       "primaryKey": false
     },
     {
+      "name": "code",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
       "name": "name",
       "objectType": "java",
       "type": "string",
@@ -124,9 +136,9 @@
       "primaryKey": false
     },
     {
-      "name": "parentId",
+      "name": "parentCode",
       "objectType": "java",
-      "type": "integer",
+      "type": "string",
       "required": false,
       "before": false,
       "after": false,
@@ -136,9 +148,9 @@
       "primaryKey": false
     },
     {
-      "name": "applicationId",
+      "name": "applicationCode",
       "objectType": "java",
-      "type": "integer",
+      "type": "string",
       "required": false,
       "before": false,
       "after": false,

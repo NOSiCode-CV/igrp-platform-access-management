@@ -6,12 +6,10 @@ import cv.igrp.platform.access_management.shared.application.constants.CustomFie
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -38,14 +36,16 @@ import java.util.Map;
 public class RemoveApplicationCustomFieldsCommandHandler implements CommandHandler<RemoveApplicationCustomFieldsCommand, ResponseEntity<String>> {
 
    private CustomFieldEntityRepository customFieldRepository;
+   private ApplicationEntityRepository applicationRepository;
 
    /**
     * Constructs a new instance of {@code RemoveApplicationCustomFieldsCommandHandler} with required dependencies.
     *
     * @param customFieldRepository repository used to retrieve and persist custom fields
     */
-   public RemoveApplicationCustomFieldsCommandHandler(CustomFieldEntityRepository customFieldRepository) {
+   public RemoveApplicationCustomFieldsCommandHandler(CustomFieldEntityRepository customFieldRepository, ApplicationEntityRepository applicationRepository) {
       this.customFieldRepository = customFieldRepository;
+      this.applicationRepository = applicationRepository;
    }
 
    /**
@@ -62,9 +62,11 @@ public class RemoveApplicationCustomFieldsCommandHandler implements CommandHandl
     */
    @IgrpCommandHandler
    public ResponseEntity<String> handle(RemoveApplicationCustomFieldsCommand command) {
+      ApplicationEntity application = applicationRepository.findByCode(command.getCode())
+              .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found with code: " + command.getCode()));
       CustomFieldEntity customField = customFieldRepository
-              .findByTableNameAndRecordId(CustomFieldTableName.APPLICATION.getName(), command.getId())
-              .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "CustomFieldEntity not found", "CustomFieldEntity not found for Application ID: " + command.getId()));
+              .findByTableNameAndRecordId(CustomFieldTableName.APPLICATION.getName(), application.getId())
+              .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "CustomFieldEntity not found", "CustomFieldEntity not found for Application ID: " + application.getId()));
       Map<String, Object> fields = customField.getFields();
       if (fields != null)
          command.getRemoveApplicationCustomFieldsRequest().forEach(fields::remove);

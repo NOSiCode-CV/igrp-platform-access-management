@@ -30,11 +30,12 @@ public class DeleteApplicationCommandHandlerTest {
     void testHandle_whenApplicationFoundAndDeleted() {
         // Given
         Integer applicationId = 1;
+        String applicationCode = "APP";
         ApplicationEntity application = new ApplicationEntity();
         application.setId(applicationId);
         application.setStatus(Status.ACTIVE); // Initially active
 
-        DeleteApplicationCommand command = new DeleteApplicationCommand(applicationId);
+        DeleteApplicationCommand command = new DeleteApplicationCommand(applicationCode);
 
         // When
         when(applicationRepository.findById(applicationId)).thenReturn(Optional.of(application));
@@ -53,7 +54,8 @@ public class DeleteApplicationCommandHandlerTest {
     void testHandle_whenApplicationNotFound() {
         // Given
         Integer applicationId = 999;  // An ID that doesn't exist
-        DeleteApplicationCommand command = new DeleteApplicationCommand(applicationId);
+        String applicationCode = "APP";
+        DeleteApplicationCommand command = new DeleteApplicationCommand(applicationCode);
 
         // When
         when(applicationRepository.findById(applicationId)).thenReturn(Optional.empty());
@@ -62,6 +64,6 @@ public class DeleteApplicationCommandHandlerTest {
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> deleteApplicationCommandHandler.handle(command));
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
         assertNotNull(exception.getBody().getProperties());
-        assertEquals("Application not found with id: 999", exception.getBody().getProperties().get("details"));
+        assertEquals("Application not found with code: APP", exception.getBody().getProperties().get("details"));
     }
 }

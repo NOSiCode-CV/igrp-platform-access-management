@@ -55,11 +55,11 @@ public class GetResourcesQueryHandler implements QueryHandler<GetResourcesQuery,
    */
   @IgrpQueryHandler
   public ResponseEntity<List<ResourceDTO>> handle(GetResourcesQuery query) {
-    logger.info("Handling GetResourcesQuery: name={}, applicationId={}, type={}, externalId={}",
-            query.getName(), query.getApplicationId(), query.getType(), query.getExternalID());
+    logger.info("Handling GetResourcesQuery: name={}, applicationCode={}, type={}, externalId={}",
+            query.getName(), query.getApplicationCode(), query.getType(), query.getExternalID());
 
     Specification<ResourceEntity> spec = buildSpecification(
-            query.getName(), query.getApplicationId(), query.getType(), query.getExternalID(), query.getApplicationCode());
+            query.getName(), query.getType(), query.getExternalID(), query.getApplicationCode());
 
     List<ResourceDTO> resources = resourceRepository.findAll(spec)
             .stream()
@@ -74,29 +74,20 @@ public class GetResourcesQueryHandler implements QueryHandler<GetResourcesQuery,
    * on the provided filters.
    *
    * @param name         optional name filter
-   * @param applicationId optional application ID to match
    * @param type         optional resource type name, must be a valid {@link ResourceType}
    * @param externalId   optional exact external ID match
    * @return a composed {@link Specification} used to query the resource repository
    */
   private Specification<ResourceEntity> buildSpecification(
-          String name, Integer applicationId,
+          String name,
           String type, String externalId,
           String applicationCode
   ) {
 
-    Specification<ResourceEntity> spec = Specification.where(null);
+    Specification<ResourceEntity> spec = Specification.anyOf();
     if (name != null && !name.isBlank()) {
       spec = spec.and((root, query, cb) ->
               cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%")
-      );
-    }
-    if (applicationId != null) {
-
-      spec = spec.and((root, query, cb) -> {
-                Join<MenuEntryEntity, ApplicationEntity> applicationJoin = root.join("applicationId");
-                return cb.equal(applicationJoin.get("id"), applicationId);
-              }
       );
     }
 

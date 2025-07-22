@@ -40,8 +40,9 @@ public class RemovePermissionsCommandHandlerTest {
     void itShouldThrow_NotFoundException_WhenProvided_RoleId_NotFound() {
         //... Given
         int roleId = 1;
+        String roleName = "admin";
         ArrayList<Integer> permissionsToRemove = new ArrayList<>();
-        RemovePermissionsCommand command = new RemovePermissionsCommand(permissionsToRemove, roleId);
+        RemovePermissionsCommand command = new RemovePermissionsCommand(permissionsToRemove, roleName);
 
         when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED))
                 .thenReturn(Optional.empty());
@@ -58,6 +59,7 @@ public class RemovePermissionsCommandHandlerTest {
     void itShouldRemovePermissions_WhenRoleAndPermissionsExists() {
         //... Given
         int roleId = 1;
+        String roleName = "admin";
         int permissionId1 = 1;
         int permissionId2 = 2;
         RoleEntity savedRole = new RoleEntity();
@@ -74,9 +76,9 @@ public class RemovePermissionsCommandHandlerTest {
         savedRole.setPermissions(permissions);
         List<Integer> permissionsToRemove = List.of(permissionId1, permissionId2);
         RemovePermissionsCommand removePermissionsCommand =
-                new RemovePermissionsCommand(permissionsToRemove, roleId);
+                new RemovePermissionsCommand(permissionsToRemove, roleName);
 
-        when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED))
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
                 .thenReturn(Optional.of(savedRole));
         //... When
         ResponseEntity<List<PermissionDTO>> result = underTest.handle(removePermissionsCommand);
@@ -99,6 +101,7 @@ public class RemovePermissionsCommandHandlerTest {
     void itShouldReturnEmptyList_WhenNoneOfPermissionsAreInRole() {
         //... Given
         int roleId = 1;
+        String roleName = "admin";
         int permissionId1 = 1;
         int permissionId2 = 2;
         int permissionId3 = 3;
@@ -122,9 +125,9 @@ public class RemovePermissionsCommandHandlerTest {
         savedRole.setPermissions(permissions);
         List<Integer> permissionsToRemove = List.of(permissionId1, permissionId2);
         RemovePermissionsCommand removePermissionsCommand =
-                new RemovePermissionsCommand(permissionsToRemove, roleId);
+                new RemovePermissionsCommand(permissionsToRemove, roleName);
 
-        when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED))
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
                 .thenReturn(Optional.of(savedRole));
         //... When
         ResponseEntity<List<PermissionDTO>> result = underTest.handle(removePermissionsCommand);
@@ -147,11 +150,12 @@ public class RemovePermissionsCommandHandlerTest {
     void itShouldRemoveOnlyExistingPermissions_AndIgnoreOthers() {
         // Given
         int roleId = 1;
+        String roleName = "admin";
         Integer permissionToRemoveId = 100;
         Integer permissionToKeepId = 200;
 
         RemovePermissionsCommand command = new RemovePermissionsCommand(
-                List.of(permissionToRemoveId), roleId);
+                List.of(permissionToRemoveId), roleName);
 
         PermissionEntity permissionToRemove = new PermissionEntity();
         permissionToRemove.setId(permissionToRemoveId);
@@ -169,7 +173,7 @@ public class RemovePermissionsCommandHandlerTest {
         role.setStatus(Status.ACTIVE);
         role.setPermissions(initialPermissions);
 
-        when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
         when(permissionMapper.mapToDTO(permissionToRemove)).thenReturn(dtoRemoved);
         when(roleRepository.save(role)).thenReturn(role);
 
@@ -194,15 +198,17 @@ public class RemovePermissionsCommandHandlerTest {
     void itShouldNotFail_WhenRoleHasNoPermissions() {
         // Given
         int roleId = 1;
+        String roleName = "admin";
         List<Integer> permissionIdsToRemove = List.of(101, 102);
-        RemovePermissionsCommand command = new RemovePermissionsCommand(permissionIdsToRemove, roleId);
+        RemovePermissionsCommand command = new RemovePermissionsCommand(permissionIdsToRemove, roleName);
 
         RoleEntity role = new RoleEntity();
         role.setId(roleId);
+        role.setName(roleName);
         role.setStatus(Status.ACTIVE);
         role.setPermissions(new HashSet<>());
 
-        when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.save(role)).thenReturn(role);
 
         // When
@@ -222,10 +228,11 @@ public class RemovePermissionsCommandHandlerTest {
     void itShouldHandleDuplicatePermissionIdsInCommand() {
         // Given
         int roleId = 1;
+        String roleName = "admin";
         Integer duplicatedPermissionId = 100;
 
         RemovePermissionsCommand command = new RemovePermissionsCommand(
-                List.of(duplicatedPermissionId, duplicatedPermissionId), roleId);
+                List.of(duplicatedPermissionId, duplicatedPermissionId), roleName);
 
         PermissionEntity permission = new PermissionEntity();
         permission.setId(duplicatedPermissionId);
@@ -237,10 +244,11 @@ public class RemovePermissionsCommandHandlerTest {
 
         RoleEntity role = new RoleEntity();
         role.setId(roleId);
+        role.setName(roleName);
         role.setStatus(Status.ACTIVE);
         role.setPermissions(rolePermissions);
 
-        when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
         when(permissionMapper.mapToDTO(permission)).thenReturn(permissionDTO);
         when(roleRepository.save(role)).thenReturn(role);
 
@@ -264,11 +272,12 @@ public class RemovePermissionsCommandHandlerTest {
     void itShouldMapRemovedPermissionsToDTOsOnly() {
         // Given
         int roleId = 1;
+        String roleName = "admin";
         Integer permissionToRemoveId = 100;
         Integer permissionToKeepId = 200;
 
         RemovePermissionsCommand command = new RemovePermissionsCommand(
-                List.of(permissionToRemoveId), roleId);
+                List.of(permissionToRemoveId), roleName);
 
         PermissionEntity permissionToRemove = new PermissionEntity();
         permissionToRemove.setId(permissionToRemoveId);
@@ -283,10 +292,11 @@ public class RemovePermissionsCommandHandlerTest {
 
         RoleEntity role = new RoleEntity();
         role.setId(roleId);
+        role.setName(roleName);
         role.setStatus(Status.ACTIVE);
         role.setPermissions(rolePermissions);
 
-        when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
         when(permissionMapper.mapToDTO(permissionToRemove)).thenReturn(dtoToRemove);
         when(roleRepository.save(role)).thenReturn(role);
 

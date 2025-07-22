@@ -4,8 +4,6 @@ import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import org.springframework.data.jpa.domain.Specification;
@@ -37,8 +35,8 @@ import java.util.List;
 @Component
 public class GetApplicationsQueryHandler implements QueryHandler<GetApplicationsQuery, ResponseEntity<List<ApplicationDTO>>>{
 
-  private ApplicationEntityRepository applicationRepository;
-  private ApplicationMapper applicationMapper;
+  private final ApplicationEntityRepository applicationRepository;
+  private final ApplicationMapper applicationMapper;
 
   /**
    * Constructs the handler with required dependencies.
@@ -75,19 +73,19 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
    * @return a {@link Specification} representing the composed query filters
    */
   private Specification<ApplicationEntity> buildSpecification(final String code, final String name, final String slug) {
-    Specification<ApplicationEntity> spec = Specification.where(null);
+    Specification<ApplicationEntity> spec = Specification.allOf();
     if (code != null && !code.isEmpty()) {
-      spec = spec.and((root, query, cb) ->
+      spec = spec.and((root, _, cb) ->
               cb.equal(root.get("code"), code)
       );
     }
     if (name != null && !name.isEmpty()) {
-      spec = spec.and((root, query, cb) ->
+      spec = spec.and((root, _, cb) ->
               cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%")
       );
     }
     if (slug != null && !slug.isEmpty()) {
-      spec = spec.and((root, query, cb) ->
+      spec = spec.and((root, _, cb) ->
               cb.equal(cb.lower(root.get("slug")), slug.toLowerCase())
       );
     }

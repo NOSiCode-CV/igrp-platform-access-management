@@ -3,12 +3,13 @@ package cv.igrp.platform.access_management.resource.application.queries;
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
-import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -35,6 +36,7 @@ public class GetResourceCustomFieldsQueryHandler implements QueryHandler<GetReso
   private static final Logger logger = LoggerFactory.getLogger(GetResourceCustomFieldsQueryHandler.class);
 
   private final CustomFieldEntityRepository customFieldRepository;
+  private final ResourceEntityRepository resourceRepository;
 
   /**
    * Constructs the {@code GetResourceCustomFieldsQueryHandler} with the required dependency.
@@ -43,12 +45,13 @@ public class GetResourceCustomFieldsQueryHandler implements QueryHandler<GetReso
    *                              entries based on table name and record ID
    */
   public GetResourceCustomFieldsQueryHandler(
-          CustomFieldEntityRepository customFieldRepository) {
+          CustomFieldEntityRepository customFieldRepository, ResourceEntityRepository resourceRepository) {
     this.customFieldRepository = customFieldRepository;
+    this.resourceRepository = resourceRepository;
   }
 
   /**
-   * Handles a {@link cv.igrp.platform.access_management.resource.application.queries.queries.GetResourceCustomFieldsQuery} request by retrieving the custom fields
+   * Handles a {@link cv.igrp.platform.access_management.resource.application.queries.GetResourceCustomFieldsQuery} request by retrieving the custom fields
    * for a given resource ID.
    *
    * @param query the query object containing the resource ID
@@ -58,21 +61,30 @@ public class GetResourceCustomFieldsQueryHandler implements QueryHandler<GetReso
    */
   @IgrpQueryHandler
   public ResponseEntity<Map<String, ?>> handle(GetResourceCustomFieldsQuery query) {
-    Integer resourceId = query.getId();
+    String resourceName = query.getName();
 
-    logger.info("Fetching custom fields for resource ID: {}", resourceId);
+    logger.info("Fetching custom fields for resource name: {}", resourceName);
+
+    ResourceEntity resource = resourceRepository.findByName(resourceName)
+            .orElseThrow(() -> {
+              logger.warn("Resource not found with name: {}", resourceName);
+              return IgrpResponseStatusException.of(
+                      HttpStatus.NOT_FOUND,
+                      "Resource not found",
+                      "Resource not found with name: " + resourceName);
+            });
 
     CustomFieldEntity customField = customFieldRepository
-            .findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), query.getId())
+            .findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resource.getId())
             .orElseThrow(() -> {
-              logger.warn("No custom field found for resource ID: {}", resourceId);
+              logger.warn("No custom field found for resource name: {}", resourceName);
               return IgrpResponseStatusException.of(
                       HttpStatus.NOT_FOUND,
                       "CustomFieldEntity not found",
-                      "CustomFieldEntity not found for Resource ID: " + resourceId);
+                      "CustomFieldEntity not found for Resource name: " + resourceName);
             });
 
-    logger.info("Custom fields successfully retrieved for resource ID: {}", resourceId);
+    logger.info("Custom fields successfully retrieved for resource name: {}", resourceName);
     return ResponseEntity.ok(Optional.ofNullable(customField.getFields()).orElse(Map.of()));
   }
 

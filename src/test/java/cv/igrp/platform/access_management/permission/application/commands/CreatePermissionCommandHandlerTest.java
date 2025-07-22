@@ -46,13 +46,13 @@ public class CreatePermissionCommandHandlerTest {
     @Test
     void itShouldThrowNotFoundException_WhenApplicationDoesNotExist() {
         //... Given
-        int applicationId = 1;
+        String applicationCode = "APP";
         String permissionName = "permissionName";
         String permissionDescription = "permissionDescription";
-        PermissionDTO permissiondto = new PermissionDTO(null, permissionName, permissionDescription, null, applicationId);
+        PermissionDTO permissiondto = new PermissionDTO(null, permissionName, permissionDescription, null, applicationCode);
         CreatePermissionCommand command = new CreatePermissionCommand(permissiondto);
 
-        when(applicationRepository.findById(applicationId))
+        when(applicationRepository.findByCode(applicationCode))
                 .thenReturn(Optional.empty());
         //... When
         IgrpResponseStatusException response = assertThrows(IgrpResponseStatusException.class, () -> underTest.handle(command));
@@ -64,17 +64,17 @@ public class CreatePermissionCommandHandlerTest {
     @Test
     void itShouldCreatePermission_WhenApplicationExists() {
         // Given
-        int appId = 1;
+        String appCode = "APP";
         String permissionName = "READ_USERS";
         PermissionDTO dto = new PermissionDTO();
         dto.setName(permissionName);
-        dto.setApplicationId(appId);
+        dto.setApplicationCode(appCode);
         dto.setStatus(Status.ACTIVE);
 
         CreatePermissionCommand command = new CreatePermissionCommand(dto);
 
         ApplicationEntity application = new ApplicationEntity();
-        application.setId(appId);
+        application.setId(1);
 
         PermissionEntity permissionToSave = new PermissionEntity();
         permissionToSave.setName(permissionName);
@@ -93,7 +93,7 @@ public class CreatePermissionCommandHandlerTest {
         expectedResponse.setStatus(Status.ACTIVE);
 
         // When
-        when(applicationRepository.findById(appId)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCode(appCode)).thenReturn(Optional.of(application));
         when(permissionMapper.mapDtoToEntity(dto, application)).thenReturn(permissionToSave);
         when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(expectedResponse);
@@ -109,7 +109,7 @@ public class CreatePermissionCommandHandlerTest {
         assertEquals(expectedResponse, response.getBody());
 
         assertEquals(permissionName, capturedPermission.getName());
-        assertEquals(appId, capturedPermission.getApplication().getId());
+        assertEquals(appCode, capturedPermission.getApplication().getCode());
         assertEquals(Status.ACTIVE, capturedPermission.getStatus());
     }
 
@@ -117,10 +117,11 @@ public class CreatePermissionCommandHandlerTest {
     void itShouldUseDefaultStatus_WhenStatusIsNotProvided() {
         // Given
         int appId = 1;
+        String appCode = "APP";
         String permissionName = "READ_USERS";
         PermissionDTO dto = new PermissionDTO();
         dto.setName(permissionName);
-        dto.setApplicationId(appId);
+        dto.setApplicationCode(appCode);
 
         CreatePermissionCommand command = new CreatePermissionCommand(dto);
 
@@ -165,11 +166,12 @@ public class CreatePermissionCommandHandlerTest {
     void itShouldMapSavedPermissionToDTO() {
         // Given
         int appId = 1;
+        String appCode = "APP";
         String permissionName = "MANAGE_ROLES";
 
         PermissionDTO dto = new PermissionDTO();
         dto.setName(permissionName);
-        dto.setApplicationId(appId);
+        dto.setApplicationCode(appCode);
 
         CreatePermissionCommand command = new CreatePermissionCommand(dto);
 

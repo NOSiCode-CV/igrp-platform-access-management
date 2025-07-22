@@ -48,8 +48,9 @@ public class UpdateRoleCommandHandlerTest {
         //... Given
         String roleName = "app";
         RoleDTO roleData = new RoleDTO();
-        String roleName = "New RoleName";
+        String roleDesc = "New RoleName";
         roleData.setName(roleName);
+        roleData.setDescription(roleDesc);
         UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleName);
 
         when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))

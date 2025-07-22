@@ -51,7 +51,7 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
    */
   @IgrpQueryHandler
   public ResponseEntity<List<MenuEntryDTO>> handle(GetMenusQuery query) {
-    Specification<MenuEntryEntity> spec = buildMenuEntrySpecification(query.getName(), query.getApplicationId(), query.getType(), query.getStatus(), query.getApplicationCode());
+    Specification<MenuEntryEntity> spec = buildMenuEntrySpecification(query.getName(), query.getType(), query.getStatus(), query.getApplicationCode());
     List<MenuEntryEntity> menus =  menuEntryRepository.findAll(spec);
     List<MenuEntryDTO> menuEntryDTOs = menus.stream()
             .map(menuEntryMapper::toDTO)
@@ -61,37 +61,29 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
     return ResponseEntity.ok(menuEntryDTOs);
   }
 
-  private Specification<MenuEntryEntity> buildMenuEntrySpecification(String name, Integer applicationId, String type, String status, String applicationCode) {
-    Specification<MenuEntryEntity> spec = Specification.where(null);
+  private Specification<MenuEntryEntity> buildMenuEntrySpecification(String name, String type, String status, String applicationCode) {
+    Specification<MenuEntryEntity> spec = Specification.anyOf();
     if (name != null && !name.isEmpty()) {
-      spec = spec.and((root, query, cb) ->
+      spec = spec.and((root, _, cb) ->
               cb.like(cb.lower(root.get("name")), "%" + name.toLowerCase() + "%")
       );
     }
     if (type != null) {
       MenuEntryType menuEntryType = resolveMenuEntryType(type);
-      spec = spec.and((root, query, cb) ->
+      spec = spec.and((root, _, cb) ->
               cb.equal(root.get("type"), menuEntryType)
       );
     }
     if (status != null) {
       Status menuEntryStatus = resolveMenuEntryStatus(status);
-      spec = spec.and((root, query, cb) ->
+      spec = spec.and((root, _, cb) ->
               cb.equal(root.get("status"), menuEntryStatus)
-      );
-    }
-    if (applicationId != null) {
-
-      spec = spec.and((root, query, cb) -> {
-                Join<MenuEntryEntity, ApplicationEntity> applicationJoin = root.join("applicationId");
-                return cb.equal(applicationJoin.get("id"), applicationId);
-              }
       );
     }
 
     if (applicationCode != null) {
 
-      spec = spec.and((root, query, cb) -> {
+      spec = spec.and((root, _, cb) -> {
                 Join<MenuEntryEntity, ApplicationEntity> applicationJoin = root.join("applicationId");
                 return cb.equal(applicationJoin.get("code"), applicationCode);
               }

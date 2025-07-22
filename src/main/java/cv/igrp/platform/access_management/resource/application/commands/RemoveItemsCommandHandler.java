@@ -62,17 +62,17 @@ public class RemoveItemsCommandHandler implements CommandHandler<RemoveItemsComm
     */
    @IgrpCommandHandler
    public ResponseEntity<ResourceDTO> handle(RemoveItemsCommand command) {
-      Integer resourceId = command.getId();
+      String resourceName = command.getName();
 
-      logger.info("Handling RemoveItemsCommand for resource ID: {}", resourceId);
+      logger.info("Handling RemoveItemsCommand for resource name: {}", resourceName);
 
-      ResourceEntity resource = resourceRepository.findById(resourceId)
+      ResourceEntity resource = resourceRepository.findByName(resourceName)
               .orElseThrow(() -> {
-                 logger.warn("Resource not found with ID: {}", resourceId);
+                 logger.warn("Resource not found with name: {}", resourceName);
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
                          "Resource not found",
-                         "Resource not found with id: " + resourceId);
+                         "Resource not found with name: " + resourceName);
               });
 
       List<Integer> itemsToRemove = command.getRemoveItemsRequest();

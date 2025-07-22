@@ -14,6 +14,7 @@ public class MenuEntryMapper {
         MenuEntryDTO dto = new MenuEntryDTO();
         dto.setId(entity.getId());
         dto.setName(entity.getName());
+        dto.setCode(entity.getCode());
         dto.setType(entity.getType());
         dto.setPosition(entity.getPosition());
         dto.setIcon(entity.getIcon());
@@ -22,10 +23,10 @@ public class MenuEntryMapper {
         dto.setUrl(entity.getUrl());
 
         if (entity.getParentId() != null)
-            dto.setParentId(entity.getParentId().getId());
+            dto.setParentCode(entity.getParentId().getCode());
 
         if (entity.getApplicationId() != null)
-            dto.setApplicationId(entity.getApplicationId().getId());
+            dto.setApplicationCode(entity.getApplicationId().getCode());
 
         dto.setCreatedBy(entity.getCreatedBy());
         if(entity.getCreatedDate() != null)
@@ -43,6 +44,7 @@ public class MenuEntryMapper {
         MenuEntryEntity entity = new MenuEntryEntity();
         entity.setId(dto.getId());
         entity.setName(dto.getName());
+        entity.setCode(dto.getCode());
         entity.setType(dto.getType());
         entity.setPosition(dto.getPosition());
         entity.setIcon(dto.getIcon());

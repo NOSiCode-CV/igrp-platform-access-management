@@ -2,10 +2,16 @@ package cv.igrp.platform.access_management.app.mapper;
 
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
+
+import static java.util.Optional.ofNullable;
 
 /**
  * Mapper component responsible for converting between {@link ApplicationEntity} entities
@@ -29,6 +35,12 @@ import java.net.URI;
 @Component
 public class ApplicationMapper {
 
+    private final DepartmentEntityRepository departmentEntityRepository;
+
+    public ApplicationMapper(DepartmentEntityRepository departmentEntityRepository) {
+        this.departmentEntityRepository = departmentEntityRepository;
+    }
+
     /**
      * Converts an {@link ApplicationEntity} entity to an {@link ApplicationDTO}.
      *
@@ -49,6 +61,7 @@ public class ApplicationMapper {
         dto.setUrl(entity.getUrl() != null ? URI.create(entity.getUrl()) : null);
         dto.setSlug(entity.getSlug());
         dto.setCreatedBy(entity.getCreatedBy());
+        dto.setDepartmentCode(ofNullable(entity.getDepartmentId()).map(DepartmentEntity::getCode).orElse(null));
         if(entity.getCreatedDate() != null)
             dto.setCreatedDate(entity.getCreatedDate().toString());
         dto.setLastModifiedBy(entity.getLastModifiedBy());
@@ -77,6 +90,8 @@ public class ApplicationMapper {
         entity.setPicture(dto.getPicture());
         entity.setUrl(dto.getUrl() != null ? dto.getUrl().toString() : null);
         entity.setSlug(dto.getSlug());
+        entity.setDepartmentId(departmentEntityRepository.findByCode(dto.getDepartmentCode()).orElseThrow(
+                () -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Department not found", "Department not found for code: " + dto.getDepartmentCode())));
 
         return entity;
     }

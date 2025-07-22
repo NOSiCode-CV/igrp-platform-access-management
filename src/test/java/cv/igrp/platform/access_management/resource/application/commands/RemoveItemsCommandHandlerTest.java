@@ -36,8 +36,8 @@ public class RemoveItemsCommandHandlerTest {
     @InjectMocks
     private RemoveItemsCommandHandler handler;
 
-    private RemoveItemsCommand removeItemsCommand(List<Integer> itemsToRemove, Integer resourceId) {
-        return new RemoveItemsCommand(itemsToRemove, resourceId);
+    private RemoveItemsCommand removeItemsCommand(List<Integer> itemsToRemove, String resourceName) {
+        return new RemoveItemsCommand(itemsToRemove, resourceName);
     }
 
     private ResourceEntity resource;
@@ -74,8 +74,8 @@ public class RemoveItemsCommandHandlerTest {
     @DisplayName("should return 200 OK without modifying when item list is null")
     void testHandle_whenItemListIsNull_shouldSkipRemoval() {
         // Arrange
-        command = removeItemsCommand(null, 1);
-        when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
+        command = removeItemsCommand(null, "resource1");
+        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
         // Act
@@ -86,7 +86,7 @@ public class RemoveItemsCommandHandlerTest {
         assertEquals(resourceDTO, response.getBody());
 
         // Verify
-        verify(resourceRepository, times(1)).findById(1);
+        verify(resourceRepository, times(1)).findByName("resource1");
         verify(resourceRepository, never()).save(any());
         verifyNoMoreInteractions(resourceRepository, resourceMapper);
     }
@@ -95,8 +95,8 @@ public class RemoveItemsCommandHandlerTest {
     @DisplayName("should return 200 OK without modifying when item list is empty")
     void testHandle_whenItemListIsEmpty_shouldSkipRemoval() {
         // Arrange
-        command = removeItemsCommand(new ArrayList<>(), 1);
-        when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
+        command = removeItemsCommand(new ArrayList<>(), "resource1");
+        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
         // Act
@@ -106,7 +106,7 @@ public class RemoveItemsCommandHandlerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
         // Verify
-        verify(resourceRepository, times(1)).findById(1);
+        verify(resourceRepository, times(1)).findByName("resource1");
         verify(resourceRepository, never()).save(any());
         verifyNoMoreInteractions(resourceRepository, resourceMapper);
     }
@@ -116,7 +116,7 @@ public class RemoveItemsCommandHandlerTest {
     void testHandle_whenValidItemsProvided_shouldRemoveItems() {
         // Arrange
 
-        command = removeItemsCommand(List.of(2), 1);
+        command = removeItemsCommand(List.of(2), "resource1");
         when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
@@ -131,7 +131,7 @@ public class RemoveItemsCommandHandlerTest {
         assertEquals(1, resource.getItems().getFirst().getId());
 
         // Verify
-        verify(resourceRepository, times(1)).findById(1);
+        verify(resourceRepository, times(1)).findByName("resource1");
         verify(resourceRepository, times(1)).save(resource);
         verify(resourceMapper, times(1)).toDto(resource);
         verifyNoMoreInteractions(resourceRepository, resourceMapper);
@@ -141,8 +141,8 @@ public class RemoveItemsCommandHandlerTest {
     @DisplayName("should throw IgrpResponseStatusException when resource not found")
     void handle_whenResourceNotFound_shouldThrow() {
         // Arrange
-        command = removeItemsCommand( List.of(1), 999);
-        when(resourceRepository.findById(999)).thenReturn(Optional.empty());
+        command = removeItemsCommand( List.of(1), "resource1");
+        when(resourceRepository.findByName("resource1")).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
@@ -151,7 +151,7 @@ public class RemoveItemsCommandHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
 
         // Verify
-        verify(resourceRepository, times(1)).findById(999);
+        verify(resourceRepository, times(1)).findByName("resource1");
         verifyNoMoreInteractions(resourceRepository, resourceMapper);
     }
 }

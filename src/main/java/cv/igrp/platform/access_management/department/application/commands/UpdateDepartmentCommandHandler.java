@@ -57,22 +57,22 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
     */
    @IgrpCommandHandler
    public ResponseEntity<DepartmentDTO> handle(UpdateDepartmentCommand command) {
-      Integer departmentId = command.getId();
+      String departmentCode = command.getCode();
 
-      logger.info("Updating department with id {}", departmentId);
+      logger.info("Updating department with code {}", departmentCode);
 
-      DepartmentEntity department = departmentRepository.findById(departmentId)
+      DepartmentEntity department = departmentRepository.findByCode(departmentCode)
               .orElseThrow(() -> {
-                 logger.warn("Department with id={} not found", departmentId);
+                 logger.warn("Department with code={} not found", departmentCode);
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Invalid Department ID", "Department not found with id: " + departmentId);
+                         HttpStatus.NOT_FOUND, "Invalid Department Code", "Department not found with code: " + departmentCode);
               });
 
       departmentMapper.updateEntityFromDto(command.getDepartmentdto(), department);
 
       DepartmentEntity updated = departmentRepository.save(department);
 
-      logger.info("Successfully updated department with id={}", updated.getId());
+      logger.info("Successfully updated department with code={}", updated.getCode());
 
       return ResponseEntity.ok(departmentMapper.toDto(updated));
    }

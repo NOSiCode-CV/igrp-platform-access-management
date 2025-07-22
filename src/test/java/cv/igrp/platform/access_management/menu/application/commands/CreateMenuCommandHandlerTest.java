@@ -55,8 +55,8 @@ public class CreateMenuCommandHandlerTest {
     @BeforeEach
     void setUp() {
         dto = new MenuEntryDTO();
-        dto.setApplicationId(1);
-        dto.setParentId(3);
+        dto.setApplicationCode("APP");
+        dto.setParentCode("MENU1");
         dto.setType(MenuEntryType.MENU_PAGE);
         dto.setPageSlug("my-page");
         dto.setUrl("/pages/my-page");
@@ -73,8 +73,8 @@ public class CreateMenuCommandHandlerTest {
     void testHandle_whenValidInput_shouldCreateMenuEntry() {
         // Arrange
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
-        when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
-        when(menuEntryRepository.findById(3)).thenReturn(Optional.of(parentMenu));
+        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
+        when(menuEntryRepository.findByCode("MENU1")).thenReturn(Optional.of(parentMenu));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(dto);
 
@@ -88,8 +88,8 @@ public class CreateMenuCommandHandlerTest {
         assertEquals(dto, response.getBody());
 
         // Verify
-        verify(applicationRepository, times(1)).findById(1);
-        verify(menuEntryRepository, times(1)).findById(3);
+        verify(applicationRepository, times(1)).findByCode("APP");
+        verify(menuEntryRepository, times(1)).findByCode("MENU1");
         verify(menuEntryRepository, times(1)).save(menuEntry);
         verify(menuEntryMapper, times(1)).toDTO(menuEntry);
         verifyNoMoreInteractions(menuEntryRepository, applicationRepository, menuEntryMapper);
@@ -99,7 +99,7 @@ public class CreateMenuCommandHandlerTest {
     @DisplayName("should skip setting resource and parent if null")
     void testHandle_whenResourceAndParentIdAreNull_shouldSkipThem() {
         // Arrange
-        dto.setParentId(null);
+        dto.setParentCode(null);
 
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
         when(applicationRepository.findById(1)).thenReturn(Optional.of(application));

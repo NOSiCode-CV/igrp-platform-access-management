@@ -1,3 +1,6 @@
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+
 package cv.igrp.platform.access_management.menu.interfaces.rest;
 
 import cv.igrp.framework.stereotype.IgrpController;
@@ -63,16 +66,16 @@ public class MenuController {
   )
   
   public ResponseEntity<List<MenuEntryDTO>> getMenus(
-    @RequestParam(value = "applicationId", required = false) Integer applicationId,
     @RequestParam(value = "name", required = false) String name,
     @RequestParam(value = "type", required = false) String type,
     @RequestParam(value = "status", required = false) String status,
-    @RequestParam(value = "applicationCode", required = false) String applicationCode)
+    @RequestParam(value = "applicationCode", required = false) String applicationCode,
+    @RequestParam(value = "code", required = false) String code)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetMenusQuery(applicationId, name, type, status, applicationCode);
+      final var query = new GetMenusQuery(name, type, status, applicationCode, code);
 
       ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
 
@@ -158,7 +161,7 @@ public class MenuController {
   }
 
   @PutMapping(
-    value = "menus/{id}"
+    value = "menus/{code}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateMenu",
@@ -178,12 +181,12 @@ public class MenuController {
   )
   
   public ResponseEntity<MenuEntryDTO> updateMenu(@Valid @RequestBody MenuEntryDTO updateMenuRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "code") String code)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new UpdateMenuCommand(updateMenuRequest, id);
+      final var command = new UpdateMenuCommand(updateMenuRequest, code);
 
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 
@@ -195,7 +198,7 @@ public class MenuController {
   }
 
   @DeleteMapping(
-    value = "menus/{id}"
+    value = "menus/{code}"
   )
   @Operation(
     summary = "DELETE method to handle operations for deleteMenu",
@@ -215,12 +218,12 @@ public class MenuController {
   )
   
   public ResponseEntity<String> deleteMenu(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "code") String code)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new DeleteMenuCommand(id);
+      final var command = new DeleteMenuCommand(code);
 
        ResponseEntity<String> response = commandBus.send(command);
 

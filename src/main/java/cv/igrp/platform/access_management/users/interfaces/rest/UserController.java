@@ -1,3 +1,6 @@
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+
 package cv.igrp.platform.access_management.users.interfaces.rest;
 
 import cv.igrp.framework.stereotype.IgrpController;
@@ -82,7 +85,7 @@ public class UserController {
   }
 
   @PostMapping(
-    value = "users/{id}/addRoles"
+    value = "users/{username}/addRoles"
   )
   @Operation(
     summary = "POST method to handle operations for AddRolesToUser",
@@ -112,12 +115,12 @@ public class UserController {
   )
   
   public ResponseEntity<?> addRolesToUser(@Valid @RequestBody RoleUserDTO addRolesToUserRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "username") String username)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new AddRolesToUserCommand(addRolesToUserRequest, id);
+      final var command = new AddRolesToUserCommand(addRolesToUserRequest, username);
 
        ResponseEntity<?> response = commandBus.send(command);
 
@@ -129,7 +132,7 @@ public class UserController {
   }
 
   @DeleteMapping(
-    value = "users/{id}/removeRoles"
+    value = "users/{username}/removeRoles"
   )
   @Operation(
     summary = "DELETE method to handle operations for RemoveRolesFromUser",
@@ -149,12 +152,12 @@ public class UserController {
   )
   
   public ResponseEntity<List<RoleDTO>> removeRolesFromUser(@RequestBody List<Integer> removeRolesFromUserRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "username") String username)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, id);
+      final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, username);
 
        ResponseEntity<List<RoleDTO>> response = commandBus.send(command);
 
@@ -166,7 +169,7 @@ public class UserController {
   }
 
   @GetMapping(
-    value = "users/{id}/roles"
+    value = "users/{username}/roles"
   )
   @Operation(
     summary = "GET method to handle operations for getUserRoles",
@@ -186,12 +189,12 @@ public class UserController {
   )
   
   public ResponseEntity<List<RoleDTO>> getUserRoles(
-    @RequestParam(value = "applicationId") Integer applicationId, @PathVariable(value = "id") Integer id)
+    @RequestParam(value = "applicationId") Integer applicationId, @PathVariable(value = "username") String username)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetUserRolesQuery(applicationId, id);
+      final var query = new GetUserRolesQuery(applicationId, username);
 
       ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
 
@@ -223,8 +226,8 @@ public class UserController {
   )
   
   public ResponseEntity<List<IGRPUserDTO>> getUsers(@RequestBody List<Integer> getUsersRequest
-    , @RequestParam(value = "applicationId", required = false) Integer applicationId,
-    @RequestParam(value = "departmentId", required = false) Integer departmentId,
+    , @RequestParam(value = "applicationCode", required = false) Integer applicationCode,
+    @RequestParam(value = "departmentCode", required = false) Integer departmentCode,
     @RequestParam(value = "name", required = false) String name,
     @RequestParam(value = "username", required = false) String username,
     @RequestParam(value = "email", required = false) String email)
@@ -232,7 +235,7 @@ public class UserController {
 
       LOGGER.debug("Operation started");
 
-      final var command = new GetUsersCommand(getUsersRequest, applicationId, departmentId, name, username, email);
+      final var command = new GetUsersCommand(getUsersRequest, applicationCode, departmentCode, name, username, email);
 
        ResponseEntity<List<IGRPUserDTO>> response = commandBus.send(command);
 
@@ -281,7 +284,7 @@ public class UserController {
   }
 
   @PutMapping(
-    value = "users/{id}"
+    value = "users/{username}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateUser",
@@ -301,12 +304,12 @@ public class UserController {
   )
   
   public ResponseEntity<IGRPUserDTO> updateUser(@Valid @RequestBody IGRPUserDTO updateUserRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "username") String username)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new UpdateUserCommand(updateUserRequest, id);
+      final var command = new UpdateUserCommand(updateUserRequest, username);
 
        ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
 

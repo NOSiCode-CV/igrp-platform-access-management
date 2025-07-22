@@ -84,7 +84,7 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
       log.info("Update permission with name: {}", command.getPermissiondto().getName());
       PermissionEntity foundPermission = permissionRepository.findByNameAndStatusNot(command.getPermissiondto().getName(), DELETED)
               .orElseThrow(() -> {
-                 log.warn("Permission with id: {} not found", command.getId());
+                 log.warn("Permission with name: {} not found", command.getName());
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND, "Update Permission", "Permission with name: " + command.getPermissiondto().getName() + " not found."
                  );

@@ -44,31 +44,31 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
     */
    @IgrpCommandHandler
    public ResponseEntity<List<RoleDTO>> handle(RemoveRolesFromUserCommand command) {
-      Integer userId = command.getId();
+      String username = command.getUsername();
       List<Integer> roleIdsToRemove = command.getRemoveRolesFromUserRequest();
 
-      logger.info("Attempting to remove roles {} from user id={}", roleIdsToRemove, userId);
+      logger.info("Attempting to remove roles {} from username={}", roleIdsToRemove, username);
 
-      IGRPUserEntity user = userRepository.findById(command.getId())
+      IGRPUserEntity user = userRepository.findByUsername(command.getUsername())
               .orElseThrow(() -> {
-                 logger.warn("User not found with id={}", userId);
+                 logger.warn("User not found with username={}", username);
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
-                         "Invalid User id",
-                         "User not found with id: " + userId);
+                         "Invalid Username",
+                         "User not found with username: " + username);
               });
 
       if (roleIdsToRemove != null && !roleIdsToRemove.isEmpty()) {
          List<RoleEntity> roles = new ArrayList<>(user.getRoles());
          boolean isRolesRemoved = roles.removeIf(role -> roleIdsToRemove.contains(role.getId()));
          if (isRolesRemoved) {
-            logger.info("Roles removed successfully from user id={}", userId);
+            logger.info("Roles removed successfully from user name={}", username);
          } else {
-            logger.info("No matching roles found to remove for user id={}", userId);
+            logger.info("No matching roles found to remove for user name={}", username);
          }
          user.setRoles(roles);
       } else {
-         logger.info("No roles provided for removal for user id={}", userId);
+         logger.info("No roles provided for removal for user name={}", username);
       }
 
       userRepository.save(user);
@@ -80,7 +80,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
                       null))
               .collect(Collectors.toList());
 
-      logger.info("Returning {} remaining roles for user id={}", result.size(), userId);
+      logger.info("Returning {} remaining roles for user name={}", result.size(), username);
 
       return ResponseEntity.ok(result);
    }

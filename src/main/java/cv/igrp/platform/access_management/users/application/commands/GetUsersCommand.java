@@ -5,6 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
@@ -14,10 +15,10 @@ public class GetUsersCommand implements Command {
 
   
   private List<Integer> getUsersRequest;
-  @NotNull(message = "The field <applicationId> is required.")
-  private Integer applicationId;
-  @NotNull(message = "The field <departmentId> is required.")
-  private Integer departmentId;
+  @NotNull(message = "The field <applicationCode> is required.")
+  private Integer applicationCode;
+  @NotNull(message = "The field <departmentCode> is required.")
+  private Integer departmentCode;
   @NotBlank(message = "The field <name> is required.")
   private String name;
   @NotBlank(message = "The field <username> is required.")

@@ -30,7 +30,8 @@ class GetResourceCustomFieldsQueryHandlerTest {
     void testHandle_ShouldReturnFields_WhenCustomFieldExists() {
         // Given
         Integer resourceId = 123;
-        GetResourceCustomFieldsQuery query = new GetResourceCustomFieldsQuery(resourceId);
+        String resourceName = "resource123";
+        GetResourceCustomFieldsQuery query = new GetResourceCustomFieldsQuery(resourceName);
         Map<String, Object> mockFields = new HashMap<>();
         mockFields.put("field1", "value1");
         mockFields.put("field2", 5);
@@ -57,7 +58,8 @@ class GetResourceCustomFieldsQueryHandlerTest {
     void testHandle_ShouldThrowException_WhenCustomFieldNotFound() {
         // Given
         Integer resourceId = 999;
-        GetResourceCustomFieldsQuery query = new GetResourceCustomFieldsQuery(resourceId);
+        String resourceName = "resource999";
+        GetResourceCustomFieldsQuery query = new GetResourceCustomFieldsQuery(resourceName);
 
         when(customFieldRepository.findByTableNameAndRecordId("t_resource", resourceId))
                 .thenReturn(Optional.empty());

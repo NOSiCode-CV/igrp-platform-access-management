@@ -87,17 +87,17 @@ public class CreateResourceCommandHandler implements CommandHandler<CreateResour
 
       var resourceDTO = command.getResourcedto();
 
-      logger.info("Creating resource with applicationId: {}", resourceDTO.getApplicationId());
+      logger.info("Creating resource with applicationCode: {}", resourceDTO.getApplicationCode());
 
       ResourceEntity resource = resourceMapper.toEntity(resourceDTO);
 
-      ApplicationEntity application = applicationRepository.findById(resourceDTO.getApplicationId())
+      ApplicationEntity application = applicationRepository.findByCode(resourceDTO.getApplicationCode())
               .orElseThrow(() -> {
-                 logger.warn("Application not found with id: {}", resourceDTO.getApplicationId());
+                 logger.warn("Application not found with code: {}", resourceDTO.getApplicationCode());
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
                          "Application not found",
-                         "Application not found with id: " + resourceDTO.getApplicationId());
+                         "Application not found with code: " + resourceDTO.getApplicationCode());
               });
 
       resource.setApplicationId(application);
@@ -105,13 +105,13 @@ public class CreateResourceCommandHandler implements CommandHandler<CreateResour
       if (resourceDTO.getItems() != null && !resourceDTO.getItems().isEmpty()) {
          List<ResourceItemEntity> items = resourceDTO.getItems().stream()
                  .map(itemDTO -> {
-                    PermissionEntity permission = permissionRepository.findById(itemDTO.getPermissionId())
+                    PermissionEntity permission = permissionRepository.findByName(itemDTO.getPermissionName())
                             .orElseThrow(() -> {
-                               logger.warn("Permission not found with id: {}", itemDTO.getPermissionId());
+                               logger.warn("Permission not found with name: {}", itemDTO.getPermissionName());
                                return IgrpResponseStatusException.of(
                                        HttpStatus.NOT_FOUND,
                                        "Permission not found",
-                                       "Permission not found with id: " + itemDTO.getPermissionId());
+                                       "Permission not found with name: " + itemDTO.getPermissionName());
                             });
                     return resourceMapper.toItemEntity(itemDTO, resource, permission);
                  }).toList();
@@ -122,7 +122,7 @@ public class CreateResourceCommandHandler implements CommandHandler<CreateResour
       }
 
       ResourceEntity savedResource = resourceRepository.save(resource);
-      logger.info("Resource created successfully with id: {}", savedResource.getId());
+      logger.info("Resource created successfully with name: {}", savedResource.getName());
 
       ResourceDTO responseDto = resourceMapper.toDto(savedResource);
       return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);

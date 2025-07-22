@@ -70,17 +70,17 @@ public class GetUserRolesQueryHandler implements QueryHandler<GetUserRolesQuery,
    */
   @IgrpQueryHandler
   public ResponseEntity<List<RoleDTO>> handle(GetUserRolesQuery query) {
-    Integer userId = query.getId();
+    String username = query.getUsername();
 
-    logger.info("Fetching roles for user id={}", userId);
+    logger.info("Fetching roles for user name={}", username);
 
-    IGRPUserEntity user = userRepository.findById(query.getId())
+    IGRPUserEntity user = userRepository.findByUsername(query.getUsername())
             .orElseThrow(() -> {
-              logger.warn("User not found with id={}", userId);
+              logger.warn("User not found with username={}", username);
               return IgrpResponseStatusException.of(
                       HttpStatus.NOT_FOUND,
-                      "Invalid User id",
-                      "User not found with id: " + userId);
+                      "Invalid User",
+                      "User not found with username: " + username);
             });
 
     List<RoleEntity> roles = Optional.ofNullable(user.getRoles()).orElse(Collections.emptyList());
@@ -90,7 +90,7 @@ public class GetUserRolesQueryHandler implements QueryHandler<GetUserRolesQuery,
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
 
-    logger.info("User id={} has {} role(s)", userId, result.size());
+    logger.info("User name={} has {} role(s)", username, result.size());
 
     return ResponseEntity.ok(result);
   }

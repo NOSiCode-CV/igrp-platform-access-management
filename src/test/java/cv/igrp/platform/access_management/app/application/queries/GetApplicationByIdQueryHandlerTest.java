@@ -28,7 +28,8 @@ public class GetApplicationByIdQueryHandlerTest {
 
     private GetApplicationByIdQueryHandler getApplicationByIdQueryHandler;
 
-    private final ApplicationMapper applicationMapper = new ApplicationMapper();
+    @Mock
+    private final ApplicationMapper applicationMapper = Mockito.mock(ApplicationMapper.class);
 
     @BeforeEach
     void setUp() {

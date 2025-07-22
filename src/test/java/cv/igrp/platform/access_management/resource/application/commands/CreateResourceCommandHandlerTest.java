@@ -61,16 +61,16 @@ public class CreateResourceCommandHandlerTest {
     @BeforeEach
     void setUp() {
         resourceDTO = new ResourceDTO();
-        resourceDTO.setApplicationId(1);
+        resourceDTO.setApplicationCode("APP");
 
         itemDTO = new ResourceItemDTO();
-        itemDTO.setPermissionId(10);
+        itemDTO.setPermissionName("manage");
         itemDTO.setName("Item1");
         itemDTO.setUrl("url1");
 
         resourceDTO.setId(1);
         resourceDTO.setItems(List.of(itemDTO));
-        resourceDTO.setName("Test Resource");
+        resourceDTO.setName("test");
         resourceDTO.setType(ResourceType.API);
 
         resource = new ResourceEntity();
@@ -91,8 +91,8 @@ public class CreateResourceCommandHandlerTest {
         // Arrange
         command = createResourceCommand(resourceDTO);
         when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
-        when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
-        when(permissionRepository.findById(10)).thenReturn(Optional.of(permission));
+        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
+        when(permissionRepository.findByName("manage")).thenReturn(Optional.of(permission));
         when(resourceMapper.toItemEntity(itemDTO, resource, permission)).thenReturn(resourceItem);
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
@@ -103,13 +103,13 @@ public class CreateResourceCommandHandlerTest {
         // Assert
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals(resourceDTO, response.getBody());
-        assertEquals("Test Resource", Objects.requireNonNull(response.getBody()).getName());
+        assertEquals("test", Objects.requireNonNull(response.getBody()).getName());
         assertEquals(1, response.getBody().getId());
 
         // Verify
         verify(resourceMapper).toEntity(resourceDTO);
-        verify(applicationRepository,times(1)).findById(1);
-        verify(permissionRepository, times(1)).findById(10);
+        verify(applicationRepository,times(1)).findByCode("APP");
+        verify(permissionRepository, times(1)).findByName("manage");
         verify(resourceMapper, times(1)).toItemEntity(itemDTO, resource, permission);
         verify(resourceRepository, times(1)).save(resource);
         verify(resourceMapper, times(1)).toDto(resource);
@@ -121,7 +121,7 @@ public class CreateResourceCommandHandlerTest {
         // Arrange
         command = createResourceCommand(resourceDTO);
         when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
-        when(applicationRepository.findById(1)).thenReturn(Optional.empty());
+        when(applicationRepository.findByCode("APP")).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
@@ -130,11 +130,11 @@ public class CreateResourceCommandHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
 
         assertNotNull(exception.getBody().getProperties());
-        assertTrue(exception.getBody().getProperties().getOrDefault("details", "").toString().contains("Application not found with id: 1"));
+        assertTrue(exception.getBody().getProperties().getOrDefault("details", "").toString().contains("Application not found with code: APP"));
 
         // Verify
         verify(resourceMapper, times(1)).toEntity(resourceDTO);
-        verify(applicationRepository, times(1)).findById(1);
+        verify(applicationRepository, times(1)).findByCode("APP");
         verifyNoMoreInteractions(permissionRepository, resourceRepository);
     }
 
@@ -144,8 +144,8 @@ public class CreateResourceCommandHandlerTest {
         // Arrange
         command = createResourceCommand(resourceDTO);
         when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
-        when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
-        when(permissionRepository.findById(10)).thenReturn(Optional.empty());
+        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
+        when(permissionRepository.findByName("manage")).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
@@ -153,12 +153,12 @@ public class CreateResourceCommandHandlerTest {
         // Assert
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
         assertNotNull(exception.getBody().getProperties());
-        assertTrue(exception.getBody().getProperties().getOrDefault("details", "").toString().contains("Permission not found with id: 10"));
+        assertTrue(exception.getBody().getProperties().getOrDefault("details", "").toString().contains("Permission not found with name: manage"));
 
         // Verify
         verify(resourceMapper, times(1)).toEntity(resourceDTO);
-        verify(applicationRepository, times(1)).findById(1);
-        verify(permissionRepository, times(1)).findById(10);
+        verify(applicationRepository, times(1)).findByCode("APP");
+        verify(permissionRepository, times(1)).findByName("manage");
         verifyNoMoreInteractions(permissionRepository, resourceRepository, resourceMapper);
     }
 
@@ -169,7 +169,7 @@ public class CreateResourceCommandHandlerTest {
         resourceDTO.setItems(Collections.emptyList());
         command = createResourceCommand(resourceDTO);
         when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
-        when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
@@ -181,7 +181,7 @@ public class CreateResourceCommandHandlerTest {
         assertEquals(resourceDTO, response.getBody());
 
         // Verify
-        verify(applicationRepository, times(1)).findById(1);
+        verify(applicationRepository, times(1)).findByCode("APP");
         verify(resourceRepository, times(1)).save(resource);
         verifyNoInteractions(permissionRepository);
     }

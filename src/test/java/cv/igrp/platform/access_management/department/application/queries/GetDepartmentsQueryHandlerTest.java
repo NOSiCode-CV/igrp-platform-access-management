@@ -37,8 +37,8 @@ public class GetDepartmentsQueryHandlerTest {
     private DepartmentEntity departmentA, departmentB;
     private DepartmentDTO departmentDTOA, departmentDTOB;
 
-    private GetDepartmentsQuery getDepartmentsQuery(Integer applicationId, String name, String status){
-        return new GetDepartmentsQuery(applicationId, null, null, name, status, null);
+    private GetDepartmentsQuery getDepartmentsQuery(String name, String status){
+        return new GetDepartmentsQuery(name, status, null, null);
     }
 
     @BeforeEach
@@ -77,7 +77,7 @@ public class GetDepartmentsQueryHandlerTest {
     @DisplayName("should return list of DepartmentDTOs when departments match criteria")
     void testHandle_shouldReturnListOfDepartmentDTOs() {
         // Arrange
-        GetDepartmentsQuery query = getDepartmentsQuery(1001, "finance", DepartmentStatus.ACTIVE.name());
+        GetDepartmentsQuery query = getDepartmentsQuery("finance", DepartmentStatus.ACTIVE.name());
 
         when(departmentRepository.findAll(any(Specification.class))).thenReturn(List.of(departmentA, departmentB));
         when(departmentMapper.toDto(departmentA)).thenReturn(departmentDTOA);
@@ -108,7 +108,7 @@ public class GetDepartmentsQueryHandlerTest {
     @DisplayName("should return empty list when no departments match")
     void testHandle_whenNoDepartmentsMatch_shouldReturnEmptyList() {
         // Arrange
-        GetDepartmentsQuery query = getDepartmentsQuery(9999, "nonexistent",DepartmentStatus.ACTIVE.name());
+        GetDepartmentsQuery query = getDepartmentsQuery("nonexistent",DepartmentStatus.ACTIVE.name());
         when(departmentRepository.findAll(any(Specification.class))).thenReturn(List.of());
 
         // Act
@@ -131,7 +131,7 @@ public class GetDepartmentsQueryHandlerTest {
     @DisplayName("should return all departments when no filters are provided")
     void testHandle_whenQueryIsEmpty_shouldReturnAllDepartments() {
         // Arrange
-        GetDepartmentsQuery query = getDepartmentsQuery(null, null, null);
+        GetDepartmentsQuery query = getDepartmentsQuery( null, null);
 
         when(departmentRepository.findAll(any(Specification.class))).thenReturn(List.of(departmentA, departmentB));
         when(departmentMapper.toDto(departmentA)).thenReturn(departmentDTOA);

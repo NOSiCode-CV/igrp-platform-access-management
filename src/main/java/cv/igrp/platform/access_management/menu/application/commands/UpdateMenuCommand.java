@@ -14,7 +14,7 @@ public class UpdateMenuCommand implements Command {
 
   
   private MenuEntryDTO menuentrydto;
-  @NotNull(message = "The field <id> is required.")
-  private Integer id;
+  @NotBlank(message = "The field <code> is required.")
+  private String code;
 
 }

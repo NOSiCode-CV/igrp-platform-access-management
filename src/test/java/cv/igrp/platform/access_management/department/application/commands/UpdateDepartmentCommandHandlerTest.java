@@ -38,9 +38,10 @@ public class UpdateDepartmentCommandHandlerTest {
     private DepartmentEntity updatedDepartment;
     private DepartmentDTO updatedDepartmentDTO;
     private final Integer DEPARTMENT_ID = 1;
+    private final String DEPARTMENT_CODE = "HR";
 
     private UpdateDepartmentCommand updateCommand(DepartmentDTO dto){
-        return new UpdateDepartmentCommand(dto,DEPARTMENT_ID);
+        return new UpdateDepartmentCommand(dto,DEPARTMENT_CODE);
     }
 
     @BeforeEach
@@ -109,7 +110,7 @@ public class UpdateDepartmentCommandHandlerTest {
         // Assert
         assertNotNull(exception);
         assertNotNull(exception.getBody().getProperties());
-        assertEquals("Department not found with id: " + command.getId(), exception.getBody().getProperties().get("details"));
+        assertEquals("Department not found with code: " + command.getCode(), exception.getBody().getProperties().get("details"));
 
         // Verify
         verify(departmentRepository, times(1)).findById(DEPARTMENT_ID);

@@ -31,8 +31,8 @@ public class GetUsersCommandHandler implements CommandHandler<GetUsersCommand, R
 
    @IgrpCommandHandler
    public ResponseEntity<List<IGRPUserDTO>> handle(GetUsersCommand command) {
-      logger.info("Handling GetUsersCommand: applicationId={}, departmentId={}, name={}, username={}, email={}",
-              command.getApplicationId(), command.getDepartmentId(), command.getName(),
+      logger.info("Handling GetUsersCommand: applicationCode={}, departmentCode={}, name={}, username={}, email={}",
+              command.getApplicationCode(), command.getDepartmentCode(), command.getName(),
               command.getUsername(), command.getEmail());
 
       Specification<IGRPUserEntity> spec = buildSpecification(command);
@@ -45,22 +45,22 @@ public class GetUsersCommandHandler implements CommandHandler<GetUsersCommand, R
    }
 
    private Specification<IGRPUserEntity> buildSpecification(GetUsersCommand command) {
-      Specification<IGRPUserEntity> spec = Specification.where(null);
+      Specification<IGRPUserEntity> spec = Specification.anyOf();
 
-      if (command.getApplicationId() != null) {
+      if (command.getApplicationCode() != null) {
          spec = spec.and((root, q, cb) -> {
             Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
             Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
             Join<Object, Object> applicationJoin = departmentJoin.join("applicationId", JoinType.INNER);
-            return cb.equal(applicationJoin.get("id"), command.getApplicationId());
+            return cb.equal(applicationJoin.get("code"), command.getApplicationCode());
          });
       }
 
-      if (command.getDepartmentId() != null) {
+      if (command.getDepartmentCode() != null) {
          spec = spec.and((root, q, cb) -> {
             Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
             Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
-            return cb.equal(departmentJoin.get("id"), command.getDepartmentId());
+            return cb.equal(departmentJoin.get("code"), command.getDepartmentCode());
          });
       }
 

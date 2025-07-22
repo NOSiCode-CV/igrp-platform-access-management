@@ -106,12 +106,13 @@ public class ApplicationController {
   public ResponseEntity<List<ApplicationDTO>> getApplications(
     @RequestParam(value = "code", required = false) String code,
     @RequestParam(value = "name", required = false) String name,
-    @RequestParam(value = "slug", required = false) String slug)
+    @RequestParam(value = "slug", required = false) String slug,
+    @RequestParam(value = "departmentCode", required = false) String departmentCode)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetApplicationsQuery(code, name, slug);
+      final var query = new GetApplicationsQuery(code, name, slug, departmentCode);
 
       ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
 
@@ -160,7 +161,7 @@ public class ApplicationController {
   }
 
   @PutMapping(
-    value = "applications/{id}"
+    value = "applications/{code}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateApplication",
@@ -180,12 +181,12 @@ public class ApplicationController {
   )
   
   public ResponseEntity<ApplicationDTO> updateApplication(@Valid @RequestBody ApplicationDTO updateApplicationRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "code") String code)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new UpdateApplicationCommand(updateApplicationRequest, id);
+      final var command = new UpdateApplicationCommand(updateApplicationRequest, code);
 
        ResponseEntity<ApplicationDTO> response = commandBus.send(command);
 
@@ -197,7 +198,7 @@ public class ApplicationController {
   }
 
   @DeleteMapping(
-    value = "applications/{id}"
+    value = "applications/{code}"
   )
   @Operation(
     summary = "DELETE method to handle operations for deleteApplication",
@@ -217,12 +218,12 @@ public class ApplicationController {
   )
   
   public ResponseEntity<String> deleteApplication(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "code") String code)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new DeleteApplicationCommand(id);
+      final var command = new DeleteApplicationCommand(code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
@@ -345,7 +346,7 @@ public class ApplicationController {
   }
 
   @PostMapping(
-    value = "/applications/{id}/custom-fields"
+    value = "/applications/{code}/custom-fields"
   )
   @Operation(
     summary = "POST method to handle operations for addApplicationCustomFields",
@@ -365,12 +366,12 @@ public class ApplicationController {
   )
   
   public ResponseEntity<String> addApplicationCustomFields(@RequestBody Map<String, ?> addApplicationCustomFieldsRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "code") String code)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new AddApplicationCustomFieldsCommand(addApplicationCustomFieldsRequest, id);
+      final var command = new AddApplicationCustomFieldsCommand(addApplicationCustomFieldsRequest, code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
@@ -382,7 +383,7 @@ public class ApplicationController {
   }
 
   @PostMapping(
-    value = "/applications/{id}/custom-fields/remove"
+    value = "/applications/{code}/custom-fields/remove"
   )
   @Operation(
     summary = "POST method to handle operations for removeApplicationCustomFields",
@@ -402,12 +403,12 @@ public class ApplicationController {
   )
   
   public ResponseEntity<String> removeApplicationCustomFields(@RequestBody List<String> removeApplicationCustomFieldsRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "code") String code)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new RemoveApplicationCustomFieldsCommand(removeApplicationCustomFieldsRequest, id);
+      final var command = new RemoveApplicationCustomFieldsCommand(removeApplicationCustomFieldsRequest, code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
@@ -419,7 +420,7 @@ public class ApplicationController {
   }
 
   @GetMapping(
-    value = "/applications/{id}/custom-fields"
+    value = "/applications/{code}/custom-fields"
   )
   @Operation(
     summary = "GET method to handle operations for getApplicationCustomFields",
@@ -439,12 +440,12 @@ public class ApplicationController {
   )
   
   public ResponseEntity<Map<String, ?>> getApplicationCustomFields(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "code") String code)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetApplicationCustomFieldsQuery(id);
+      final var query = new GetApplicationCustomFieldsQuery(code);
 
       ResponseEntity<Map<String, ?>> response = queryBus.handle(query);
 

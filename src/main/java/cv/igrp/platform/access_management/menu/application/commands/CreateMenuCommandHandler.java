@@ -99,23 +99,23 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
 
       MenuEntryEntity menuEntry = menuEntryMapper.toEntity(menuEntryDTO);
 
-      if (menuEntryDTO.getApplicationId() != null) {
-         menuEntry.setApplicationId(applicationRepository.findById(menuEntryDTO.getApplicationId())
+      if (menuEntryDTO.getApplicationCode() != null) {
+         menuEntry.setApplicationId(applicationRepository.findByCode(menuEntryDTO.getApplicationCode())
                  .orElseThrow(() -> {
-                    logger.warn("Application not found with ID: {}", menuEntryDTO.getApplicationId());
+                    logger.warn("Application not found with code: {}", menuEntryDTO.getApplicationCode());
                     return IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND, "Application not found",
-                            "Application not found with id: " + menuEntryDTO.getApplicationId());
+                            "Application not found with code: " + menuEntryDTO.getApplicationCode());
                  }));
       }
 
-      if (menuEntryDTO.getParentId() != null) {
-         menuEntry.setParentId(menuEntryRepository.findById(menuEntryDTO.getParentId())
+      if (menuEntryDTO.getParentCode() != null) {
+         menuEntry.setParentId(menuEntryRepository.findByCode(menuEntryDTO.getParentCode())
                  .orElseThrow(() -> {
-                    logger.warn("Parent menu not found with ID: {}", menuEntryDTO.getParentId());
+                    logger.warn("Parent menu not found with code: {}", menuEntryDTO.getParentCode());
                     return IgrpResponseStatusException.of(
-                            HttpStatus.NOT_FOUND, "ParentMenu not found",
-                            "ParentMenu not found with id: " + menuEntryDTO.getParentId());
+                            HttpStatus.NOT_FOUND, "Parent Menu not found",
+                            "ParentMenu not found with code: " + menuEntryDTO.getParentCode());
                  }));
       }
 
@@ -127,18 +127,18 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
 
             PermissionEntity permission = permissionRepository.findByName(perm)
                     .orElseThrow(() -> {
-                       logger.warn("Resource not found with name: {}", perm);
+                       logger.warn("Permission not found with name: {}", perm);
                        return IgrpResponseStatusException.of(
-                               HttpStatus.NOT_FOUND, "Resource not found",
-                               "Resource not found with id: " + perm);
+                               HttpStatus.NOT_FOUND, "Permission not found",
+                               "Permission not found with name: " + perm);
                     });
 
-            permission.setMenuEntryId(menuEntryRepository.findById(menuEntryDTO.getParentId())
+            permission.setMenuEntryId(menuEntryRepository.findByCode(menuEntryDTO.getParentCode())
                     .orElseThrow(() -> {
-                       logger.warn("Menu not found with ID: {}", menuEntryDTO.getParentId());
+                       logger.warn("Menu not found with code: {}", menuEntryDTO.getParentCode());
                        return IgrpResponseStatusException.of(
                                HttpStatus.NOT_FOUND, "Menu not found",
-                               "Menu not found with id: " + menuEntryDTO.getParentId());
+                               "Menu not found with code: " + menuEntryDTO.getParentCode());
                     }));
 
             permissionRepository.save(permission);
@@ -148,9 +148,9 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
       }
 
       logger.info("""
-                    Menu created: id={}, name={}, type={}
+                    Menu created: code={}, name={}, type={}
                     """,
-              savedMenuEntry.getId(),
+              savedMenuEntry.getCode(),
               savedMenuEntry.getName(),
               savedMenuEntry.getType());
 

@@ -71,13 +71,13 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<List<PermissionDTO>> handle(RemovePermissionsCommand command) {
-      log.info("Remove Permissions with id: {} from Role with id: {}.", command.getRemovePermissionsRequest().stream().toList(), command.getId());
+      log.info("Remove Permissions with name: {} from Role with name: {}.", command.getRemovePermissionsRequest().stream().toList(), command.getName());
       List<PermissionDTO> response = new ArrayList<>();
-      RoleEntity foundRole = roleRepository.findByIdAndStatusNot(command.getId(), Status.DELETED)
+      RoleEntity foundRole = roleRepository.findByNameAndStatusNot(command.getName(), Status.DELETED)
               .orElseThrow(() -> {
-                 log.warn("Role with id: {} not found.", command.getId());
+                 log.warn("Role with name: {} not found.", command.getName());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Remove Permission By Role ID", "Role with id: " + command.getId() + " not found."
+                         HttpStatus.NOT_FOUND, "Remove Permission By Role ID", "Role with id: " + command.getName() + " not found."
                  );
               });
       for (Integer permissionId : command.getRemovePermissionsRequest()) {
@@ -90,7 +90,7 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
                     response.add(permissionMapper.mapToDTO(permission));
                  });
       }
-      log.info("Permissions with id {} removed from Role with id: {} successfully.", command.getRemovePermissionsRequest().stream().toList(), command.getId());
+      log.info("Permissions with IDs {} removed from Role with name: {} successfully.", command.getRemovePermissionsRequest().stream().toList(), command.getName());
       roleRepository.save(foundRole);
       return new ResponseEntity<>(response, HttpStatus.OK);
    }

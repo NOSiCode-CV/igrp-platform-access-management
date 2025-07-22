@@ -38,18 +38,19 @@ public class DeleteResourceCommandHandlerTest {
     void testHandle_ShouldDeleteResourceAndReturnNoContent_WhenResourceExists() {
         // Given
         Integer resourceId = 1;
+        String resourceName = "resource1";
         DeleteResourceCommand command = new DeleteResourceCommand();
-        command.setId(resourceId);
+        command.setName(resourceName);
 
         ResourceEntity resource = new ResourceEntity();
         resource.setId(resourceId);
-        resource.setName("Resource 1");
+        resource.setName(resourceName);
 
         CustomFieldEntity customField = new CustomFieldEntity();
         customField.setRecordId(resourceId);
 
         // Mocks
-        when(resourceRepository.findById(resourceId)).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByName(resourceName)).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resourceId))
                 .thenReturn(Optional.of(customField));
 
@@ -71,10 +72,11 @@ public class DeleteResourceCommandHandlerTest {
     @DisplayName("should throw exception when resource not found")
     void testHandle_ShouldThrowException_WhenResourceNotFound() {
         // Given
+        String resourceName = "resource1";
         DeleteResourceCommand command = new DeleteResourceCommand();
-        command.setId(99);
+        command.setName(resourceName);
 
-        when(resourceRepository.findById(99)).thenReturn(Optional.empty());
+        when(resourceRepository.findByName(resourceName)).thenReturn(Optional.empty());
 
         // When / Then
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
@@ -89,15 +91,17 @@ public class DeleteResourceCommandHandlerTest {
     @DisplayName("should not delete custom field when not found")
     void testHandle_ShouldNotDeleteCustomField_WhenCustomFieldNotFound() {
         // Given
-        Integer resourceId = 1;
+        String resourceName = "resource1";
+        int resourceId = 1;
         DeleteResourceCommand command = new DeleteResourceCommand();
-        command.setId(resourceId);
+        command.setName(resourceName);
 
         ResourceEntity resource = new ResourceEntity();
-        resource.setId(resourceId);
+        resource.setId(1);
+        resource.setName(resourceName);
 
         // Mocks
-        when(resourceRepository.findById(resourceId)).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByName(resourceName)).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resourceId))
                 .thenReturn(Optional.empty());
 

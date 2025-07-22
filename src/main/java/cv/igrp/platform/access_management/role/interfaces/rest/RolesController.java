@@ -21,7 +21,6 @@ import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.role.application.commands.*;
 import cv.igrp.platform.access_management.role.application.queries.*;
 
-
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
@@ -104,12 +103,13 @@ public class RolesController {
   )
   
   public ResponseEntity<List<RoleDTO>> getRoles(
-    )
+    @RequestParam(value = "departmentCode") String departmentCode,
+    @RequestParam(value = "username") String username)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetRolesQuery();
+      final var query = new GetRolesQuery(departmentCode, username);
 
       ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
 
@@ -158,7 +158,7 @@ public class RolesController {
   }
 
   @PutMapping(
-    value = "roles/{id}"
+    value = "roles/{name}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateRole",
@@ -178,12 +178,12 @@ public class RolesController {
   )
   
   public ResponseEntity<RoleDTO> updateRole(@Valid @RequestBody RoleDTO updateRoleRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new UpdateRoleCommand(updateRoleRequest, id);
+      final var command = new UpdateRoleCommand(updateRoleRequest, name);
 
        ResponseEntity<RoleDTO> response = commandBus.send(command);
 
@@ -195,7 +195,7 @@ public class RolesController {
   }
 
   @DeleteMapping(
-    value = "roles/{id}"
+    value = "roles/{name}"
   )
   @Operation(
     summary = "DELETE method to handle operations for deleteRole",
@@ -215,12 +215,12 @@ public class RolesController {
   )
   
   public ResponseEntity<Boolean> deleteRole(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new DeleteRoleCommand(id);
+      final var command = new DeleteRoleCommand(name);
 
        ResponseEntity<Boolean> response = commandBus.send(command);
 
@@ -232,7 +232,7 @@ public class RolesController {
   }
 
   @PostMapping(
-    value = "roles/{id}/removePermissions"
+    value = "roles/{name}/removePermissions"
   )
   @Operation(
     summary = "POST method to handle operations for RemovePermissions",
@@ -252,12 +252,12 @@ public class RolesController {
   )
   
   public ResponseEntity<List<PermissionDTO>> removePermissions(@RequestBody List<Integer> removePermissionsRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new RemovePermissionsCommand(removePermissionsRequest, id);
+      final var command = new RemovePermissionsCommand(removePermissionsRequest, name);
 
        ResponseEntity<List<PermissionDTO>> response = commandBus.send(command);
 
@@ -269,7 +269,7 @@ public class RolesController {
   }
 
   @GetMapping(
-    value = "roles/{id}/permissions"
+    value = "roles/{name}/permissions"
   )
   @Operation(
     summary = "GET method to handle operations for GetPermissionsByRoleId",
@@ -289,12 +289,12 @@ public class RolesController {
   )
   
   public ResponseEntity<List<PermissionDTO>> getPermissionsByRoleId(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetPermissionsByRoleIdQuery(id);
+      final var query = new GetPermissionsByRoleIdQuery(name);
 
       ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
 
@@ -306,7 +306,7 @@ public class RolesController {
   }
 
   @PostMapping(
-    value = "roles/{id}/addPermissions"
+    value = "roles/{name}/addPermissions"
   )
   @Operation(
     summary = "POST method to handle operations for addPermissions",
@@ -326,12 +326,12 @@ public class RolesController {
   )
   
   public ResponseEntity<List<PermissionDTO>> addPermissions(@RequestBody List<Integer> addPermissionsRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new AddPermissionsCommand(addPermissionsRequest, id);
+      final var command = new AddPermissionsCommand(addPermissionsRequest, name);
 
        ResponseEntity<List<PermissionDTO>> response = commandBus.send(command);
 

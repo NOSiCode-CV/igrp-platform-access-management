@@ -4,8 +4,6 @@ import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import org.springframework.http.ResponseEntity;
@@ -35,8 +33,8 @@ import java.util.List;
 @Component
 public class GetApplicationDeniedToUserQueryHandler implements QueryHandler<GetApplicationDeniedToUserQuery, ResponseEntity<List<ApplicationDTO>>>{
 
-  private ApplicationEntityRepository applicationRepository;
-  private ApplicationMapper applicationMapper;
+  private final ApplicationEntityRepository applicationRepository;
+  private final ApplicationMapper applicationMapper;
 
   /**
    * Constructs the query handler with the required dependencies.

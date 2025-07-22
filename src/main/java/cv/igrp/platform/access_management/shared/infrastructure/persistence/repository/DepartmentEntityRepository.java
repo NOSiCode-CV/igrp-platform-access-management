@@ -19,4 +19,6 @@ public interface DepartmentEntityRepository extends
 
     boolean existsByCode(String code);
 
+    void deleteByCode(String code);
+
 }

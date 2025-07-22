@@ -4,6 +4,7 @@ import cv.igrp.platform.access_management.shared.application.constants.CustomFie
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,7 +27,7 @@ import java.util.Map;
  *     <li>Returning the custom fields map wrapped in a {@link ResponseEntity} with status {@link HttpStatus#OK}.</li>
  * </ul>
  *
- * @see cv.igrp.platform.access_management.app.application.queries.queries.GetApplicationCustomFieldsQuery
+ * @see cv.igrp.platform.access_management.app.application.queries.GetApplicationCustomFieldsQuery
  * @see CustomFieldEntityRepository
  * @see CustomFieldTableName
  * @see IgrpResponseStatusException
@@ -35,14 +36,16 @@ import java.util.Map;
 public class GetApplicationCustomFieldsQueryHandler implements QueryHandler<GetApplicationCustomFieldsQuery, ResponseEntity<Map<String, ?>>>{
 
   private CustomFieldEntityRepository customFieldRepository;
+  private ApplicationEntityRepository applicationRepository;
 
   /**
    * Constructs a new {@code GetApplicationCustomFieldsQueryHandler} with the required dependencies.
    *
    * @param customFieldRepository repository used to retrieve custom fields by table name and record ID
    */
-  public GetApplicationCustomFieldsQueryHandler(CustomFieldEntityRepository customFieldRepository) {
+  public GetApplicationCustomFieldsQueryHandler(CustomFieldEntityRepository customFieldRepository, ApplicationEntityRepository applicationRepository) {
     this.customFieldRepository = customFieldRepository;
+    this.applicationRepository = applicationRepository;
   }
 
   /**
@@ -54,9 +57,12 @@ public class GetApplicationCustomFieldsQueryHandler implements QueryHandler<GetA
    */
   @IgrpQueryHandler
   public ResponseEntity<Map<String, ?>> handle(GetApplicationCustomFieldsQuery query) {
+    ApplicationEntity application = applicationRepository.findByCode(query.getCode())
+            .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found for code: " + query.getCode()));
+
     CustomFieldEntity customField = customFieldRepository
-            .findByTableNameAndRecordId(CustomFieldTableName.APPLICATION.getName(), query.getId())
-            .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "CustomFieldEntity not found", "CustomFieldEntity not found for Application ID: " + query.getId()));
+            .findByTableNameAndRecordId(CustomFieldTableName.APPLICATION.getName(), application.getId())
+            .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "CustomFieldEntity not found", "CustomFieldEntity not found for Application ID: " + application.getId()));
     return ResponseEntity.ok(customField.getFields());
   }
 

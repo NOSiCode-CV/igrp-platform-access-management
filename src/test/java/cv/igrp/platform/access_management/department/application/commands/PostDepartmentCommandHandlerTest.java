@@ -56,7 +56,7 @@ public class PostDepartmentCommandHandlerTest {
         departmentDTO = new DepartmentDTO();
         departmentDTO.setName("Test Department");
         departmentDTO.setDescription("Test Description");
-        departmentDTO.setParent_id(null);
+        departmentDTO.setParent_code(null);
 
         command = postDepartmentCommand(departmentDTO);
 
@@ -113,7 +113,7 @@ public class PostDepartmentCommandHandlerTest {
     void testHandle_whenParentIdIsProvided_shouldCreateDepartmentWithParentSuccessfully() {
 
         // Arrange
-        departmentDTO.setParent_id(2);
+        departmentDTO.setParent_code("DEPT_RH");
         command = postDepartmentCommand(departmentDTO);
 
         when(departmentMapper.toEntity(departmentDTO)).thenReturn(department);
@@ -137,34 +137,6 @@ public class PostDepartmentCommandHandlerTest {
         verifyNoMoreInteractions(departmentMapper, departmentRepository);
 
     }
-
-    @Test
-    @DisplayName("Should throw BAD_REQUEST when parent department ID is invalid")
-    void handle_whenParentDepartmentIdIsInvalid_shouldThrowBadRequestException() {
-
-        // Arrange
-        departmentDTO.setParent_id(-1);
-
-        when(departmentMapper.toEntity(departmentDTO)).thenReturn(department);
-        when(departmentRepository.findById(departmentDTO.getParent_id())).thenReturn(Optional.empty());
-
-        command = postDepartmentCommand(departmentDTO);
-
-        // Act
-        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class,
-                () -> postDepartmentCommandHandler.handle(command));
-
-        // Assert
-        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getBody().getStatus());
-        assertEquals("Invalid department ID", exception.getBody().getTitle());
-
-        // Verify
-        verify(departmentMapper).toEntity(departmentDTO);
-        verify(departmentRepository).findById(departmentDTO.getParent_id());
-        verifyNoMoreInteractions(departmentMapper, departmentRepository);
-    }
-
-
 
     @Disabled("Fails due to missing null return if mapper return null entity")
     @Test

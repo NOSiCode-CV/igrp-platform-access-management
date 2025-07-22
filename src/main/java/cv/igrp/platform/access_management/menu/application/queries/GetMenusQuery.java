@@ -13,8 +13,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetMenusQuery implements Query {
 
-  @NotNull(message = "The field <applicationId> is required.")
-  private Integer applicationId;
   @NotBlank(message = "The field <name> is required.")
   private String name;
   @NotBlank(message = "The field <type> is required.")
@@ -23,5 +21,7 @@ public class GetMenusQuery implements Query {
   private String status;
   @NotBlank(message = "The field <applicationCode> is required.")
   private String applicationCode;
+  @NotBlank(message = "The field <code> is required.")
+  private String code;
 
 }

@@ -103,17 +103,15 @@ public class DepartmentController {
   )
   
   public ResponseEntity<List<DepartmentDTO>> getDepartments(
-    @RequestParam(value = "applicationId", required = false) Integer applicationId,
-    @RequestParam(value = "applicationCode", required = false) String applicationCode,
-    @RequestParam(value = "parentId", required = false) Integer parentId,
     @RequestParam(value = "name", required = false) String name,
     @RequestParam(value = "status", required = false) String status,
-    @RequestParam(value = "code", required = false) String code)
+    @RequestParam(value = "code", required = false) String code,
+    @RequestParam(value = "parentCode", required = false) String parentCode)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetDepartmentsQuery(applicationId, applicationCode, parentId, name, status, code);
+      final var query = new GetDepartmentsQuery(name, status, code, parentCode);
 
       ResponseEntity<List<DepartmentDTO>> response = queryBus.handle(query);
 
@@ -162,7 +160,7 @@ public class DepartmentController {
   }
 
   @PutMapping(
-    value = "departments/{id}"
+    value = "departments/{code}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateDepartment",
@@ -182,12 +180,12 @@ public class DepartmentController {
   )
   
   public ResponseEntity<DepartmentDTO> updateDepartment(@Valid @RequestBody DepartmentDTO updateDepartmentRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "code") String code)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new UpdateDepartmentCommand(updateDepartmentRequest, id);
+      final var command = new UpdateDepartmentCommand(updateDepartmentRequest, code);
 
        ResponseEntity<DepartmentDTO> response = commandBus.send(command);
 
@@ -199,7 +197,7 @@ public class DepartmentController {
   }
 
   @DeleteMapping(
-    value = "departments/{id}"
+    value = "departments/{code}"
   )
   @Operation(
     summary = "DELETE method to handle operations for deleteDepartment",
@@ -219,12 +217,12 @@ public class DepartmentController {
   )
   
   public ResponseEntity<?> deleteDepartment(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "code") String code)
   {
 
       LOGGER.debug("Operation started");
 
-      final var command = new DeleteDepartmentCommand(id);
+      final var command = new DeleteDepartmentCommand(code);
 
        ResponseEntity<?> response = commandBus.send(command);
 

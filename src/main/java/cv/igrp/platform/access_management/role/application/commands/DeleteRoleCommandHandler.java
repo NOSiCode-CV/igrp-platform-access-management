@@ -62,12 +62,12 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<Boolean> handle(DeleteRoleCommand command) {
-      log.info("Delete Role with id: {}.", command.getId());
-      RoleEntity role = roleRepository.findById(command.getId())
+      log.info("Delete Role with name: {}.", command.getName());
+      RoleEntity role = roleRepository.findByName(command.getName())
               .orElseThrow(() -> {
-                 log.warn("Role with id: {} not found.", command.getId());
+                 log.warn("Role with name: {} not found.", command.getName());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Delete Role", "Role with id: " + command.getId() + " not found."
+                         HttpStatus.NOT_FOUND, "Delete Role", "Role with name: " + command.getName() + " not found."
                  );
               });
       role.setStatus(Status.DELETED);
@@ -79,7 +79,7 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
       }
 
       roleRepository.save(role);
-      log.info("Role with id: {} deleted successfully.", command.getId());
+      log.info("Role with name: {} deleted successfully.", command.getName());
       return new ResponseEntity<>(true, HttpStatus.NO_CONTENT);
    }
 
