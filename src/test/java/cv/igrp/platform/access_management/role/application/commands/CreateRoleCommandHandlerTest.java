@@ -45,16 +45,16 @@ public class CreateRoleCommandHandlerTest {
     void itShouldThrowRecordNotFoundException_When_CreatingARole_AndDepartment_NotFound() {
         //... Given
         RoleDTO role = new RoleDTO();
-        int departmentId = 1;
+        String departmentCode = "RH";
         String roleName = "Role Name";
-        role.setDepartmentId(departmentId);
+        role.setDepartmentCode(departmentCode);
         role.setName(roleName);
         String roleDescription = "Role Description";
         role.setDescription(roleDescription);
         CreateRoleCommand command = new CreateRoleCommand(role);
 
         //... When
-        when(departmentRepository.findById(departmentId)).thenReturn(Optional.empty());
+        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.empty());
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
         //... Then
@@ -62,26 +62,26 @@ public class CreateRoleCommandHandlerTest {
     }
 
     @Test
-    void itShouldThrowRecordNotFoundException_When_CreatingARole_AndRoleParentId_NotFound() {
+    void itShouldThrowRecordNotFoundException_When_CreatingARole_AndRoleParentName_NotFound() {
         //... Given
         RoleDTO role = new RoleDTO();
-        int departmentId = 1;
-        int roleParentId = 1;
+        String departmentCode = "RH";
+        String roleParentName = "admin";
         String roleName = "Role Name";
-        role.setDepartmentId(departmentId);
+        role.setDepartmentCode(role.getDepartmentCode());
         role.setName(roleName);
-        role.setParentId(roleParentId);
+        role.setParentName(roleParentName);
         String roleDescription = "Role Description";
         role.setDescription(roleDescription);
         CreateRoleCommand command = new CreateRoleCommand(role);
         DepartmentEntity department = new DepartmentEntity();
-        department.setId(departmentId);
+        department.setCode(departmentCode);
         String departmentName = "Department Name";
         department.setName(departmentName);
 
         //... When
-        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(department));
-        when(roleRepository.findByIdAndStatusNot(roleParentId, Status.DELETED))
+        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(roleRepository.findByNameAndStatusNot(roleParentName, Status.DELETED))
                 .thenReturn(Optional.empty());
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
@@ -93,19 +93,19 @@ public class CreateRoleCommandHandlerTest {
     void itShouldHandle_WhenDepartment_HasNoRolesAssociated() {
         // Given
         RoleDTO role = new RoleDTO();
-        int departmentId = 1;
+        String departmentCode = "RH";
         String roleName = "Role Name";
         String roleDescription = "Role Description";
 
-        role.setDepartmentId(departmentId);
+        role.setDepartmentCode(departmentCode);
         role.setName(roleName);
         role.setDescription(roleDescription);
-        role.setParentId(null);
+        role.setParentName(null);
 
         CreateRoleCommand command = new CreateRoleCommand(role);
 
         DepartmentEntity department = new DepartmentEntity();
-        department.setId(departmentId);
+        department.setCode(departmentCode);
         department.setName("Department Name");
 
         RoleEntity roleEntity = new RoleEntity();
@@ -113,7 +113,7 @@ public class CreateRoleCommandHandlerTest {
         RoleDTO expectedResponse = new RoleDTO();
 
         // When
-        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
         when(roleMapper.mapToEntity(role, department, null)).thenReturn(roleEntity);
         when(roleRepository.save(roleEntity)).thenReturn(savedRole);
         when(roleMapper.mapToDto(savedRole)).thenReturn(expectedResponse);
@@ -128,19 +128,19 @@ public class CreateRoleCommandHandlerTest {
     void itShouldThrowBadRequestException_WhenNewRoleName_Exists_InThe_SameDepartment() {
         // Given
         RoleDTO role = new RoleDTO();
-        int departmentId = 1;
+        String departmentCode = "RH";
         String roleName = "create_resource";
         String roleDescription = "Role Description";
 
-        role.setDepartmentId(departmentId);
+        role.setDepartmentCode(departmentCode);
         role.setName(roleName.toUpperCase());
         role.setDescription(roleDescription);
-        role.setParentId(null);
+        role.setParentName(null);
 
         CreateRoleCommand command = new CreateRoleCommand(role);
 
         DepartmentEntity department = new DepartmentEntity();
-        department.setId(departmentId);
+        department.setCode(departmentCode);
         department.setName("Department Name");
         ArrayList<RoleEntity> persistedRoles = new ArrayList<>();
         RoleEntity savedRole = new RoleEntity();
@@ -148,7 +148,7 @@ public class CreateRoleCommandHandlerTest {
         persistedRoles.add(savedRole);
         department.setRoles(persistedRoles);
 
-        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
 
         // When
 
@@ -157,7 +157,7 @@ public class CreateRoleCommandHandlerTest {
 
         //... Then
         assertEquals(HttpStatus.CONFLICT.value(), ex.getBody().getStatus());
-        verify(roleRepository, never()).findByIdAndStatusNot(any(), any());
+        verify(roleRepository, never()).findByNameAndStatusNot(any(), any());
         verify(roleRepository, never()).save(any());
     }
 
@@ -165,20 +165,20 @@ public class CreateRoleCommandHandlerTest {
     void itShouldCreateRole_WhenDepartment_HasRolesAssociated() {
         // Given
         RoleDTO role = new RoleDTO();
-        int departmentId = 1;
+        String departmentCode = "RH";
         String roleName = "update_resource";
         String savedRoleName = "create_resource";
         String roleDescription = "Role Description";
 
-        role.setDepartmentId(departmentId);
+        role.setDepartmentCode(departmentCode);
         role.setName(roleName);
         role.setDescription(roleDescription);
-        role.setParentId(null);
+        role.setParentName(null);
 
         CreateRoleCommand command = new CreateRoleCommand(role);
 
         DepartmentEntity department = new DepartmentEntity();
-        department.setId(departmentId);
+        department.setCode(departmentCode);
         department.setName("Department Name");
 
         RoleEntity roleEntity = new RoleEntity();
@@ -187,7 +187,7 @@ public class CreateRoleCommandHandlerTest {
         RoleDTO expectedResponse = new RoleDTO();
 
         // When
-        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
         when(roleMapper.mapToEntity(role, department, null)).thenReturn(roleEntity);
         when(roleRepository.save(roleEntity)).thenReturn(savedRole);
         when(roleMapper.mapToDto(savedRole)).thenReturn(expectedResponse);
@@ -199,22 +199,22 @@ public class CreateRoleCommandHandlerTest {
     }
 
     @Test
-    void itShouldCreateNewRole_When_ParentRoleId_IsNotProvided() {
+    void itShouldCreateNewRole_When_ParentRoleName_IsNotProvided() {
         // Given
         RoleDTO role = new RoleDTO();
-        int departmentId = 1;
+        String departmentCode = "RH";
         String roleName = "Role Name";
         String roleDescription = "Role Description";
 
-        role.setDepartmentId(departmentId);
+        role.setDepartmentCode(departmentCode);
         role.setName(roleName);
         role.setDescription(roleDescription);
-        role.setParentId(null);
+        role.setParentName(null);
 
         CreateRoleCommand command = new CreateRoleCommand(role);
 
         DepartmentEntity department = new DepartmentEntity();
-        department.setId(departmentId);
+        department.setCode(departmentCode);
         department.setName("Department Name");
 
         RoleEntity roleEntity = new RoleEntity();
@@ -222,7 +222,7 @@ public class CreateRoleCommandHandlerTest {
         RoleDTO expectedResponse = new RoleDTO();
 
         // When
-        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
         when(roleMapper.mapToEntity(role, department, null)).thenReturn(roleEntity);
         when(roleRepository.save(roleEntity)).thenReturn(savedRole);
         when(roleMapper.mapToDto(savedRole)).thenReturn(expectedResponse);
@@ -233,42 +233,42 @@ public class CreateRoleCommandHandlerTest {
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals(expectedResponse, response.getBody());
 
-        verify(roleRepository, never()).findByIdAndStatusNot(any(), any());
+        verify(roleRepository, never()).findByNameAndStatusNot(any(), any());
     }
 
     @Test
-    void itShouldCreateNewRole_WithParentRoleId_When_ParentRoleId_IsProvided() {
+    void itShouldCreateNewRole_WithParentRoleName_When_ParentRoleName_IsProvided() {
         // Given
         RoleDTO role = new RoleDTO();
-        int departmentId = 1;
-        Integer parentRoleId = 1;
+        String departmentCode = "RH";
+        String parentRoleName = "RH";
         String roleName = "Role Name";
         String roleDescription = "Role Description";
 
-        role.setDepartmentId(departmentId);
+        role.setDepartmentCode(departmentCode);
         role.setName(roleName);
         role.setDescription(roleDescription);
-        role.setParentId(parentRoleId);
+        role.setParentName(parentRoleName);
 
         CreateRoleCommand command = new CreateRoleCommand(role);
 
         DepartmentEntity department = new DepartmentEntity();
-        department.setId(departmentId);
+        department.setCode(departmentCode);
         department.setName("Department Name");
 
         RoleEntity roleEntity = new RoleEntity();
         RoleEntity parentRole = new RoleEntity();
-        parentRole.setId(parentRoleId);
+        parentRole.setName(parentRoleName);
         parentRole.setName("Parent Role Name");
         RoleEntity savedRole = new RoleEntity();
         RoleDTO expectedResponse = new RoleDTO();
-        expectedResponse.setParentId(parentRoleId);
+        expectedResponse.setParentName(parentRoleName);
         expectedResponse.setName(roleName);
         expectedResponse.setDescription(roleDescription);
 
         // When
-        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(department));
-        when(roleRepository.findByIdAndStatusNot(parentRoleId, Status.DELETED))
+        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(roleRepository.findByNameAndStatusNot(parentRoleName, Status.DELETED))
                 .thenReturn(Optional.of(parentRole));
         when(roleMapper.mapToEntity(role, department, parentRole)).thenReturn(roleEntity);
         when(roleRepository.save(roleEntity)).thenReturn(savedRole);

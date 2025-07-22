@@ -35,6 +35,7 @@ public interface PermissionEntityRepository extends
      * @return an {@link Optional} containing the {@link PermissionEntity}, if found and not matching the excluded status
      */
     Optional<PermissionEntity> findByIdAndStatusNot(Integer id, Status status);
+    Optional<PermissionEntity> findByNameAndStatusNot(String name, Status status);
 
     Optional<PermissionEntity> findByName(String name);
 

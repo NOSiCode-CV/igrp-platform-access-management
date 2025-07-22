@@ -29,7 +29,7 @@ class PermissionValidatorTest {
 
         PermissionDTO newPermissionDTO = new PermissionDTO();
         newPermissionDTO.setName("read_user");
-        newPermissionDTO.setApplicationId(1);
+        newPermissionDTO.setApplicationCode("app");
 
         // When
         ResourceValidationResponse response =
@@ -48,7 +48,7 @@ class PermissionValidatorTest {
 
         PermissionDTO dto = new PermissionDTO();
         dto.setName("NEW_PERMISSION");
-        dto.setApplicationId(1);
+        dto.setApplicationCode("app");
 
         // When
         ResourceValidationResponse response = PermissionValidator.validatePermissionName(dto, application);

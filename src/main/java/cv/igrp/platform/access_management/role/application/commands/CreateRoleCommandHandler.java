@@ -77,11 +77,11 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
       log.info("Create Role with name: {}.", command.getRoledto().getName());
       RoleDTO request = command.getRoledto();
       RoleEntity parentRole = null;
-      DepartmentEntity department = departmentRepository.findById(command.getRoledto().getDepartmentId())
+      DepartmentEntity department = departmentRepository.findByCode(command.getRoledto().getDepartmentCode())
               .orElseThrow(() -> {
-                 log.warn("Department with id: {} not found.", command.getRoledto().getDepartmentId());
+                 log.warn("Department with id: {} not found.", command.getRoledto().getDepartmentCode());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Create Role", "Department with id: " + command.getRoledto().getDepartmentId() + " not found."
+                         HttpStatus.NOT_FOUND, "Create Role", "Department with id: " + command.getRoledto().getDepartmentCode() + " not found."
                  );
               });
       ResourceValidationResponse roleValidationResponse = RoleValidator.validateRoleDto(command.getRoledto(), department);
@@ -91,13 +91,13 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
          );
       }
 
-      if (command.getRoledto().getParentId() != null) {
-         Integer parentRoleId = command.getRoledto().getParentId();
-         parentRole = roleRepository.findByIdAndStatusNot(parentRoleId, Status.DELETED)
+      if (command.getRoledto().getParentName() != null) {
+         String parentRoleName = command.getRoledto().getParentName();
+         parentRole = roleRepository.findByNameAndStatusNot(parentRoleName, Status.DELETED)
                  .orElseThrow(() -> {
-                    log.warn("Parent Role with id: {} not found.", command.getRoledto().getParentId());
+                    log.warn("Parent Role with id: {} not found.", command.getRoledto().getParentName());
                     return IgrpResponseStatusException.of(
-                            HttpStatus.NOT_FOUND, "Create Role", "Parent Role with id: " + parentRoleId + " not found."
+                            HttpStatus.NOT_FOUND, "Create Role", "Parent Role with name: " + parentRoleName + " not found."
                     );
                  });
       }

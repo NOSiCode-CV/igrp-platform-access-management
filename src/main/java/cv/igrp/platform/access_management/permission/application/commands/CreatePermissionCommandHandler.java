@@ -83,11 +83,11 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
    public ResponseEntity<PermissionDTO> handle(CreatePermissionCommand command) {
       log.info("Create permission with name: {}", command.getPermissiondto().getName());
       PermissionDTO request = command.getPermissiondto();
-      ApplicationEntity foundApplication = applicationRepository.findById(command.getPermissiondto().getApplicationId())
+      ApplicationEntity foundApplication = applicationRepository.findByCode(command.getPermissiondto().getApplicationCode())
               .orElseThrow(() -> {
-                 log.warn("Application with id {} not found.", command.getPermissiondto().getApplicationId());
+                 log.warn("Application with code {} not found.", command.getPermissiondto().getApplicationCode());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Create Permission", "Application with id: " + command.getPermissiondto().getApplicationId() + " not found."
+                         HttpStatus.NOT_FOUND, "Create Permission", "Application with code: " + command.getPermissiondto().getApplicationCode() + " not found."
                  );
               });
       ResourceValidationResponse validationResponse = PermissionValidator.validatePermissionName(command.getPermissiondto(), foundApplication);

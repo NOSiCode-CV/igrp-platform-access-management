@@ -39,12 +39,12 @@ public class DepartmentMapper {
     public DepartmentDTO toDto(DepartmentEntity department) {
         if (department == null) return null;
         DepartmentDTO dto = new DepartmentDTO();
-        dto.setId(department.getId());
-        dto.setCode(department.getCode());
         dto.setName(department.getName());
+        dto.setCode(department.getCode());
+        dto.setName(department.getCode());
         dto.setStatus(department.getStatus());
         dto.setDescription(department.getDescription());
-        dto.setParent_id(ofNullable(department.getParentId()).map(DepartmentEntity::getId).orElse(null));
+        dto.setParent_code(ofNullable(department.getParentId()).map(DepartmentEntity::getCode).orElse(null));
         return dto;
     }
 
@@ -57,9 +57,9 @@ public class DepartmentMapper {
     public DepartmentEntity toEntity(DepartmentDTO dto) {
         if (dto == null) return null;
         DepartmentEntity department = new DepartmentEntity();
-        department.setId(dto.getId());
         department.setCode(dto.getCode());
-        department.setName(dto.getName());
+        department.setCode(dto.getCode());
+        department.setCode(dto.getCode());
         department.setStatus(Objects.nonNull(dto.getStatus()) ? dto.getStatus() : DepartmentStatus.ACTIVE);
         department.setDescription(dto.getDescription());
         return department;
@@ -73,7 +73,7 @@ public class DepartmentMapper {
      */
     public void updateEntityFromDto(DepartmentDTO dto, DepartmentEntity department) {
         department.setCode(dto.getCode());
-        department.setName(dto.getName());
+        department.setCode(dto.getCode());
         department.setStatus(dto.getStatus());
         department.setDescription(dto.getDescription());
     }

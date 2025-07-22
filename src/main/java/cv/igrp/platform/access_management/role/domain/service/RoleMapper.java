@@ -22,13 +22,13 @@ public class RoleMapper {
      */
     public RoleDTO mapToDto(RoleEntity role) {
         RoleDTO roleDTO = new RoleDTO();
-        roleDTO.setId(role.getId());
+        roleDTO.setName(role.getName());
         if (role.getParent() != null) {
-            roleDTO.setParentId(role.getParent().getId());
+            roleDTO.setParentName(role.getParent().getName());
         }
         roleDTO.setName(role.getName());
         roleDTO.setDescription(role.getDescription());
-        roleDTO.setDepartmentId(role.getDepartment().getId());
+        roleDTO.setDepartmentCode(role.getDepartment().getCode());
         roleDTO.setStatus(role.getStatus());
         return roleDTO;
     }

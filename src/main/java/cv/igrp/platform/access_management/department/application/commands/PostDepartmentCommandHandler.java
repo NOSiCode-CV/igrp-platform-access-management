@@ -81,19 +81,19 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
 
       DepartmentEntity department = departmentMapper.toEntity(departmentDto);
 
-      if(departmentDto.getParent_id() != null) {
-         DepartmentEntity parent = departmentRepository.findById(command.getDepartmentdto().getParent_id())
+      if(departmentDto.getParent_code() != null) {
+         DepartmentEntity parent = departmentRepository.findByCode(command.getDepartmentdto().getParent_code())
                  .orElseThrow(() -> {
-                    logger.warn("Invalid parent ID: {}", departmentDto.getParent_id());
+                    logger.warn("Invalid parent Code: {}", departmentDto.getParent_code());
                     return IgrpResponseStatusException.of(
-                            HttpStatus.BAD_REQUEST, "Invalid department ID", "No parent department found with ID: " + departmentDto.getParent_id());
+                            HttpStatus.BAD_REQUEST, "Invalid department Code", "No parent department found with Code: " + departmentDto.getParent_code());
                  });
          department.setParentId(parent);
       }
 
       DepartmentEntity saved = departmentRepository.save(department);
 
-      logger.info("Department created successfully: id={}", saved.getId());
+      logger.info("Department created successfully: code={}", saved.getCode());
 
       DepartmentDTO result = departmentMapper.toDto(saved);
       return ResponseEntity.status(HttpStatus.CREATED).body(result);

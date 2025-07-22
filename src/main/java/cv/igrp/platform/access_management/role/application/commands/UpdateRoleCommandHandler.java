@@ -85,23 +85,23 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<RoleDTO> handle(UpdateRoleCommand command) {
-      log.info("Update Role with id: {}.", command.getId());
+      log.info("Update Role with name: {}.", command.getRoledto().getName());
       RoleDTO newData = command.getRoledto();
       DepartmentEntity department = null;
       RoleEntity parentRole = null;
-      RoleEntity roleToUpdate = roleRepository.findByIdAndStatusNot(command.getId(), Status.DELETED)
+      RoleEntity roleToUpdate = roleRepository.findByNameAndStatusNot(command.getRoledto().getName(), Status.DELETED)
               .orElseThrow(() -> {
-                 log.warn("Role with id: {} not found.", command.getId());
+                 log.warn("Role with name: {} not found.", command.getRoledto().getName());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, ERROR_TITLE, "Role with id: " + command.getId() + " not found."
+                         HttpStatus.NOT_FOUND, ERROR_TITLE, "Role with name: " + command.getRoledto().getName() + " not found."
                  );
               });
-      if (newData.getDepartmentId() != null) {
-         department = departmentRepository.findById(newData.getDepartmentId())
+      if (newData.getDepartmentCode() != null) {
+         department = departmentRepository.findByCode(newData.getDepartmentCode())
                  .orElseThrow(() -> {
-                    log.warn("Department with id: {} not found.", command.getRoledto().getDepartmentId());
+                    log.warn("Department with code: {} not found.", command.getRoledto().getDepartmentCode());
                     return IgrpResponseStatusException.of(
-                            HttpStatus.NOT_FOUND, ERROR_TITLE, "Department with id: " + newData.getDepartmentId() + " not found."
+                            HttpStatus.NOT_FOUND, ERROR_TITLE, "Department with code: " + newData.getDepartmentCode() + " not found."
                     );
                  });
          ResourceValidationResponse roleValidationResponse = RoleValidator.validateRoleDto(command.getRoledto(), department);
@@ -111,12 +111,12 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
             );
          }
       }
-      if (newData.getParentId() != null) {
-         parentRole = roleRepository.findById(newData.getParentId())
+      if (newData.getParentName() != null) {
+         parentRole = roleRepository.findByName(newData.getParentName())
                  .orElseThrow(() -> {
-                    log.warn("Parent Role with id: {} not found.", newData.getParentId());
+                    log.warn("Parent Role with name: {} not found.", newData.getParentName());
                     return IgrpResponseStatusException.of(
-                            HttpStatus.NOT_FOUND, ERROR_TITLE, "Parent Role with id: " + newData.getParentId() + " not found."
+                            HttpStatus.NOT_FOUND, ERROR_TITLE, "Parent Role with name: " + newData.getParentName() + " not found."
                     );
                  });
       }
@@ -126,7 +126,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
       roleToUpdate.setParent(parentRole);
       roleToUpdate.setStatus(newData.getStatus());
       RoleEntity updatedRole = roleRepository.save(roleToUpdate);
-      log.info("Role with id: {} updated successfully.", command.getId());
+      log.info("Role with name: {} updated successfully.", command.getRoledto().getName());
       return new ResponseEntity<>(roleMapper.mapToDto(updatedRole), HttpStatus.OK);
    }
 

@@ -30,7 +30,7 @@ public class PermissionMapper {
         permissionDTO.setName(permission.getName());
         permissionDTO.setDescription(permission.getDescription());
         permissionDTO.setStatus(permission.getStatus());
-        permissionDTO.setApplicationId(permission.getApplication().getId());
+        permissionDTO.setApplicationCode(permission.getApplication().getCode());
         return permissionDTO;
     }
 

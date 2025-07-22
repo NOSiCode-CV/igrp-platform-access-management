@@ -48,13 +48,13 @@ class PermissionMapperTest {
         assertEquals(permissionName, result.getName());
         assertEquals(permissionDescription, result.getDescription());
         assertEquals(permissionStatus, result.getStatus());
-        assertEquals(application.getId(), result.getApplicationId());
+        assertEquals(application.getId(), result.getApplicationCode());
     }
 
     @Test
     void itShouldSetStatusToActive_When_NotProvided() {
         // Given
-        int applicationId = 10;
+        String applicationCode = "app";
         String name = "ACCESS_DASHBOARD";
         String description = "Allows dashboard access";
 
@@ -62,10 +62,10 @@ class PermissionMapperTest {
         dto.setName(name);
         dto.setDescription(description);
         dto.setStatus(null);
-        dto.setApplicationId(applicationId);
+        dto.setApplicationCode(applicationCode);
 
         ApplicationEntity application = new ApplicationEntity();
-        application.setId(applicationId);
+        application.setCode(applicationCode);
 
         // When
         PermissionEntity permission = underTest.mapDtoToEntity(dto, application);
@@ -81,7 +81,7 @@ class PermissionMapperTest {
     @Test
     void itShouldMapAllFieldsCorrectly_FromDTOToPermission() {
         // Given
-        int applicationId = 10;
+        String applicationCode = "app";
         String name = "ACCESS_DASHBOARD";
         String description = "Allows dashboard access";
         Status status = Status.INACTIVE;
@@ -90,10 +90,10 @@ class PermissionMapperTest {
         dto.setName(name);
         dto.setDescription(description);
         dto.setStatus(status);
-        dto.setApplicationId(applicationId);
+        dto.setApplicationCode(applicationCode);
 
         ApplicationEntity application = new ApplicationEntity();
-        application.setId(applicationId);
+        application.setCode(applicationCode);
 
         // When
         PermissionEntity permission = underTest.mapDtoToEntity(dto, application);

@@ -68,9 +68,9 @@
       "module": "shared"
     },
     {
-      "name": "parent_id",
+      "name": "parent_code",
       "objectType": "java",
-      "type": "integer",
+      "type": "string",
       "required": false,
       "before": false,
       "after": false,

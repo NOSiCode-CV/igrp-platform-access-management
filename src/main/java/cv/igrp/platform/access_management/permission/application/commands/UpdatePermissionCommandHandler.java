@@ -81,24 +81,24 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<PermissionDTO> handle(UpdatePermissionCommand command) {
-      log.info("Update permission with id: {}", command.getId());
-      PermissionEntity foundPermission = permissionRepository.findByIdAndStatusNot(command.getId(), DELETED)
+      log.info("Update permission with name: {}", command.getPermissiondto().getName());
+      PermissionEntity foundPermission = permissionRepository.findByNameAndStatusNot(command.getPermissiondto().getName(), DELETED)
               .orElseThrow(() -> {
                  log.warn("Permission with id: {} not found", command.getId());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Update Permission", "Permission with id: " + command.getId() + " not found."
+                         HttpStatus.NOT_FOUND, "Update Permission", "Permission with name: " + command.getPermissiondto().getName() + " not found."
                  );
               });
-      ApplicationEntity application = applicationRepository.findById(command.getPermissiondto().getApplicationId())
+      ApplicationEntity application = applicationRepository.findByCode(command.getPermissiondto().getApplicationCode())
               .orElseThrow(() -> {
-                 log.warn("Application with id: {} not found", command.getPermissiondto().getApplicationId());
+                 log.warn("Application with code: {} not found", command.getPermissiondto().getApplicationCode());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Update Permission", "Application with id: " + command.getId() + " not found."
+                         HttpStatus.NOT_FOUND, "Update Permission", "Application with code: " + command.getPermissiondto().getApplicationCode() + " not found."
                  );
               });
       ResourceValidationResponse validationResponse = PermissionValidator.validatePermissionName(command.getPermissiondto(), application);
       if (!validationResponse.isValid()) {
-         log.warn("Invalid Permission Dto with id {}.", command.getId());
+         log.warn("Invalid Permission Dto with name {}.", command.getPermissiondto().getName());
          throw IgrpResponseStatusException.of(
                  HttpStatus.CONFLICT, "Update Permission", validationResponse.getFailureMessage());
       }
@@ -111,7 +111,7 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
       foundPermission.setStatus(command.getPermissiondto().getStatus());
       PermissionEntity updatedPermission = permissionRepository.save(foundPermission);
       PermissionDTO response = permissionMapper.mapToDTO(updatedPermission);
-      log.info("Permission with id: {} updated successfully", command.getId());
+      log.info("Permission with name: {} updated successfully", command.getPermissiondto().getName());
       return new ResponseEntity<>(response, HttpStatus.OK);
    }
 

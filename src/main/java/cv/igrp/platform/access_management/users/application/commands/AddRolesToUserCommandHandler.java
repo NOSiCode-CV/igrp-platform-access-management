@@ -71,25 +71,25 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
     */
    @IgrpCommandHandler
    public ResponseEntity<List<RoleDTO>> handle(AddRolesToUserCommand command) {
-      Integer userId = command.getId();
-      Integer roleId = command.getRoleuserdto().role_id();
+      String userName = command.getRoleuserdto().user_name();
+      String roleName = command.getRoleuserdto().role_name();
 
-      logger.info("Assigning role id={} to user id={}", roleId, userId);
+      logger.info("Assigning role name={} to user name={}", roleName, userName);
 
-      IGRPUserEntity user = userRepository.findById(userId)
+      IGRPUserEntity user = userRepository.findByUsername(userName)
               .orElseThrow(() -> {
-                 logger.warn("User not found with id={}", userId);
+                 logger.warn("User not found with name={}", userName);
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND,"Invalid User id",
-                         "User not found with id: " + userId);
+                         HttpStatus.NOT_FOUND,"Invalid User name",
+                         "User not found with name: " + userName);
               });
 
-      RoleEntity roleToAdd = roleRepository.findById(roleId)
+      RoleEntity roleToAdd = roleRepository.findByName(roleName)
               .orElseThrow(() -> {
-                 logger.warn("Role not found with id={}", roleId);
+                 logger.warn("Role not found with name={}", roleName);
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Invalid Role id",
-                         "Role not found with id: " + roleId);
+                         HttpStatus.NOT_FOUND, "Invalid Role name",
+                         "Role not found with name: " + roleName);
               });
 
       Set<IGRPUserEntity> users = roleToAdd.getUsers();
@@ -100,9 +100,9 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
       boolean isRoleAdded = users.add(user);
 
       if (isRoleAdded) {
-         logger.info("User id={} successfully added to role id={}", userId, roleId);
+         logger.info("User name={} successfully added to role name={}", userName, roleName);
       } else {
-         logger.info("User id={} was already associated with role id={}", userId, roleId);
+         logger.info("User name={} was already associated with role name={}", userName, roleName);
       }
 
       var roleUpdated = roleRepository.save(roleToAdd);

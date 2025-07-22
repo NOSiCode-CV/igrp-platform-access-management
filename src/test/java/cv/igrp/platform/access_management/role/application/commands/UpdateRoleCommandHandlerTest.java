@@ -44,15 +44,15 @@ public class UpdateRoleCommandHandlerTest {
     }
 
     @Test
-    void itShouldThrowNotFoundException_WhenProvidedRoleId_DoesNotExist() {
+    void itShouldThrowNotFoundException_WhenProvidedRoleName_DoesNotExist() {
         //... Given
-        int roleId = 100;
+        String roleName = "app";
         RoleDTO roleData = new RoleDTO();
         String roleName = "New RoleName";
         roleData.setName(roleName);
-        UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleId);
+        UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleName);
 
-        when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED))
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
                 .thenReturn(Optional.empty());
 
         //... When
@@ -67,21 +67,20 @@ public class UpdateRoleCommandHandlerTest {
     @Test
     void itShouldThrowNotFoundException_WhenProvidedRoleIdIsFound_AndProvidedDepartmentId_DoesNotExist() {
         //... Given
-        int roleId = 100;
-        int nonExistentDepartmentId = 100;
+        String roleName = "app";
+        String nonExistentDepartmentCode = "app";
         RoleDTO roleData = new RoleDTO();
-        String roleName = "New RoleName";
         roleData.setName(roleName);
-        roleData.setDepartmentId(nonExistentDepartmentId);
-        UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleId);
+        roleData.setDepartmentCode(nonExistentDepartmentCode);
+        UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleName);
 
         RoleEntity existingRole = new RoleEntity();
-        existingRole.setId(roleId);
+        existingRole.setName(roleName);
         existingRole.setStatus(Status.ACTIVE);
 
-        when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED))
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
                 .thenReturn(Optional.of(existingRole));
-        when(departmentRepository.findById(nonExistentDepartmentId))
+        when(departmentRepository.findByCode(nonExistentDepartmentCode))
                 .thenReturn(Optional.empty());
 
         //... When
@@ -95,31 +94,31 @@ public class UpdateRoleCommandHandlerTest {
     @Test
     void itShouldThrowNotBadException_RoleName_Exists_InProvidedDepartment() {
         //... Given
-        int roleIdToUpdate = 100;
-        int savedRoleId = 100;
-        int departmentId = 100;
+        String roleNameToUpdate = "app";
+        String savedRoleName = "app";
+        String departmentCode = "app";
         RoleDTO roleData = new RoleDTO();
         String roleName = "New RoleName";
         roleData.setName(roleName);
-        roleData.setDepartmentId(departmentId);
-        UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleIdToUpdate);
+        roleData.setDepartmentCode(departmentCode);
+        UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleNameToUpdate);
 
         RoleEntity existingRole = new RoleEntity();
-        existingRole.setId(roleIdToUpdate);
+        existingRole.setName(roleNameToUpdate);
         existingRole.setStatus(Status.ACTIVE);
 
         DepartmentEntity foundDepartment = new DepartmentEntity();
-        foundDepartment.setId(departmentId);
+        foundDepartment.setCode(departmentCode);
         ArrayList<RoleEntity> persistedRoles = new ArrayList<>();
         RoleEntity savedRole = new RoleEntity();
-        savedRole.setId(savedRoleId);
+        savedRole.setName(savedRoleName);
         savedRole.setName(roleName);
         persistedRoles.add(savedRole);
         foundDepartment.setRoles(persistedRoles);
 
-        when(roleRepository.findByIdAndStatusNot(roleIdToUpdate, Status.DELETED))
+        when(roleRepository.findByNameAndStatusNot(roleNameToUpdate, Status.DELETED))
                 .thenReturn(Optional.of(existingRole));
-        when(departmentRepository.findById(departmentId))
+        when(departmentRepository.findByCode(departmentCode))
                 .thenReturn(Optional.of(foundDepartment));
 
         //... When
@@ -133,27 +132,26 @@ public class UpdateRoleCommandHandlerTest {
     @Test
     void itShouldThrowNotFoundException_WhenProvidedParentRoleDoesNotExist() {
         //... Given
-        int roleId = 110;
-        int existentDepartmentId = 100;
-        int nonExistentParentRoleId = 100;
+        String roleName = "app";
+        String existentDepartmentCode = "app";
+        String nonExistentParentRoleName = "app";
         RoleDTO roleData = new RoleDTO();
-        String roleName = "New RoleName";
         roleData.setName(roleName);
-        roleData.setParentId(nonExistentParentRoleId);
-        roleData.setDepartmentId(existentDepartmentId);
-        UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleId);
+        roleData.setParentName(nonExistentParentRoleName);
+        roleData.setDepartmentCode(existentDepartmentCode);
+        UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleName);
 
         RoleEntity existingRole = new RoleEntity();
-        existingRole.setId(roleId);
+        existingRole.setName(roleName);
         existingRole.setStatus(Status.ACTIVE);
 
-        when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED))
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
                 .thenReturn(Optional.of(existingRole));
         DepartmentEntity department = new DepartmentEntity();
-        department.setId(existentDepartmentId);
+        department.setCode(existentDepartmentCode);
         department.setStatus(DepartmentStatus.ACTIVE);
 
-        when(departmentRepository.findById(existentDepartmentId))
+        when(departmentRepository.findByCode(existentDepartmentCode))
                 .thenReturn(Optional.of(department));
 
         //... When
@@ -167,15 +165,15 @@ public class UpdateRoleCommandHandlerTest {
     @Test
     void itShouldUpdateOnlyChangedFields() {
         // Given
-        int roleId = 1;
+        String roleName = "app";
 
         DepartmentEntity department = new DepartmentEntity();
-        int departmentId = 10;
-        department.setId(departmentId);
+        String departmentCode = "app";
+        department.setCode(departmentCode);
         department.setName("Dept");
 
         RoleEntity existingRole = new RoleEntity();
-        existingRole.setId(roleId);
+        existingRole.setName(roleName);
         String rolePreviousName = "Role Previous Name";
         existingRole.setName(rolePreviousName);
         String rolePreviousDescription = "Role Previous Description";
@@ -190,24 +188,24 @@ public class UpdateRoleCommandHandlerTest {
         String roleNewDescription = "Role New Description";
         updatedData.setDescription(roleNewDescription);
         updatedData.setStatus(Status.ACTIVE);
-        updatedData.setDepartmentId(departmentId);
-        updatedData.setParentId(null);
+        updatedData.setDepartmentCode(departmentCode);
+        updatedData.setParentName(null);
 
-        UpdateRoleCommand command = new UpdateRoleCommand(updatedData, roleId);
+        UpdateRoleCommand command = new UpdateRoleCommand(updatedData, roleName);
 
         RoleEntity updatedRole = new RoleEntity();
-        updatedRole.setId(roleId);
+        updatedRole.setName(roleName);
         updatedRole.setName("New Name");
         updatedRole.setDescription("New Desc");
         updatedRole.setStatus(Status.ACTIVE);
         updatedRole.setDepartment(department);
 
         RoleDTO responseDto = new RoleDTO();
-        responseDto.setId(roleId);
+        responseDto.setName(roleName);
         responseDto.setName(roleNewName);
 
-        when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED)).thenReturn(Optional.of(existingRole));
-        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(department));
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(existingRole));
+        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
         when(roleRepository.save(existingRole)).thenReturn(updatedRole);
         when(roleMapper.mapToDto(updatedRole)).thenReturn(responseDto);
 
@@ -228,15 +226,15 @@ public class UpdateRoleCommandHandlerTest {
     @Test
     void itShouldPersistUpdatedRole() {
         // Given
-        int roleId = 1;
+        String roleName = "app";
 
         DepartmentEntity department = new DepartmentEntity();
-        int departmentId = 10;
-        department.setId(departmentId);
+        String departmentCode = "app";
+        department.setCode(departmentCode);
         department.setName("Dept");
 
         RoleEntity existingRole = new RoleEntity();
-        existingRole.setId(roleId);
+        existingRole.setName(roleName);
         String rolePreviousName = "Role Previous Name";
         existingRole.setName(rolePreviousName);
         String rolePreviousDescription = "Role Previous Description";
@@ -251,24 +249,24 @@ public class UpdateRoleCommandHandlerTest {
         String roleNewDescription = "Role New Description";
         updatedData.setDescription(roleNewDescription);
         updatedData.setStatus(Status.ACTIVE);
-        updatedData.setDepartmentId(departmentId);
-        updatedData.setParentId(null);
+        updatedData.setDepartmentCode(departmentCode);
+        updatedData.setParentName(null);
 
-        UpdateRoleCommand command = new UpdateRoleCommand(updatedData, roleId);
+        UpdateRoleCommand command = new UpdateRoleCommand(updatedData, roleName);
 
         RoleEntity updatedRole = new RoleEntity();
-        updatedRole.setId(roleId);
+        updatedRole.setName(roleName);
         updatedRole.setName("New Name");
         updatedRole.setDescription("New Desc");
         updatedRole.setStatus(Status.ACTIVE);
         updatedRole.setDepartment(department);
 
         RoleDTO responseDto = new RoleDTO();
-        responseDto.setId(roleId);
+        responseDto.setName(roleName);
         responseDto.setName(roleNewName);
 
-        when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED)).thenReturn(Optional.of(existingRole));
-        when(departmentRepository.findById(departmentId)).thenReturn(Optional.of(department));
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(existingRole));
+        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
         when(roleRepository.save(existingRole)).thenReturn(updatedRole);
         when(roleMapper.mapToDto(updatedRole)).thenReturn(responseDto);
 

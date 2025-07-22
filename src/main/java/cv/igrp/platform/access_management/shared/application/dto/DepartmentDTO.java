@@ -1,3 +1,6 @@
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+
 package cv.igrp.platform.access_management.shared.application.dto;
 
 import cv.igrp.framework.stereotype.IgrpDTO;
@@ -33,6 +36,6 @@ public class DepartmentDTO {
   private DepartmentStatus status ;
   
   
-  private Integer parent_id ;
+  private String parent_code ;
 
 }
