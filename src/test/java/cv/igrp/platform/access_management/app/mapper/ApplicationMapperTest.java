@@ -11,6 +11,7 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ApplicationMapperTest {
@@ -28,6 +29,13 @@ class ApplicationMapperTest {
         applicationDto.setStatus(null);
         applicationDto.setName(applicationName);
 
+        ApplicationEntity application = new ApplicationEntity();
+        application.setType(AppType.INTERNAL);
+        application.setStatus(Status.ACTIVE);
+        application.setName(applicationName);
+
+        when(underTest.toEntity(applicationDto)).thenReturn(application);
+
         //... When
         ApplicationEntity applicationEntity = underTest.toEntity(applicationDto);
 
@@ -43,6 +51,13 @@ class ApplicationMapperTest {
         applicationDto.setType(AppType.INTERNAL);
         applicationDto.setStatus(Status.INACTIVE);
         applicationDto.setName(applicationName);
+
+        ApplicationEntity application = new ApplicationEntity();
+        application.setType(AppType.INTERNAL);
+        application.setStatus(Status.INACTIVE);
+        application.setName(applicationName);
+
+        when(underTest.toEntity(applicationDto)).thenReturn(application);
 
         //... When
         ApplicationEntity applicationEntity = underTest.toEntity(applicationDto);

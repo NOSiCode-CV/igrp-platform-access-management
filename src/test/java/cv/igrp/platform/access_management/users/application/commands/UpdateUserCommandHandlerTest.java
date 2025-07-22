@@ -73,7 +73,7 @@ public class UpdateUserCommandHandlerTest {
         assertEquals(dto, response.getBody());
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("New Name", user.getName());
-        assertEquals("newUser", user.getUsername());
+        assertEquals(USER_ID, user.getUsername());
         assertEquals("new@example.com", user.getEmail());
 
         // Verify
@@ -96,7 +96,7 @@ public class UpdateUserCommandHandlerTest {
 
         // Assert
         assertNotNull(exception.getBody().getProperties());
-        assertEquals("User not found with id: " + USER_ID, exception.getBody().getProperties().get("details"));
+        assertEquals("User not found with username: " + USER_ID, exception.getBody().getProperties().get("details"));
 
         // Verify
         verify(userRepository, times(1)).findByUsername(USER_ID);
@@ -126,7 +126,7 @@ public class UpdateUserCommandHandlerTest {
         assertNotNull(response);
         assertNotNull(response.getBody());
         assertEquals("updated@example.com", user.getEmail());
-        assertEquals("oldUser", user.getUsername());
+        assertEquals(USER_ID, user.getUsername());
         assertEquals("Old Name", user.getName());
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
@@ -146,7 +146,7 @@ public class UpdateUserCommandHandlerTest {
 
         command = updateUserCommand(dto, USER_ID);
 
-        when(userRepository.findById(1)).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
         when(userRepository.save(user)).thenReturn(user);
         when(userMapper.toDto(user)).thenReturn(dto);
 
@@ -155,7 +155,7 @@ public class UpdateUserCommandHandlerTest {
 
         // Assert
         assertEquals("Old Name", user.getName());
-        assertEquals("oldUser", user.getUsername());
+        assertEquals(USER_ID, user.getUsername());
         assertEquals("old@example.com", user.getEmail());
         assertEquals(HttpStatus.OK, response.getStatusCode());
 

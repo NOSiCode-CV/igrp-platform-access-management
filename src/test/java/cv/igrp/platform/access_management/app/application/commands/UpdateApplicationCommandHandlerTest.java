@@ -39,12 +39,9 @@ public class UpdateApplicationCommandHandlerTest {
     @Test
     void itShouldThrowRecordNotFoundException_When_ProvidedApplicationId_DoesNotExist() {
         //... Given
-        int applicationId = 100;
         String appCode = "APP";
         ApplicationDTO applicationDTO = new ApplicationDTO();
         UpdateApplicationCommand command = new UpdateApplicationCommand(applicationDTO, appCode);
-        when(applicationRepository.findById(applicationId))
-                .thenReturn(Optional.empty());
 
         //... When
         IgrpResponseStatusException response = assertThrows(IgrpResponseStatusException.class, () -> underTest.handle(command));
@@ -78,7 +75,7 @@ public class UpdateApplicationCommandHandlerTest {
         existingApp.setUrl(applicationPreviousUrl);
         existingApp.setSlug(applicationPreviousSlug);
 
-        when(applicationRepository.findById(applicationId)).thenReturn(Optional.of(existingApp));
+        when(applicationRepository.findByCode(applicationCode)).thenReturn(Optional.of(existingApp));
 
         ApplicationDTO dto = new ApplicationDTO();
         dto.setId(applicationId);

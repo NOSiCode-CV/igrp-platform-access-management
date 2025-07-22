@@ -39,12 +39,11 @@ public class RemovePermissionsCommandHandlerTest {
     @Test
     void itShouldThrow_NotFoundException_WhenProvided_RoleId_NotFound() {
         //... Given
-        int roleId = 1;
         String roleName = "admin";
         ArrayList<Integer> permissionsToRemove = new ArrayList<>();
         RemovePermissionsCommand command = new RemovePermissionsCommand(permissionsToRemove, roleName);
 
-        when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED))
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
                 .thenReturn(Optional.empty());
 
         //... When

@@ -42,23 +42,11 @@ public class AddPermissionsCommandHandlerTest {
     @Test
     void itShouldThrowException_WhenGivenRole_NotFound() {
         //... Given
-        int roleId = 1;
         String roleName = "admin";
         ArrayList<Integer> permissionList = new ArrayList<>();
         AddPermissionsCommand command = new AddPermissionsCommand(permissionList, roleName);
-        ArrayList<PermissionEntity> savedPermissions = new ArrayList<>();
-        ApplicationEntity application = new ApplicationEntity();
-        HashSet<RoleEntity> roles = new HashSet<>();
-        Integer permissionId = 1;
-        String permissionName = "permissionName";
-        String permissionDescription = "permissionDescription";
-        savedPermissions.add(new PermissionEntity(permissionId, permissionName, permissionDescription, Status.ACTIVE, application, null, null, roles));
 
         //... When
-        when(permissionRepository.findAllById(permissionList))
-                .thenReturn(savedPermissions);
-        when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED))
-                .thenReturn(Optional.empty());
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
 

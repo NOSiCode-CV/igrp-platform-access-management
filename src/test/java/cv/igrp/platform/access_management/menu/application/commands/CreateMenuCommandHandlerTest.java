@@ -102,7 +102,7 @@ public class CreateMenuCommandHandlerTest {
         dto.setParentCode(null);
 
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
-        when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(dto);
 
@@ -115,7 +115,7 @@ public class CreateMenuCommandHandlerTest {
         assertEquals(dto, response.getBody());
 
         // Verify
-        verify(applicationRepository, times(1)).findById(1);
+        verify(applicationRepository, times(1)).findByCode("APP");
         verify(menuEntryRepository, never()).findById(anyInt());
         verify(menuEntryRepository,times(1)).save(menuEntry);
         verify(menuEntryMapper, times(1)).toDTO(menuEntry);
@@ -127,7 +127,7 @@ public class CreateMenuCommandHandlerTest {
     @DisplayName("should throw EntityNotFoundException when application ID is invalid")
     void testHandle_whenApplicationNotFound_shouldThrowException() {
         // Arrange
-        when(applicationRepository.findById(1)).thenReturn(Optional.empty());
+        when(applicationRepository.findByCode("APP")).thenReturn(Optional.empty());
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
 
         // Act
@@ -142,7 +142,7 @@ public class CreateMenuCommandHandlerTest {
     void handle_whenResourceNotFound_shouldThrowException() {
 
         // Arrange
-        when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
 
         // Act
@@ -156,9 +156,9 @@ public class CreateMenuCommandHandlerTest {
     @DisplayName("should throw EntityNotFoundException when parent menu ID is invalid")
     void handle_whenParentMenuNotFound_shouldThrowException() {
         // Arrange
-        when(applicationRepository.findById(1)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
-        when(menuEntryRepository.findById(3)).thenReturn(Optional.empty());
+        when(menuEntryRepository.findByCode("MENU1")).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> createMenuCommandHandler.handle(command));

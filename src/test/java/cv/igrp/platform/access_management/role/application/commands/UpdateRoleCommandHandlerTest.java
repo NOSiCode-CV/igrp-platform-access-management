@@ -112,12 +112,11 @@ public class UpdateRoleCommandHandlerTest {
         foundDepartment.setCode(departmentCode);
         ArrayList<RoleEntity> persistedRoles = new ArrayList<>();
         RoleEntity savedRole = new RoleEntity();
-        savedRole.setName(savedRoleName);
         savedRole.setName(roleName);
         persistedRoles.add(savedRole);
         foundDepartment.setRoles(persistedRoles);
 
-        when(roleRepository.findByNameAndStatusNot(roleNameToUpdate, Status.DELETED))
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
                 .thenReturn(Optional.of(existingRole));
         when(departmentRepository.findByCode(departmentCode))
                 .thenReturn(Optional.of(foundDepartment));
@@ -174,7 +173,6 @@ public class UpdateRoleCommandHandlerTest {
         department.setName("Dept");
 
         RoleEntity existingRole = new RoleEntity();
-        existingRole.setName(roleName);
         String rolePreviousName = "Role Previous Name";
         existingRole.setName(rolePreviousName);
         String rolePreviousDescription = "Role Previous Description";
@@ -195,17 +193,15 @@ public class UpdateRoleCommandHandlerTest {
         UpdateRoleCommand command = new UpdateRoleCommand(updatedData, roleName);
 
         RoleEntity updatedRole = new RoleEntity();
-        updatedRole.setName(roleName);
         updatedRole.setName("New Name");
         updatedRole.setDescription("New Desc");
         updatedRole.setStatus(Status.ACTIVE);
         updatedRole.setDepartment(department);
 
         RoleDTO responseDto = new RoleDTO();
-        responseDto.setName(roleName);
         responseDto.setName(roleNewName);
 
-        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(existingRole));
+        when(roleRepository.findByNameAndStatusNot(roleNewName, Status.DELETED)).thenReturn(Optional.of(existingRole));
         when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
         when(roleRepository.save(existingRole)).thenReturn(updatedRole);
         when(roleMapper.mapToDto(updatedRole)).thenReturn(responseDto);
@@ -235,7 +231,6 @@ public class UpdateRoleCommandHandlerTest {
         department.setName("Dept");
 
         RoleEntity existingRole = new RoleEntity();
-        existingRole.setName(roleName);
         String rolePreviousName = "Role Previous Name";
         existingRole.setName(rolePreviousName);
         String rolePreviousDescription = "Role Previous Description";
@@ -256,17 +251,15 @@ public class UpdateRoleCommandHandlerTest {
         UpdateRoleCommand command = new UpdateRoleCommand(updatedData, roleName);
 
         RoleEntity updatedRole = new RoleEntity();
-        updatedRole.setName(roleName);
         updatedRole.setName("New Name");
         updatedRole.setDescription("New Desc");
         updatedRole.setStatus(Status.ACTIVE);
         updatedRole.setDepartment(department);
 
         RoleDTO responseDto = new RoleDTO();
-        responseDto.setName(roleName);
         responseDto.setName(roleNewName);
 
-        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(existingRole));
+        when(roleRepository.findByNameAndStatusNot(roleNewName, Status.DELETED)).thenReturn(Optional.of(existingRole));
         when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
         when(roleRepository.save(existingRole)).thenReturn(updatedRole);
         when(roleMapper.mapToDto(updatedRole)).thenReturn(responseDto);

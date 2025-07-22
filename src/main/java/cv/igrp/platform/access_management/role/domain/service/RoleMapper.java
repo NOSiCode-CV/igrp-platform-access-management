@@ -22,6 +22,7 @@ public class RoleMapper {
      */
     public RoleDTO mapToDto(RoleEntity role) {
         RoleDTO roleDTO = new RoleDTO();
+        roleDTO.setId(role.getId());
         roleDTO.setName(role.getName());
         if (role.getParent() != null) {
             roleDTO.setParentName(role.getParent().getName());

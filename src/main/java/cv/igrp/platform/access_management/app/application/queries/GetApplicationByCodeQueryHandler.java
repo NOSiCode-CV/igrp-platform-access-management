@@ -45,7 +45,7 @@ public class GetApplicationByCodeQueryHandler implements QueryHandler<GetApplica
    @IgrpQueryHandler
   public ResponseEntity<ApplicationDTO> handle(GetApplicationByCodeQuery query) {
     ApplicationEntity application = applicationRepository.findByCode(query.getCode())
-            .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Application not found", "Application not found with code: " + query.getCode()));
+            .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found with code: " + query.getCode()));
     return ResponseEntity.ok(applicationMapper.toDto(application));
   }
 

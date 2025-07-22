@@ -50,7 +50,16 @@ public class GetApplicationByIdQueryHandlerTest {
         application.setStatus(Status.ACTIVE);
         application.setSlug("sample-app");
 
+        ApplicationDTO applicationDTO = new ApplicationDTO();
+        applicationDTO.setId(id);
+        applicationDTO.setName("Sample App");
+        applicationDTO.setCode("APP001");
+        applicationDTO.setType(AppType.INTERNAL);
+        applicationDTO.setStatus(Status.ACTIVE);
+        applicationDTO.setSlug("sample-app");
+
         Mockito.when(applicationRepository.findById(id)).thenReturn(Optional.of(application));
+        Mockito.when(applicationMapper.toDto(application)).thenReturn(applicationDTO);
 
         // When
         ResponseEntity<ApplicationDTO> response = getApplicationByIdQueryHandler.handle(query);

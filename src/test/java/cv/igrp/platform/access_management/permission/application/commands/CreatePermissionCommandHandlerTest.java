@@ -75,6 +75,7 @@ public class CreatePermissionCommandHandlerTest {
 
         ApplicationEntity application = new ApplicationEntity();
         application.setId(1);
+        application.setCode(appCode);
 
         PermissionEntity permissionToSave = new PermissionEntity();
         permissionToSave.setName(permissionName);
@@ -127,6 +128,7 @@ public class CreatePermissionCommandHandlerTest {
 
         ApplicationEntity application = new ApplicationEntity();
         application.setId(appId);
+        application.setCode(appCode);
 
         PermissionEntity permissionToSave = new PermissionEntity();
         permissionToSave.setName(permissionName);
@@ -142,7 +144,7 @@ public class CreatePermissionCommandHandlerTest {
         expectedResponse.setName(permissionName);
 
         // When
-        when(applicationRepository.findById(appId)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCode(appCode)).thenReturn(Optional.of(application));
         when(permissionMapper.mapDtoToEntity(dto, application)).thenReturn(permissionToSave);
         when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(expectedResponse);
@@ -177,6 +179,7 @@ public class CreatePermissionCommandHandlerTest {
 
         ApplicationEntity application = new ApplicationEntity();
         application.setId(appId);
+        application.setCode(appCode);
 
         PermissionEntity permissionToSave = new PermissionEntity();
         permissionToSave.setName(permissionName);
@@ -192,7 +195,7 @@ public class CreatePermissionCommandHandlerTest {
         mappedDTO.setName(permissionName);
 
         // When
-        when(applicationRepository.findById(appId)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCode(appCode)).thenReturn(Optional.of(application));
         when(permissionMapper.mapDtoToEntity(dto, application)).thenReturn(permissionToSave);
         when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(mappedDTO);

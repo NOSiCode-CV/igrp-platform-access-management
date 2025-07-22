@@ -48,7 +48,7 @@ class PermissionMapperTest {
         assertEquals(permissionName, result.getName());
         assertEquals(permissionDescription, result.getDescription());
         assertEquals(permissionStatus, result.getStatus());
-        assertEquals(application.getId(), result.getApplicationCode());
+        assertEquals(application.getCode(), result.getApplicationCode());
     }
 
     @Test

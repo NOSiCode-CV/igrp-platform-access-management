@@ -42,7 +42,7 @@ public class DeleteDepartmentCommandHandlerTest {
     @DisplayName("Should delete department and return 204 when department exists")
     void testHandle_whenDepartmentExists_shouldDeleteAndReturnNoContent() {
         // Arrange
-        when(departmentRepository.existsById(DEPARTMENT_ID)).thenReturn(true);
+        when(departmentRepository.existsByCode(DEPARTMENT_CODE)).thenReturn(true);
 
         // Act
         ResponseEntity<Void> response = deleteDepartmentCommandHandler.handle(command);
@@ -52,8 +52,8 @@ public class DeleteDepartmentCommandHandlerTest {
         assertEquals(HttpStatus.NO_CONTENT.value(), response.getStatusCode().value());
 
         // Verify
-        verify(departmentRepository).existsById(DEPARTMENT_ID);
-        verify(departmentRepository).deleteById(DEPARTMENT_ID);
+        verify(departmentRepository).existsByCode(DEPARTMENT_CODE);
+        verify(departmentRepository).deleteByCode(DEPARTMENT_CODE);
         verifyNoMoreInteractions(departmentRepository);
     }
 
@@ -62,7 +62,7 @@ public class DeleteDepartmentCommandHandlerTest {
     void testHandle_whenDepartmentDoesNotExist_shouldThrowException() {
         // Arrange
 
-        when(departmentRepository.existsById(DEPARTMENT_ID)).thenReturn(false);
+        when(departmentRepository.existsByCode(DEPARTMENT_CODE)).thenReturn(false);
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
@@ -70,11 +70,11 @@ public class DeleteDepartmentCommandHandlerTest {
 
         // Assert
         assertNotNull(exception.getBody().getProperties());
-        assertEquals("Department not found with id: " + DEPARTMENT_ID, exception.getBody().getProperties().get("details"));
+        assertEquals("Department not found with code: " + DEPARTMENT_CODE, exception.getBody().getProperties().get("details"));
 
         // Verify
-        verify(departmentRepository).existsById(DEPARTMENT_ID);
-        verify(departmentRepository, never()).deleteById(DEPARTMENT_ID);
+        verify(departmentRepository).existsByCode(DEPARTMENT_CODE);
+        verify(departmentRepository, never()).deleteByCode(DEPARTMENT_CODE);
         verifyNoMoreInteractions(departmentRepository);
     }
 

@@ -4,7 +4,9 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,12 +28,19 @@ public class GetApplicationCustomFieldsQueryHandlerTest {
     @Mock
     private CustomFieldEntityRepository customFieldRepository;
 
+    @Mock
+    private ApplicationEntityRepository applicationRepository;
+
     @Test
     void testHandleGetApplicationCustomFieldsQuery_Success() {
         // Given
         Integer applicationId = 1;
         String applicationCode = "APP";
         Map<String, Object> expectedFields = Map.of("key1", "value1", "key2", "value2");
+
+        ApplicationEntity application = new ApplicationEntity();
+        application.setId(applicationId);
+        application.setCode(applicationCode);
 
         CustomFieldEntity customField = new CustomFieldEntity();
         customField.setTableName("t_application");
@@ -40,6 +49,7 @@ public class GetApplicationCustomFieldsQueryHandlerTest {
 
         when(customFieldRepository.findByTableNameAndRecordId("t_application", applicationId))
                 .thenReturn(Optional.of(customField));
+        when(applicationRepository.findByCode(applicationCode)).thenReturn(Optional.of(application));
 
         GetApplicationCustomFieldsQuery query = new GetApplicationCustomFieldsQuery(applicationCode);
 
@@ -58,8 +68,13 @@ public class GetApplicationCustomFieldsQueryHandlerTest {
         Integer applicationId = 1;
         String applicationCode = "APP";
 
+        ApplicationEntity application = new ApplicationEntity();
+        application.setId(applicationId);
+        application.setCode(applicationCode);
+
         when(customFieldRepository.findByTableNameAndRecordId("t_application", applicationId))
                 .thenReturn(Optional.empty());
+        when(applicationRepository.findByCode(applicationCode)).thenReturn(Optional.of(application));
 
         GetApplicationCustomFieldsQuery query = new GetApplicationCustomFieldsQuery(applicationCode);
 

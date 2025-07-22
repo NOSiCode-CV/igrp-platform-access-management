@@ -46,14 +46,12 @@ public class CreateApplicationCommandHandlerTest {
 
     @Test
     void testHandle() {
-
         DepartmentEntity department = new DepartmentEntity();
         department.setName("Test Department");
         department.setCode("HR");
         department.setDescription("Test Description");
         department.setStatus(DepartmentStatus.ACTIVE);
 
-        // Given
         ApplicationDTO applicationDTO = new ApplicationDTO(
                 null,
                 "APP001",
@@ -73,9 +71,17 @@ public class CreateApplicationCommandHandlerTest {
         );
         CreateApplicationCommand command = new CreateApplicationCommand(applicationDTO);
 
-        ApplicationEntity expectedToSave = applicationMapper.toEntity(applicationDTO);
-        expectedToSave.setId(null);
+        // ✅ Create the expectedToSave manually
+        ApplicationEntity expectedToSave = new ApplicationEntity();
+        expectedToSave.setCode("APP001");
+        expectedToSave.setName("Test Application");
+        expectedToSave.setDescription("A test app description");
         expectedToSave.setStatus(Status.ACTIVE);
+        expectedToSave.setType(AppType.INTERNAL);
+        expectedToSave.setOwner("Admin");
+        expectedToSave.setPicture("pic.png");
+        expectedToSave.setUrl("http://localhost:8080");
+        expectedToSave.setSlug("test-app");
 
         ApplicationEntity savedApplication = new ApplicationEntity();
         savedApplication.setId(1);
@@ -90,13 +96,12 @@ public class CreateApplicationCommandHandlerTest {
         savedApplication.setSlug("test-app");
         savedApplication.setDepartmentId(department);
 
-        when(departmentRepository.findByCode("HR")).thenReturn(Optional.of(department));
+        when(applicationMapper.toEntity(applicationDTO)).thenReturn(expectedToSave);
         when(applicationRepository.save(Mockito.any(ApplicationEntity.class))).thenReturn(savedApplication);
+        when(applicationMapper.toDto(savedApplication)).thenCallRealMethod(); // Optional if you map back to DTO
 
-        // When
         ResponseEntity<ApplicationDTO> response = createApplicationCommandHandler.handle(command);
 
-        // Then
         assertNotNull(response);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(response.getBody());
@@ -108,4 +113,5 @@ public class CreateApplicationCommandHandlerTest {
 
         verify(applicationRepository).save(Mockito.any(ApplicationEntity.class));
     }
+
 }

@@ -68,7 +68,7 @@ public class CreateRoleCommandHandlerTest {
         String departmentCode = "RH";
         String roleParentName = "admin";
         String roleName = "Role Name";
-        role.setDepartmentCode(role.getDepartmentCode());
+        role.setDepartmentCode(departmentCode);
         role.setName(roleName);
         role.setParentName(roleParentName);
         String roleDescription = "Role Description";

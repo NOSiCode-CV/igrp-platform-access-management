@@ -55,11 +55,25 @@ public class GetApplicationsByIdsCommandHandlerTest {
         app2.setCode("APP2");
         app2.setName("Application Two");
 
+        ApplicationDTO dto1 = new ApplicationDTO();
+        dto1.setId(1);
+        dto1.setCode("APP1");
+        dto1.setName("Application One");
+        dto1.setUrl(java.net.URI.create("http://app1.com"));
+
+        ApplicationDTO dto2 = new ApplicationDTO();
+        dto2.setId(2);
+        dto2.setCode("APP2");
+        dto2.setName("Application Two");
+
         List<ApplicationEntity> applicationList = Arrays.asList(app1, app2);
+        List<ApplicationDTO> dtoListExpected = Arrays.asList(dto1, dto2);
         List<Integer> ids = Arrays.asList(1, 2);
         GetApplicationsByIdsCommand command = new GetApplicationsByIdsCommand(ids);
 
         when(applicationRepository.findAllById(ids)).thenReturn(applicationList);
+        when(applicationMapper.toDto(app1)).thenReturn(dto1);
+        when(applicationMapper.toDto(app2)).thenReturn(dto2);
 
         // When
         ResponseEntity<List<ApplicationDTO>> response = getApplicationsByIdsCommandHandler.handle(command);
@@ -70,17 +84,20 @@ public class GetApplicationsByIdsCommandHandlerTest {
         assertNotNull(dtoList);
         assertEquals(2, dtoList.size());
 
-        ApplicationDTO dto1 = dtoList.getFirst();
-        assertEquals(app1.getId(), dto1.getId());
-        assertEquals(app1.getName(), dto1.getName());
-        assertEquals(app1.getUrl(), dto1.getUrl().toString());
+        ApplicationDTO dto1Result = dtoList.getFirst();
+        assertEquals(dto1.getId(), dto1Result.getId());
+        assertEquals(dto1.getName(), dto1Result.getName());
+        assertEquals(dto1.getUrl().toString(), dto1Result.getUrl().toString());
 
-        ApplicationDTO dto2 = dtoList.get(1);
-        assertEquals(app2.getId(), dto2.getId());
-        assertEquals(app2.getName(), dto2.getName());
+        ApplicationDTO dto2Result = dtoList.get(1);
+        assertEquals(dto2.getId(), dto2Result.getId());
+        assertEquals(dto2.getName(), dto2Result.getName());
 
         verify(applicationRepository, times(1)).findAllById(ids);
+        verify(applicationMapper).toDto(app1);
+        verify(applicationMapper).toDto(app2);
     }
+
 
     @Test
     void testHandle_WithEmptyIdList_ShouldReturnEmptyDTOList() {

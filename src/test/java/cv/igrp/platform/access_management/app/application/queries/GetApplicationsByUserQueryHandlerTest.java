@@ -50,10 +50,22 @@ public class GetApplicationsByUserQueryHandlerTest {
         app2.setName("App Two");
         app2.setCode("CODE_2");
 
+        ApplicationDTO app1Dto = new ApplicationDTO();
+        app1Dto.setId(1);
+        app1Dto.setName("App One");
+        app1Dto.setCode("CODE_1");
+
+        ApplicationDTO app2Dto = new ApplicationDTO();
+        app2Dto.setId(2);
+        app2Dto.setName("App Two");
+        app2Dto.setCode("CODE_2");
+
         List<ApplicationEntity> applications = List.of(app1, app2);
 
         when(applicationRepository.findDistinctByDepartmentId_Roles_Users_UsernameOrDepartmentId_Roles_Users_Email(uid, uid))
                 .thenReturn(applications);
+        when(applicationMapper.toDto(app1)).thenReturn(app1Dto);
+        when(applicationMapper.toDto(app2)).thenReturn(app2Dto);
 
         // When
         ResponseEntity<List<ApplicationDTO>> response = getApplicationsByUserQueryHandler.handle(query);
