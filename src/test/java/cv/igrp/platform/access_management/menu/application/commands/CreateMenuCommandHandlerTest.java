@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.menu.application.commands;
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 
+import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
@@ -56,6 +57,9 @@ public class CreateMenuCommandHandlerTest {
         dto = new MenuEntryDTO();
         dto.setApplicationId(1);
         dto.setParentId(3);
+        dto.setType(MenuEntryType.MENU_PAGE);
+        dto.setPageSlug("my-page");
+        dto.setUrl("/pages/my-page");
 
         command = createMenuCommand(dto);
 

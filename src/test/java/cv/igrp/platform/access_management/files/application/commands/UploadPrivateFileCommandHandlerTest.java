@@ -1,4 +1,7 @@
-package cv.igrp.platform.access_management.files.application.queries.handlers;
+package cv.igrp.platform.access_management.files.application.commands;
+
+import static org.mockito.Mockito.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -7,29 +10,28 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class GetLinkQueryHandlerTest {
+public class UploadPrivateFileCommandHandlerTest {
 
     @InjectMocks
-    private GetLinkQueryHandler getLinkQueryHandler;
+    private UploadPrivateFileCommandHandler uploadFileCommandHandler;
 
     @BeforeEach
     void setUp() {
-      // TODO: Initialize mock dependencies if needed
+        // TODO: initialize mock dependencies if needed
     }
 
     @Test
-    void testHandleGetLinkQuery() {
+    void testHandle() {
         // TODO: Implement unit test for handle method
         // Example:
         // Given
-        // GetLinkQuery query = new GetLinkQuery(...);
+        // UploadFileCommand command = new UploadFileCommand(...);
         //
         // When
-        // ResponseEntity<String> response = getLinkQueryHandler.handle(query);
+        // ResponseEntity<String> response = uploadFileCommandHandler.handle(command);
         //
         // Then
         // assertNotNull(response);
         // assertEquals(..., response.getBody());
     }
-
 }

@@ -1,20 +1,20 @@
 {
   "type": "enum",
-  "module": "shared",
-  "name": "ResourceItemType",
+  "module": "files",
+  "name": "UploadType",
   "values": [
     {
-      "name": "PAGE",
+      "name": "public",
       "attributes": [
-        "PAGE",
-        "Page"
+        "PUBLIC",
+        "is public upload"
       ]
     },
     {
-      "name": "API_RESOURCE",
+      "name": "private",
       "attributes": [
-        "API_RESOURCE",
-        "API Resource"
+        "PRIVATE",
+        "is private upload"
       ]
     }
   ],

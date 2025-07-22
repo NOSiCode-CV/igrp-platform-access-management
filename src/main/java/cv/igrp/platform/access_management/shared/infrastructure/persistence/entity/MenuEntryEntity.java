@@ -1,3 +1,6 @@
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.entity;
 
 import cv.igrp.platform.access_management.shared.config.AuditEntity;
@@ -56,6 +59,10 @@ public class MenuEntryEntity extends AuditEntity {
   
     @Column(name="target", length=10)
     private String target;
+
+  
+    @Column(name="page_slug", unique = true)
+    private String pageSlug;
 
   
     @Column(name="url")

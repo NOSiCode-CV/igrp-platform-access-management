@@ -1,0 +1,53 @@
+[
+  {
+    "name": "Main",
+    "type": "GROUP",
+    "icon": "fa-layer-group",
+    "children": [
+      {
+        "name": "Home Page",
+        "type": "SYSTEM_PAGE",
+        "pageSlug": "home"
+      },
+      {
+        "name": "Libraries",
+        "type": "SYSTEM_PAGE",
+        "pageSlug": "libraries"
+      }
+    ]
+  },
+  {
+    "name": "Access Management",
+    "type": "GROUP",
+    "icon": "fa-lock",
+    "children": [
+      {
+        "name": "Apps Management",
+        "type": "SYSTEM_PAGE",
+        "pageSlug": "apps"
+      },
+      {
+        "name": "Access Management",
+        "type": "FOLDER",
+        "icon": "fa-folder",
+        "children": [
+          {
+            "name": "User Management",
+            "type": "SYSTEM_PAGE",
+            "pageSlug": "users"
+          },
+          {
+            "name": "Department Management",
+            "type": "SYSTEM_PAGE",
+            "pageSlug": "departments"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "Settings",
+    "type": "SYSTEM_PAGE",
+    "pageSlug": "settings"
+  }
+]

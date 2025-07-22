@@ -1,4 +1,7 @@
-package cv.igrp.platform.access_management.shared.application.constants;
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+
+package cv.igrp.platform.access_management.files.application.constants;
 
 import cv.igrp.framework.core.domain.IgrpEnum;
 
@@ -8,17 +11,16 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public enum AppType implements IgrpEnum<String> {
+public enum UploadType implements IgrpEnum<String> {
 
-  EXTERNAL("EXTERNAL", "External"),
-    INTERNAL("INTERNAL", "Internal"),
-    SYSTEM("SYSTEM", "System")
+  PUBLIC("PUBLIC", "is public upload"),
+    PRIVATE("PRIVATE", "is private upload")
   ;
 
   private final String code;
   private final String description;
 
-  AppType(String code, String description) {
+  UploadType(String code, String description) {
     this.code = code;
     this.description = description;
   }
@@ -36,15 +38,15 @@ public enum AppType implements IgrpEnum<String> {
   /**
   * Pre-built maps for fast lookup.
   */
-  private static final Map<String, AppType> CODE_MAP = Arrays.stream(values())
-          .collect(Collectors.toMap(AppType::getCode, Function.identity()));
+  private static final Map<String, UploadType> CODE_MAP = Arrays.stream(values())
+          .collect(Collectors.toMap(UploadType::getCode, Function.identity()));
 
   /**
   * Attempts to find the enum value associated with the given code.
   * @param code The code to look up
   * @return An Optional containing the enum value if found, empty Optional otherwise
   */
-  public static Optional<AppType> fromCode(String code) {
+  public static Optional<UploadType> fromCode(String code) {
     return Optional.ofNullable(CODE_MAP.get(code));
   }
 
@@ -54,15 +56,15 @@ public enum AppType implements IgrpEnum<String> {
   * @return The enum value for the given code
   * @throws IllegalArgumentException if no enum value exists for the given code
   */
-  public static AppType fromCodeOrThrow(String code) {
-    return fromCode(code).orElseThrow(() -> new IllegalArgumentException("Invalid AppType for this code: " + code));
+  public static UploadType fromCodeOrThrow(String code) {
+    return fromCode(code).orElseThrow(() -> new IllegalArgumentException("Invalid UploadType for this code: " + code));
   }
 
   /**
   * Returns a map of code to description.
   */
   public static Map<String, String> codeDescriptionMap() {
-    return CODE_MAP.values().stream().collect(Collectors.toMap(AppType::getCode, AppType::getDescription));
+    return CODE_MAP.values().stream().collect(Collectors.toMap(UploadType::getCode, UploadType::getDescription));
   }
 
 }

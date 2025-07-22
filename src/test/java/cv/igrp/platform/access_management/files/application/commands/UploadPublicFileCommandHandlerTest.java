@@ -1,4 +1,4 @@
-package cv.igrp.platform.access_management.files.application.commands.handlers;
+package cv.igrp.platform.access_management.files.application.commands;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -7,14 +7,14 @@ import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-public class UploadFileCommandHandlerTest {
+public class UploadPublicFileCommandHandlerTest {
 
     @InjectMocks
-    private UploadFileCommandHandler uploadFileCommandHandler;
+    private UploadPublicFileCommandHandler uploadFileCommandHandler;
 
     @BeforeEach
     void setUp() {
-      // TODO: initialize mock dependencies if needed
+        // TODO: initialize mock dependencies if needed
     }
 
     @Test

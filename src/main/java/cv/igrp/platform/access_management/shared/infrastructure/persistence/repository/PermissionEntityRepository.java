@@ -40,4 +40,7 @@ public interface PermissionEntityRepository extends
     Optional<PermissionEntity> findByName(String name);
 
     List<PermissionEntity> findByMenuEntryId(MenuEntryEntity menuEntryId);
+
+    boolean existsByName(String name);
+
 }

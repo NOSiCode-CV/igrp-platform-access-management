@@ -45,4 +45,8 @@ public interface RoleEntityRepository extends
     Optional<RoleEntity> findByNameAndStatusNot(String name, Status status);
     Optional<RoleEntity> findByName(String name);
 
+    Optional<RoleEntity> findByName(String name);
+
+    boolean existsByName(String name);
+
 }
