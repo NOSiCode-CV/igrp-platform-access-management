@@ -2,14 +2,12 @@ package cv.igrp.platform.access_management.shared.infrastructure.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
-import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.*;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -62,13 +60,11 @@ class ConfigurationServiceTest {
         RoleEntity role = new RoleEntity();
         role.setName("superadmin");
 
-        when(userRepository.findByUsername("superadmin")).thenReturn(Optional.of(user));
-        when(userRepository.save(any())).thenReturn(user);
+        configurationService.assignRoleToSuperAdminUser(role, user);
 
-        configurationService.assignRoleToSuperAdminUser(role);
-
-        assertTrue(user.getRoles().contains(role));
-        verify(userRepository).save(user);
+        assertEquals(1, role.getUsers().size());
+        assertEquals("superadmin", role.getUsers().stream().toList().get(0).getUsername());
+        verify(roleRepository).save(role);
     }
 
     @Test
@@ -78,9 +74,8 @@ class ConfigurationServiceTest {
         role.setName("superadmin");
 
         user.getRoles().add(role);
-        when(userRepository.findByUsername("superadmin")).thenReturn(Optional.of(user));
 
-        configurationService.assignRoleToSuperAdminUser(role);
+        configurationService.assignRoleToSuperAdminUser(role, user);
 
         verify(userRepository, never()).save(user);
     }
@@ -174,7 +169,6 @@ class ConfigurationServiceTest {
         when(applicationRepository.save(any())).thenReturn(app);
         when(permissionRepository.save(any())).thenReturn(perm);
         when(roleRepository.save(any())).thenReturn(role);
-        when(userRepository.findByUsername("superadmin")).thenReturn(Optional.of(user));
         when(userRepository.save(any())).thenReturn(user);
 
         configurationService.initializeSystemConfiguration();
@@ -182,7 +176,7 @@ class ConfigurationServiceTest {
         verify(departmentRepository).save(any());
         verify(applicationRepository).save(any());
         verify(permissionRepository).save(any());
-        verify(roleRepository).save(any());
-        verify(userRepository, times(2)).save(any());
+        verify(roleRepository, times(2)).save(any());
+        verify(userRepository).save(any());
     }
 }
