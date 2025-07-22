@@ -1,1 +1,349 @@
-{"type":"controller","name":"User","module":"users","description":"User","basePath":"api","actions":[{"actionName":"getUser","path":"users/{id}","method":"GET","responses":{"200":{"content":{"application/json":{"schema":{"type":"IGRPUserDTO","name":"data","collectionType":"none"}}}}},"pathVariables":[{"name":"id","type":"integer","isRequired":true,"description":"User ID"}]},{"actionName":"AddRolesToUser","path":"users/{id}/addRoles","method":"POST","requestBody":{"content":{"application/json":{"schema":{"type":"RoleUserDTO","name":"Role","objectType":"dto","module":"shared"}}}},"responses":{"200":{"content":{"application/json":{"schema":{"type":"Role","name":"data","collectionType":"list"}}}},"201":{"name":"OK","content":{"application/json":{"schema":{"type":"Role","name":"data","collectionType":"list"}}}}},"pathVariables":[{"type":"integer","name":"id","isRequired":true}]},{"actionName":"RemoveRolesFromUser","path":"users/{id}/removeRoles","method":"DELETE","requestBody":{"content":{"application/json":{"schema":{"type":"integer","name":"Roles","collectionType":"list"}}}},"responses":{"200":{"content":{"application/json":{"schema":{"type":"RoleDTO","objectType":"dto","name":"data","collectionType":"list","module":"shared"}}}}},"pathVariables":[{"type":"integer","name":"id","isRequired":true}]},{"actionName":"getUserRoles","path":"users/{id}/roles","method":"GET","responses":{"200":{"content":{"application/json":{"schema":{"type":"RoleDTO","objectType":"dto","name":"data","collectionType":"list","module":"shared"}}}}},"requestParams":[{"type":"integer","name":"applicationId","description":"Application ID","isRequired":true}],"pathVariables":[{"type":"integer","name":"id","description":"User ID","isRequired":true}]},{"actionName":"getUsers","path":"getUsers","method":"POST","requestBody":{"content":{"application/json":{"schema":{"type":"integer","name":"Roles","collectionType":"list"}}}},"responses":{"200":{"content":{"application/json":{"schema":{"type":"IGRPUserDTO","objectType":"dto","name":"data","collectionType":"list","module":"shared"}}}}},"requestParams":[{"type":"integer","name":"applicationId","description":"ApplicationId","isRequired":false},{"type":"integer","name":"departmentId","description":"DepartmentId","isRequired":false},{"type":"string","name":"name","description":"Name","isRequired":false},{"type":"string","name":"username","description":"Username","isRequired":false},{"type":"string","name":"email","description":"Email","isRequired":false}]},{"actionName":"createUser","path":"users","method":"POST","requestBody":{"content":{"application/json":{"schema":{"type":"IGRPUserDTO","name":"User","description":"User Data","objectType":"dto","module":"shared","collectionType":"none"}}}},"responses":{"200":{"content":{"application/json":{"schema":{"type":"IGRPUserDTO","objectType":"dto","name":"data","collectionType":"none","module":"shared"}}}}}},{"actionName":"updateUser","path":"users/{id}","method":"PUT","requestBody":{"content":{"application/json":{"schema":{"type":"IGRPUserDTO","name":"User","description":"User Data","objectType":"dto","module":"shared"}}}},"responses":{"200":{"content":{"application/json":{"schema":{"type":"IGRPUserDTO","objectType":"dto","name":"data","collectionType":"none","module":"shared"}}}}},"pathVariables":[{"name":"id","type":"integer","isRequired":true}]},{"actionName":"getCurrentUser","path":"users/currentUser","method":"GET","responses":{"200":{"content":{"application/json":{"schema":{"type":"IGRPUserDTO","objectType":"dto","name":"data","collectionType":"none","module":"shared"}}}}}},{"actionName":"inviteUser","path":"users/invite","method":"POST","requestBody":{"content":{"application/json":{"schema":{"collectionType":"none","name":"data","type":"IGRPUserDTO","objectType":"dto","module":"shared"}}}},"responses":{"200":{"name":"OK","content":{"application/json":{"schema":{"type":"IGRPUserDTO","objectType":"dto","name":"data","collectionType":"none","module":"shared"}}}}}}],"id":"4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"}
+{
+  "type": "controller",
+  "name": "User",
+  "module": "users",
+  "description": "User",
+  "basePath": "api",
+  "actions": [
+    {
+      "actionName": "getUser",
+      "path": "users/{id}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "IGRPUserDTO",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true,
+          "description": "User ID"
+        }
+      ]
+    },
+    {
+      "actionName": "AddRolesToUser",
+      "path": "users/{username}/addRoles",
+      "method": "POST",
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "Role",
+                "name": "data",
+                "collectionType": "list"
+              }
+            }
+          }
+        },
+        "201": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "Role",
+                "name": "data",
+                "collectionType": "list"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "username",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "RoleUserDTO",
+              "name": "Role",
+              "objectType": "dto",
+              "module": "shared"
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "RemoveRolesFromUser",
+      "path": "users/{username}/removeRoles",
+      "method": "DELETE",
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "username",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "integer",
+              "name": "Roles",
+              "collectionType": "list"
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "getUserRoles",
+      "path": "users/{username}/roles",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "integer",
+          "name": "applicationId",
+          "description": "Application ID",
+          "isRequired": true
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "username",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getUsers",
+      "path": "getUsers",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "integer",
+              "name": "Roles",
+              "collectionType": "list"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "IGRPUserDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "integer",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": false
+        },
+        {
+          "type": "integer",
+          "name": "departmentCode",
+          "description": "Department Code",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "name",
+          "description": "Name",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "username",
+          "description": "Username",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "email",
+          "description": "Email",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "actionName": "createUser",
+      "path": "users",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "IGRPUserDTO",
+              "name": "User",
+              "description": "User Data",
+              "objectType": "dto",
+              "module": "shared",
+              "collectionType": "none"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "IGRPUserDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "updateUser",
+      "path": "users/{username}",
+      "method": "PUT",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "IGRPUserDTO",
+              "name": "User",
+              "description": "User Data",
+              "objectType": "dto",
+              "module": "shared"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "IGRPUserDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "username",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getCurrentUser",
+      "path": "users/currentUser",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "IGRPUserDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "inviteUser",
+      "path": "users/invite",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "collectionType": "none",
+              "name": "data",
+              "type": "IGRPUserDTO",
+              "objectType": "dto",
+              "module": "shared"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "IGRPUserDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"
+}

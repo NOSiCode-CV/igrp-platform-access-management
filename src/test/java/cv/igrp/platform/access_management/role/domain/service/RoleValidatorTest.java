@@ -1,9 +1,9 @@
 package cv.igrp.platform.access_management.role.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
-import cv.igrp.platform.access_management.shared.domain.models.Department;
-import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -23,7 +23,7 @@ class RoleValidatorTest {
         RoleDTO newRole = new RoleDTO();
         newRole.setName("Admin");
 
-        Department department = new Department();
+        DepartmentEntity department = new DepartmentEntity();
         department.setRoles(List.of());
 
         // When
@@ -37,11 +37,11 @@ class RoleValidatorTest {
     @Test
     void shouldReturnInvalidResponse_WhenRoleNameAlreadyExists() {
         // Given
-        Role existingRole = new Role();
+        RoleEntity existingRole = new RoleEntity();
         String roleName = "Admin";
         existingRole.setName(roleName);
 
-        Department department = new Department();
+        DepartmentEntity department = new DepartmentEntity();
         department.setId(1);
         department.setRoles(List.of(existingRole));
 

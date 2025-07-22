@@ -1,0 +1,79 @@
+entity user {}
+
+entity role {
+    relation department @department
+    relation parent @role
+    relation permissions @permission
+    relation users @user
+
+    permission view = users or department.user
+    permission edit = department.admin
+    permission delete = department.admin
+    permission assign = department.admin
+    permission inherit = parent
+}
+
+entity department {
+    relation admin @user
+    relation user @user
+    relation parent @department
+    relation application @application
+
+    permission view = user or admin or application.admin
+    permission edit = admin
+    permission delete = admin
+    permission assign = admin
+}
+
+entity application {
+    relation admin @user
+    relation department @department
+    relation resources @resource
+    relation menus @menu
+
+    permission view = admin or department.user
+    permission edit = admin
+    permission delete = admin
+    permission configure = admin
+}
+
+entity resource {
+    relation application @application
+    relation permissions @permission
+    relation items @resource_item
+
+    permission view = application.admin or application.department.user
+    permission edit = application.admin
+    permission delete = application.admin
+    permission manage_items = application.admin
+}
+
+entity resource_item {
+    relation resource @resource
+    relation permission @permission
+
+    permission view = resource.application.admin or resource.application.department.user
+    permission edit = resource.application.admin
+    permission delete = resource.application.admin
+}
+
+entity permission {
+    relation application @application
+    relation roles @role
+
+    permission view = application.admin or application.department.user
+    permission edit = application.admin
+    permission delete = application.admin
+    permission assign = application.admin
+}
+
+entity menu {
+    relation application @application
+    relation resource @resource
+    relation parent @menu
+
+    permission view = application.admin or application.department.user
+    permission edit = application.admin
+    permission delete = application.admin
+    permission configure = application.admin
+}

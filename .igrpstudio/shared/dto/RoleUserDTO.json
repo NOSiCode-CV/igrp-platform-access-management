@@ -1,1 +1,34 @@
-{"type":"dto","module":"shared","name":"RoleUserDTO","template":"record","enableCustonValidation":false,"attributes":[{"name":"user_id","objectType":"java","type":"integer","required":true,"before":false,"after":false,"positive":false,"isEmail":false,"isUrl":false,"primaryKey":false},{"name":"role_id","objectType":"java","type":"integer","required":true,"before":false,"after":false,"positive":false,"isEmail":false,"isUrl":false,"primaryKey":false}],"id":"hpbgurambc"}
+{
+  "type": "dto",
+  "module": "shared",
+  "name": "RoleUserDTO",
+  "template": "record",
+  "enableCustonValidation": false,
+  "attributes": [
+    {
+      "name": "user_name",
+      "objectType": "java",
+      "type": "string",
+      "required": true,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "role_name",
+      "objectType": "java",
+      "type": "string",
+      "required": true,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    }
+  ],
+  "id": "hpbgurambc"
+}

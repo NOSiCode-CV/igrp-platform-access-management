@@ -92,4 +92,4 @@ COPY --from=build /app/target/access-management-upx ./access-management
 USER nonroot:nonroot
 
 EXPOSE 8080
-CMD ["./access-management"]
+CMD ["/app/access-management"]

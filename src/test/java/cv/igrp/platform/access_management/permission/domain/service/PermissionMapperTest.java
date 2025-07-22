@@ -2,8 +2,8 @@ package cv.igrp.platform.access_management.permission.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import cv.igrp.platform.access_management.shared.domain.models.Application;
-import cv.igrp.platform.access_management.shared.domain.models.Permission;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -29,10 +29,10 @@ class PermissionMapperTest {
         String permissionDescription = "Allows dashboard access";
         Status permissionStatus = Status.ACTIVE;
 
-        Application application = new Application();
+        ApplicationEntity application = new ApplicationEntity();
         application.setId(10);
 
-        Permission permission = new Permission();
+        PermissionEntity permission = new PermissionEntity();
         permission.setId(permissionId);
         permission.setName(permissionName);
         permission.setDescription(permissionDescription);
@@ -48,13 +48,13 @@ class PermissionMapperTest {
         assertEquals(permissionName, result.getName());
         assertEquals(permissionDescription, result.getDescription());
         assertEquals(permissionStatus, result.getStatus());
-        assertEquals(application.getId(), result.getApplicationId());
+        assertEquals(application.getId(), result.getApplicationCode());
     }
 
     @Test
     void itShouldSetStatusToActive_When_NotProvided() {
         // Given
-        int applicationId = 10;
+        String applicationCode = "app";
         String name = "ACCESS_DASHBOARD";
         String description = "Allows dashboard access";
 
@@ -62,13 +62,13 @@ class PermissionMapperTest {
         dto.setName(name);
         dto.setDescription(description);
         dto.setStatus(null);
-        dto.setApplicationId(applicationId);
+        dto.setApplicationCode(applicationCode);
 
-        Application application = new Application();
-        application.setId(applicationId);
+        ApplicationEntity application = new ApplicationEntity();
+        application.setCode(applicationCode);
 
         // When
-        Permission permission = underTest.mapDtoToEntity(dto, application);
+        PermissionEntity permission = underTest.mapDtoToEntity(dto, application);
 
         // Then
         assertNotNull(permission);
@@ -81,7 +81,7 @@ class PermissionMapperTest {
     @Test
     void itShouldMapAllFieldsCorrectly_FromDTOToPermission() {
         // Given
-        int applicationId = 10;
+        String applicationCode = "app";
         String name = "ACCESS_DASHBOARD";
         String description = "Allows dashboard access";
         Status status = Status.INACTIVE;
@@ -90,13 +90,13 @@ class PermissionMapperTest {
         dto.setName(name);
         dto.setDescription(description);
         dto.setStatus(status);
-        dto.setApplicationId(applicationId);
+        dto.setApplicationCode(applicationCode);
 
-        Application application = new Application();
-        application.setId(applicationId);
+        ApplicationEntity application = new ApplicationEntity();
+        application.setCode(applicationCode);
 
         // When
-        Permission permission = underTest.mapDtoToEntity(dto, application);
+        PermissionEntity permission = underTest.mapDtoToEntity(dto, application);
 
         // Then
         assertNotNull(permission);

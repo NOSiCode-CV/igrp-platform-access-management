@@ -1,1 +1,212 @@
-{"type":"controller","name":"Department","module":"department","description":"postDepartment","basePath":"api","actions":[{"actionName":"postDepartment","path":"department","method":"POST","requestBody":{"content":{"application/json":{"schema":{"type":"Department","name":"Department","isRequired":true,"objectType":"dto","module":"shared"}}}},"responses":{"201":{"name":"OK","content":{"application/json":{"schema":{"type":"DepartmentDTO","objectType":"dto","name":"data","collectionType":"none","module":"shared"}}}}}},{"actionName":"getDepartments","path":"departments","method":"GET","responses":{"200":{"description":"List of Departments","content":{"application/json":{"schema":{"type":"DepartmentDTO","name":"data","collectionType":"list"}}}}},"requestParams":[{"type":"integer","name":"applicationId","description":"Application ID","isRequired":false},{"type":"string","name":"applicationCode","description":"Application Code","isRequired":false},{"type":"integer","name":"parentId","description":"Parent Department ID","isRequired":false},{"type":"string","name":"name","description":"Department Name","isRequired":false},{"type":"string","name":"status","description":"Department Status","isRequired":false},{"type":"string","name":"code","description":"Department Code","isRequired":false}]},{"actionName":"getDepartmentById","path":"departments/{id}","method":"GET","responses":{"200":{"description":"Department Data","content":{"application/json":{"schema":{"type":"DepartmentDTO","objectType":"dto","name":"data","collectionType":"none","module":"shared"}}}}},"pathVariables":[{"type":"integer","name":"id","description":"ID of the Department","isRequired":true}]},{"actionName":"updateDepartment","path":"departments/{id}","method":"PUT","requestBody":{"content":{"application/json":{"schema":{"type":"DepartmentDTO","name":"Department","description":"Department Data","objectType":"dto","module":"shared"}}}},"responses":{"200":{"description":"Updated Department","content":{"application/json":{"schema":{"type":"DepartmentDTO","objectType":"dto","name":"data","collectionType":"none","module":"shared"}}}}},"pathVariables":[{"type":"integer","name":"id","description":"ID of the Department","isRequired":true}]},{"actionName":"deleteDepartment","path":"departments/{id}","method":"DELETE","responses":{"204":{"content":{"":{"schema":{"type":"string","name":"data","collectionType":"none"}}}}},"pathVariables":[{"type":"integer","name":"id","description":"ID of the Department","isRequired":true}]}],"id":"u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"}
+{
+  "type": "controller",
+  "name": "Department",
+  "module": "department",
+  "description": "postDepartment",
+  "basePath": "api",
+  "actions": [
+    {
+      "actionName": "postDepartment",
+      "path": "department",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "Department",
+              "name": "Department",
+              "isRequired": true,
+              "objectType": "dto",
+              "module": "shared"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "DepartmentDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "getDepartments",
+      "path": "departments",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "description": "List of Departments",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "DepartmentDTO",
+                "name": "data",
+                "collectionType": "list"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "name",
+          "description": "Department Name",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "status",
+          "description": "Department Status",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "code",
+          "description": "Department Code",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "parentCode",
+          "description": "Parent Code",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "actionName": "getDepartmentById",
+      "path": "departments/{id}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "description": "Department Data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "DepartmentDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "type": "integer",
+          "name": "id",
+          "description": "ID of the Department",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "updateDepartment",
+      "path": "departments/{code}",
+      "method": "PUT",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "DepartmentDTO",
+              "name": "Department",
+              "description": "Department Data",
+              "objectType": "dto",
+              "module": "shared"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "Updated Department",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "DepartmentDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "deleteDepartment",
+      "path": "departments/{code}",
+      "method": "DELETE",
+      "responses": {
+        "204": {
+          "content": {
+            "": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getDepartmentByCode",
+      "path": "by-code/{code}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "DepartmentDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    }
+  ],
+  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"
+}

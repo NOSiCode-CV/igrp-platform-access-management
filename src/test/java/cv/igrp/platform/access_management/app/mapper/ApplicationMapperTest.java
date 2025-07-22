@@ -3,9 +3,11 @@ package cv.igrp.platform.access_management.app.mapper;
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.models.Application;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -13,7 +15,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @ExtendWith(MockitoExtension.class)
 class ApplicationMapperTest {
 
-    private final ApplicationMapper underTest = new ApplicationMapper();
+    @Mock
+    private final ApplicationMapper underTest = Mockito.mock(ApplicationMapper.class);
 
 
     @Test
@@ -26,7 +29,7 @@ class ApplicationMapperTest {
         applicationDto.setName(applicationName);
 
         //... When
-        Application applicationEntity = underTest.toEntity(applicationDto);
+        ApplicationEntity applicationEntity = underTest.toEntity(applicationDto);
 
         //... Then
         assertEquals(Status.ACTIVE, applicationEntity.getStatus());
@@ -42,7 +45,7 @@ class ApplicationMapperTest {
         applicationDto.setName(applicationName);
 
         //... When
-        Application applicationEntity = underTest.toEntity(applicationDto);
+        ApplicationEntity applicationEntity = underTest.toEntity(applicationDto);
 
         //... Then
         assertEquals(Status.INACTIVE, applicationEntity.getStatus());
