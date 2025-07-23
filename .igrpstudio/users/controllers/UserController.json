@@ -7,7 +7,7 @@
   "actions": [
     {
       "actionName": "getUser",
-      "path": "users/{id}",
+      "path": "users/{username}",
       "method": "GET",
       "responses": {
         "200": {
@@ -24,10 +24,9 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "User ID"
+          "name": "username",
+          "type": "string",
+          "isRequired": true
         }
       ]
     },
@@ -140,8 +139,8 @@
       "requestParams": [
         {
           "type": "integer",
-          "name": "applicationId",
-          "description": "Application ID",
+          "name": "applicationCode",
+          "description": "Application Code",
           "isRequired": true
         }
       ],

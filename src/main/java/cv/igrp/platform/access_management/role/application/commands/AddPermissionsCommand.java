@@ -14,7 +14,7 @@ import java.util.List;
 public class AddPermissionsCommand implements Command {
 
   
-  private List<Integer> addPermissionsRequest;
+  private List<String> addPermissionsRequest;
   @NotBlank(message = "The field <name> is required.")
   private String name;
 

@@ -48,7 +48,7 @@ public class UserController {
   }
 
   @GetMapping(
-    value = "users/{id}"
+    value = "users/{username}"
   )
   @Operation(
     summary = "GET method to handle operations for getUser",
@@ -68,12 +68,12 @@ public class UserController {
   )
   
   public ResponseEntity<IGRPUserDTO> getUser(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "username") String username)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetUserQuery(id);
+      final var query = new GetUserQuery(username);
 
       ResponseEntity<IGRPUserDTO> response = queryBus.handle(query);
 
@@ -189,12 +189,12 @@ public class UserController {
   )
   
   public ResponseEntity<List<RoleDTO>> getUserRoles(
-    @RequestParam(value = "applicationId") Integer applicationId, @PathVariable(value = "username") String username)
+    @RequestParam(value = "applicationCode") Integer applicationCode, @PathVariable(value = "username") String username)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetUserRolesQuery(applicationId, username);
+      final var query = new GetUserRolesQuery(applicationCode, username);
 
       ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
 

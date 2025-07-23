@@ -14,7 +14,7 @@ import java.util.List;
 public class RemovePermissionsCommand implements Command {
 
   
-  private List<Integer> removePermissionsRequest;
+  private List<String> removePermissionsRequest;
   @NotBlank(message = "The field <name> is required.")
   private String name;
 

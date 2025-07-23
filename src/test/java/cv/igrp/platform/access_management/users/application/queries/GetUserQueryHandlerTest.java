@@ -32,8 +32,8 @@ public class GetUserQueryHandlerTest {
     @InjectMocks
     private GetUserQueryHandler queryUserHandler;
 
-    private GetUserQuery getUserQuery(Integer id){
-        return new GetUserQuery(id);
+    private GetUserQuery getUserQuery(String username){
+        return new GetUserQuery(username);
     }
 
     private IGRPUserEntity user;
@@ -41,29 +41,30 @@ public class GetUserQueryHandlerTest {
     private GetUserQuery query;
 
     private final Integer USER_ID = 1;
+    private final String USERNAME = "username";
 
     @BeforeEach
     void setUp() {
         user = new IGRPUserEntity();
         user.setId(USER_ID);
         user.setName("Test");
-        user.setUsername("test");
+        user.setUsername(USERNAME);
         user.setEmail("test@example.com");
 
         userDTO = new IGRPUserDTO();
         userDTO.setId(USER_ID);
         userDTO.setName("Test");
-        userDTO.setUsername("test");
+        userDTO.setUsername(USERNAME);
         userDTO.setEmail("test@example.com");
 
-        query = getUserQuery(USER_ID);
+        query = getUserQuery(USERNAME);
     }
 
     @Test
     @DisplayName("should return 200 OK with user when ID is valid")
     void testHandle_whenUserExists_shouldReturnUserDto() {
         // Arrange
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findByUsername(USERNAME)).thenReturn(Optional.of(user));
         when(userMapper.toDto(user)).thenReturn(userDTO);
 
         // Act
@@ -75,7 +76,7 @@ public class GetUserQueryHandlerTest {
         assertEquals(userDTO, response.getBody());
 
         // Verify
-        verify(userRepository, times(1)).findById(USER_ID);
+        verify(userRepository, times(1)).findByUsername(USERNAME);
         verify(userMapper, times(1)).toDto(user);
         verifyNoMoreInteractions(userRepository, userMapper);
 
@@ -85,7 +86,7 @@ public class GetUserQueryHandlerTest {
     @DisplayName("should throw IgrpResponseStatusException when user does not exist")
     void testHandle_whenUserDoesNotExist_shouldThrowException() {
         // Arrange
-        when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
+        when(userRepository.findByUsername(USERNAME)).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
@@ -94,10 +95,10 @@ public class GetUserQueryHandlerTest {
         // Assert
         assertNotNull(exception);
         assertNotNull(exception.getBody().getProperties());
-        assertEquals("User not found with id: " + USER_ID, exception.getBody().getProperties().get("details"));
+        assertEquals("User not found with username: " + USERNAME, exception.getBody().getProperties().get("details"));
 
         // Verify
-        verify(userRepository, times(1)).findById(USER_ID);
+        verify(userRepository, times(1)).findByUsername(USERNAME);
         verifyNoMoreInteractions(userRepository);
         verifyNoInteractions(userMapper);
     }
