@@ -7,6 +7,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceItemEntityRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -15,9 +16,11 @@ import java.util.List;
 public class ResourceMapper {
 
     private final PermissionEntityRepository permissionRepository;
+    private final ResourceItemEntityRepository resourceItemRepository;
 
-    public ResourceMapper(PermissionEntityRepository permissionRepository) {
+    public ResourceMapper(PermissionEntityRepository permissionRepository, ResourceItemEntityRepository resourceItemRepository) {
         this.permissionRepository = permissionRepository;
+        this.resourceItemRepository = resourceItemRepository;
     }
 
     public ResourceDTO toDto(ResourceEntity resource) {
@@ -83,7 +86,7 @@ public class ResourceMapper {
         item.setUrl(dto.getUrl());
         item.setResourceId(parentResource);
         item.setPermissionId(permission.getId());
-        return item;
+        return resourceItemRepository.save(item);
     }
 }
 
