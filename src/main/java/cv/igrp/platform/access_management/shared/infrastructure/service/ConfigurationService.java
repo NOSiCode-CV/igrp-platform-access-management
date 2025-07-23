@@ -139,7 +139,9 @@ public class ConfigurationService {
         newRole.setName("superadmin");
         newRole.setDepartment(dept);
         newRole.setDescription("iGRP Superadmin");
-        newRole.setPermissions(Set.of(perm));
+        Set<PermissionEntity> permissions = new HashSet<>();
+        permissions.add(perm);
+        newRole.setPermissions(permissions);
         newRole.setStatus(Status.ACTIVE);
         var role = roleRepository.save(newRole);
         LOGGER.info("[Startup Config] Default Role created");
