@@ -11,7 +11,9 @@ import jakarta.validation.constraints.*;
 @IgrpDTO
 public record RoleUserDTO (
   @NotBlank(message = "The field <user_name> is required.")
+	@Pattern(message = "Invalid value format for field <user_name>.", regexp = "^[A-Za-z0-9_-]+$")
   String user_name, 
   @NotBlank(message = "The field <role_name> is required.")
+	@Pattern(message = "Invalid value format for field <role_name>.", regexp = "^[A-Za-z0-9_-]+$")
   String role_name
 ){}
