@@ -7,11 +7,12 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -49,6 +50,7 @@ public class ConfigurationService {
     }
 
     @Transactional
+    @Async
     public void initializeSystemConfiguration() {
         long startTime = System.currentTimeMillis();
         LOGGER.info("[Startup Config] Starting system initialization...");
