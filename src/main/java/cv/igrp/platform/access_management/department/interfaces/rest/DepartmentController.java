@@ -234,7 +234,7 @@ public class DepartmentController {
   }
 
   @GetMapping(
-    value = "by-code/{code}"
+    value = "departments/by-code/{code}"
   )
   @Operation(
     summary = "GET method to handle operations for getDepartmentByCode",

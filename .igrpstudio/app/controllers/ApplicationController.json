@@ -365,7 +365,7 @@
     },
     {
       "actionName": "getApplicationByCode",
-      "path": "by-code/{code}",
+      "path": "/applications/by-code/{code}",
       "method": "GET",
       "responses": {
         "200": {
