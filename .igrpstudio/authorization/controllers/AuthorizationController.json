@@ -1,0 +1,78 @@
+{
+  "type": "controller",
+  "name": "Authorization",
+  "module": "authorization",
+  "description": "Checking authorization for action",
+  "basePath": "api",
+  "actions": [
+    {
+      "actionName": "checkAuthorization",
+      "path": "authorize/check",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "PermissionCheckRequest",
+              "collectionType": "none",
+              "name": "PermissionCheckRequest",
+              "objectType": "dto",
+              "module": "authorization"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "PermissionCheckResponse",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "authorization"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "batchCheckAuthorization",
+      "path": "authorize/batch-check",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "PermissionCheckRequest",
+              "collectionType": "list",
+              "name": "batchCheckPermission",
+              "objectType": "dto",
+              "module": "authorization"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "PermissionCheckResponse",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "authorization"
+              }
+            }
+          }
+        }
+      }
+    }
+  ],
+  "id": "m3c9qe02pq-CONTROLLER"
+}

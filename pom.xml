@@ -169,7 +169,7 @@
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
             <artifactId>core</artifactId>
-            <version>${framework.auth.version}</version>
+            <version>0.1.0-beta</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
