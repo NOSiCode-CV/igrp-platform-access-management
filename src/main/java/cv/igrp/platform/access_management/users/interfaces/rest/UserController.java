@@ -22,7 +22,6 @@ import cv.igrp.platform.access_management.users.application.commands.*;
 import cv.igrp.platform.access_management.users.application.queries.*;
 
 
-import cv.igrp.platform.access_management.shared.application.dto.RoleUserDTO;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
@@ -114,7 +113,7 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<?> addRolesToUser(@Valid @RequestBody RoleUserDTO addRolesToUserRequest
+  public ResponseEntity<?> addRolesToUser(@RequestBody List<String> addRolesToUserRequest
     , @PathVariable(value = "username") String username)
   {
 
@@ -151,7 +150,7 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<List<RoleDTO>> removeRolesFromUser(@RequestBody List<Integer> removeRolesFromUserRequest
+  public ResponseEntity<List<RoleDTO>> removeRolesFromUser(@RequestBody List<String> removeRolesFromUserRequest
     , @PathVariable(value = "username") String username)
   {
 

@@ -29,12 +29,12 @@ public class RemoveRolesFromUserCommandHandlerTest {
     @InjectMocks
     private RemoveRolesFromUserCommandHandler removeRolesFromUserCommandHandler;
 
-    private RemoveRolesFromUserCommand removeRolesFromUserCommand(List<Integer> removeRolesFromUserRequest, String username){
+    private RemoveRolesFromUserCommand removeRolesFromUserCommand(List<String> removeRolesFromUserRequest, String username){
         return new RemoveRolesFromUserCommand(removeRolesFromUserRequest, username);
     }
 
     private RemoveRolesFromUserCommand command;
-    private List<Integer> idRolesToBeRemoved;
+    private List<String> idRolesToBeRemoved;
     private IGRPUserEntity user;
     private RoleEntity role1, role2;
 
@@ -44,12 +44,12 @@ public class RemoveRolesFromUserCommandHandlerTest {
     void setUp() {
         role1 = new RoleEntity();
         role1.setId(100);
-        role1.setName("Admin");
+        role1.setName("admin");
         role1.setDescription("Admin role");
 
         role2 = new RoleEntity();
         role2.setId(200);
-        role2.setName("User");
+        role2.setName("user");
         role2.setDescription("User role");
 
         user = new IGRPUserEntity();
@@ -57,15 +57,15 @@ public class RemoveRolesFromUserCommandHandlerTest {
         user.setRoles(new ArrayList<>(List.of(role1, role2)));
 
         idRolesToBeRemoved = new ArrayList<>();
-        idRolesToBeRemoved.add(100);
-        idRolesToBeRemoved.add(200);
+        idRolesToBeRemoved.add("admin");
+        idRolesToBeRemoved.add("user");
     }
 
     @Test
     @DisplayName("should remove matching role and return updated roles")
     void testHandle_whenRoleIdMatches_shouldRemoveAndReturnRemainingRoles() {
         // Arrange
-        command = removeRolesFromUserCommand(new ArrayList<>(List.of(100)), USER_ID);
+        command = removeRolesFromUserCommand(List.of("admin"), USER_ID);
         when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
 
         // Act
@@ -88,9 +88,9 @@ public class RemoveRolesFromUserCommandHandlerTest {
     @DisplayName("should do nothing if role ID doesn't match any roles")
     void testHandle_whenRoleIdDoesNotMatch_shouldReturnAllRoles() {
         // Arrange
-        List<Integer> removeRolesThatDoesntExist = new ArrayList<>();
-        removeRolesThatDoesntExist.add(500);
-        removeRolesThatDoesntExist.add(700);
+        List<String> removeRolesThatDoesntExist = new ArrayList<>();
+        removeRolesThatDoesntExist.add("auditor");
+        removeRolesThatDoesntExist.add("tester");
 
         command = removeRolesFromUserCommand(removeRolesThatDoesntExist,USER_ID);
 
@@ -199,7 +199,7 @@ public class RemoveRolesFromUserCommandHandlerTest {
     @DisplayName("should not remove any roles if no matching IDs found")
     void testHandle_whenRoleIdsDoNotMatch_shouldReturnUnchangedRoles() {
         // Arrange
-        command = new RemoveRolesFromUserCommand(new ArrayList<>(List.of(999,899)), USER_ID);
+        command = new RemoveRolesFromUserCommand(new ArrayList<>(List.of("reporter","maintainer")), USER_ID);
         when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
 
         // Act
@@ -220,7 +220,7 @@ public class RemoveRolesFromUserCommandHandlerTest {
     void testHandle_whenRolesAreImmutable_shouldRemoveWithoutError() {
         // Arrange
         user.setRoles(List.of(role1, role2));
-        command = removeRolesFromUserCommand( List.of(100), USER_ID);
+        command = removeRolesFromUserCommand( List.of("admin"), USER_ID);
         when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
 
         // Act

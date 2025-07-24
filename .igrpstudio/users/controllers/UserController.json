@@ -34,6 +34,17 @@
       "actionName": "AddRolesToUser",
       "path": "users/{username}/addRoles",
       "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "Role",
+              "collectionType": "list"
+            }
+          }
+        }
+      },
       "responses": {
         "200": {
           "content": {
@@ -65,24 +76,23 @@
           "type": "string",
           "isRequired": true
         }
-      ],
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "RoleUserDTO",
-              "name": "Role",
-              "objectType": "dto",
-              "module": "shared"
-            }
-          }
-        }
-      }
+      ]
     },
     {
       "actionName": "RemoveRolesFromUser",
       "path": "users/{username}/removeRoles",
       "method": "DELETE",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "Roles",
+              "collectionType": "list"
+            }
+          }
+        }
+      },
       "responses": {
         "200": {
           "content": {
@@ -104,18 +114,7 @@
           "type": "string",
           "isRequired": true
         }
-      ],
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "integer",
-              "name": "Roles",
-              "collectionType": "list"
-            }
-          }
-        }
-      }
+      ]
     },
     {
       "actionName": "getUserRoles",

@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -71,10 +72,8 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
     */
    @IgrpCommandHandler
    public ResponseEntity<List<RoleDTO>> handle(AddRolesToUserCommand command) {
-      String userName = command.getRoleuserdto().user_name();
-      String roleName = command.getRoleuserdto().role_name();
-
-      logger.info("Assigning role name={} to user name={}", roleName, userName);
+      String userName = command.getUsername();
+      List<RoleEntity> roles = new ArrayList<>();
 
       IGRPUserEntity user = userRepository.findByUsername(userName)
               .orElseThrow(() -> {
@@ -84,31 +83,39 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
                          "User not found with name: " + userName);
               });
 
-      RoleEntity roleToAdd = roleRepository.findByName(roleName)
-              .orElseThrow(() -> {
-                 logger.warn("Role not found with name={}", roleName);
-                 return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Invalid Role name",
-                         "Role not found with name: " + roleName);
-              });
+      for(String roleName : command.getAddRolesToUserRequest()) {
 
-      Set<IGRPUserEntity> users = roleToAdd.getUsers();
-      if (users == null) {
-         users = new HashSet<>();
-         roleToAdd.setUsers(users);
+         logger.info("Assigning role name={} to user name={}", roleName, userName);
+
+         RoleEntity roleToAdd = roleRepository.findByName(roleName)
+                 .orElseThrow(() -> {
+                    logger.warn("Role not found with name={}", roleName);
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Invalid Role name",
+                            "Role not found with name: " + roleName);
+                 });
+
+         Set<IGRPUserEntity> users = roleToAdd.getUsers();
+
+         if (users == null) {
+            users = new HashSet<>();
+            roleToAdd.setUsers(users);
+         }
+         boolean isRoleAdded = users.add(user);
+
+         if (isRoleAdded) {
+            logger.info("User name={} successfully added to role name={}", userName, roleName);
+         } else {
+            logger.info("User name={} was already associated with role name={}", userName, roleName);
+         }
+
+         roles.add(roleRepository.save(roleToAdd));
       }
-      boolean isRoleAdded = users.add(user);
 
-      if (isRoleAdded) {
-         logger.info("User name={} successfully added to role name={}", userName, roleName);
-      } else {
-         logger.info("User name={} was already associated with role name={}", userName, roleName);
-      }
+      List<RoleDTO> rolesDTO = roles.stream().map(roleMapper::mapToDto).toList();
 
-      var roleUpdated = roleRepository.save(roleToAdd);
-      RoleDTO roleDTO = roleMapper.mapToDto(roleUpdated);
+      return ResponseEntity.status(HttpStatus.CREATED).body(rolesDTO);
 
-      return ResponseEntity.status(HttpStatus.CREATED).body(List.of(roleDTO));
    }
 
 }

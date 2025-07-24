@@ -45,7 +45,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
    @IgrpCommandHandler
    public ResponseEntity<List<RoleDTO>> handle(RemoveRolesFromUserCommand command) {
       String username = command.getUsername();
-      List<Integer> roleIdsToRemove = command.getRemoveRolesFromUserRequest();
+      List<String> roleIdsToRemove = command.getRemoveRolesFromUserRequest();
 
       logger.info("Attempting to remove roles {} from username={}", roleIdsToRemove, username);
 
@@ -60,7 +60,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
 
       if (roleIdsToRemove != null && !roleIdsToRemove.isEmpty()) {
          List<RoleEntity> roles = new ArrayList<>(user.getRoles());
-         boolean isRolesRemoved = roles.removeIf(role -> roleIdsToRemove.contains(role.getId()));
+         boolean isRolesRemoved = roles.removeIf(role -> roleIdsToRemove.contains(role.getName()));
          if (isRolesRemoved) {
             logger.info("Roles removed successfully from user name={}", username);
          } else {

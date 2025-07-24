@@ -72,7 +72,7 @@ public class ResourceController {
     @RequestParam(value = "type", required = false) String type,
     @RequestParam(value = "externalID", required = false) String externalID,
     @RequestParam(value = "applicationCode", required = false) String applicationCode,
-    @RequestParam(value = "description") String description)
+    @RequestParam(value = "description", required = false) String description)
   {
 
       LOGGER.debug("Operation started");

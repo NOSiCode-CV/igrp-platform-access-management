@@ -19,7 +19,6 @@ import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.authorization.application.commands.*;
-import cv.igrp.platform.access_management.authorization.application.queries.*;
 
 
 import cv.igrp.platform.access_management.authorization.application.dto.PermissionCheckRequestDTO;

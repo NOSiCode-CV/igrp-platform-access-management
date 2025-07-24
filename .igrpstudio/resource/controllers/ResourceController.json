@@ -54,7 +54,7 @@
           "type": "string",
           "name": "description",
           "description": "Resource Description",
-          "isRequired": true
+          "isRequired": false
         }
       ]
     },

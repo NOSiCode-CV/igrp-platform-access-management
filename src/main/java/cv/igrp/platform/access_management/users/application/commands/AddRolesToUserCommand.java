@@ -5,7 +5,8 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import cv.igrp.platform.access_management.shared.application.dto.RoleUserDTO;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -13,7 +14,7 @@ import cv.igrp.platform.access_management.shared.application.dto.RoleUserDTO;
 public class AddRolesToUserCommand implements Command {
 
   
-  private RoleUserDTO roleuserdto;
+  private List<String> addRolesToUserRequest;
   @NotBlank(message = "The field <username> is required.")
   private String username;
 

@@ -46,7 +46,7 @@ public class AddRolesToUserCommandHandlerTest {
     private final String USER_ID = "johndoe";
     private final String ROLE_ID = "admin";
 
-    private AddRolesToUserCommand addRolesToUserCommand(RoleUserDTO roleUserDTO, String username) {
+    private AddRolesToUserCommand addRolesToUserCommand(List<String> roleUserDTO, String username) {
        return command = new AddRolesToUserCommand(roleUserDTO, username);
     }
 
@@ -63,9 +63,7 @@ public class AddRolesToUserCommandHandlerTest {
         roleDTO = new RoleDTO();
         roleDTO.setName(ROLE_ID);
 
-        RoleUserDTO dto = new RoleUserDTO(USER_ID,ROLE_ID);
-
-        command = addRolesToUserCommand(dto, USER_ID);
+        command = addRolesToUserCommand(List.of(ROLE_ID), USER_ID);
     }
 
     @Test

@@ -9,10 +9,12 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceItemEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
@@ -29,6 +31,9 @@ class ResourceMapperTest {
     @Mock
     private PermissionEntityRepository permissionRepository;
 
+    @Mock
+    ResourceItemEntityRepository resourceItemRepository;
+
     private ResourceMapper mapper;
 
     private ResourceEntity testResource;
@@ -40,7 +45,7 @@ class ResourceMapperTest {
 
     @BeforeEach
     void setUp() {
-        mapper = new ResourceMapper(permissionRepository);
+        mapper = new ResourceMapper(permissionRepository, resourceItemRepository);
 
         testApplication = new ApplicationEntity();
         testApplication.setId(123);
@@ -71,17 +76,18 @@ class ResourceMapperTest {
 
         testResourceDTO = new ResourceDTO();
         testResourceDTO.setName("test");
-        testResourceDTO.setDescription("Test Resource DTO");
-        testResourceDTO.setType(ResourceType.UI);
-        testResourceDTO.setStatus(Status.INACTIVE);
-        testResourceDTO.setExternalId("ext-456");
+        testResourceDTO.setDescription("Test Resource");
+        testResourceDTO.setType(ResourceType.API);
+        testResourceDTO.setStatus(Status.ACTIVE);
+        testResourceDTO.setExternalId("ext-123");
         testResourceDTO.setApplicationCode("APP");
 
         testResourceItemDTO = new ResourceItemDTO();
+        testResourceItemDTO.setId(789);
         testResourceItemDTO.setName("test");
-        testResourceItemDTO.setDescription("Test Item DTO");
-        testResourceItemDTO.setUrl("/api/test-dto");
-        testResourceItemDTO.setResourceName("resource456");
+        testResourceItemDTO.setDescription("Test Item");
+        testResourceItemDTO.setUrl("/api/test");
+        testResourceItemDTO.setResourceName("test");
         testResourceItemDTO.setPermissionName("permission456");
     }
 
@@ -190,6 +196,8 @@ class ResourceMapperTest {
 
     @Test
     void toItemEntity_shouldMapBasicFieldsCorrectly() {
+        when(resourceItemRepository.save(Mockito.any(ResourceItemEntity.class))).thenReturn(testResourceItem);
+
         ResourceItemEntity result = mapper.toItemEntity(testResourceItemDTO, testResource, testPermission);
 
         assertNotNull(result);
