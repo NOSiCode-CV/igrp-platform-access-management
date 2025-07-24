@@ -181,6 +181,34 @@
           "isRequired": true
         }
       ]
+    },
+    {
+      "actionName": "getAppMenus",
+      "path": "menus/app/{appCode}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "menu"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "appCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
     }
   ],
   "id": "tw5fo7aoed-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"
