@@ -25,6 +25,7 @@ class DepartmentMapperTest {
 
         DepartmentEntity parent = new DepartmentEntity();
         parent.setId(99);
+        parent.setCode("NOSI");
 
         DepartmentEntity department = new DepartmentEntity();
         department.setId(10);
@@ -42,7 +43,7 @@ class DepartmentMapperTest {
         assertEquals("Human Resources", dto.getName());
         assertEquals("Handles HR", dto.getDescription());
         assertEquals(DepartmentStatus.ACTIVE, dto.getStatus());
-        assertEquals("HR", dto.getParent_code());
+        assertEquals("NOSI", dto.getParent_code());
     }
 
     @Test

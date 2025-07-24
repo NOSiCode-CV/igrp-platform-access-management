@@ -37,10 +37,10 @@ public class GetPermissionByNameQueryHandlerTest {
   @Test
   void itShouldThrowRecordNotFoundException_WhenProvidedName_DoesNotExist() {
     //... Given
-    String permissionName = "test";
+    String permissionName = "READ_USERS";
     GetPermissionByNameQuery query = new GetPermissionByNameQuery(permissionName);
 
-    when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED))
+    when(permissionRepository.findByName(permissionName))
             .thenReturn(Optional.empty());
 
     //... When
@@ -54,7 +54,7 @@ public class GetPermissionByNameQueryHandlerTest {
   @Test
   void itShouldReturnPermissionDTO_WhenPermissionExists() {
     // Given
-    String permissionName = "test";
+    String permissionName = "READ_USERS";
     GetPermissionByNameQuery query = new GetPermissionByNameQuery(permissionName);
 
     PermissionEntity permission = new PermissionEntity();
@@ -68,7 +68,7 @@ public class GetPermissionByNameQueryHandlerTest {
     expectedDTO.setStatus(Status.ACTIVE);
 
     // Stubbing
-    when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED))
+    when(permissionRepository.findByName(permissionName))
             .thenReturn(Optional.of(permission));
     when(permissionMapper.mapToDTO(permission)).thenReturn(expectedDTO);
 
@@ -80,7 +80,7 @@ public class GetPermissionByNameQueryHandlerTest {
     assertNotNull(response.getBody());
     assertEquals(expectedDTO, response.getBody());
 
-    verify(permissionRepository).findByNameAndStatusNot(permissionName, Status.DELETED);
+    verify(permissionRepository).findByName(permissionName);
     verify(permissionMapper).mapToDTO(permission);
   }
 

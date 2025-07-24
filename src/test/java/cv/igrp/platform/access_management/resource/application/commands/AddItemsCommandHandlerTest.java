@@ -55,10 +55,12 @@ class AddItemsCommandHandlerTest {
     @BeforeEach
     void setUp() {
         resource = new ResourceEntity();
+        resource.setName("resource1");
         permission = new PermissionEntity();
         permission.setId(1);
+        permission.setName("permission1");
         itemDTO = new ResourceItemDTO();
-        itemDTO.setPermissionName("test");
+        itemDTO.setPermissionName("permission1");
         itemDTO.setName("Dashboard");
         itemDTO.setUrl("/dashboard");
         item = new ResourceItemEntity();
@@ -71,8 +73,8 @@ class AddItemsCommandHandlerTest {
         // Arrange
         resource.setItems(new ArrayList<>());
         resourceDTO.setItems(List.of(itemDTO));
-        when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
-        when(permissionRepository.findById(1)).thenReturn(Optional.of(permission));
+        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
+        when(permissionRepository.findByName("permission1")).thenReturn(Optional.of(permission));
         when(resourceMapper.toItemEntity(itemDTO, resource, permission)).thenReturn(item);
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
@@ -89,7 +91,7 @@ class AddItemsCommandHandlerTest {
         assertEquals(itemDTO, response.getBody().getItems().getFirst());
 
         // Verify
-        verify(resourceRepository, times(1)).findById(1);
+        verify(resourceRepository, times(1)).findByName("resource1");
         verify(resourceRepository, times(1)).save(resource);
         verify(resourceMapper,times(1)).toDto(resource);
         verify(resourceMapper, times(1)).toItemEntity(itemDTO, resource, permission);
@@ -101,8 +103,8 @@ class AddItemsCommandHandlerTest {
     void testHandle_whenResourceItemsListIsNull_shouldInitializeList() {
         // Arrange
         resource.setItems(null);
-        when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
-        when(permissionRepository.findById(1)).thenReturn(Optional.of(permission));
+        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
+        when(permissionRepository.findByName("permission1")).thenReturn(Optional.of(permission));
         when(resourceMapper.toItemEntity(itemDTO, resource, permission)).thenReturn(item);
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
@@ -117,7 +119,7 @@ class AddItemsCommandHandlerTest {
         assertNotNull(resource.getItems());
 
         // Verify
-        verify(resourceRepository, times(1)).findById(1);
+        verify(resourceRepository, times(1)).findByName("resource1");
         verify(resourceRepository, times(1)).save(resource);
         verifyNoMoreInteractions(permissionRepository, resourceMapper, resourceRepository);
     }
@@ -126,7 +128,7 @@ class AddItemsCommandHandlerTest {
     @DisplayName("should throw IgrpResponseStatusException when resource not found")
     void testHandle_shouldThrow_whenResourceNotFound() {
         // Arrange
-        when(resourceRepository.findById(1)).thenReturn(Optional.empty());
+        when(resourceRepository.findByName("resource1")).thenReturn(Optional.empty());
 
         // Act
         AddItemsCommand command = new AddItemsCommand(List.of(itemDTO), "resource1");
@@ -135,7 +137,7 @@ class AddItemsCommandHandlerTest {
         assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
 
         // Verify
-        verify(resourceRepository, times(1)).findById(1);
+        verify(resourceRepository, times(1)).findByName("resource1");
         verifyNoInteractions(permissionRepository, resourceMapper);
     }
 
@@ -143,8 +145,8 @@ class AddItemsCommandHandlerTest {
     @DisplayName("should throw IgrpResponseStatusException when permission not found")
     void testHandle_shouldThrow_whenPermissionNotFound() {
         // Arrange
-        when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
-        when(permissionRepository.findById(1)).thenReturn(Optional.empty());
+        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
+        when(permissionRepository.findByName("permission1")).thenReturn(Optional.empty());
 
         // Act
         AddItemsCommand command = new AddItemsCommand(List.of(itemDTO), "resource1");
@@ -153,7 +155,7 @@ class AddItemsCommandHandlerTest {
         assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
 
         // Verify
-        verify(permissionRepository).findById(1);
+        verify(permissionRepository).findByName("permission1");
         verifyNoMoreInteractions(permissionRepository);
     }
 
@@ -161,7 +163,7 @@ class AddItemsCommandHandlerTest {
     @DisplayName("should succeed with empty item list")
     void testHandle_shouldWorkWithEmptyItemList() {
         // Arrange
-        when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
@@ -188,4 +190,3 @@ class AddItemsCommandHandlerTest {
     }
 
 }
-

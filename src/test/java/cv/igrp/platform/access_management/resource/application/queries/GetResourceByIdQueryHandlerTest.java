@@ -34,6 +34,7 @@ class GetResourceByIdQueryHandlerTest {
     private GetResourceByIdQueryHandler handler;
 
     private ResourceEntity resource;
+    private ResourceDTO resourceDTO;
 
     @BeforeEach
     void setUp() {
@@ -45,6 +46,14 @@ class GetResourceByIdQueryHandlerTest {
         resource.setType(ResourceType.API);
         resource.setStatus(Status.ACTIVE);
         resource.setExternalId("ext-doc-api");
+
+        resourceDTO = new ResourceDTO();
+        resourceDTO.setId(1);
+        resourceDTO.setName("Document API");
+        resourceDTO.setType(ResourceType.API);
+        resourceDTO.setStatus(Status.ACTIVE);
+        resourceDTO.setExternalId("ext-doc-api");
+
     }
 
     @Test
@@ -53,6 +62,8 @@ class GetResourceByIdQueryHandlerTest {
         // Arrange
         GetResourceByIdQuery query = new GetResourceByIdQuery(1);
         when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
+
+        when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
         // Act
         ResponseEntity<ResourceDTO> response = handler.handle(query);

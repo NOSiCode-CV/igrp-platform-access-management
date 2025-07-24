@@ -457,7 +457,7 @@ public class ApplicationController {
   }
 
   @GetMapping(
-    value = "by-code/{code}"
+    value = "/applications/by-code/{code}"
   )
   @Operation(
     summary = "GET method to handle operations for getApplicationByCode",

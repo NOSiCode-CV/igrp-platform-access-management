@@ -56,16 +56,19 @@ public class UpdateDepartmentCommandHandlerTest {
 
         existingDepartment = new DepartmentEntity();
         existingDepartment.setId(DEPARTMENT_ID);
+        existingDepartment.setCode(DEPARTMENT_CODE);
         existingDepartment.setName("Original Human Resources");
         existingDepartment.setDescription("Original description");
 
         updatedDepartment = new DepartmentEntity();
         updatedDepartment.setId(DEPARTMENT_ID);
+        updatedDepartment.setCode(DEPARTMENT_CODE);
         updatedDepartment.setName("Updated Human Resources");
         updatedDepartment.setDescription("Updated description");
 
         updatedDepartmentDTO = new DepartmentDTO();
-        updatedDepartment.setId(DEPARTMENT_ID);
+        updatedDepartmentDTO.setId(DEPARTMENT_ID);
+        updatedDepartmentDTO.setCode(DEPARTMENT_CODE);
         updatedDepartmentDTO.setCode("HR");
         updatedDepartmentDTO.setName("Updated Human Resources");
         updatedDepartmentDTO.setDescription("Updated description");
@@ -75,7 +78,7 @@ public class UpdateDepartmentCommandHandlerTest {
     @DisplayName("should update department and return 200 OK when department exists")
     void testHandle_whenDepartmentExists_shouldUpdateAndReturnOk() {
         // Arrange
-        when(departmentRepository.findById(DEPARTMENT_ID)).thenReturn(Optional.of(existingDepartment));
+        when(departmentRepository.findByCode(DEPARTMENT_CODE)).thenReturn(Optional.of(existingDepartment));
         doNothing().when(departmentMapper).updateEntityFromDto(departmentDTO, existingDepartment);
         when(departmentRepository.save(existingDepartment)).thenReturn(updatedDepartment);
         when(departmentMapper.toDto(updatedDepartment)).thenReturn(updatedDepartmentDTO);
@@ -89,7 +92,7 @@ public class UpdateDepartmentCommandHandlerTest {
         assertEquals(updatedDepartmentDTO, response.getBody());
 
         // Verify
-        verify(departmentRepository, times(1)).findById(DEPARTMENT_ID);
+        verify(departmentRepository, times(1)).findByCode(DEPARTMENT_CODE);
         verify(departmentMapper, times(1)).updateEntityFromDto(departmentDTO, existingDepartment);
         verify(departmentRepository, times(1)).save(existingDepartment);
         verify(departmentMapper, times(1)).toDto(updatedDepartment);
@@ -101,7 +104,7 @@ public class UpdateDepartmentCommandHandlerTest {
     void testHandle_whenDepartmentDoesNotExist_shouldThrowEntityNotFoundException(){
         // Arrange
         command = updateCommand(departmentDTO);
-        when(departmentRepository.findById(DEPARTMENT_ID)).thenReturn(Optional.empty());
+        when(departmentRepository.findByCode(DEPARTMENT_CODE)).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
@@ -113,7 +116,7 @@ public class UpdateDepartmentCommandHandlerTest {
         assertEquals("Department not found with code: " + command.getCode(), exception.getBody().getProperties().get("details"));
 
         // Verify
-        verify(departmentRepository, times(1)).findById(DEPARTMENT_ID);
+        verify(departmentRepository, times(1)).findByCode(DEPARTMENT_CODE);
         verifyNoMoreInteractions(departmentRepository, departmentMapper);
 
     }
@@ -125,7 +128,7 @@ public class UpdateDepartmentCommandHandlerTest {
         departmentDTO.setDescription(null);
         command = updateCommand(departmentDTO);
 
-        when(departmentRepository.findById(DEPARTMENT_ID)).thenReturn(Optional.of(existingDepartment));
+        when(departmentRepository.findByCode(DEPARTMENT_CODE)).thenReturn(Optional.of(existingDepartment));
         doNothing().when(departmentMapper).updateEntityFromDto(departmentDTO, existingDepartment);
         when(departmentRepository.save(existingDepartment)).thenReturn(updatedDepartment);
         when(departmentMapper.toDto(updatedDepartment)).thenReturn(updatedDepartmentDTO);

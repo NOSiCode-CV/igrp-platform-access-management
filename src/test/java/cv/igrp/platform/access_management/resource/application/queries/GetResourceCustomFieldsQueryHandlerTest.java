@@ -5,7 +5,9 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -26,6 +28,9 @@ class GetResourceCustomFieldsQueryHandlerTest {
     @Mock
     private CustomFieldEntityRepository customFieldRepository;
 
+    @Mock
+    private ResourceEntityRepository resourceRepository;
+
     @Test
     void testHandle_ShouldReturnFields_WhenCustomFieldExists() {
         // Given
@@ -36,12 +41,18 @@ class GetResourceCustomFieldsQueryHandlerTest {
         mockFields.put("field1", "value1");
         mockFields.put("field2", 5);
 
+        ResourceEntity resource = new ResourceEntity();
+        resource.setId(resourceId);
+        resource.setName(resourceName);
+
         CustomFieldEntity customField = new CustomFieldEntity();
         customField.setId(1);
         customField.setTableName("t_resource");
         customField.setRecordId(resourceId);
         customField.setFields(mockFields);
 
+        when(resourceRepository.findByName(resourceName))
+                .thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId("t_resource", resourceId))
                 .thenReturn(Optional.of(customField));
 
@@ -61,6 +72,12 @@ class GetResourceCustomFieldsQueryHandlerTest {
         String resourceName = "resource999";
         GetResourceCustomFieldsQuery query = new GetResourceCustomFieldsQuery(resourceName);
 
+        ResourceEntity resource = new ResourceEntity();
+        resource.setId(resourceId);
+        resource.setName(resourceName);
+
+        when(resourceRepository.findByName(resourceName))
+                .thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId("t_resource", resourceId))
                 .thenReturn(Optional.empty());
 

@@ -69,6 +69,7 @@ class RoleMapperTest {
         RoleEntity role = new RoleEntity();
         RoleEntity parentRole = new RoleEntity();
         parentRole.setId(parentRoleId);
+        parentRole.setName(parentRoleName);
         role.setId(roleId);
         role.setName(roleName);
         String roleDescription = "Developer";

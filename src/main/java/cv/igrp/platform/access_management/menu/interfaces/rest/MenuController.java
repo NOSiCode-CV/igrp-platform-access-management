@@ -234,4 +234,41 @@ public class MenuController {
               .body(response.getBody());
   }
 
+  @GetMapping(
+    value = "menus/app/{appCode}"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getAppMenus",
+    description = "GET method to handle operations for getAppMenus",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = MenuEntryDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<MenuEntryDTO>> getAppMenus(
+    @PathVariable(value = "appCode") String appCode)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var query = new GetAppMenusQuery(appCode);
+
+      ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
+
+      LOGGER.debug("Operation finished");
+
+      return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
 }

@@ -46,7 +46,7 @@ public class AddRolesToUserCommandHandlerTest {
     private final String USER_ID = "johndoe";
     private final String ROLE_ID = "admin";
 
-    private AddRolesToUserCommand addRolesToUserCommand(RoleUserDTO roleUserDTO, String username) {
+    private AddRolesToUserCommand addRolesToUserCommand(List<String> roleUserDTO, String username) {
        return command = new AddRolesToUserCommand(roleUserDTO, username);
     }
 
@@ -63,9 +63,7 @@ public class AddRolesToUserCommandHandlerTest {
         roleDTO = new RoleDTO();
         roleDTO.setName(ROLE_ID);
 
-        RoleUserDTO dto = new RoleUserDTO(USER_ID,ROLE_ID);
-
-        command = addRolesToUserCommand(dto, USER_ID);
+        command = addRolesToUserCommand(List.of(ROLE_ID), USER_ID);
     }
 
     @Test
@@ -111,7 +109,7 @@ public class AddRolesToUserCommandHandlerTest {
         // Assert
 
         assertNotNull(exception.getBody().getProperties());
-        assertEquals("User not found with id: " + USER_ID, exception.getBody().getProperties().get("details"));
+        assertEquals("User not found with name: " + USER_ID, exception.getBody().getProperties().get("details"));
 
         // Verify
         verify(userRepository, times(1)).findByUsername(USER_ID);
@@ -132,7 +130,7 @@ public class AddRolesToUserCommandHandlerTest {
 
         // Assert
         assertNotNull(exception.getBody().getProperties());
-        assertEquals("Role not found with id: " + ROLE_ID, exception.getBody().getProperties().get("details"));
+        assertEquals("Role not found with name: " + ROLE_ID, exception.getBody().getProperties().get("details"));
 
         // Verify
         verify(userRepository, times(1)).findByUsername(USER_ID);

@@ -21,6 +21,7 @@ import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.role.application.commands.*;
 import cv.igrp.platform.access_management.role.application.queries.*;
 
+
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
@@ -251,7 +252,7 @@ public class RolesController {
     }
   )
   
-  public ResponseEntity<List<PermissionDTO>> removePermissions(@RequestBody List<Integer> removePermissionsRequest
+  public ResponseEntity<List<PermissionDTO>> removePermissions(@RequestBody List<String> removePermissionsRequest
     , @PathVariable(value = "name") String name)
   {
 
@@ -325,7 +326,7 @@ public class RolesController {
     }
   )
   
-  public ResponseEntity<List<PermissionDTO>> addPermissions(@RequestBody List<Integer> addPermissionsRequest
+  public ResponseEntity<List<PermissionDTO>> addPermissions(@RequestBody List<String> addPermissionsRequest
     , @PathVariable(value = "name") String name)
   {
 

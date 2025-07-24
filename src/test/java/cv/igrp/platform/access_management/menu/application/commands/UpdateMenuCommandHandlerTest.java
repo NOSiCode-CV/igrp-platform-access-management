@@ -145,7 +145,7 @@ public class UpdateMenuCommandHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
 
         assertNotNull(ex.getBody().getProperties());
-        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Parent MenuEntry not found"));
+        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Parent Menu Entry not found"));
 
         // Verify
         verify(menuEntryRepository, times(1)).findByCode("MENU1");

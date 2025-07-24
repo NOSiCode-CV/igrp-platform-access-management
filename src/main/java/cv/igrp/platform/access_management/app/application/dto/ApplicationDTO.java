@@ -25,6 +25,7 @@ public class ApplicationDTO {
   
   private Integer id ;
   @NotBlank(message = "The field <code> is required.")
+	@Pattern(message = "Invalid value format for field <code>.", regexp = "^[A-Za-z0-9_-]+$")
   
   private String code ;
   @NotBlank(message = "The field <name> is required.")

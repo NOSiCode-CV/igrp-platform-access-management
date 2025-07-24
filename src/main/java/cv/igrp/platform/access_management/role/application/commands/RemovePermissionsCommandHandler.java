@@ -80,10 +80,10 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
                          HttpStatus.NOT_FOUND, "Remove Permission By Role ID", "Role with id: " + command.getName() + " not found."
                  );
               });
-      for (Integer permissionId : command.getRemovePermissionsRequest()) {
+      for (String permissionId : command.getRemovePermissionsRequest()) {
          foundRole.getPermissions()
                  .stream()
-                 .filter(permission -> permission.getId().equals(permissionId))
+                 .filter(permission -> permission.getName().equals(permissionId))
                  .findFirst()
                  .ifPresent(permission -> {
                     foundRole.getPermissions().remove(permission);

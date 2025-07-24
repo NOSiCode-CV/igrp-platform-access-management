@@ -7,7 +7,7 @@
   "actions": [
     {
       "actionName": "getUser",
-      "path": "users/{id}",
+      "path": "users/{username}",
       "method": "GET",
       "responses": {
         "200": {
@@ -24,10 +24,9 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "User ID"
+          "name": "username",
+          "type": "string",
+          "isRequired": true
         }
       ]
     },
@@ -35,6 +34,17 @@
       "actionName": "AddRolesToUser",
       "path": "users/{username}/addRoles",
       "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "Role",
+              "collectionType": "list"
+            }
+          }
+        }
+      },
       "responses": {
         "200": {
           "content": {
@@ -66,24 +76,23 @@
           "type": "string",
           "isRequired": true
         }
-      ],
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "RoleUserDTO",
-              "name": "Role",
-              "objectType": "dto",
-              "module": "shared"
-            }
-          }
-        }
-      }
+      ]
     },
     {
       "actionName": "RemoveRolesFromUser",
       "path": "users/{username}/removeRoles",
       "method": "DELETE",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "Roles",
+              "collectionType": "list"
+            }
+          }
+        }
+      },
       "responses": {
         "200": {
           "content": {
@@ -105,18 +114,7 @@
           "type": "string",
           "isRequired": true
         }
-      ],
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "integer",
-              "name": "Roles",
-              "collectionType": "list"
-            }
-          }
-        }
-      }
+      ]
     },
     {
       "actionName": "getUserRoles",
@@ -140,8 +138,8 @@
       "requestParams": [
         {
           "type": "integer",
-          "name": "applicationId",
-          "description": "Application ID",
+          "name": "applicationCode",
+          "description": "Application Code",
           "isRequired": true
         }
       ],

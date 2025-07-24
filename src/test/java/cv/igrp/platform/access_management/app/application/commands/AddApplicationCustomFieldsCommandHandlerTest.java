@@ -49,6 +49,7 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
 
         ApplicationEntity application = new ApplicationEntity();
         application.setId(applicationId);
+        application.setCode(applicationCode);
         application.setName("Test Application");
 
         CustomFieldEntity newCustomField = new CustomFieldEntity();
@@ -56,7 +57,7 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
         newCustomField.setRecordId(applicationId);
         newCustomField.setFields(new HashMap<>());
 
-        when(applicationRepository.findById(applicationId)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCode(applicationCode)).thenReturn(Optional.of(application));
         when(customFieldRepository.findByTableNameAndRecordId("t_application", applicationId))
                 .thenReturn(Optional.empty());
 
@@ -80,6 +81,7 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
 
         ApplicationEntity application = new ApplicationEntity();
         application.setId(applicationId);
+        application.setCode(applicationCode);
         application.setName("Test Application");
 
         CustomFieldEntity existingCustomField = new CustomFieldEntity();
@@ -87,7 +89,7 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
         existingCustomField.setRecordId(applicationId);
         existingCustomField.setFields(new HashMap<>(Map.of("field2", "value2")));
 
-        when(applicationRepository.findById(applicationId)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCode(applicationCode)).thenReturn(Optional.of(application));
         when(customFieldRepository.findByTableNameAndRecordId("t_application", applicationId))
                 .thenReturn(Optional.of(existingCustomField));
 
@@ -104,13 +106,10 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
     @Test
     void testHandle_WhenApplicationDoesNotExist() {
         // Given
-        Integer applicationId = 1;
         String applicationCode = "APP";
         AddApplicationCustomFieldsCommand command = new AddApplicationCustomFieldsCommand();
         command.setCode(applicationCode);
         command.setAddApplicationCustomFieldsRequest(Map.of("field1", "value1"));
-
-        when(applicationRepository.findById(applicationId)).thenReturn(Optional.empty());
 
         // When & Then
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> addApplicationCustomFieldsCommandHandler.handle(command));

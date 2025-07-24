@@ -74,9 +74,9 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<List<PermissionDTO>> handle(AddPermissionsCommand command) {
-      List<Integer> permissionIdList = command.getAddPermissionsRequest().stream().toList();
+      List<String> permissionIdList = command.getAddPermissionsRequest().stream().toList();
       log.info("Add Permissions: {} for Role name: {}.", permissionIdList, command.getName());
-      List<PermissionEntity> permissionList = permissionRepository.findAllById(permissionIdList)
+      List<PermissionEntity> permissionList = permissionRepository.findAllByNameIn(permissionIdList)
               .stream()
               .filter(permission -> !permission.getStatus().equals(Status.DELETED))
               .toList();

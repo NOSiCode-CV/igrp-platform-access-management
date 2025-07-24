@@ -14,7 +14,7 @@ import java.util.List;
 public class RemoveRolesFromUserCommand implements Command {
 
   
-  private List<Integer> removeRolesFromUserRequest;
+  private List<String> removeRolesFromUserRequest;
   @NotBlank(message = "The field <username> is required.")
   private String username;
 

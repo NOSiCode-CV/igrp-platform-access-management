@@ -39,12 +39,11 @@ public class RemovePermissionsCommandHandlerTest {
     @Test
     void itShouldThrow_NotFoundException_WhenProvided_RoleId_NotFound() {
         //... Given
-        int roleId = 1;
         String roleName = "admin";
-        ArrayList<Integer> permissionsToRemove = new ArrayList<>();
+        ArrayList<String> permissionsToRemove = new ArrayList<>();
         RemovePermissionsCommand command = new RemovePermissionsCommand(permissionsToRemove, roleName);
 
-        when(roleRepository.findByIdAndStatusNot(roleId, Status.DELETED))
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
                 .thenReturn(Optional.empty());
 
         //... When
@@ -62,6 +61,8 @@ public class RemovePermissionsCommandHandlerTest {
         String roleName = "admin";
         int permissionId1 = 1;
         int permissionId2 = 2;
+        String permissionName1 = "permission1";
+        String permissionName2 = "permission2";
         RoleEntity savedRole = new RoleEntity();
         savedRole.setStatus(Status.ACTIVE);
         savedRole.setId(roleId);
@@ -69,12 +70,14 @@ public class RemovePermissionsCommandHandlerTest {
         PermissionEntity permission2 = new PermissionEntity();
         permission1.setId(permissionId1);
         permission2.setId(permissionId2);
+        permission1.setName(permissionName1);
         permission1.setStatus(Status.ACTIVE);
+        permission2.setName(permissionName2);
         permission2.setStatus(Status.ACTIVE);
 
         HashSet<PermissionEntity> permissions = new HashSet<>(Set.of(permission1, permission2));
         savedRole.setPermissions(permissions);
-        List<Integer> permissionsToRemove = List.of(permissionId1, permissionId2);
+        List<String> permissionsToRemove = List.of(permissionName1, permissionName2);
         RemovePermissionsCommand removePermissionsCommand =
                 new RemovePermissionsCommand(permissionsToRemove, roleName);
 
@@ -105,6 +108,9 @@ public class RemovePermissionsCommandHandlerTest {
         int permissionId1 = 1;
         int permissionId2 = 2;
         int permissionId3 = 3;
+        String permissionName1 = "permission1";
+        String permissionName2 = "permission2";
+        String permissionName3 = "permission3";
         RoleEntity savedRole = new RoleEntity();
         savedRole.setStatus(Status.ACTIVE);
         savedRole.setId(roleId);
@@ -114,8 +120,11 @@ public class RemovePermissionsCommandHandlerTest {
         PermissionEntity permission3 = new PermissionEntity();
 
         permission1.setId(permissionId1);
+        permission1.setName(permissionName1);
         permission2.setId(permissionId2);
+        permission2.setName(permissionName2);
         permission3.setId(permissionId3);
+        permission3.setName(permissionName3);
 
         permission1.setStatus(Status.ACTIVE);
         permission2.setStatus(Status.ACTIVE);
@@ -123,7 +132,7 @@ public class RemovePermissionsCommandHandlerTest {
 
         HashSet<PermissionEntity> permissions = new HashSet<>(Set.of(permission3));
         savedRole.setPermissions(permissions);
-        List<Integer> permissionsToRemove = List.of(permissionId1, permissionId2);
+        List<String> permissionsToRemove = List.of(permissionName1, permissionName2);
         RemovePermissionsCommand removePermissionsCommand =
                 new RemovePermissionsCommand(permissionsToRemove, roleName);
 
@@ -152,19 +161,24 @@ public class RemovePermissionsCommandHandlerTest {
         int roleId = 1;
         String roleName = "admin";
         Integer permissionToRemoveId = 100;
+        String permissionToRemoveName = "permissionToRemove";
         Integer permissionToKeepId = 200;
+        String permissionToKeepName = "permissionToKeep";
 
         RemovePermissionsCommand command = new RemovePermissionsCommand(
-                List.of(permissionToRemoveId), roleName);
+                List.of(permissionToRemoveName), roleName);
 
         PermissionEntity permissionToRemove = new PermissionEntity();
         permissionToRemove.setId(permissionToRemoveId);
+        permissionToRemove.setName(permissionToRemoveName);
 
         PermissionEntity permissionToKeep = new PermissionEntity();
         permissionToKeep.setId(permissionToKeepId);
+        permissionToKeep.setName(permissionToKeepName);
 
         PermissionDTO dtoRemoved = new PermissionDTO();
         dtoRemoved.setId(permissionToRemoveId);
+        dtoRemoved.setName(permissionToRemoveName);
 
         Set<PermissionEntity> initialPermissions = new HashSet<>(Set.of(permissionToRemove, permissionToKeep));
 
@@ -199,7 +213,7 @@ public class RemovePermissionsCommandHandlerTest {
         // Given
         int roleId = 1;
         String roleName = "admin";
-        List<Integer> permissionIdsToRemove = List.of(101, 102);
+        List<String> permissionIdsToRemove = List.of("read", "write");
         RemovePermissionsCommand command = new RemovePermissionsCommand(permissionIdsToRemove, roleName);
 
         RoleEntity role = new RoleEntity();
@@ -230,15 +244,18 @@ public class RemovePermissionsCommandHandlerTest {
         int roleId = 1;
         String roleName = "admin";
         Integer duplicatedPermissionId = 100;
+        String duplicatedPermissionName = "duplicatedPermission";
 
         RemovePermissionsCommand command = new RemovePermissionsCommand(
-                List.of(duplicatedPermissionId, duplicatedPermissionId), roleName);
+                List.of(duplicatedPermissionName, duplicatedPermissionName), roleName);
 
         PermissionEntity permission = new PermissionEntity();
         permission.setId(duplicatedPermissionId);
+        permission.setName(duplicatedPermissionName);
 
         PermissionDTO permissionDTO = new PermissionDTO();
         permissionDTO.setId(duplicatedPermissionId);
+        permissionDTO.setName(duplicatedPermissionName);
 
         Set<PermissionEntity> rolePermissions = new HashSet<>(Set.of(permission));
 
@@ -274,19 +291,24 @@ public class RemovePermissionsCommandHandlerTest {
         int roleId = 1;
         String roleName = "admin";
         Integer permissionToRemoveId = 100;
+        String permissionToRemoveName = "permissionToRemove";
         Integer permissionToKeepId = 200;
+        String permissionToKeepName = "permissionToKeep";
 
         RemovePermissionsCommand command = new RemovePermissionsCommand(
-                List.of(permissionToRemoveId), roleName);
+                List.of(permissionToRemoveName), roleName);
 
         PermissionEntity permissionToRemove = new PermissionEntity();
         permissionToRemove.setId(permissionToRemoveId);
+        permissionToRemove.setName(permissionToRemoveName);
 
         PermissionEntity permissionToKeep = new PermissionEntity();
         permissionToKeep.setId(permissionToKeepId);
+        permissionToKeep.setName(permissionToKeepName);
 
         PermissionDTO dtoToRemove = new PermissionDTO();
         dtoToRemove.setId(permissionToRemoveId);
+        dtoToRemove.setName(permissionToKeepName);
 
         Set<PermissionEntity> rolePermissions = new HashSet<>(Set.of(permissionToRemove, permissionToKeep));
 

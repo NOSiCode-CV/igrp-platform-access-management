@@ -14,7 +14,8 @@
       "positive": false,
       "isEmail": false,
       "isUrl": false,
-      "primaryKey": false
+      "primaryKey": false,
+      "regex": "^[A-Za-z0-9_-]+$"
     },
     {
       "name": "role_name",
@@ -26,7 +27,8 @@
       "positive": false,
       "isEmail": false,
       "isUrl": false,
-      "primaryKey": false
+      "primaryKey": false,
+      "regex": "^[A-Za-z0-9_-]+$"
     }
   ],
   "id": "go1cwjalpv"

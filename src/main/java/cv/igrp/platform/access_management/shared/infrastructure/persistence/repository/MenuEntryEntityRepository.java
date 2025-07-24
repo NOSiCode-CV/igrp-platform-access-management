@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import org.springframework.data.jpa.repository.Query;
@@ -27,5 +28,7 @@ public interface MenuEntryEntityRepository extends
     List<MenuEntryEntity> findSystemMenuHierarchy(@Param("appId") ApplicationEntity appId);
 
     Optional<MenuEntryEntity> findByCode(String code);
+
+    List<MenuEntryEntity> findByApplicationIdAndStatus(ApplicationEntity appId, Status status);
 
 }

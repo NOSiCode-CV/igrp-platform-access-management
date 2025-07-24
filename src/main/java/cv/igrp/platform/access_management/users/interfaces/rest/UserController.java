@@ -22,7 +22,6 @@ import cv.igrp.platform.access_management.users.application.commands.*;
 import cv.igrp.platform.access_management.users.application.queries.*;
 
 
-import cv.igrp.platform.access_management.shared.application.dto.RoleUserDTO;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
@@ -48,7 +47,7 @@ public class UserController {
   }
 
   @GetMapping(
-    value = "users/{id}"
+    value = "users/{username}"
   )
   @Operation(
     summary = "GET method to handle operations for getUser",
@@ -68,12 +67,12 @@ public class UserController {
   )
   
   public ResponseEntity<IGRPUserDTO> getUser(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "username") String username)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetUserQuery(id);
+      final var query = new GetUserQuery(username);
 
       ResponseEntity<IGRPUserDTO> response = queryBus.handle(query);
 
@@ -114,7 +113,7 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<?> addRolesToUser(@Valid @RequestBody RoleUserDTO addRolesToUserRequest
+  public ResponseEntity<?> addRolesToUser(@RequestBody List<String> addRolesToUserRequest
     , @PathVariable(value = "username") String username)
   {
 
@@ -151,7 +150,7 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<List<RoleDTO>> removeRolesFromUser(@RequestBody List<Integer> removeRolesFromUserRequest
+  public ResponseEntity<List<RoleDTO>> removeRolesFromUser(@RequestBody List<String> removeRolesFromUserRequest
     , @PathVariable(value = "username") String username)
   {
 
@@ -189,12 +188,12 @@ public class UserController {
   )
   
   public ResponseEntity<List<RoleDTO>> getUserRoles(
-    @RequestParam(value = "applicationId") Integer applicationId, @PathVariable(value = "username") String username)
+    @RequestParam(value = "applicationCode") Integer applicationCode, @PathVariable(value = "username") String username)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetUserRolesQuery(applicationId, username);
+      final var query = new GetUserRolesQuery(applicationCode, username);
 
       ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
 

@@ -61,7 +61,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
         Map<String, Object> fieldsToAdd = Map.of("fieldTest", "valueTest");
         command = addResourceCustomFieldsCommand(fieldsToAdd, "resource1");
 
-        when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 1)).thenReturn(Optional.of(customField));
         when(customFieldRepository.save(any(CustomFieldEntity.class))).thenReturn(customField);
 
@@ -73,7 +73,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
         assertTrue(customField.getFields().containsKey("fieldTest"));
 
         // Verify
-        verify(resourceRepository, times(1)).findById(1);
+        verify(resourceRepository, times(1)).findByName("resource1");
         verify(customFieldRepository, times(1)).findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 1);
         verify(customFieldRepository, times(1)).save(customField);
     }
@@ -86,7 +86,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
         command = addResourceCustomFieldsCommand(fieldsToAdd, "resource1");
         customField.setFields(fieldsToAdd);
 
-        when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 1)).thenReturn(Optional.empty());
         when(customFieldRepository.save(any(CustomFieldEntity.class))).thenReturn(customField);
 
@@ -98,6 +98,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
         assertTrue(customField.getFields().containsKey("fieldTest2"));
 
         // Verify
+        verify(resourceRepository, times(1)).findByName("resource1");
         verify(customFieldRepository).save(any(CustomFieldEntity.class));
     }
 

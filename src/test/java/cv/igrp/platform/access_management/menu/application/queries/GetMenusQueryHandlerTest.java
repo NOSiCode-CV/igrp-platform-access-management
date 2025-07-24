@@ -41,7 +41,7 @@ public class GetMenusQueryHandlerTest {
     private GetMenusQueryHandler getMenusQueryHandler;
 
     private GetMenusQuery getMenusQuery(String applicationCode, String name, String type, String status){
-        return new GetMenusQuery(applicationCode, name, type, status, null);
+        return new GetMenusQuery(name, type, status, applicationCode, null);
     }
 
     private MenuEntryEntity menuEntry;

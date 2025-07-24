@@ -13,8 +13,8 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetUserRolesQuery implements Query {
 
-  @NotNull(message = "The field <applicationId> is required.")
-  private Integer applicationId;
+  @NotNull(message = "The field <applicationCode> is required.")
+  private Integer applicationCode;
   @NotBlank(message = "The field <username> is required.")
   private String username;
 

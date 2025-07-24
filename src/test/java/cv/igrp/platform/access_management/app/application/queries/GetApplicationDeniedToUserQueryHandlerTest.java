@@ -50,7 +50,19 @@ public class GetApplicationDeniedToUserQueryHandlerTest {
         app2.setCode("APP2");
         app2.setName("Application Two");
 
+        ApplicationDTO app1Dto = new ApplicationDTO();
+        app1Dto.setId(1);
+        app1Dto.setCode("APP1");
+        app1Dto.setName("Application One");
+
+        ApplicationDTO app2Dto = new ApplicationDTO();
+        app2Dto.setId(2);
+        app2Dto.setCode("APP2");
+        app2Dto.setName("Application Two");
+
         when(applicationRepository.findDeniedApplications(uid)).thenReturn(List.of(app1, app2));
+        when(applicationMapper.toDto(app1)).thenReturn(app1Dto);
+        when(applicationMapper.toDto(app2)).thenReturn(app2Dto);
 
         // When
         ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);

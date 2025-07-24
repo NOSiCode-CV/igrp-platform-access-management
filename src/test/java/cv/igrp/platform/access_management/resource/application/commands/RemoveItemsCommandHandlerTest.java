@@ -117,7 +117,7 @@ public class RemoveItemsCommandHandlerTest {
         // Arrange
 
         command = removeItemsCommand(List.of(2), "resource1");
-        when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 

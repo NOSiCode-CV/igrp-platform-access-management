@@ -43,4 +43,6 @@ public interface PermissionEntityRepository extends
 
     boolean existsByName(String name);
 
+    List<PermissionEntity> findAllByNameIn(List<String> name);
+
 }

@@ -32,7 +32,7 @@ public class ResourceEntity extends AuditEntity {
 
   
     @NotBlank(message = "name is mandatory")
-    @Column(name="name", unique = true, nullable = false, length=100)
+    @Column(name="name", nullable = false, length=100)
     private String name;
 
   

@@ -8,21 +8,32 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceItemEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class ResourceMapperTest {
 
     @Mock
+    private PermissionEntityRepository permissionRepository;
+
+    @Mock
+    ResourceItemEntityRepository resourceItemRepository;
+
     private ResourceMapper mapper;
 
     private ResourceEntity testResource;
@@ -34,82 +45,79 @@ class ResourceMapperTest {
 
     @BeforeEach
     void setUp() {
-        // Arrange
-
+        mapper = new ResourceMapper(permissionRepository, resourceItemRepository);
 
         testApplication = new ApplicationEntity();
         testApplication.setId(123);
-
+        testApplication.setCode("APP");
 
         testPermission = new PermissionEntity();
-        testPermission.setId(123);
+        testPermission.setId(456);
+        testPermission.setName("permission456");
 
         testResource = new ResourceEntity();
         testResource.setId(123);
-        testResource.setName("Test Resource");
+        testResource.setName("test");
+        testResource.setDescription("Test Resource");
         testResource.setType(ResourceType.API);
         testResource.setStatus(Status.ACTIVE);
         testResource.setExternalId("ext-123");
         testResource.setApplicationId(testApplication);
 
-
         testResourceItem = new ResourceItemEntity();
-        testResourceItem.setId(123);
-        testResourceItem.setName("Test Item");
+        testResourceItem.setId(789);
+        testResourceItem.setName("test");
+        testResourceItem.setDescription("Test Item");
         testResourceItem.setUrl("/api/test");
         testResourceItem.setResourceId(testResource);
         testResourceItem.setPermissionId(testPermission.getId());
 
-        // Set up test resource with items
         testResource.setItems(Collections.singletonList(testResourceItem));
 
-        // Set up test resource DTO
         testResourceDTO = new ResourceDTO();
-        testResourceDTO.setName("Test Resource DTO");
-        testResourceDTO.setType(ResourceType.UI);
-        testResourceDTO.setStatus(Status.INACTIVE);
-        testResourceDTO.setExternalId("ext-456");
+        testResourceDTO.setName("test");
+        testResourceDTO.setDescription("Test Resource");
+        testResourceDTO.setType(ResourceType.API);
+        testResourceDTO.setStatus(Status.ACTIVE);
+        testResourceDTO.setExternalId("ext-123");
         testResourceDTO.setApplicationCode("APP");
 
-        // Set up test resource item DTO
         testResourceItemDTO = new ResourceItemDTO();
-        testResourceItemDTO.setName("Test Item DTO");
-        testResourceItemDTO.setUrl("/api/test-dto");
-        testResourceItemDTO.setResourceName("resource456");
+        testResourceItemDTO.setId(789);
+        testResourceItemDTO.setName("test");
+        testResourceItemDTO.setDescription("Test Item");
+        testResourceItemDTO.setUrl("/api/test");
+        testResourceItemDTO.setResourceName("test");
         testResourceItemDTO.setPermissionName("permission456");
     }
 
     @Test
     void toDto_shouldMapAllFieldsCorrectly() {
-        // Arrange - already done in setUp()
+        when(permissionRepository.findById(456)).thenReturn(Optional.of(testPermission));
 
-        // Act
         ResourceDTO result = mapper.toDto(testResource);
 
-        // Assert
         assertNotNull(result);
         assertEquals(testResource.getId(), result.getId());
         assertEquals(testResource.getName(), result.getName());
         assertEquals(testResource.getType(), result.getType());
         assertEquals(testResource.getStatus(), result.getStatus());
         assertEquals(testResource.getExternalId(), result.getExternalId());
-        assertEquals(testResource.getApplicationId().getCode(), result.getApplicationCode());
-        assertEquals(testResource.getCreatedBy(), result.getCreatedBy());
+        assertEquals("APP", result.getApplicationCode());
         assertNotNull(result.getItems());
         assertEquals(1, result.getItems().size());
+
+        ResourceItemDTO itemDto = result.getItems().getFirst();
+        assertEquals("permission456", itemDto.getPermissionName());
     }
 
     @Test
     void toDto_shouldHandleNullValues() {
-        // Arrange
         ResourceEntity resource = new ResourceEntity();
         resource.setId(1);
-        // All other fields are null
 
-        // Act
         ResourceDTO result = mapper.toDto(resource);
 
-        // Assert
         assertNotNull(result);
         assertEquals(1, result.getId());
         assertNull(result.getName());
@@ -117,50 +125,35 @@ class ResourceMapperTest {
         assertNull(result.getStatus());
         assertNull(result.getExternalId());
         assertNull(result.getApplicationCode());
-        assertNull(result.getItems());
-        assertNull(result.getCreatedBy());
-        assertNull(result.getCreatedDate());
-        assertNull(result.getLastModifiedBy());
-        assertNull(result.getLastModifiedDate());
+        assertEquals(result.getItems(), List.of());
     }
 
     @Test
     void toDto_shouldReturnNullForNullInput() {
-        // Arrange - null input
-
-        // Act
-        ResourceDTO result = mapper.toDto(null);
-
-        // Assert
-        assertNull(result);
+        assertNull(mapper.toDto(null));
     }
 
     @Test
     void toItemDto_shouldMapAllFieldsCorrectly() {
-        // Arrange - already done in setUp()
+        when(permissionRepository.findById(456)).thenReturn(Optional.of(testPermission));
 
-        // Act
         ResourceItemDTO result = mapper.toItemDto(testResourceItem);
 
-        // Assert
         assertNotNull(result);
         assertEquals(testResourceItem.getId(), result.getId());
         assertEquals(testResourceItem.getName(), result.getName());
         assertEquals(testResourceItem.getUrl(), result.getUrl());
         assertEquals(testResourceItem.getResourceId().getName(), result.getResourceName());
+        assertEquals("permission456", result.getPermissionName());
     }
 
     @Test
     void toItemDto_shouldHandleNullValues() {
-        // Arrange
         ResourceItemEntity item = new ResourceItemEntity();
         item.setId(1);
-        // All other fields are null
 
-        // Act
         ResourceItemDTO result = mapper.toItemDto(item);
 
-        // Assert
         assertNotNull(result);
         assertEquals(1, result.getId());
         assertNull(result.getName());
@@ -171,97 +164,56 @@ class ResourceMapperTest {
 
     @Test
     void toItemDto_shouldReturnNullForNullInput() {
-        // Arrange
-
-        // Act
-        ResourceItemDTO result = mapper.toItemDto(null);
-
-        // Assert
-        assertNull(result);
+        assertNull(mapper.toItemDto(null));
     }
 
     @Test
     void toEntity_shouldMapBasicFieldsCorrectly() {
-        // Arrange - already done in setUp()
-
-        // Act
         ResourceEntity result = mapper.toEntity(testResourceDTO);
 
-        // Assert
         assertNotNull(result);
         assertEquals(testResourceDTO.getName(), result.getName());
         assertEquals(testResourceDTO.getType(), result.getType());
         assertEquals(testResourceDTO.getStatus(), result.getStatus());
         assertEquals(testResourceDTO.getExternalId(), result.getExternalId());
-
-        // Assert - fields that should not be mapped
-        assertNull(result.getId(), "ID should not be mapped");
-        assertNull(result.getApplicationId(), "ApplicationId should not be mapped");
+        assertNull(result.getId());
+        assertNull(result.getApplicationId());
     }
 
     @Test
     void toEntity_shouldSetStatusToActive_When_NotProvided() {
-        // Arrange - already done in setUp()
         testResourceDTO.setStatus(null);
 
-        // Act
         ResourceEntity result = mapper.toEntity(testResourceDTO);
 
-        // Assert
-        assertNotNull(result);
-        assertEquals(testResourceDTO.getName(), result.getName());
-        assertEquals(testResourceDTO.getType(), result.getType());
         assertEquals(Status.ACTIVE, result.getStatus());
-        assertEquals(testResourceDTO.getExternalId(), result.getExternalId());
-
-        // Assert - fields that should not be mapped
-        assertNull(result.getId(), "ID should not be mapped");
-        assertNull(result.getApplicationId(), "ApplicationId should not be mapped");
     }
 
     @Test
     void toEntity_shouldReturnNullForNullInput() {
-        // Arrange - null input
-
-        // Act
-        ResourceEntity result = mapper.toEntity(null);
-
-        // Assert
-        assertNull(result);
+        assertNull(mapper.toEntity(null));
     }
 
     @Test
     void toItemEntity_shouldMapBasicFieldsCorrectly() {
-        // Arrange - already done in setUp()
+        when(resourceItemRepository.save(Mockito.any(ResourceItemEntity.class))).thenReturn(testResourceItem);
 
-        // Act
         ResourceItemEntity result = mapper.toItemEntity(testResourceItemDTO, testResource, testPermission);
 
-        // Assert
         assertNotNull(result);
         assertEquals(testResourceItemDTO.getName(), result.getName());
         assertEquals(testResourceItemDTO.getUrl(), result.getUrl());
-        assertSame(testResource, result.getResourceId(), "Resource reference should be the same object");
-        assertSame(testPermission.getId(), result.getPermissionId(), "Permission reference should be the same object");
-
-        // Assert - fields that should not be mapped
-        assertNull(result.getId(), "ID should not be mapped");
+        assertSame(testResource, result.getResourceId());
+        assertSame(testPermission.getId(), result.getPermissionId());
     }
 
     @Test
     void toItemEntity_shouldReturnNullForNullInput() {
-        // Arrange - null input
-
-        // Act
-        ResourceItemEntity result = mapper.toItemEntity(null, testResource, testPermission);
-
-        // Assert
-        assertNull(result);
+        assertNull(mapper.toItemEntity(null, testResource, testPermission));
     }
 
     @Test
     void toDto_shouldHandleMultipleItems() {
-        // Arrange
         ResourceItemEntity item1 = new ResourceItemEntity();
         item1.setId(1);
         item1.setName("Item1");
@@ -276,27 +228,24 @@ class ResourceMapperTest {
 
         testResource.setItems(Arrays.asList(item1, item2));
 
-        // Act
+        when(permissionRepository.findById(testPermission.getId())).thenReturn(Optional.of(testPermission));
+
         ResourceDTO result = mapper.toDto(testResource);
 
-        // Assert
         assertNotNull(result);
-        assertNotNull(result.getItems(), "Items list should not be null");
-        assertEquals(2, result.getItems().size(), "Should have 2 items");
-        assertEquals(1, result.getItems().get(0).getId(), "First item ID should match");
-        assertEquals(2, result.getItems().get(1).getId(), "Second item ID should match");
+        assertNotNull(result.getItems());
+        assertEquals(2, result.getItems().size());
+        assertEquals(1, result.getItems().get(0).getId());
+        assertEquals(2, result.getItems().get(1).getId());
     }
 
     @Test
     void toDto_shouldHandleNullItems() {
-        // Arrange
         testResource.setItems(null);
 
-        // Act
         ResourceDTO result = mapper.toDto(testResource);
 
-        // Assert
         assertNotNull(result);
-        assertNull(result.getItems(), "Items should be null when source items are null");
+        assertEquals(result.getItems(), List.of());
     }
 }

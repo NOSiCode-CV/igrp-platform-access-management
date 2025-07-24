@@ -6,18 +6,6 @@
   "enableCustonValidation": false,
   "attributes": [
     {
-      "name": "user_name",
-      "objectType": "java",
-      "type": "string",
-      "required": true,
-      "before": false,
-      "after": false,
-      "positive": false,
-      "isEmail": false,
-      "isUrl": false,
-      "primaryKey": false
-    },
-    {
       "name": "role_name",
       "objectType": "java",
       "type": "string",
@@ -27,7 +15,8 @@
       "positive": false,
       "isEmail": false,
       "isUrl": false,
-      "primaryKey": false
+      "primaryKey": false,
+      "regex": "^[A-Za-z0-9_-]+$"
     }
   ],
   "id": "hpbgurambc"

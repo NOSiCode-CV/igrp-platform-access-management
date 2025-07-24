@@ -49,6 +49,15 @@ public class GetApplicationByCodeQueryHandlerTest {
     application.setStatus(Status.ACTIVE);
     application.setSlug("sample-app");
 
+    ApplicationDTO applicationDTO = new ApplicationDTO();
+    applicationDTO.setCode(code);
+    applicationDTO.setName("Sample App");
+    applicationDTO.setCode("APP001");
+    applicationDTO.setType(AppType.INTERNAL);
+    applicationDTO.setStatus(Status.ACTIVE);
+    applicationDTO.setSlug("sample-app");
+
+    Mockito.when(applicationMapper.toDto(application)).thenReturn(applicationDTO);
     Mockito.when(applicationRepository.findByCode(code)).thenReturn(Optional.of(application));
 
     // When

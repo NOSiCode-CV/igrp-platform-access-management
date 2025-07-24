@@ -33,12 +33,13 @@ public class DeleteApplicationCommandHandlerTest {
         String applicationCode = "APP";
         ApplicationEntity application = new ApplicationEntity();
         application.setId(applicationId);
+        application.setCode(applicationCode);
         application.setStatus(Status.ACTIVE); // Initially active
 
         DeleteApplicationCommand command = new DeleteApplicationCommand(applicationCode);
 
         // When
-        when(applicationRepository.findById(applicationId)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCode(applicationCode)).thenReturn(Optional.of(application));
 
         ResponseEntity<String> response = deleteApplicationCommandHandler.handle(command);
 
@@ -53,12 +54,8 @@ public class DeleteApplicationCommandHandlerTest {
     @Test
     void testHandle_whenApplicationNotFound() {
         // Given
-        Integer applicationId = 999;  // An ID that doesn't exist
         String applicationCode = "APP";
         DeleteApplicationCommand command = new DeleteApplicationCommand(applicationCode);
-
-        // When
-        when(applicationRepository.findById(applicationId)).thenReturn(Optional.empty());
 
         // Then
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> deleteApplicationCommandHandler.handle(command));

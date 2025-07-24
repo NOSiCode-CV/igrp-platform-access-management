@@ -2,7 +2,6 @@ package cv.igrp.platform.access_management.department.application.commands;
 
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
@@ -71,6 +70,7 @@ public class PostDepartmentCommandHandlerTest {
 
         parentDepartment = new DepartmentEntity();
         parentDepartment.setId(2);
+        parentDepartment.setCode("DEPT_RH");
         parentDepartment.setName("Parent Department");
 
         savedDepartment = new DepartmentEntity();
@@ -117,7 +117,7 @@ public class PostDepartmentCommandHandlerTest {
         command = postDepartmentCommand(departmentDTO);
 
         when(departmentMapper.toEntity(departmentDTO)).thenReturn(department);
-        when(departmentRepository.findById(2)).thenReturn(Optional.of(parentDepartment));
+        when(departmentRepository.findByCode("DEPT_RH")).thenReturn(Optional.of(parentDepartment));
         when(departmentRepository.save(any(DepartmentEntity.class))).thenReturn(savedDepartment);
         when(departmentMapper.toDto(savedDepartment)).thenReturn(resultDTO);
 
@@ -131,7 +131,7 @@ public class PostDepartmentCommandHandlerTest {
 
         // Verify
         verify(departmentMapper).toEntity(departmentDTO);
-        verify(departmentRepository).findById(2);
+        verify(departmentRepository).findByCode("DEPT_RH");
         verify(departmentRepository).save(department);
         verify(departmentMapper).toDto(savedDepartment);
         verifyNoMoreInteractions(departmentMapper, departmentRepository);
