@@ -75,7 +75,7 @@ public class DatabaseAuthorizeApiAdapter implements AuthorizationCore {
                 limit 1;
                """;
 
-        List<Integer> results = jdbcTemplate.query(sql, (rs, rowNum) -> 1, username, resourceItem, permissionName);
+        List<Integer> results = jdbcTemplate.query(sql, (_, _) -> 1, username, resourceItem, permissionName);
 
         return !results.isEmpty();
     }
