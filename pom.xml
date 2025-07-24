@@ -309,6 +309,9 @@
                 <artifactId>native-maven-plugin</artifactId>
                 <version>0.10.6</version>                 <!-- choose a recent version -->
                 <extensions>true</extensions>
+                <configuration>
+                    <includeResources>menus\.json</includeResources>
+                </configuration>
                 <executions>
                     <execution>
                         <id>build-native</id>
@@ -317,14 +320,6 @@
                             </goal>                   <!-- this is the native-image builder goal -->
                         </goals>
                         <phase>package</phase>                <!-- run during mvn package -->
-                    </execution>
-                    <execution>
-                        <goals>
-                            <goal>native-image</goal>
-                        </goals>
-                        <configuration>
-                            <includeResources>menus\.json</includeResources>
-                        </configuration>
                     </execution>
                 </executions>
                 <configuration>
