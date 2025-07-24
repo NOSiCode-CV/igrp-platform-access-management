@@ -318,17 +318,10 @@
                         </goals>
                         <phase>package</phase>                <!-- run during mvn package -->
                     </execution>
-                    <execution>
-                        <goals>
-                            <goal>native-image</goal>
-                        </goals>
-                        <configuration>
-                            <includeResources>menus\.json</includeResources>
-                        </configuration>
-                    </execution>
                 </executions>
                 <configuration>
                     <imageName>${project.artifactId}</imageName>
+                    <includeResources>menus\.json</includeResources>
                     <buildArgs>
 
                         <!-- Multi-platform -->
