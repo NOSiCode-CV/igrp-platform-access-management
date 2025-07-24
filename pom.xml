@@ -309,9 +309,6 @@
                 <artifactId>native-maven-plugin</artifactId>
                 <version>0.10.6</version>                 <!-- choose a recent version -->
                 <extensions>true</extensions>
-                <configuration>
-                    <includeResources>menus\.json</includeResources>
-                </configuration>
                 <executions>
                     <execution>
                         <id>build-native</id>
@@ -324,6 +321,7 @@
                 </executions>
                 <configuration>
                     <imageName>${project.artifactId}</imageName>
+                    <includeResources>menus\.json</includeResources>
                     <buildArgs>
 
                         <!-- Multi-platform -->
