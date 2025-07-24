@@ -16,12 +16,12 @@ import java.util.concurrent.TimeUnit;
 public class DatabaseAuthorizeApiAdapter implements AuthorizationCore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseAuthorizeApiAdapter.class);
-
     private final JdbcTemplate jdbcTemplate;
+    private final PermissionCacheService cacheService;
 
-    public DatabaseAuthorizeApiAdapter(JdbcTemplate jdbcTemplate) {
+    public DatabaseAuthorizeApiAdapter(JdbcTemplate jdbcTemplate, PermissionCacheService cacheService) {
         this.jdbcTemplate = jdbcTemplate;
-
+        this.cacheService = cacheService;
     }
 
     @Override
@@ -29,25 +29,43 @@ public class DatabaseAuthorizeApiAdapter implements AuthorizationCore {
         return CompletableFuture.supplyAsync(() -> {
             long start = System.nanoTime();
 
-            //LOGGER.info("Checking authorization for user '{}' with resource '{}'", username, request.getResource());
+            var cachedResponse = cacheService.getPermission(request);
 
-            String subject = request.getSubject();
-            String resource = request.getResource();
-            String action = request.getAction();
+            if (cachedResponse.isPresent()) {
+                PermissionCheckResponse response = cachedResponse.get();
+                response.setCacheHit(true);
+                response.setResolutionTimeMs(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start));
+                return response;
+            }
 
-            boolean allowed = checkPermission(subject, resource, action);
+            PermissionCheckResponse dbResponse = checkInternal(request);
 
-            PermissionCheckResponse response = new PermissionCheckResponse();
+            cacheService.cachePermission(request, dbResponse);
 
-            response.setAllowed(allowed);
-            response.setViaRoles(Collections.emptyList());
-            response.setCacheHit(false);
-            response.setReason(allowed ? "Permission granted" : "Permission denied");
-            response.setResolutionTimeMs(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start));
+            dbResponse.setCacheHit(false);
+            dbResponse.setResolutionTimeMs(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start));
+            return dbResponse;
 
-            LOGGER.debug("Redis authorization result for subject '{}': {}", request.getSubject(), response);
-            return response;
+
         });
+    }
+
+    public PermissionCheckResponse checkInternal(PermissionCheckRequest request) {
+        String subject = request.getSubject();
+        String resource = request.getResource();
+        String action = request.getAction();
+
+        boolean allowed = checkPermission(subject, resource, action);
+
+        PermissionCheckResponse response = new PermissionCheckResponse();
+        response.setAllowed(allowed);
+        response.setViaRoles(Collections.emptyList());
+        response.setReason(allowed ? "Permission granted" : "Permission denied");
+
+        response.setCacheHit(false); // será modificado via wrapper
+
+        LOGGER.debug("Authorization result for '{}': {}", subject, response);
+        return response;
     }
 
     @Override
