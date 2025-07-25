@@ -3,11 +3,9 @@ package cv.igrp.platform.access_management.shared.security;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Profile;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 
 @Configuration
-@Profile("!basic-auth") // Ignore this config when 'basic-auth' is active
 public class JwtAuthenticationConverterConfig {
 
     @Bean
@@ -15,4 +13,5 @@ public class JwtAuthenticationConverterConfig {
     public JwtAuthenticationConverter defaultJwtAuthenticationConverter() {
         return new JwtAuthenticationConverter();
     }
+
 }
