@@ -321,7 +321,6 @@
                 </executions>
                 <configuration>
                     <imageName>${project.artifactId}</imageName>
-                    <includeResources>menus\.json</includeResources>
                     <buildArgs>
 
                         <!-- Multi-platform -->
@@ -335,7 +334,7 @@
                         <!--<buildArg>-libc=musl</buildArg>-->
                         <buildArg>-H:-CheckToolchain</buildArg>
                         <buildArg>-H:+ReportUnsupportedElementsAtRuntime</buildArg>
-
+                        <buildArg>-H:IncludeResources=menus\.json</buildArg>
                         <!-- Core GraalVM settings -->
                         <buildArg>--no-fallback</buildArg>
                         <buildArg>-H:+ReportExceptionStackTraces</buildArg>
@@ -483,6 +482,22 @@
                 <native.march>-march=native</native.march>
             </properties>
         </profile>
+
+        <profile>
+            <id>basic-auth</id>
+            <activation>
+                <activeByDefault>false</activeByDefault>
+            </activation>
+            <dependencies>
+                <!-- This dependency should be excluded from runtime for basic auth profile -->
+                <dependency>
+                    <groupId>org.springframework.boot</groupId>
+                    <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+                    <scope>provided</scope> <!-- or optional -->
+                </dependency>
+            </dependencies>
+        </profile>
+
     </profiles>
 
 </project>

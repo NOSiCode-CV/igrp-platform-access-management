@@ -37,8 +37,8 @@ public class GetMenuByIdQueryHandlerTest {
     @InjectMocks
     private GetMenuByIdQueryHandler getMenuByIdQueryHandler;
 
-    private GetMenuByIdQuery getMenuByIdQuery(Integer id){
-        return new GetMenuByIdQuery(id);
+    private GetMenuByIdQuery getMenuByIdQuery(String code){
+        return new GetMenuByIdQuery(code);
     }
 
     private MenuEntryEntity menuEntry;
@@ -48,6 +48,7 @@ public class GetMenuByIdQueryHandlerTest {
     void setUp() {
         menuEntry = new MenuEntryEntity();
         menuEntry.setId(1);
+        menuEntry.setCode("test");
         menuEntry.setName("Test Menu");
         menuEntry.setType(MenuEntryType.MENU_PAGE);
         menuEntry.setPosition((short) 1);
@@ -58,6 +59,7 @@ public class GetMenuByIdQueryHandlerTest {
 
         dto = new MenuEntryDTO();
         dto.setId(1);
+        dto.setCode("test");
         dto.setName("Test Menu");
         dto.setType(MenuEntryType.MENU_PAGE);
         dto.setPosition((short) 1);
@@ -71,8 +73,8 @@ public class GetMenuByIdQueryHandlerTest {
     @DisplayName("should return 200 OK with MenuEntryDTO if menu exists")
     void testHandle_whenMenuExists_shouldReturnOk() {
         // Arrange
-        GetMenuByIdQuery query = getMenuByIdQuery(1);
-        when(menuEntryRepository.findById(1)).thenReturn(Optional.of(menuEntry));
+        GetMenuByIdQuery query = getMenuByIdQuery("test");
+        when(menuEntryRepository.findByCode("test")).thenReturn(Optional.of(menuEntry));
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(dto);
 
         // Act
@@ -86,7 +88,7 @@ public class GetMenuByIdQueryHandlerTest {
         assertEquals(dto, response.getBody());
 
         // Verify
-        verify(menuEntryRepository,times(1)).findById(1);
+        verify(menuEntryRepository,times(1)).findByCode("test");
         verify(menuEntryMapper).toDTO(menuEntry);
         verifyNoMoreInteractions(menuEntryRepository,menuEntryMapper);
     }
@@ -95,8 +97,8 @@ public class GetMenuByIdQueryHandlerTest {
     @DisplayName("should throw IgrpResponseStatusException when menu not found")
     void testHandle_whenMenuNotFound_shouldThrowException() {
         // Arrange
-        GetMenuByIdQuery query = getMenuByIdQuery(999);
-        when(menuEntryRepository.findById(999)).thenReturn(Optional.empty());
+        GetMenuByIdQuery query = getMenuByIdQuery("unknown");
+        when(menuEntryRepository.findByCode("unknown")).thenReturn(Optional.empty());
 
         // Act & Assert
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
@@ -107,10 +109,10 @@ public class GetMenuByIdQueryHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND.value(), problem.getStatus());
 
         assertNotNull(problem.getProperties());
-        assertTrue(problem.getProperties().getOrDefault("details", "").toString().contains("Menu not found with id: 999"));
+        assertTrue(problem.getProperties().getOrDefault("details", "").toString().contains("Menu not found with code: unknown"));
 
         // Verify
-        verify(menuEntryRepository, times(1)).findById(999);
+        verify(menuEntryRepository, times(1)).findByCode("unknown");
         verifyNoMoreInteractions(menuEntryRepository, menuEntryMapper);
     }
 }

@@ -89,7 +89,7 @@ public class ResourceController {
   }
 
   @GetMapping(
-    value = "resources/{id}"
+    value = "resources/{name}"
   )
   @Operation(
     summary = "GET method to handle operations for getResourceById",
@@ -109,12 +109,12 @@ public class ResourceController {
   )
   
   public ResponseEntity<ResourceDTO> getResourceById(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "name") String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetResourceByIdQuery(id);
+      final var query = new GetResourceByIdQuery(name);
 
       ResponseEntity<ResourceDTO> response = queryBus.handle(query);
 

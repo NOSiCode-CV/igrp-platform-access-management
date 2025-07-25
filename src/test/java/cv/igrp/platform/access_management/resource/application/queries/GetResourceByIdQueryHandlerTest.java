@@ -42,14 +42,16 @@ class GetResourceByIdQueryHandlerTest {
 
         resource = new ResourceEntity();
         resource.setId(1);
-        resource.setName("Document API");
+        resource.setName("document");
+        resource.setDescription("Document API");
         resource.setType(ResourceType.API);
         resource.setStatus(Status.ACTIVE);
         resource.setExternalId("ext-doc-api");
 
         resourceDTO = new ResourceDTO();
         resourceDTO.setId(1);
-        resourceDTO.setName("Document API");
+        resourceDTO.setName("document");
+        resourceDTO.setDescription("Document API");
         resourceDTO.setType(ResourceType.API);
         resourceDTO.setStatus(Status.ACTIVE);
         resourceDTO.setExternalId("ext-doc-api");
@@ -60,8 +62,8 @@ class GetResourceByIdQueryHandlerTest {
     @DisplayName("should return 200 OK with valid ResourceDTO when resource exists")
     void testHandle_whenResourceExists_shouldReturnDto() {
         // Arrange
-        GetResourceByIdQuery query = new GetResourceByIdQuery(1);
-        when(resourceRepository.findById(1)).thenReturn(Optional.of(resource));
+        GetResourceByIdQuery query = new GetResourceByIdQuery("document");
+        when(resourceRepository.findByName("document")).thenReturn(Optional.of(resource));
 
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
@@ -78,7 +80,7 @@ class GetResourceByIdQueryHandlerTest {
         assertEquals(resource.getExternalId(), dto.getExternalId());
 
         // Verify
-        verify(resourceRepository, times(1)).findById(1);
+        verify(resourceRepository, times(1)).findByName("document");
         verifyNoMoreInteractions(resourceRepository);
     }
 
@@ -86,8 +88,8 @@ class GetResourceByIdQueryHandlerTest {
     @DisplayName("should throw IgrpResponseStatusException when resource does not exist")
     void testHandle_whenResourceNotFound_shouldThrowException() {
         // Arrange
-        GetResourceByIdQuery query = new GetResourceByIdQuery(999);
-        when(resourceRepository.findById(999)).thenReturn(Optional.empty());
+        GetResourceByIdQuery query = new GetResourceByIdQuery("unknown");
+        when(resourceRepository.findByName("unknown")).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(query));
@@ -96,10 +98,10 @@ class GetResourceByIdQueryHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
 
         assertNotNull(ex.getBody().getProperties());
-        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("999"));
+        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("unknown"));
 
         // Verify
-        verify(resourceRepository, times(1)).findById(999);
+        verify(resourceRepository, times(1)).findByName("unknown");
         verifyNoMoreInteractions(resourceRepository);
     }
 }

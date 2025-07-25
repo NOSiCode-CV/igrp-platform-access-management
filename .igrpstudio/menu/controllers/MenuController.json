@@ -60,7 +60,7 @@
     },
     {
       "actionName": "getMenuById",
-      "path": "menus/{id}",
+      "path": "menus/{code}",
       "method": "GET",
       "responses": {
         "200": {
@@ -78,10 +78,9 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "The ID of  Menu"
+          "name": "code",
+          "type": "string",
+          "isRequired": true
         }
       ]
     },

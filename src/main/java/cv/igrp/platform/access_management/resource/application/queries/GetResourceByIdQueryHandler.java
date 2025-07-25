@@ -56,19 +56,19 @@ public class GetResourceByIdQueryHandler implements QueryHandler<GetResourceById
    */
   @IgrpQueryHandler
   public ResponseEntity<ResourceDTO> handle(GetResourceByIdQuery query) {
-    Integer resourceId = query.getId();
-    logger.info("Fetching resource with ID: {}", resourceId);
+    String resourceName = query.getName();
+    logger.info("Fetching resource with name: {}", resourceName);
 
-    ResourceEntity resource = resourceRepository.findById(resourceId)
+    ResourceEntity resource = resourceRepository.findByName(resourceName)
             .orElseThrow(() -> {
-              logger.warn("Resource not found with ID: {}", resourceId);
+              logger.warn("Resource not found with name: {}", resourceName);
               return IgrpResponseStatusException.of(
                       HttpStatus.NOT_FOUND,
                       "Resource not found",
-                      "Resource not found with id: " + resourceId);
+                      "Resource not found with name: " + resourceName);
             });
 
-    logger.info("Resource found with ID: {}", resourceId);
+    logger.info("Resource found with name: {}", resourceName);
     return ResponseEntity.ok(resourceMapper.toDto(resource));
   }
 
