@@ -55,16 +55,16 @@ public class GetMenuByIdQueryHandler implements QueryHandler<GetMenuByIdQuery, R
    */
   @IgrpQueryHandler
   public ResponseEntity<MenuEntryDTO> handle(GetMenuByIdQuery query) {
-    MenuEntryEntity menu = menuEntryRepository.findById(query.getId())
+    MenuEntryEntity menu = menuEntryRepository.findByCode(query.getCode())
             .orElseThrow(() -> {
-              logger.warn("Menu not found with ID: {}", query.getId());
+              logger.warn("Menu not found with code: {}", query.getCode());
               return IgrpResponseStatusException.of(
                       HttpStatus.NOT_FOUND,
                       "Menu not found",
-                      "Menu not found with id: " + query.getId());
+                      "Menu not found with code: " + query.getCode());
             });
 
-    logger.info("Menu with ID: {} successfully retrieved", query.getId());
+    logger.info("Menu with code: {} successfully retrieved", query.getCode());
     return ResponseEntity.ok(menuEntryMapper.toDTO(menu));
   }
 

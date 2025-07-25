@@ -146,6 +146,7 @@ public class CreateResourceCommandHandlerTest {
         when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
         when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
         when(permissionRepository.findByName("manage")).thenReturn(Optional.empty());
+        when(resourceRepository.save(resource)).thenReturn(resource);
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
@@ -159,6 +160,7 @@ public class CreateResourceCommandHandlerTest {
         verify(resourceMapper, times(1)).toEntity(resourceDTO);
         verify(applicationRepository, times(1)).findByCode("APP");
         verify(permissionRepository, times(1)).findByName("manage");
+        verify(resourceRepository, times(1)).save(resource);
         verifyNoMoreInteractions(permissionRepository, resourceRepository, resourceMapper);
     }
 
