@@ -17,7 +17,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
   exclude = WebFluxAutoConfiguration.class
 )
 @EnableAsync
-@EnableCaching
 @ComponentScan(basePackages = "cv.igrp")
 public class IgrpPlatformAccessManagementApplication {
 

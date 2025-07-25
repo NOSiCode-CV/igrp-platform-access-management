@@ -18,7 +18,7 @@
       "primaryKey": false
     },
     {
-      "name": "via_roles",
+      "name": "viaRoles",
       "objectType": "java",
       "type": "string",
       "required": false,
@@ -31,9 +31,9 @@
       "collectionType": "list"
     },
     {
-      "name": "cache_hit",
+      "name": "reason",
       "objectType": "java",
-      "type": "boolean",
+      "type": "string",
       "required": false,
       "before": false,
       "after": false,
@@ -43,9 +43,21 @@
       "primaryKey": false
     },
     {
-      "name": "resolution_time_ms",
+      "name": "resolutionTimeMs",
       "objectType": "java",
       "type": "long",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "cacheHit",
+      "objectType": "java",
+      "type": "boolean",
       "required": false,
       "before": false,
       "after": false,

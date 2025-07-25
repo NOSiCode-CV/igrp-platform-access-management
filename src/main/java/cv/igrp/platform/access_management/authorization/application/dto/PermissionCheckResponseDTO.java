@@ -25,12 +25,15 @@ public class PermissionCheckResponseDTO {
   private boolean allowed ;
   
   
-  private List<String> via_roles = new ArrayList<>();
+  private List<String> viaRoles = new ArrayList<>();
   
   
-  private boolean cache_hit ;
+  private String reason ;
   
   
-  private Long resolution_time_ms ;
+  private Long resolutionTimeMs ;
+  
+  
+  private boolean cacheHit ;
 
 }

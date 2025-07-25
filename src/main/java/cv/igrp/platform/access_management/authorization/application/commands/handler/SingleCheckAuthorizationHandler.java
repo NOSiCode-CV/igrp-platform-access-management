@@ -27,9 +27,10 @@ public class SingleCheckAuthorizationHandler {
             PermissionCheckResponse permissionCheckResponse = authorizationCore.check(request).get();
             var responseDto = new PermissionCheckResponseDTO();
             responseDto.setAllowed(permissionCheckResponse.isAllowed());
-            responseDto.setVia_roles(permissionCheckResponse.getViaRoles());
-            responseDto.setResolution_time_ms(permissionCheckResponse.getResolutionTimeMs());
-            responseDto.setCache_hit(permissionCheckResponse.isCacheHit());
+            responseDto.setViaRoles(permissionCheckResponse.getViaRoles());
+            responseDto.setReason(permissionCheckResponse.getReason());
+            responseDto.setCacheHit(permissionCheckResponse.isCacheHit());
+            responseDto.setResolutionTimeMs(permissionCheckResponse.getResolutionTimeMs());
             return responseDto;
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
