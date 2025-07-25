@@ -328,6 +328,7 @@
                 </executions>
                 <configuration>
                     <imageName>${project.artifactId}</imageName>
+                    <includeResources>menus\.json</includeResources>
                     <buildArgs>
 
                         <!-- Multi-platform -->
