@@ -87,7 +87,7 @@ public class MenuController {
   }
 
   @GetMapping(
-    value = "menus/{id}"
+    value = "menus/{code}"
   )
   @Operation(
     summary = "GET method to handle operations for getMenuById",
@@ -107,12 +107,12 @@ public class MenuController {
   )
   
   public ResponseEntity<MenuEntryDTO> getMenuById(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "code") String code)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetMenuByIdQuery(id);
+      final var query = new GetMenuByIdQuery(code);
 
       ResponseEntity<MenuEntryDTO> response = queryBus.handle(query);
 

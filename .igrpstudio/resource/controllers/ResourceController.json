@@ -60,7 +60,7 @@
     },
     {
       "actionName": "getResourceById",
-      "path": "resources/{id}",
+      "path": "resources/{name}",
       "method": "GET",
       "responses": {
         "200": {
@@ -80,10 +80,9 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true,
-          "description": "The Resource ID"
+          "name": "name",
+          "type": "string",
+          "isRequired": true
         }
       ]
     },
