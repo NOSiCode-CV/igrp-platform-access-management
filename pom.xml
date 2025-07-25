@@ -334,7 +334,7 @@
                         <!--<buildArg>-libc=musl</buildArg>-->
                         <buildArg>-H:-CheckToolchain</buildArg>
                         <buildArg>-H:+ReportUnsupportedElementsAtRuntime</buildArg>
-
+                        <buildArg>-H:IncludeResources=menus\.json</buildArg>
                         <!-- Core GraalVM settings -->
                         <buildArg>--no-fallback</buildArg>
                         <buildArg>-H:+ReportExceptionStackTraces</buildArg>
