@@ -83,6 +83,8 @@ RUN set -eux; \
 # =================================================================== # gcr.io/distroless/static:nonroot  #(for --static )
 FROM gcr.io/distroless/base-nossl:nonroot
 
+RUN apk add --no-cache curl
+
 ARG TARGETPLATFORM
 LABEL platform=${TARGETPLATFORM}
 
