@@ -96,4 +96,5 @@ EXPOSE 8080
 # Runtime ENV - override at runtime with `-e SPRING_PROFILES_ACTIVE=staging`
 ENV SPRING_PROFILES_ACTIVE=development
 
-CMD ["/app/access-management"]
+CMD ["/app/access-management", "--spring.profiles.active=${SPRING_PROFILES_ACTIVE}"]
+
