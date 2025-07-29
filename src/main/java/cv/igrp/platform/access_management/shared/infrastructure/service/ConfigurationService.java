@@ -19,6 +19,9 @@ public class ConfigurationService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationService.class);
     private static final String SYSTEM_USER = "system";
+    private static final String SUPER_ADMIN_USERNAME = "superadmin";
+    private static final String IGRP_DEPARTMENT = "DEPT_IGRP";
+    private static final String IGRP_APP = "APP_IGRP";
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
@@ -36,14 +39,14 @@ public class ConfigurationService {
 
         try {
             // 1. Bulk existence checks
-            boolean superAdminExists = exists("SELECT 1 FROM t_user WHERE username='superadmin' LIMIT 1");
-            boolean departmentExists = exists("SELECT 1 FROM t_department WHERE code='DEPT_IGRP' LIMIT 1");
+            boolean superAdminExists = exists("SELECT 1 FROM t_user WHERE username='%s' LIMIT 1".formatted(SUPER_ADMIN_USERNAME));
+            boolean departmentExists = exists("SELECT 1 FROM t_department WHERE code='%s' LIMIT 1".formatted(IGRP_DEPARTMENT));
             boolean appExists = exists("SELECT 1 FROM t_application WHERE type='SYSTEM' LIMIT 1");
             boolean permissionExists = exists("SELECT 1 FROM t_permission WHERE name='manage_access' LIMIT 1");
-            boolean roleExists = exists("SELECT 1 FROM t_role WHERE name='superadmin' LIMIT 1");
+            boolean roleExists = exists("SELECT 1 FROM t_role WHERE name='%s' LIMIT 1".formatted(SUPER_ADMIN_USERNAME));
 
             // 2. Create missing entities in optimized order
-            Long departmentId = departmentExists ? getId("SELECT id FROM t_department WHERE code='DEPT_IGRP'") :
+            Long departmentId = departmentExists ? getId("SELECT id FROM t_department WHERE code='%s'".formatted(IGRP_DEPARTMENT)) :
                     createDefaultDepartment();
 
             Long appId = appExists ? getId("SELECT id FROM t_application WHERE type='SYSTEM' LIMIT 1") :
@@ -52,10 +55,10 @@ public class ConfigurationService {
             Long permissionId = permissionExists ? getId("SELECT id FROM t_permission WHERE name='manage_access'") :
                     createDefaultPermission(appId);
 
-            Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE name='superadmin'") :
+            Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE name='%s'".formatted(SUPER_ADMIN_USERNAME)) :
                     createDefaultRole(departmentId, permissionId);
 
-            Long userId = superAdminExists ? getId("SELECT id FROM t_user WHERE username='superadmin'") :
+            Long userId = superAdminExists ? getId("SELECT id FROM t_user WHERE username='%s'".formatted(SUPER_ADMIN_USERNAME)) :
                     createSuperAdminUser();
 
             // Assign role to superadmin
@@ -87,7 +90,7 @@ public class ConfigurationService {
         LOGGER.info("[Startup Config] Default Department created");
         return jdbcTemplate.queryForObject(sql,
                 Long.class,
-                "iGRP", "DEPT_IGRP", "iGRP Department", SYSTEM_USER, SYSTEM_USER);
+                "iGRP", IGRP_DEPARTMENT, "iGRP Department", SYSTEM_USER, SYSTEM_USER);
     }
 
     private Long createDefaultApp(Long deptId) {
@@ -101,7 +104,7 @@ public class ConfigurationService {
         LOGGER.info("[Startup Config] Default App created");
         return jdbcTemplate.queryForObject(sql,
                 Long.class,
-                "iGRP", "APP_IGRP", "iGRP Application", "superadmin", deptId,
+                "iGRP", IGRP_APP, "iGRP Application", SUPER_ADMIN_USERNAME, deptId,
                 SYSTEM_USER, SYSTEM_USER);
     }
 
@@ -131,7 +134,7 @@ public class ConfigurationService {
         """;
         Long roleId = jdbcTemplate.queryForObject(sqlRole,
                 Long.class,
-                "superadmin", "iGRP Superadmin", deptId,
+                SUPER_ADMIN_USERNAME, "iGRP Superadmin", deptId,
                 SYSTEM_USER, SYSTEM_USER);
 
         // Insert role-permission relation
@@ -160,7 +163,7 @@ public class ConfigurationService {
         LOGGER.info("[Startup Config] Super admin user created");
         return jdbcTemplate.queryForObject(sql,
                 Long.class,
-                "iGRP Super Admin", "superadmin", "superadmin@igrp.cv",
+                "iGRP Super Admin", SUPER_ADMIN_USERNAME, "%s@igrp.cv".formatted(SUPER_ADMIN_USERNAME),
                 SYSTEM_USER, SYSTEM_USER);
     }
 
@@ -275,7 +278,7 @@ public class ConfigurationService {
                 SET fields = jsonb_set(fields, ?, ?::jsonb),
                     last_modified_by=?, last_modified_date=now()
                 WHERE id = ?
-            """, new Object[]{"{"+key+"}", "\""+value+"\"", SYSTEM_USER, cfId});
+            """, "{"+key+"}", "\""+value+"\"", SYSTEM_USER, cfId);
         }
     }
 
