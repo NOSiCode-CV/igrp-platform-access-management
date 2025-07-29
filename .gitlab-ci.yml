@@ -12,7 +12,6 @@ variables:
   VERSION_TAG: "$CI_COMMIT_SHORT_SHA"
   IMAGE_NAME_FULL: "$REGISTRY_URL/$CI_PROJECT/$IMAGE_NAME"
   IMAGE_TAG: latest
-  SPRING_PROFILES_ACTIVE: cicd
 
 stages:
   - build
@@ -31,7 +30,7 @@ build-arm64:
   script:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
-    - docker build --build-arg SPRING_PROFILES_ACTIVE=$SPRING_PROFILES_ACTIVE --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
+    - docker build --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
   tags:
     - arm64
   only:
@@ -43,7 +42,7 @@ build-amd64:
   script:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
-    - docker build --build-arg SPRING_PROFILES_ACTIVE=$SPRING_PROFILES_ACTIVE --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
+    - docker build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
   only:
     - deploy/base
 
