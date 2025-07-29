@@ -1,51 +1,33 @@
 package cv.igrp.platform.access_management.shared.infrastructure.service;
 
-import cv.igrp.platform.access_management.shared.application.constants.AppType;
-import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
-import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.*;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.*;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.io.InputStream;
 
 @Service
 public class ConfigurationService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationService.class);
+    private static final String SYSTEM_USER = "system";
+    private static final String SUPER_ADMIN_USERNAME = "superadmin";
+    private static final String IGRP_DEPARTMENT = "DEPT_IGRP";
+    private static final String IGRP_APP = "APP_IGRP";
 
-    private final IGRPUserEntityRepository userRepository;
-    private final ApplicationEntityRepository applicationRepository;
-    private final DepartmentEntityRepository departmentRepository;
-    private final MenuEntryEntityRepository menuEntryRepository;
-    private final PermissionEntityRepository permissionRepository;
-    private final RoleEntityRepository roleRepository;
-    private final CustomFieldEntityRepository propertyRepository;
+    private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
 
-    public ConfigurationService(
-            IGRPUserEntityRepository userRepository,
-            ApplicationEntityRepository applicationRepository,
-            DepartmentEntityRepository departmentRepository,
-            MenuEntryEntityRepository menuEntryRepository,
-            PermissionEntityRepository permissionRepository,
-            RoleEntityRepository roleRepository,
-            CustomFieldEntityRepository propertyRepository,
-            ObjectMapper objectMapper) {
-        this.userRepository = userRepository;
-        this.applicationRepository = applicationRepository;
-        this.departmentRepository = departmentRepository;
-        this.menuEntryRepository = menuEntryRepository;
-        this.permissionRepository = permissionRepository;
-        this.roleRepository = roleRepository;
-        this.propertyRepository = propertyRepository;
+    public ConfigurationService(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+        this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
     }
 
@@ -56,184 +38,182 @@ public class ConfigurationService {
         LOGGER.info("[Startup Config] Starting system initialization...");
 
         try {
-            // 1. Bulk check existence of all default entities first
-            boolean superAdminExists = userRepository.existsByUsername("superadmin");
-            boolean departmentExists = departmentRepository.existsByCode("DEPT_IGRP");
-            boolean appExists = applicationRepository.existsByType(AppType.SYSTEM);
-            boolean permissionExists = permissionRepository.existsByName("manage_access");
-            boolean roleExists = roleRepository.existsByName("superadmin");
+            // 1. Bulk existence checks
+            boolean superAdminExists = exists("SELECT 1 FROM t_user WHERE username='%s' LIMIT 1".formatted(SUPER_ADMIN_USERNAME));
+            boolean departmentExists = exists("SELECT 1 FROM t_department WHERE code='%s' LIMIT 1".formatted(IGRP_DEPARTMENT));
+            boolean appExists = exists("SELECT 1 FROM t_application WHERE type='SYSTEM' LIMIT 1");
+            boolean permissionExists = exists("SELECT 1 FROM t_permission WHERE name='manage_access' LIMIT 1");
+            boolean roleExists = exists("SELECT 1 FROM t_role WHERE name='%s' LIMIT 1".formatted(SUPER_ADMIN_USERNAME));
 
             // 2. Create missing entities in optimized order
-            DepartmentEntity department = departmentExists ?
-                    departmentRepository.findByCode("DEPT_IGRP").get() :
+            Long departmentId = departmentExists ? getId("SELECT id FROM t_department WHERE code='%s'".formatted(IGRP_DEPARTMENT)) :
                     createDefaultDepartment();
 
-            ApplicationEntity app = appExists ?
-                    applicationRepository.findFirstByType(AppType.SYSTEM).get() :
-                    createDefaultApp(department);
+            Long appId = appExists ? getId("SELECT id FROM t_application WHERE type='SYSTEM' LIMIT 1") :
+                    createDefaultApp(departmentId);
 
-            PermissionEntity permission = permissionExists ?
-                    permissionRepository.findByName("manage_access").get() :
-                    createDefaultPermission(app);
+            Long permissionId = permissionExists ? getId("SELECT id FROM t_permission WHERE name='manage_access'") :
+                    createDefaultPermission(appId);
 
-            RoleEntity role = roleExists ?
-                    roleRepository.findByName("superadmin").get() :
-                    createDefaultRole(department, permission);
+            Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE name='%s'".formatted(SUPER_ADMIN_USERNAME)) :
+                    createDefaultRole(departmentId, permissionId);
 
-            // 3. Handle user and role assignment
-            IGRPUserEntity user = superAdminExists? userRepository.findByUsername("superadmin").get() : createSuperAdminUser();
+            Long userId = superAdminExists ? getId("SELECT id FROM t_user WHERE username='%s'".formatted(SUPER_ADMIN_USERNAME)) :
+                    createSuperAdminUser();
 
-            assignRoleToSuperAdminUser(role, user);
+            // Assign role to superadmin
+            assignRoleToSuperAdminUser(roleId, userId);
 
-            // 4. Optimized menu handling
-            createDefaultMenus(app);
+            // Create default menus
+            createDefaultMenus(appId);
 
             LOGGER.info("[Startup Config] System initialization completed in {} ms",
                     System.currentTimeMillis() - startTime);
+
         } catch (Exception e) {
             LOGGER.error("[Startup Config] Error initializing system: {}", e.getMessage(), e);
         }
     }
 
-    @Transactional
-    public DepartmentEntity createDefaultDepartment() {
-        var newDept = new DepartmentEntity();
-        newDept.setName("iGRP");
-        newDept.setCode("DEPT_IGRP");
-        newDept.setDescription("iGRP Department");
-        var dept = departmentRepository.save(newDept);
+    // =====================================================
+    // Default entity creation with audit columns
+    // =====================================================
+
+    private Long createDefaultDepartment() {
+        String sql = """
+            INSERT INTO t_department
+            (name, code, description, status,
+             created_by, created_date, last_modified_by, last_modified_date)
+            VALUES (?, ?, ?, 'ACTIVE', ?, now(), ?, now())
+            RETURNING id
+        """;
         LOGGER.info("[Startup Config] Default Department created");
-        return dept;
+        return jdbcTemplate.queryForObject(sql,
+                Long.class,
+                "iGRP", IGRP_DEPARTMENT, "iGRP Department", SYSTEM_USER, SYSTEM_USER);
     }
 
-    @Transactional
-    public ApplicationEntity createDefaultApp(DepartmentEntity dept) {
-        var newApp = new ApplicationEntity();
-        newApp.setName("iGRP");
-        newApp.setDescription("iGRP Application");
-        newApp.setCode("APP_IGRP");
-        newApp.setOwner("superadmin");
-        newApp.setDepartmentId(dept);
-        newApp.setStatus(Status.ACTIVE);
-        newApp.setType(AppType.SYSTEM);
-        var app = applicationRepository.save(newApp);
+    private Long createDefaultApp(Long deptId) {
+        String sql = """
+            INSERT INTO t_application
+            (name, code, description, owner, department_id, status, type,
+             created_by, created_date, last_modified_by, last_modified_date)
+            VALUES (?, ?, ?, ?, ?, 'ACTIVE', 'SYSTEM', ?, now(), ?, now())
+            RETURNING id
+        """;
         LOGGER.info("[Startup Config] Default App created");
-        return app;
+        return jdbcTemplate.queryForObject(sql,
+                Long.class,
+                "iGRP", IGRP_APP, "iGRP Application", SUPER_ADMIN_USERNAME, deptId,
+                SYSTEM_USER, SYSTEM_USER);
     }
 
-    @Transactional
-    public PermissionEntity createDefaultPermission(ApplicationEntity app) {
-        var newPerm = new PermissionEntity();
-        newPerm.setName("manage_access");
-        newPerm.setApplication(app);
-        newPerm.setDescription("iGRP Manage Access Permission");
-        newPerm.setStatus(Status.ACTIVE);
-        var perm = permissionRepository.save(newPerm);
+    private Long createDefaultPermission(Long appId) {
+        String sql = """
+            INSERT INTO t_permission
+            (name, description, status, application,
+             created_by, created_date, last_modified_by, last_modified_date)
+            VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
+            RETURNING id
+        """;
         LOGGER.info("[Startup Config] Default Permission created");
-        return perm;
+        return jdbcTemplate.queryForObject(sql,
+                Long.class,
+                "manage_access", "iGRP Manage Access Permission", appId,
+                SYSTEM_USER, SYSTEM_USER);
     }
 
-    @Transactional
-    public RoleEntity createDefaultRole(DepartmentEntity dept, PermissionEntity perm) {
-        var newRole = new RoleEntity();
-        newRole.setName("superadmin");
-        newRole.setDepartment(dept);
-        newRole.setDescription("iGRP Superadmin");
-        Set<PermissionEntity> permissions = new HashSet<>();
-        permissions.add(perm);
-        newRole.setPermissions(permissions);
-        newRole.setStatus(Status.ACTIVE);
-        var role = roleRepository.save(newRole);
+    private Long createDefaultRole(Long deptId, Long permId) {
+        // Insert role
+        String sqlRole = """
+            INSERT INTO t_role
+            (name, description, status, department,
+             created_by, created_date, last_modified_by, last_modified_date)
+            VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
+            RETURNING id
+        """;
+        Long roleId = jdbcTemplate.queryForObject(sqlRole,
+                Long.class,
+                SUPER_ADMIN_USERNAME, "iGRP Superadmin", deptId,
+                SYSTEM_USER, SYSTEM_USER);
+
+        // Insert role-permission relation
+        String sqlRolePerm = """
+            INSERT INTO t_role_permission
+            (role_id, permission)
+            SELECT ?, ?
+            WHERE NOT EXISTS (
+                SELECT 1 FROM t_role_permission WHERE role_id=? AND permission=?
+            )
+        """;
+        jdbcTemplate.update(sqlRolePerm, roleId, permId, roleId, permId);
+
         LOGGER.info("[Startup Config] Default Role created");
-        return role;
+        return roleId;
     }
 
-    @Transactional
-    public void assignRoleToSuperAdminUser(RoleEntity role, IGRPUserEntity user) {
+    private Long createSuperAdminUser() {
+        String sql = """
+            INSERT INTO t_user
+            (name, username, email,
+             created_by, created_date, last_modified_by, last_modified_date)
+            VALUES (?, ?, ?, ?, now(), ?, now())
+            RETURNING id
+        """;
+        LOGGER.info("[Startup Config] Super admin user created");
+        return jdbcTemplate.queryForObject(sql,
+                Long.class,
+                "iGRP Super Admin", SUPER_ADMIN_USERNAME, "%s@igrp.cv".formatted(SUPER_ADMIN_USERNAME),
+                SYSTEM_USER, SYSTEM_USER);
+    }
 
-        Set<IGRPUserEntity> users = role.getUsers();
-
-        if (users == null) {
-            users = new HashSet<>();
-            role.setUsers(users);
-        }
-        boolean isRoleAdded = users.add(user);
-
-        if (isRoleAdded) {
-            LOGGER.info("Superadmin successfully added to role");
-        } else {
-            LOGGER.info("Superadmin was already associated with role");
-        }
-
-        roleRepository.save(role);
+    private void assignRoleToSuperAdminUser(Long roleId, Long userId) {
+        String sql = """
+            INSERT INTO t_role_users
+            (users_id, roles_id)
+            SELECT ?, ?
+            WHERE NOT EXISTS (
+                SELECT 1 FROM t_role_users WHERE users_id = ? AND roles_id = ?
+            )
+        """;
+        jdbcTemplate.update(sql, userId, roleId, userId, roleId);
 
         LOGGER.info("[Startup Config] Superadmin user linked to role");
     }
 
-    @Transactional
-    public IGRPUserEntity createSuperAdminUser() {
-        var newAdmin = new IGRPUserEntity();
-        newAdmin.setName("iGRP Super Admin");
-        newAdmin.setUsername("superadmin");
-        newAdmin.setEmail("superadmin@igrp.cv");
-        newAdmin.setRoles(new ArrayList<>());
-        LOGGER.info("[Startup Config] Super admin user created");
-        return userRepository.save(newAdmin);
-    }
+    // =====================================================
+    // Menu creation
+    // =====================================================
 
-    @Transactional
-    public void createDefaultMenus(ApplicationEntity app) {
+    private void createDefaultMenus(Long appId) {
         long startTime = System.currentTimeMillis();
         try {
-            // 1. First check if we even need to process menus
-            JsonNode root = objectMapper.readTree(new ClassPathResource("menus.json").getInputStream());
+            InputStream jsonStream = new ClassPathResource("menus.json").getInputStream();
+            JsonNode root = objectMapper.readTree(jsonStream);
             String currentJsonHash = String.valueOf(root.hashCode());
 
-            // Check if we have a stored hash that matches
-            Optional<CustomFieldEntity> menuHashProp = propertyRepository.findByTableNameAndRecordId(
-                    "t_application", app.getId());
+            // Fetch previous hash
+            String sqlHash = """
+                SELECT fields->>'menus_hash'
+                FROM t_custom_field
+                WHERE table_name='t_application' AND record_id=? LIMIT 1
+            """;
+            String previousHash = jdbcTemplate.query(sqlHash, ps -> ps.setLong(1, appId),
+                    rs -> rs.next() ? rs.getString(1) : null);
 
-            if (menuHashProp.isPresent() && menuHashProp.get().getFields().getOrDefault("menus_hash", "<no_data>").equals(currentJsonHash)) {
+            if (currentJsonHash.equals(previousHash)) {
                 LOGGER.info("[Startup Config] Menu JSON unchanged. Skipping menu processing.");
                 return;
             }
 
-            // 2. Only proceed with full processing if JSON changed
-            List<MenuEntryEntity> newMenus = new ArrayList<>();
-            buildMenuHierarchy(root, null, (short) 0, app, newMenus);
+            // Delete old menus for the app
+            jdbcTemplate.update("DELETE FROM t_menu_entry WHERE application_id = ?", appId);
 
-            // 3. Fetch existing system menus with their hierarchy in one query
-            List<MenuEntryEntity> existingSystemMenus = menuEntryRepository
-                    .findSystemMenuHierarchy(app);
+            // Insert new menus recursively
+            insertMenuHierarchy(root, null, (short) 0, appId);
 
-            // 4. Compare and update if needed
-            if (!menusAreEqual(existingSystemMenus, newMenus)) {
-                LOGGER.info("[Startup Config] Menu changes detected. Updating...");
-                menuEntryRepository.deleteAll(existingSystemMenus);
-                menuEntryRepository.saveAll(newMenus);
-
-                Map<String, Object> fields;
-
-                Optional<CustomFieldEntity> customFieldsOpt = propertyRepository.findByTableNameAndRecordId("t_application", app.getId());
-
-                CustomFieldEntity customFields;
-
-                if (customFieldsOpt.isPresent()) {
-                    customFields = customFieldsOpt.get();
-                    fields = customFields.getFields();
-                } else {
-                    fields = new HashMap<>();
-                    customFields = new CustomFieldEntity();
-                    customFields.setTableName("t_application");
-                    customFields.setRecordId(app.getId());
-                }
-
-                fields.put("menus_hash", currentJsonHash);
-                customFields.setFields(fields);
-
-                // Store the new hash
-                propertyRepository.save(customFields);
-            }
+            // Update hash in custom_field
+            upsertCustomField(appId, "menus_hash", currentJsonHash);
 
             LOGGER.info("[Startup Config] Menu processing completed in {} ms",
                     System.currentTimeMillis() - startTime);
@@ -242,89 +222,82 @@ public class ConfigurationService {
         }
     }
 
-    private void buildMenuHierarchy(JsonNode node, MenuEntryEntity parent, short position, ApplicationEntity app, List<MenuEntryEntity> accumulator) {
+    private void insertMenuHierarchy(JsonNode node, Long parentId, short position, Long appId) {
         for (JsonNode entry : node) {
             try {
                 MenuEntryType type = MenuEntryType.valueOf(entry.get("type").asText());
-                if (parent != null) {
-                    MenuEntryType parentType = parent.getType();
 
-                    if ((parentType == MenuEntryType.GROUP && type == MenuEntryType.GROUP) ||
-                            (parentType == MenuEntryType.FOLDER && (type == MenuEntryType.FOLDER || type == MenuEntryType.GROUP)) ||
-                            ((parentType == MenuEntryType.MENU_PAGE ||
-                                    parentType == MenuEntryType.EXTERNAL_PAGE ||
-                                    parentType == MenuEntryType.SYSTEM_PAGE))) {
-                        LOGGER.warn("[Startup Config] Invalid hierarchy: skipping {} inside {}", type, parentType);
-                        continue;
-                    }
-                }
-
-                MenuEntryEntity menu = new MenuEntryEntity();
-                menu.setName(entry.get("name").asText());
-                menu.setType(type);
-                menu.setIcon(entry.has("icon") ? entry.get("icon").asText() : null);
-                menu.setPosition(position);
-                menu.setTarget(entry.has("target") ? entry.get("target").asText() : "_self");
-                menu.setUrl(entry.has("url") ? entry.get("url").asText() : null);
-                menu.setPageSlug(entry.has("pageSlug") ? entry.get("pageSlug").asText() : null);
-                menu.setStatus(Status.ACTIVE);
-                menu.setParentId(parent);
-                menu.setApplicationId(app);
-
-                accumulator.add(menu);
+                Long menuId = jdbcTemplate.queryForObject("""
+                    INSERT INTO t_menu_entry
+                    (name, type, icon, position, target, url, page_slug, status,
+                     parent_id, application_id,
+                     created_by, created_date, last_modified_by, last_modified_date)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, now(), ?, now())
+                    RETURNING id
+                """,
+                        Long.class,
+                        entry.get("name").asText(),
+                        type.name(),
+                        entry.has("icon") ? entry.get("icon").asText() : null,
+                        position,
+                        entry.has("target") ? entry.get("target").asText() : "_self",
+                        entry.has("url") ? entry.get("url").asText() : null,
+                        entry.has("pageSlug") ? entry.get("pageSlug").asText() : null,
+                        parentId, appId,
+                        SYSTEM_USER, SYSTEM_USER
+                );
 
                 if (entry.has("children")) {
-                    buildMenuHierarchy(entry.get("children"), menu, (short) 0, app, accumulator);
+                    insertMenuHierarchy(entry.get("children"), menuId, (short) 0, appId);
                 }
 
                 position++;
-
             } catch (Exception e) {
                 LOGGER.warn("[Startup Config] Failed to process menu entry: {}", e.getMessage());
             }
         }
     }
 
-    private boolean menusAreEqual(List<MenuEntryEntity> existingMenus, List<MenuEntryEntity> newMenus) {
-        if (existingMenus.size() != newMenus.size()) {
+    private void upsertCustomField(Long recordId, String key, String value) {
+        String selectSql = """
+            SELECT id FROM t_custom_field WHERE table_name='t_application' AND record_id=? LIMIT 1
+        """;
+        Long cfId = jdbcTemplate.query(selectSql, ps -> ps.setLong(1, recordId),
+                rs -> rs.next() ? rs.getLong(1) : null);
+
+        if (cfId == null) {
+            jdbcTemplate.update("""
+                INSERT INTO t_custom_field (table_name, record_id, fields,
+                                            created_by, created_date, last_modified_by, last_modified_date)
+                VALUES ('t_application', ?, jsonb_build_object(?, ?),
+                        ?, now(), ?, now())
+            """, recordId, key, value, SYSTEM_USER, SYSTEM_USER);
+        } else {
+            jdbcTemplate.update("""
+                UPDATE t_custom_field
+                SET fields = jsonb_set(fields, ?, ?::jsonb),
+                    last_modified_by=?, last_modified_date=now()
+                WHERE id = ?
+            """, "{"+key+"}", "\""+value+"\"", SYSTEM_USER, cfId);
+        }
+    }
+
+    // =====================================================
+    // Helpers
+    // =====================================================
+
+    private boolean exists(String sql) {
+        try {
+            Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
+            return count != null && count > 0;
+        } catch (EmptyResultDataAccessException e) {
+            // This catch block is generally not needed if the SQL is COUNT(*),
+            // as COUNT(*) will always return 0 if no rows match, not throw an exception.
             return false;
         }
-
-        Map<String, MenuEntryEntity> existingMap = createMenuMap(existingMenus);
-        Map<String, MenuEntryEntity> newMap = createMenuMap(newMenus);
-
-        for (Map.Entry<String, MenuEntryEntity> entry : newMap.entrySet()) {
-            MenuEntryEntity existing = existingMap.get(entry.getKey());
-            MenuEntryEntity newMenu = entry.getValue();
-
-            if (existing == null || !menuEntriesEqual(existing, newMenu)) {
-                return false;
-            }
-        }
-
-        return true;
     }
 
-    private Map<String, MenuEntryEntity> createMenuMap(List<MenuEntryEntity> menus) {
-        Map<String, MenuEntryEntity> map = new HashMap<>();
-        for (MenuEntryEntity menu : menus) {
-            String parentName = menu.getParentId() != null ? menu.getParentId().getName() : "null";
-            String key = menu.getName() + "|" + menu.getType() + "|" + parentName;
-            map.put(key, menu);
-        }
-        return map;
-    }
-
-    private boolean menuEntriesEqual(MenuEntryEntity a, MenuEntryEntity b) {
-        return Objects.equals(a.getName(), b.getName()) &&
-                a.getType() == b.getType() &&
-                Objects.equals(a.getIcon(), b.getIcon()) &&
-                Objects.equals(a.getUrl(), b.getUrl()) &&
-                Objects.equals(a.getPageSlug(), b.getPageSlug()) &&
-                Objects.equals(a.getTarget(), b.getTarget()) &&
-                a.getStatus() == b.getStatus() &&
-                (a.getParentId() == null && b.getParentId() == null ||
-                        (a.getParentId() != null && b.getParentId() != null &&
-                                Objects.equals(a.getParentId().getName(), b.getParentId().getName())));
+    private Long getId(String sql) {
+        return jdbcTemplate.query(sql, rs -> rs.next() ? rs.getLong(1) : null);
     }
 }
