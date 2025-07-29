@@ -79,7 +79,7 @@ public class ConfigurationService {
     // Default entity creation with audit columns
     // =====================================================
 
-    private Long createDefaultDepartment() {
+    Long createDefaultDepartment() {
         String sql = """
             INSERT INTO t_department
             (name, code, description, status,
@@ -93,7 +93,7 @@ public class ConfigurationService {
                 "iGRP", IGRP_DEPARTMENT, "iGRP Department", SYSTEM_USER, SYSTEM_USER);
     }
 
-    private Long createDefaultApp(Long deptId) {
+    Long createDefaultApp(Long deptId) {
         String sql = """
             INSERT INTO t_application
             (name, code, description, owner, department_id, status, type,
@@ -108,7 +108,7 @@ public class ConfigurationService {
                 SYSTEM_USER, SYSTEM_USER);
     }
 
-    private Long createDefaultPermission(Long appId) {
+    Long createDefaultPermission(Long appId) {
         String sql = """
             INSERT INTO t_permission
             (name, description, status, application,
@@ -123,7 +123,7 @@ public class ConfigurationService {
                 SYSTEM_USER, SYSTEM_USER);
     }
 
-    private Long createDefaultRole(Long deptId, Long permId) {
+    Long createDefaultRole(Long deptId, Long permId) {
         // Insert role
         String sqlRole = """
             INSERT INTO t_role
@@ -167,7 +167,7 @@ public class ConfigurationService {
                 SYSTEM_USER, SYSTEM_USER);
     }
 
-    private void assignRoleToSuperAdminUser(Long roleId, Long userId) {
+    void assignRoleToSuperAdminUser(Long roleId, Long userId) {
         String sql = """
             INSERT INTO t_role_users
             (users_id, roles_id)
@@ -185,7 +185,7 @@ public class ConfigurationService {
     // Menu creation
     // =====================================================
 
-    private void createDefaultMenus(Long appId) {
+    void createDefaultMenus(Long appId) {
         long startTime = System.currentTimeMillis();
         try {
             InputStream jsonStream = new ClassPathResource("menus.json").getInputStream();
@@ -286,7 +286,7 @@ public class ConfigurationService {
     // Helpers
     // =====================================================
 
-    private boolean exists(String sql) {
+    boolean exists(String sql) {
         try {
             Integer count = jdbcTemplate.queryForObject(sql, Integer.class);
             return count != null && count > 0;
@@ -297,7 +297,7 @@ public class ConfigurationService {
         }
     }
 
-    private Long getId(String sql) {
+    Long getId(String sql) {
         return jdbcTemplate.query(sql, rs -> rs.next() ? rs.getLong(1) : null);
     }
 }
