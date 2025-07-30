@@ -24,7 +24,7 @@ import java.util.Set;
 public class IGRPUserEntity extends AuditEntity implements UserIdentity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
     private Integer id;
 

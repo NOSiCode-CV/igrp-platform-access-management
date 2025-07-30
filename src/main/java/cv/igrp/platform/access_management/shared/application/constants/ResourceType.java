@@ -1,3 +1,6 @@
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+
 package cv.igrp.platform.access_management.shared.application.constants;
 
 import cv.igrp.framework.core.domain.IgrpEnum;
@@ -11,7 +14,8 @@ import java.util.stream.Collectors;
 public enum ResourceType implements IgrpEnum<String> {
 
   API("API", "API"),
-    UI("UI", "User Interface")
+    UI("UI", "User Interface"),
+    PROCESS("PROCESS", "Process")
   ;
 
   private final String code;

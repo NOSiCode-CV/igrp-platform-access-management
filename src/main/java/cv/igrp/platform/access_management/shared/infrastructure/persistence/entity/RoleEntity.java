@@ -1,3 +1,6 @@
+/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.entity;
 
 import cv.igrp.platform.access_management.shared.config.AuditEntity;
@@ -23,7 +26,7 @@ import org.hibernate.annotations.OnDeleteAction;
 public class RoleEntity extends AuditEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
     private Integer id;
 

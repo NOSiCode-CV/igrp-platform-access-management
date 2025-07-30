@@ -12,7 +12,6 @@ RUN echo "Building on: ${BUILDPLATFORM}, targeting: ${TARGETPLATFORM}"
 
 WORKDIR /app
 
-
 # Install only wget & xz
 USER root
 RUN microdnf install --nodocs -y \
@@ -45,17 +44,13 @@ RUN chmod +x mvnw && \
 
 COPY src/ src/
 
-# give Maven more heap
+# Give Maven memory
 ENV MAVEN_OPTS="-Xmx12g -Xms4g -XX:+UseG1GC -XX:+UseStringDeduplication"
 ENV JAVA_TOOL_OPTIONS="-Xmx12g -Xms4g"
 
 # version for UPX
 ARG UPX_VERSION=5.0.1
-ARG SPRING_ACTIVE_PROFILE=cicd
 
-ENV SPRING_ACTIVE_PROFILE=${SPRING_ACTIVE_PROFILE}
-
-# build native image and then UPX-compress it
 RUN set -eux; \
     # pick arch/profile based on target
     case "${TARGETPLATFORM}" in \
@@ -80,7 +75,7 @@ RUN set -eux; \
 
 # ===================================================================
 # Runtime stage: minimal --static-nolibc binary
-# =================================================================== # gcr.io/distroless/static:nonroot  #(for --static )
+# ===================================================================
 FROM gcr.io/distroless/base-nossl:nonroot
 
 ARG TARGETPLATFORM
@@ -92,4 +87,6 @@ COPY --from=build /app/target/access-management-upx ./access-management
 USER nonroot:nonroot
 
 EXPOSE 8080
+
 CMD ["/app/access-management"]
+
