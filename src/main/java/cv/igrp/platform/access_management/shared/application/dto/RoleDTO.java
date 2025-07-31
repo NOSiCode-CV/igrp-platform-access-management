@@ -30,7 +30,7 @@ public class RoleDTO {
   @Size(max = 255, message = "The field length <description> cannot be more than 255 characters.")
   
   private String description ;
-  @NotBlank(message = "The field <departmentCode> is required.")
+  
   
   private String departmentCode ;
   
