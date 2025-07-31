@@ -96,7 +96,9 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
                          HttpStatus.NOT_FOUND, ERROR_TITLE, "Role with name: " + command.getRoledto().getName() + " not found."
                  );
               });
-      if (newData.getDepartmentCode() != null) {
+
+      // NOTE: cannot move role to another department
+      /*if (newData.getDepartmentCode() != null) {
          department = departmentRepository.findByCode(newData.getDepartmentCode())
                  .orElseThrow(() -> {
                     log.warn("Department with code: {} not found.", command.getRoledto().getDepartmentCode());
@@ -110,7 +112,8 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
                     HttpStatus.CONFLICT, ERROR_TITLE, roleValidationResponse.getFailureMessage()
             );
          }
-      }
+      }*/
+
       if (newData.getParentName() != null) {
          parentRole = roleRepository.findByName(newData.getParentName())
                  .orElseThrow(() -> {
@@ -122,7 +125,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
       }
       roleToUpdate.setName(newData.getName());
       roleToUpdate.setDescription(newData.getDescription());
-      roleToUpdate.setDepartment(department);
+      //roleToUpdate.setDepartment(department);
       roleToUpdate.setParent(parentRole);
       roleToUpdate.setStatus(newData.getStatus());
       RoleEntity updatedRole = roleRepository.save(roleToUpdate);
