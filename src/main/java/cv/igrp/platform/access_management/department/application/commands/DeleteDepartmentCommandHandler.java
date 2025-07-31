@@ -1,5 +1,7 @@
 package cv.igrp.platform.access_management.department.application.commands;
 
+import cv.igrp.framework.auth.core.adapter.IAdapter;
+import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -9,6 +11,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * {@link CommandHandler} implementation responsible for handling the {@link cv.igrp.platform.access_management.department.application.commands.DeleteDepartmentCommand}.
@@ -27,14 +30,16 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
            LoggerFactory.getLogger(DeleteDepartmentCommandHandler.class);
 
    private final DepartmentEntityRepository departmentRepository;
+   private final IAdapter adapter;
 
    /**
     * Constructs a new instance of {@code DeleteDepartmentCommandHandler} with the given repository.
     *
     * @param departmentRepository the repository used to access and delete departments
     */
-   public DeleteDepartmentCommandHandler(DepartmentEntityRepository departmentRepository) {
+   public DeleteDepartmentCommandHandler(DepartmentEntityRepository departmentRepository, IAdapter adapter) {
       this.departmentRepository = departmentRepository;
+      this.adapter = adapter;
    }
 
 
@@ -50,6 +55,7 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
     * @throws IgrpResponseStatusException if no department is found with the specified ID
     */
    @IgrpCommandHandler
+   @Transactional
    public ResponseEntity<Void> handle(DeleteDepartmentCommand command) {
       String code = command.getCode();
 
@@ -63,6 +69,11 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
 
       departmentRepository.deleteByCode(code);
 
+      try {
+         adapter.deleteDepartment(code);
+      } catch (IAMException e) {
+         throw new RuntimeException(e);
+      }
       logger.info("Successfully deleted department with code={}", code);
       return ResponseEntity.noContent().build();
    }

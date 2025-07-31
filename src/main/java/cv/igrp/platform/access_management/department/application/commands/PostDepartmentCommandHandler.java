@@ -1,5 +1,7 @@
 package cv.igrp.platform.access_management.department.application.commands;
 
+import cv.igrp.framework.auth.core.adapter.IAdapter;
+import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
@@ -43,23 +45,21 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
            LoggerFactory.getLogger(PostDepartmentCommandHandler.class);
 
    private final DepartmentEntityRepository departmentRepository;
-   private final ApplicationEntityRepository applicationRepository;
    private final DepartmentMapper departmentMapper;
+   private final IAdapter adapter;
 
    /**
     * Constructs the command handler with required dependencies.
     *
     * @param departmentRepository the repository used to persist departments
-    * @param applicationRepository the repository used to fetch associated applications
     * @param departmentMapper the mapper used to convert between DTOs and domain entities
     */
    public PostDepartmentCommandHandler(
            DepartmentEntityRepository departmentRepository,
-           ApplicationEntityRepository applicationRepository,
-           DepartmentMapper departmentMapper) {
+           DepartmentMapper departmentMapper, IAdapter adapter) {
       this.departmentRepository = departmentRepository;
-      this.applicationRepository = applicationRepository;
       this.departmentMapper = departmentMapper;
+      this.adapter = adapter;
    }
 
    /**
@@ -75,13 +75,14 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
     */
    @IgrpCommandHandler
    public ResponseEntity<DepartmentDTO> handle(PostDepartmentCommand command) {
+
       var departmentDto = command.getDepartmentdto();
 
       logger.info("Creating department: name={}, code={}", departmentDto.getName(), departmentDto.getCode());
 
       DepartmentEntity department = departmentMapper.toEntity(departmentDto);
 
-      if(departmentDto.getParent_code() != null) {
+      if(departmentDto.getParent_code() != null && !departmentDto.getParent_code().isBlank()) {
          DepartmentEntity parent = departmentRepository.findByCode(command.getDepartmentdto().getParent_code())
                  .orElseThrow(() -> {
                     logger.warn("Invalid parent Code: {}", departmentDto.getParent_code());
@@ -92,6 +93,11 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
       }
 
       DepartmentEntity saved = departmentRepository.save(department);
+      try {
+        adapter.createDepartment(department.getCode(), department.getParentId() != null ? department.getParentId().getCode() : null);
+      } catch (IAMException e) {
+        throw new RuntimeException(e);
+      }
 
       logger.info("Department created successfully: code={}", saved.getCode());
 

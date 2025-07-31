@@ -1,5 +1,7 @@
 package cv.igrp.platform.access_management.department.application.commands;
 
+import cv.igrp.framework.auth.core.adapter.IAdapter;
+import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
@@ -13,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Command handler responsible for processing {@link UpdateDepartmentCommand} to update an existing department.
@@ -35,6 +38,7 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
 
    private final DepartmentEntityRepository departmentRepository;
    private final DepartmentMapper departmentMapper;
+   private final IAdapter adapter;
 
    /**
     * Constructs the command handler with required dependencies.
@@ -43,9 +47,10 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
     * @param departmentMapper the mapper used to convert between DTOs and entities
     */
    public UpdateDepartmentCommandHandler(
-           DepartmentEntityRepository departmentRepository, DepartmentMapper departmentMapper) {
+           DepartmentEntityRepository departmentRepository, DepartmentMapper departmentMapper, IAdapter adapter) {
       this.departmentRepository = departmentRepository;
       this.departmentMapper = departmentMapper;
+      this.adapter = adapter;
    }
 
    /**
@@ -56,6 +61,7 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
     * @throws IgrpResponseStatusException if no department is found with the given ID
     */
    @IgrpCommandHandler
+   @Transactional
    public ResponseEntity<DepartmentDTO> handle(UpdateDepartmentCommand command) {
       String departmentCode = command.getCode();
 
@@ -71,6 +77,14 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
       departmentMapper.updateEntityFromDto(command.getDepartmentdto(), department);
 
       DepartmentEntity updated = departmentRepository.save(department);
+
+      if (!departmentCode.equals(department.getCode())) {
+          try {
+              adapter.updateDepartment(departmentCode, department.getCode());
+          } catch (IAMException e) {
+              throw new RuntimeException(e);
+          }
+      }
 
       logger.info("Successfully updated department with code={}", updated.getCode());
 
