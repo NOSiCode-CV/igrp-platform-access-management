@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.role.domain.service;
 
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -50,7 +51,7 @@ public class RoleValidator {
         if(department != null && department.getRoles() != null){
             Optional<RoleEntity> optionalRoleSameName = department.getRoles()
                     .stream()
-                    .filter(role -> role.getName().equalsIgnoreCase(roleDTO.getName()))
+                    .filter(role -> !role.getStatus().equals(Status.DELETED) && role.getName().equalsIgnoreCase(roleDTO.getName()))
                     .findFirst();
             if(optionalRoleSameName.isPresent()){
                 logger.warn("Role with name {} exists in Department {}.", roleDTO.getName(), department.getId());

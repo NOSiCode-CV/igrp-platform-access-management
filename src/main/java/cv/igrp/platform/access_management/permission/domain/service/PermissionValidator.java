@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.permission.domain.service;
 
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
@@ -35,7 +36,7 @@ public class PermissionValidator {
         result.setValid(true);
         if (application.getPermissions() != null) {
             Optional<PermissionEntity> optionalPermission = application.getPermissions().stream()
-                    .filter(permission -> permission.getName().equalsIgnoreCase(permissionDTO.getName()))
+                    .filter(permission -> !permission.getStatus().equals(Status.DELETED) && permission.getName().equalsIgnoreCase(permissionDTO.getName()))
                     .findFirst();
 
             if (optionalPermission.isPresent()) {
