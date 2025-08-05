@@ -1,5 +1,7 @@
 package cv.igrp.platform.access_management.role.application.commands;
 
+import cv.igrp.framework.auth.core.adapter.IAdapter;
+import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -36,14 +38,17 @@ import java.util.List;
 public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleCommand, ResponseEntity<Boolean>> {
 
    private final RoleEntityRepository roleRepository;
+   private final IAdapter adapter;
 
    /**
     * Constructs a new instance of {@code DeleteRoleCommandHandler} with the required dependencies.
     *
     * @param roleRepository repository for accessing and updating role entities
+    * @param adapter the adapter interface used to interact with the external Identity and Access Management (IAM) system
     */
-   public DeleteRoleCommandHandler(RoleEntityRepository roleRepository) {
+   public DeleteRoleCommandHandler(RoleEntityRepository roleRepository, IAdapter adapter) {
       this.roleRepository = roleRepository;
+       this.adapter = adapter;
    }
 
    /**
@@ -63,11 +68,11 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
    @Transactional
    public ResponseEntity<Boolean> handle(DeleteRoleCommand command) {
       log.info("Delete Role with name: {}.", command.getName());
-      RoleEntity role = roleRepository.findByName(command.getName())
+      RoleEntity role = roleRepository.findByNameAndStatusNot(command.getName(), Status.DELETED)
               .orElseThrow(() -> {
                  log.warn("Role with name: {} not found.", command.getName());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Delete Role", "Role with name: " + command.getName() + " not found."
+                         HttpStatus.NOT_FOUND, "Delete Role", "Role with name: %s not found.".formatted(command.getName())
                  );
               });
       role.setStatus(Status.DELETED);
@@ -77,8 +82,17 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
                  .filter(roleChild -> !roleChild.getStatus().equals(Status.DELETED))
                  .forEach(roleChild -> roleChild.setStatus(Status.DELETED));
       }
-
       roleRepository.save(role);
+      try {
+         adapter.deleteRole(role.getDepartment().getCode(), role.getName());
+      } catch (IAMException e) {
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.INTERNAL_SERVER_ERROR,
+                 "Role Deletion Failed",
+                 e.getMessage()
+         );
+      }
+
       log.info("Role with name: {} deleted successfully.", command.getName());
       return new ResponseEntity<>(true, HttpStatus.NO_CONTENT);
    }

@@ -16,6 +16,13 @@
         "UI",
         "User Interface"
       ]
+    },
+    {
+      "name": "PROCESS",
+      "attributes": [
+        "PROCESS",
+        "Process"
+      ]
     }
   ],
   "attributes": [

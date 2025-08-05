@@ -1,13 +1,13 @@
 package cv.igrp.platform.access_management.role.application.commands;
 
+import cv.igrp.framework.auth.core.adapter.IAdapter;
+import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
-import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
@@ -52,20 +52,20 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
 
    public static final String ERROR_TITLE = "Update Role";
    private final RoleEntityRepository roleRepository;
-   private final DepartmentEntityRepository departmentRepository;
    private final RoleMapper roleMapper;
+   private final IAdapter adapter;
 
    /**
     * Constructs an {@code UpdateRoleCommandHandler} with the required dependencies.
     *
     * @param roleRepository        the repository used to fetch and persist roles
-    * @param departmentRepository  the repository used to retrieve departments by ID
     * @param roleMapper            the mapper used to convert {@link RoleEntity} to {@link RoleDTO}
+    * @param adapter               the adapter interface used to interact with the external Identity and Access Management (IAM) system
     */
-   public UpdateRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper) {
+   public UpdateRoleCommandHandler(RoleEntityRepository roleRepository, RoleMapper roleMapper, IAdapter adapter) {
       this.roleRepository = roleRepository;
-      this.departmentRepository = departmentRepository;
       this.roleMapper = roleMapper;
+      this.adapter = adapter;
    }
 
    /**
@@ -87,16 +87,16 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
    public ResponseEntity<RoleDTO> handle(UpdateRoleCommand command) {
       log.info("Update Role with name: {}.", command.getRoledto().getName());
       RoleDTO newData = command.getRoledto();
-      DepartmentEntity department = null;
-      RoleEntity parentRole = null;
-      RoleEntity roleToUpdate = roleRepository.findByNameAndStatusNot(command.getRoledto().getName(), Status.DELETED)
+      RoleEntity roleToUpdate = roleRepository.findByNameAndStatusNot(command.getName(), Status.DELETED)
               .orElseThrow(() -> {
                  log.warn("Role with name: {} not found.", command.getRoledto().getName());
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND, ERROR_TITLE, "Role with name: " + command.getRoledto().getName() + " not found."
                  );
               });
-      if (newData.getDepartmentCode() != null) {
+
+      // NOTE: cannot move role to another department
+      /*if (newData.getDepartmentCode() != null) {
          department = departmentRepository.findByCode(newData.getDepartmentCode())
                  .orElseThrow(() -> {
                     log.warn("Department with code: {} not found.", command.getRoledto().getDepartmentCode());
@@ -110,22 +110,39 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
                     HttpStatus.CONFLICT, ERROR_TITLE, roleValidationResponse.getFailureMessage()
             );
          }
-      }
-      if (newData.getParentName() != null) {
-         parentRole = roleRepository.findByName(newData.getParentName())
-                 .orElseThrow(() -> {
-                    log.warn("Parent Role with name: {} not found.", newData.getParentName());
-                    return IgrpResponseStatusException.of(
-                            HttpStatus.NOT_FOUND, ERROR_TITLE, "Parent Role with name: " + newData.getParentName() + " not found."
-                    );
-                 });
+      }*/
+      RoleEntity parentRole = roleToUpdate.getParent();
+      String parentName = newData.getParentName();
+      if (parentName != null) {
+          if (parentName.isBlank()) {
+              parentRole = null;
+          } else {
+              parentRole = roleRepository.findByName(parentName)
+                      .orElseThrow(() -> {
+                          log.warn("Parent Role with name: {} not found.", newData.getParentName());
+                          return IgrpResponseStatusException.of(
+                                  HttpStatus.NOT_FOUND, ERROR_TITLE, "Parent Role with name: %s not found.".formatted(newData.getParentName())
+                          );
+                      });
+          }
       }
       roleToUpdate.setName(newData.getName());
       roleToUpdate.setDescription(newData.getDescription());
-      roleToUpdate.setDepartment(department);
+      //roleToUpdate.setDepartment(department);
       roleToUpdate.setParent(parentRole);
       roleToUpdate.setStatus(newData.getStatus());
       RoleEntity updatedRole = roleRepository.save(roleToUpdate);
+      if (!command.getName().equals(roleToUpdate.getName())) {
+          try {
+              adapter.updateRole(roleToUpdate.getDepartment().getCode(), command.getName(), roleToUpdate.getName());
+          } catch (IAMException e) {
+              throw IgrpResponseStatusException.of(
+                      HttpStatus.INTERNAL_SERVER_ERROR,
+                      "Role Update Failed",
+                      e.getMessage()
+              );
+          }
+      }
       log.info("Role with name: {} updated successfully.", command.getRoledto().getName());
       return new ResponseEntity<>(roleMapper.mapToDto(updatedRole), HttpStatus.OK);
    }

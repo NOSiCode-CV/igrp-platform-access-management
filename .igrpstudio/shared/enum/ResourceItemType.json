@@ -16,6 +16,13 @@
         "API_RESOURCE",
         "API Resource"
       ]
+    },
+    {
+      "name": "PROCESS_STEP",
+      "attributes": [
+        "PROCESS_STEP",
+        "Process Step"
+      ]
     }
   ],
   "attributes": [

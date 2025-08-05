@@ -2,6 +2,8 @@ package cv.igrp.platform.access_management.shared.infrastructure.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cv.igrp.framework.auth.core.adapter.IAdapter;
+import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
+import java.util.Set;
 
 @Service
 public class ConfigurationService {
@@ -21,14 +24,16 @@ public class ConfigurationService {
     private static final String SYSTEM_USER = "system";
     private static final String SUPER_ADMIN_USERNAME = "superadmin";
     private static final String IGRP_DEPARTMENT = "DEPT_IGRP";
-    private static final String IGRP_APP = "APP_IGRP";
+    private static final String IGRP_APP = "APP_IGRP_CENTER";
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
+    private final IAdapter adapter;
 
-    public ConfigurationService(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+    public ConfigurationService(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper, IAdapter adapter) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
+        this.adapter = adapter;
     }
 
     @Transactional
@@ -79,87 +84,100 @@ public class ConfigurationService {
     // Default entity creation with audit columns
     // =====================================================
 
-    Long createDefaultDepartment() {
+    Long createDefaultDepartment() throws IAMException {
         String sql = """
-            INSERT INTO t_department
-            (name, code, description, status,
-             created_by, created_date, last_modified_by, last_modified_date)
-            VALUES (?, ?, ?, 'ACTIVE', ?, now(), ?, now())
-            RETURNING id
-        """;
-        LOGGER.info("[Startup Config] Default Department created");
-        return jdbcTemplate.queryForObject(sql,
+                    INSERT INTO t_department
+                    (name, code, description, status,
+                     created_by, created_date, last_modified_by, last_modified_date)
+                    VALUES (?, ?, ?, 'ACTIVE', ?, now(), ?, now())
+                    RETURNING id
+                """;
+        var query = jdbcTemplate.queryForObject(sql,
                 Long.class,
                 "iGRP", IGRP_DEPARTMENT, "iGRP Department", SYSTEM_USER, SYSTEM_USER);
+        LOGGER.info("[Startup Config] Default Department created");
+        if (query != null) {
+            adapter.createDepartment(IGRP_DEPARTMENT, null);
+        }
+        return query;
     }
 
     Long createDefaultApp(Long deptId) {
         String sql = """
-            INSERT INTO t_application
-            (name, code, description, owner, department_id, status, type,
-             created_by, created_date, last_modified_by, last_modified_date)
-            VALUES (?, ?, ?, ?, ?, 'ACTIVE', 'SYSTEM', ?, now(), ?, now())
-            RETURNING id
-        """;
+                    INSERT INTO t_application
+                    (name, code, description, owner, department_id, status, type,
+                     created_by, created_date, last_modified_by, last_modified_date)
+                    VALUES (?, ?, ?, ?, ?, 'ACTIVE', 'SYSTEM', ?, now(), ?, now())
+                    RETURNING id
+                """;
         LOGGER.info("[Startup Config] Default App created");
         return jdbcTemplate.queryForObject(sql,
                 Long.class,
-                "iGRP", IGRP_APP, "iGRP Application", SUPER_ADMIN_USERNAME, deptId,
+                "iGRP App Center", IGRP_APP, "iGRP Application Center", SUPER_ADMIN_USERNAME, deptId,
                 SYSTEM_USER, SYSTEM_USER);
     }
 
-    Long createDefaultPermission(Long appId) {
+    Long createDefaultPermission(Long appId) throws IAMException {
         String sql = """
-            INSERT INTO t_permission
-            (name, description, status, application,
-             created_by, created_date, last_modified_by, last_modified_date)
-            VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
-            RETURNING id
-        """;
+                    INSERT INTO t_permission
+                    (name, description, status, application,
+                     created_by, created_date, last_modified_by, last_modified_date)
+                    VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
+                    RETURNING id
+                """;
         LOGGER.info("[Startup Config] Default Permission created");
-        return jdbcTemplate.queryForObject(sql,
+        var query = jdbcTemplate.queryForObject(sql,
                 Long.class,
                 "manage_access", "iGRP Manage Access Permission", appId,
                 SYSTEM_USER, SYSTEM_USER);
+        if (query != null) {
+            adapter.createPermission("manage_access", "iGRP Manage Access Permission");
+        }
+        return query;
     }
 
-    Long createDefaultRole(Long deptId, Long permId) {
+    Long createDefaultRole(Long deptId, Long permId) throws IAMException {
         // Insert role
         String sqlRole = """
-            INSERT INTO t_role
-            (name, description, status, department,
-             created_by, created_date, last_modified_by, last_modified_date)
-            VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
-            RETURNING id
-        """;
+                    INSERT INTO t_role
+                    (name, description, status, department,
+                     created_by, created_date, last_modified_by, last_modified_date)
+                    VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
+                    RETURNING id
+                """;
         Long roleId = jdbcTemplate.queryForObject(sqlRole,
                 Long.class,
-                SUPER_ADMIN_USERNAME, "iGRP Superadmin", deptId,
+                "superadmin", "iGRP Superadmin", deptId,
                 SYSTEM_USER, SYSTEM_USER);
+
+        adapter.createRole(IGRP_DEPARTMENT, "superadmin");
 
         // Insert role-permission relation
         String sqlRolePerm = """
-            INSERT INTO t_role_permission
-            (role_id, permission)
-            SELECT ?, ?
-            WHERE NOT EXISTS (
-                SELECT 1 FROM t_role_permission WHERE role_id=? AND permission=?
-            )
-        """;
+                    INSERT INTO t_role_permission
+                    (role_id, permission)
+                    SELECT ?, ?
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM t_role_permission WHERE role_id=? AND permission=?
+                    )
+                """;
         jdbcTemplate.update(sqlRolePerm, roleId, permId, roleId, permId);
 
+        adapter.assignPermissionsToRole(Set.of("manage_access"), "superadmin");
+
         LOGGER.info("[Startup Config] Default Role created");
+
         return roleId;
     }
 
     private Long createSuperAdminUser() {
         String sql = """
-            INSERT INTO t_user
-            (name, username, email,
-             created_by, created_date, last_modified_by, last_modified_date)
-            VALUES (?, ?, ?, ?, now(), ?, now())
-            RETURNING id
-        """;
+                    INSERT INTO t_user
+                    (name, username, email,
+                     created_by, created_date, last_modified_by, last_modified_date)
+                    VALUES (?, ?, ?, ?, now(), ?, now())
+                    RETURNING id
+                """;
         LOGGER.info("[Startup Config] Super admin user created");
         return jdbcTemplate.queryForObject(sql,
                 Long.class,
@@ -167,16 +185,18 @@ public class ConfigurationService {
                 SYSTEM_USER, SYSTEM_USER);
     }
 
-    void assignRoleToSuperAdminUser(Long roleId, Long userId) {
+    void assignRoleToSuperAdminUser(Long roleId, Long userId) throws IAMException {
         String sql = """
-            INSERT INTO t_role_users
-            (users_id, roles_id)
-            SELECT ?, ?
-            WHERE NOT EXISTS (
-                SELECT 1 FROM t_role_users WHERE users_id = ? AND roles_id = ?
-            )
-        """;
+                    INSERT INTO t_role_users
+                    (users_id, roles_id)
+                    SELECT ?, ?
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM t_role_users WHERE users_id = ? AND roles_id = ?
+                    )
+                """;
         jdbcTemplate.update(sql, userId, roleId, userId, roleId);
+
+        adapter.assignRoleToUser(IGRP_DEPARTMENT, "superadmin", SUPER_ADMIN_USERNAME);
 
         LOGGER.info("[Startup Config] Superadmin user linked to role");
     }
@@ -194,10 +214,10 @@ public class ConfigurationService {
 
             // Fetch previous hash
             String sqlHash = """
-                SELECT fields->>'menus_hash'
-                FROM t_custom_field
-                WHERE table_name='t_application' AND record_id=? LIMIT 1
-            """;
+                        SELECT fields->>'menus_hash'
+                        FROM t_custom_field
+                        WHERE table_name='t_application' AND record_id=? LIMIT 1
+                    """;
             String previousHash = jdbcTemplate.query(sqlHash, ps -> ps.setLong(1, appId),
                     rs -> rs.next() ? rs.getString(1) : null);
 
@@ -225,17 +245,18 @@ public class ConfigurationService {
     private void insertMenuHierarchy(JsonNode node, Long parentId, short position, Long appId) {
         for (JsonNode entry : node) {
             try {
-                MenuEntryType type = MenuEntryType.valueOf(entry.get("type").asText());
+                MenuEntryType type = MenuEntryType.fromCodeOrThrow(entry.get("type").asText());
 
                 Long menuId = jdbcTemplate.queryForObject("""
-                    INSERT INTO t_menu_entry
-                    (name, type, icon, position, target, url, page_slug, status,
-                     parent_id, application_id,
-                     created_by, created_date, last_modified_by, last_modified_date)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, now(), ?, now())
-                    RETURNING id
-                """,
+                                    INSERT INTO t_menu_entry
+                                    (code, name, type, icon, position, target, url, page_slug, status,
+                                     parent_id, application_id,
+                                     created_by, created_date, last_modified_by, last_modified_date)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, now(), ?, now())
+                                    RETURNING id
+                                """,
                         Long.class,
+                        entry.get("code").asText(),
                         entry.get("name").asText(),
                         type.name(),
                         entry.has("icon") ? entry.get("icon").asText() : null,
@@ -260,25 +281,33 @@ public class ConfigurationService {
 
     private void upsertCustomField(Long recordId, String key, String value) {
         String selectSql = """
-            SELECT id FROM t_custom_field WHERE table_name='t_application' AND record_id=? LIMIT 1
-        """;
+                    SELECT id FROM t_custom_field WHERE table_name='t_application' AND record_id=? LIMIT 1
+                """;
         Long cfId = jdbcTemplate.query(selectSql, ps -> ps.setLong(1, recordId),
                 rs -> rs.next() ? rs.getLong(1) : null);
 
         if (cfId == null) {
             jdbcTemplate.update("""
-                INSERT INTO t_custom_field (table_name, record_id, fields,
-                                            created_by, created_date, last_modified_by, last_modified_date)
-                VALUES ('t_application', ?, jsonb_build_object(?, ?),
-                        ?, now(), ?, now())
-            """, recordId, key, value, SYSTEM_USER, SYSTEM_USER);
+                        INSERT INTO t_custom_field (table_name, record_id, fields,
+                                                    created_by, created_date, last_modified_by, last_modified_date)
+                        VALUES ('t_application', ?, jsonb_build_object(?, ?),
+                                ?, now(), ?, now())
+                    """, recordId, key, value, SYSTEM_USER, SYSTEM_USER);
         } else {
             jdbcTemplate.update("""
-                UPDATE t_custom_field
-                SET fields = jsonb_set(fields, ?, ?::jsonb),
-                    last_modified_by=?, last_modified_date=now()
-                WHERE id = ?
-            """, "{"+key+"}", "\""+value+"\"", SYSTEM_USER, cfId);
+                            UPDATE t_custom_field
+                            SET fields = jsonb_set(fields, ?::text[], ?::jsonb),
+                                last_modified_by=?, last_modified_date=now()
+                            WHERE id = ?
+                            """,
+                    new Object[]{
+                            "{" + key + "}",               // JSON path
+                            "\"" + value + "\"",            // JSON value as string
+                            SYSTEM_USER,
+                            cfId
+                    }
+            );
+
         }
     }
 

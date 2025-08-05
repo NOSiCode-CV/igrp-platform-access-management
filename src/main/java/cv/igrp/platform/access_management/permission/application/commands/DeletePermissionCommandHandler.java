@@ -4,9 +4,11 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.domain.events.DeletePermissionEvent;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -48,9 +50,12 @@ public class DeletePermissionCommandHandler implements CommandHandler<DeletePerm
     * @param permissionRepository the repository used to access and update permissions
     */
    private final PermissionEntityRepository permissionRepository;
-   public DeletePermissionCommandHandler(PermissionEntityRepository permissionRepository) {
+   private final ApplicationEventPublisher eventPublisher;
+
+   public DeletePermissionCommandHandler(PermissionEntityRepository permissionRepository, ApplicationEventPublisher eventPublisher) {
 
       this.permissionRepository = permissionRepository;
+      this.eventPublisher = eventPublisher;
    }
 
    /**
@@ -76,6 +81,7 @@ public class DeletePermissionCommandHandler implements CommandHandler<DeletePerm
       permission.setStatus(Status.DELETED);
       permissionRepository.save(permission);
       log.info("Permission with name: {} deleted successfully", command.getName());
+      eventPublisher.publishEvent(new DeletePermissionEvent(this, command.getName()));
       return new ResponseEntity<>(true, HttpStatus.NO_CONTENT);
    }
 

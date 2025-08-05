@@ -17,7 +17,6 @@ import java.util.List;
 @Audited
 @Getter
 @Setter
-@ToString
 @IgrpEntity
 @Entity
 @NoArgsConstructor
@@ -75,16 +74,33 @@ public class MenuEntryEntity extends AuditEntity {
   
 
 
-  @ManyToOne(fetch = FetchType.EAGER)
+  @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id", referencedColumnName = "id")
     private MenuEntryEntity parentId;
     @NotNull(message = "applicationId is mandatory")
 
 
-  @ManyToOne(fetch = FetchType.EAGER)
+  @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", referencedColumnName = "id")
     private ApplicationEntity applicationId;   @OneToMany(mappedBy = "menuEntryId")
 private List<PermissionEntity> permissions;
 
 
+    @Override
+    public String toString() {
+        return "MenuEntryEntity{" +
+                "id=" + id +
+                ", code='" + code + '\'' +
+                ", name='" + name + '\'' +
+                ", type=" + type +
+                ", position=" + position +
+                ", icon='" + icon + '\'' +
+                ", status=" + status +
+                ", target='" + target + '\'' +
+                ", pageSlug='" + pageSlug + '\'' +
+                ", url='" + url + '\'' +
+                ", parentId=" + (parentId != null ? parentId.getId() : "null") +
+                ", applicationId=" + (applicationId != null ? applicationId.getId() : "null") +
+                '}';
+    }
 }

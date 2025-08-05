@@ -49,12 +49,12 @@ public class DepartmentEntity extends AuditEntity {
   
 
 
-  @ManyToOne(fetch = FetchType.EAGER)
+  @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id", referencedColumnName = "id")
     private DepartmentEntity parentId;   @OneToMany(mappedBy = "parentId")
 private List<DepartmentEntity> childrenids;
 
-   @OneToOne(mappedBy = "department", fetch = FetchType.EAGER)
+   @OneToOne(mappedBy = "department", fetch = FetchType.LAZY)
    private PermissionEntity permissions;
 
    @OneToMany(mappedBy = "departmentId")

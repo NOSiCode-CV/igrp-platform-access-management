@@ -1,5 +1,7 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
+import cv.igrp.framework.auth.core.adapter.IAdapter;
+import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
@@ -14,6 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -46,6 +51,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
    private final IGRPUserEntityRepository userRepository;
    private final RoleEntityRepository roleRepository;
    private final RoleMapper roleMapper;
+   private final IAdapter adapter;
 
    /**
     * Constructs the handler with required dependencies.
@@ -53,14 +59,17 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
     * @param userRepository the repository used to retrieve user entities
     * @param roleRepository the repository used to retrieve and update roles
     * @param roleMapper the mapper used to convert role entities to DTOs
+    * @param adapter the adapter to assign role to user in iam
     */
    public AddRolesToUserCommandHandler(
            IGRPUserEntityRepository userRepository,
            RoleEntityRepository roleRepository,
-           RoleMapper roleMapper) {
+           RoleMapper roleMapper,
+           IAdapter adapter) {
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
       this.roleMapper = roleMapper;
+      this.adapter = adapter;
    }
 
    /**
@@ -71,6 +80,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
     * @throws IgrpResponseStatusException if the user or role is not found
     */
    @IgrpCommandHandler
+   @Transactional
    public ResponseEntity<List<RoleDTO>> handle(AddRolesToUserCommand command) {
       String userName = command.getUsername();
       List<RoleEntity> roles = new ArrayList<>();
@@ -105,11 +115,35 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
 
          if (isRoleAdded) {
             logger.info("User name={} successfully added to role name={}", userName, roleName);
+            roles.add(roleRepository.save(roleToAdd));
          } else {
             logger.info("User name={} was already associated with role name={}", userName, roleName);
          }
-
-         roles.add(roleRepository.save(roleToAdd));
+      }
+      //TODO Refactor transactional annotation were added.
+      if(!roles.isEmpty()) {
+         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+               for (RoleEntity role : roles) {
+                  try {
+                     adapter.assignRoleToUser(role.getDepartment().getCode(),role.getName(),userName);
+                     logger.info("Role name={} from department with code {} assigned to user name={} in Keycloak",
+                             role.getName(),
+                             role.getDepartment().getCode(),
+                             userName);
+                  } catch (IAMException e) {
+                     logger.error("Failed to assign role name={} from {} department to user name={} in Keycloak: {}",
+                             role.getName(),
+                             role.getDepartment().getCode(),
+                             userName,
+                             e.getMessage(), e);
+                     throw new RuntimeException(e);
+                  }
+               }
+               TransactionSynchronization.super.afterCommit();
+            }
+         });
       }
 
       List<RoleDTO> rolesDTO = roles.stream().map(roleMapper::mapToDto).toList();

@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.authorization.application.commands.handler;
 
 import cv.igrp.framework.auth.core.authorization.model.PermissionCheckRequest;
+import cv.igrp.framework.auth.core.authorization.model.PermissionCheckResponse;
 import cv.igrp.framework.auth.core.authorization.service.AuthorizationCore;
 import cv.igrp.platform.access_management.authorization.application.dto.PermissionCheckResponseDTO;
 import org.springframework.stereotype.Service;
@@ -22,17 +23,14 @@ public class SingleCheckAuthorizationHandler {
         request.setResource(resource);
         request.setSubject(username);
 
-        var result = this.authorizationCore.check(request);
-
         try {
-            var permissionCheckResponse = result.get();
-
+            PermissionCheckResponse permissionCheckResponse = authorizationCore.check(request).get();
             var responseDto = new PermissionCheckResponseDTO();
             responseDto.setAllowed(permissionCheckResponse.isAllowed());
-            responseDto.setCache_hit(permissionCheckResponse.isCacheHit());
-            responseDto.setVia_roles(permissionCheckResponse.getViaRoles());
-            responseDto.setResolution_time_ms(permissionCheckResponse.getResolutionTimeMs());
-
+            responseDto.setViaRoles(permissionCheckResponse.getViaRoles());
+            responseDto.setReason(permissionCheckResponse.getReason());
+            responseDto.setCacheHit(permissionCheckResponse.isCacheHit());
+            responseDto.setResolutionTimeMs(permissionCheckResponse.getResolutionTimeMs());
             return responseDto;
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
