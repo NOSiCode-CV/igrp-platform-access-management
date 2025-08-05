@@ -104,7 +104,7 @@ public class ConfigurationService {
         LOGGER.info("[Startup Config] Default App created");
         return jdbcTemplate.queryForObject(sql,
                 Long.class,
-                "iGRP", IGRP_APP, "iGRP Application", SUPER_ADMIN_USERNAME, deptId,
+                "iGRP App Center", IGRP_APP, "iGRP Application Center", SUPER_ADMIN_USERNAME, deptId,
                 SYSTEM_USER, SYSTEM_USER);
     }
 
@@ -225,7 +225,7 @@ public class ConfigurationService {
     private void insertMenuHierarchy(JsonNode node, Long parentId, short position, Long appId) {
         for (JsonNode entry : node) {
             try {
-                MenuEntryType type = MenuEntryType.valueOf(entry.get("type").asText());
+                MenuEntryType type = MenuEntryType.fromCodeOrThrow(entry.get("type").asText());
 
                 Long menuId = jdbcTemplate.queryForObject("""
                                     INSERT INTO t_menu_entry
