@@ -53,6 +53,7 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
     *
     * @param departmentRepository the repository used to persist departments
     * @param departmentMapper the mapper used to convert between DTOs and domain entities
+    * @param adapter               the adapter interface used to interact with the external Identity and Access Management (IAM) system
     */
    public PostDepartmentCommandHandler(
            DepartmentEntityRepository departmentRepository,

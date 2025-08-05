@@ -45,6 +45,7 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
     *
     * @param departmentRepository the repository used to retrieve and save department entities
     * @param departmentMapper the mapper used to convert between DTOs and entities
+    * @param adapter               the adapter interface used to interact with the external Identity and Access Management (IAM) system
     */
    public UpdateDepartmentCommandHandler(
            DepartmentEntityRepository departmentRepository, DepartmentMapper departmentMapper, IAdapter adapter) {

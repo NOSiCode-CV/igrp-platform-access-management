@@ -31,7 +31,7 @@ public class PermissionCacheService {
 
 
     @Cacheable(value = CACHE_NAME,
-            key = "#request.subject + ':' + #request.resource + ':' + #request.action")
+            keyGenerator = "permissionCacheKeyGenerator")
     public PermissionCacheEntryDTO getOrLoadPermission(PermissionCheckRequest request) {
 
         LOGGER.info("Cache MISS - Buscando no banco de dados: {}:{}:{}",

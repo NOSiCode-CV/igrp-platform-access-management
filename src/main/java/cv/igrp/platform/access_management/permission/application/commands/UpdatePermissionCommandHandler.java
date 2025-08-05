@@ -7,11 +7,13 @@ import cv.igrp.platform.access_management.permission.domain.service.PermissionVa
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
+import cv.igrp.platform.access_management.shared.domain.events.DeletePermissionEvent;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -50,6 +52,7 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
    private final PermissionEntityRepository permissionRepository;
    private final ApplicationEntityRepository applicationRepository;
    private final PermissionMapper permissionMapper;
+   private final ApplicationEventPublisher eventPublisher;
 
    /**
     * Constructs the handler with required dependencies.
@@ -58,10 +61,11 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
     * @param applicationRepository    repository to retrieve the associated application entity
     * @param permissionMapper         mapper to convert permission entities to DTOs
     */
-   public UpdatePermissionCommandHandler(PermissionEntityRepository permissionRepository, ApplicationEntityRepository applicationRepository, PermissionMapper permissionMapper) {
+   public UpdatePermissionCommandHandler(PermissionEntityRepository permissionRepository, ApplicationEntityRepository applicationRepository, PermissionMapper permissionMapper, ApplicationEventPublisher eventPublisher) {
       this.permissionRepository = permissionRepository;
       this.applicationRepository = applicationRepository;
       this.permissionMapper = permissionMapper;
+      this.eventPublisher = eventPublisher;
    }
 
 
@@ -112,6 +116,9 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
       PermissionEntity updatedPermission = permissionRepository.save(foundPermission);
       PermissionDTO response = permissionMapper.mapToDTO(updatedPermission);
       log.info("Permission with name: {} updated successfully", command.getPermissiondto().getName());
+
+      eventPublisher.publishEvent(new DeletePermissionEvent(this, command.getName()));
+
       return new ResponseEntity<>(response, HttpStatus.OK);
    }
 

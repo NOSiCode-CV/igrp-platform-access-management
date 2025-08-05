@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 @Component
 public class DeleteApplicationCommandHandler implements CommandHandler<DeleteApplicationCommand, ResponseEntity<String>> {
 
-   private ApplicationEntityRepository applicationRepository;
+   private final ApplicationEntityRepository applicationRepository;
 
    /**
     * Constructs the handler with the required repository dependency.

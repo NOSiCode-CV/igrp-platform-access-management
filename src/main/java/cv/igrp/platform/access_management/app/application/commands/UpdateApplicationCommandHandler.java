@@ -35,8 +35,8 @@ import org.slf4j.LoggerFactory;
 @Component
 public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApplicationCommand, ResponseEntity<ApplicationDTO>> {
 
-   private ApplicationEntityRepository applicationRepository;
-   private ApplicationMapper applicationMapper;
+   private final ApplicationEntityRepository applicationRepository;
+   private final ApplicationMapper applicationMapper;
 
    /**
     * Constructs a new {@code UpdateApplicationCommandHandler} with the required dependencies.

@@ -15,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 
@@ -69,6 +70,7 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
     * @return a {@link ResponseEntity} containing the created user as a {@link IGRPUserDTO}
     */
    @IgrpCommandHandler
+   @Transactional
    public ResponseEntity<IGRPUserDTO> handle(CreateUserCommand command) {
       var dto =command.getIgrpuserdto();
 
@@ -80,8 +82,10 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
       user.setEmail(command.getIgrpuserdto().getEmail());
       user.setRoles(new ArrayList<>());
 
+      var savedUser = userRepository.save(user);
+
       try {
-         adapter.createUser(user);
+         adapter.createUser(savedUser);
       } catch (IAMException e) {
          logger.error(e.getMessage(), e);
          throw IgrpResponseStatusException.of(
@@ -90,8 +94,6 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
                  e.getMessage()
          );
       }
-
-      var savedUser = userRepository.save(user);
 
       logger.info("User created successfully with id={}", savedUser.getId());
 

@@ -36,6 +36,7 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
     * Constructs a new instance of {@code DeleteDepartmentCommandHandler} with the given repository.
     *
     * @param departmentRepository the repository used to access and delete departments
+    * @param adapter               the adapter interface used to interact with the external Identity and Access Management (IAM) system
     */
    public DeleteDepartmentCommandHandler(DepartmentEntityRepository departmentRepository, IAdapter adapter) {
       this.departmentRepository = departmentRepository;
