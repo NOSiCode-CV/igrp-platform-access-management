@@ -21,7 +21,7 @@ public class ConfigurationService {
     private static final String SYSTEM_USER = "system";
     private static final String SUPER_ADMIN_USERNAME = "superadmin";
     private static final String IGRP_DEPARTMENT = "DEPT_IGRP";
-    private static final String IGRP_APP = "APP_IGRP";
+    private static final String IGRP_APP = "APP_IGRP_CENTER";
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
@@ -81,12 +81,12 @@ public class ConfigurationService {
 
     Long createDefaultDepartment() {
         String sql = """
-            INSERT INTO t_department
-            (name, code, description, status,
-             created_by, created_date, last_modified_by, last_modified_date)
-            VALUES (?, ?, ?, 'ACTIVE', ?, now(), ?, now())
-            RETURNING id
-        """;
+                    INSERT INTO t_department
+                    (name, code, description, status,
+                     created_by, created_date, last_modified_by, last_modified_date)
+                    VALUES (?, ?, ?, 'ACTIVE', ?, now(), ?, now())
+                    RETURNING id
+                """;
         LOGGER.info("[Startup Config] Default Department created");
         return jdbcTemplate.queryForObject(sql,
                 Long.class,
@@ -95,12 +95,12 @@ public class ConfigurationService {
 
     Long createDefaultApp(Long deptId) {
         String sql = """
-            INSERT INTO t_application
-            (name, code, description, owner, department_id, status, type,
-             created_by, created_date, last_modified_by, last_modified_date)
-            VALUES (?, ?, ?, ?, ?, 'ACTIVE', 'SYSTEM', ?, now(), ?, now())
-            RETURNING id
-        """;
+                    INSERT INTO t_application
+                    (name, code, description, owner, department_id, status, type,
+                     created_by, created_date, last_modified_by, last_modified_date)
+                    VALUES (?, ?, ?, ?, ?, 'ACTIVE', 'SYSTEM', ?, now(), ?, now())
+                    RETURNING id
+                """;
         LOGGER.info("[Startup Config] Default App created");
         return jdbcTemplate.queryForObject(sql,
                 Long.class,
@@ -110,12 +110,12 @@ public class ConfigurationService {
 
     Long createDefaultPermission(Long appId) {
         String sql = """
-            INSERT INTO t_permission
-            (name, description, status, application,
-             created_by, created_date, last_modified_by, last_modified_date)
-            VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
-            RETURNING id
-        """;
+                    INSERT INTO t_permission
+                    (name, description, status, application,
+                     created_by, created_date, last_modified_by, last_modified_date)
+                    VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
+                    RETURNING id
+                """;
         LOGGER.info("[Startup Config] Default Permission created");
         return jdbcTemplate.queryForObject(sql,
                 Long.class,
@@ -126,12 +126,12 @@ public class ConfigurationService {
     Long createDefaultRole(Long deptId, Long permId) {
         // Insert role
         String sqlRole = """
-            INSERT INTO t_role
-            (name, description, status, department,
-             created_by, created_date, last_modified_by, last_modified_date)
-            VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
-            RETURNING id
-        """;
+                    INSERT INTO t_role
+                    (name, description, status, department,
+                     created_by, created_date, last_modified_by, last_modified_date)
+                    VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
+                    RETURNING id
+                """;
         Long roleId = jdbcTemplate.queryForObject(sqlRole,
                 Long.class,
                 SUPER_ADMIN_USERNAME, "iGRP Superadmin", deptId,
@@ -139,13 +139,13 @@ public class ConfigurationService {
 
         // Insert role-permission relation
         String sqlRolePerm = """
-            INSERT INTO t_role_permission
-            (role_id, permission)
-            SELECT ?, ?
-            WHERE NOT EXISTS (
-                SELECT 1 FROM t_role_permission WHERE role_id=? AND permission=?
-            )
-        """;
+                    INSERT INTO t_role_permission
+                    (role_id, permission)
+                    SELECT ?, ?
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM t_role_permission WHERE role_id=? AND permission=?
+                    )
+                """;
         jdbcTemplate.update(sqlRolePerm, roleId, permId, roleId, permId);
 
         LOGGER.info("[Startup Config] Default Role created");
@@ -154,12 +154,12 @@ public class ConfigurationService {
 
     private Long createSuperAdminUser() {
         String sql = """
-            INSERT INTO t_user
-            (name, username, email,
-             created_by, created_date, last_modified_by, last_modified_date)
-            VALUES (?, ?, ?, ?, now(), ?, now())
-            RETURNING id
-        """;
+                    INSERT INTO t_user
+                    (name, username, email,
+                     created_by, created_date, last_modified_by, last_modified_date)
+                    VALUES (?, ?, ?, ?, now(), ?, now())
+                    RETURNING id
+                """;
         LOGGER.info("[Startup Config] Super admin user created");
         return jdbcTemplate.queryForObject(sql,
                 Long.class,
@@ -169,13 +169,13 @@ public class ConfigurationService {
 
     void assignRoleToSuperAdminUser(Long roleId, Long userId) {
         String sql = """
-            INSERT INTO t_role_users
-            (users_id, roles_id)
-            SELECT ?, ?
-            WHERE NOT EXISTS (
-                SELECT 1 FROM t_role_users WHERE users_id = ? AND roles_id = ?
-            )
-        """;
+                    INSERT INTO t_role_users
+                    (users_id, roles_id)
+                    SELECT ?, ?
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM t_role_users WHERE users_id = ? AND roles_id = ?
+                    )
+                """;
         jdbcTemplate.update(sql, userId, roleId, userId, roleId);
 
         LOGGER.info("[Startup Config] Superadmin user linked to role");
@@ -194,10 +194,10 @@ public class ConfigurationService {
 
             // Fetch previous hash
             String sqlHash = """
-                SELECT fields->>'menus_hash'
-                FROM t_custom_field
-                WHERE table_name='t_application' AND record_id=? LIMIT 1
-            """;
+                        SELECT fields->>'menus_hash'
+                        FROM t_custom_field
+                        WHERE table_name='t_application' AND record_id=? LIMIT 1
+                    """;
             String previousHash = jdbcTemplate.query(sqlHash, ps -> ps.setLong(1, appId),
                     rs -> rs.next() ? rs.getString(1) : null);
 
@@ -228,14 +228,15 @@ public class ConfigurationService {
                 MenuEntryType type = MenuEntryType.valueOf(entry.get("type").asText());
 
                 Long menuId = jdbcTemplate.queryForObject("""
-                    INSERT INTO t_menu_entry
-                    (name, type, icon, position, target, url, page_slug, status,
-                     parent_id, application_id,
-                     created_by, created_date, last_modified_by, last_modified_date)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, now(), ?, now())
-                    RETURNING id
-                """,
+                                    INSERT INTO t_menu_entry
+                                    (code, name, type, icon, position, target, url, page_slug, status,
+                                     parent_id, application_id,
+                                     created_by, created_date, last_modified_by, last_modified_date)
+                                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?, now(), ?, now())
+                                    RETURNING id
+                                """,
                         Long.class,
+                        entry.get("code").asText(),
                         entry.get("name").asText(),
                         type.name(),
                         entry.has("icon") ? entry.get("icon").asText() : null,
@@ -260,25 +261,33 @@ public class ConfigurationService {
 
     private void upsertCustomField(Long recordId, String key, String value) {
         String selectSql = """
-            SELECT id FROM t_custom_field WHERE table_name='t_application' AND record_id=? LIMIT 1
-        """;
+                    SELECT id FROM t_custom_field WHERE table_name='t_application' AND record_id=? LIMIT 1
+                """;
         Long cfId = jdbcTemplate.query(selectSql, ps -> ps.setLong(1, recordId),
                 rs -> rs.next() ? rs.getLong(1) : null);
 
         if (cfId == null) {
             jdbcTemplate.update("""
-                INSERT INTO t_custom_field (table_name, record_id, fields,
-                                            created_by, created_date, last_modified_by, last_modified_date)
-                VALUES ('t_application', ?, jsonb_build_object(?, ?),
-                        ?, now(), ?, now())
-            """, recordId, key, value, SYSTEM_USER, SYSTEM_USER);
+                        INSERT INTO t_custom_field (table_name, record_id, fields,
+                                                    created_by, created_date, last_modified_by, last_modified_date)
+                        VALUES ('t_application', ?, jsonb_build_object(?, ?),
+                                ?, now(), ?, now())
+                    """, recordId, key, value, SYSTEM_USER, SYSTEM_USER);
         } else {
             jdbcTemplate.update("""
-                UPDATE t_custom_field
-                SET fields = jsonb_set(fields, ?, ?::jsonb),
-                    last_modified_by=?, last_modified_date=now()
-                WHERE id = ?
-            """, "{"+key+"}", "\""+value+"\"", SYSTEM_USER, cfId);
+                            UPDATE t_custom_field
+                            SET fields = jsonb_set(fields, ?::text[], ?::jsonb),
+                                last_modified_by=?, last_modified_date=now()
+                            WHERE id = ?
+                            """,
+                    new Object[]{
+                            "{" + key + "}",               // JSON path
+                            "\"" + value + "\"",            // JSON value as string
+                            SYSTEM_USER,
+                            cfId
+                    }
+            );
+
         }
     }
 

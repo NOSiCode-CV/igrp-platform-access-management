@@ -21,6 +21,7 @@ public class MenuEntryMapper {
         dto.setStatus(entity.getStatus());
         dto.setTarget(entity.getTarget());
         dto.setUrl(entity.getUrl());
+        dto.setPageSlug(entity.getPageSlug());
 
         if (entity.getParentId() != null)
             dto.setParentCode(entity.getParentId().getCode());
@@ -51,6 +52,7 @@ public class MenuEntryMapper {
         entity.setStatus(dto.getStatus() != null ? dto.getStatus() : Status.ACTIVE);
         entity.setTarget(dto.getTarget());
         entity.setUrl(dto.getUrl());
+        entity.setPageSlug(dto.getPageSlug());
 
         // parentId, applicationId, and resourceId should be set in the service layer using repositories
         // like MenuEntryEntity.setParentId(menuRepo.findById(dto.getParentId()).orElse(null))

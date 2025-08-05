@@ -45,20 +45,20 @@ public class PermissionEntity extends AuditEntity {
   
 
 
-  @ManyToOne(fetch = FetchType.EAGER)
+  @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application", referencedColumnName = "id")
     private ApplicationEntity application;
 
 
   
-    @OneToOne(fetch = FetchType.EAGER)
+    @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department", unique = true, referencedColumnName = "id")
     private DepartmentEntity department;
 
 
-  @ManyToOne(fetch = FetchType.EAGER)
+  @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "menu_entry_id", referencedColumnName = "id")
-    private MenuEntryEntity menuEntryId;   @ManyToMany(mappedBy = "permissions", fetch = FetchType.EAGER)
+    private MenuEntryEntity menuEntryId;   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
 private Set<RoleEntity> roles;
 
 

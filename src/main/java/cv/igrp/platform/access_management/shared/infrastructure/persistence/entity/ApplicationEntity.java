@@ -75,7 +75,7 @@ public class ApplicationEntity extends AuditEntity {
   
 
 
-  @ManyToOne(fetch = FetchType.EAGER, cascade = { CascadeType.ALL })
+  @ManyToOne(fetch = FetchType.LAZY, cascade = { CascadeType.ALL })
     @JoinColumn(name = "department_id", referencedColumnName = "id")
     private DepartmentEntity departmentId;   @OneToMany(mappedBy = "applicationId")
 private List<MenuEntryEntity> menus;
