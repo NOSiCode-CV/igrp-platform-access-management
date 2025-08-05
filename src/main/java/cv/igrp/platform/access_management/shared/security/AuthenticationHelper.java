@@ -41,6 +41,20 @@ public class AuthenticationHelper {
     }
 
     /**
+     * Retrieves the JWT token value from the security context.
+     *
+     * @return JWT token
+     * @throws IllegalStateException if the JWT token is not found in the security context
+     */
+    public Jwt getJwtToken() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
+            return jwt;
+        }
+        throw new IllegalStateException("JWT token not found in security context");
+    }
+
+    /**
      * Retrieves the JWT token value from the security context as a bearer token.
      *
      * @return JWT token

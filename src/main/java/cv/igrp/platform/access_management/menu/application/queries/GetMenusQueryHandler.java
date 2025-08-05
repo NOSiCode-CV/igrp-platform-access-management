@@ -102,16 +102,7 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
    * @throws IgrpResponseStatusException if the type is invalid
    */
   private MenuEntryType resolveMenuEntryType(String type) {
-    try {
-      return MenuEntryType.valueOf(type);
-    } catch (IllegalArgumentException ex) {
-      logger.warn("Invalid menu type provided: '{}'", type);
-      throw IgrpResponseStatusException.of(
-              HttpStatus.BAD_REQUEST,
-              "Invalid menu type",
-              "No menu type found with name: " + type
-      );
-    }
+      return MenuEntryType.fromCodeOrThrow(type);
   }
 
   /**
@@ -123,16 +114,7 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
    * @throws IgrpResponseStatusException if the type is invalid
    */
   private Status resolveMenuEntryStatus(String status) {
-    try {
-      return Status.valueOf(status);
-    } catch (IllegalArgumentException ex) {
-      logger.warn("Invalid menu status provided: '{}'", status);
-      throw IgrpResponseStatusException.of(
-              HttpStatus.BAD_REQUEST,
-              "Invalid menu status",
-              "No menu status found with name: " + status
-      );
-    }
+    return Status.fromCodeOrThrow(status);
   }
 
 }

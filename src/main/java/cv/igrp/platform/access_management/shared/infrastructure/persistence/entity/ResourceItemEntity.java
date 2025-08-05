@@ -45,7 +45,7 @@ public class ResourceItemEntity extends AuditEntity {
     @NotNull(message = "resourceId is mandatory")
 
 
-  @ManyToOne(fetch = FetchType.EAGER)
+  @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resource_id", referencedColumnName = "id")
     private ResourceEntity resourceId;
     @Column(name="permission_id")

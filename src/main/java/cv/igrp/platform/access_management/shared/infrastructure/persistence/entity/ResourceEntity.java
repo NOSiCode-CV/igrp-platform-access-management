@@ -56,7 +56,7 @@ public class ResourceEntity extends AuditEntity {
     @NotNull(message = "applicationId is mandatory")
 
 
-  @ManyToOne(fetch = FetchType.EAGER)
+  @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", referencedColumnName = "id")
     private ApplicationEntity applicationId;
     @Column(name="external_id")
