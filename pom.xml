@@ -34,7 +34,7 @@
         <!-- IGRP module versions -->
         <igrp.framework.core.version>0.0.3-alpha</igrp.framework.core.version>
         <igrp.framework.stereotype.version>0.0.1-alpha</igrp.framework.stereotype.version>
-        <framework.auth.version>0.1.0-beta</framework.auth.version>
+        <framework.auth.version>0.1.0-beta-SNAPSHOT</framework.auth.version>
         <filemanager.version>0.0.3-alpha</filemanager.version>
         <notification.email.version>0.0.1-alpha</notification.email.version>
     </properties>
@@ -179,7 +179,7 @@
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
             <artifactId>core</artifactId>
-            <version>${framework.auth.version}</version>
+            <version>0.1.0-beta</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
