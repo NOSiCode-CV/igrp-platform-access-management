@@ -15,6 +15,7 @@ import org.mockito.Captor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -36,6 +37,8 @@ public class UpdatePermissionCommandHandlerTest {
     private ApplicationEntityRepository applicationRepository;
     @Mock
     private PermissionMapper permissionMapper;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
     @Captor
     private ArgumentCaptor<PermissionEntity> permissionCaptor;
 

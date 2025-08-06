@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.role.application.commands;
 
+import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -37,6 +38,8 @@ public class UpdateRoleCommandHandlerTest {
     private DepartmentEntityRepository departmentRepository;
     @Mock
     private RoleMapper roleMapper;
+    @Mock
+    private IAdapter adapter;
 
     @Test
     void itShouldStartContext() {
@@ -66,60 +69,39 @@ public class UpdateRoleCommandHandlerTest {
     }
 
     @Test
-    void itShouldThrowNotFoundException_WhenProvidedRoleIdIsFound_AndProvidedDepartmentId_DoesNotExist() {
-        //... Given
-        String roleName = "app";
-        String nonExistentDepartmentCode = "app";
-        RoleDTO roleData = new RoleDTO();
-        roleData.setName(roleName);
-        roleData.setDepartmentCode(nonExistentDepartmentCode);
-        UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleName);
-
-        RoleEntity existingRole = new RoleEntity();
-        existingRole.setName(roleName);
-        existingRole.setStatus(Status.ACTIVE);
-
-        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
-                .thenReturn(Optional.of(existingRole));
-        when(departmentRepository.findByCode(nonExistentDepartmentCode))
-                .thenReturn(Optional.empty());
-
-        //... When
-        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
-                () -> underTest.handle(command));
-        //... Then
-        assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
-        verify(roleRepository, never()).save(any(RoleEntity.class));
-    }
-
-    @Test
     void itShouldThrowNotBadException_RoleName_Exists_InProvidedDepartment() {
         //... Given
         String roleNameToUpdate = "app";
-        String savedRoleName = "app";
+        String alreadyPresentRoleName = "admin";
         String departmentCode = "app";
+        DepartmentEntity foundDepartment = new DepartmentEntity();
+        foundDepartment.setCode(departmentCode);
         RoleDTO roleData = new RoleDTO();
-        String roleName = "New RoleName";
-        roleData.setName(roleName);
+        roleData.setName(alreadyPresentRoleName);
         roleData.setDepartmentCode(departmentCode);
         UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleNameToUpdate);
 
         RoleEntity existingRole = new RoleEntity();
         existingRole.setName(roleNameToUpdate);
         existingRole.setStatus(Status.ACTIVE);
+        existingRole.setDepartment(foundDepartment);
 
-        DepartmentEntity foundDepartment = new DepartmentEntity();
-        foundDepartment.setCode(departmentCode);
+        RoleEntity anotherExistingRole = new RoleEntity();
+        anotherExistingRole.setName(alreadyPresentRoleName);
+        anotherExistingRole.setStatus(Status.ACTIVE);
+        anotherExistingRole.setDepartment(foundDepartment);
+
         ArrayList<RoleEntity> persistedRoles = new ArrayList<>();
         RoleEntity savedRole = new RoleEntity();
-        savedRole.setName(roleName);
+        savedRole.setName(alreadyPresentRoleName);
+        savedRole.setStatus(Status.ACTIVE);
+        savedRole.setDepartment(foundDepartment);
         persistedRoles.add(savedRole);
+        persistedRoles.add(anotherExistingRole);
         foundDepartment.setRoles(persistedRoles);
 
-        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
+        when(roleRepository.findByNameAndStatusNot(roleNameToUpdate, Status.DELETED))
                 .thenReturn(Optional.of(existingRole));
-        when(departmentRepository.findByCode(departmentCode))
-                .thenReturn(Optional.of(foundDepartment));
 
         //... When
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
@@ -151,9 +133,6 @@ public class UpdateRoleCommandHandlerTest {
         department.setCode(existentDepartmentCode);
         department.setStatus(DepartmentStatus.ACTIVE);
 
-        when(departmentRepository.findByCode(existentDepartmentCode))
-                .thenReturn(Optional.of(department));
-
         //... When
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
@@ -165,7 +144,6 @@ public class UpdateRoleCommandHandlerTest {
     @Test
     void itShouldUpdateOnlyChangedFields() {
         // Given
-        String roleName = "app";
 
         DepartmentEntity department = new DepartmentEntity();
         String departmentCode = "app";
@@ -190,7 +168,7 @@ public class UpdateRoleCommandHandlerTest {
         updatedData.setDepartmentCode(departmentCode);
         updatedData.setParentName(null);
 
-        UpdateRoleCommand command = new UpdateRoleCommand(updatedData, roleName);
+        UpdateRoleCommand command = new UpdateRoleCommand(updatedData, rolePreviousName);
 
         RoleEntity updatedRole = new RoleEntity();
         updatedRole.setName("New Name");
@@ -201,8 +179,7 @@ public class UpdateRoleCommandHandlerTest {
         RoleDTO responseDto = new RoleDTO();
         responseDto.setName(roleNewName);
 
-        when(roleRepository.findByNameAndStatusNot(roleNewName, Status.DELETED)).thenReturn(Optional.of(existingRole));
-        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(roleRepository.findByNameAndStatusNot(rolePreviousName, Status.DELETED)).thenReturn(Optional.of(existingRole));
         when(roleRepository.save(existingRole)).thenReturn(updatedRole);
         when(roleMapper.mapToDto(updatedRole)).thenReturn(responseDto);
 
@@ -223,7 +200,6 @@ public class UpdateRoleCommandHandlerTest {
     @Test
     void itShouldPersistUpdatedRole() {
         // Given
-        String roleName = "app";
 
         DepartmentEntity department = new DepartmentEntity();
         String departmentCode = "app";
@@ -248,7 +224,7 @@ public class UpdateRoleCommandHandlerTest {
         updatedData.setDepartmentCode(departmentCode);
         updatedData.setParentName(null);
 
-        UpdateRoleCommand command = new UpdateRoleCommand(updatedData, roleName);
+        UpdateRoleCommand command = new UpdateRoleCommand(updatedData, rolePreviousName);
 
         RoleEntity updatedRole = new RoleEntity();
         updatedRole.setName("New Name");
@@ -259,8 +235,7 @@ public class UpdateRoleCommandHandlerTest {
         RoleDTO responseDto = new RoleDTO();
         responseDto.setName(roleNewName);
 
-        when(roleRepository.findByNameAndStatusNot(roleNewName, Status.DELETED)).thenReturn(Optional.of(existingRole));
-        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(roleRepository.findByNameAndStatusNot(rolePreviousName, Status.DELETED)).thenReturn(Optional.of(existingRole));
         when(roleRepository.save(existingRole)).thenReturn(updatedRole);
         when(roleMapper.mapToDto(updatedRole)).thenReturn(responseDto);
 

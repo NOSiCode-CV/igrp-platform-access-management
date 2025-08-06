@@ -205,14 +205,12 @@ public class GetMenusQueryHandlerTest {
         query = getMenusQuery(null, null, "NON_EXISTENT_TYPE", null);
 
         // Act
-        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 getMenusQueryHandler.handle(query));
 
         // Assert
         assertNotNull(ex);
-        assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getBody().getStatus());
-        assertNotNull(ex.getBody().getTitle());
-        assertTrue(ex.getBody().getTitle().contains("Invalid menu type"));
+        assertTrue(ex.getMessage().contains("Invalid MenuEntryType"));
 
         // Verify
         verifyNoInteractions(menuEntryRepository);
@@ -226,14 +224,12 @@ public class GetMenusQueryHandlerTest {
         query = getMenusQuery(null, null, null,"NON_EXISTENT_STATUS");
 
         // Act
-        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
+        IllegalArgumentException ex = assertThrows(IllegalArgumentException.class, () ->
                 getMenusQueryHandler.handle(query));
 
         // Assert
         assertNotNull(ex);
-        assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getBody().getStatus());
-        assertNotNull(ex.getBody().getTitle());
-        assertTrue(ex.getBody().getTitle().contains("Invalid menu status"));
+        assertTrue(ex.getMessage().contains("Invalid Status"));
 
         // Verify
         verifyNoInteractions(menuEntryRepository);
