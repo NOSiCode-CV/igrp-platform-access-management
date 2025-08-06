@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.role.domain.service;
 
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -40,6 +41,7 @@ class RoleValidatorTest {
         RoleEntity existingRole = new RoleEntity();
         String roleName = "Admin";
         existingRole.setName(roleName);
+        existingRole.setStatus(Status.ACTIVE);
 
         DepartmentEntity department = new DepartmentEntity();
         department.setId(1);
@@ -47,6 +49,7 @@ class RoleValidatorTest {
 
         RoleDTO newRole = new RoleDTO();
         newRole.setName(roleName);
+        newRole.setStatus(Status.ACTIVE);
 
         // When
         ResourceValidationResponse response = RoleValidator.validateRoleDto(newRole, department);

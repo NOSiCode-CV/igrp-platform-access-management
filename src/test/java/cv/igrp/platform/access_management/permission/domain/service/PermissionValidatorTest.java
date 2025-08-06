@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.permission.domain.service;
 
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
@@ -22,14 +23,17 @@ class PermissionValidatorTest {
         String existingPermissionName = "READ_USER";
         PermissionEntity existingPermission = new PermissionEntity();
         existingPermission.setName(existingPermissionName);
+        existingPermission.setStatus(Status.ACTIVE);
 
         ApplicationEntity application = new ApplicationEntity();
         application.setId(1);
         application.setPermissions(List.of(existingPermission));
+        application.setStatus(Status.ACTIVE);
 
         PermissionDTO newPermissionDTO = new PermissionDTO();
         newPermissionDTO.setName("read_user");
         newPermissionDTO.setApplicationCode("app");
+        newPermissionDTO.setStatus(Status.ACTIVE);
 
         // When
         ResourceValidationResponse response =

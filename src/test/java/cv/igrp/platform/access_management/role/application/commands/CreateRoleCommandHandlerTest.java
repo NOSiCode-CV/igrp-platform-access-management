@@ -1,6 +1,8 @@
 package cv.igrp.platform.access_management.role.application.commands;
 
+import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -35,6 +37,8 @@ public class CreateRoleCommandHandlerTest {
     private RoleEntityRepository roleRepository;
     @Mock
     private RoleMapper roleMapper;
+    @Mock
+    private IAdapter adapter;
 
     @Test
     void itShouldStartContext() {
@@ -135,6 +139,7 @@ public class CreateRoleCommandHandlerTest {
         role.setDepartmentCode(departmentCode);
         role.setName(roleName.toUpperCase());
         role.setDescription(roleDescription);
+        role.setStatus(Status.ACTIVE);
         role.setParentName(null);
 
         CreateRoleCommand command = new CreateRoleCommand(role);
@@ -142,9 +147,11 @@ public class CreateRoleCommandHandlerTest {
         DepartmentEntity department = new DepartmentEntity();
         department.setCode(departmentCode);
         department.setName("Department Name");
+        department.setStatus(DepartmentStatus.ACTIVE);
         ArrayList<RoleEntity> persistedRoles = new ArrayList<>();
         RoleEntity savedRole = new RoleEntity();
         savedRole.setName(roleName);
+        savedRole.setStatus(Status.ACTIVE);
         persistedRoles.add(savedRole);
         department.setRoles(persistedRoles);
 

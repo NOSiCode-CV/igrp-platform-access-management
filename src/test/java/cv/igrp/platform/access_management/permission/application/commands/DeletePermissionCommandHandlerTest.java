@@ -9,6 +9,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
@@ -25,6 +26,8 @@ public class DeletePermissionCommandHandlerTest {
     private DeletePermissionCommandHandler underTest;
     @Mock
     private PermissionEntityRepository permissionRepository;
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @Test
     void itShouldStartContext() {
