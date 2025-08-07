@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.app.application.commands;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import org.springframework.http.ResponseEntity;
@@ -54,7 +55,7 @@ public class GetApplicationsByIdsCommandHandler implements CommandHandler<GetApp
     */
    @IgrpQueryHandler
    public ResponseEntity<List<ApplicationDTO>> handle(GetApplicationsByIdsCommand query) {
-      List<ApplicationEntity> applications = applicationRepository.findAllById(query.getGetApplicationsByIdsRequest());
+      List<ApplicationEntity> applications = applicationRepository.findByIdInAndStatusNot(query.getGetApplicationsByIdsRequest(), Status.DELETED);
       List<ApplicationDTO> applicationDTOs = applications.stream()
               .map(applicationMapper::toDto)
               .toList();

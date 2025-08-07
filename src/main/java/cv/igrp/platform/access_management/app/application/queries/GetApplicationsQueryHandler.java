@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.app.application.queries;
 
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.framework.core.domain.QueryHandler;
@@ -89,6 +90,11 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
               cb.equal(cb.lower(root.get("slug")), slug.toLowerCase())
       );
     }
+
+    // Exclude deleted applications
+    spec = spec.and((root, _, cb) ->
+            cb.notEqual(root.get("status"), Status.DELETED)
+    );
 
     return spec;
   }
