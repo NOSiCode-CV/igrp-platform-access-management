@@ -84,9 +84,6 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
       if (dto.getName() != null) {
          user.setName(dto.getName());
       }
-      if (dto.getUsername() != null) {
-         user.setUsername(dto.getUsername());
-      }
       if (dto.getEmail() != null) {
          user.setEmail(dto.getEmail());
       }
