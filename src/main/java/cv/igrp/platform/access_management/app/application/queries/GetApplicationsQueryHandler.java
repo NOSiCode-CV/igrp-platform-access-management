@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.app.application.queries;
 
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
+import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
@@ -58,7 +59,7 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
    */
   @IgrpQueryHandler
   public ResponseEntity<List<ApplicationDTO>> handle(GetApplicationsQuery applicationsQuery) {
-    Specification<ApplicationEntity> spec = buildSpecification(applicationsQuery.getCode(), applicationsQuery.getName(), applicationsQuery.getSlug());
+    Specification<ApplicationEntity> spec = buildSpecification(applicationsQuery.getCode(), applicationsQuery.getName(), applicationsQuery.getSlug(), applicationsQuery.getType());
     List<ApplicationDTO> applications = applicationRepository.findAll(spec)
             .stream()
             .map(applicationMapper::toDto)
@@ -73,7 +74,7 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
    * @param name the name substring to search for, case-insensitive (optional)
    * @return a {@link Specification} representing the composed query filters
    */
-  private Specification<ApplicationEntity> buildSpecification(final String code, final String name, final String slug) {
+  private Specification<ApplicationEntity> buildSpecification(final String code, final String name, final String slug, final String type) {
     Specification<ApplicationEntity> spec = Specification.allOf();
     if (code != null && !code.isEmpty()) {
       spec = spec.and((root, _, cb) ->
@@ -90,6 +91,12 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
               cb.equal(cb.lower(root.get("slug")), slug.toLowerCase())
       );
     }
+    if (type != null && !type.isEmpty()) {
+      spec = spec.and((root, _, cb) ->
+              cb.equal(cb.lower(root.get("type")), AppType.fromCodeOrThrow(type))
+      );
+    }
+
 
     // Exclude deleted applications
     spec = spec.and((root, _, cb) ->
