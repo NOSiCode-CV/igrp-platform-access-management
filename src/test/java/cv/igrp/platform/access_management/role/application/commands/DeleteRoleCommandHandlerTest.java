@@ -1,7 +1,9 @@
 package cv.igrp.platform.access_management.role.application.commands;
 
+import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import org.junit.jupiter.api.Test;
@@ -27,6 +29,9 @@ public class DeleteRoleCommandHandlerTest {
     @Mock
     private RoleEntityRepository roleRepository;
 
+    @Mock
+    private IAdapter adapter;
+
     @Test
     void itShouldStartContext() {
         assertNotNull(underTest);
@@ -39,7 +44,7 @@ public class DeleteRoleCommandHandlerTest {
         DeleteRoleCommand command = new DeleteRoleCommand(roleName);
 
         //... When
-        when(roleRepository.findByName(roleName))
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
                 .thenReturn(Optional.empty());
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
@@ -51,6 +56,8 @@ public class DeleteRoleCommandHandlerTest {
     @Test
     void itShouldDeleteRole_WhenRoleIsFound() {
         // Given
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT_IGRP");
         String roleName = "admin";
         RoleEntity role = new RoleEntity();
         role.setId(1);
@@ -58,8 +65,9 @@ public class DeleteRoleCommandHandlerTest {
         role.setStatus(Status.ACTIVE);
         RoleEntity parenteRole = new RoleEntity();
         role.setParent(parenteRole);
+        role.setDepartment(department);
 
-        when(roleRepository.findByName(roleName)).thenReturn(Optional.of(role));
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.save(role)).thenReturn(role);
 
         DeleteRoleCommand command = new DeleteRoleCommand(roleName);
@@ -78,6 +86,8 @@ public class DeleteRoleCommandHandlerTest {
     @Test
     void itShouldDeleteChildren_WhenRoleIsRoot() {
         // Given
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT_IGRP");
         int roleId = 1;
         String roleName = "admin";
         RoleEntity parenteRole = new RoleEntity();
@@ -85,18 +95,22 @@ public class DeleteRoleCommandHandlerTest {
         parenteRole.setName(roleName);
         parenteRole.setStatus(Status.ACTIVE);
         parenteRole.setParent(null);
+        parenteRole.setDepartment(department);
 
         RoleEntity child1 = new RoleEntity();
         child1.setParent(parenteRole);
         child1.setStatus(Status.ACTIVE);
+        child1.setDepartment(department);
         RoleEntity child2 = new RoleEntity();
         child2.setStatus(Status.DELETED);
         child2.setParent(parenteRole);
+        child2.setDepartment(department);
         RoleEntity child3 = new RoleEntity();
         child3.setStatus(Status.INACTIVE);
         child3.setParent(parenteRole);
+        child3.setDepartment(department);
 
-        when(roleRepository.findByName(roleName)).thenReturn(Optional.of(parenteRole));
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(parenteRole));
         when(roleRepository.findByParent(parenteRole)).thenReturn(List.of(child1, child2, child3));
 
         DeleteRoleCommand command = new DeleteRoleCommand(roleName);
@@ -115,6 +129,8 @@ public class DeleteRoleCommandHandlerTest {
     @Test
     void itShouldDeleteRole_WhenRoleIsNotRoot() {
         // Given
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT_IGRP");
         int roleId = 1;
         String roleName = "admin";
         RoleEntity role = new RoleEntity();
@@ -122,8 +138,9 @@ public class DeleteRoleCommandHandlerTest {
         role.setName(roleName);
         role.setStatus(Status.ACTIVE);
         role.setParent(null);
+        role.setDepartment(department);
 
-        when(roleRepository.findByName(roleName)).thenReturn(Optional.of(role));
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.findByParent(role)).thenReturn(List.of());
 
         DeleteRoleCommand command = new DeleteRoleCommand(roleName);
@@ -139,6 +156,8 @@ public class DeleteRoleCommandHandlerTest {
     @Test
     void itShouldHandleNullChildListSafely() {
         // Given
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT_IGRP");
         int roleId = 1;
         String roleName = "admin";
         RoleEntity role = new RoleEntity();
@@ -146,8 +165,9 @@ public class DeleteRoleCommandHandlerTest {
         role.setName(roleName);
         role.setStatus(Status.ACTIVE);
         role.setParent(null);
+        role.setDepartment(department);
 
-        when(roleRepository.findByName(roleName)).thenReturn(Optional.of(role));
+        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.findByParent(role)).thenReturn(null);
 
         DeleteRoleCommand command = new DeleteRoleCommand(roleName);
@@ -163,17 +183,22 @@ public class DeleteRoleCommandHandlerTest {
     @Test
     void itShouldSaveOnlyTheDeletedParentRole() {
         // Given
+
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT_IGRP");
         RoleEntity parent = new RoleEntity();
         parent.setId(1);
         parent.setName("admin");
         parent.setStatus(Status.ACTIVE);
         parent.setParent(null);
+        parent.setDepartment(department);
 
         RoleEntity child = new RoleEntity();
         child.setStatus(Status.ACTIVE);
         child.setParent(parent);
+        child.setDepartment(department);
 
-        when(roleRepository.findByName("admin")).thenReturn(Optional.of(parent));
+        when(roleRepository.findByNameAndStatusNot("admin", Status.DELETED)).thenReturn(Optional.of(parent));
         when(roleRepository.findByParent(parent)).thenReturn(List.of(child));
 
         // When

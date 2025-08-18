@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.department.application.commands;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +22,9 @@ public class DeleteDepartmentCommandHandlerTest {
 
     @Mock
     private DepartmentEntityRepository departmentRepository;
+
+    @Mock
+    IAdapter adapter;
 
     @InjectMocks
     private DeleteDepartmentCommandHandler deleteDepartmentCommandHandler;

@@ -78,6 +78,12 @@
           "name": "departmentCode",
           "description": "The Department Code",
           "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "type",
+          "description": "The Application Type",
+          "isRequired": false
         }
       ]
     },
@@ -392,5 +398,5 @@
       ]
     }
   ],
-  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"
+  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications"
 }

@@ -53,9 +53,12 @@ public class GetAppMenusQueryHandlerTest {
   void setUp() {
     permission = new PermissionEntity();
     permission.setId(100);
+    permission.setName("view_menu");
+    permission.setStatus(Status.ACTIVE);
 
     role = new RoleEntity();
     role.setPermissions(Set.of(permission));
+    role.setStatus(Status.ACTIVE);
 
     user = new IGRPUserEntity();
     user.setUsername("superadmin");
@@ -64,6 +67,7 @@ public class GetAppMenusQueryHandlerTest {
     app = new ApplicationEntity();
     app.setId(1);
     app.setCode("APP_IGRP");
+    app.setStatus(Status.ACTIVE);
 
     menu = new MenuEntryEntity();
     menu.setId(10);
@@ -73,6 +77,7 @@ public class GetAppMenusQueryHandlerTest {
     menuDTO = new MenuEntryDTO();
     menuDTO.setId(10);
     menuDTO.setName("Test Menu");
+    menuDTO.setStatus(Status.ACTIVE);
   }
 
   @Test

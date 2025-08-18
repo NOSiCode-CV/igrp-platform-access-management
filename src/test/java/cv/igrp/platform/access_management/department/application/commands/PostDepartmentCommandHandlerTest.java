@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.department.application.commands;
 
+import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
@@ -33,6 +34,9 @@ public class PostDepartmentCommandHandlerTest {
 
     @Mock
     private DepartmentMapper departmentMapper;
+
+    @Mock
+    private IAdapter adapter;
 
     @InjectMocks
     private PostDepartmentCommandHandler postDepartmentCommandHandler;

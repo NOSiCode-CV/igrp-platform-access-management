@@ -72,7 +72,7 @@ public class GetAppMenusQueryHandler implements QueryHandler<GetAppMenusQuery, R
 
         // Step 2: Get user's permission IDs from roles
         Set<Integer> userPermissionIds = user.getRoles().stream()
-                .filter(Objects::nonNull)
+                .filter(role -> Objects.nonNull(role) && !role.getStatus().equals(Status.DELETED))
                 .flatMap(role -> role.getPermissions().stream())
                 .map(PermissionEntity::getId)
                 .collect(Collectors.toSet());
@@ -93,6 +93,7 @@ public class GetAppMenusQueryHandler implements QueryHandler<GetAppMenusQuery, R
                         return false;
                     }
                     return menuPermissions.stream()
+                                    .filter(permission -> permission.getStatus() == Status.ACTIVE)
                                     .map(PermissionEntity::getId)
                                     .anyMatch(userPermissionIds::contains);
                 })

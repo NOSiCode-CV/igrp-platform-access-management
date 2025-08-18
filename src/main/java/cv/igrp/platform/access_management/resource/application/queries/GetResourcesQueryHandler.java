@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.resource.application.queries;
 
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
 import cv.igrp.platform.access_management.shared.application.constants.ResourceType;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -110,6 +111,12 @@ public class GetResourcesQueryHandler implements QueryHandler<GetResourcesQuery,
               cb.equal(root.get("externalId"), externalId)
       );
     }
+
+    // Excluded deleted resources
+    spec = spec.and((root, _, cb) ->
+            cb.notEqual(root.get("status"), Status.DELETED)
+    );
+
     return spec;
   }
 

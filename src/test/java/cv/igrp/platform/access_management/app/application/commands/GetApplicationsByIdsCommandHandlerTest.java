@@ -71,7 +71,7 @@ public class GetApplicationsByIdsCommandHandlerTest {
         List<Integer> ids = Arrays.asList(1, 2);
         GetApplicationsByIdsCommand command = new GetApplicationsByIdsCommand(ids);
 
-        when(applicationRepository.findAllById(ids)).thenReturn(applicationList);
+        when(applicationRepository.findByIdInAndStatusNot(ids, Status.DELETED)).thenReturn(applicationList);
         when(applicationMapper.toDto(app1)).thenReturn(dto1);
         when(applicationMapper.toDto(app2)).thenReturn(dto2);
 
@@ -93,7 +93,7 @@ public class GetApplicationsByIdsCommandHandlerTest {
         assertEquals(dto2.getId(), dto2Result.getId());
         assertEquals(dto2.getName(), dto2Result.getName());
 
-        verify(applicationRepository, times(1)).findAllById(ids);
+        verify(applicationRepository, times(1)).findByIdInAndStatusNot(ids, Status.DELETED);
         verify(applicationMapper).toDto(app1);
         verify(applicationMapper).toDto(app2);
     }
@@ -105,7 +105,7 @@ public class GetApplicationsByIdsCommandHandlerTest {
         List<Integer> ids = List.of();
         GetApplicationsByIdsCommand command = new GetApplicationsByIdsCommand(ids);
 
-        when(applicationRepository.findAllById(ids)).thenReturn(List.of());
+        when(applicationRepository.findByIdInAndStatusNot(ids, Status.DELETED)).thenReturn(List.of());
 
         // When
         ResponseEntity<List<ApplicationDTO>> response = getApplicationsByIdsCommandHandler.handle(command);
@@ -115,7 +115,7 @@ public class GetApplicationsByIdsCommandHandlerTest {
         assertNotNull(response.getBody());
         assertTrue(response.getBody().isEmpty());
 
-        verify(applicationRepository, times(1)).findAllById(ids);
+        verify(applicationRepository, times(1)).findByIdInAndStatusNot(ids, Status.DELETED);
     }
 
 }

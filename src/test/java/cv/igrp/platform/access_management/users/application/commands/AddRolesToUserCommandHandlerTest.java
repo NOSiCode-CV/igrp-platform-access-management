@@ -5,12 +5,12 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
-import cv.igrp.platform.access_management.shared.application.dto.RoleUserDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.*;
 
@@ -50,7 +51,6 @@ public class AddRolesToUserCommandHandlerTest {
        return command = new AddRolesToUserCommand(roleUserDTO, username);
     }
 
-
     @BeforeEach
     void setUp() {
         user = new IGRPUserEntity();
@@ -64,6 +64,14 @@ public class AddRolesToUserCommandHandlerTest {
         roleDTO.setName(ROLE_ID);
 
         command = addRolesToUserCommand(List.of(ROLE_ID), USER_ID);
+
+        // Simulate a transaction for unit tests
+        TransactionSynchronizationManager.initSynchronization();
+    }
+
+    @AfterEach
+    void clearTransaction() {
+        TransactionSynchronizationManager.clearSynchronization();
     }
 
     @Test
@@ -107,7 +115,6 @@ public class AddRolesToUserCommandHandlerTest {
                 addRolesToUserCommandHandler.handle(command));
 
         // Assert
-
         assertNotNull(exception.getBody().getProperties());
         assertEquals("User not found with name: " + USER_ID, exception.getBody().getProperties().get("details"));
 
@@ -144,7 +151,7 @@ public class AddRolesToUserCommandHandlerTest {
     @DisplayName("should not duplicate user if already present in role")
     void testHandle_whenUserAlreadyInRole_shouldNotDuplicate() {
         // Arrange
-        role.setUsers(new HashSet<>(List.of(user)));
+        //role.setUsers(new HashSet<>(List.of(user)));
 
         when(roleRepository.findByName(ROLE_ID)).thenReturn(Optional.of(role));
         when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));

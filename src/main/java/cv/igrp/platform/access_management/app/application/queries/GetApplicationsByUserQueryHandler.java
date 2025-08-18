@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.app.application.queries;
 
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.framework.core.domain.QueryHandler;
@@ -57,7 +58,7 @@ public class GetApplicationsByUserQueryHandler implements QueryHandler<GetApplic
   @IgrpQueryHandler
   public ResponseEntity<List<ApplicationDTO>> handle(GetApplicationsByUserQuery query) {
     List<ApplicationEntity> applications = applicationRepository
-            .findDistinctByDepartmentId_Roles_Users_UsernameOrDepartmentId_Roles_Users_Email(query.getUid(), query.getUid());
+            .findDistinctByDepartmentId_Roles_Users_UsernameOrDepartmentId_Roles_Users_EmailAndStatusNot(query.getUid(), query.getUid(), Status.DELETED);
 
     List<ApplicationDTO> applicationDTOs = applications.stream()
             .map(applicationMapper::toDto)
