@@ -8,6 +8,8 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
+import org.hibernate.exception.ConstraintViolationException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -77,27 +79,41 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
       logger.info("Creating new user: username={}, email={}", dto.getUsername(), dto.getEmail());
 
       IGRPUserEntity user = new IGRPUserEntity();
-      user.setName(command.getIgrpuserdto().getName());
-      user.setUsername(command.getIgrpuserdto().getUsername());
-      user.setEmail(command.getIgrpuserdto().getEmail());
+      user.setName(dto.getName());
+      user.setUsername(dto.getUsername());
+      user.setEmail(dto.getEmail());
       user.setRoles(new ArrayList<>());
 
-      var savedUser = userRepository.save(user);
+      // Verify if username exists
+      if (userRepository.existsByUsername(dto.getUsername()))
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.CONFLICT,
+                 "Username %s already exists".formatted(dto.getUsername())
+         );
 
       try {
+
+         var savedUser = userRepository.save(user);
+
          adapter.createUser(savedUser);
+
+         logger.info("User created successfully with id={}", savedUser.getId());
+
+         return ResponseEntity.ok(userMapper.toDto(savedUser));
       } catch (IAMException e) {
          logger.error(e.getMessage(), e);
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.INTERNAL_SERVER_ERROR,
+         throw IgrpResponseStatusException.internalServerError(
                  "User Creation Failed",
+                 e.getMessage()
+         );
+      } catch (Exception e) {
+         logger.error("Unexpected User Creation Error: {}", e.getMessage(), e);
+         throw IgrpResponseStatusException.internalServerError(
+                 "Unexpected User Creation Error",
                  e.getMessage()
          );
       }
 
-      logger.info("User created successfully with id={}", savedUser.getId());
-
-      return ResponseEntity.ok(userMapper.toDto(savedUser));
    }
 
 }
