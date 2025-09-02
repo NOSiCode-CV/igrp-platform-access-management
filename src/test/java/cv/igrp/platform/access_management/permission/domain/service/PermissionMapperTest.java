@@ -2,7 +2,7 @@ package cv.igrp.platform.access_management.permission.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,15 +29,16 @@ class PermissionMapperTest {
         String permissionDescription = "Allows dashboard access";
         Status permissionStatus = Status.ACTIVE;
 
-        ApplicationEntity application = new ApplicationEntity();
-        application.setId(10);
+        DepartmentEntity department = new DepartmentEntity();
+        department.setId(10);
+        department.setCode("DEPT");
 
         PermissionEntity permission = new PermissionEntity();
         permission.setId(permissionId);
         permission.setName(permissionName);
         permission.setDescription(permissionDescription);
         permission.setStatus(permissionStatus);
-        permission.setApplication(application);
+        permission.setDepartment(department);
 
         // When
         PermissionDTO result = underTest.mapToDTO(permission);
@@ -48,13 +49,13 @@ class PermissionMapperTest {
         assertEquals(permissionName, result.getName());
         assertEquals(permissionDescription, result.getDescription());
         assertEquals(permissionStatus, result.getStatus());
-        assertEquals(application.getCode(), result.getApplicationCode());
+        assertEquals(department.getCode(), result.getDepartmentCode());
     }
 
     @Test
     void itShouldSetStatusToActive_When_NotProvided() {
         // Given
-        String applicationCode = "app";
+        String departmentCode = "DEPT";
         String name = "ACCESS_DASHBOARD";
         String description = "Allows dashboard access";
 
@@ -62,26 +63,26 @@ class PermissionMapperTest {
         dto.setName(name);
         dto.setDescription(description);
         dto.setStatus(null);
-        dto.setApplicationCode(applicationCode);
+        dto.setDepartmentCode(departmentCode);
 
-        ApplicationEntity application = new ApplicationEntity();
-        application.setCode(applicationCode);
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode(departmentCode);
 
         // When
-        PermissionEntity permission = underTest.mapDtoToEntity(dto, application);
+        PermissionEntity permission = underTest.mapDtoToEntity(dto, department);
 
         // Then
         assertNotNull(permission);
         assertEquals(name, permission.getName());
         assertEquals(description, permission.getDescription());
         assertEquals(Status.ACTIVE, permission.getStatus());
-        assertEquals(application, permission.getApplication());
+        assertEquals(department, permission.getDepartment());
     }
 
     @Test
     void itShouldMapAllFieldsCorrectly_FromDTOToPermission() {
         // Given
-        String applicationCode = "app";
+        String departmentCode = "DEPT";
         String name = "ACCESS_DASHBOARD";
         String description = "Allows dashboard access";
         Status status = Status.INACTIVE;
@@ -90,19 +91,19 @@ class PermissionMapperTest {
         dto.setName(name);
         dto.setDescription(description);
         dto.setStatus(status);
-        dto.setApplicationCode(applicationCode);
+        dto.setDepartmentCode(departmentCode);
 
-        ApplicationEntity application = new ApplicationEntity();
-        application.setCode(applicationCode);
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode(departmentCode);
 
         // When
-        PermissionEntity permission = underTest.mapDtoToEntity(dto, application);
+        PermissionEntity permission = underTest.mapDtoToEntity(dto, department);
 
         // Then
         assertNotNull(permission);
         assertEquals(name, permission.getName());
         assertEquals(description, permission.getDescription());
         assertEquals(status, permission.getStatus());
-        assertEquals(application, permission.getApplication());
+        assertEquals(department, permission.getDepartment());
     }
 }

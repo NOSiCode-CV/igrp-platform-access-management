@@ -4,9 +4,9 @@ import cv.igrp.platform.access_management.permission.domain.service.PermissionMa
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,7 +34,7 @@ public class UpdatePermissionCommandHandlerTest {
     @Mock
     private PermissionEntityRepository permissionRepository;
     @Mock
-    private ApplicationEntityRepository applicationRepository;
+    private DepartmentEntityRepository departmentRepository;
     @Mock
     private PermissionMapper permissionMapper;
     @Mock
@@ -68,11 +68,11 @@ public class UpdatePermissionCommandHandlerTest {
     }
 
     @Test
-    void itShouldThrowRecordNotFound_When_ProvidedApplicationId_NotFound() {
+    void itShouldThrowRecordNotFound_When_ProvidedDepartmentId_NotFound() {
         // Given
         int permissionId = 100;
         String permissionName = "READ_DATA";
-        String applicationCode = "APP";
+        String departmentCode = "DEPT";
         String permissionNewDescription = "PermissionNewId";
         String permissionPreviousName = "Permission PreviousName";
 
@@ -80,7 +80,7 @@ public class UpdatePermissionCommandHandlerTest {
         permissionNewData.setName(permissionName); // <-- FIXED
         permissionNewData.setDescription(permissionNewDescription);
         permissionNewData.setStatus(Status.INACTIVE);
-        permissionNewData.setApplicationCode(applicationCode);
+        permissionNewData.setDepartmentCode(departmentCode);
 
         UpdatePermissionCommand command = new UpdatePermissionCommand(permissionNewData, permissionName);
 
@@ -91,7 +91,7 @@ public class UpdatePermissionCommandHandlerTest {
 
         when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED))
                 .thenReturn(Optional.of(foundPermission));
-        when(applicationRepository.findByCode(applicationCode))
+        when(departmentRepository.findByCode(departmentCode))
                 .thenReturn(Optional.empty());
 
         // When
@@ -106,31 +106,31 @@ public class UpdatePermissionCommandHandlerTest {
 
 
     @Test
-    void itShouldUpdateApplication_WhenProvidedApplicationIdIsDifferent() {
+    void itShouldUpdateDepartment_WhenProvidedDepartmentIdIsDifferent() {
         // Given
         int permissionId = 1;
         String permissionName = "READ_DATA";
-        int previousAppId = 10;
-        String previousAppCode = "PREV_APP";
-        int newAppId = 20;
-        String newAppCode = "APP";
+        int previousDepartmentId = 10;
+        String previousDepartmentCode = "PREV_DEPT";
+        int newDepartmentId = 20;
+        String newDepartmentCode = "DEPT";
 
-        ApplicationEntity previousApp = new ApplicationEntity();
-        previousApp.setId(previousAppId);
-        previousApp.setCode(previousAppCode);
+        DepartmentEntity previousDept = new DepartmentEntity();
+        previousDept.setId(previousDepartmentId);
+        previousDept.setCode(previousDepartmentCode);
 
-        ApplicationEntity newApp = new ApplicationEntity();
-        newApp.setId(newAppId);
-        newApp.setCode(newAppCode);
+        DepartmentEntity newDept = new DepartmentEntity();
+        newDept.setId(newDepartmentId);
+        newDept.setCode(newDepartmentCode);
 
         PermissionEntity existingPermission = new PermissionEntity();
         existingPermission.setId(permissionId);
         existingPermission.setName("READ_DATA");
         existingPermission.setStatus(Status.ACTIVE);
-        existingPermission.setApplication(previousApp);
+        existingPermission.setDepartment(previousDept);
 
         PermissionDTO updateDTO = new PermissionDTO();
-        updateDTO.setApplicationCode(newAppCode);
+        updateDTO.setDepartmentCode(newDepartmentCode);
         updateDTO.setName("READ_DATA");
         updateDTO.setDescription("Updated Description");
         updateDTO.setStatus(Status.ACTIVE);
@@ -141,7 +141,7 @@ public class UpdatePermissionCommandHandlerTest {
         PermissionDTO mappedDTO = new PermissionDTO();
 
         when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED)).thenReturn(Optional.of(existingPermission));
-        when(applicationRepository.findByCode(newAppCode)).thenReturn(Optional.of(newApp));
+        when(departmentRepository.findByCode(newDepartmentCode)).thenReturn(Optional.of(newDept));
         when(permissionRepository.save(any(PermissionEntity.class))).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(mappedDTO);
 
@@ -152,35 +152,35 @@ public class UpdatePermissionCommandHandlerTest {
         verify(permissionRepository).save(permissionCaptor.capture());
         PermissionEntity capturedPermission = permissionCaptor.getValue();
 
-        assertEquals(newAppId, capturedPermission.getApplication().getId());
+        assertEquals(newDepartmentId, capturedPermission.getDepartment().getId());
     }
 
     @Test
     void itShouldUpdatePermission_WhenValidCommandIsProvided() {
         // Given
         int permissionId = 1;
-        int applicationId = 100;
+        int departmentId = 100;
         String permissionName = "READ_DATA";
-        String appCode = "APP";
+        String departmentCode = "DEPT";
         String permissionPreviousDescription = "Old Description";
         String permissionNewDescription = "New Description";
 
-        ApplicationEntity application = new ApplicationEntity();
-        application.setId(applicationId);
-        application.setCode(appCode);
+        DepartmentEntity department = new DepartmentEntity();
+        department.setId(departmentId);
+        department.setCode(departmentCode);
 
         PermissionEntity existingPermission = new PermissionEntity();
         existingPermission.setId(permissionId);
         existingPermission.setName(permissionName);
         existingPermission.setDescription(permissionPreviousDescription);
         existingPermission.setStatus(Status.INACTIVE);
-        existingPermission.setApplication(application);
+        existingPermission.setDepartment(department);
 
         PermissionDTO dto = new PermissionDTO();
         dto.setDescription(permissionNewDescription);
         dto.setName(permissionName);
         dto.setStatus(Status.ACTIVE);
-        dto.setApplicationCode(appCode);
+        dto.setDepartmentCode(departmentCode);
 
         UpdatePermissionCommand command = new UpdatePermissionCommand(dto, permissionName);
 
@@ -189,7 +189,7 @@ public class UpdatePermissionCommandHandlerTest {
 
         // When
         when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED)).thenReturn(Optional.of(existingPermission));
-        when(applicationRepository.findByCode(appCode)).thenReturn(Optional.of(application));
+        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
         when(permissionRepository.save(any(PermissionEntity.class))).thenReturn(updatedPermission);
         when(permissionMapper.mapToDTO(updatedPermission)).thenReturn(mappedDTO);
 
@@ -201,7 +201,7 @@ public class UpdatePermissionCommandHandlerTest {
 
         assertEquals(permissionNewDescription, savedPermission.getDescription());
         assertEquals(Status.ACTIVE, savedPermission.getStatus());
-        assertEquals(appCode, savedPermission.getApplication().getCode());
+        assertEquals(departmentCode, savedPermission.getDepartment().getCode());
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(mappedDTO, response.getBody());

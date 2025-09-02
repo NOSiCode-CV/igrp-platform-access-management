@@ -17,7 +17,6 @@ import java.util.List;
 @Audited
 @Getter
 @Setter
-@ToString
 @IgrpEntity
 @Entity
 @NoArgsConstructor
