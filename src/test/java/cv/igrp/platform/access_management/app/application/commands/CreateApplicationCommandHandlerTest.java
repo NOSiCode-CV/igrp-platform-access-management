@@ -62,6 +62,7 @@ public class CreateApplicationCommandHandlerTest {
         department.setCode("HR");
         department.setDescription("Test Description");
         department.setStatus(DepartmentStatus.ACTIVE);
+        department.setApplications(new ArrayList<>());
 
         ApplicationDTO applicationDTO = new ApplicationDTO(
                 null,
@@ -105,12 +106,19 @@ public class CreateApplicationCommandHandlerTest {
         savedApplication.setPicture("pic.png");
         savedApplication.setUrl("http://localhost:8080");
         savedApplication.setSlug("test-app");
-        savedApplication.setDepartmentId(department);
 
         when(applicationValidator.validateApplicationCode(applicationDTO)).thenReturn(resourceValidationResponse);
         when(applicationMapper.toEntity(applicationDTO)).thenReturn(expectedToSave);
         when(applicationRepository.save(Mockito.any(ApplicationEntity.class))).thenReturn(savedApplication);
-        when(applicationMapper.toDto(savedApplication)).thenCallRealMethod(); // Optional if you map back to DTO
+        when(applicationMapper.toDto(savedApplication)).thenAnswer(inv -> {
+            ApplicationDTO dto = new ApplicationDTO();
+            dto.setId(savedApplication.getId());
+            dto.setCode(savedApplication.getCode());
+            dto.setName(savedApplication.getName());
+            dto.setDepartmentCode("HR");
+            dto.setStatus(savedApplication.getStatus());
+            return dto;
+        });
 
         ResponseEntity<ApplicationDTO> response = createApplicationCommandHandler.handle(command);
 
