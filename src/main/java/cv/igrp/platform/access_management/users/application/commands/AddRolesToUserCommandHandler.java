@@ -5,6 +5,7 @@ import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
@@ -17,8 +18,6 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionSynchronization;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -97,12 +96,12 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
 
          logger.info("Assigning role name={} to user name={}", roleName, userName);
 
-         RoleEntity roleToAdd = roleRepository.findByName(roleName)
+         RoleEntity roleToAdd = roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)
                  .orElseThrow(() -> {
                     logger.warn("Role not found with name={}", roleName);
                     return IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND, "Invalid Role name",
-                            "Role not found with name: " + roleName);
+                            "Role not found with name: %s".formatted(roleName));
                  });
 
          Set<IGRPUserEntity> users = roleToAdd.getUsers();
@@ -120,30 +119,23 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
             logger.info("User name={} was already associated with role name={}", userName, roleName);
          }
       }
-      //TODO Refactor transactional annotation were added.
       if(!roles.isEmpty()) {
-         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
-            @Override
-            public void afterCommit() {
-               for (RoleEntity role : roles) {
-                  try {
-                     adapter.assignRoleToUser(role.getDepartment().getCode(),role.getName(),userName);
-                     logger.info("Role name={} from department with code {} assigned to user name={} in Keycloak",
-                             role.getName(),
-                             role.getDepartment().getCode(),
-                             userName);
-                  } catch (IAMException e) {
-                     logger.error("Failed to assign role name={} from {} department to user name={} in Keycloak: {}",
-                             role.getName(),
-                             role.getDepartment().getCode(),
-                             userName,
-                             e.getMessage(), e);
-                     throw new RuntimeException(e);
-                  }
-               }
-               TransactionSynchronization.super.afterCommit();
+         for (RoleEntity role : roles) {
+            try {
+               adapter.assignRoleToUser(role.getDepartment().getCode(),role.getName(),userName);
+               logger.info("Role name={} from department with code {} assigned to user name={} in Keycloak",
+                       role.getName(),
+                       role.getDepartment().getCode(),
+                       userName);
+            } catch (IAMException e) {
+               logger.error("Failed to assign role name={} from {} department to user name={} in Keycloak: {}",
+                       role.getName(),
+                       role.getDepartment().getCode(),
+                       userName,
+                       e.getMessage(), e);
+               throw new RuntimeException(e);
             }
-         });
+         }
       }
 
       List<RoleDTO> rolesDTO = roles.stream().map(roleMapper::mapToDto).toList();
