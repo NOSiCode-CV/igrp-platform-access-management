@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetRolesByPermissionIDQuery implements Query {
 
-  @NotBlank(message = "The field <name> is required")
+  @NotBlank(message = "The field <name> is required.")
   private String name;
 
 }

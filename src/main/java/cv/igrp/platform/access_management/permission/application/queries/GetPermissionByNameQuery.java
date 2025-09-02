@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetPermissionByNameQuery implements Query {
 
-  @NotBlank(message = "The field <name> is required")
+  @NotBlank(message = "The field <name> is required.")
   private String name;
 
 }

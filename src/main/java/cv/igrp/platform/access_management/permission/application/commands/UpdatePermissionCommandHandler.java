@@ -8,9 +8,9 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.domain.events.DeletePermissionEvent;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
@@ -27,20 +27,20 @@ import static cv.igrp.platform.access_management.shared.application.constants.St
  * Handles the update operation for a {@link PermissionEntity}.
  * <p>
  * This command handler is responsible for validating the existence of the permission and associated
- * {@link DepartmentEntity}, updating the permission's data (name, description, department, and status),
+ * {@link ApplicationEntity}, updating the permission's data (name, description, application, and status),
  * and returning the updated result as a {@link PermissionDTO}.
  * </p>
  * <p>
- * If the permission or the department does not exist, an {@link IgrpResponseStatusException} with HTTP 404
+ * If the permission or the application does not exist, an {@link IgrpResponseStatusException} with HTTP 404
  * is thrown.
  * </p>
  *
  * @see UpdatePermissionCommand
  * @see PermissionEntityRepository
- * @see DepartmentEntityRepository
+ * @see ApplicationEntityRepository
  * @see PermissionMapper
  * @see PermissionEntity
- * @see DepartmentEntity
+ * @see ApplicationEntity
  * @see PermissionDTO
  * @see Status
  * @see IgrpResponseStatusException
@@ -50,7 +50,7 @@ import static cv.igrp.platform.access_management.shared.application.constants.St
 public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePermissionCommand, ResponseEntity<PermissionDTO>> {
 
    private final PermissionEntityRepository permissionRepository;
-   private final DepartmentEntityRepository departmentRepository;
+   private final ApplicationEntityRepository applicationRepository;
    private final PermissionMapper permissionMapper;
    private final ApplicationEventPublisher eventPublisher;
 
@@ -58,12 +58,12 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
     * Constructs the handler with required dependencies.
     *
     * @param permissionRepository     repository to access and persist permission entities
-    * @param departmentRepository    repository to retrieve the associated department entity
+    * @param applicationRepository    repository to retrieve the associated application entity
     * @param permissionMapper         mapper to convert permission entities to DTOs
     */
-   public UpdatePermissionCommandHandler(PermissionEntityRepository permissionRepository, DepartmentEntityRepository departmentRepository, PermissionMapper permissionMapper, ApplicationEventPublisher eventPublisher) {
+   public UpdatePermissionCommandHandler(PermissionEntityRepository permissionRepository, ApplicationEntityRepository applicationRepository, PermissionMapper permissionMapper, ApplicationEventPublisher eventPublisher) {
       this.permissionRepository = permissionRepository;
-      this.departmentRepository = departmentRepository;
+      this.applicationRepository = applicationRepository;
       this.permissionMapper = permissionMapper;
       this.eventPublisher = eventPublisher;
    }
@@ -73,14 +73,14 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
     * Handles the update of a {@link PermissionEntity} based on the given {@link UpdatePermissionCommand}.
     * <ul>
     *     <li>Validates that the permission exists and is not deleted.</li>
-    *     <li>Validates that the referenced department exists.</li>
-    *     <li>Updates name, optional description, status and department association.</li>
+    *     <li>Validates that the referenced application exists.</li>
+    *     <li>Updates name, optional description, status and application association.</li>
     *     <li>Returns the updated entity as a {@link PermissionDTO} with status {@code 200 OK}.</li>
     * </ul>
     *
     * @param command the command containing the ID and new data for the permission
     * @return a {@link ResponseEntity} with the updated {@link PermissionDTO}
-    * @throws IgrpResponseStatusException if the permission or department is not found
+    * @throws IgrpResponseStatusException if the permission or application is not found
     */
    @IgrpCommandHandler
    @Transactional
@@ -93,14 +93,14 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
                          HttpStatus.NOT_FOUND, "Update Permission", "Permission with name: " + command.getPermissiondto().getName() + " not found."
                  );
               });
-      DepartmentEntity department = departmentRepository.findByCode(command.getPermissiondto().getDepartmentCode())
+      ApplicationEntity application = applicationRepository.findByCode(command.getPermissiondto().getApplicationCode())
               .orElseThrow(() -> {
-                 log.warn("Department with code: {} not found", command.getPermissiondto().getDepartmentCode());
+                 log.warn("Application with code: {} not found", command.getPermissiondto().getApplicationCode());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Update Permission", "Department with code: " + command.getPermissiondto().getDepartmentCode() + " not found."
+                         HttpStatus.NOT_FOUND, "Update Permission", "Application with code: " + command.getPermissiondto().getApplicationCode() + " not found."
                  );
               });
-      ResourceValidationResponse validationResponse = PermissionValidator.validatePermissionName(command.getPermissiondto(), department);
+      ResourceValidationResponse validationResponse = PermissionValidator.validatePermissionName(command.getPermissiondto(), application);
       if (!validationResponse.isValid()) {
          log.warn("Invalid Permission Dto with name {}.", command.getPermissiondto().getName());
          throw IgrpResponseStatusException.of(
@@ -111,7 +111,7 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
       if (newData.getDescription() != null && !newData.getDescription().trim().isEmpty()) {
          foundPermission.setDescription(newData.getDescription());
       }
-      foundPermission.setDepartment(department);
+      foundPermission.setApplication(application);
       foundPermission.setStatus(command.getPermissiondto().getStatus());
       PermissionEntity updatedPermission = permissionRepository.save(foundPermission);
       PermissionDTO response = permissionMapper.mapToDTO(updatedPermission);

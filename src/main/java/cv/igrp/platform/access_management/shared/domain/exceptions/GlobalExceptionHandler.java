@@ -111,12 +111,4 @@ public class GlobalExceptionHandler {
         return problem;
     }
 
-    @ExceptionHandler(NoActionPerformedException.class)
-    public ProblemDetail handleNoActionPerformed(NoActionPerformedException ex) {
-        var problemDetail = ProblemDetail.forStatus(ex.getStatusCode());
-        problemDetail.setTitle("No Action Performed");
-        problemDetail.setDetail(ex.getReason());
-        return problemDetail;
-    }
-
 }

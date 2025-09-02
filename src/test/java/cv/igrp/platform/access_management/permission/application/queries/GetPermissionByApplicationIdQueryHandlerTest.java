@@ -3,7 +3,7 @@ package cv.igrp.platform.access_management.permission.application.queries;
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import org.junit.jupiter.api.Test;
@@ -39,32 +39,32 @@ public class GetPermissionByApplicationIdQueryHandlerTest {
     @Test
     void itShouldFilterByApplicationIdOnly_AndIgnoreOthers() {
         // Given
-        int targetDeptId = 100;
-        int otherDeptId = 200;
+        int targetAppId = 100;
+        int otherAppId = 200;
 
-        DepartmentEntity targetDept = new DepartmentEntity();
-        targetDept.setId(targetDeptId);
+        ApplicationEntity targetApp = new ApplicationEntity();
+        targetApp.setId(targetAppId);
 
-        DepartmentEntity otherApp = new DepartmentEntity();
-        otherApp.setId(otherDeptId);
+        ApplicationEntity otherApp = new ApplicationEntity();
+        otherApp.setId(otherAppId);
 
         PermissionEntity p1 = new PermissionEntity();
         p1.setId(1);
         p1.setName("P1");
         p1.setStatus(Status.ACTIVE);
-        p1.setDepartment(targetDept);
+        p1.setApplication(targetApp);
 
         PermissionEntity p2 = new PermissionEntity();
         p2.setId(2);
         p2.setName("P2");
         p2.setStatus(Status.INACTIVE);
-        p2.setDepartment(otherApp);
+        p2.setApplication(otherApp);
 
         PermissionEntity p3 = new PermissionEntity();
         p3.setId(3);
         p3.setName("P3");
         p3.setStatus(Status.ACTIVE);
-        p3.setDepartment(targetDept);
+        p3.setApplication(targetApp);
 
         List<PermissionEntity> allPermissions = List.of(p1, p2, p3);
 
@@ -80,7 +80,7 @@ public class GetPermissionByApplicationIdQueryHandlerTest {
         when(permissionMapper.mapToDTO(p1)).thenReturn(dto1);
         when(permissionMapper.mapToDTO(p3)).thenReturn(dto3);
 
-        GetPermissionByApplicationIdQuery query = new GetPermissionByApplicationIdQuery(targetDeptId, null);
+        GetPermissionByApplicationIdQuery query = new GetPermissionByApplicationIdQuery(targetAppId, null);
 
         // When
         ResponseEntity<List<PermissionDTO>> response = underTest.handle(query);
@@ -104,26 +104,26 @@ public class GetPermissionByApplicationIdQueryHandlerTest {
         // Given
         int targetAppId = 100;
 
-        DepartmentEntity targetApp = new DepartmentEntity();
+        ApplicationEntity targetApp = new ApplicationEntity();
         targetApp.setId(targetAppId);
 
         PermissionEntity p1 = new PermissionEntity();
         p1.setId(1);
         p1.setName("P1");
         p1.setStatus(Status.ACTIVE);
-        p1.setDepartment(targetApp);
+        p1.setApplication(targetApp);
 
         PermissionEntity p3 = new PermissionEntity();
         p3.setId(3);
         p3.setName("P3");
         p3.setStatus(Status.ACTIVE);
-        p3.setDepartment(targetApp);
+        p3.setApplication(targetApp);
 
         PermissionEntity p4 = new PermissionEntity();
         p4.setId(4);
         p4.setName("P4");
         p4.setStatus(Status.DELETED);
-        p4.setDepartment(targetApp);
+        p4.setApplication(targetApp);
         List<PermissionEntity> allPermissions = List.of(p1, p3, p4);
 
         PermissionDTO dto1 = new PermissionDTO();
@@ -160,28 +160,28 @@ public class GetPermissionByApplicationIdQueryHandlerTest {
     @Test
     void itShouldReturnPermissions_WhenApplicationIdMatchesAndStatusIsActiveOrInactive() {
         // Given
-        int departmentId = 100;
+        int applicationId = 100;
 
-        DepartmentEntity dept = new DepartmentEntity();
-        dept.setId(departmentId);
+        ApplicationEntity app = new ApplicationEntity();
+        app.setId(applicationId);
 
         PermissionEntity activePermission = new PermissionEntity();
         activePermission.setId(1);
         activePermission.setName("ACTIVE");
         activePermission.setStatus(Status.ACTIVE);
-        activePermission.setDepartment(dept);
+        activePermission.setApplication(app);
 
         PermissionEntity inactivePermission = new PermissionEntity();
         inactivePermission.setId(2);
         inactivePermission.setName("INACTIVE");
         inactivePermission.setStatus(Status.INACTIVE);
-        inactivePermission.setDepartment(dept);
+        inactivePermission.setApplication(app);
 
         PermissionEntity deletedPermission = new PermissionEntity();
         deletedPermission.setId(3);
         deletedPermission.setName("DELETED");
         deletedPermission.setStatus(Status.DELETED);
-        deletedPermission.setDepartment(dept);
+        deletedPermission.setApplication(app);
 
         List<PermissionEntity> allPermissions = List.of(activePermission, inactivePermission, deletedPermission);
 
@@ -197,7 +197,7 @@ public class GetPermissionByApplicationIdQueryHandlerTest {
         when(permissionMapper.mapToDTO(activePermission)).thenReturn(dto1);
         when(permissionMapper.mapToDTO(inactivePermission)).thenReturn(dto2);
 
-        GetPermissionByApplicationIdQuery query = new GetPermissionByApplicationIdQuery(departmentId, null);
+        GetPermissionByApplicationIdQuery query = new GetPermissionByApplicationIdQuery(applicationId, null);
 
         // When
         ResponseEntity<List<PermissionDTO>> response = underTest.handle(query);

@@ -15,6 +15,7 @@ import java.util.List;
 @Audited
 @Getter
 @Setter
+@ToString
 @IgrpEntity
 @Entity
 @NoArgsConstructor
@@ -53,8 +54,8 @@ public class DepartmentEntity extends AuditEntity {
     private DepartmentEntity parentId;   @OneToMany(mappedBy = "parentId")
 private List<DepartmentEntity> childrenids;
 
-   @OneToMany(mappedBy = "department")
-private List<PermissionEntity> permissions;
+   @OneToOne(mappedBy = "department", fetch = FetchType.LAZY)
+   private PermissionEntity permissions;
 
    @OneToMany(mappedBy = "departmentId")
 private List<ApplicationEntity> applications;

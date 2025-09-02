@@ -7,9 +7,9 @@ import cv.igrp.platform.access_management.permission.domain.service.PermissionVa
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -27,16 +27,16 @@ import org.springframework.transaction.annotation.Transactional;
  * <p>This handler executes the following workflow:</p>
  * <ul>
  *   <li>Receives a {@link CreatePermissionCommand} containing permission creation data.</li>
- *   <li>Validates that the referenced {@link DepartmentEntity} exists.</li>
+ *   <li>Validates that the referenced {@link ApplicationEntity} exists.</li>
  *   <li>Maps the incoming {@link PermissionDTO} to a {@link PermissionEntity} entity via {@link PermissionMapper}.</li>
  *   <li>Saves the new permission entity and returns the mapped {@link PermissionDTO}.</li>
  * </ul>
  *
- * <p>If the department ID is invalid (i.e., not found), an {@link IgrpResponseStatusException} is thrown with a {@link HttpStatus#NOT_FOUND} status.</p>
+ * <p>If the application ID is invalid (i.e., not found), an {@link IgrpResponseStatusException} is thrown with a {@link HttpStatus#NOT_FOUND} status.</p>
  *
  * @see CreatePermissionCommand
  * @see PermissionEntityRepository
- * @see DepartmentEntityRepository
+ * @see ApplicationEntityRepository
  * @see PermissionMapper
  * @see PermissionDTO
  * @see Status
@@ -49,26 +49,26 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
    private static final Logger LOGGER = LoggerFactory.getLogger(CreatePermissionCommandHandler.class);
 
    private final PermissionEntityRepository repository;
-   private final DepartmentEntityRepository departmentRepository;
+   private final ApplicationEntityRepository applicationRepository;
    private final PermissionMapper permissionMapper;
 
    /**
     * Constructs a new {@code CreatePermissionCommandHandler} with the required dependencies.
     *
     * @param repository            the permission repository used to persist the permission
-    * @param departmentRepository the department repository used to validate the department's existence
+    * @param applicationRepository the application repository used to validate the application's existence
     * @param permissionMapper      the mapper used to convert entities to DTOs
     */
-   public CreatePermissionCommandHandler(PermissionEntityRepository repository, DepartmentEntityRepository departmentRepository, PermissionMapper permissionMapper) {
+   public CreatePermissionCommandHandler(PermissionEntityRepository repository, ApplicationEntityRepository applicationRepository, PermissionMapper permissionMapper) {
       this.repository = repository;
-      this.departmentRepository = departmentRepository;
+      this.applicationRepository = applicationRepository;
       this.permissionMapper = permissionMapper;
    }
 
    /**
     * Handles the creation of a new permission.
     * <ul>
-    *     <li>Validates the department associated with the permission.</li>
+    *     <li>Validates the application associated with the permission.</li>
     *     <li>Sets default status to {@link Status#ACTIVE} if none provided.</li>
     *     <li>Trims and sets the description if present.</li>
     *     <li>Saves the permission and maps it to a DTO.</li>
@@ -76,27 +76,27 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
     *
     * @param command the {@link CreatePermissionCommand} containing the permission data
     * @return a {@link ResponseEntity} with status {@code 201 CREATED} and the created {@link PermissionDTO}
-    * @throws IgrpResponseStatusException if the department is not found
+    * @throws IgrpResponseStatusException if the application is not found
     */
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<PermissionDTO> handle(CreatePermissionCommand command) {
       log.info("Create permission with name: {}", command.getPermissiondto().getName());
       PermissionDTO request = command.getPermissiondto();
-      DepartmentEntity foundDepartment = departmentRepository.findByCode(command.getPermissiondto().getDepartmentCode())
+      ApplicationEntity foundApplication = applicationRepository.findByCode(command.getPermissiondto().getApplicationCode())
               .orElseThrow(() -> {
-                 log.warn("Department with code {} not found.", command.getPermissiondto().getDepartmentCode());
+                 log.warn("Application with code {} not found.", command.getPermissiondto().getApplicationCode());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Create Permission", "Department with code: " + command.getPermissiondto().getDepartmentCode() + " not found."
+                         HttpStatus.NOT_FOUND, "Create Permission", "Application with code: " + command.getPermissiondto().getApplicationCode() + " not found."
                  );
               });
-      ResourceValidationResponse validationResponse = PermissionValidator.validatePermissionName(command.getPermissiondto(), foundDepartment);
+      ResourceValidationResponse validationResponse = PermissionValidator.validatePermissionName(command.getPermissiondto(), foundApplication);
       if (!validationResponse.isValid()) {
          log.warn("Invalid Permission Dto with name {}.", command.getPermissiondto().getName());
          throw IgrpResponseStatusException.of(
                  HttpStatus.CONFLICT, "Create Permission", validationResponse.getFailureMessage());
       }
-      PermissionEntity newPermission = permissionMapper.mapDtoToEntity(request, foundDepartment);
+      PermissionEntity newPermission = permissionMapper.mapDtoToEntity(request, foundApplication);
       PermissionEntity savedPermission = repository.save(newPermission);
       PermissionDTO permissionDTO = permissionMapper.mapToDTO(savedPermission);
       log.info("Permission with name: {} created successfully.", command.getPermissiondto().getName());

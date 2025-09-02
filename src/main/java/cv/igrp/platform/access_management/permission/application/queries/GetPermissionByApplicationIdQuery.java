@@ -13,9 +13,9 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetPermissionByApplicationIdQuery implements Query {
 
-  @NotNull(message = "The field <departmentId> is required")
-  private Integer departmentId;
-  @NotBlank(message = "The field <departmentCode> is required")
-  private String departmentCode;
+  @NotNull(message = "The field <applicationId> is required.")
+  private Integer applicationId;
+  @NotBlank(message = "The field <applicationCode> is required.")
+  private String applicationCode;
 
 }

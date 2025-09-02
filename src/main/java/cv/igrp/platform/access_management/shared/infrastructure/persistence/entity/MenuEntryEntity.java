@@ -30,7 +30,7 @@ public class MenuEntryEntity extends AuditEntity {
     private Integer id;
 
   
-    @Column(name="code")
+    @Column(name="code", unique = true)
     private String code;
 
   
@@ -86,4 +86,21 @@ public class MenuEntryEntity extends AuditEntity {
 private List<PermissionEntity> permissions;
 
 
+    @Override
+    public String toString() {
+        return "MenuEntryEntity{" +
+                "id=" + id +
+                ", code='" + code + '\'' +
+                ", name='" + name + '\'' +
+                ", type=" + type +
+                ", position=" + position +
+                ", icon='" + icon + '\'' +
+                ", status=" + status +
+                ", target='" + target + '\'' +
+                ", pageSlug='" + pageSlug + '\'' +
+                ", url='" + url + '\'' +
+                ", parentId=" + (parentId != null ? parentId.getId() : "null") +
+                ", applicationId=" + (applicationId != null ? applicationId.getId() : "null") +
+                '}';
+    }
 }
