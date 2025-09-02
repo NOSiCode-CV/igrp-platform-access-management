@@ -93,11 +93,14 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # opcional: versão do upx via .env
+        UPX_VERSION: ${UPX_VERSION:-5.0.1}
+    image: registry-az.nosi.cv/igrp/access-management-api:latest
+    platform: ${PLATFORM}
     container_name: igrpplatformaccessmanagement-service
     env_file:
       - .env
-    depends_on:
-      - postgres
     environment:
       - SERVER_PORT=${SERVICE_PORT}
       - SERVICE_NAME=igrpplatformaccessmanagement-service
@@ -105,16 +108,12 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:${POSTGRES_INTERNAL_PORT}/${POSTGRES_DATABASE}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
-      - OTEL_TRACES_EXPORTER=${OTEL_TRACES_EXPORTER}
-      - OTEL_METRICS_EXPORTER=${OTEL_METRICS_EXPORTER}
-      - OTEL_LOGS_EXPORTER=${OTEL_LOGS_EXPORTER}
-      - OTEL_COLLECTOR_ENDPOINT=${OTEL_COLLECTOR_ENDPOINT}
-      - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME}
-      - MANAGEMENT_TRACING_ENABLED=true
-      - MANAGEMENT_ZIPKIN_TRACING_ENDPOINT=http://tempo:${TEMPO_SERVICE_ZIPKIN_PORT}
+      - MANAGEMENT_TRACING_ENABLED=false
+      - AUTH_JWT_ISSUER=${AUTH_JWT_ISSUER}
       - ENABLE_SWAGGER=${ENABLE_SWAGGER}
+      - TZ=${TZ:-Atlantic/Cape_Verde}
     ports:
-      - ${SERVICE_PORT}:${SERVICE_PORT}
+      - 8085:${SERVICE_PORT}
     #restart: unless-stopped
     deploy:
       resources:

@@ -1,0 +1,13 @@
+[
+  { "interfaces": ["org.keycloak.admin.client.resource.RealmResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RealmsResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.UsersResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.UserResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RolesResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RoleResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.ClientsResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.ClientResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.GroupsResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.GroupResource"] },
+  { "interfaces": ["jakarta.ws.rs.ext.Providers"] }
+]

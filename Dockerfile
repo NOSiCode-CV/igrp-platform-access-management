@@ -62,6 +62,7 @@ RUN set -eux; \
     ./mvnw --batch-mode \
       -Pnative \
       -Dbuild.target=${ARCH} \
+      -Dspring.cloud.refresh.enabled=false \
       clean package -DskipTests; \
     \
     # UPX compress
