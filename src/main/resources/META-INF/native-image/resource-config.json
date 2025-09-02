@@ -1,5 +1,18 @@
 {
   "resources": [
-    { "pattern": "META-INF/services/org.apache.logging.log4j.spi.Provider" }
+    { "pattern": "META-INF/services/org.apache.logging.log4j.spi.Provider" },
+    { "pattern": "eureka-client.properties" },
+    { "pattern": "META-INF/services/com.netflix.*" },
+    { "pattern": "META-INF/spring/org.springframework.cloud.*" },
+    { "pattern": "META-INF/services/io.opentelemetry.*" },
+    { "pattern": "META-INF/services/org.keycloak.admin.client.spi.ResteasyClientProvider" },
+    { "pattern": "META-INF/services/jakarta.ws.rs.ext.Providers" },
+    { "pattern": "META-INF/services/jakarta.ws.rs.client.ClientBuilder" },
+
+    { "pattern": "org/jboss/resteasy/resteasy_jaxrs/i18n/.*\\.properties" },
+    { "pattern": "org/jboss/resteasy/client/jaxrs/i18n/.*\\.properties" },
+    { "pattern": "org/jboss/resteasy/plugins/providers/i18n/.*\\.properties" },
+    { "pattern": "org/jboss/resteasy/plugins/providers/multipart/i18n/.*\\.properties" },
+    { "pattern": "org/jboss/resteasy/plugins/providers/sse/i18n/.*\\.properties" }
   ]
 }
