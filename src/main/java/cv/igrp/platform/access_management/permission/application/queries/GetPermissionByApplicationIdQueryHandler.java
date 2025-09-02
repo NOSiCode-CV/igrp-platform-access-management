@@ -3,7 +3,7 @@ package cv.igrp.platform.access_management.permission.application.queries;
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -21,10 +21,10 @@ import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Query handler responsible for retrieving all active or inactive {@link PermissionEntity} entities
- * associated with a specific {@link ApplicationEntity} ID.
+ * associated with a specific {@link DepartmentEntity} ID.
  * <p>
  * This handler filters the result in-memory after fetching all permissions,
- * returning only those with the provided application ID and a {@link Status} of
+ * returning only those with the provided department ID and a {@link Status} of
  * {@code ACTIVE} or {@code INACTIVE}.
  * </p>
  *
@@ -55,15 +55,15 @@ public class GetPermissionByApplicationIdQueryHandler implements QueryHandler<Ge
 
 
   /**
-   * Handles the query by filtering all permissions by application ID and status.
+   * Handles the query by filtering all permissions by department ID and status.
    *
-   * @param query the query containing the application ID to filter by
+   * @param query the query containing the department ID to filter by
    * @return a {@link ResponseEntity} containing the filtered list of {@link PermissionDTO}
    */
   @IgrpQueryHandler
   @Transactional(readOnly = true)
   public ResponseEntity<List<PermissionDTO>> handle(GetPermissionByApplicationIdQuery query) {
-    log.info("Get Permission with Application ID {}", query.getApplicationId());
+    log.info("Get Permission with Department ID {}", query.getDepartmentId());
     Set<PermissionEntity> permissionList = permissionRepository.findAll()
             .stream()
             .filter(permission -> resolveCondition(permission, query)
@@ -78,18 +78,18 @@ public class GetPermissionByApplicationIdQueryHandler implements QueryHandler<Ge
 
   private boolean resolveCondition(PermissionEntity permission, GetPermissionByApplicationIdQuery query) {
 
-    if(query.getApplicationId() != null && query.getApplicationId() > 0) {
-      return permission.getApplication().getId().equals(query.getApplicationId());
+    if(query.getDepartmentId() != null && query.getDepartmentId() > 0) {
+      return permission.getDepartment().getId().equals(query.getDepartmentId());
     }
 
-    if(query.getApplicationCode() != null && !query.getApplicationCode().isEmpty()) {
-      return permission.getApplication().getCode().equals(query.getApplicationCode());
+    if(query.getDepartmentCode() != null && !query.getDepartmentCode().isEmpty()) {
+      return permission.getDepartment().getCode().equals(query.getDepartmentCode());
     }
 
     throw IgrpResponseStatusException.of(
             HttpStatus.BAD_REQUEST,
-            "No application filter provided",
-            "No application filter provided in the request. Must either be <applicationId> or <applicationCode>"
+            "No department filter provided",
+            "No department filter provided in the request. Must either be <departmentId> or <departmentCode>"
     );
 
   }

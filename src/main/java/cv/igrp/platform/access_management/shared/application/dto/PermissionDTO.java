@@ -17,24 +17,24 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 
 
 @IgrpDTO
-public class PermissionDTO {
+public class PermissionDTO  {
 
   
   
   private Integer id ;
-  @NotBlank(message = "The field <name> is required.")
-	@Size(max = 60, message = "The field length <name> cannot be more than 60 characters.")
+  @NotBlank(message = "The field <name> is required")
+	@Size(max = 60, message = "The field length <name> cannot be more than 60 characters")
 	@Pattern(message = "Invalid value format for field <name>.", regexp = "^[A-Za-z0-9_-]+$")
   
   private String name ;
-  @Size(max = 255, message = "The field length <description> cannot be more than 255 characters.")
+  @Size(max = 255, message = "The field length <description> cannot be more than 255 characters")
   
   private String description ;
   
   
   private Status status ;
-  @NotBlank(message = "The field <applicationCode> is required.")
+  @NotBlank(message = "The field <departmentCode> is required")
   
-  private String applicationCode ;
+  private String departmentCode ;
 
 }
