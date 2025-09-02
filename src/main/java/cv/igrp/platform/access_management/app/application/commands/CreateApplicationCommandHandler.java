@@ -3,8 +3,10 @@ package cv.igrp.platform.access_management.app.application.commands;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.app.domain.service.ApplicationValidator;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import org.springframework.http.HttpStatus;
@@ -36,6 +38,7 @@ public class CreateApplicationCommandHandler implements CommandHandler<CreateApp
 
    private final ApplicationEntityRepository applicationRepository;
    private final ApplicationMapper applicationMapper;
+   private final ApplicationValidator applicationValidator;
 
    /**
     * Constructs the handler with the required dependencies.
@@ -43,9 +46,10 @@ public class CreateApplicationCommandHandler implements CommandHandler<CreateApp
     * @param applicationRepository the repository used to persist the application entity
     * @param applicationMapper     the mapper used to convert between {@link ApplicationEntity} and {@link ApplicationDTO}
     */
-   public CreateApplicationCommandHandler(ApplicationEntityRepository applicationRepository, ApplicationMapper applicationMapper) {
+   public CreateApplicationCommandHandler(ApplicationEntityRepository applicationRepository, ApplicationMapper applicationMapper, ApplicationValidator applicationValidator) {
       this.applicationRepository = applicationRepository;
       this.applicationMapper = applicationMapper;
+      this.applicationValidator = applicationValidator;
    }
 
    /**
@@ -63,6 +67,12 @@ public class CreateApplicationCommandHandler implements CommandHandler<CreateApp
     */
    @IgrpCommandHandler
    public ResponseEntity<ApplicationDTO> handle(CreateApplicationCommand command) {
+      var validation = applicationValidator.validateApplicationCode(command.getApplicationdto());
+      if(!validation.isValid()) {
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.CONFLICT, "Create Application", validation.getFailureMessage()
+         );
+      }
       ApplicationEntity application = applicationMapper.toEntity(command.getApplicationdto());
       application.setId(null);
       ApplicationEntity savedApplication = applicationRepository.save(application);

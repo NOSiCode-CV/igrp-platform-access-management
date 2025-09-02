@@ -48,7 +48,6 @@ public class PostDepartmentCommandHandlerTest {
     private PostDepartmentCommand command;
     private DepartmentDTO departmentDTO;
     private DepartmentEntity department;
-    private ApplicationEntity application;
     private DepartmentEntity parentDepartment;
     private DepartmentEntity savedDepartment;
     private DepartmentDTO resultDTO;
@@ -66,11 +65,6 @@ public class PostDepartmentCommandHandlerTest {
         department = new DepartmentEntity();
         department.setName("Test Department");
         department.setDescription("Test Description");
-
-        application = new ApplicationEntity();
-        application.setId(1);
-        application.setName("Test Application");
-        application.setDepartmentId(department);
 
         parentDepartment = new DepartmentEntity();
         parentDepartment.setId(2);

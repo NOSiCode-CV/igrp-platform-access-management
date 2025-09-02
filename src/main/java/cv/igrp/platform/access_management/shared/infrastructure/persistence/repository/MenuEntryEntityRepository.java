@@ -4,6 +4,7 @@ import cv.igrp.platform.access_management.shared.application.constants.MenuEntry
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -31,4 +32,5 @@ public interface MenuEntryEntityRepository extends
 
     List<MenuEntryEntity> findByApplicationIdAndStatus(ApplicationEntity appId, Status status);
 
+    Optional<MenuEntryEntity> findByCodeAndStatusNot(String code, Status status);
 }

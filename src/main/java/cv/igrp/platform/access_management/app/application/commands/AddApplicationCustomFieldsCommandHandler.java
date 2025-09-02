@@ -65,7 +65,7 @@ public class AddApplicationCustomFieldsCommandHandler implements CommandHandler<
    @IgrpCommandHandler
    public ResponseEntity<String> handle(AddApplicationCustomFieldsCommand command) {
       ApplicationEntity application = applicationRepository.findByCode(command.getCode())
-              .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found for code: " + command.getCode()));
+              .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found for code: %s".formatted(command.getCode())));
 
       CustomFieldEntity customField = customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.APPLICATION.getName(), application.getId())
               .orElseGet(() -> {

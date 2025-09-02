@@ -30,7 +30,7 @@ public class MenuEntryEntity extends AuditEntity {
     private Integer id;
 
   
-    @Column(name="code", unique = true)
+    @Column(name="code")
     private String code;
 
   

@@ -15,7 +15,7 @@ import java.util.Set;
 @Audited
 @Getter
 @Setter
-@ToString
+@ToString(exclude = {"roles"})
 @IgrpEntity
 @Entity
 @NoArgsConstructor
