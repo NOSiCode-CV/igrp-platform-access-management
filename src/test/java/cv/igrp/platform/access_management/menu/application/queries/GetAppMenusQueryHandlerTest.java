@@ -127,7 +127,6 @@ public class GetAppMenusQueryHandlerTest {
 
   @Test
   void testHandle_UserHasNoPermissions_ReturnsEmptyList() {
-    user.setRoles(List.of()); // User has no roles
 
     when(authenticationHelper.getPreferredUsername()).thenReturn("superadmin");
     when(userRepository.findByUsername("superadmin")).thenReturn(Optional.of(user));

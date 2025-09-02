@@ -46,20 +46,29 @@ public class RemoveRolesFromUserCommandHandlerTest {
         role1.setId(100);
         role1.setName("admin");
         role1.setDescription("Admin role");
+        role1.setUsers(new HashSet<>());
 
         role2 = new RoleEntity();
         role2.setId(200);
         role2.setName("user");
         role2.setDescription("User role");
+        role2.setUsers(new HashSet<>());
 
         user = new IGRPUserEntity();
         user.setUsername(USER_ID);
-        user.setRoles(new ArrayList<>(List.of(role1, role2)));
+        user.setRoles(new ArrayList<>());
+
+        // Keep relationship consistent
+        user.getRoles().add(role1);
+        user.getRoles().add(role2);
+        role1.getUsers().add(user);
+        role2.getUsers().add(user);
 
         idRolesToBeRemoved = new ArrayList<>();
         idRolesToBeRemoved.add("admin");
         idRolesToBeRemoved.add("user");
     }
+
 
     @Test
     @DisplayName("should remove matching role and return updated roles")
@@ -178,7 +187,6 @@ public class RemoveRolesFromUserCommandHandlerTest {
     @DisplayName("should return empty list if user has no roles assigned")
     void testHandle_whenUserHasNoRoles_shouldReturnEmptyList() {
         // Arrange
-        user.setRoles(new ArrayList<>());
         command = removeRolesFromUserCommand(idRolesToBeRemoved, USER_ID);
         when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
 

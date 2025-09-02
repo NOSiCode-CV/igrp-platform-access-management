@@ -46,6 +46,7 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
    private final MenuEntryMapper menuEntryMapper;
    private final ApplicationEntityRepository applicationRepository;
    private final PermissionEntityRepository permissionRepository;
+   private final MenuEntryValidator menuEntryValidator;
 
    /**
     * Constructs a {@code CreateMenuCommandHandler} with all required dependencies.
@@ -56,11 +57,13 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
     */
    public CreateMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository, MenuEntryMapper menuEntryMapper,
                                    ApplicationEntityRepository applicationRepository,
-                                   PermissionEntityRepository permissionRepository) {
+                                   PermissionEntityRepository permissionRepository,
+                                   MenuEntryValidator menuEntryValidator) {
       this.menuEntryRepository = menuEntryRepository;
       this.menuEntryMapper = menuEntryMapper;
       this.applicationRepository = applicationRepository;
       this.permissionRepository = permissionRepository;
+      this.menuEntryValidator = menuEntryValidator;
    }
 
    /**
@@ -94,6 +97,13 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
          throw IgrpResponseStatusException.of(
                  HttpStatus.BAD_REQUEST, "Menu", "Menu Entry DTO Missing");
       }
+
+       var validation = menuEntryValidator.validateMenuEntryCode(menuEntryDTO);
+       if(!validation.isValid()) {
+           throw IgrpResponseStatusException.of(
+                   HttpStatus.CONFLICT, "Create Menu Entry", validation.getFailureMessage()
+           );
+       }
 
       MenuEntryValidator.validateRequiredFields(menuEntryDTO);
 
