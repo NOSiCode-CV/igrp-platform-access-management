@@ -5,6 +5,7 @@ ARG TARGETPLATFORM
 # ===================================================================
 FROM --platform=${BUILDPLATFORM} ghcr.io/graalvm/native-image-community:23-ol9 AS build
 
+ARG APP_BUILD_FINGERPRINT
 # show platforms
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
