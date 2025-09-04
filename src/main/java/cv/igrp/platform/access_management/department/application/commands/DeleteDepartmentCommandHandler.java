@@ -73,7 +73,11 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
       try {
          adapter.deleteDepartment(code);
       } catch (IAMException e) {
-         throw new RuntimeException(e);
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.INTERNAL_SERVER_ERROR,
+                 "Department Deletion Failed",
+                 e.getMessage()
+         );
       }
       logger.info("Successfully deleted department with code={}", code);
       return ResponseEntity.noContent().build();

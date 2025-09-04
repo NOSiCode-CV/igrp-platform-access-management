@@ -16,6 +16,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Command handler responsible for processing {@link PostDepartmentCommand} to create a new department.
@@ -75,6 +76,7 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
     * @throws IgrpResponseStatusException if the application or parent department ID is invalid
     */
    @IgrpCommandHandler
+   @Transactional
    public ResponseEntity<DepartmentDTO> handle(PostDepartmentCommand command) {
 
       var departmentDto = command.getDepartmentdto();
@@ -97,7 +99,11 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
       try {
         adapter.createDepartment(department.getCode(), department.getParentId() != null ? department.getParentId().getCode() : null);
       } catch (IAMException e) {
-        throw new RuntimeException(e);
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.INTERNAL_SERVER_ERROR,
+                 "Department Creation Failed",
+                 e.getMessage()
+         );
       }
 
       logger.info("Department created successfully: code={}", saved.getCode());
