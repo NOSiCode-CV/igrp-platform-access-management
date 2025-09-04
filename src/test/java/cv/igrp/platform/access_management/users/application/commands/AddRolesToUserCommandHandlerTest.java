@@ -22,6 +22,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 
 import java.util.*;
@@ -105,7 +106,7 @@ public class AddRolesToUserCommandHandlerTest {
     }
 
     @Test
-    @DisplayName("should throw RuntimeException with cause IgrpResponseStatusException if role not found")
+    @DisplayName("should throw IgrpResponseStatusException if role not found")
     void testHandle_whenRoleNotFound_shouldThrowRuntimeWithCause() {
         AddRolesToUserCommand command = buildCommand(List.of(ROLE_NAME));
 
@@ -113,14 +114,16 @@ public class AddRolesToUserCommandHandlerTest {
         when(roleRepository.findByNameAndStatusNot(eq(ROLE_NAME), eq(Status.DELETED)))
                 .thenReturn(Optional.empty());
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () ->
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
                 addRolesToUserCommandHandler.handle(command));
 
-        assertInstanceOf(IgrpResponseStatusException.class, exception.getCause());
+        ProblemDetail problemDetail = exception.getBody();
 
-        IgrpResponseStatusException cause = (IgrpResponseStatusException) exception.getCause();
-        assertEquals("Role not found with name: %s".formatted(ROLE_NAME),
-                cause.getBody().getProperties().get("details"));
+        assertNotNull(problemDetail.getProperties());
+        assertTrue(problemDetail.getProperties()
+                .get("details")
+                .toString()
+                .contains("Role not found with name: %s".formatted(ROLE_NAME)));
 
         verify(userRepository).findByUsername(eq(USERNAME));
         verify(roleRepository).findByNameAndStatusNot(eq(ROLE_NAME), eq(Status.DELETED));
