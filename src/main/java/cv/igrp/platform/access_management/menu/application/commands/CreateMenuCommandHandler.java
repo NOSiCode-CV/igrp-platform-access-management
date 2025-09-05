@@ -131,32 +131,6 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
 
       var savedMenuEntry = menuEntryRepository.save(menuEntry);
 
-      if (menuEntryDTO.getPermissions() != null) {
-
-         menuEntryDTO.getPermissions().forEach(perm -> {
-
-            PermissionEntity permission = permissionRepository.findByName(perm)
-                    .orElseThrow(() -> {
-                       logger.warn("Permission not found with name: {}", perm);
-                       return IgrpResponseStatusException.of(
-                               HttpStatus.NOT_FOUND, "Permission not found",
-                               "Permission not found with name: " + perm);
-                    });
-
-            permission.setMenuEntryId(menuEntryRepository.findByCode(menuEntryDTO.getParentCode())
-                    .orElseThrow(() -> {
-                       logger.warn("Menu not found with code: {}", menuEntryDTO.getParentCode());
-                       return IgrpResponseStatusException.of(
-                               HttpStatus.NOT_FOUND, "Menu not found",
-                               "Menu not found with code: " + menuEntryDTO.getParentCode());
-                    }));
-
-            permissionRepository.save(permission);
-
-         });
-
-      }
-
       logger.info("""
                     Menu created: code={}, name={}, type={}
                     """,

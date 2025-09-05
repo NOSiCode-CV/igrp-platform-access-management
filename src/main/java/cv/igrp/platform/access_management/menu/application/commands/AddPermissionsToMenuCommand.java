@@ -5,13 +5,16 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class DeleteMenuCommand implements Command {
+public class AddPermissionsToMenuCommand implements Command {
 
+  
+  private List<String> addPermissionsToMenuRequest;
   @NotBlank(message = "The field <code> is required")
   private String code;
 

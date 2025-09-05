@@ -11,6 +11,7 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -107,13 +108,13 @@ class MenuEntryMapperTest {
         entity.setStatus(Status.INACTIVE);
         entity.setTarget("_self");
         entity.setUrl("/settings");
-        entity.setPermissions(new ArrayList<>());
+        entity.setPermissions(new HashSet<>());
 
         MenuEntryEntity parent = new MenuEntryEntity();
         parent.setId(99);
         parent.setCode("MENU0");
         entity.setParentId(parent);
-        parent.setPermissions(new ArrayList<>());
+        parent.setPermissions(new HashSet<>());
 
         ApplicationEntity app = new ApplicationEntity();
         app.setId(5);
@@ -143,7 +144,7 @@ class MenuEntryMapperTest {
         entity.setName("Help");
         entity.setApplicationId(null);
         entity.setParentId(null);
-        entity.setPermissions(new ArrayList<>());
+        entity.setPermissions(new HashSet<>());
 
         MenuEntryDTO dto = mapper.toDTO(entity);
 
