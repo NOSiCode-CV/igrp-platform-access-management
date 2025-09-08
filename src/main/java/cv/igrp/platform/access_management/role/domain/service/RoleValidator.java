@@ -1,9 +1,10 @@
 package cv.igrp.platform.access_management.role.domain.service;
 
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
-import cv.igrp.platform.access_management.shared.domain.models.Department;
-import cv.igrp.platform.access_management.shared.domain.models.Role;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,17 +21,17 @@ import java.util.Optional;
  */
 public class RoleValidator {
 
-    private static Logger Log = LoggerFactory.getLogger(RoleValidator.class);
+    private static final Logger logger = LoggerFactory.getLogger(RoleValidator.class);
 
     /**
      * Validates the given {@link RoleDTO} based on business rules, such as duplicate role name within
-     * the same {@link Department}.
+     * the same {@link DepartmentEntity}.
      *
      * @param roleDTO the role data to be validated
      * @param department the department in which the role is being created
      * @return a {@link ResourceValidationResponse} containing validation status and failure messages
      */
-    public static ResourceValidationResponse validateRoleDto(RoleDTO roleDTO, Department department){
+    public static ResourceValidationResponse validateRoleDto(RoleDTO roleDTO, DepartmentEntity department){
         ResourceValidationResponse response = new ResourceValidationResponse();
         response.setValid(true);
         response.setFailureMessage(new ArrayList<>());
@@ -40,20 +41,20 @@ public class RoleValidator {
 
     /**
      * Validates whether the role name provided in {@link RoleDTO} already exists in the given
-     * {@link Department}.
+     * {@link DepartmentEntity}.
      *
      * @param roleDTO the role data to be validated
      * @param department the department in which the role is being created
      * @param response the validation response object to be updated with failure messages if any
      */
-    private static void validateRoleName(RoleDTO roleDTO, Department department, ResourceValidationResponse response) {
+    private static void validateRoleName(RoleDTO roleDTO, DepartmentEntity department, ResourceValidationResponse response) {
         if(department != null && department.getRoles() != null){
-            Optional<Role> optionalRoleSameName = department.getRoles()
+            Optional<RoleEntity> optionalRoleSameName = department.getRoles()
                     .stream()
-                    .filter(role -> role.getName().equalsIgnoreCase(roleDTO.getName()))
+                    .filter(role -> !role.getStatus().equals(Status.DELETED) && role.getName().equalsIgnoreCase(roleDTO.getName()))
                     .findFirst();
             if(optionalRoleSameName.isPresent()){
-                Log.warn("Role with name {} exists in Department {}.", roleDTO.getName(), department.getId());
+                logger.warn("Role with name {} exists in Department {}.", roleDTO.getName(), department.getId());
                 response.setValid(false);
                 response.addFailureMessage("Role with name: " + roleDTO.getName() + " exists in Department: " + department.getId());
             }

@@ -1,11 +1,11 @@
 package cv.igrp.platform.access_management.users.mapper;
 
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
-import cv.igrp.platform.access_management.shared.domain.models.IGRPUser;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import org.springframework.stereotype.Component;
 
 /**
- * Mapper component responsible for converting between {@link IGRPUser} entities
+ * Mapper component responsible for converting between {@link IGRPUserEntity} entities
  * and {@link IGRPUserDTO} data transfer objects.
  * <p>
  * This mapper provides bidirectional conversion methods to support data transformation
@@ -16,12 +16,12 @@ import org.springframework.stereotype.Component;
 public class IGRPUserMapper {
 
     /**
-     * Converts an {@link IGRPUser} entity to an {@link IGRPUserDTO}.
+     * Converts an {@link IGRPUserEntity} entity to an {@link IGRPUserDTO}.
      *
      * @param user the user entity to convert; may be {@code null}
      * @return a DTO representing the user, or {@code null} if the input is {@code null}
      */
-    public IGRPUserDTO toDto(IGRPUser user) {
+    public IGRPUserDTO toDto(IGRPUserEntity user) {
         if (user == null) return null;
         IGRPUserDTO dto = new IGRPUserDTO();
         dto.setId(Integer.parseInt(user.getId()));
@@ -32,15 +32,15 @@ public class IGRPUserMapper {
     }
 
     /**
-     * Converts an {@link IGRPUserDTO} to an {@link IGRPUser} entity.
+     * Converts an {@link IGRPUserDTO} to an {@link IGRPUserEntity} entity.
      *
      * @param dto the DTO to convert; may be {@code null}
      * @return a new user entity populated with data from the DTO,
      *         or {@code null} if the input is {@code null}
      */
-    public IGRPUser toEntity(IGRPUserDTO dto) {
+    public IGRPUserEntity toEntity(IGRPUserDTO dto) {
         if (dto == null) return null;
-        IGRPUser user = new IGRPUser();
+        IGRPUserEntity user = new IGRPUserEntity();
         user.setId(dto.getId());
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());

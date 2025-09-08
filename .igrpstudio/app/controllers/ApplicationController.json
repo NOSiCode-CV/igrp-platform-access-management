@@ -1,1 +1,402 @@
-{"type":"controller","name":"Application","module":"app","description":"Application Management","basePath":"api","actions":[{"actionName":"createApplication","path":"applications","method":"POST","requestBody":{"content":{"application/json":{"schema":{"type":"ApplicationDTO","name":"Application","objectType":"dto","module":"app"}}}},"responses":{"201":{"description":"The Persisted Application","content":{"application/json":{"schema":{"type":"ApplicationDTO","name":"data","collectionType":"none"}}}}}},{"actionName":"getApplications","path":"applications","method":"GET","responses":{"200":{"description":"The List of Application","content":{"application/json":{"schema":{"type":"ApplicationDTO","name":"data","collectionType":"list"}}}}},"requestParams":[{"type":"string","name":"code","description":"The Application Code","isRequired":false},{"type":"string","name":"name","description":"The Application Name","isRequired":false},{"type":"string","name":"slug","description":"The Application Slug","isRequired":false}]},{"actionName":"getApplicationById","path":"applications/{id}","method":"GET","responses":{"200":{"description":"The Application Data","content":{"application/json":{"schema":{"type":"ApplicationDTO","name":"data","collectionType":"none"}}}}},"pathVariables":[{"type":"integer","name":"id","description":"The ID of the Application","isRequired":true}]},{"actionName":"updateApplication","path":"applications/{id}","method":"PUT","requestBody":{"content":{"application/json":{"schema":{"type":"ApplicationDTO","name":"Application","objectType":"dto","module":"app","description":"The Application Data"}}}},"responses":{"200":{"description":"The Updated Application","content":{"application/json":{"schema":{"type":"ApplicationDTO","name":"data","collectionType":"none"}}}}},"pathVariables":[{"type":"integer","name":"id","description":"The Application ID","isRequired":true}]},{"actionName":"deleteApplication","path":"applications/{id}","method":"DELETE","responses":{"204":{"description":"No content","content":{"application/json":{"schema":{"type":"string","name":"data","collectionType":"none"}}}}},"pathVariables":[{"type":"integer","name":"id","description":"The Application ID","isRequired":true}]},{"actionName":"getApplicationsByIds","path":"applications/by-ids","method":"POST","requestBody":{"content":{"application/json":{"schema":{"type":"integer","name":"ids","description":"List of Application IDs","collectionType":"list"}}}},"responses":{"200":{"description":"The List of Application","content":{"application/json":{"schema":{"type":"ApplicationDTO","objectType":"dto","name":"data","collectionType":"list","module":"app"}}}}}},{"actionName":"getApplicationsByUser","path":"applications/by-user/{uid}","method":"GET","responses":{"200":{"description":"List of accessible Applications","content":{"application/json":{"schema":{"type":"ApplicationDTO","name":"data","collectionType":"list"}}}}},"pathVariables":[{"type":"string","name":"uid","description":"The User Identifier","isRequired":true}]},{"actionName":"getApplicationDeniedToUser","path":"/applications/denied-to-user/{uid}","method":"GET","responses":{"200":{"description":"List of Applications denied to User","content":{"application/json":{"schema":{"type":"ApplicationDTO","name":"data","collectionType":"list"}}}}},"pathVariables":[{"type":"string","name":"uid","description":"The User Identifier","isRequired":true}]},{"actionName":"addApplicationCustomFields","path":"/applications/{id}/custom-fields","method":"POST","requestBody":{"content":{"application/json":{"schema":{"type":"string","name":"undefined","collectionType":"map","isRequired":true}}}},"responses":{"204":{"description":"No Content","content":{"application/json":{"schema":{"type":"string","name":"data","collectionType":"none"}}}}},"pathVariables":[{"type":"integer","name":"id","description":"Application ID","isRequired":true}]},{"actionName":"removeApplicationCustomFields","path":"/applications/{id}/custom-fields/remove","method":"POST","requestBody":{"content":{"application/json":{"schema":{"type":"string","name":"fieldKeys","collectionType":"list","isRequired":true}}}},"responses":{"204":{"description":"No Content","content":{"application/json":{"schema":{"type":"string","name":"data","collectionType":"none"}}}}},"pathVariables":[{"type":"integer","name":"id","description":"Application ID","isRequired":true}]},{"actionName":"getApplicationCustomFields","path":"/applications/{id}/custom-fields","method":"GET","responses":{"200":{"name":"OK","description":"Application Custom Fields ","content":{"application/json":{"schema":{"type":"string","name":"data","collectionType":"map"}}}}},"pathVariables":[{"name":"id","type":"integer","isRequired":true,"description":"Application ID"}]}],"id":"350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"}
+{
+  "type": "controller",
+  "name": "Application",
+  "module": "app",
+  "description": "Application Management",
+  "basePath": "api",
+  "actions": [
+    {
+      "actionName": "createApplication",
+      "path": "applications",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "ApplicationDTO",
+              "name": "Application",
+              "objectType": "dto",
+              "module": "app"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "The Persisted Application",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "getApplications",
+      "path": "applications",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "description": "The List of Application",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "name": "data",
+                "collectionType": "list"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "code",
+          "description": "The Application Code",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "name",
+          "description": "The Application Name",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "slug",
+          "description": "The Application Slug",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "description": "The Department Code",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "type",
+          "description": "The Application Type",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "actionName": "getApplicationById",
+      "path": "applications/{id}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "description": "The Application Data",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "type": "integer",
+          "name": "id",
+          "description": "The ID of the Application",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "updateApplication",
+      "path": "applications/{code}",
+      "method": "PUT",
+      "responses": {
+        "200": {
+          "description": "The Updated Application",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "ApplicationDTO",
+              "name": "Application",
+              "objectType": "dto",
+              "module": "app",
+              "description": "The Application Data"
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "deleteApplication",
+      "path": "applications/{code}",
+      "method": "DELETE",
+      "responses": {
+        "204": {
+          "description": "No content",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getApplicationsByIds",
+      "path": "applications/by-ids",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "integer",
+              "name": "ids",
+              "description": "List of Application IDs",
+              "collectionType": "list"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The List of Application",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "app"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "getApplicationsByUser",
+      "path": "applications/by-user/{uid}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "description": "List of accessible Applications",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "name": "data",
+                "collectionType": "list"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "type": "string",
+          "name": "uid",
+          "description": "The User Identifier",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getApplicationDeniedToUser",
+      "path": "/applications/denied-to-user/{uid}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "description": "List of Applications denied to User",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "name": "data",
+                "collectionType": "list"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "type": "string",
+          "name": "uid",
+          "description": "The User Identifier",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "addApplicationCustomFields",
+      "path": "/applications/{code}/custom-fields",
+      "method": "POST",
+      "responses": {
+        "204": {
+          "description": "No Content",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "undefined",
+              "collectionType": "map",
+              "isRequired": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "removeApplicationCustomFields",
+      "path": "/applications/{code}/custom-fields/remove",
+      "method": "POST",
+      "responses": {
+        "204": {
+          "description": "No Content",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "fieldKeys",
+              "collectionType": "list",
+              "isRequired": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "getApplicationCustomFields",
+      "path": "/applications/{code}/custom-fields",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "description": "Application Custom Fields ",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "map"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getApplicationByCode",
+      "path": "/applications/by-code/{code}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "app"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    }
+  ],
+  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications"
+}

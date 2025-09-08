@@ -1,0 +1,31 @@
+{
+  "type": "enum",
+  "module": "files",
+  "name": "UploadType",
+  "values": [
+    {
+      "name": "public",
+      "attributes": [
+        "PUBLIC",
+        "is public upload"
+      ]
+    },
+    {
+      "name": "private",
+      "attributes": [
+        "PRIVATE",
+        "is private upload"
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "type": "string",
+      "name": "Code"
+    },
+    {
+      "type": "string",
+      "name": "Description"
+    }
+  ]
+}

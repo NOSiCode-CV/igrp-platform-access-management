@@ -1,13 +1,13 @@
 package cv.igrp.platform.access_management.global_configuration.mapper;
 
 import cv.igrp.platform.access_management.global_configuration.application.dto.GlobalConfigurationDTO;
-import cv.igrp.platform.access_management.global_configuration.domain.models.GlobalConfiguration;
+import cv.igrp.platform.access_management.global_configuration.infrastructure.persistence.entity.GlobalConfigurationEntity;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
 
 /**
- * Mapper component responsible for converting between {@link GlobalConfiguration} entities
+ * Mapper component responsible for converting between {@link GlobalConfigurationEntity} entities
  * and {@link GlobalConfigurationDTO} data transfer objects.
  * <p>
  * This class centralizes the mapping logic to isolate transformation concerns,
@@ -22,19 +22,19 @@ import java.net.URI;
  *     <li>Date fields are converted to ISO-8601 string format.</li>
  * </ul>
  *
- * @see GlobalConfiguration
+ * @see GlobalConfigurationEntity
  * @see GlobalConfigurationDTO
  */
 @Component
 public class GlobalConfigurationMapper {
 
     /**
-     * Converts an {@link GlobalConfiguration} entity to an {@link GlobalConfigurationDTO}.
+     * Converts an {@link GlobalConfigurationEntity} entity to an {@link GlobalConfigurationDTO}.
      *
-     * @param entity the {@link GlobalConfiguration} entity to be converted; may be {@code null}
+     * @param entity the {@link GlobalConfigurationEntity} entity to be converted; may be {@code null}
      * @return a fully populated {@link GlobalConfigurationDTO} or {@code null} if input is {@code null}
      */
-    public GlobalConfigurationDTO toDto(GlobalConfiguration entity) {
+    public GlobalConfigurationDTO toDto(GlobalConfigurationEntity entity) {
         if (entity == null) return null;
         GlobalConfigurationDTO dto = new GlobalConfigurationDTO();
         dto.setType(entity.getType());
@@ -43,15 +43,15 @@ public class GlobalConfigurationMapper {
     }
 
     /**
-     * Converts an {@link GlobalConfigurationDTO} to an {@link GlobalConfiguration} entity.
+     * Converts an {@link GlobalConfigurationDTO} to an {@link GlobalConfigurationEntity} entity.
      *
      * @param dto the {@link GlobalConfigurationDTO} to be converted; may be {@code null}
-     * @return a fully populated {@link GlobalConfiguration} entity or {@code null} if input is {@code null}
+     * @return a fully populated {@link GlobalConfigurationEntity} entity or {@code null} if input is {@code null}
      */
-    public GlobalConfiguration toEntity(GlobalConfigurationDTO dto) {
+    public GlobalConfigurationEntity toEntity(GlobalConfigurationDTO dto) {
         if (dto == null) return null;
 
-        GlobalConfiguration entity = new GlobalConfiguration();
+        GlobalConfigurationEntity entity = new GlobalConfigurationEntity();
         entity.setType(dto.getType());
         entity.setConfig(dto.getConfig());
 

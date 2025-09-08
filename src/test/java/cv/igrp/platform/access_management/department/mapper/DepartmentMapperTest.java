@@ -2,8 +2,7 @@ package cv.igrp.platform.access_management.department.mapper;
 
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
-import cv.igrp.platform.access_management.shared.domain.models.Application;
-import cv.igrp.platform.access_management.shared.domain.models.Department;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -23,19 +22,17 @@ class DepartmentMapperTest {
     @Test
     @DisplayName("toDto(): should map entity to DTO correctly")
     void toDto1_shouldMapFieldsCorrectly() {
-        Application app = new Application();
-        app.setId(1);
 
-        Department parent = new Department();
+        DepartmentEntity parent = new DepartmentEntity();
         parent.setId(99);
+        parent.setCode("NOSI");
 
-        Department department = new Department();
+        DepartmentEntity department = new DepartmentEntity();
         department.setId(10);
         department.setCode("HR");
         department.setName("Human Resources");
         department.setStatus(DepartmentStatus.ACTIVE);
         department.setDescription("Handles HR");
-        department.setApplicationId(app);
         department.setParentId(parent);
 
         DepartmentDTO dto = mapper.toDto(department);
@@ -46,8 +43,7 @@ class DepartmentMapperTest {
         assertEquals("Human Resources", dto.getName());
         assertEquals("Handles HR", dto.getDescription());
         assertEquals(DepartmentStatus.ACTIVE, dto.getStatus());
-        assertEquals(1, dto.getApplication_id());
-        assertEquals(99, dto.getParent_id());
+        assertEquals("NOSI", dto.getParent_code());
     }
 
     @Test
@@ -66,7 +62,7 @@ class DepartmentMapperTest {
         dto.setDescription("Tech Dept");
         dto.setStatus(DepartmentStatus.INACTIVE);
 
-        Department entity = mapper.toEntity(dto);
+        DepartmentEntity entity = mapper.toEntity(dto);
 
         assertNotNull(entity);
         assertEquals(20, entity.getId());
@@ -85,7 +81,7 @@ class DepartmentMapperTest {
         dto.setDescription("Ops dept");
         dto.setStatus(null);
 
-        Department entity = mapper.toEntity(dto);
+        DepartmentEntity entity = mapper.toEntity(dto);
 
         assertEquals(DepartmentStatus.ACTIVE, entity.getStatus());
     }
@@ -105,7 +101,7 @@ class DepartmentMapperTest {
         dto.setDescription("Updated desc");
         dto.setStatus(DepartmentStatus.INACTIVE);
 
-        Department entity = new Department();
+        DepartmentEntity entity = new DepartmentEntity();
         entity.setCode("OLD");
         entity.setName("Old Dept");
         entity.setDescription("Old desc");

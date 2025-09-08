@@ -1,35 +1,94 @@
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+#===================================================================
+# Build stage: GraalVM 24 + Native Image
 # ===================================================================
-# Build stage: GraalVM 21 + Native Image with Maven Wrapper
-# ===================================================================
-FROM ghcr.io/graalvm/native-image-community:21-muslib-ol9 AS build
+FROM --platform=${BUILDPLATFORM} ghcr.io/graalvm/native-image-community:23-ol9 AS build
 
-# Diretório de trabalho
+ARG APP_BUILD_FINGERPRINT
+# show platforms
+ARG BUILDPLATFORM
+ARG TARGETPLATFORM
+RUN echo "Building on: ${BUILDPLATFORM}, targeting: ${TARGETPLATFORM}"
+
 WORKDIR /app
 
-# Configuração do diretório e ambiente
-ARG SPRING_ACTIVE_PROFILE
-ENV SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILE}
+# Install only wget & xz
+USER root
+RUN microdnf install --nodocs -y \
+      wget xz make gcc findutils \
+    && microdnf clean all
 
-# Copiar código fonte e configurações Maven
-COPY mvnw mvnw.cmd pom.xml ./
+# -----------------------------
+# 1) Install & build musl from source
+# -----------------------------
+#RUN wget -q https://musl.libc.org/releases/musl-1.2.5.tar.gz \
+#      -O /tmp/musl-1.2.5.tar.gz && \
+#    tar -xzf /tmp/musl-1.2.5.tar.gz -C /tmp && \
+#    cd /tmp/musl-1.2.5 && \
+#    ./configure --prefix=/usr/local/musl --exec-prefix=/usr/local && \
+#    make && make install
+
+# -----------------------------
+# 2) Symlink the single musl-gcc into the two names GraalVM expects
+# -----------------------------
+#RUN ln -sf /usr/local/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc && \
+#    ln -sf /usr/local/bin/musl-gcc /usr/local/bin/aarch64-linux-musl-gcc
+
+# copy only what's needed for mvnw bootstrap
+COPY mvnw ./
 COPY .mvn/ .mvn/
-RUN chmod +x mvnw && ./mvnw dependency:go-offline -B
+COPY pom.xml ./
 
-COPY src ./src
-# Compilar aplicação e gerar executável nativo completo e statico
-RUN ./mvnw -Pnative clean package -DskipTests
+RUN chmod +x mvnw && \
+    ./mvnw --batch-mode dependency:go-offline -B
+
+COPY src/ src/
+
+# Give Maven memory
+ENV MAVEN_OPTS="-Xmx12g -Xms4g -XX:+UseG1GC -XX:+UseStringDeduplication"
+ENV JAVA_TOOL_OPTIONS="-Xmx12g -Xms4g"
+
+# version for UPX
+ARG UPX_VERSION=5.0.1
+
+RUN set -eux; \
+    # pick arch/profile based on target
+    case "${TARGETPLATFORM}" in \
+      "linux/arm64") ARCH=arm64; ;; \
+      "linux/amd64") ARCH=amd64; ;; \
+      *)              ARCH=amd64; ;; \
+    esac; \
+    echo "→ Building for ${ARCH}"; \
+    ./mvnw --batch-mode \
+      -Pnative \
+      -Dbuild.target=${ARCH} \
+      -Dspring.cloud.refresh.enabled=false \
+      clean package -DskipTests; \
+    \
+    # UPX compress
+    UPX_ARCHIVE="upx-${UPX_VERSION}-${ARCH}_linux.tar.xz"; \
+    wget -q https://github.com/upx/upx/releases/download/v${UPX_VERSION}/${UPX_ARCHIVE}; \
+    tar -xJf ${UPX_ARCHIVE}; \
+    mv "upx-${UPX_VERSION}-${ARCH}_linux"/upx /usr/local/bin/upx; \
+    rm -rf ${UPX_ARCHIVE} "upx-${UPX_VERSION}-${ARCH}_linux"; \
+    upx --lzma --best -o target/access-management-upx target/access-management; \
+    ls -lh target/access-management-upx
 
 # ===================================================================
-# Runtime stage: minimal static binary
+# Runtime stage: minimal --static-nolibc binary
 # ===================================================================
-FROM gcr.io/distroless/static:nonroot
+FROM gcr.io/distroless/base-nossl:nonroot
 
-# Diretório de trabalho
+ARG TARGETPLATFORM
+LABEL platform=${TARGETPLATFORM}
+
 WORKDIR /app
+COPY --from=build /app/target/access-management-upx ./access-management
 
-# Copy the native executable (artifactId assumed "access-management")
-COPY --from=build /app/target/*-runner /app/access-management
+USER nonroot:nonroot
 
-# Expor porta e executar aplicação
 EXPOSE 8080
-CMD ["./access-management"]
+
+CMD ["/app/access-management"]
+

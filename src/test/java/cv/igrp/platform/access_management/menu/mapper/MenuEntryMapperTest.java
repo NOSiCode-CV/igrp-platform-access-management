@@ -3,13 +3,14 @@ package cv.igrp.platform.access_management.menu.mapper;
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.models.Application;
-import cv.igrp.platform.access_management.shared.domain.models.MenuEntry;
-import cv.igrp.platform.access_management.shared.domain.models.Resource;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -36,7 +37,7 @@ class MenuEntryMapperTest {
         dto.setTarget("_blank");
         dto.setUrl("/dashboard");
 
-        MenuEntry entity = mapper.toEntity(dto);
+        MenuEntryEntity entity = mapper.toEntity(dto);
 
         assertNotNull(entity);
         assertEquals(1, entity.getId());
@@ -62,7 +63,7 @@ class MenuEntryMapperTest {
         dto.setTarget("_blank");
         dto.setUrl("/dashboard");
 
-        MenuEntry entity = mapper.toEntity(dto);
+        MenuEntryEntity entity = mapper.toEntity(dto);
 
         assertNotNull(entity);
         assertEquals(1, entity.getId());
@@ -78,7 +79,7 @@ class MenuEntryMapperTest {
     @Test
     @DisplayName("toDTO(): should map entity to DTO including nested IDs")
     void toDTO_shouldMapEntityAndNestedObjectsToFlatDTO() {
-        MenuEntry entity = getMenuEntry();
+        MenuEntryEntity entity = getMenuEntry();
 
         MenuEntryDTO dto = mapper.toDTO(entity);
 
@@ -91,14 +92,13 @@ class MenuEntryMapperTest {
         assertEquals(Status.INACTIVE, dto.getStatus());
         assertEquals("_self", dto.getTarget());
         assertEquals("/settings", dto.getUrl());
-        assertEquals(99, dto.getParentId());
-        assertEquals(5, dto.getApplicationId());
-        assertEquals(8, dto.getResourceId());
+        assertEquals("MENU0", dto.getParentCode());
+        assertEquals("APP", dto.getApplicationCode());
     }
 
     @NotNull
-    private static MenuEntry getMenuEntry() {
-        MenuEntry entity = new MenuEntry();
+    private static MenuEntryEntity getMenuEntry() {
+        MenuEntryEntity entity = new MenuEntryEntity();
         entity.setId(10);
         entity.setName("Settings");
         entity.setType(MenuEntryType.EXTERNAL_PAGE);
@@ -107,18 +107,19 @@ class MenuEntryMapperTest {
         entity.setStatus(Status.INACTIVE);
         entity.setTarget("_self");
         entity.setUrl("/settings");
+        entity.setPermissions(new ArrayList<>());
 
-        MenuEntry parent = new MenuEntry();
+        MenuEntryEntity parent = new MenuEntryEntity();
         parent.setId(99);
+        parent.setCode("MENU0");
         entity.setParentId(parent);
+        parent.setPermissions(new ArrayList<>());
 
-        Application app = new Application();
+        ApplicationEntity app = new ApplicationEntity();
         app.setId(5);
+        app.setCode("APP");
         entity.setApplicationId(app);
 
-        Resource resource = new Resource();
-        resource.setId(8);
-        entity.setResourceId(resource);
         return entity;
     }
 
@@ -137,19 +138,18 @@ class MenuEntryMapperTest {
     @Test
     @DisplayName("toDTO(): should not fail when nested objects are null")
     void toDTO_shouldHandleNullNestedObjectsGracefully() {
-        MenuEntry entity = new MenuEntry();
+        MenuEntryEntity entity = new MenuEntryEntity();
         entity.setId(1);
         entity.setName("Help");
         entity.setApplicationId(null);
         entity.setParentId(null);
-        entity.setResourceId(null);
+        entity.setPermissions(new ArrayList<>());
 
         MenuEntryDTO dto = mapper.toDTO(entity);
 
         assertEquals(1, dto.getId());
-        assertNull(dto.getApplicationId());
-        assertNull(dto.getParentId());
-        assertNull(dto.getResourceId());
+        assertNull(dto.getApplicationCode());
+        assertNull(dto.getParentCode());
     }
 
 }

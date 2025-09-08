@@ -2,13 +2,19 @@ package cv.igrp.platform.access_management.app.mapper;
 
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.models.Application;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
 
+import static java.util.Optional.ofNullable;
+
 /**
- * Mapper component responsible for converting between {@link Application} entities
+ * Mapper component responsible for converting between {@link ApplicationEntity} entities
  * and {@link ApplicationDTO} data transfer objects.
  * <p>
  * This class centralizes the mapping logic to isolate transformation concerns,
@@ -23,19 +29,25 @@ import java.net.URI;
  *     <li>Date fields are converted to ISO-8601 string format.</li>
  * </ul>
  *
- * @see Application
+ * @see ApplicationEntity
  * @see ApplicationDTO
  */
 @Component
 public class ApplicationMapper {
 
+    private final DepartmentEntityRepository departmentEntityRepository;
+
+    public ApplicationMapper(DepartmentEntityRepository departmentEntityRepository) {
+        this.departmentEntityRepository = departmentEntityRepository;
+    }
+
     /**
-     * Converts an {@link Application} entity to an {@link ApplicationDTO}.
+     * Converts an {@link ApplicationEntity} entity to an {@link ApplicationDTO}.
      *
-     * @param entity the {@link Application} entity to be converted; may be {@code null}
+     * @param entity the {@link ApplicationEntity} entity to be converted; may be {@code null}
      * @return a fully populated {@link ApplicationDTO} or {@code null} if input is {@code null}
      */
-    public ApplicationDTO toDto(Application entity) {
+    public ApplicationDTO toDto(ApplicationEntity entity) {
         if (entity == null) return null;
         ApplicationDTO dto = new ApplicationDTO();
         dto.setId(entity.getId());
@@ -49,6 +61,7 @@ public class ApplicationMapper {
         dto.setUrl(entity.getUrl() != null ? URI.create(entity.getUrl()) : null);
         dto.setSlug(entity.getSlug());
         dto.setCreatedBy(entity.getCreatedBy());
+        dto.setDepartmentCode(ofNullable(entity.getDepartmentId()).map(DepartmentEntity::getCode).orElse(null));
         if(entity.getCreatedDate() != null)
             dto.setCreatedDate(entity.getCreatedDate().toString());
         dto.setLastModifiedBy(entity.getLastModifiedBy());
@@ -58,15 +71,15 @@ public class ApplicationMapper {
     }
 
     /**
-     * Converts an {@link ApplicationDTO} to an {@link Application} entity.
+     * Converts an {@link ApplicationDTO} to an {@link ApplicationEntity} entity.
      *
      * @param dto the {@link ApplicationDTO} to be converted; may be {@code null}
-     * @return a fully populated {@link Application} entity or {@code null} if input is {@code null}
+     * @return a fully populated {@link ApplicationEntity} entity or {@code null} if input is {@code null}
      */
-    public Application toEntity(ApplicationDTO dto) {
+    public ApplicationEntity toEntity(ApplicationDTO dto) {
         if (dto == null) return null;
 
-        Application entity = new Application();
+        ApplicationEntity entity = new ApplicationEntity();
         entity.setId(dto.getId());
         entity.setCode(dto.getCode());
         entity.setName(dto.getName());
@@ -77,6 +90,8 @@ public class ApplicationMapper {
         entity.setPicture(dto.getPicture());
         entity.setUrl(dto.getUrl() != null ? dto.getUrl().toString() : null);
         entity.setSlug(dto.getSlug());
+        entity.setDepartmentId(departmentEntityRepository.findByCode(dto.getDepartmentCode()).orElseThrow(
+                () -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Department not found", "Department not found for code: " + dto.getDepartmentCode())));
 
         return entity;
     }

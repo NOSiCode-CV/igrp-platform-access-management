@@ -1,1 +1,86 @@
-{"type":"dto","module":"shared","name":"RoleDTO","template":"classic","enableCustonValidation":false,"attributes":[{"name":"id","objectType":"java","type":"integer","required":false,"before":false,"after":false,"positive":false,"isEmail":false,"isUrl":false,"primaryKey":false},{"name":"name","objectType":"java","type":"string","required":true,"before":false,"after":false,"positive":false,"maxLength":15,"isEmail":false,"isUrl":false,"primaryKey":false},{"name":"description","objectType":"java","type":"string","required":false,"before":false,"after":false,"positive":false,"maxLength":255,"isEmail":false,"isUrl":false,"primaryKey":false},{"name":"departmentId","objectType":"java","type":"integer","required":true,"before":false,"after":false,"positive":false,"isEmail":false,"isUrl":false,"primaryKey":false},{"name":"parentId","objectType":"java","type":"integer","required":false,"before":false,"after":false,"positive":false,"isEmail":false,"isUrl":false,"primaryKey":false},{"name":"status","objectType":"enum","type":"Status","required":false,"before":false,"after":false,"positive":false,"isEmail":false,"isUrl":false,"primaryKey":false,"module":"shared"}],"id":"2xsfscjnlo"}
+{
+  "type": "dto",
+  "module": "shared",
+  "name": "RoleDTO",
+  "template": "classic",
+  "enableCustonValidation": false,
+  "attributes": [
+    {
+      "name": "id",
+      "objectType": "java",
+      "type": "integer",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "name",
+      "objectType": "java",
+      "type": "string",
+      "required": true,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "maxLength": 15,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "regex": "^[A-Za-z0-9_-]+$"
+    },
+    {
+      "name": "description",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "maxLength": 255,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "departmentCode",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "parentName",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "status",
+      "objectType": "enum",
+      "type": "Status",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "module": "shared"
+    }
+  ],
+  "id": "2xsfscjnlo"
+}

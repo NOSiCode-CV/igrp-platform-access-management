@@ -3,9 +3,11 @@ package cv.igrp.platform.access_management.resource.mapper;
 import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.resource.application.dto.ResourceItemDTO;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.models.Permission;
-import cv.igrp.platform.access_management.shared.domain.models.Resource;
-import cv.igrp.platform.access_management.shared.domain.models.ResourceItem;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceItemEntityRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -13,15 +15,24 @@ import java.util.List;
 @Component
 public class ResourceMapper {
 
-    public ResourceDTO toDto(Resource resource) {
+    private final PermissionEntityRepository permissionRepository;
+    private final ResourceItemEntityRepository resourceItemRepository;
+
+    public ResourceMapper(PermissionEntityRepository permissionRepository, ResourceItemEntityRepository resourceItemRepository) {
+        this.permissionRepository = permissionRepository;
+        this.resourceItemRepository = resourceItemRepository;
+    }
+
+    public ResourceDTO toDto(ResourceEntity resource) {
         if (resource == null) return null;
         ResourceDTO dto = new ResourceDTO();
         dto.setId(resource.getId());
         dto.setName(resource.getName());
+        dto.setDescription(resource.getDescription());
         dto.setType(resource.getType());
         dto.setStatus(resource.getStatus());
         dto.setExternalId(resource.getExternalId());
-        dto.setApplicationId(resource.getApplicationId() != null ? resource.getApplicationId().getId() : null);
+        dto.setApplicationCode(resource.getApplicationId() != null ? resource.getApplicationId().getCode() : null);
         if (resource.getItems() != null) {
             List<ResourceItemDTO> items = resource.getItems().stream().map(this::toItemDto).toList();
             dto.setItems(items);
@@ -35,14 +46,16 @@ public class ResourceMapper {
         return dto;
     }
 
-    public ResourceItemDTO toItemDto(ResourceItem item) {
+    public ResourceItemDTO toItemDto(ResourceItemEntity item) {
         if (item == null) return null;
         ResourceItemDTO dto = new ResourceItemDTO();
         dto.setId(item.getId());
         dto.setName(item.getName());
+        dto.setDescription(item.getDescription());
         dto.setUrl(item.getUrl());
-        dto.setResourceId(item.getResourceId() != null ? item.getResourceId().getId() : null);
-        dto.setPermissionId(item.getPermissionId() != null ? item.getPermissionId().getId() : null);
+        dto.setResourceName(item.getResourceId() != null ? item.getResourceId().getName() : null);
+        dto.setPermissionName(item.getPermissionId() != null ? permissionRepository.findById(
+                item.getPermissionId()).map(PermissionEntity::getName).orElse(null): null);
         dto.setCreatedBy(item.getCreatedBy());
         if(item.getCreatedDate() != null)
             dto.setCreatedDate(item.getCreatedDate().toString());
@@ -52,11 +65,12 @@ public class ResourceMapper {
         return dto;
     }
 
-    public Resource toEntity(ResourceDTO dto) {
+    public ResourceEntity toEntity(ResourceDTO dto) {
         if (dto == null) return null;
 
-        Resource resource = new Resource();
+        ResourceEntity resource = new ResourceEntity();
         resource.setName(dto.getName());
+        resource.setDescription(dto.getDescription());
         resource.setType(dto.getType());
         resource.setStatus(dto.getStatus() != null ? dto.getStatus() : Status.ACTIVE);
         resource.setExternalId(dto.getExternalId());
@@ -64,14 +78,15 @@ public class ResourceMapper {
         return resource;
     }
 
-    public ResourceItem toItemEntity(ResourceItemDTO dto, Resource parentResource, Permission permission) {
+    public ResourceItemEntity toItemEntity(ResourceItemDTO dto, ResourceEntity parentResource, PermissionEntity permission) {
         if (dto == null) return null;
-        ResourceItem item = new ResourceItem();
+        ResourceItemEntity item = new ResourceItemEntity();
         item.setName(dto.getName());
+        item.setDescription(dto.getDescription());
         item.setUrl(dto.getUrl());
         item.setResourceId(parentResource);
-        item.setPermissionId(permission);
-        return item;
+        item.setPermissionId(permission.getId());
+        return resourceItemRepository.save(item);
     }
 }
 

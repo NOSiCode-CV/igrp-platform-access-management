@@ -1,1 +1,74 @@
-{"type":"dto","module":"shared","name":"PermissionDTO","template":"classic","enableCustonValidation":false,"attributes":[{"name":"id","objectType":"java","type":"integer","required":false,"before":false,"after":false,"positive":false,"isEmail":false,"isUrl":false,"primaryKey":false},{"name":"name","objectType":"java","type":"string","required":true,"before":false,"after":false,"positive":false,"maxLength":60,"isEmail":false,"isUrl":false,"primaryKey":false},{"name":"description","objectType":"java","type":"string","required":false,"before":false,"after":false,"positive":false,"maxLength":255,"isEmail":false,"isUrl":false,"primaryKey":false},{"name":"status","objectType":"enum","type":"Status","required":false,"before":false,"after":false,"positive":false,"isEmail":false,"isUrl":false,"primaryKey":false,"module":"shared"},{"name":"applicationId","objectType":"java","type":"integer","required":true,"before":false,"after":false,"positive":false,"isEmail":false,"isUrl":false,"primaryKey":false}],"id":"ecx37yuxhk"}
+{
+  "type": "dto",
+  "module": "shared",
+  "name": "PermissionDTO",
+  "template": "classic",
+  "enableCustonValidation": false,
+  "attributes": [
+    {
+      "name": "id",
+      "objectType": "java",
+      "type": "integer",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "name",
+      "objectType": "java",
+      "type": "string",
+      "required": true,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "maxLength": 60,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "regex": "^[A-Za-z0-9_-]+$"
+    },
+    {
+      "name": "description",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "maxLength": 255,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "status",
+      "objectType": "enum",
+      "type": "Status",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "module": "shared"
+    },
+    {
+      "name": "departmentCode",
+      "objectType": "java",
+      "type": "string",
+      "required": true,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    }
+  ],
+  "id": "ecx37yuxhk"
+}

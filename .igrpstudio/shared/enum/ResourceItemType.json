@@ -1,1 +1,38 @@
-{"type":"enum","module":"shared","name":"ResourceItemType","values":[{"name":"PAGE","attributes":["PAGE","Page"]},{"name":"API_RESOURCE","attributes":["API_RESOURCE","API Resource"]}],"attributes":[{"type":"string","name":"Code"},{"type":"string","name":"Description"}]}
+{
+  "type": "enum",
+  "module": "shared",
+  "name": "ResourceItemType",
+  "values": [
+    {
+      "name": "PAGE",
+      "attributes": [
+        "PAGE",
+        "Page"
+      ]
+    },
+    {
+      "name": "API_RESOURCE",
+      "attributes": [
+        "API_RESOURCE",
+        "API Resource"
+      ]
+    },
+    {
+      "name": "PROCESS_STEP",
+      "attributes": [
+        "PROCESS_STEP",
+        "Process Step"
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "type": "string",
+      "name": "Code"
+    },
+    {
+      "type": "string",
+      "name": "Description"
+    }
+  ]
+}
