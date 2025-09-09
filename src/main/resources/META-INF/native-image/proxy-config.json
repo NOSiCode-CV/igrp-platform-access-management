@@ -325,5 +325,7 @@
       "org.keycloak.admin.client.resource.ResourcePermissionsResource",
       "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"
     ]
-  }
+  },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.RoleScopeResource", "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"]}
 ]
