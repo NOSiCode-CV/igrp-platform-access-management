@@ -75,6 +75,7 @@ public class CreateUserCommandHandlerTest {
       // Arrange
         when(userRepository.save(any(IGRPUserEntity.class))).thenReturn(userEntity);
         when(userMapper.toDto(userEntity)).thenReturn(expectedDto);
+        when(userRepository.existsByUsername(expectedDto.getUsername())).thenReturn(false);
 
         // Act
         ResponseEntity<IGRPUserDTO> response = createUserCommandHandler.handle(command);

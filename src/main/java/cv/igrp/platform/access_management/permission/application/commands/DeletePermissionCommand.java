@@ -12,7 +12,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class DeletePermissionCommand implements Command {
 
-  @NotBlank(message = "The field <name> is required.")
+  @NotBlank(message = "The field <name> is required")
   private String name;
 
 }

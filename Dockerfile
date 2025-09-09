@@ -19,7 +19,21 @@ RUN microdnf install --nodocs -y \
       wget xz make gcc findutils \
     && microdnf clean all
 
+# -----------------------------
+# 1) Install & build musl from source
+# -----------------------------
+#RUN wget -q https://musl.libc.org/releases/musl-1.2.5.tar.gz \
+#      -O /tmp/musl-1.2.5.tar.gz && \
+#    tar -xzf /tmp/musl-1.2.5.tar.gz -C /tmp && \
+#    cd /tmp/musl-1.2.5 && \
+#    ./configure --prefix=/usr/local/musl --exec-prefix=/usr/local && \
+#    make && make install
 
+# -----------------------------
+# 2) Symlink the single musl-gcc into the two names GraalVM expects
+# -----------------------------
+#RUN ln -sf /usr/local/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc && \
+#    ln -sf /usr/local/bin/musl-gcc /usr/local/bin/aarch64-linux-musl-gcc
 
 # copy only what's needed for mvnw bootstrap
 COPY mvnw ./
@@ -51,7 +65,7 @@ RUN set -eux; \
       -Dbuild.target=${ARCH} \
       -Dspring.cloud.refresh.enabled=false \
       clean package -DskipTests; \
-      \
+    \
     # UPX compress
     UPX_ARCHIVE="upx-${UPX_VERSION}-${ARCH}_linux.tar.xz"; \
     wget -q https://github.com/upx/upx/releases/download/v${UPX_VERSION}/${UPX_ARCHIVE}; \
@@ -78,3 +92,4 @@ USER nonroot:nonroot
 EXPOSE 8080
 
 CMD ["/app/access-management"]
+

@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -62,7 +63,7 @@ public class GetApplicationsByUserQueryHandlerTest {
 
         List<ApplicationEntity> applications = List.of(app1, app2);
 
-        when(applicationRepository.findDistinctByDepartmentId_Roles_Users_UsernameOrDepartmentId_Roles_Users_Email(uid, uid))
+        when(applicationRepository.findDistinctByDepartmentId_Roles_Users_UsernameOrDepartmentId_Roles_Users_EmailAndStatusNot(uid, uid, Status.DELETED))
                 .thenReturn(applications);
         when(applicationMapper.toDto(app1)).thenReturn(app1Dto);
         when(applicationMapper.toDto(app2)).thenReturn(app2Dto);

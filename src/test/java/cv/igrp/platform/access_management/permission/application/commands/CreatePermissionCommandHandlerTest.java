@@ -4,9 +4,9 @@ import cv.igrp.platform.access_management.permission.domain.service.PermissionMa
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,7 +30,7 @@ public class CreatePermissionCommandHandlerTest {
     @InjectMocks
     private CreatePermissionCommandHandler underTest;
     @Mock
-    private ApplicationEntityRepository applicationRepository;
+    private DepartmentEntityRepository departmentRepository;
     @Mock
     private PermissionEntityRepository permissionRepository;
     @Mock
@@ -44,15 +44,15 @@ public class CreatePermissionCommandHandlerTest {
     }
 
     @Test
-    void itShouldThrowNotFoundException_WhenApplicationDoesNotExist() {
+    void itShouldThrowNotFoundException_WhenDepartmentDoesNotExist() {
         //... Given
-        String applicationCode = "APP";
+        String departmentCode = "DEPT";
         String permissionName = "permissionName";
         String permissionDescription = "permissionDescription";
-        PermissionDTO permissiondto = new PermissionDTO(null, permissionName, permissionDescription, null, applicationCode);
+        PermissionDTO permissiondto = new PermissionDTO(null, permissionName, permissionDescription, null, departmentCode);
         CreatePermissionCommand command = new CreatePermissionCommand(permissiondto);
 
-        when(applicationRepository.findByCode(applicationCode))
+        when(departmentRepository.findByCode(departmentCode))
                 .thenReturn(Optional.empty());
         //... When
         IgrpResponseStatusException response = assertThrows(IgrpResponseStatusException.class, () -> underTest.handle(command));
@@ -62,30 +62,30 @@ public class CreatePermissionCommandHandlerTest {
     }
 
     @Test
-    void itShouldCreatePermission_WhenApplicationExists() {
+    void itShouldCreatePermission_WhenDepartmentExists() {
         // Given
-        String appCode = "APP";
+        String departmentCode = "DEPT";
         String permissionName = "READ_USERS";
         PermissionDTO dto = new PermissionDTO();
         dto.setName(permissionName);
-        dto.setApplicationCode(appCode);
+        dto.setDepartmentCode(departmentCode);
         dto.setStatus(Status.ACTIVE);
 
         CreatePermissionCommand command = new CreatePermissionCommand(dto);
 
-        ApplicationEntity application = new ApplicationEntity();
-        application.setId(1);
-        application.setCode(appCode);
+        DepartmentEntity department = new DepartmentEntity();
+        department.setId(1);
+        department.setCode(departmentCode);
 
         PermissionEntity permissionToSave = new PermissionEntity();
         permissionToSave.setName(permissionName);
-        permissionToSave.setApplication(application);
+        permissionToSave.setDepartment(department);
         permissionToSave.setStatus(Status.ACTIVE);
 
         PermissionEntity savedPermission = new PermissionEntity();
         savedPermission.setId(10);
         savedPermission.setName(permissionName);
-        savedPermission.setApplication(application);
+        savedPermission.setDepartment(department);
         savedPermission.setStatus(Status.ACTIVE);
 
         PermissionDTO expectedResponse = new PermissionDTO();
@@ -94,8 +94,8 @@ public class CreatePermissionCommandHandlerTest {
         expectedResponse.setStatus(Status.ACTIVE);
 
         // When
-        when(applicationRepository.findByCode(appCode)).thenReturn(Optional.of(application));
-        when(permissionMapper.mapDtoToEntity(dto, application)).thenReturn(permissionToSave);
+        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(permissionMapper.mapDtoToEntity(dto, department)).thenReturn(permissionToSave);
         when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(expectedResponse);
 
@@ -110,42 +110,42 @@ public class CreatePermissionCommandHandlerTest {
         assertEquals(expectedResponse, response.getBody());
 
         assertEquals(permissionName, capturedPermission.getName());
-        assertEquals(appCode, capturedPermission.getApplication().getCode());
+        assertEquals(departmentCode, capturedPermission.getDepartment().getCode());
         assertEquals(Status.ACTIVE, capturedPermission.getStatus());
     }
 
     @Test
     void itShouldUseDefaultStatus_WhenStatusIsNotProvided() {
         // Given
-        int appId = 1;
-        String appCode = "APP";
+        int deptId = 1;
+        String departmentCode = "DEPT";
         String permissionName = "READ_USERS";
         PermissionDTO dto = new PermissionDTO();
         dto.setName(permissionName);
-        dto.setApplicationCode(appCode);
+        dto.setDepartmentCode(departmentCode);
 
         CreatePermissionCommand command = new CreatePermissionCommand(dto);
 
-        ApplicationEntity application = new ApplicationEntity();
-        application.setId(appId);
-        application.setCode(appCode);
+        DepartmentEntity department = new DepartmentEntity();
+        department.setId(deptId);
+        department.setCode(departmentCode);
 
         PermissionEntity permissionToSave = new PermissionEntity();
         permissionToSave.setName(permissionName);
-        permissionToSave.setApplication(application);
+        permissionToSave.setDepartment(department);
 
         PermissionEntity savedPermission = new PermissionEntity();
         savedPermission.setId(10);
         savedPermission.setName(permissionName);
-        savedPermission.setApplication(application);
+        savedPermission.setDepartment(department);
 
         PermissionDTO expectedResponse = new PermissionDTO();
         expectedResponse.setId(10);
         expectedResponse.setName(permissionName);
 
         // When
-        when(applicationRepository.findByCode(appCode)).thenReturn(Optional.of(application));
-        when(permissionMapper.mapDtoToEntity(dto, application)).thenReturn(permissionToSave);
+        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(permissionMapper.mapDtoToEntity(dto, department)).thenReturn(permissionToSave);
         when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(expectedResponse);
 
@@ -160,43 +160,43 @@ public class CreatePermissionCommandHandlerTest {
         assertEquals(expectedResponse, response.getBody());
 
         assertEquals(permissionName, capturedPermission.getName());
-        assertEquals(appId, capturedPermission.getApplication().getId());
+        assertEquals(deptId, capturedPermission.getDepartment().getId());
         assertNull(capturedPermission.getStatus());
     }
 
     @Test
     void itShouldMapSavedPermissionToDTO() {
         // Given
-        int appId = 1;
-        String appCode = "APP";
+        int deptId = 1;
+        String departmentCode = "DEPT";
         String permissionName = "MANAGE_ROLES";
 
         PermissionDTO dto = new PermissionDTO();
         dto.setName(permissionName);
-        dto.setApplicationCode(appCode);
+        dto.setDepartmentCode(departmentCode);
 
         CreatePermissionCommand command = new CreatePermissionCommand(dto);
 
-        ApplicationEntity application = new ApplicationEntity();
-        application.setId(appId);
-        application.setCode(appCode);
+        DepartmentEntity department = new DepartmentEntity();
+        department.setId(deptId);
+        department.setCode(departmentCode);
 
         PermissionEntity permissionToSave = new PermissionEntity();
         permissionToSave.setName(permissionName);
-        permissionToSave.setApplication(application);
+        permissionToSave.setDepartment(department);
 
         PermissionEntity savedPermission = new PermissionEntity();
         savedPermission.setId(20);
         savedPermission.setName(permissionName);
-        savedPermission.setApplication(application);
+        savedPermission.setDepartment(department);
 
         PermissionDTO mappedDTO = new PermissionDTO();
         mappedDTO.setId(20);
         mappedDTO.setName(permissionName);
 
         // When
-        when(applicationRepository.findByCode(appCode)).thenReturn(Optional.of(application));
-        when(permissionMapper.mapDtoToEntity(dto, application)).thenReturn(permissionToSave);
+        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(permissionMapper.mapDtoToEntity(dto, department)).thenReturn(permissionToSave);
         when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(mappedDTO);
 

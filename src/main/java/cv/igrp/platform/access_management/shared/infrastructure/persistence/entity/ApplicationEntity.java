@@ -17,7 +17,6 @@ import java.util.List;
 @Audited
 @Getter
 @Setter
-@ToString
 @IgrpEntity
 @Entity
 @NoArgsConstructor
@@ -32,7 +31,7 @@ public class ApplicationEntity extends AuditEntity {
 
   
     @NotBlank(message = "code is mandatory")
-    @Column(name="code", unique = true, nullable = false, length=15)
+    @Column(name="code", nullable = false, length=15)
     private String code;
 
   

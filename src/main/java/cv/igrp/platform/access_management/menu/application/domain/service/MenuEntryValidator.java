@@ -2,22 +2,53 @@ package cv.igrp.platform.access_management.menu.application.domain.service;
 
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Component;
+
+import java.util.Optional;
+
 
 /**
- * Utility class responsible for validating {@link MenuEntryDTO} instances against business rules.
+ * Validator class responsible for applying business rules related to {@link MenuEntryDTO}.
  *
- * <p>This validator checks for conditions such as fields setting for a specific menu entry type.
- * Validation results are encapsulated in a {@link ResourceValidationResponse} object, which includes
- * status and detailed failure messages.
+ * <p>This class currently validates menu entry code uniqueness within a given {@link MenuEntryEntity}.
+ * It returns a {@link ResourceValidationResponse} indicating whether the validation passed or failed.
+ *
+ * <p>Designed to be extended with additional validation rules as needed.
  */
+@Component
 public class MenuEntryValidator {
 
-    private static final Logger logger = LoggerFactory.getLogger(MenuEntryValidator.class);
+    private static Logger Log = LoggerFactory.getLogger(MenuEntryValidator.class);
+
+    private MenuEntryEntityRepository menuEntryEntityRepository;
+
+    public MenuEntryValidator(MenuEntryEntityRepository menuEntryEntityRepository) {
+        this.menuEntryEntityRepository = menuEntryEntityRepository;
+    }
+
+    /**
+     * Validates that the menu entry code does not already exist within the given menu entry.
+     *
+     * @param menuEntryDTO the menu entry data to validate
+     * @return a {@link ResourceValidationResponse} indicating the result of the validation
+     */
+    public ResourceValidationResponse validateMenuEntryCode(MenuEntryDTO menuEntryDTO) {
+        ResourceValidationResponse result = new ResourceValidationResponse();
+        result.setValid(true);
+        Optional<MenuEntryEntity> app = menuEntryEntityRepository.findByCodeAndStatusNot(menuEntryDTO.getCode(), Status.DELETED);
+        if (app.isPresent()) {
+            result.setValid(false);
+        }
+        return result;
+    }
 
     public static void validateRequiredFields(MenuEntryDTO menuEntry) {
 

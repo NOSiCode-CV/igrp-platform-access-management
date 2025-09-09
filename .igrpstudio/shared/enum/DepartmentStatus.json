@@ -11,13 +11,6 @@
       ]
     },
     {
-      "name": "PENDING",
-      "attributes": [
-        "PENDING",
-        "Pending"
-      ]
-    },
-    {
       "name": "INACTIVE",
       "attributes": [
         "INACTIVE",
@@ -25,10 +18,10 @@
       ]
     },
     {
-      "name": "IN_PROGRESS",
+      "name": "DELETED",
       "attributes": [
-        "IN_PROGRESS",
-        "In Progress"
+        "DELETED",
+        "Deleted"
       ]
     }
   ],

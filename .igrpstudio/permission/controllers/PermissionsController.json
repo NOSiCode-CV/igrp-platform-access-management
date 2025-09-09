@@ -188,14 +188,14 @@
       "requestParams": [
         {
           "type": "integer",
-          "name": "applicationId",
-          "description": "Application ID",
+          "name": "departmentId",
+          "description": "Department ID",
           "isRequired": false
         },
         {
           "type": "string",
-          "name": "applicationCode",
-          "description": "Application Code",
+          "name": "departmentCode",
+          "description": "Department Code",
           "isRequired": false
         }
       ]
@@ -229,5 +229,5 @@
       ]
     }
   ],
-  "id": "faon6pyr23-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"
+  "id": "faon6pyr23-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getPermissionByApplicationId"
 }

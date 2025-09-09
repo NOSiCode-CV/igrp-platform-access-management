@@ -4,10 +4,12 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import cv.igrp.platform.access_management.app.domain.service.ApplicationValidator;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
@@ -23,6 +25,7 @@ import org.springframework.http.ResponseEntity;
 import cv.igrp.platform.access_management.app.application.dto.*;
 
 import java.net.URI;
+import java.util.ArrayList;
 import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
@@ -37,11 +40,19 @@ public class CreateApplicationCommandHandlerTest {
     @Mock
     private ApplicationMapper applicationMapper;
 
+    @Mock
+    private ApplicationValidator applicationValidator;
+
     private CreateApplicationCommandHandler createApplicationCommandHandler;
+
+    private ResourceValidationResponse resourceValidationResponse;
 
     @BeforeEach
     void setUp() {
-        createApplicationCommandHandler = new CreateApplicationCommandHandler(applicationRepository, applicationMapper);
+        createApplicationCommandHandler = new CreateApplicationCommandHandler(applicationRepository, applicationMapper, applicationValidator);
+        resourceValidationResponse = new ResourceValidationResponse();
+        resourceValidationResponse.setValid(true);
+        resourceValidationResponse.setFailureMessage(new ArrayList<>());
     }
 
     @Test
@@ -51,6 +62,7 @@ public class CreateApplicationCommandHandlerTest {
         department.setCode("HR");
         department.setDescription("Test Description");
         department.setStatus(DepartmentStatus.ACTIVE);
+        department.setApplications(new ArrayList<>());
 
         ApplicationDTO applicationDTO = new ApplicationDTO(
                 null,
@@ -94,11 +106,19 @@ public class CreateApplicationCommandHandlerTest {
         savedApplication.setPicture("pic.png");
         savedApplication.setUrl("http://localhost:8080");
         savedApplication.setSlug("test-app");
-        savedApplication.setDepartmentId(department);
 
+        when(applicationValidator.validateApplicationCode(applicationDTO)).thenReturn(resourceValidationResponse);
         when(applicationMapper.toEntity(applicationDTO)).thenReturn(expectedToSave);
         when(applicationRepository.save(Mockito.any(ApplicationEntity.class))).thenReturn(savedApplication);
-        when(applicationMapper.toDto(savedApplication)).thenCallRealMethod(); // Optional if you map back to DTO
+        when(applicationMapper.toDto(savedApplication)).thenAnswer(inv -> {
+            ApplicationDTO dto = new ApplicationDTO();
+            dto.setId(savedApplication.getId());
+            dto.setCode(savedApplication.getCode());
+            dto.setName(savedApplication.getName());
+            dto.setDepartmentCode("HR");
+            dto.setStatus(savedApplication.getStatus());
+            return dto;
+        });
 
         ResponseEntity<ApplicationDTO> response = createApplicationCommandHandler.handle(command);
 

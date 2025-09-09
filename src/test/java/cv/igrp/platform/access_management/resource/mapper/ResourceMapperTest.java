@@ -17,10 +17,7 @@ import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
@@ -55,6 +52,13 @@ class ResourceMapperTest {
         testPermission.setId(456);
         testPermission.setName("permission456");
 
+        testResourceItem = new ResourceItemEntity();
+        testResourceItem.setId(789);
+        testResourceItem.setName("test");
+        testResourceItem.setDescription("Test Item");
+        testResourceItem.setUrl("/api/test");
+        testResourceItem.setPermissionId(testPermission.getId());
+
         testResource = new ResourceEntity();
         testResource.setId(123);
         testResource.setName("test");
@@ -63,24 +67,9 @@ class ResourceMapperTest {
         testResource.setStatus(Status.ACTIVE);
         testResource.setExternalId("ext-123");
         testResource.setApplicationId(testApplication);
+        testResource.setItems(new ArrayList<>(List.of(testResourceItem)));
 
-        testResourceItem = new ResourceItemEntity();
-        testResourceItem.setId(789);
-        testResourceItem.setName("test");
-        testResourceItem.setDescription("Test Item");
-        testResourceItem.setUrl("/api/test");
-        testResourceItem.setResourceId(testResource);
-        testResourceItem.setPermissionId(testPermission.getId());
-
-        testResource.setItems(Collections.singletonList(testResourceItem));
-
-        testResourceDTO = new ResourceDTO();
-        testResourceDTO.setName("test");
-        testResourceDTO.setDescription("Test Resource");
-        testResourceDTO.setType(ResourceType.API);
-        testResourceDTO.setStatus(Status.ACTIVE);
-        testResourceDTO.setExternalId("ext-123");
-        testResourceDTO.setApplicationCode("APP");
+        //testResource.setItems(Collections.singletonList(testResourceItem));
 
         testResourceItemDTO = new ResourceItemDTO();
         testResourceItemDTO.setId(789);
@@ -89,6 +78,16 @@ class ResourceMapperTest {
         testResourceItemDTO.setUrl("/api/test");
         testResourceItemDTO.setResourceName("test");
         testResourceItemDTO.setPermissionName("permission456");
+
+        testResourceDTO = new ResourceDTO();
+        testResourceDTO.setName("test");
+        testResourceDTO.setDescription("Test Resource");
+        testResourceDTO.setType(ResourceType.API);
+        testResourceDTO.setStatus(Status.ACTIVE);
+        testResourceDTO.setExternalId("ext-123");
+        testResourceDTO.setApplicationCode("APP");
+        testResourceDTO.setItems(List.of(testResourceItemDTO));
+
     }
 
     @Test

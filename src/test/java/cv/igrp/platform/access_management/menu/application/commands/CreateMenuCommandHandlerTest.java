@@ -1,10 +1,12 @@
 package cv.igrp.platform.access_management.menu.application.commands;
 
+import cv.igrp.platform.access_management.menu.application.domain.service.MenuEntryValidator;
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
@@ -20,6 +22,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -39,6 +42,9 @@ public class CreateMenuCommandHandlerTest {
     @Mock
     private MenuEntryMapper menuEntryMapper;
 
+    @Mock
+    private MenuEntryValidator menuEntryValidator;
+
     @InjectMocks
     private CreateMenuCommandHandler createMenuCommandHandler;
 
@@ -51,6 +57,7 @@ public class CreateMenuCommandHandlerTest {
     private MenuEntryDTO dto;
     private ApplicationEntity application;
     private MenuEntryEntity parentMenu;
+    private ResourceValidationResponse resourceValidationResponse;
 
     @BeforeEach
     void setUp() {
@@ -66,6 +73,9 @@ public class CreateMenuCommandHandlerTest {
         menuEntry = new MenuEntryEntity();
         application = new ApplicationEntity();
         parentMenu = new MenuEntryEntity();
+        resourceValidationResponse = new ResourceValidationResponse();
+        resourceValidationResponse.setValid(true);
+        resourceValidationResponse.setFailureMessage(new ArrayList<>());
     }
 
     @Test
@@ -77,6 +87,7 @@ public class CreateMenuCommandHandlerTest {
         when(menuEntryRepository.findByCode("MENU1")).thenReturn(Optional.of(parentMenu));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(dto);
+        when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
 
         // Act
         ResponseEntity<MenuEntryDTO> response = createMenuCommandHandler.handle(command);
@@ -105,6 +116,7 @@ public class CreateMenuCommandHandlerTest {
         when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(dto);
+        when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
 
         // Act
         ResponseEntity<MenuEntryDTO> response = createMenuCommandHandler.handle(command);
@@ -129,6 +141,7 @@ public class CreateMenuCommandHandlerTest {
         // Arrange
         when(applicationRepository.findByCode("APP")).thenReturn(Optional.empty());
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
+        when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> createMenuCommandHandler.handle(command));
@@ -144,6 +157,7 @@ public class CreateMenuCommandHandlerTest {
         // Arrange
         when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
+        when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> createMenuCommandHandler.handle(command));
@@ -159,6 +173,7 @@ public class CreateMenuCommandHandlerTest {
         when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
         when(menuEntryRepository.findByCode("MENU1")).thenReturn(Optional.empty());
+        when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> createMenuCommandHandler.handle(command));

@@ -56,7 +56,8 @@ public class GetApplicationsQueryHandlerTest {
         String name = "MyApp";
         String slug = "my-app-one";
         String department = "HR";
-        GetApplicationsQuery query = new GetApplicationsQuery(code, name, slug, department);
+        String appType = "INTERNAL";
+        GetApplicationsQuery query = new GetApplicationsQuery(code, name, slug, department, appType);
 
         ApplicationEntity app1 = new ApplicationEntity();
         app1.setId(1);
@@ -114,7 +115,7 @@ public class GetApplicationsQueryHandlerTest {
     void testHandleGetApplicationsQuery_shouldReturnMatchesByNameOnly() {
         // Given
         String name = "portal";
-        GetApplicationsQuery query = new GetApplicationsQuery(null, name, null, "HR"); // code is null
+        GetApplicationsQuery query = new GetApplicationsQuery(null, name, null, "HR", null); // code is null
 
         ApplicationEntity app1 = new ApplicationEntity();
         app1.setId(1);
@@ -176,7 +177,7 @@ public class GetApplicationsQueryHandlerTest {
     @Test
     void testHandleGetApplicationsQuery_shouldReturnAllWhenNoFiltersProvided() {
         // Given
-        GetApplicationsQuery query = new GetApplicationsQuery(null, null, null, "HR"); // No filters
+        GetApplicationsQuery query = new GetApplicationsQuery(null, null, null, null, null); // No filters
 
         ApplicationEntity app1 = new ApplicationEntity();
         app1.setId(1);
