@@ -74,5 +74,12 @@
   { "interfaces": ["org.keycloak.admin.client.resource.ResourceResource",     "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
 
   { "interfaces": ["org.keycloak.admin.client.resource.ScopesResource",       "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
-  { "interfaces": ["org.keycloak.admin.client.resource.ScopeResource",        "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] }
+  { "interfaces": ["org.keycloak.admin.client.resource.ScopeResource",        "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.ResourcePermissionsResource", "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] }
+
+  
+
+
+  
 ]
