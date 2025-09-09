@@ -1,6 +1,3 @@
-/* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
-/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
-
 package cv.igrp.platform.access_management.shared.application.constants;
 
 import cv.igrp.framework.core.domain.IgrpEnum;
@@ -14,8 +11,9 @@ import java.util.stream.Collectors;
 public enum DepartmentStatus implements IgrpEnum<String> {
 
   ACTIVE("ACTIVE", "Active"),
+    PENDING("PENDING", "Pending"),
     INACTIVE("INACTIVE", "Inactive"),
-    DELETED("DELETED", "Deleted")
+    IN_PROGRESS("IN_PROGRESS", "In Progress")
   ;
 
   private final String code;

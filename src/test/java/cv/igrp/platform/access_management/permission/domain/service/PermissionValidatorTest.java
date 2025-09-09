@@ -1,11 +1,9 @@
 package cv.igrp.platform.access_management.permission.domain.service;
 
-import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,20 +25,19 @@ class PermissionValidatorTest {
         existingPermission.setName(existingPermissionName);
         existingPermission.setStatus(Status.ACTIVE);
 
-        DepartmentEntity department = new DepartmentEntity();
-        department.setId(1);
-        department.setCode("DEPT");
-        department.setPermissions(List.of(existingPermission));
-        department.setStatus(DepartmentStatus.ACTIVE);
+        ApplicationEntity application = new ApplicationEntity();
+        application.setId(1);
+        application.setPermissions(List.of(existingPermission));
+        application.setStatus(Status.ACTIVE);
 
         PermissionDTO newPermissionDTO = new PermissionDTO();
         newPermissionDTO.setName("read_user");
-        newPermissionDTO.setDepartmentCode("DEPT");
+        newPermissionDTO.setApplicationCode("app");
         newPermissionDTO.setStatus(Status.ACTIVE);
 
         // When
         ResourceValidationResponse response =
-                PermissionValidator.validatePermissionName(newPermissionDTO, department);
+                PermissionValidator.validatePermissionName(newPermissionDTO, application);
 
         // Then
         assertFalse(response.isValid());
@@ -50,17 +47,15 @@ class PermissionValidatorTest {
     @Test
     void shouldReturnValidWhenPermissionNameDoesNotExist() {
         // Given
-        DepartmentEntity department = new DepartmentEntity();
-        department.setId(1);
-        department.setCode("DEPT");
-        department.setPermissions(Collections.emptyList());
+        ApplicationEntity application = new ApplicationEntity();
+        application.setPermissions(Collections.emptyList());
 
         PermissionDTO dto = new PermissionDTO();
         dto.setName("NEW_PERMISSION");
-        dto.setDepartmentCode("DEPT");
+        dto.setApplicationCode("app");
 
         // When
-        ResourceValidationResponse response = PermissionValidator.validatePermissionName(dto, department);
+        ResourceValidationResponse response = PermissionValidator.validatePermissionName(dto, application);
 
         // Then
         assertTrue(response.isValid());

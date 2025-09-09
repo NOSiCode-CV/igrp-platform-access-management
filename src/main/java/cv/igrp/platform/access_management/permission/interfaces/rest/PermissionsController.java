@@ -252,13 +252,13 @@ public class PermissionsController {
   )
   
   public ResponseEntity<List<PermissionDTO>> getPermissionByApplicationId(
-    @RequestParam(value = "departmentId", required = false) Integer departmentId,
-    @RequestParam(value = "departmentCode", required = false) String departmentCode)
+    @RequestParam(value = "applicationId", required = false) Integer applicationId,
+    @RequestParam(value = "applicationCode", required = false) String applicationCode)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetPermissionByApplicationIdQuery(departmentId, departmentCode);
+      final var query = new GetPermissionByApplicationIdQuery(applicationId, applicationCode);
 
       ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
 

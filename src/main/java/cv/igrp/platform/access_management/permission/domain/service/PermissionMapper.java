@@ -2,7 +2,7 @@ package cv.igrp.platform.access_management.permission.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import org.springframework.stereotype.Component;
 
@@ -30,29 +30,29 @@ public class PermissionMapper {
         permissionDTO.setName(permission.getName());
         permissionDTO.setDescription(permission.getDescription());
         permissionDTO.setStatus(permission.getStatus());
-        permissionDTO.setDepartmentCode(permission.getDepartment().getCode());
+        permissionDTO.setApplicationCode(permission.getApplication().getCode());
         return permissionDTO;
     }
 
     /**
-     * Converts a {@link PermissionDTO} and its associated {@link DepartmentEntity} into a {@link PermissionEntity} entity.
+     * Converts a {@link PermissionDTO} and its associated {@link ApplicationEntity} into a {@link PermissionEntity} entity.
      * <p>
      * If the {@code status} field in the DTO is {@code null}, it defaults to {@link Status#ACTIVE}.
      * The description field, if present, is trimmed before being set.
      * </p>
      *
      * @param request     the DTO containing permission data
-     * @param department the department to associate with the permission
+     * @param application the application to associate with the permission
      * @return a {@link PermissionEntity} entity ready to be persisted
      */
-    public PermissionEntity mapDtoToEntity(PermissionDTO request, DepartmentEntity department) {
+    public PermissionEntity mapDtoToEntity(PermissionDTO request, ApplicationEntity application) {
         PermissionEntity newPermission = new PermissionEntity();
         newPermission.setStatus(Objects.nonNull(request.getStatus()) ? request.getStatus() : Status.ACTIVE);
         newPermission.setName(request.getName());
         if (request.getDescription() != null) {
             newPermission.setDescription(request.getDescription().trim());
         }
-        newPermission.setDepartment(department);
+        newPermission.setApplication(application);
         return newPermission;
     }
 }

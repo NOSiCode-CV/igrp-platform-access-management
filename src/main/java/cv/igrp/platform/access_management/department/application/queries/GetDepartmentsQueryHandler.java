@@ -88,9 +88,6 @@ public class GetDepartmentsQueryHandler implements QueryHandler<GetDepartmentsQu
         predicates.add(cb.equal(parentJoin.get("code"), query.getParentCode()));
       }
 
-      // Exclude deleted departments
-      predicates.add(cb.notEqual(root.get("status"), DepartmentStatus.DELETED));
-
       return cb.and(predicates.toArray(new Predicate[0]));
     };
 

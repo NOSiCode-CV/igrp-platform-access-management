@@ -15,6 +15,7 @@ import java.util.Set;
 @Audited
 @Getter
 @Setter
+@ToString
 @IgrpEntity
 @Entity
 @NoArgsConstructor
@@ -49,8 +50,9 @@ public class PermissionEntity extends AuditEntity {
     private ApplicationEntity application;
 
 
-  @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department", referencedColumnName = "id")
+  
+    @OneToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department", unique = true, referencedColumnName = "id")
     private DepartmentEntity department;
 
 

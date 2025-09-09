@@ -90,11 +90,6 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
       );
     }
 
-    // Exclude deleted menus
-    spec = spec.and((root, _, cb) ->
-            cb.notEqual(root.get("status"), Status.DELETED)
-    );
-
     return spec;
   }
 

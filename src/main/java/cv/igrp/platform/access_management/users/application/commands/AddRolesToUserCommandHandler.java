@@ -1,13 +1,12 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.auth.core.adapter.IAdapter;
+import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
-import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.domain.exceptions.NoActionPerformedException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
@@ -18,9 +17,13 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import java.util.*;
-import java.util.stream.Collectors;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Command handler responsible for associating a {@link RoleEntity} with a specific {@link IGRPUserEntity}.
@@ -79,68 +82,66 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<List<RoleDTO>> handle(AddRolesToUserCommand command) {
-      String username = command.getUsername();
-      List<String> rolesToAdd = command.getAddRolesToUserRequest();
+      String userName = command.getUsername();
+      List<RoleEntity> roles = new ArrayList<>();
 
-      if (rolesToAdd.isEmpty())
-         throw new NoActionPerformedException("No action performed because the role list is empty");
-
-      List<RoleEntity> successfullyAssignedInKeycloak = new ArrayList<>();
-
-      IGRPUserEntity user = userRepository.findByUsername(username)
+      IGRPUserEntity user = userRepository.findByUsername(userName)
               .orElseThrow(() -> {
-                 logger.warn("User not found with name={}", username);
+                 logger.warn("User not found with name={}", userName);
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,"Invalid User name",
-                         "User not found with name: %s".formatted(username));
+                         "User not found with name: " + userName);
               });
 
-      List<RoleEntity> roles = user.getRoles();
+      for(String roleName : command.getAddRolesToUserRequest()) {
 
-      try {
-         Set<String> existingRoleCodes = roles.stream()
-                 .filter(role -> !Objects.equals(role.getStatus(),Status.DELETED))
-                 .map(RoleEntity::getName)
-                 .collect(Collectors.toSet());
+         logger.info("Assigning role name={} to user name={}", roleName, userName);
 
-         for (String role : command.getAddRolesToUserRequest()) {
+         RoleEntity roleToAdd = roleRepository.findByName(roleName)
+                 .orElseThrow(() -> {
+                    logger.warn("Role not found with name={}", roleName);
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Invalid Role name",
+                            "Role not found with name: " + roleName);
+                 });
 
-            if (existingRoleCodes.contains(role)) {
-               continue;
-            }
+         Set<IGRPUserEntity> users = roleToAdd.getUsers();
 
-            logger.info("Assigning role name={} to user name={}", role, username);
-            RoleEntity roleEntity = roleRepository.findByNameAndStatusNot(role, Status.DELETED)
-                    .orElseThrow(() -> {
-                       logger.warn("Role not found with name={}", role);
-                       return IgrpResponseStatusException.of(
-                               HttpStatus.NOT_FOUND, "Invalid Role name",
-                               "Role not found with name: %s".formatted(role));
-                    });
-            if(roleEntity.getUsers()==null) {
-               roleEntity.setUsers(new HashSet<>());
-            }
-            roleEntity.getUsers().add(user);
-            roleRepository.save(roleEntity);
-//            user.getRoles().add(roleEntity);
-
-            adapter.assignRoleToUser(roleEntity.getDepartment().getCode(), roleEntity.getName(), command.getUsername());
-            successfullyAssignedInKeycloak.add(roleEntity);
+         if (users == null) {
+            users = new HashSet<>();
+            roleToAdd.setUsers(users);
          }
-         //@ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
-         //Não funciona : o lado "owner" da relação está em RoleEntity e não no IGRPUserEntity
-//         userRepository.save(user);
-      } catch (Exception e) {
-         logger.error("Error while adding roles into Keycloak for username={}. Starting compensation...", username, e);
+         boolean isRoleAdded = users.add(user);
 
-         for (RoleEntity role : successfullyAssignedInKeycloak) {
-            try {
-               adapter.unassignRoleFromUser(role.getDepartment().getCode(), role.getName(), command.getUsername());
-            } catch (Exception rollbackEx) {
-               logger.error("Compensation failed: could not revert role={} in Keycloak for user={}: {}",
-                       role.getName(),
-                       command.getUsername(),
-                       rollbackEx.getMessage());
+         if (isRoleAdded) {
+            logger.info("User name={} successfully added to role name={}", userName, roleName);
+            roles.add(roleRepository.save(roleToAdd));
+         } else {
+            logger.info("User name={} was already associated with role name={}", userName, roleName);
+         }
+      }
+      //TODO Refactor transactional annotation were added.
+      if(!roles.isEmpty()) {
+         TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+               for (RoleEntity role : roles) {
+                  try {
+                     adapter.assignRoleToUser(role.getDepartment().getCode(),role.getName(),userName);
+                     logger.info("Role name={} from department with code {} assigned to user name={} in Keycloak",
+                             role.getName(),
+                             role.getDepartment().getCode(),
+                             userName);
+                  } catch (IAMException e) {
+                     logger.error("Failed to assign role name={} from {} department to user name={} in Keycloak: {}",
+                             role.getName(),
+                             role.getDepartment().getCode(),
+                             userName,
+                             e.getMessage(), e);
+                     throw new RuntimeException(e);
+                  }
+               }
+               TransactionSynchronization.super.afterCommit();
             }
          }
          throw IgrpResponseStatusException.of(
@@ -150,8 +151,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
          );
       }
 
-      // Showing only the new ones.
-      List<RoleDTO> rolesDTO = successfullyAssignedInKeycloak.stream().map(roleMapper::mapToDto).toList();
+      List<RoleDTO> rolesDTO = roles.stream().map(roleMapper::mapToDto).toList();
 
       return ResponseEntity.status(HttpStatus.CREATED).body(rolesDTO);
 

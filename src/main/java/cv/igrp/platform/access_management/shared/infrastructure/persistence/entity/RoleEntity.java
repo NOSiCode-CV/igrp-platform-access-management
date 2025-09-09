@@ -17,7 +17,7 @@ import org.hibernate.annotations.OnDeleteAction;
 @Audited
 @Getter
 @Setter
-@ToString(exclude = {"department", "users"})
+@ToString
 @IgrpEntity
 @Entity
 @NoArgsConstructor

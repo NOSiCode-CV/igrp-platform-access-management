@@ -3,10 +3,8 @@ package cv.igrp.platform.access_management.users.application.commands;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
@@ -28,9 +26,6 @@ public class RemoveRolesFromUserCommandHandlerTest {
     @Mock
     IGRPUserEntityRepository userRepository;
 
-    @Mock
-    IAdapter adapter;
-
     @InjectMocks
     private RemoveRolesFromUserCommandHandler removeRolesFromUserCommandHandler;
 
@@ -42,50 +37,29 @@ public class RemoveRolesFromUserCommandHandlerTest {
     private List<String> idRolesToBeRemoved;
     private IGRPUserEntity user;
     private RoleEntity role1, role2;
-    private DepartmentEntity department;
 
     private final String USER_ID = "johndoe";
 
     @BeforeEach
     void setUp() {
-
-        department = new DepartmentEntity();
-        department.setId(1);
-        department.setName("Department 1");
-        department.setCode("DEPT_1");
-        department.setRoles(new ArrayList<>());
-
         role1 = new RoleEntity();
         role1.setId(100);
         role1.setName("admin");
         role1.setDescription("Admin role");
-        role1.setUsers(new HashSet<>());
-        role1.setDepartment(department);
 
         role2 = new RoleEntity();
         role2.setId(200);
         role2.setName("user");
         role2.setDescription("User role");
-        role2.setUsers(new HashSet<>());
-        role2.setDepartment(department);
 
         user = new IGRPUserEntity();
         user.setUsername(USER_ID);
-        user.setRoles(new ArrayList<>());
-
-        // Keep relationship consistent
-        user.getRoles().add(role1);
-        user.getRoles().add(role2);
-        role1.getUsers().add(user);
-        role2.getUsers().add(user);
-        department.getRoles().add(role1);
-        department.getRoles().add(role2);
+        user.setRoles(new ArrayList<>(List.of(role1, role2)));
 
         idRolesToBeRemoved = new ArrayList<>();
         idRolesToBeRemoved.add("admin");
         idRolesToBeRemoved.add("user");
     }
-
 
     @Test
     @DisplayName("should remove matching role and return updated roles")
@@ -121,6 +95,7 @@ public class RemoveRolesFromUserCommandHandlerTest {
         command = removeRolesFromUserCommand(removeRolesThatDoesntExist,USER_ID);
 
         when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
+
         // Act
         ResponseEntity<List<RoleDTO>> response = removeRolesFromUserCommandHandler.handle(command);
 
@@ -134,6 +109,7 @@ public class RemoveRolesFromUserCommandHandlerTest {
 
         // Verify
         verify(userRepository, times(1)).findByUsername(USER_ID);
+        verify(userRepository, times(1)).save(user);
         verifyNoMoreInteractions(userRepository);
 
     }
@@ -174,6 +150,7 @@ public class RemoveRolesFromUserCommandHandlerTest {
 
         // Verify
         verify(userRepository, times(1)).findByUsername(USER_ID);
+        verify(userRepository, times(1)).save(user);
         verifyNoMoreInteractions(userRepository);
     }
 
@@ -181,7 +158,7 @@ public class RemoveRolesFromUserCommandHandlerTest {
     @DisplayName("should return all roles when role removal list is null")
     void testHandle_whenRoleIdsListIsNull_shouldReturnAllRoles() {
         // Arrange
-        command = new RemoveRolesFromUserCommand(null, USER_ID);
+         command = new RemoveRolesFromUserCommand(null, USER_ID);
         when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
 
         // Act
@@ -193,6 +170,7 @@ public class RemoveRolesFromUserCommandHandlerTest {
 
         // Verify
         verify(userRepository, times(1)).findByUsername(USER_ID);
+        verify(userRepository, times(1)).save(user);
         verifyNoMoreInteractions(userRepository);
     }
 
@@ -200,6 +178,7 @@ public class RemoveRolesFromUserCommandHandlerTest {
     @DisplayName("should return empty list if user has no roles assigned")
     void testHandle_whenUserHasNoRoles_shouldReturnEmptyList() {
         // Arrange
+        user.setRoles(new ArrayList<>());
         command = removeRolesFromUserCommand(idRolesToBeRemoved, USER_ID);
         when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
 
@@ -232,6 +211,7 @@ public class RemoveRolesFromUserCommandHandlerTest {
 
         // Verify
         verify(userRepository, times(1)).findByUsername(USER_ID);
+        verify(userRepository, times(1)).save(user);
         verifyNoMoreInteractions(userRepository);
     }
 

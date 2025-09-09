@@ -1,13 +1,85 @@
 [
-  { "interfaces": ["org.keycloak.admin.client.resource.RealmResource"] },
+  { "interfaces": ["org.jboss.resteasy.spi.ResteasyConfiguration"] },
+
+  { "interfaces": ["jakarta.ws.rs.ext.Providers"] },
+  { "interfaces": ["jakarta.ws.rs.core.Configuration"] },
+  { "interfaces": ["jakarta.ws.rs.core.UriInfo"] },
+  { "interfaces": ["jakarta.ws.rs.core.HttpHeaders"] },
+  { "interfaces": ["jakarta.ws.rs.core.Request"] },
+  { "interfaces": ["jakarta.ws.rs.core.SecurityContext"] },
+
   { "interfaces": ["org.keycloak.admin.client.resource.RealmsResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RealmsResource", "java.io.Closeable"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RealmResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RealmResource", "java.io.Closeable"] },
+
   { "interfaces": ["org.keycloak.admin.client.resource.UsersResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.UsersResource", "java.io.Closeable"] },
   { "interfaces": ["org.keycloak.admin.client.resource.UserResource"] },
-  { "interfaces": ["org.keycloak.admin.client.resource.RolesResource"] },
-  { "interfaces": ["org.keycloak.admin.client.resource.RoleResource"] },
-  { "interfaces": ["org.keycloak.admin.client.resource.ClientsResource"] },
-  { "interfaces": ["org.keycloak.admin.client.resource.ClientResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.UserResource", "java.io.Closeable"] },
+
   { "interfaces": ["org.keycloak.admin.client.resource.GroupsResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.GroupsResource", "java.io.Closeable"] },
   { "interfaces": ["org.keycloak.admin.client.resource.GroupResource"] },
-  { "interfaces": ["jakarta.ws.rs.ext.Providers"] }
+  { "interfaces": ["org.keycloak.admin.client.resource.GroupResource", "java.io.Closeable"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.RolesResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RolesResource", "java.io.Closeable"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RealmRolesResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RealmRolesResource", "java.io.Closeable"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RoleResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RoleResource", "java.io.Closeable"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RoleByIdResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RoleByIdResource", "java.io.Closeable"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.RoleMappingResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RoleMappingResource", "java.io.Closeable"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RoleScopeResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RoleScopeResource", "java.io.Closeable"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.ClientsResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.ClientsResource", "java.io.Closeable"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.ClientResource"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.ClientResource", "java.io.Closeable"] },
+  { "interfaces": ["org.keycloak.admin.client.token.TokenService", "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+
+  
+  { "interfaces": ["org.keycloak.admin.client.resource.RealmsResource", "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RealmResource",  "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.UsersResource",  "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.UserResource",   "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.GroupsResource", "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.GroupResource",  "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.ClientsResource","org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.ClientResource", "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.RolesResource",  "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.RoleResource",   "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.RoleMappingResource", "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.ClientRoleMappingsResource", "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.AuthorizationResource", "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.PoliciesResource",     "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.PolicyResource",       "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.PermissionsResource",  "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.PermissionResource",   "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.ResourcesResource",    "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.ResourceResource",     "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.ScopesResource",       "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+  { "interfaces": ["org.keycloak.admin.client.resource.ScopeResource",        "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] },
+
+  { "interfaces": ["org.keycloak.admin.client.resource.ResourcePermissionsResource", "org.jboss.resteasy.client.jaxrs.internal.proxy.ResteasyClientProxy"] }
+
+  
+
+
+  
 ]

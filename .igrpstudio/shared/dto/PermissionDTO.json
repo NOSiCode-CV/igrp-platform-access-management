@@ -58,7 +58,7 @@
       "module": "shared"
     },
     {
-      "name": "departmentCode",
+      "name": "applicationCode",
       "objectType": "java",
       "type": "string",
       "required": true,

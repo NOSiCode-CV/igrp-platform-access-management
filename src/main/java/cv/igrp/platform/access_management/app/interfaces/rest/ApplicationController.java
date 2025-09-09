@@ -107,13 +107,12 @@ public class ApplicationController {
     @RequestParam(value = "code", required = false) String code,
     @RequestParam(value = "name", required = false) String name,
     @RequestParam(value = "slug", required = false) String slug,
-    @RequestParam(value = "departmentCode", required = false) String departmentCode,
-    @RequestParam(value = "type", required = false) String type)
+    @RequestParam(value = "departmentCode", required = false) String departmentCode)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetApplicationsQuery(code, name, slug, departmentCode, type);
+      final var query = new GetApplicationsQuery(code, name, slug, departmentCode);
 
       ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
 

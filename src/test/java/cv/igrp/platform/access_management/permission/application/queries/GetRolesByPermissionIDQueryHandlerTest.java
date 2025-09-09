@@ -15,7 +15,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -115,28 +114,23 @@ public class GetRolesByPermissionIDQueryHandlerTest {
         permission.setId(permissionId);
         permission.setName(permissionName);
         permission.setStatus(Status.ACTIVE);
-        permission.setRoles(new HashSet<>());
 
         RoleEntity activeRole = new RoleEntity();
         activeRole.setId(1);
         activeRole.setName("admin");
         activeRole.setStatus(Status.ACTIVE);
-        activeRole.setPermissions(new HashSet<>());
-        permission.getRoles().add(activeRole);
 
         RoleEntity inactiveRole = new RoleEntity();
         inactiveRole.setId(2);
         inactiveRole.setName("inactive");
         inactiveRole.setStatus(Status.INACTIVE);
-        inactiveRole.setPermissions(new HashSet<>());
-        permission.getRoles().add(inactiveRole);
 
         RoleEntity deletedRole = new RoleEntity();
         deletedRole.setId(3);
         deletedRole.setName("deleted");
         deletedRole.setStatus(Status.DELETED);
-        deletedRole.setPermissions(new HashSet<>());
-        permission.getRoles().add(deletedRole);
+
+        permission.setRoles(Set.of(activeRole, inactiveRole, deletedRole));
 
         RoleDTO activeDTO = new RoleDTO();
         activeDTO.setId(1);
@@ -176,19 +170,18 @@ public class GetRolesByPermissionIDQueryHandlerTest {
         permission.setId(permissionId);
         permission.setName(permissionName);
         permission.setStatus(Status.ACTIVE);
-        permission.setRoles(new HashSet<>());
 
         RoleEntity role1 = new RoleEntity();
         role1.setId(1);
         role1.setName("admin");
         role1.setStatus(Status.ACTIVE);
-        permission.getRoles().add(role1);
 
         RoleEntity role2 = new RoleEntity();
         role2.setId(2);
         role2.setName("inactive");
         role2.setStatus(Status.INACTIVE);
-        permission.getRoles().add(role2);
+
+        permission.setRoles(Set.of(role1, role2));
 
         RoleDTO dto1 = new RoleDTO();
         dto1.setId(1);

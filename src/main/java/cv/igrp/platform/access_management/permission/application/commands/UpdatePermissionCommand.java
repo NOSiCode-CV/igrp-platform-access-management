@@ -14,7 +14,7 @@ public class UpdatePermissionCommand implements Command {
 
   
   private PermissionDTO permissiondto;
-  @NotBlank(message = "The field <name> is required")
+  @NotBlank(message = "The field <name> is required.")
   private String name;
 
 }

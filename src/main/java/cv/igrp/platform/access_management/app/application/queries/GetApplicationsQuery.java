@@ -21,7 +21,5 @@ public class GetApplicationsQuery implements Query {
   private String slug;
   @NotBlank(message = "The field <departmentCode> is required.")
   private String departmentCode;
-  @NotBlank(message = "The field <type> is required.")
-  private String type;
 
 }

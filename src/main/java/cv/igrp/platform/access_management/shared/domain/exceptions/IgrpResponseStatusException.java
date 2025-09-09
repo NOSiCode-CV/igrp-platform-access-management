@@ -46,8 +46,4 @@ public class IgrpResponseStatusException extends ErrorResponseException {
         return notFound(title, null);
     }
 
-    public static IgrpResponseStatusException internalServerError(String title, String details) {
-        return of(HttpStatus.INTERNAL_SERVER_ERROR, title, details);
-    }
-
 }
