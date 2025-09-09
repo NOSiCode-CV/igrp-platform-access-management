@@ -82,8 +82,7 @@
   { "name": "io.opentelemetry.sdk.common.CompletableResultCode", "allDeclaredConstructors": true, "allDeclaredMethods": true, "allDeclaredFields": true },
 
   { "name": "org.keycloak.admin.client.spi.ResteasyClientClassicProvider", "allDeclaredConstructors": true, "allPublicConstructors": true, "allDeclaredMethods": true, "allPublicMethods": true, "allDeclaredFields": true, "allPublicFields": true },
-  { "name": "org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder", "allPublicMethods": true, "allDeclaredFields": true },
-  { "name": "org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl", "allDeclaredConstructors": true, "allDeclaredMethods": true, "allDeclaredFields": true },
+ 
   { "name": "org.jboss.resteasy.client.jaxrs.internal.ClientInvocationBuilder", "allDeclaredConstructors": true, "allDeclaredMethods": true, "allDeclaredFields": true },
   { "name": "org.jboss.resteasy.resteasy_jaxrs.i18n.Messages_$bundle", "allDeclaredConstructors": true, "allPublicConstructors": true, "allDeclaredMethods": true, "allPublicMethods": true, "allDeclaredFields": true },
   { "name": "org.jboss.resteasy.client.jaxrs.i18n.Messages_$bundle", "allDeclaredConstructors": true, "allPublicConstructors": true, "allDeclaredMethods": true, "allPublicMethods": true, "allDeclaredFields": true },
@@ -93,5 +92,813 @@
   { "name": "org.jboss.resteasy.plugins.providers.jaxb.JAXBElementProvider", "allDeclaredConstructors": true, "allDeclaredMethods": true, "allDeclaredFields": true },
   { "name": "org.jboss.resteasy.plugins.providers.jaxb.AbstractJAXBProvider", "allDeclaredConstructors": true, "allDeclaredMethods": true, "allDeclaredFields": true },
   { "name": "org.jboss.resteasy.plugins.providers.jaxb.i18n.LogMessages_$logger", "allDeclaredConstructors": true, "allPublicConstructors": true, "allDeclaredMethods": true, "allPublicMethods": true },
-  { "name": "org.jboss.logging.DelegatingBasicLogger", "allDeclaredConstructors": true, "allDeclaredMethods": true }
+  { "name": "org.jboss.logging.DelegatingBasicLogger", "allDeclaredConstructors": true, "allDeclaredMethods": true },
+  
+  { "name": "org.jboss.resteasy.plugins.providers.jackson.ResteasyJackson2Provider",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true
+  },
+
+  
+
+  { "name": "org.keycloak.representations.idm.UserConsentRepresentation",
+      "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+
+  { "name": "org.keycloak.representations.idm.EventRepresentation",
+      "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  { "name": "org.keycloak.representations.idm.UserSessionRepresentation",
+      "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+
+
+
+
+  { "name": "org.keycloak.representations.idm.authorization.PermissionTicketRepresentation",
+      "allDeclaredConstructors": true, "allDeclaredFields": true, "allPublicMethods": true },
+  {
+    "name": "org.keycloak.admin.client.spi.ResteasyClientClassicProvider",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true
+  },
+  { "name": "org.jboss.resteasy.plugins.providers.DocumentProvider", "allDeclaredConstructors": true },
+
+
+  { "name": "org.jboss.resteasy.resteasy_jaxrs.i18n.LogMessages_$logger", "allDeclaredConstructors": true, "allDeclaredMethods": true },
+  { "name": "org.jboss.resteasy.client.jaxrs.i18n.LogMessages_$logger",  "allDeclaredConstructors": true, "allDeclaredMethods": true },
+  
+ 
+  
+  
+
+  { "name": "org.jboss.resteasy.plugins.providers.i18n.LogMessages_$logger", "allPublicConstructors": true },
+  { "name": "org.jboss.resteasy.plugins.providers.i18n.Messages_$bundle",    "allPublicConstructors": true },
+
+  { "name": "org.jboss.resteasy.plugins.providers.multipart.i18n.LogMessages_$logger", "allPublicConstructors": true },
+  { "name": "org.jboss.resteasy.plugins.providers.multipart.i18n.Messages_$bundle",    "allPublicConstructors": true },
+
+  { "name": "org.jboss.resteasy.plugins.providers.sse.i18n.LogMessages_$logger", "allPublicConstructors": true },
+  { "name": "org.jboss.resteasy.plugins.providers.sse.i18n.Messages_$bundle",    "allPublicConstructors": true },
+
+
+  {
+    "name": "org.keycloak.admin.client.resource.AuthenticationManagementResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.AuthorizationResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.BearerAuthFilter",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.ClientResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.ClientsResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.ClientScopeResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.ClientScopesResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.ComponentResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.ComponentsResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.GroupResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.GroupsResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.IdentityProviderResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.IdentityProvidersResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.ProtocolMappersResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.PoliciesResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.PolicyResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.RealmResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.RealmsResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.ResourceResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.ResourceScopeResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.ResourceScopesResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.ResourcesResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.RoleMappingResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.RoleResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.RoleScopeResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.RolesResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.UserResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.resource.UsersResource",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.admin.client.token.TokenService",
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.keycloak.common.util.MultivaluedHashMap",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.json.StringListMapDeserializer",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true,
+    "methods": [
+      {
+        "name": "deserialize",
+        "parameterTypes": [
+          "com.fasterxml.jackson.core.JsonParser",
+          "com.fasterxml.jackson.databind.DeserializationContext"
+        ]
+      }
+    ]
+  },
+
+  {
+    "name": "org.keycloak.representations.idm.AbstractAuthenticationExecutionRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.ApplicationRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.AuthenticationExecutionExportRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.AuthenticationExecutionInfoRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.AuthenticationExecutionRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.AuthenticationFlowRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true,
+    "methods": [
+      {
+        "name": "getAlias",
+        "parameterTypes": []
+      },
+      {
+        "name": "getDescription",
+        "parameterTypes": []
+      },
+      {
+        "name": "getId",
+        "parameterTypes": []
+      },
+      {
+        "name": "getProviderId",
+        "parameterTypes": []
+      },
+      {
+        "name": "isBuiltIn",
+        "parameterTypes": []
+      },
+      {
+        "name": "isTopLevel",
+        "parameterTypes": []
+      },
+      {
+        "name": "setAlias",
+        "parameterTypes": [
+          "java.lang.String"
+        ]
+      },
+      {
+        "name": "setBuiltIn",
+        "parameterTypes": [
+          "boolean"
+        ]
+      },
+      {
+        "name": "setDescription",
+        "parameterTypes": [
+          "java.lang.String"
+        ]
+      },
+      {
+        "name": "setId",
+        "parameterTypes": [
+          "java.lang.String"
+        ]
+      },
+      {
+        "name": "setProviderId",
+        "parameterTypes": [
+          "java.lang.String"
+        ]
+      },
+      {
+        "name": "setTopLevel",
+        "parameterTypes": [
+          "boolean"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "org.keycloak.representations.idm.AuthenticatorConfigRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.ClaimRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+
+
+  {
+    "name": "org.keycloak.representations.idm.ClientTemplateRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.ComponentExportRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+
+
+  {
+    "name": "org.keycloak.representations.idm.FederatedIdentityRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+
+  {
+    "name": "org.keycloak.representations.idm.IdentityProviderMapperRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.IdentityProviderRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.OAuthClientRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+
+  {
+    "name": "org.keycloak.representations.idm.RequiredActionProviderRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.RequiredActionProviderSimpleRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+
+  {
+    "name": "org.keycloak.representations.idm.RoleRepresentation$Composites",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.RolesRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true,
+    "methods": [
+      {
+        "name": "getApplication",
+        "parameterTypes": []
+      },
+      {
+        "name": "setClient",
+        "parameterTypes": [
+          "java.util.Map"
+        ]
+      },
+      {
+        "name": "setRealm",
+        "parameterTypes": [
+          "java.util.List"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "org.keycloak.representations.idm.ScopeMappingRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.SocialLinkRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.UserConsentRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.UserFederationMapperRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.UserFederationProviderRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.authorization.AbstractPolicyRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.authorization.DecisionStrategy",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.authorization.Logic",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.authorization.PolicyEnforcementMode",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true
+  },
+
+  {
+    "name": "org.keycloak.representations.idm.authorization.ResourceOwnerRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+
+  {
+    "name": "org.keycloak.representations.idm.authorization.ResourceServerRepresentation",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+
+  {
+    "name": "com.fasterxml.jackson.databind.ext.Java7HandlersImpl",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "com.fasterxml.jackson.databind.ext.Java7SupportImpl",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "com.fasterxml.jackson.module.jaxb.JaxbAnnotationIntrospector",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "org.jboss.resteasy.client.jaxrs.ClientHttpEngineBuilder43"
+  },
+  {
+    "name": "org.jboss.resteasy.client.jaxrs.i18n.LogMessages_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "org.jboss.resteasy.client.jaxrs.i18n.Messages_$bundle",
+    "fields": [
+      {
+        "name": "INSTANCE"
+      }
+    ]
+  },
+  {
+    "name": "org.jboss.resteasy.plugins.providers.jaxb.JAXBElementProvider",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jboss.resteasy.plugins.providers.jaxb.i18n.LogMessages_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "org.jboss.resteasy.resteasy_jaxrs.i18n.LogMessages_$logger",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": [
+          "org.jboss.logging.Logger"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "org.jboss.resteasy.resteasy_jaxrs.i18n.Messages_$bundle",
+    "fields": [
+      {
+        "name": "INSTANCE"
+      }
+    ]
+  },
+  {
+    "name": "org.apache.logging.log4j.message.ReusableMessageFactory",
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+
+
+
+
+
+
+
+  
+
+  {
+    "name": "org.keycloak.admin.client.JacksonProvider",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true,
+    "allPublicFields": true
+  },
+
+  {
+    "name": "org.jboss.resteasy.client.jaxrs.internal.ClientConfiguration",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+
+  {
+    "name": "org.keycloak.representations.AccessToken",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+
+
+
+  {
+    "name": "org.keycloak.representations.idm.ProtocolMapperRepresentation",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.ComponentRepresentation",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+
+  {
+    "name": "com.fasterxml.jackson.databind.ObjectMapper",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+  {
+    "name": "com.fasterxml.jackson.databind.module.SimpleModule",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jboss.resteasy.plugins.providers.jackson.ResteasyJacksonProvider",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+
+  
+
+
+  {
+    "name": "org.keycloak.representations.idm.authorization.ResourceRepresentation",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allPublicMethods": true, 
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.authorization.ScopeRepresentation",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allPublicMethods": true, 
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.authorization.PolicyRepresentation",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allPublicMethods": true, 
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.authorization.RolePolicyRepresentation",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.authorization.GroupPolicyRepresentation",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+
+
+
+  {
+    "name": "com.fasterxml.jackson.databind.ser.std.ToStringSerializer",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+  {
+    "name": "com.fasterxml.jackson.datatype.jsr310.JavaTimeModule",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+  {
+    "name": "com.fasterxml.jackson.annotation.JsonInclude$Include",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+
+  
+  
+  { "name": "org.jboss.resteasy.plugins.providers.jackson.i18n.LogMessages_$logger", "allDeclaredConstructors": true, "allDeclaredMethods": true },
+  { "name": "org.jboss.resteasy.plugins.providers.jackson.i18n.Messages_$bundle",    "allDeclaredConstructors": true, "allDeclaredMethods": true },
+
+  {
+    "name": "org.jboss.resteasy.client.jaxrs.internal.ResteasyClientBuilderImpl",
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.jboss.resteasy.client.jaxrs.ResteasyClientBuilder",
+    "allPublicMethods": true,
+    "allDeclaredConstructors": true
+  },
+
+
+  {
+    "name": "org.jboss.resteasy.client.jaxrs.internal.proxy.ProxyBuilderImpl",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true,
+    "allPublicFields": true
+  },
+  {
+    "name": "org.jboss.resteasy.client.jaxrs.internal.ClientWebTarget",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.jboss.resteasy.client.jaxrs.ProxyBuilder",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+
+
+  {
+    "name": "org.keycloak.admin.client.Keycloak",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+  {
+    "name": "org.keycloak.admin.client.token.TokenManager",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true
+  },
+
+
+  {
+    "name": "org.jboss.resteasy.client.jaxrs.internal.proxy.ClientProxy",
+    "allDeclaredConstructors": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.jboss.resteasy.client.jaxrs.internal.proxy.ClientProxyImpl",
+    "allDeclaredConstructors": true,
+    "allPublicMethods": true
+  },
+
+  {
+    "name": "java.util.HashSet",
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "java.util.Optional",
+    "allDeclaredFields": true,
+    "allDeclaredMethods": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.slf4j.bridge.SLF4JBridgeHandler"
+  },
+  {
+    "name": "org.slf4j.spi.LocationAwareLogger"
+  },
+
+  {
+    "name": "org.keycloak.representations.idm.GroupRepresentation",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true,
+    "allPublicFields": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.UserRepresentation",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true,
+    "allPublicFields": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.CredentialRepresentation",
+    "allPublicConstructors": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.RoleRepresentation",
+    "allDeclaredConstructors": true,
+    "allPublicConstructors": true,
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true,
+    "allPublicFields": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.ClientRepresentation",
+    "allPublicConstructors": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.ClientScopeRepresentation",
+    "allPublicConstructors": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.MappingsRepresentation",
+    "allPublicConstructors": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.RoleMappingRepresentation",
+    "allPublicConstructors": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.RealmRepresentation",
+    "allPublicConstructors": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "org.keycloak.representations.AccessTokenResponse",
+    "allPublicConstructors": true,
+    "allPublicMethods": true,
+    "allDeclaredFields": true
+  },
+
+  { "name": "org.keycloak.representations.idm.authorization.PermissionRepresentation",         "allPublicConstructors": true, "allPublicMethods": true, "allDeclaredFields": true },
+  { "name": "org.keycloak.representations.idm.authorization.ResourcePermissionRepresentation", "allPublicConstructors": true, "allPublicMethods": true, "allDeclaredFields": true }
+
+  
+
+    
 ]
