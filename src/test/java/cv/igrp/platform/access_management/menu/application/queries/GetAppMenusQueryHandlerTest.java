@@ -68,7 +68,7 @@ public class GetAppMenusQueryHandlerTest {
     menu = new MenuEntryEntity();
     menu.setId(10);
     menu.setStatus(Status.ACTIVE);
-    menu.setPermissions(List.of(permission));
+    menu.setPermissions(Set.of(permission));
 
     menuDTO = new MenuEntryDTO();
     menuDTO.setId(10);

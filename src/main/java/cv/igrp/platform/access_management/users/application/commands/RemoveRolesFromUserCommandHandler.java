@@ -63,7 +63,29 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
          boolean isRolesRemoved = roles.removeIf(role -> roleIdsToRemove.contains(role.getName()));
          if (isRolesRemoved) {
             logger.info("Roles removed successfully from user name={}", username);
-         } else {
+
+            for (RoleEntity role : rolesToRemove) {
+               try {
+                  adapter.unassignRoleFromUser(role.getDepartment().getCode(), role.getName(), username);
+                  logger.info("Role name={} from department with code {} unassigned to user name={} in Keycloak",
+                          role.getName(),
+                          role.getDepartment().getCode(),
+                          username);
+               } catch(IAMException e){
+                  logger.error("Failed to unassign role name={} from {} department to user name={} in Keycloak: {}",
+                          role.getName(),
+                          role.getDepartment().getCode(),
+                          username,
+                          e.getMessage(), e);
+                  throw IgrpResponseStatusException.of(
+                          HttpStatus.INTERNAL_SERVER_ERROR,
+                          "Remove Roles from User Failed",
+                          e.getMessage()
+                  );
+               }
+            }
+         }
+          else {
             logger.info("No matching roles found to remove for user name={}", username);
          }
          user.setRoles(roles);

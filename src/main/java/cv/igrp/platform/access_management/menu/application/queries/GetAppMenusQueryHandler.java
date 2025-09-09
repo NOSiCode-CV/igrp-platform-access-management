@@ -88,7 +88,7 @@ public class GetAppMenusQueryHandler implements QueryHandler<GetAppMenusQuery, R
         // Step 4: Filter only menus user has permission for (or no permission required)
         List<MenuEntryDTO> accessibleMenus = allMenus.stream()
                 .filter(menu -> {
-                    List<PermissionEntity> menuPermissions = menu.getPermissions();
+                    Set<PermissionEntity> menuPermissions = menu.getPermissions();
                     if(menuPermissions == null || menuPermissions.isEmpty()) {
                         return false;
                     }

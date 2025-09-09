@@ -30,7 +30,9 @@ build-arm64:
   script:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
-    - docker build --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
+  #  - docker build --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
+    - docker build --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
+    
   tags:
     - arm64
   only:
@@ -42,7 +44,8 @@ build-amd64:
   script:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
-    - docker build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
+  #  - docker build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
+    - docker build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
   only:
     - deploy/base
 

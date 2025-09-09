@@ -19,6 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
@@ -126,7 +127,35 @@ public class AddRolesToUserCommandHandlerTest {
 
     @Test
     @DisplayName("should throw IgrpResponseStatusException if role not found")
-    void testHandle_whenRoleNotFound_shouldThrowException() {
+    void testHandle_whenRoleNotFound_shouldThrowRuntimeWithCause() {
+        AddRolesToUserCommand command = buildCommand(List.of(ROLE_NAME));
+
+        when(userRepository.findByUsername(eq(USERNAME))).thenReturn(Optional.of(user));
+        when(roleRepository.findByNameAndStatusNot(eq(ROLE_NAME), eq(Status.DELETED)))
+                .thenReturn(Optional.empty());
+
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
+                addRolesToUserCommandHandler.handle(command));
+
+        ProblemDetail problemDetail = exception.getBody();
+
+        assertNotNull(problemDetail.getProperties());
+        assertTrue(problemDetail.getProperties()
+                .get("details")
+                .toString()
+                .contains("Role not found with name: %s".formatted(ROLE_NAME)));
+
+        verify(userRepository).findByUsername(eq(USERNAME));
+        verify(roleRepository).findByNameAndStatusNot(eq(ROLE_NAME), eq(Status.DELETED));
+        verifyNoInteractions(roleMapper);
+    }
+
+
+    @Test
+    @DisplayName("should add role to user and return 201 with RoleDTO")
+    void testHandle_whenValidCommand_shouldReturnCreatedRoleDTO() {
+        AddRolesToUserCommand command = buildCommand(List.of(ROLE_NAME));
+
         // Arrange
         when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
         when(roleRepository.findByName(ROLE_ID)).thenReturn(Optional.empty());

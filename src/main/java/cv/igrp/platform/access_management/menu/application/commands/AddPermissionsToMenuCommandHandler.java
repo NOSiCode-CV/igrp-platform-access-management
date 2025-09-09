@@ -1,0 +1,121 @@
+package cv.igrp.platform.access_management.menu.application.commands;
+
+import cv.igrp.framework.core.domain.CommandHandler;
+import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
+import org.springframework.transaction.annotation.Transactional;
+
+/**
+ * Command handler responsible for processing the {@link AddPermissionsToMenuCommand},
+ * which adds a list of permissions to a given menu entry.
+ * <p>
+ * This handler ensures the target menu entry exists and is active (not deleted),
+ * filters out any permissions marked as deleted, and attaches valid permissions
+ * to the menu entry. The updated menu entry is then persisted, and the added permissions are returned as DTOs.
+ * @see AddPermissionsToMenuCommand
+ * @see PermissionEntity
+ * @see PermissionDTO
+ * @see PermissionEntityRepository
+ * @see MenuEntryEntity
+ * @see MenuEntryEntityRepository
+ * @see PermissionMapper
+ * @see IgrpResponseStatusException
+ * @see Status
+ */
+@Slf4j
+@Component
+public class AddPermissionsToMenuCommandHandler implements CommandHandler<AddPermissionsToMenuCommand, ResponseEntity<List<PermissionDTO>>> {
+
+   private final PermissionEntityRepository permissionRepository;
+   private final MenuEntryEntityRepository menuEntryRepository;
+   private final PermissionMapper permissionMapper;
+
+   /**
+    * Constructs the handler with necessary repositories and mappers.
+    *
+    * @param permissionRepository repository used to fetch permissions
+    * @param menuEntryRepository       repository used to retrieve and save menu entries
+    * @param permissionMapper     mapper for converting {@link PermissionEntity} entities to {@link PermissionDTO}
+    */
+   public AddPermissionsToMenuCommandHandler(
+           PermissionEntityRepository permissionRepository,
+           MenuEntryEntityRepository menuEntryRepository,
+           PermissionMapper permissionMapper
+   ) {
+      this.permissionRepository = permissionRepository;
+      this.menuEntryRepository = menuEntryRepository;
+      this.permissionMapper = permissionMapper;
+   }
+
+   /**
+    * Handles the addition of permissions to a specific menu entry.
+    * <ul>
+    *     <li>Fetches the list of permissions by ID, ignoring any with DELETED status.</li>
+    *     <li>Validates the existence of the target menu entry and ensures it's not deleted.</li>
+    *     <li>Adds the valid permissions to the menu entry and persists the updated menu entry.</li>
+    *     <li>Returns a list of {@link PermissionDTO} objects representing the added permissions.</li>
+    * </ul>
+    *
+    * @param command the command containing the menu entry code and list of permission names to add
+    * @return a {@link ResponseEntity} containing the added permissions
+    * @throws IgrpResponseStatusException if the menu entry is not found or is marked as deleted
+    */
+   @IgrpCommandHandler
+   @Transactional
+   public ResponseEntity<List<PermissionDTO>> handle(AddPermissionsToMenuCommand command) {
+
+      List<String> permissionIdList = command.getAddPermissionsToMenuRequest().stream().toList();
+      log.info("Add Permissions: {} for menu entry: {}.", permissionIdList, command.getCode());
+      List<PermissionEntity> permissionList = permissionRepository.findAllByNameIn(permissionIdList)
+              .stream()
+              .filter(permission -> !permission.getStatus().equals(Status.DELETED))
+              .toList();
+
+      if (permissionList.isEmpty()) {
+         log.warn("No permission available from given set: {} ", command.getAddPermissionsToMenuRequest().stream().toList());
+         throw IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Permissions not found", permissionIdList);
+      }
+
+      MenuEntryEntity foundMenu = menuEntryRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
+              .orElseThrow(() -> {
+                 log.warn("Menu Entry with code: {} not found.", command.getCode());
+                 return IgrpResponseStatusException.of(
+                         HttpStatus.NOT_FOUND, "Add Permission", "Menu Entry with code: " + command.getCode() + " not found."
+                 );
+              });
+
+      foundMenu.getPermissions().addAll(permissionList);
+      MenuEntryEntity savedMenu = menuEntryRepository.save(foundMenu);
+
+      Set<Integer> addedPermissionIds = permissionList.stream()
+              .map(PermissionEntity::getId)
+              .collect(Collectors.toSet());
+
+      List<PermissionDTO> response = savedMenu.getPermissions()
+              .stream()
+              .filter(permission -> addedPermissionIds.contains(permission.getId()))
+              .map(permissionMapper::mapToDTO)
+              .toList();
+
+      log.info("Permissions: {} for menu entry: {} added successfully.", addedPermissionIds, command.getCode());
+      return new ResponseEntity<>(response, HttpStatus.OK);
+
+   }
+
+}

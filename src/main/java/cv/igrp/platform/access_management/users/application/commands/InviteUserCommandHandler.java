@@ -1,20 +1,24 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.auth.core.adapter.IAdapter;
+import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.model.Notification;
 import cv.igrp.framework.notifications.mail.smtp.dto.SendNotificationResponseDTO;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +47,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
    }
 
    @IgrpCommandHandler
+   @Transactional
    public ResponseEntity<IGRPUserDTO> handle(InviteUserCommand command) {
 
       var dto = command.getIgrpuserdto();
@@ -58,8 +63,16 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
       var savedUser = userRepository.save(user);
 
       try {
-
          adapter.createUser(user);
+      } catch (IAMException e) {
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.INTERNAL_SERVER_ERROR,
+                 "User Creation Failed",
+                 e.getMessage()
+         );
+      }
+
+      try {
 
          LOGGER.info("Inviting new user: username={}, email={}", dto.getUsername(), dto.getEmail());
 
@@ -78,7 +91,6 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
                  
                  """.formatted(Objects.nonNull(savedUser.getName()) ? savedUser.getName() : savedUser.getUsername(), savedUser.getUsername(), savedUser.getUsername()));
          notification.setMetadata(Map.of("userId", savedUser.getId()));
-
 
          notificationAdapter.send(notification);
 

@@ -330,6 +330,9 @@
                     </execution>
                 </executions>
                 <configuration>
+                    <!--<agent>
+                        <enabled>true</enabled>
+                    </agent>-->
                     <imageName>${project.artifactId}</imageName>
                     <buildArgs>
 

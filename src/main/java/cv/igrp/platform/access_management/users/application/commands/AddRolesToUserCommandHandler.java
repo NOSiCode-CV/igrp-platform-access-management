@@ -143,7 +143,12 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
                }
                TransactionSynchronization.super.afterCommit();
             }
-         });
+         }
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.INTERNAL_SERVER_ERROR,
+                 "Add Roles to User Failed",
+                 e.getMessage()
+         );
       }
 
       List<RoleDTO> rolesDTO = roles.stream().map(roleMapper::mapToDto).toList();
