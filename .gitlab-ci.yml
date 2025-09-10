@@ -19,64 +19,82 @@ stages:
 
 .build-template:
   only:
-    - deploy/base
+    - deploy/base-jvm
+    - deploy/base-native
   before_script:
     - apk add --no-cache curl bash
     - docker login -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD" "$REGISTRY_URL"
 
-build-arm64:
+build-native-arm64:
   stage: build
   extends: .build-template
   script:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
-  #  - docker build --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
-    - docker build --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
+  #  - docker build -f Dockerfile_native --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
+    - docker build -f Dockerfile_native --platform linux/arm64 -t "$IMAGE_NAME_FULL-native:arm64" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-native:arm64",push=true .
     
   tags:
     - arm64
   only:
-    - deploy/base
+    - deploy/base-native
 
-build-amd64:
+build-native-amd64:
   extends: .build-template
   stage: build
   script:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
   #  - docker build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
-    - docker build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
+    - docker build -f Dockerfile_native --platform linux/amd64 -t "$IMAGE_NAME_FULL-native:amd64" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-native:amd64",push=true .
   only:
-    - deploy/base
+    - deploy/base-native
 
-create-manifest:
+create-native-manifest:
   stage: manifest
   script:
     - docker login -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD" "$REGISTRY_URL"
-    - docker manifest create "$IMAGE_NAME_FULL:$IMAGE_TAG" --amend "$IMAGE_NAME_FULL:amd64" --amend "$IMAGE_NAME_FULL:arm64"
-    - docker manifest push $IMAGE_NAME_FULL:$IMAGE_TAG
+    - docker manifest create "$IMAGE_NAME_FULL-native:$IMAGE_TAG" --amend "$IMAGE_NAME_FULL-native:amd64" --amend "$IMAGE_NAME_FULL-native:arm64"
+    - docker manifest push "$IMAGE_NAME_FULL-native:$IMAGE_TAG"
   needs:
-    - build-amd64
-    - build-arm64
+    - build-native-amd64
+    - build-native-arm64
   only:
-    - deploy/base  
+    - deploy/base-native
 
-
-build_docker_image_base_temp_dev:
+build-jvm-arm64:
   stage: build
-  only:
-    - deploy-temp
+  extends: .build-template
   script:
-    - docker login $REGISTRY_URL -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD"
-    - docker build -f Dockerfile_temp -t $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID .
-    - docker tag $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:latest
-    - docker push $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:$CI_PIPELINE_ID
-    - docker push $REGISTRY_URL/$BASE_REGISTRY_PROJECT/access-management-api:latest
+    - docker buildx create --use --name amd64builder
+    - docker buildx inspect --bootstrap
+  #  - docker build --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
+    - docker build -f Dockerfile --platform linux/arm64 -t "$IMAGE_NAME_FULL-jvm:arm64" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-jvm:arm64",push=true .
 
-build_docker_image_inss_dev:
-  stage: build
+  tags:
+    - arm64
   only:
-    - deploy-inss
+    - deploy/base-jvm
+
+build-jvm-amd64:
+  extends: .build-template
+  stage: build
   script:
-    - docker login $REGISTRY_URL -u "$REGISTRY_USERNAME" -p "$REGISTRY_PASSWORD"
-    - docker buildx build --platform $TARGETPLATFORMS -t $REGISTRY_URL/$REGISTRY_PROJECT/access-management-api-dev:$CI_PIPELINE_ID --push .
+    - docker buildx create --use --name amd64builder
+    - docker buildx inspect --bootstrap
+  #  - docker build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
+    - docker build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_FULL-jvm:amd64" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-jvm:amd64",push=true .
+  only:
+    - deploy/base-jvm
+
+create-jvm-manifest:
+  stage: manifest
+  script:
+    - docker login -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD" "$REGISTRY_URL"
+    - docker manifest create "$IMAGE_NAME_FULL-jvm:$IMAGE_TAG" --amend "$IMAGE_NAME_FULL-jvm:amd64" --amend "$IMAGE_NAME_FULL-jvm:arm64"
+    - docker manifest push "$IMAGE_NAME_FULL-jvm:$IMAGE_TAG"
+  needs:
+    - build-jvm-amd64
+    - build-jvm-arm64
+  only:
+    - deploy/base-jvm

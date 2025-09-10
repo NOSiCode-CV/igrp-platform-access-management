@@ -1,95 +1,67 @@
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
-#===================================================================
-# Build stage: GraalVM 24 + Native Image
-# ===================================================================
-FROM --platform=${BUILDPLATFORM} ghcr.io/graalvm/native-image-community:23-ol9 AS build
+# Use an official Maven image with JDK 21 to build the application
+FROM maven:3.9.10-eclipse-temurin-24-alpine AS build
 
-ARG APP_BUILD_FINGERPRINT
-# show platforms
-ARG BUILDPLATFORM
-ARG TARGETPLATFORM
-RUN echo "Building on: ${BUILDPLATFORM}, targeting: ${TARGETPLATFORM}"
+# Define build-time argument
+ARG OTEL_TRACES_EXPORTER
+ARG OTEL_METRICS_EXPORTER
+ARG OTEL_LOGS_EXPORTER
+ARG OTEL_COLLECTOR_ENDPOINT
+ARG OTEL_SERVICE_NAME
+ARG OTEL_ENABLED
 
+# Set the working directory
+ENV APP_HOME /app
+ENV SPRING_PROFILES_ACTIVE=${SPRING_ACTIVE_PROFILE}
+
+# Copy the pom.xml first for better layer caching
+COPY pom.xml $APP_HOME/pom.xml
+
+# Download dependencies separately to leverage Docker cache
+WORKDIR $APP_HOME
+RUN mvn dependency:go-offline
+
+# Copy the source code and OpenTelemetry agent
+COPY src $APP_HOME/src
+COPY opentelemetry-javaagent.jar $APP_HOME/opentelemetry-javaagent.jar
+
+# Package the application
+RUN mvn package -DskipTests
+
+# Runtime image
+FROM eclipse-temurin:23-jre-alpine
+
+# Define runtime environment variable
+ENV OTEL_TRACES_EXPORTER=${OTEL_TRACES_EXPORTER}
+ENV OTEL_METRICS_EXPORTER=${OTEL_METRICS_EXPORTER}
+ENV OTEL_LOGS_EXPORTER=${OTEL_LOGS_EXPORTER}
+ENV OTEL_COLLECTOR_ENDPOINT=${OTEL_COLLECTOR_ENDPOINT}
+ENV OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME}
+ENV OTEL_ENABLED=${OTEL_ENABLED}
+ENV SPRING_ACTIVE_PROFILE=${SPRING_ACTIVE_PROFILE}
+ENV JAVA_OPTS="-XX:MaxRAMPercentage=75.0 \
+               -XX:+UseStringDeduplication \
+               -XX:-HeapDumpOnOutOfMemoryError"
+
+# Set the working directory
 WORKDIR /app
 
-# Install only wget & xz
-USER root
-RUN microdnf install --nodocs -y \
-      wget xz make gcc findutils \
-    && microdnf clean all
+# Copy the JAR file and OpenTelemetry agent from the build stage
+COPY --from=build /app/target/*.jar /app/app.jar
+COPY --from=build /app/opentelemetry-javaagent.jar /app/opentelemetry-javaagent.jar
 
-# -----------------------------
-# 1) Install & build musl from source
-# -----------------------------
-#RUN wget -q https://musl.libc.org/releases/musl-1.2.5.tar.gz \
-#      -O /tmp/musl-1.2.5.tar.gz && \
-#    tar -xzf /tmp/musl-1.2.5.tar.gz -C /tmp && \
-#    cd /tmp/musl-1.2.5 && \
-#    ./configure --prefix=/usr/local/musl --exec-prefix=/usr/local && \
-#    make && make install
+# Expose the port that the application will run on
+EXPOSE ${SERVICE_PORT}
 
-# -----------------------------
-# 2) Symlink the single musl-gcc into the two names GraalVM expects
-# -----------------------------
-#RUN ln -sf /usr/local/bin/musl-gcc /usr/local/bin/x86_64-linux-musl-gcc && \
-#    ln -sf /usr/local/bin/musl-gcc /usr/local/bin/aarch64-linux-musl-gcc
-
-# copy only what's needed for mvnw bootstrap
-COPY mvnw ./
-COPY .mvn/ .mvn/
-COPY pom.xml ./
-
-RUN chmod +x mvnw && \
-    ./mvnw --batch-mode dependency:go-offline -B
-
-COPY src/ src/
-
-# Give Maven memory
-ENV MAVEN_OPTS="-Xmx12g -Xms4g -XX:+UseG1GC -XX:+UseStringDeduplication"
-ENV JAVA_TOOL_OPTIONS="-Xmx12g -Xms4g"
-
-# version for UPX
-ARG UPX_VERSION=5.0.1
-
-RUN set -eux; \
-    # pick arch/profile based on target
-    case "${TARGETPLATFORM}" in \
-      "linux/arm64") ARCH=arm64; ;; \
-      "linux/amd64") ARCH=amd64; ;; \
-      *)              ARCH=amd64; ;; \
-    esac; \
-    echo "→ Building for ${ARCH}"; \
-    ./mvnw --batch-mode \
-      -Pnative \
-      -Dbuild.target=${ARCH} \
-      -Dspring.cloud.refresh.enabled=false \
-      clean package -DskipTests; \
-    \
-    # UPX compress
-    UPX_ARCHIVE="upx-${UPX_VERSION}-${ARCH}_linux.tar.xz"; \
-    wget -q https://github.com/upx/upx/releases/download/v${UPX_VERSION}/${UPX_ARCHIVE}; \
-    tar -xJf ${UPX_ARCHIVE}; \
-    mv "upx-${UPX_VERSION}-${ARCH}_linux"/upx /usr/local/bin/upx; \
-    rm -rf ${UPX_ARCHIVE} "upx-${UPX_VERSION}-${ARCH}_linux"; \
-    upx --lzma --best -o target/access-management-upx target/access-management; \
-    ls -lh target/access-management-upx
-
-# ===================================================================
-# Runtime stage: minimal --static-nolibc binary
-# ===================================================================
-
-FROM gcr.io/distroless/base-nossl:nonroot
-
-ARG TARGETPLATFORM
-LABEL platform=${TARGETPLATFORM}
-
-WORKDIR /app
-COPY --from=build /app/target/access-management-upx ./access-management
-
-USER nonroot:nonroot
-
-EXPOSE 8080
-
-CMD ["/app/access-management"]
-
+# Command to run the application
+CMD ["sh", "-c", "if [ \"$OTEL_ENABLED\" != \"false\" ]; then \
+  java -javaagent:/app/opentelemetry-javaagent.jar \
+  -Dotel.traces.exporter=${OTEL_TRACES_EXPORTER} \
+  -Dotel.metrics.exporter=${OTEL_METRICS_EXPORTER} \
+  -Dotel.logs.exporter=${OTEL_LOGS_EXPORTER} \
+  -Dotel.exporter.otlp.endpoint=${OTEL_COLLECTOR_ENDPOINT} \
+  -Dotel.service.name=${OTEL_SERVICE_NAME} \
+  ${JAVA_OPTS} \
+  -jar /app/app.jar; \
+else \
+  java ${JAVA_OPTS} -jar /app/app.jar; \
+fi"]
