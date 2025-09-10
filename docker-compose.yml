@@ -27,7 +27,7 @@ services:
     image: prom/prometheus:v2.51.2
     container_name: prometheus
     ports:
-      - ${PROMETHEUS_SERVICE_EXTERNAL_PORT}:${PROMETHEUS_SERVICE_INTERNAL_PORT}
+      - ${PROMETHEUS_SERVICE_EXTERNAL_PORT}:9090
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     command: "--config.file=/etc/prometheus/prometheus.yml"
@@ -36,8 +36,8 @@ services:
     image: grafana/promtail:3.0.0
     container_name: promtail
     environment:
-      - PROMTAIL_SERVICE_INTERNAL_PORT=${PROMTAIL_SERVICE_INTERNAL_PORT}
-      - LOKI_SERVICE_INTERNAL_PORT=${LOKI_SERVICE_INTERNAL_PORT}
+      - PROMTAIL_SERVICE_INTERNAL_PORT=9080
+      - LOKI_SERVICE_INTERNAL_PORT=3100
     volumes:
       - ./monitoring/promtail/promtail-docker-config.yml:/etc/promtail/docker-config.yml
       - /var/lib/docker/containers:/var/lib/docker/containers:ro
@@ -49,7 +49,7 @@ services:
     container_name: loki
     command: "-config.expand-env=true -config.file=/etc/loki/local-config.yaml"
     ports:
-      - ${LOKI_SERVICE_EXTERNAL_PORT}:${LOKI_SERVICE_INTERNAL_PORT}
+      - ${LOKI_SERVICE_EXTERNAL_PORT}:3100
     depends_on:
       - promtail
   
@@ -70,7 +70,7 @@ services:
     image: grafana/grafana:10.4.2
     container_name: grafana
     ports:
-      - ${GRAFANA_SERVICE_EXTERNAL_PORT}:${GRAFANA_SERVICE_INTERNAL_PORT}
+      - ${GRAFANA_SERVICE_EXTERNAL_PORT}:3000
     volumes:
       - grafana_data:/var/lib/grafana
     environment:
@@ -85,7 +85,7 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DATABASE}
     ports:
-      - ${POSTGRES_EXTERNAL_PORT}:${POSTGRES_INTERNAL_PORT}
+      - ${POSTGRES_EXTERNAL_PORT}:5432
     volumes:
       - postgres-data-14:/var/lib/postgresql/data
     restart: unless-stopped
@@ -107,7 +107,7 @@ services:
       - SERVER_PORT=${SERVICE_PORT}
       - SERVICE_NAME=igrpplatformaccessmanagement-service
       - SPRING_ACTIVE_PROFILE=${SERVICE_PROFILE}
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:${POSTGRES_INTERNAL_PORT}/${POSTGRES_DATABASE}
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/${POSTGRES_DATABASE}
       - SPRING_DATASOURCE_USERNAME=${POSTGRES_USER}
       - SPRING_DATASOURCE_PASSWORD=${POSTGRES_PASSWORD}
   #    - OTEL_TRACES_EXPORTER=${OTEL_TRACES_EXPORTER}
