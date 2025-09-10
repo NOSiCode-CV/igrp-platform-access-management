@@ -1266,5 +1266,35 @@
     "allPublicConstructors": true,
     "allPublicMethods": true,
     "allDeclaredFields": true
+  },
+
+
+  {
+    "name": "org.keycloak.representations.idm.UserProfileMetadata",
+    "allPublicFields": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true,
+    "allDeclaredMethods": true,
+    "allPublicConstructors": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.UserProfileAttributeMetadata",
+    "allPublicFields": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true,
+    "allDeclaredMethods": true,
+    "allPublicConstructors": true,
+    "allDeclaredConstructors": true
+  },
+  {
+    "name": "org.keycloak.representations.idm.UserProfileAttributeGroupMetadata",
+    "allPublicFields": true,
+    "allDeclaredFields": true,
+    "allPublicMethods": true,
+    "allDeclaredMethods": true,
+    "allPublicConstructors": true,
+    "allDeclaredConstructors": true
   }
+
 ]
