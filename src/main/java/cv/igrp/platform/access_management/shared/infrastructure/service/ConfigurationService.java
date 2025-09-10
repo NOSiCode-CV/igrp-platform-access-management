@@ -58,7 +58,7 @@ public class ConfigurationService {
                     createDefaultApp(departmentId);
 
             Long permissionId = permissionExists ? getId("SELECT id FROM t_permission WHERE name='manage_access'") :
-                    createDefaultPermission(appId);
+                    createDefaultPermission(appId, departmentId);
 
             Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE name='%s'".formatted(SUPER_ADMIN_USERNAME)) :
                     createDefaultRole(departmentId, permissionId);
@@ -117,18 +117,18 @@ public class ConfigurationService {
                 SYSTEM_USER, SYSTEM_USER);
     }
 
-    Long createDefaultPermission(Long appId) throws IAMException {
+    Long createDefaultPermission(Long appId, Long deptId) throws IAMException {
         String sql = """
                     INSERT INTO t_permission
-                    (name, description, status, application,
+                    (name, description, status, application, department
                      created_by, created_date, last_modified_by, last_modified_date)
-                    VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
+                    VALUES (?, ?, 'ACTIVE', ?, ?, ?, now(), ?, now())
                     RETURNING id
                 """;
         LOGGER.info("[Startup Config] Default Permission created");
         var query = jdbcTemplate.queryForObject(sql,
                 Long.class,
-                "manage_access", "iGRP Manage Access Permission", appId,
+                "manage_access", "iGRP Manage Access Permission", appId, deptId,
                 SYSTEM_USER, SYSTEM_USER);
         if (query != null) {
             adapter.createPermission("manage_access", "iGRP Manage Access Permission");

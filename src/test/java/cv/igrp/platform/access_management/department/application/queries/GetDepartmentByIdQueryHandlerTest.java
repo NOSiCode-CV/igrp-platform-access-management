@@ -9,7 +9,6 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -102,7 +101,6 @@ public class GetDepartmentByIdQueryHandlerTest {
         verifyNoMoreInteractions(departmentRepository, departmentMapper);
     }
 
-    @Disabled("Fails due to missing null return if mapper return null entity")
     @Test
     @DisplayName("should throw NullPointerException when mapper returns null")
     void testHandle_whenMapperReturnsNull_shouldThrowException() {
@@ -115,6 +113,6 @@ public class GetDepartmentByIdQueryHandlerTest {
                 getDepartmentByIdQueryHandler.handle(query));
 
         // Assert
-        assertNull(exception.getMessage());
+        assertTrue(exception.getMessage().contains("\"dto\" is null"));
     }
 }

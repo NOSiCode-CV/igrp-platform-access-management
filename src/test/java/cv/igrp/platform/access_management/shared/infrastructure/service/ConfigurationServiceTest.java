@@ -117,14 +117,14 @@ class ConfigurationServiceTest {
         when(jdbcTemplate.queryForObject(anyString(), eq(Long.class), any(Object[].class)))
                 .thenReturn(30L);
 
-        Long result = configurationService.createDefaultPermission(1L);
+        Long result = configurationService.createDefaultPermission(1L, 1L);
 
         assertEquals(30L, result);
         verify(jdbcTemplate).queryForObject(
                 contains("INSERT INTO t_permission"),
                 eq(Long.class),
                 eq("manage_access"), eq("iGRP Manage Access Permission"),
-                eq(1L), eq("system"), eq("system")
+                eq(1L), eq(1L), eq("system"), eq("system")
         );
     }
 
@@ -136,38 +136,20 @@ class ConfigurationServiceTest {
         // Clear any existing stubs that might interfere
         reset(jdbcTemplate);
 
-        // 1. Stub the role creation with exact parameter matching
-        String roleSql = """
-        INSERT INTO t_role
-        (name, description, status, department,
-         created_by, created_date, last_modified_by, last_modified_date)
-        VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
-        RETURNING id
-        """.trim();
-
+        // 1. Stub the role creation (use startsWith to ignore formatting/whitespace)
         when(jdbcTemplate.queryForObject(
-                eq(roleSql),
+                startsWith("INSERT INTO t_role"),
                 eq(Long.class),
-                eq(anyString()),
+                eq("superadmin"),
                 eq("iGRP Superadmin"),
                 eq(1L),
                 eq("system"),
                 eq("system")
         )).thenReturn(40L);
 
-        // 2. Stub the permission mapping with exact parameter matching
-        String permSql = """
-        INSERT INTO t_role_permission
-        (role_id, permission)
-        SELECT ?, ?
-        WHERE NOT EXISTS (
-            SELECT 1 FROM t_role_permission WHERE role_id=? AND permission=?
-        )
-        """.trim();
-
-        // Use doReturn().when() pattern to avoid strict stubbing issues
+        // 2. Stub the permission mapping
         doReturn(1).when(jdbcTemplate).update(
-                eq(permSql),
+                startsWith("INSERT INTO t_role_permission"),
                 eq(40L),
                 eq(2L),
                 eq(40L),
@@ -182,9 +164,9 @@ class ConfigurationServiceTest {
 
         // Verify role creation
         verify(jdbcTemplate).queryForObject(
-                eq(roleSql),
+                startsWith("INSERT INTO t_role"),
                 eq(Long.class),
-                eq(anyString()),
+                anyString(),
                 eq("iGRP Superadmin"),
                 eq(1L),
                 eq("system"),
@@ -193,7 +175,7 @@ class ConfigurationServiceTest {
 
         // Verify permission mapping
         verify(jdbcTemplate).update(
-                eq(permSql),
+                startsWith("INSERT INTO t_role_permission"),
                 eq(40L),
                 eq(2L),
                 eq(40L),
