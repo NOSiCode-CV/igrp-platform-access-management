@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetAppMenusQuery implements Query {
 
-  @NotBlank(message = "The field <appCode> is required.")
+  @NotBlank(message = "The field <appCode> is required")
   private String appCode;
 
 }

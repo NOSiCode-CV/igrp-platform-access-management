@@ -8,7 +8,6 @@ import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.ImportRuntimeHints;
 import org.springframework.data.envers.repository.support.EnversRevisionRepositoryImpl;
-import org.springframework.stereotype.Component;
 import org.springframework.context.ApplicationContextAware;
 
 import java.util.Map;
@@ -34,7 +33,6 @@ public class EnversHints {
            
             registerModelEntities(hints, classLoader);
             
-		         registerOpenTelemetryHints(hints);    //Somente Opentelemetry
         }
 
         private void registerFixedClasses(RuntimeHints hints) {
@@ -44,13 +42,7 @@ public class EnversHints {
                 org.hibernate.proxy.ProxyConfiguration.class,
                 org.hibernate.engine.spi.SessionImplementor.class,
                 
-		       // OpenTelemetry Essentials  / Somente Opentelemetry
-                io.opentelemetry.sdk.resources.Resource.class,
-                io.opentelemetry.sdk.trace.SdkTracerProvider.class,
-                io.opentelemetry.sdk.trace.export.BatchSpanProcessor.class,
-                io.opentelemetry.exporter.otlp.trace.OtlpGrpcSpanExporter.class,
-                io.opentelemetry.sdk.trace.SpanProcessor.class,
-                io.opentelemetry.sdk.common.CompletableResultCode.class
+		
                 
             };
             
@@ -60,15 +52,6 @@ public class EnversHints {
         }
 
 
-
-		        // Somente Opentelemetry
-        private void registerOpenTelemetryHints(RuntimeHints hints) {
-         
-            hints.resources().registerPattern("META-INF/services/io.opentelemetry.*");
-            
-          
-            hints.reflection().registerType(io.opentelemetry.context.Context.class, MemberCategory.values());
-        }
        
 
 

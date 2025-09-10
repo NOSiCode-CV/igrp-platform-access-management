@@ -24,6 +24,7 @@ import cv.igrp.platform.access_management.menu.application.queries.*;
 
 import java.util.List;
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
+import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 
 @IgrpController
 @RestController
@@ -267,6 +268,80 @@ public class MenuController {
       LOGGER.debug("Operation finished");
 
       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+  @PostMapping(
+    value = "menus/{code}/addPermissions"
+  )
+  @Operation(
+    summary = "POST method to handle operations for addPermissionsToMenu",
+    description = "POST method to handle operations for addPermissionsToMenu",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = PermissionDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<PermissionDTO>> addPermissionsToMenu(@RequestBody List<String> addPermissionsToMenuRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var command = new AddPermissionsToMenuCommand(addPermissionsToMenuRequest, code);
+
+       ResponseEntity<List<PermissionDTO>> response = commandBus.send(command);
+
+       LOGGER.debug("Operation finished");
+
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+  @PostMapping(
+    value = "menus/{code}/removePermissions"
+  )
+  @Operation(
+    summary = "POST method to handle operations for removePermissionsFromMenu",
+    description = "POST method to handle operations for removePermissionsFromMenu",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = PermissionDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<PermissionDTO>> removePermissionsFromMenu(@RequestBody List<String> removePermissionsFromMenuRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var command = new RemovePermissionsFromMenuCommand(removePermissionsFromMenuRequest, code);
+
+       ResponseEntity<List<PermissionDTO>> response = commandBus.send(command);
+
+       LOGGER.debug("Operation finished");
+
+        return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }

@@ -8,17 +8,13 @@ import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 @Component
 public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuCommand, ResponseEntity<MenuEntryDTO>> {
@@ -28,7 +24,6 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
    private final MenuEntryEntityRepository menuEntryRepository;
    private final MenuEntryMapper menuEntryMapper;
    private final ApplicationEntityRepository applicationRepository;
-   private final PermissionEntityRepository permissionEntityRepository;
 
    /**
     * Constructs an {@code UpdateMenuCommandHandler} with required dependencies.
@@ -37,11 +32,10 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
     * @param menuEntryMapper the mapper used to convert between {@link MenuEntryEntity} and {@link MenuEntryDTO}
     * @param applicationRepository the repository used to validate and retrieve associated {@link ApplicationEntity} entities
     */
-   public UpdateMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository, MenuEntryMapper menuEntryMapper, ApplicationEntityRepository applicationRepository, PermissionEntityRepository permissionEntityRepository) {
+   public UpdateMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository, MenuEntryMapper menuEntryMapper, ApplicationEntityRepository applicationRepository) {
       this.menuEntryRepository = menuEntryRepository;
       this.applicationRepository = applicationRepository;
       this.menuEntryMapper = menuEntryMapper;
-      this.permissionEntityRepository = permissionEntityRepository;
    }
 
    /**
@@ -104,30 +98,6 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
 
       var savedMenuEntry = menuEntryRepository.save(menuEntry);
 
-      if (menuDto.getPermissions() != null) {
-
-         List<String> newPermissions = menuDto.getPermissions();
-         List<PermissionEntity> existingPermissions = permissionEntityRepository.findByMenuEntryId(menuEntry);
-
-         List<String> existingPermissionNames = existingPermissions.stream()
-                 .map(PermissionEntity::getName)
-                 .toList();
-
-         // Add new permissions
-         for (String permission : newPermissions) {
-            if (!existingPermissionNames.contains(permission)) {
-               addPermissionToMenuEntry(permission, menuEntry);
-            }
-         }
-
-         // Remove permissions that are no longer present
-         for (PermissionEntity permissionEntity : existingPermissions) {
-            if (!newPermissions.contains(permissionEntity.getName())) {
-               permissionEntityRepository.delete(permissionEntity);
-            }
-         }
-      }
-
       logger.info("""
                     Menu updated: code={}, name={}, type={}
                     """,
@@ -137,13 +107,5 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
 
       return ResponseEntity.ok(menuEntryMapper.toDTO(savedMenuEntry));
    }
-
-   private void addPermissionToMenuEntry(String permissionName, MenuEntryEntity menuEntry) {
-      PermissionEntity newPermission = new PermissionEntity();
-      newPermission.setName(permissionName);
-      newPermission.setMenuEntryId(menuEntry);
-      permissionEntityRepository.save(newPermission);
-   }
-
 
 }

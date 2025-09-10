@@ -92,7 +92,11 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
                           role.getDepartment().getCode(),
                           username,
                           e.getMessage(), e);
-                  throw new RuntimeException(e);
+                  throw IgrpResponseStatusException.of(
+                          HttpStatus.INTERNAL_SERVER_ERROR,
+                          "Remove Roles from User Failed",
+                          e.getMessage()
+                  );
                }
             }
          }

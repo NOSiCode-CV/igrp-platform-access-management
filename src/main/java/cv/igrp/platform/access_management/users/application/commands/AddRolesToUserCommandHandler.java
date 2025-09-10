@@ -143,7 +143,11 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
                        rollbackEx.getMessage());
             }
          }
-         throw new RuntimeException(e);
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.INTERNAL_SERVER_ERROR,
+                 "Add Roles to User Failed",
+                 e.getMessage()
+         );
       }
 
       // Showing only the new ones.

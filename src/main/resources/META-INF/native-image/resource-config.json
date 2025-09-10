@@ -1,18 +1,105 @@
 {
   "resources": [
-    { "pattern": "META-INF/services/org.apache.logging.log4j.spi.Provider" },
-    { "pattern": "eureka-client.properties" },
-    { "pattern": "META-INF/services/com.netflix.*" },
-    { "pattern": "META-INF/spring/org.springframework.cloud.*" },
-    { "pattern": "META-INF/services/io.opentelemetry.*" },
-    { "pattern": "META-INF/services/org.keycloak.admin.client.spi.ResteasyClientProvider" },
-    { "pattern": "META-INF/services/jakarta.ws.rs.ext.Providers" },
-    { "pattern": "META-INF/services/jakarta.ws.rs.client.ClientBuilder" },
-
-    { "pattern": "org/jboss/resteasy/resteasy_jaxrs/i18n/.*\\.properties" },
-    { "pattern": "org/jboss/resteasy/client/jaxrs/i18n/.*\\.properties" },
-    { "pattern": "org/jboss/resteasy/plugins/providers/i18n/.*\\.properties" },
-    { "pattern": "org/jboss/resteasy/plugins/providers/multipart/i18n/.*\\.properties" },
-    { "pattern": "org/jboss/resteasy/plugins/providers/sse/i18n/.*\\.properties" }
+    {
+      "pattern": "META-INF/services/org.apache.logging.log4j.spi.Provider"
+    },
+    {
+      "pattern": "eureka-client.properties"
+    },
+    {
+      "pattern": "META-INF/services/com.netflix.*"
+    },
+    {
+      "pattern": "META-INF/spring/org.springframework.cloud.*"
+    },
+    {
+      "pattern": "META-INF/services/io.opentelemetry.*"
+    },
+    {
+      "pattern": "META-INF/services/org.keycloak.admin.client.spi.ResteasyClientProvider"
+    },
+    {
+      "pattern": "META-INF/services/org.keycloak.admin.client.spi.ResteasyClientClassicProvider"
+    },
+    {
+      "pattern": "META-INF/services/jakarta.ws.rs.ext.Providers"
+    },
+    {
+      "pattern": "META-INF/services/jakarta.ws.rs.client.ClientBuilder"
+    },
+    {
+      "pattern": "META-INF/services/jakarta.ws.rs.ext.RuntimeDelegate"
+    },
+    {
+      "pattern": "org/jboss/resteasy/resteasy_jaxrs/i18n/.*"
+    },
+    {
+      "pattern": "org/jboss/resteasy/client/jaxrs/i18n/.*"
+    },
+    {
+      "pattern": "org/jboss/resteasy/plugins/providers/jackson/i18n/.*"
+    },
+    {
+      "pattern": "org/jboss/resteasy/plugins/providers/i18n/.*\\.properties"
+    },
+    {
+      "pattern": "org/jboss/resteasy/plugins/providers/multipart/i18n/.*\\.properties"
+    },
+    {
+      "pattern": "org/jboss/resteasy/plugins/providers/sse/i18n/.*\\.properties"
+    },
+    {
+      "pattern": "META-INF/services/javax.ws.rs.ext.Providers"
+    },
+    {
+      "pattern": "org/keycloak/admin/client/.*"
+    },
+    {
+      "pattern": "META-INF/services/org.jboss.resteasy.spi.config.ConfigurationFactory"
+    },
+    {
+      "pattern": "META-INF/services/javax.ws.rs.client.ClientBuilder"
+    },
+    {
+      "pattern": "META-INF/services/com.fasterxml.jackson.databind.Module"
+    }
+  ],
+  "bundles": [
+    {
+      "name": "org.jboss.resteasy.resteasy_jaxrs.i18n.Messages"
+    },
+    {
+      "name": "org.jboss.resteasy.resteasy_jaxrs.i18n.LogMessages"
+    },
+    {
+      "name": "org.jboss.resteasy.client.jaxrs.i18n.Messages"
+    },
+    {
+      "name": "org.jboss.resteasy.client.jaxrs.i18n.LogMessages"
+    },
+    {
+      "name": "org.jboss.resteasy.plugins.providers.i18n.Messages"
+    },
+    {
+      "name": "org.jboss.resteasy.plugins.providers.i18n.LogMessages"
+    },
+    {
+      "name": "org.jboss.resteasy.plugins.providers.multipart.i18n.Messages"
+    },
+    {
+      "name": "org.jboss.resteasy.plugins.providers.multipart.i18n.LogMessages"
+    },
+    {
+      "name": "org.jboss.resteasy.plugins.providers.sse.i18n.Messages"
+    },
+    {
+      "name": "org.jboss.resteasy.plugins.providers.sse.i18n.LogMessages"
+    },
+    {
+      "name": "org.jboss.resteasy.plugins.providers.jackson.i18n.Messages"
+    },
+    {
+      "name": "org.jboss.resteasy.plugins.providers.jackson.i18n.LogMessages"
+    }
   ]
 }

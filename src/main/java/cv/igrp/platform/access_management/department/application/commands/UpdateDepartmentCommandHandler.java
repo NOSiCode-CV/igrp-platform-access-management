@@ -83,7 +83,11 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
           try {
               adapter.updateDepartment(departmentCode, department.getCode());
           } catch (IAMException e) {
-              throw new RuntimeException(e);
+              throw IgrpResponseStatusException.of(
+                      HttpStatus.INTERNAL_SERVER_ERROR,
+                      "Department Update Failed",
+                      e.getMessage()
+              );
           }
       }
 
