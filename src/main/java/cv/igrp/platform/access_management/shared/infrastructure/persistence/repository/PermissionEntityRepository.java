@@ -37,8 +37,6 @@ public interface PermissionEntityRepository extends
     Optional<PermissionEntity> findByIdAndStatusNot(Integer id, Status status);
     Optional<PermissionEntity> findByNameAndStatusNot(String name, Status status);
 
-    Optional<PermissionEntity> findByName(String name);
-
     List<PermissionEntity> findAllByNameIn(List<String> name);
 
 }

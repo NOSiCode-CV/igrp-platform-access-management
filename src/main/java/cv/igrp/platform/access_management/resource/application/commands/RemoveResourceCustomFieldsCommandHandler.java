@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.resource.application.commands;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -75,7 +76,7 @@ public class RemoveResourceCustomFieldsCommandHandler implements CommandHandler<
 
       logger.info("Processing removal of custom fields for resource name: {}", resourceName);
 
-      ResourceEntity resource = resourceRepository.findByName(resourceName)
+      ResourceEntity resource = resourceRepository.findByNameAndStatusNot(resourceName, Status.DELETED)
               .orElseThrow(() -> {
                  logger.warn("Resource not found with name: {}", resourceName);
                  return IgrpResponseStatusException.of(

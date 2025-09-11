@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.resource.application.queries;
 
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
@@ -59,7 +60,7 @@ public class GetResourceByIdQueryHandler implements QueryHandler<GetResourceById
     String resourceName = query.getName();
     logger.info("Fetching resource with name: {}", resourceName);
 
-    ResourceEntity resource = resourceRepository.findByName(resourceName)
+    ResourceEntity resource = resourceRepository.findByNameAndStatusNot(resourceName, Status.DELETED)
             .orElseThrow(() -> {
               logger.warn("Resource not found with name: {}", resourceName);
               return IgrpResponseStatusException.of(

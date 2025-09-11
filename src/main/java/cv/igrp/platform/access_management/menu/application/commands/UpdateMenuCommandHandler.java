@@ -5,6 +5,7 @@ import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.menu.application.domain.service.MenuEntryValidator;
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
@@ -53,7 +54,7 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
    @IgrpCommandHandler
    public ResponseEntity<MenuEntryDTO> handle(UpdateMenuCommand command) {
 
-      MenuEntryEntity menuEntry = menuEntryRepository.findByCode(command.getCode())
+      MenuEntryEntity menuEntry = menuEntryRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
               .orElseThrow(() -> {
                  logger.warn("Menu not found with code: {}", command.getCode());
                  return IgrpResponseStatusException.of(
@@ -75,7 +76,7 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
       menuEntry.setUrl(menuDto.getUrl());
 
       if (menuDto.getParentCode() != null) {
-         menuEntry.setParentId(menuEntryRepository.findByCode(menuDto.getParentCode())
+         menuEntry.setParentId(menuEntryRepository.findByCodeAndStatusNot(menuDto.getParentCode(), Status.DELETED)
                  .orElseThrow(() -> {
                     logger.warn("Parent Menu not found with code: {}", menuDto.getParentCode());
                     return IgrpResponseStatusException.of(
@@ -86,7 +87,7 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
       }
 
       if (menuDto.getApplicationCode() != null){
-         menuEntry.setApplicationId(applicationRepository.findByCode(menuDto.getApplicationCode())
+         menuEntry.setApplicationId(applicationRepository.findByCodeAndStatusNot(menuDto.getApplicationCode(), Status.DELETED)
                  .orElseThrow(() -> {
                     logger.warn("Application not found with code: {}", menuDto.getApplicationCode());
                     return IgrpResponseStatusException.of(

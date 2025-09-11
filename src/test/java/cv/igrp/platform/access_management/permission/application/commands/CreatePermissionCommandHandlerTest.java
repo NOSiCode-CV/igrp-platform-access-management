@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.permission.application.commands;
 
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -52,7 +53,7 @@ public class CreatePermissionCommandHandlerTest {
         PermissionDTO permissiondto = new PermissionDTO(null, permissionName, permissionDescription, null, departmentCode);
         CreatePermissionCommand command = new CreatePermissionCommand(permissiondto);
 
-        when(departmentRepository.findByCode(departmentCode))
+        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED))
                 .thenReturn(Optional.empty());
         //... When
         IgrpResponseStatusException response = assertThrows(IgrpResponseStatusException.class, () -> underTest.handle(command));
@@ -94,7 +95,7 @@ public class CreatePermissionCommandHandlerTest {
         expectedResponse.setStatus(Status.ACTIVE);
 
         // When
-        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
         when(permissionMapper.mapDtoToEntity(dto, department)).thenReturn(permissionToSave);
         when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(expectedResponse);
@@ -144,7 +145,7 @@ public class CreatePermissionCommandHandlerTest {
         expectedResponse.setName(permissionName);
 
         // When
-        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
         when(permissionMapper.mapDtoToEntity(dto, department)).thenReturn(permissionToSave);
         when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(expectedResponse);
@@ -195,7 +196,7 @@ public class CreatePermissionCommandHandlerTest {
         mappedDTO.setName(permissionName);
 
         // When
-        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
         when(permissionMapper.mapDtoToEntity(dto, department)).thenReturn(permissionToSave);
         when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(mappedDTO);

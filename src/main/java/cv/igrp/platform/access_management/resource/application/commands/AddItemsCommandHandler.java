@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.resource.application.commands;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -78,7 +79,7 @@ public class AddItemsCommandHandler implements CommandHandler<AddItemsCommand, R
    public ResponseEntity<ResourceDTO> handle(AddItemsCommand command) {
       logger.info("Handling AddItemsCommand for resource name: {}", command.getName());
 
-      ResourceEntity resource = resourceRepository.findByName(command.getName())
+      ResourceEntity resource = resourceRepository.findByNameAndStatusNot(command.getName(), Status.DELETED)
               .orElseThrow(() -> {logger.warn("Resource not found with name: {}", command.getName());
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
@@ -87,7 +88,7 @@ public class AddItemsCommandHandler implements CommandHandler<AddItemsCommand, R
               });
       List<ResourceItemEntity> items = command.getResourceitemdto().stream()
               .map(dto -> {
-                 PermissionEntity permission = permissionRepository.findByName(dto.getPermissionName())
+                 PermissionEntity permission = permissionRepository.findByNameAndStatusNot(dto.getPermissionName(), Status.DELETED)
                          .orElseThrow(() -> {
                             logger.warn("Permission not found with name: {}", dto.getPermissionName());
                             return IgrpResponseStatusException.of(

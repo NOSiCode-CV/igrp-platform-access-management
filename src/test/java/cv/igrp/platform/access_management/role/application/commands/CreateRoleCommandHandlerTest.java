@@ -58,7 +58,7 @@ public class CreateRoleCommandHandlerTest {
         CreateRoleCommand command = new CreateRoleCommand(role);
 
         //... When
-        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.empty());
+        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.empty());
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
         //... Then
@@ -84,7 +84,7 @@ public class CreateRoleCommandHandlerTest {
         department.setName(departmentName);
 
         //... When
-        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
         when(roleRepository.findByNameAndStatusNot(roleParentName, Status.DELETED))
                 .thenReturn(Optional.empty());
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
@@ -117,7 +117,7 @@ public class CreateRoleCommandHandlerTest {
         RoleDTO expectedResponse = new RoleDTO();
 
         // When
-        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
         when(roleMapper.mapToEntity(role, department, null)).thenReturn(roleEntity);
         when(roleRepository.save(roleEntity)).thenReturn(savedRole);
         when(roleMapper.mapToDto(savedRole)).thenReturn(expectedResponse);
@@ -155,7 +155,7 @@ public class CreateRoleCommandHandlerTest {
         persistedRoles.add(savedRole);
         department.setRoles(persistedRoles);
 
-        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
 
         // When
 
@@ -194,7 +194,7 @@ public class CreateRoleCommandHandlerTest {
         RoleDTO expectedResponse = new RoleDTO();
 
         // When
-        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
         when(roleMapper.mapToEntity(role, department, null)).thenReturn(roleEntity);
         when(roleRepository.save(roleEntity)).thenReturn(savedRole);
         when(roleMapper.mapToDto(savedRole)).thenReturn(expectedResponse);
@@ -229,7 +229,7 @@ public class CreateRoleCommandHandlerTest {
         RoleDTO expectedResponse = new RoleDTO();
 
         // When
-        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
         when(roleMapper.mapToEntity(role, department, null)).thenReturn(roleEntity);
         when(roleRepository.save(roleEntity)).thenReturn(savedRole);
         when(roleMapper.mapToDto(savedRole)).thenReturn(expectedResponse);
@@ -274,7 +274,7 @@ public class CreateRoleCommandHandlerTest {
         expectedResponse.setDescription(roleDescription);
 
         // When
-        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
         when(roleRepository.findByNameAndStatusNot(parentRoleName, Status.DELETED))
                 .thenReturn(Optional.of(parentRole));
         when(roleMapper.mapToEntity(role, department, parentRole)).thenReturn(roleEntity);

@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.app.application.commands;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
@@ -62,7 +63,7 @@ public class RemoveApplicationCustomFieldsCommandHandlerTest {
 
         when(customFieldRepository.findByTableNameAndRecordId("t_application", appId))
                 .thenReturn(Optional.of(customField));
-        when(applicationRepository.findByCode(appCode)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCodeAndStatusNot(appCode, Status.DELETED)).thenReturn(Optional.of(application));
 
         // When
         ResponseEntity<String> response = removeApplicationCustomFieldsCommandHandler.handle(command);
@@ -94,7 +95,7 @@ public class RemoveApplicationCustomFieldsCommandHandlerTest {
 
         when(customFieldRepository.findByTableNameAndRecordId("t_application", appId))
                 .thenReturn(Optional.empty());
-        when(applicationRepository.findByCode(appCode)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCodeAndStatusNot(appCode, Status.DELETED)).thenReturn(Optional.of(application));
 
         // When + Then
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,

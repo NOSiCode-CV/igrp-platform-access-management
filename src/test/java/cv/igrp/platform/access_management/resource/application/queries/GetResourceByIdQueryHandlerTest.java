@@ -63,7 +63,7 @@ class GetResourceByIdQueryHandlerTest {
     void testHandle_whenResourceExists_shouldReturnDto() {
         // Arrange
         GetResourceByIdQuery query = new GetResourceByIdQuery("document");
-        when(resourceRepository.findByName("document")).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByNameAndStatusNot("document", Status.DELETED)).thenReturn(Optional.of(resource));
 
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
@@ -80,7 +80,7 @@ class GetResourceByIdQueryHandlerTest {
         assertEquals(resource.getExternalId(), dto.getExternalId());
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("document");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("document", Status.DELETED);
         verifyNoMoreInteractions(resourceRepository);
     }
 
@@ -89,7 +89,7 @@ class GetResourceByIdQueryHandlerTest {
     void testHandle_whenResourceNotFound_shouldThrowException() {
         // Arrange
         GetResourceByIdQuery query = new GetResourceByIdQuery("unknown");
-        when(resourceRepository.findByName("unknown")).thenReturn(Optional.empty());
+        when(resourceRepository.findByNameAndStatusNot("unknown", Status.DELETED)).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(query));
@@ -101,7 +101,7 @@ class GetResourceByIdQueryHandlerTest {
         assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("unknown"));
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("unknown");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("unknown", Status.DELETED);
         verifyNoMoreInteractions(resourceRepository);
     }
 }

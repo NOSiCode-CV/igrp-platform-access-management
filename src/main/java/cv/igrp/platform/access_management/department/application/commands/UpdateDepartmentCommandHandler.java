@@ -5,6 +5,8 @@ import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
@@ -68,7 +70,7 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
 
       logger.info("Updating department with code {}", departmentCode);
 
-      DepartmentEntity department = departmentRepository.findByCode(departmentCode)
+      DepartmentEntity department = departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)
               .orElseThrow(() -> {
                  logger.warn("Department with code={} not found", departmentCode);
                  return IgrpResponseStatusException.of(

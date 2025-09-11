@@ -39,7 +39,7 @@ public class DeleteApplicationCommandHandlerTest {
         DeleteApplicationCommand command = new DeleteApplicationCommand(applicationCode);
 
         // When
-        when(applicationRepository.findByCode(applicationCode)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCodeAndStatusNot(applicationCode, Status.DELETED)).thenReturn(Optional.of(application));
 
         ResponseEntity<String> response = deleteApplicationCommandHandler.handle(command);
 

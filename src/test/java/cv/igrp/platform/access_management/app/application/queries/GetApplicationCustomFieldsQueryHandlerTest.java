@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.app.application.queries;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
@@ -49,7 +50,7 @@ public class GetApplicationCustomFieldsQueryHandlerTest {
 
         when(customFieldRepository.findByTableNameAndRecordId("t_application", applicationId))
                 .thenReturn(Optional.of(customField));
-        when(applicationRepository.findByCode(applicationCode)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCodeAndStatusNot(applicationCode, Status.DELETED)).thenReturn(Optional.of(application));
 
         GetApplicationCustomFieldsQuery query = new GetApplicationCustomFieldsQuery(applicationCode);
 
@@ -74,7 +75,7 @@ public class GetApplicationCustomFieldsQueryHandlerTest {
 
         when(customFieldRepository.findByTableNameAndRecordId("t_application", applicationId))
                 .thenReturn(Optional.empty());
-        when(applicationRepository.findByCode(applicationCode)).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCodeAndStatusNot(applicationCode, Status.DELETED)).thenReturn(Optional.of(application));
 
         GetApplicationCustomFieldsQuery query = new GetApplicationCustomFieldsQuery(applicationCode);
 

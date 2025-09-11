@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.app.application.queries;
 
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
@@ -44,7 +45,7 @@ public class GetApplicationByCodeQueryHandler implements QueryHandler<GetApplica
 
    @IgrpQueryHandler
   public ResponseEntity<ApplicationDTO> handle(GetApplicationByCodeQuery query) {
-    ApplicationEntity application = applicationRepository.findByCode(query.getCode())
+    ApplicationEntity application = applicationRepository.findByCodeAndStatusNot(query.getCode(), Status.DELETED)
             .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found with code: " + query.getCode()));
     return ResponseEntity.ok(applicationMapper.toDto(application));
   }

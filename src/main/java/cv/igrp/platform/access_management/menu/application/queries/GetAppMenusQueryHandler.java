@@ -62,7 +62,7 @@ public class GetAppMenusQueryHandler implements QueryHandler<GetAppMenusQuery, R
         IGRPUserEntity user = optionalUser.get();
 
         // Step 1: Get application by appCode
-        Optional<ApplicationEntity> optionalApp = applicationRepository.findByCode(query.getAppCode());
+        Optional<ApplicationEntity> optionalApp = applicationRepository.findByCodeAndStatusNot(query.getAppCode(), Status.DELETED);
         if (optionalApp.isEmpty()) {
             LOGGER.warn("No application found with code: {}", query.getAppCode());
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

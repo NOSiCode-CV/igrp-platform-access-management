@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.resource.application.commands;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
@@ -66,7 +67,7 @@ public class UpdateResourceCommandHandler implements CommandHandler<UpdateResour
 
       logger.info("Updating resource with name: {}", resourceName);
 
-      ResourceEntity resource = resourceRepository.findByName(command.getName())
+      ResourceEntity resource = resourceRepository.findByNameAndStatusNot(command.getName(), Status.DELETED)
               .orElseThrow(() -> {
                  logger.warn("Resource not found with name: {}", resourceName);
                  return IgrpResponseStatusException.of(

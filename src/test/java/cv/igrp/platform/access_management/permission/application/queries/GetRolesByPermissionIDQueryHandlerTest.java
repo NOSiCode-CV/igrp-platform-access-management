@@ -45,7 +45,7 @@ public class GetRolesByPermissionIDQueryHandlerTest {
         String permissionName = "test";
         GetRolesByPermissionIDQuery query = new GetRolesByPermissionIDQuery(permissionName);
 
-        when(permissionRepository.findByName(permissionName))
+        when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED))
                 .thenReturn(Optional.empty());
 
         //... When
@@ -65,7 +65,7 @@ public class GetRolesByPermissionIDQueryHandlerTest {
         deletedPermission.setName(permissionName);
         deletedPermission.setStatus(Status.DELETED);
 
-        when(permissionRepository.findByName(permissionName))
+        when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED))
                 .thenReturn(Optional.of(deletedPermission));
 
         GetRolesByPermissionIDQuery query = new GetRolesByPermissionIDQuery(permissionName);
@@ -90,7 +90,7 @@ public class GetRolesByPermissionIDQueryHandlerTest {
         permission.setStatus(Status.ACTIVE);
         permission.setRoles(null);
 
-        when(permissionRepository.findByName(permissionName)).thenReturn(Optional.of(permission));
+        when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED)).thenReturn(Optional.of(permission));
 
         // When
         ResponseEntity<List<RoleDTO>> response = underTest.handle(query);
@@ -145,7 +145,7 @@ public class GetRolesByPermissionIDQueryHandlerTest {
         inactiveDTO.setId(2);
         inactiveDTO.setName("inactive");
 
-        when(permissionRepository.findByName(permissionName)).thenReturn(Optional.of(permission));
+        when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED)).thenReturn(Optional.of(permission));
         when(roleMapper.mapToDto(activeRole)).thenReturn(activeDTO);
         when(roleMapper.mapToDto(inactiveRole)).thenReturn(inactiveDTO);
 
@@ -198,7 +198,7 @@ public class GetRolesByPermissionIDQueryHandlerTest {
         dto2.setId(2);
         dto2.setName("inactive");
 
-        when(permissionRepository.findByName(permissionName)).thenReturn(Optional.of(permission));
+        when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED)).thenReturn(Optional.of(permission));
         when(roleMapper.mapToDto(role1)).thenReturn(dto1);
         when(roleMapper.mapToDto(role2)).thenReturn(dto2);
 
