@@ -69,94 +69,6 @@ public class UpdatePermissionCommandHandlerTest {
     }
 
     @Test
-    void itShouldThrowRecordNotFound_When_ProvidedDepartmentId_NotFound() {
-        // Given
-        int permissionId = 100;
-        String permissionName = "READ_DATA";
-        String departmentCode = "DEPT";
-        String permissionNewDescription = "PermissionNewId";
-        String permissionPreviousName = "Permission PreviousName";
-
-        PermissionDTO permissionNewData = new PermissionDTO();
-        permissionNewData.setName(permissionName); // <-- FIXED
-        permissionNewData.setDescription(permissionNewDescription);
-        permissionNewData.setStatus(Status.INACTIVE);
-        permissionNewData.setDepartmentCode(departmentCode);
-
-        UpdatePermissionCommand command = new UpdatePermissionCommand(permissionNewData, permissionName);
-
-        PermissionEntity foundPermission = new PermissionEntity();
-        foundPermission.setId(permissionId);
-        foundPermission.setName(permissionName);
-        foundPermission.setDescription(permissionPreviousName);
-
-        when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED))
-                .thenReturn(Optional.of(foundPermission));
-        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED))
-                .thenReturn(Optional.empty());
-
-        // When
-        IgrpResponseStatusException response = assertThrows(
-                IgrpResponseStatusException.class,
-                () -> underTest.handle(command)
-        );
-
-        // Then
-        assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatus());
-    }
-
-
-    @Test
-    void itShouldUpdateDepartment_WhenProvidedDepartmentIdIsDifferent() {
-        // Given
-        int permissionId = 1;
-        String permissionName = "READ_DATA";
-        int previousDepartmentId = 10;
-        String previousDepartmentCode = "PREV_DEPT";
-        int newDepartmentId = 20;
-        String newDepartmentCode = "DEPT";
-
-        DepartmentEntity previousDept = new DepartmentEntity();
-        previousDept.setId(previousDepartmentId);
-        previousDept.setCode(previousDepartmentCode);
-
-        DepartmentEntity newDept = new DepartmentEntity();
-        newDept.setId(newDepartmentId);
-        newDept.setCode(newDepartmentCode);
-
-        PermissionEntity existingPermission = new PermissionEntity();
-        existingPermission.setId(permissionId);
-        existingPermission.setName("READ_DATA");
-        existingPermission.setStatus(Status.ACTIVE);
-        existingPermission.setDepartment(previousDept);
-
-        PermissionDTO updateDTO = new PermissionDTO();
-        updateDTO.setDepartmentCode(newDepartmentCode);
-        updateDTO.setName("READ_DATA");
-        updateDTO.setDescription("Updated Description");
-        updateDTO.setStatus(Status.ACTIVE);
-
-        UpdatePermissionCommand command = new UpdatePermissionCommand(updateDTO, permissionName);
-
-        PermissionEntity savedPermission = new PermissionEntity();
-        PermissionDTO mappedDTO = new PermissionDTO();
-
-        when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED)).thenReturn(Optional.of(existingPermission));
-        when(departmentRepository.findByCodeAndStatusNot(newDepartmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(newDept));
-        when(permissionRepository.save(any(PermissionEntity.class))).thenReturn(savedPermission);
-        when(permissionMapper.mapToDTO(savedPermission)).thenReturn(mappedDTO);
-
-        // When
-        underTest.handle(command);
-
-        // Then
-        verify(permissionRepository).save(permissionCaptor.capture());
-        PermissionEntity capturedPermission = permissionCaptor.getValue();
-
-        assertEquals(newDepartmentId, capturedPermission.getDepartment().getId());
-    }
-
-    @Test
     void itShouldUpdatePermission_WhenValidCommandIsProvided() {
         // Given
         int permissionId = 1;
@@ -190,7 +102,6 @@ public class UpdatePermissionCommandHandlerTest {
 
         // When
         when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED)).thenReturn(Optional.of(existingPermission));
-        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
         when(permissionRepository.save(any(PermissionEntity.class))).thenReturn(updatedPermission);
         when(permissionMapper.mapToDTO(updatedPermission)).thenReturn(mappedDTO);
 

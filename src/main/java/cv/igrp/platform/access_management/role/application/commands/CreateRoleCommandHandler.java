@@ -4,6 +4,7 @@ import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.permission.domain.service.PermissionValidator;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
@@ -78,7 +79,6 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<RoleDTO> handle(CreateRoleCommand command) {
-      log.info("Create Role with name: {}.", command.getRoledto().getName());
       RoleDTO request = command.getRoledto();
       RoleEntity parentRole = null;
       DepartmentEntity department = departmentRepository.findByCodeAndStatusNot(command.getRoledto().getDepartmentCode(), DepartmentStatus.DELETED)
@@ -88,6 +88,11 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
                          HttpStatus.NOT_FOUND, "Create Role", "Department with id: " + command.getRoledto().getDepartmentCode() + " not found."
                  );
               });
+
+      command.getRoledto().setName(RoleValidator.normalizeRoleName(command.getRoledto().getName(), department.getCode()));
+
+      log.info("Create Role with name: {}.", command.getRoledto().getName());
+
       ResourceValidationResponse roleValidationResponse = RoleValidator.validateRoleDto(command.getRoledto(), department);
       if(!roleValidationResponse.isValid()){
          throw IgrpResponseStatusException.of(

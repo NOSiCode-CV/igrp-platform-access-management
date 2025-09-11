@@ -60,4 +60,26 @@ public class RoleValidator {
             }
         }
     }
+
+    /**
+     * Normalizes a role name to the format: departmentCode.name
+     * - If the given name already starts with departmentCode + ".", it is returned as-is.
+     * - Otherwise, the departmentCode is prepended to the name, separated by a dot.
+     *
+     * @param name the original role name
+     * @param departmentCode the department code
+     * @return the normalized role name
+     */
+    public static String normalizeRoleName(String name, String departmentCode) {
+        if (name == null || departmentCode == null) {
+            throw new IllegalArgumentException("Name and departmentCode must not be null");
+        }
+
+        String prefix = departmentCode + ".";
+        if (name.startsWith(prefix)) {
+            return name;
+        }
+        return prefix + name;
+    }
+    
 }

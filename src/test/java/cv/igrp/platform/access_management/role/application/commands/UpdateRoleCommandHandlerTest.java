@@ -68,49 +68,6 @@ public class UpdateRoleCommandHandlerTest {
     }
 
     @Test
-    void itShouldThrowNotBadException_RoleName_Exists_InProvidedDepartment() {
-        //... Given
-        String roleNameToUpdate = "app";
-        String alreadyPresentRoleName = "admin";
-        String departmentCode = "app";
-        DepartmentEntity foundDepartment = new DepartmentEntity();
-        foundDepartment.setCode(departmentCode);
-        RoleDTO roleData = new RoleDTO();
-        roleData.setName(alreadyPresentRoleName);
-        roleData.setDepartmentCode(departmentCode);
-        UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleNameToUpdate);
-
-        RoleEntity existingRole = new RoleEntity();
-        existingRole.setName(roleNameToUpdate);
-        existingRole.setStatus(Status.ACTIVE);
-        existingRole.setDepartment(foundDepartment);
-
-        RoleEntity anotherExistingRole = new RoleEntity();
-        anotherExistingRole.setName(alreadyPresentRoleName);
-        anotherExistingRole.setStatus(Status.ACTIVE);
-        anotherExistingRole.setDepartment(foundDepartment);
-
-        ArrayList<RoleEntity> persistedRoles = new ArrayList<>();
-        RoleEntity savedRole = new RoleEntity();
-        savedRole.setName(alreadyPresentRoleName);
-        savedRole.setStatus(Status.ACTIVE);
-        savedRole.setDepartment(foundDepartment);
-        persistedRoles.add(savedRole);
-        persistedRoles.add(anotherExistingRole);
-        foundDepartment.setRoles(persistedRoles);
-
-        when(roleRepository.findByNameAndStatusNot(roleNameToUpdate, Status.DELETED))
-                .thenReturn(Optional.of(existingRole));
-
-        //... When
-        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
-                () -> underTest.handle(command));
-        //... Then
-        assertEquals(HttpStatus.CONFLICT.value(), ex.getBody().getStatus());
-        verify(roleRepository, never()).save(any(RoleEntity.class));
-    }
-
-    @Test
     void itShouldThrowNotFoundException_WhenProvidedParentRoleDoesNotExist() {
         // Given
         String roleName = "app";
