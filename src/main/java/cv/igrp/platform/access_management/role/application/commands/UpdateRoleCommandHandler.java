@@ -99,16 +99,6 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
                     );
                 });
 
-        if(!Objects.equals(roleToUpdate.getName(), newData.getName())) {
-            var department = roleToUpdate.getDepartment();
-            ResourceValidationResponse roleValidationResponse = RoleValidator.validateRoleDto(command.getRoledto(), department);
-            if (!roleValidationResponse.isValid()) {
-                throw IgrpResponseStatusException.of(
-                        HttpStatus.CONFLICT, ERROR_TITLE, roleValidationResponse.getFailureMessage()
-                );
-            }
-        }
-
         RoleEntity parentRole = roleToUpdate.getParent();
         String parentName = newData.getParentName();
         if (parentName != null) {
@@ -124,9 +114,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
                         });
             }
         }
-        roleToUpdate.setName(newData.getName());
         roleToUpdate.setDescription(newData.getDescription());
-        //roleToUpdate.setDepartment(department);
         roleToUpdate.setParent(parentRole);
         roleToUpdate.setStatus(newData.getStatus());
         RoleEntity updatedRole = roleRepository.save(roleToUpdate);

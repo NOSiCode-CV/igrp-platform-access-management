@@ -82,7 +82,6 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<PermissionDTO> handle(CreatePermissionCommand command) {
-      log.info("Create permission with name: {}", command.getPermissiondto().getName());
       PermissionDTO request = command.getPermissiondto();
       DepartmentEntity foundDepartment = departmentRepository.findByCodeAndStatusNot(command.getPermissiondto().getDepartmentCode(), DepartmentStatus.DELETED)
               .orElseThrow(() -> {
@@ -91,6 +90,11 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
                          HttpStatus.NOT_FOUND, "Create Permission", "Department with code: " + command.getPermissiondto().getDepartmentCode() + " not found."
                  );
               });
+
+      command.getPermissiondto().setName(PermissionValidator.normalizePermissionName(command.getPermissiondto().getName(), foundDepartment.getCode()));
+
+      log.info("Create permission with name: {}", command.getPermissiondto().getName());
+
       ResourceValidationResponse validationResponse = PermissionValidator.validatePermissionName(command.getPermissiondto(), foundDepartment);
       if (!validationResponse.isValid()) {
          log.warn("Invalid Permission Dto with name {}.", command.getPermissiondto().getName());

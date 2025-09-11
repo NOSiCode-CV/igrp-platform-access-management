@@ -94,25 +94,10 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
                          HttpStatus.NOT_FOUND, "Update Permission", "Permission with name: " + command.getPermissiondto().getName() + " not found."
                  );
               });
-      DepartmentEntity department = departmentRepository.findByCodeAndStatusNot(command.getPermissiondto().getDepartmentCode(), DepartmentStatus.DELETED)
-              .orElseThrow(() -> {
-                 log.warn("Department with code: {} not found", command.getPermissiondto().getDepartmentCode());
-                 return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Update Permission", "Department with code: " + command.getPermissiondto().getDepartmentCode() + " not found."
-                 );
-              });
-      ResourceValidationResponse validationResponse = PermissionValidator.validatePermissionName(command.getPermissiondto(), department);
-      if (!validationResponse.isValid()) {
-         log.warn("Invalid Permission Dto with name {}.", command.getPermissiondto().getName());
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.CONFLICT, "Update Permission", validationResponse.getFailureMessage());
-      }
       PermissionDTO newData = command.getPermissiondto();
-      foundPermission.setName(newData.getName());
       if (newData.getDescription() != null && !newData.getDescription().trim().isEmpty()) {
          foundPermission.setDescription(newData.getDescription());
       }
-      foundPermission.setDepartment(department);
       foundPermission.setStatus(command.getPermissiondto().getStatus());
       PermissionEntity updatedPermission = permissionRepository.save(foundPermission);
       PermissionDTO response = permissionMapper.mapToDTO(updatedPermission);
