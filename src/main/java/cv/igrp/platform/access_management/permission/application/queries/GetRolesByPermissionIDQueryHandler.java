@@ -73,7 +73,7 @@ public class GetRolesByPermissionIDQueryHandler implements QueryHandler<GetRoles
   @Transactional(readOnly = true)
   public ResponseEntity<List<RoleDTO>> handle(GetRolesByPermissionIDQuery query) {
     log.info("Get Roles with Permission name {}", query.getName());
-    PermissionEntity permissionFound = permissionRepository.findByName(query.getName())
+    PermissionEntity permissionFound = permissionRepository.findByNameAndStatusNot(query.getName(), Status.DELETED)
             .filter(permission -> permission.getStatus().equals(Status.ACTIVE) || permission.getStatus().equals(Status.INACTIVE))
             .orElseThrow(() -> {
               log.warn("Get Roles with Permission name {}", query.getName());

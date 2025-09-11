@@ -23,13 +23,6 @@ public interface MenuEntryEntityRepository extends
     RevisionRepository<MenuEntryEntity, Integer, Integer>
 {
 
-    @Query("SELECT m FROM MenuEntryEntity m WHERE m.applicationId = :appId " +
-            "AND (m.type = 'SYSTEM_PAGE' OR m.id IN " +
-            "(SELECT DISTINCT p.parentId.id FROM MenuEntryEntity p WHERE p.type = 'SYSTEM_PAGE' AND p.applicationId = :appId))")
-    List<MenuEntryEntity> findSystemMenuHierarchy(@Param("appId") ApplicationEntity appId);
-
-    Optional<MenuEntryEntity> findByCode(String code);
-
     List<MenuEntryEntity> findByApplicationIdAndStatus(ApplicationEntity appId, Status status);
 
     Optional<MenuEntryEntity> findByCodeAndStatusNot(String code, Status status);

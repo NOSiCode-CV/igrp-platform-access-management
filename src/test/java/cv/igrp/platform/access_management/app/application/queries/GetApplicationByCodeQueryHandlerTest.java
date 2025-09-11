@@ -58,7 +58,7 @@ public class GetApplicationByCodeQueryHandlerTest {
     applicationDTO.setSlug("sample-app");
 
     Mockito.when(applicationMapper.toDto(application)).thenReturn(applicationDTO);
-    Mockito.when(applicationRepository.findByCode(code)).thenReturn(Optional.of(application));
+    Mockito.when(applicationRepository.findByCodeAndStatusNot(code, Status.DELETED)).thenReturn(Optional.of(application));
 
     // When
     ResponseEntity<ApplicationDTO> response = getApplicationByCodeQueryHandler.handle(query);
@@ -78,7 +78,7 @@ public class GetApplicationByCodeQueryHandlerTest {
     String code = "APP";
     GetApplicationByCodeQuery query = new GetApplicationByCodeQuery(code);
 
-    Mockito.when(applicationRepository.findByCode(code)).thenReturn(Optional.empty());
+    Mockito.when(applicationRepository.findByCodeAndStatusNot(code, Status.DELETED)).thenReturn(Optional.empty());
 
     // When / Then
     IgrpResponseStatusException exception = assertThrows(

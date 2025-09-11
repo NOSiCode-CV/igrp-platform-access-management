@@ -1,5 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,7 +17,7 @@ public interface DepartmentEntityRepository extends
     RevisionRepository<DepartmentEntity, Integer, Integer>
 {
 
-    Optional<DepartmentEntity> findByCode(String code);
+    Optional<DepartmentEntity> findByCodeAndStatusNot(String code, DepartmentStatus status);
 
     boolean existsByCode(String code);
 

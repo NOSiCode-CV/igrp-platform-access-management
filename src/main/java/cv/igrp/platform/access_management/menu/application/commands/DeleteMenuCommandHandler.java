@@ -42,7 +42,7 @@ public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuComman
    @IgrpCommandHandler
    public ResponseEntity<String> handle(DeleteMenuCommand command) {
 
-      MenuEntryEntity menuEntry = menuEntryRepository.findByCode(command.getCode())
+      MenuEntryEntity menuEntry = menuEntryRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
               .orElseThrow(() -> {
                  logger.warn("Menu entry with code {} not found", command.getCode());
                  return IgrpResponseStatusException.of(

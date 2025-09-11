@@ -49,7 +49,7 @@ public class DeleteMenuCommandHandlerTest {
     void testHandle_whenMenuExists_shouldSoftDeleteAndReturnNoContent() {
         // Arrange
         command = deleteMenuCommand("MENU1");
-        when(menuEntryRepository.findByCode("MENU1")).thenReturn(Optional.of(menuEntry));
+        when(menuEntryRepository.findByCodeAndStatusNot("MENU1", Status.DELETED)).thenReturn(Optional.of(menuEntry));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
 
         // Act
@@ -61,7 +61,7 @@ public class DeleteMenuCommandHandlerTest {
         assertEquals(Status.DELETED, menuEntry.getStatus());
 
         // Verify
-        verify(menuEntryRepository, times(1)).findByCode("MENU1");
+        verify(menuEntryRepository, times(1)).findByCodeAndStatusNot("MENU1", Status.DELETED);
         verify(menuEntryRepository, times(1)).save(menuEntry);
         verifyNoMoreInteractions(menuEntryRepository);
 
@@ -72,7 +72,7 @@ public class DeleteMenuCommandHandlerTest {
     void testHandle_whenMenuNotFound_shouldThrowException() {
         // Arrange
         command = deleteMenuCommand("MENU1");
-        when(menuEntryRepository.findByCode("MENU1")).thenReturn(Optional.empty());
+        when(menuEntryRepository.findByCodeAndStatusNot("MENU1", Status.DELETED)).thenReturn(Optional.empty());
 
         // Act & Assert
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> deleteMenuCommandHandler.handle(command));
@@ -82,7 +82,7 @@ public class DeleteMenuCommandHandlerTest {
         assertNotNull(problem.getProperties());
         assertTrue(problem.getProperties().getOrDefault("details", "").toString().contains("Menu not found with code: MENU1"));
 
-        verify(menuEntryRepository, times(1)).findByCode("MENU1");
+        verify(menuEntryRepository, times(1)).findByCodeAndStatusNot("MENU1", Status.DELETED);
         verifyNoMoreInteractions(menuEntryRepository);
     }
 
@@ -92,7 +92,7 @@ public class DeleteMenuCommandHandlerTest {
         // Arrange
         command = deleteMenuCommand(null);
         //noinspection DataFlowIssue
-        when(menuEntryRepository.findByCode(null)).thenReturn(Optional.empty());
+        when(menuEntryRepository.findByCodeAndStatusNot(null, Status.DELETED)).thenReturn(Optional.empty());
 
         // Act & Assert
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> deleteMenuCommandHandler.handle(command));
@@ -107,7 +107,7 @@ public class DeleteMenuCommandHandlerTest {
         menuEntry.setStatus(Status.DELETED);
         command = deleteMenuCommand("MENU1");
 
-        when(menuEntryRepository.findByCode("MENU1")).thenReturn(Optional.of(menuEntry));
+        when(menuEntryRepository.findByCodeAndStatusNot("MENU1", Status.DELETED)).thenReturn(Optional.of(menuEntry));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
 
         // Act

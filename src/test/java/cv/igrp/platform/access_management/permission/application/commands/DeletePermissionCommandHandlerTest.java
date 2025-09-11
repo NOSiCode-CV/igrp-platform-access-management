@@ -40,7 +40,7 @@ public class DeletePermissionCommandHandlerTest {
         String permissionName = "manage";
         DeletePermissionCommand command = new DeletePermissionCommand(permissionName);
 
-        when(permissionRepository.findByName(permissionName))
+        when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED))
                 .thenReturn(Optional.empty());
 
         //... When
@@ -63,14 +63,14 @@ public class DeletePermissionCommandHandlerTest {
         String permissionDesc = "Permission Name";
         foundPermission.setDescription(permissionDesc);
 
-        when(permissionRepository.findByName(permissionName))
+        when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED))
                 .thenReturn(Optional.of(foundPermission));
 
         //... When
         underTest.handle(command);
 
         //... Then
-        verify(permissionRepository).findByName(permissionName);
+        verify(permissionRepository).findByNameAndStatusNot(permissionName, Status.DELETED);
         assertEquals(Status.DELETED, foundPermission.getStatus());
     }
 
@@ -86,14 +86,14 @@ public class DeletePermissionCommandHandlerTest {
         String permissionDesc = "Permission Name";
         foundPermission.setDescription(permissionDesc);
 
-        when(permissionRepository.findByName(permissionName))
+        when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED))
                 .thenReturn(Optional.of(foundPermission));
 
         //... When
         ResponseEntity<Boolean> response = underTest.handle(command);
 
         //... Then
-        verify(permissionRepository).findByName(permissionName);
+        verify(permissionRepository).findByNameAndStatusNot(permissionName, Status.DELETED);
         assertEquals(Status.DELETED, foundPermission.getStatus());
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
     }
@@ -110,14 +110,14 @@ public class DeletePermissionCommandHandlerTest {
         String permissionDesc = "Permission Name";
         foundPermission.setDescription(permissionDesc);
 
-        when(permissionRepository.findByName(permissionName))
+        when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED))
                 .thenReturn(Optional.of(foundPermission));
 
         //... When
         ResponseEntity<Boolean> response = underTest.handle(command);
 
         //... Then
-        verify(permissionRepository).findByName(permissionName);
+        verify(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED));
         verify(permissionRepository).save(foundPermission);
         assertEquals(Status.DELETED, foundPermission.getStatus());
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());

@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -61,7 +62,7 @@ public class GetDepartmentByCodeQueryHandlerTest {
   @DisplayName("should return 200 OK with DepartmentDTO when department exists")
   void testHandle_whenDepartmentExists_shouldReturnOk() {
     // Arrange
-    when(departmentRepository.findByCode(DEPARTMENT_CODE)).thenReturn(Optional.of(department));
+    when(departmentRepository.findByCodeAndStatusNot(DEPARTMENT_CODE, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
     when(departmentMapper.toDto(department)).thenReturn(departmentDTO);
 
     // Act
@@ -74,7 +75,7 @@ public class GetDepartmentByCodeQueryHandlerTest {
     assertEquals(departmentDTO, response.getBody());
 
     // Verify
-    verify(departmentRepository, times(1)).findByCode(department.getCode());
+    verify(departmentRepository, times(1)).findByCodeAndStatusNot(department.getCode(), DepartmentStatus.DELETED);
     verify(departmentMapper, times(1)).toDto(department);
     verifyNoMoreInteractions(departmentRepository, departmentMapper);
   }
@@ -83,7 +84,7 @@ public class GetDepartmentByCodeQueryHandlerTest {
   @DisplayName("should throw IgrpResponseStatusException when department not found")
   void handle_whenDepartmentNotFound_shouldThrowException() {
     // Arrange
-    when(departmentRepository.findByCode(DEPARTMENT_CODE)).thenReturn(Optional.empty());
+    when(departmentRepository.findByCodeAndStatusNot(DEPARTMENT_CODE, DepartmentStatus.DELETED)).thenReturn(Optional.empty());
 
     // Act
     IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
@@ -96,7 +97,7 @@ public class GetDepartmentByCodeQueryHandlerTest {
     assertEquals("Department not found with code: " + DEPARTMENT_CODE, exception.getBody().getProperties().get("details"));
 
     // Verify
-    verify(departmentRepository, times(1)).findByCode(DEPARTMENT_CODE);
+    verify(departmentRepository, times(1)).findByCodeAndStatusNot(DEPARTMENT_CODE, DepartmentStatus.DELETED);
     verifyNoMoreInteractions(departmentRepository, departmentMapper);
   }
 
@@ -104,7 +105,7 @@ public class GetDepartmentByCodeQueryHandlerTest {
   @DisplayName("should throw NullPointerException when mapper returns null")
   void testHandle_whenMapperReturnsNull_shouldThrowException() {
     // Arrange
-    when(departmentRepository.findByCode(DEPARTMENT_CODE)).thenReturn(Optional.of(department));
+    when(departmentRepository.findByCodeAndStatusNot(DEPARTMENT_CODE, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
     when(departmentMapper.toDto(department)).thenReturn(null);
 
     // Act

@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
 import cv.igrp.platform.access_management.shared.application.constants.ResourceType;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
@@ -71,7 +72,7 @@ public class UpdateResourceCommandHandlerTest {
         // Arrange
         command = updateResourceCommand(dto, "resource1");
 
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
         when(resourceRepository.save(resource)).thenReturn(updatedResource);
         when(resourceMapper.toDto(updatedResource)).thenReturn(dto);
 
@@ -84,7 +85,7 @@ public class UpdateResourceCommandHandlerTest {
         assertEquals(ResourceType.API, Objects.requireNonNull(response.getBody()).getType());
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verify(resourceRepository, times(1)).save(resource);
         verify(resourceMapper,times(1)).toDto(updatedResource);
         verifyNoMoreInteractions(resourceMapper,resourceRepository);
@@ -96,7 +97,7 @@ public class UpdateResourceCommandHandlerTest {
         // Arrange
         command = updateResourceCommand(dto, "resource99");
 
-        when(resourceRepository.findByName("resource99")).thenReturn(Optional.empty());
+        when(resourceRepository.findByNameAndStatusNot("resource99", Status.DELETED)).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class,
@@ -109,7 +110,7 @@ public class UpdateResourceCommandHandlerTest {
         assertTrue(exception.getBody().getProperties().getOrDefault("details", "").toString().contains("Resource not found"));
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource99");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource99", Status.DELETED);
         verifyNoMoreInteractions(resourceRepository);
     }
 

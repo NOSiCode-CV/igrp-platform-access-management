@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
@@ -72,7 +73,7 @@ public class RemoveItemsCommandHandlerTest {
     void testHandle_whenItemListIsNull_shouldSkipRemoval() {
         // Arrange
         command = removeItemsCommand(null, "resource1");
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
         // Act
@@ -83,7 +84,7 @@ public class RemoveItemsCommandHandlerTest {
         assertEquals(resourceDTO, response.getBody());
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verify(resourceRepository, never()).save(any());
         verifyNoMoreInteractions(resourceRepository, resourceMapper);
     }
@@ -93,7 +94,7 @@ public class RemoveItemsCommandHandlerTest {
     void testHandle_whenItemListIsEmpty_shouldSkipRemoval() {
         // Arrange
         command = removeItemsCommand(new ArrayList<>(), "resource1");
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
         // Act
@@ -103,7 +104,7 @@ public class RemoveItemsCommandHandlerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verify(resourceRepository, never()).save(any());
         verifyNoMoreInteractions(resourceRepository, resourceMapper);
     }
@@ -114,7 +115,7 @@ public class RemoveItemsCommandHandlerTest {
         // Arrange
 
         command = removeItemsCommand(List.of(2), "resource1");
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
@@ -128,7 +129,7 @@ public class RemoveItemsCommandHandlerTest {
         assertEquals(1, resource.getItems().getFirst().getId());
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verify(resourceRepository, times(1)).save(resource);
         verify(resourceMapper, times(1)).toDto(resource);
         verifyNoMoreInteractions(resourceRepository, resourceMapper);
@@ -139,7 +140,7 @@ public class RemoveItemsCommandHandlerTest {
     void handle_whenResourceNotFound_shouldThrow() {
         // Arrange
         command = removeItemsCommand( List.of(1), "resource1");
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.empty());
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
@@ -148,7 +149,7 @@ public class RemoveItemsCommandHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verifyNoMoreInteractions(resourceRepository, resourceMapper);
     }
 }

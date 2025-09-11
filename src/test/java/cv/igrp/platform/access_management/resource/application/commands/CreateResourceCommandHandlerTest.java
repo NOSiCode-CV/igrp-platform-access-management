@@ -91,8 +91,8 @@ public class CreateResourceCommandHandlerTest {
         // Arrange
         command = createResourceCommand(resourceDTO);
         when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
-        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
-        when(permissionRepository.findByName("manage")).thenReturn(Optional.of(permission));
+        when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));
+        when(permissionRepository.findByNameAndStatusNot("manage", Status.DELETED)).thenReturn(Optional.of(permission));
         when(resourceMapper.toItemEntity(itemDTO, resource, permission)).thenReturn(resourceItem);
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
@@ -108,8 +108,8 @@ public class CreateResourceCommandHandlerTest {
 
         // Verify
         verify(resourceMapper).toEntity(resourceDTO);
-        verify(applicationRepository,times(1)).findByCode("APP");
-        verify(permissionRepository, times(1)).findByName("manage");
+        verify(applicationRepository,times(1)).findByCodeAndStatusNot("APP", Status.DELETED);
+        verify(permissionRepository, times(1)).findByNameAndStatusNot("manage", Status.DELETED);
         verify(resourceMapper, times(1)).toItemEntity(itemDTO, resource, permission);
         verify(resourceRepository, times(1)).save(resource);
         verify(resourceMapper, times(1)).toDto(resource);
@@ -121,7 +121,7 @@ public class CreateResourceCommandHandlerTest {
         // Arrange
         command = createResourceCommand(resourceDTO);
         when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
-        when(applicationRepository.findByCode("APP")).thenReturn(Optional.empty());
+        when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
@@ -134,7 +134,7 @@ public class CreateResourceCommandHandlerTest {
 
         // Verify
         verify(resourceMapper, times(1)).toEntity(resourceDTO);
-        verify(applicationRepository, times(1)).findByCode("APP");
+        verify(applicationRepository, times(1)).findByCodeAndStatusNot("APP", Status.DELETED);
         verifyNoMoreInteractions(permissionRepository, resourceRepository);
     }
 
@@ -144,8 +144,8 @@ public class CreateResourceCommandHandlerTest {
         // Arrange
         command = createResourceCommand(resourceDTO);
         when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
-        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
-        when(permissionRepository.findByName("manage")).thenReturn(Optional.empty());
+        when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));
+        when(permissionRepository.findByNameAndStatusNot("manage", Status.DELETED)).thenReturn(Optional.empty());
         when(resourceRepository.save(resource)).thenReturn(resource);
 
         // Act
@@ -158,8 +158,8 @@ public class CreateResourceCommandHandlerTest {
 
         // Verify
         verify(resourceMapper, times(1)).toEntity(resourceDTO);
-        verify(applicationRepository, times(1)).findByCode("APP");
-        verify(permissionRepository, times(1)).findByName("manage");
+        verify(applicationRepository, times(1)).findByCodeAndStatusNot("APP", Status.DELETED);
+        verify(permissionRepository, times(1)).findByNameAndStatusNot("manage", Status.DELETED);
         verify(resourceRepository, times(1)).save(resource);
         verifyNoMoreInteractions(permissionRepository, resourceRepository, resourceMapper);
     }
@@ -171,7 +171,7 @@ public class CreateResourceCommandHandlerTest {
         resourceDTO.setItems(Collections.emptyList());
         command = createResourceCommand(resourceDTO);
         when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
-        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
@@ -183,7 +183,7 @@ public class CreateResourceCommandHandlerTest {
         assertEquals(resourceDTO, response.getBody());
 
         // Verify
-        verify(applicationRepository, times(1)).findByCode("APP");
+        verify(applicationRepository, times(1)).findByCodeAndStatusNot("APP", Status.DELETED);
         verify(resourceRepository, times(1)).save(resource);
         verifyNoInteractions(permissionRepository);
     }

@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -65,7 +66,7 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
     @DisplayName("should remove specified fields and persist updated custom field")
     void testHandle_whenValidRequest_shouldRemoveFieldsAndSave() {
         // Arrange
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123))
                 .thenReturn(Optional.of(customField));
 
@@ -78,7 +79,7 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
         assertFalse(customField.getFields().containsKey("field2"));
         assertTrue(customField.getFields().containsKey("field3"));
 
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verify(customFieldRepository, times(1)).findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123);
         verify(customFieldRepository, times(1)).save(customField);
         verifyNoMoreInteractions(customFieldRepository);
@@ -90,7 +91,7 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
     void testHandle_whenRemoveKeysIsNull_shouldSkipRemoval() {
         // Arrange
         command = removeResourceCustomFieldsCommand(null);
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123))
                 .thenReturn(Optional.of(customField));
 
@@ -102,7 +103,7 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
         assertEquals(3, customField.getFields().size());
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verify(customFieldRepository, times(1)).findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123);
         verify(customFieldRepository, times(1)).save(customField);
     }
@@ -112,7 +113,7 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
     void testHandle_whenFieldsMapIsNull_shouldNotFail() {
         // Arrange
         customField.setFields(null);
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123))
                 .thenReturn(Optional.of(customField));
 
@@ -125,7 +126,7 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
         assertFalse(customField.getFields().containsKey("field1"));
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verify(customFieldRepository).findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123);
         verify(customFieldRepository).save(customField);
     }
@@ -134,7 +135,7 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
     @DisplayName("should throw IgrpResponseStatusException if custom field not found")
     void testHandle_whenCustomFieldNotFound_shouldThrowException() {
         // Arrange
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123))
                 .thenReturn(Optional.empty());
 
@@ -147,7 +148,7 @@ public class RemoveResourceCustomFieldsCommandHandlerTest {
         assertEquals("CustomFieldEntity not found", exception.getBody().getTitle());
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verify(customFieldRepository).findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 123);
         verifyNoMoreInteractions(customFieldRepository);
         verifyNoMoreInteractions(resourceRepository);

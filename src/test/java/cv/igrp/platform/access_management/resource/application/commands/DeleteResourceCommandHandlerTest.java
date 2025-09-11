@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -50,7 +51,7 @@ public class DeleteResourceCommandHandlerTest {
         customField.setRecordId(resourceId);
 
         // Mocks
-        when(resourceRepository.findByName(resourceName)).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByNameAndStatusNot(resourceName, Status.DELETED)).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resourceId))
                 .thenReturn(Optional.of(customField));
 
@@ -76,7 +77,7 @@ public class DeleteResourceCommandHandlerTest {
         DeleteResourceCommand command = new DeleteResourceCommand();
         command.setName(resourceName);
 
-        when(resourceRepository.findByName(resourceName)).thenReturn(Optional.empty());
+        when(resourceRepository.findByNameAndStatusNot(resourceName, Status.DELETED)).thenReturn(Optional.empty());
 
         // When / Then
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
@@ -101,7 +102,7 @@ public class DeleteResourceCommandHandlerTest {
         resource.setName(resourceName);
 
         // Mocks
-        when(resourceRepository.findByName(resourceName)).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByNameAndStatusNot(resourceName, Status.DELETED)).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resourceId))
                 .thenReturn(Optional.empty());
 

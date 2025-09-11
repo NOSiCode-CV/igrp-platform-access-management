@@ -74,7 +74,7 @@ public class GetMenuByIdQueryHandlerTest {
     void testHandle_whenMenuExists_shouldReturnOk() {
         // Arrange
         GetMenuByIdQuery query = getMenuByIdQuery("test");
-        when(menuEntryRepository.findByCode("test")).thenReturn(Optional.of(menuEntry));
+        when(menuEntryRepository.findByCodeAndStatusNot("test", Status.DELETED)).thenReturn(Optional.of(menuEntry));
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(dto);
 
         // Act
@@ -88,7 +88,7 @@ public class GetMenuByIdQueryHandlerTest {
         assertEquals(dto, response.getBody());
 
         // Verify
-        verify(menuEntryRepository,times(1)).findByCode("test");
+        verify(menuEntryRepository,times(1)).findByCodeAndStatusNot("test", Status.DELETED);
         verify(menuEntryMapper).toDTO(menuEntry);
         verifyNoMoreInteractions(menuEntryRepository,menuEntryMapper);
     }
@@ -98,7 +98,7 @@ public class GetMenuByIdQueryHandlerTest {
     void testHandle_whenMenuNotFound_shouldThrowException() {
         // Arrange
         GetMenuByIdQuery query = getMenuByIdQuery("unknown");
-        when(menuEntryRepository.findByCode("unknown")).thenReturn(Optional.empty());
+        when(menuEntryRepository.findByCodeAndStatusNot("unknown", Status.DELETED)).thenReturn(Optional.empty());
 
         // Act & Assert
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
@@ -112,7 +112,7 @@ public class GetMenuByIdQueryHandlerTest {
         assertTrue(problem.getProperties().getOrDefault("details", "").toString().contains("Menu not found with code: unknown"));
 
         // Verify
-        verify(menuEntryRepository, times(1)).findByCode("unknown");
+        verify(menuEntryRepository, times(1)).findByCodeAndStatusNot("unknown", Status.DELETED);
         verifyNoMoreInteractions(menuEntryRepository, menuEntryMapper);
     }
 }

@@ -23,7 +23,7 @@ public class RoleDTO {
   
   private Integer id ;
   @NotBlank(message = "The field <name> is required.")
-	@Size(max = 15, message = "The field length <name> cannot be more than 15 characters.")
+	@Size(max = 25, message = "The field length <name> cannot be more than 25 characters.")
 	@Pattern(message = "Invalid value format for field <name>.", regexp = "^[A-Za-z0-9_-]+$")
   
   private String name ;

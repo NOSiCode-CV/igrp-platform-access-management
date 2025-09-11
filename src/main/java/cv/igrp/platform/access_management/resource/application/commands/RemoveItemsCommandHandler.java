@@ -4,6 +4,7 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
@@ -66,7 +67,7 @@ public class RemoveItemsCommandHandler implements CommandHandler<RemoveItemsComm
 
       logger.info("Handling RemoveItemsCommand for resource name: {}", resourceName);
 
-      ResourceEntity resource = resourceRepository.findByName(resourceName)
+      ResourceEntity resource = resourceRepository.findByNameAndStatusNot(resourceName, Status.DELETED)
               .orElseThrow(() -> {
                  logger.warn("Resource not found with name: {}", resourceName);
                  return IgrpResponseStatusException.of(

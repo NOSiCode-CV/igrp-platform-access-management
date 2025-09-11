@@ -71,7 +71,7 @@ public class DeletePermissionCommandHandler implements CommandHandler<DeletePerm
    @Transactional
    public ResponseEntity<Boolean> handle(DeletePermissionCommand command) {
       log.info("Delete permission with name: {}", command.getName());
-      PermissionEntity permission = permissionRepository.findByName(command.getName())
+      PermissionEntity permission = permissionRepository.findByNameAndStatusNot(command.getName(), Status.DELETED)
               .orElseThrow(() -> {
                  log.warn("Permission with name {} not found", command.getName());
                  return IgrpResponseStatusException.of(

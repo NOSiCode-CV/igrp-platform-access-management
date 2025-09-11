@@ -5,6 +5,7 @@ import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
@@ -83,8 +84,8 @@ public class CreateMenuCommandHandlerTest {
     void testHandle_whenValidInput_shouldCreateMenuEntry() {
         // Arrange
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
-        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
-        when(menuEntryRepository.findByCode("MENU1")).thenReturn(Optional.of(parentMenu));
+        when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));
+        when(menuEntryRepository.findByCodeAndStatusNot("MENU1", Status.DELETED)).thenReturn(Optional.of(parentMenu));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(dto);
         when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
@@ -99,8 +100,8 @@ public class CreateMenuCommandHandlerTest {
         assertEquals(dto, response.getBody());
 
         // Verify
-        verify(applicationRepository, times(1)).findByCode("APP");
-        verify(menuEntryRepository, times(1)).findByCode("MENU1");
+        verify(applicationRepository, times(1)).findByCodeAndStatusNot("APP", Status.DELETED);
+        verify(menuEntryRepository, times(1)).findByCodeAndStatusNot("MENU1", Status.DELETED);
         verify(menuEntryRepository, times(1)).save(menuEntry);
         verify(menuEntryMapper, times(1)).toDTO(menuEntry);
         verifyNoMoreInteractions(menuEntryRepository, applicationRepository, menuEntryMapper);
@@ -113,7 +114,7 @@ public class CreateMenuCommandHandlerTest {
         dto.setParentCode(null);
 
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
-        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(dto);
         when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
@@ -127,7 +128,7 @@ public class CreateMenuCommandHandlerTest {
         assertEquals(dto, response.getBody());
 
         // Verify
-        verify(applicationRepository, times(1)).findByCode("APP");
+        verify(applicationRepository, times(1)).findByCodeAndStatusNot("APP", Status.DELETED);
         verify(menuEntryRepository, never()).findById(anyInt());
         verify(menuEntryRepository,times(1)).save(menuEntry);
         verify(menuEntryMapper, times(1)).toDTO(menuEntry);
@@ -139,7 +140,7 @@ public class CreateMenuCommandHandlerTest {
     @DisplayName("should throw EntityNotFoundException when application ID is invalid")
     void testHandle_whenApplicationNotFound_shouldThrowException() {
         // Arrange
-        when(applicationRepository.findByCode("APP")).thenReturn(Optional.empty());
+        when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.empty());
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
         when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
 
@@ -155,7 +156,7 @@ public class CreateMenuCommandHandlerTest {
     void handle_whenResourceNotFound_shouldThrowException() {
 
         // Arrange
-        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
         when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
 
@@ -170,9 +171,9 @@ public class CreateMenuCommandHandlerTest {
     @DisplayName("should throw EntityNotFoundException when parent menu ID is invalid")
     void handle_whenParentMenuNotFound_shouldThrowException() {
         // Arrange
-        when(applicationRepository.findByCode("APP")).thenReturn(Optional.of(application));
+        when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
-        when(menuEntryRepository.findByCode("MENU1")).thenReturn(Optional.empty());
+        when(menuEntryRepository.findByCodeAndStatusNot("MENU1", Status.DELETED)).thenReturn(Optional.empty());
         when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
 
         // Act

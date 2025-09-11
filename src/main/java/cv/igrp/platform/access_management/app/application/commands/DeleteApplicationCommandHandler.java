@@ -59,7 +59,7 @@ public class DeleteApplicationCommandHandler implements CommandHandler<DeleteApp
     */
    @IgrpCommandHandler
    public ResponseEntity<String> handle(DeleteApplicationCommand command) {
-      ApplicationEntity application = applicationRepository.findByCode(command.getCode())
+      ApplicationEntity application = applicationRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
               .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found with code: " + command.getCode()));
 
       application.setStatus(Status.DELETED);
