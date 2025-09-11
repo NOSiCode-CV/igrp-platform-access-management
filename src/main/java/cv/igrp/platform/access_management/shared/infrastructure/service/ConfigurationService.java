@@ -85,6 +85,9 @@ public class ConfigurationService {
     // =====================================================
 
     Long createDefaultDepartment() throws IAMException {
+
+        adapter.createDepartment(IGRP_DEPARTMENT, null);
+
         String sql = """
                     INSERT INTO t_department
                     (name, code, description, status,
@@ -96,9 +99,6 @@ public class ConfigurationService {
                 Long.class,
                 "iGRP", IGRP_DEPARTMENT, "iGRP Department", SYSTEM_USER, SYSTEM_USER);
         LOGGER.info("[Startup Config] Default Department created");
-        if (query != null) {
-            adapter.createDepartment(IGRP_DEPARTMENT, null);
-        }
         return query;
     }
 
@@ -118,6 +118,9 @@ public class ConfigurationService {
     }
 
     Long createDefaultPermission(Long appId, Long deptId) throws IAMException {
+
+        adapter.createPermission("manage_access", "iGRP Manage Access Permission");
+
         String sql = """
                     INSERT INTO t_permission
                     (name, description, status, application, department,
@@ -125,19 +128,19 @@ public class ConfigurationService {
                     VALUES (?, ?, 'ACTIVE', ?, ?, ?, now(), ?, now())
                     RETURNING id
                 """;
-        LOGGER.info("[Startup Config] Default Permission created");
         var query = jdbcTemplate.queryForObject(sql,
                 Long.class,
                 "manage_access", "iGRP Manage Access Permission", appId, deptId,
                 SYSTEM_USER, SYSTEM_USER);
-        if (query != null) {
-            adapter.createPermission("manage_access", "iGRP Manage Access Permission");
-        }
+        LOGGER.info("[Startup Config] Default Permission created");
         return query;
     }
 
     Long createDefaultRole(Long deptId, Long permId) throws IAMException {
         // Insert role
+
+        adapter.createRole(IGRP_DEPARTMENT, "superadmin");
+
         String sqlRole = """
                     INSERT INTO t_role
                     (name, description, status, department,
@@ -150,9 +153,10 @@ public class ConfigurationService {
                 "superadmin", "iGRP Superadmin", deptId,
                 SYSTEM_USER, SYSTEM_USER);
 
-        adapter.createRole(IGRP_DEPARTMENT, "superadmin");
-
         // Insert role-permission relation
+
+        adapter.assignPermissionsToRole(Set.of("manage_access"), "superadmin");
+
         String sqlRolePerm = """
                     INSERT INTO t_role_permission
                     (role_id, permission)
@@ -162,9 +166,6 @@ public class ConfigurationService {
                     )
                 """;
         jdbcTemplate.update(sqlRolePerm, roleId, permId, roleId, permId);
-
-        adapter.assignPermissionsToRole(Set.of("manage_access"), "superadmin");
-
         LOGGER.info("[Startup Config] Default Role created");
 
         return roleId;
@@ -186,6 +187,9 @@ public class ConfigurationService {
     }
 
     void assignRoleToSuperAdminUser(Long roleId, Long userId) throws IAMException {
+
+        adapter.assignRoleToUser(IGRP_DEPARTMENT, "superadmin", SUPER_ADMIN_USERNAME);
+
         String sql = """
                     INSERT INTO t_role_users
                     (users_id, roles_id)
@@ -195,8 +199,6 @@ public class ConfigurationService {
                     )
                 """;
         jdbcTemplate.update(sql, userId, roleId, userId, roleId);
-
-        adapter.assignRoleToUser(IGRP_DEPARTMENT, "superadmin", SUPER_ADMIN_USERNAME);
 
         LOGGER.info("[Startup Config] Superadmin user linked to role");
     }
