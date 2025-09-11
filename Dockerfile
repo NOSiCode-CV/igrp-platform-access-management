@@ -1,11 +1,11 @@
 FROM cgr.dev/chainguard/maven:latest-dev AS build
 WORKDIR /app
-COPY pom.xml ./
-RUN --mount=type=cache,target=/root/.m2 mvn -B -q dependency:go-offline
-COPY src ./src
-RUN --mount=type=cache,target=/root/.m2 mvn -B -DskipTests clean package \
- && ls -lh target
 
+COPY pom.xml ./
+RUN mvn -B -q dependency:go-offline
+
+COPY src ./src
+RUN mvn -B -DskipTests clean package && ls -lh target
 
 FROM cgr.dev/chainguard/jre:latest
 WORKDIR /app
