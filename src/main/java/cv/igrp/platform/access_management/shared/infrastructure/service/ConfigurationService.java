@@ -120,7 +120,7 @@ public class ConfigurationService {
     Long createDefaultPermission(Long appId, Long deptId) throws IAMException {
         String sql = """
                     INSERT INTO t_permission
-                    (name, description, status, application, department
+                    (name, description, status, application, department,
                      created_by, created_date, last_modified_by, last_modified_date)
                     VALUES (?, ?, 'ACTIVE', ?, ?, ?, now(), ?, now())
                     RETURNING id
