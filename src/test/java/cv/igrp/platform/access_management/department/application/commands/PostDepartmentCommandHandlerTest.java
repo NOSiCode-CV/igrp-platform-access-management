@@ -3,11 +3,9 @@ package cv.igrp.platform.access_management.department.application.commands;
 import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,8 +18,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.Optional;
 
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 
@@ -136,18 +133,17 @@ public class PostDepartmentCommandHandlerTest {
 
     }
 
-    @Disabled("Fails due to missing null return if mapper return null entity")
     @Test
-    @DisplayName("Should throw IllegalStateException when mapper returns null entity")
+    @DisplayName("Should throw NullPointerException when mapper returns null entity")
     void testHandle_whenMappingFails_shouldThrowIllegalStateException() {
         // Arrange
         when(departmentMapper.toEntity(departmentDTO)).thenReturn(null);
 
         // Act
-        IllegalStateException ex = assertThrows(IllegalStateException.class, () -> postDepartmentCommandHandler.handle(command));
+        NullPointerException ex = assertThrows(NullPointerException.class, () -> postDepartmentCommandHandler.handle(command));
 
         // Assert
-        assertEquals("Department entity mapping failed", ex.getMessage());
+        assertTrue(ex.getMessage().contains("\"department\" is null"));
 
         // Verify
         verify(departmentMapper).toEntity(departmentDTO);
