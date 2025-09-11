@@ -117,7 +117,7 @@ public class DeletePermissionCommandHandlerTest {
         ResponseEntity<Boolean> response = underTest.handle(command);
 
         //... Then
-        verify(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED));
+        verify(permissionRepository).findByNameAndStatusNot(permissionName, Status.DELETED);
         verify(permissionRepository).save(foundPermission);
         assertEquals(Status.DELETED, foundPermission.getStatus());
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());

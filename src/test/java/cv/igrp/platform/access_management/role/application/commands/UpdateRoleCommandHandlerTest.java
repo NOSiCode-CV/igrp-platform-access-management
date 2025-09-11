@@ -23,8 +23,7 @@ import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.hibernate.validator.internal.util.Contracts.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -113,10 +112,11 @@ public class UpdateRoleCommandHandlerTest {
 
     @Test
     void itShouldThrowNotFoundException_WhenProvidedParentRoleDoesNotExist() {
-        //... Given
+        // Given
         String roleName = "app";
         String existentDepartmentCode = "app";
-        String nonExistentParentRoleName = "app";
+        String nonExistentParentRoleName = "parent-does-not-exist";
+
         RoleDTO roleData = new RoleDTO();
         roleData.setName(roleName);
         roleData.setParentName(nonExistentParentRoleName);
@@ -127,17 +127,25 @@ public class UpdateRoleCommandHandlerTest {
         existingRole.setName(roleName);
         existingRole.setStatus(Status.ACTIVE);
 
+        // Stub main role exists
         when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
                 .thenReturn(Optional.of(existingRole));
-        DepartmentEntity department = new DepartmentEntity();
-        department.setCode(existentDepartmentCode);
-        department.setStatus(DepartmentStatus.ACTIVE);
 
-        //... When
-        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
-                () -> underTest.handle(command));
-        //... Then
+        // Stub parent role does NOT exist
+        when(roleRepository.findByNameAndStatusNot(nonExistentParentRoleName, Status.DELETED))
+                .thenReturn(Optional.empty());
+
+        // When
+        IgrpResponseStatusException ex = assertThrows(
+                IgrpResponseStatusException.class,
+                () -> underTest.handle(command)
+        );
+
+        // Then
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
+        System.out.println(ex.getBody());
+        Assertions.assertNotNull(ex.getBody().getProperties());
+        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains(("Parent Role with name: " + nonExistentParentRoleName)));
         verify(roleRepository, never()).save(any(RoleEntity.class));
     }
 
