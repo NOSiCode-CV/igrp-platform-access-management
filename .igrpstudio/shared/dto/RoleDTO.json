@@ -25,7 +25,7 @@
       "before": false,
       "after": false,
       "positive": false,
-      "maxLength": 15,
+      "maxLength": 25,
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false,

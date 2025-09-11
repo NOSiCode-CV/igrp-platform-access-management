@@ -4,6 +4,7 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
 import cv.igrp.platform.access_management.permission.domain.service.PermissionValidator;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
@@ -83,7 +84,7 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
    public ResponseEntity<PermissionDTO> handle(CreatePermissionCommand command) {
       log.info("Create permission with name: {}", command.getPermissiondto().getName());
       PermissionDTO request = command.getPermissiondto();
-      DepartmentEntity foundDepartment = departmentRepository.findByCode(command.getPermissiondto().getDepartmentCode())
+      DepartmentEntity foundDepartment = departmentRepository.findByCodeAndStatusNot(command.getPermissiondto().getDepartmentCode(), DepartmentStatus.DELETED)
               .orElseThrow(() -> {
                  log.warn("Department with code {} not found.", command.getPermissiondto().getDepartmentCode());
                  return IgrpResponseStatusException.of(

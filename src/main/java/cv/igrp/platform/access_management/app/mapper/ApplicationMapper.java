@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.app.mapper;
 
 import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
@@ -90,7 +91,7 @@ public class ApplicationMapper {
         entity.setPicture(dto.getPicture());
         entity.setUrl(dto.getUrl() != null ? dto.getUrl().toString() : null);
         entity.setSlug(dto.getSlug());
-        entity.setDepartmentId(departmentEntityRepository.findByCode(dto.getDepartmentCode()).orElseThrow(
+        entity.setDepartmentId(departmentEntityRepository.findByCodeAndStatusNot(dto.getDepartmentCode(), DepartmentStatus.DELETED).orElseThrow(
                 () -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Department not found", "Department not found for code: " + dto.getDepartmentCode())));
 
         return entity;

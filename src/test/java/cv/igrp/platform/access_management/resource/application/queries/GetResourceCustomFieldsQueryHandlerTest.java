@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.resource.application.queries;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -51,7 +52,7 @@ class GetResourceCustomFieldsQueryHandlerTest {
         customField.setRecordId(resourceId);
         customField.setFields(mockFields);
 
-        when(resourceRepository.findByName(resourceName))
+        when(resourceRepository.findByNameAndStatusNot(resourceName, Status.DELETED))
                 .thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId("t_resource", resourceId))
                 .thenReturn(Optional.of(customField));
@@ -76,7 +77,7 @@ class GetResourceCustomFieldsQueryHandlerTest {
         resource.setId(resourceId);
         resource.setName(resourceName);
 
-        when(resourceRepository.findByName(resourceName))
+        when(resourceRepository.findByNameAndStatusNot(resourceName, Status.DELETED))
                 .thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId("t_resource", resourceId))
                 .thenReturn(Optional.empty());

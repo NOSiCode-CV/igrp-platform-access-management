@@ -75,7 +75,7 @@ public class UpdateApplicationCommandHandlerTest {
         existingApp.setUrl(applicationPreviousUrl);
         existingApp.setSlug(applicationPreviousSlug);
 
-        when(applicationRepository.findByCode(applicationCode)).thenReturn(Optional.of(existingApp));
+        when(applicationRepository.findByCodeAndStatusNot(applicationCode, Status.DELETED)).thenReturn(Optional.of(existingApp));
 
         ApplicationDTO dto = new ApplicationDTO();
         dto.setId(applicationId);

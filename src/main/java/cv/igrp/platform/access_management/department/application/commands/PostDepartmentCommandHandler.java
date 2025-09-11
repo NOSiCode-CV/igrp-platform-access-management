@@ -5,6 +5,8 @@ import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
@@ -86,7 +88,7 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
       DepartmentEntity department = departmentMapper.toEntity(departmentDto);
 
       if(departmentDto.getParent_code() != null && !departmentDto.getParent_code().isBlank()) {
-         DepartmentEntity parent = departmentRepository.findByCode(command.getDepartmentdto().getParent_code())
+         DepartmentEntity parent = departmentRepository.findByCodeAndStatusNot(command.getDepartmentdto().getParent_code(), DepartmentStatus.DELETED)
                  .orElseThrow(() -> {
                     logger.warn("Invalid parent Code: {}", departmentDto.getParent_code());
                     return IgrpResponseStatusException.of(

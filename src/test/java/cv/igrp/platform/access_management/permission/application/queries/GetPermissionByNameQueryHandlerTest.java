@@ -40,7 +40,7 @@ public class GetPermissionByNameQueryHandlerTest {
     String permissionName = "READ_USERS";
     GetPermissionByNameQuery query = new GetPermissionByNameQuery(permissionName);
 
-    when(permissionRepository.findByName(permissionName))
+    when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED))
             .thenReturn(Optional.empty());
 
     //... When
@@ -68,7 +68,7 @@ public class GetPermissionByNameQueryHandlerTest {
     expectedDTO.setStatus(Status.ACTIVE);
 
     // Stubbing
-    when(permissionRepository.findByName(permissionName))
+    when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED))
             .thenReturn(Optional.of(permission));
     when(permissionMapper.mapToDTO(permission)).thenReturn(expectedDTO);
 
@@ -80,7 +80,7 @@ public class GetPermissionByNameQueryHandlerTest {
     assertNotNull(response.getBody());
     assertEquals(expectedDTO, response.getBody());
 
-    verify(permissionRepository).findByName(permissionName);
+    verify(permissionRepository).findByNameAndStatusNot(permissionName, Status.DELETED);
     verify(permissionMapper).mapToDTO(permission);
   }
 

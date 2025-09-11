@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.permission.application.commands;
 
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -91,7 +92,7 @@ public class UpdatePermissionCommandHandlerTest {
 
         when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED))
                 .thenReturn(Optional.of(foundPermission));
-        when(departmentRepository.findByCode(departmentCode))
+        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED))
                 .thenReturn(Optional.empty());
 
         // When
@@ -141,7 +142,7 @@ public class UpdatePermissionCommandHandlerTest {
         PermissionDTO mappedDTO = new PermissionDTO();
 
         when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED)).thenReturn(Optional.of(existingPermission));
-        when(departmentRepository.findByCode(newDepartmentCode)).thenReturn(Optional.of(newDept));
+        when(departmentRepository.findByCodeAndStatusNot(newDepartmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(newDept));
         when(permissionRepository.save(any(PermissionEntity.class))).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(mappedDTO);
 
@@ -189,7 +190,7 @@ public class UpdatePermissionCommandHandlerTest {
 
         // When
         when(permissionRepository.findByNameAndStatusNot(permissionName, Status.DELETED)).thenReturn(Optional.of(existingPermission));
-        when(departmentRepository.findByCode(departmentCode)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
         when(permissionRepository.save(any(PermissionEntity.class))).thenReturn(updatedPermission);
         when(permissionMapper.mapToDTO(updatedPermission)).thenReturn(mappedDTO);
 

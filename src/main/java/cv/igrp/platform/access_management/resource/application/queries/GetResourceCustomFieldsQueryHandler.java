@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.resource.application.queries;
 
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -65,7 +66,7 @@ public class GetResourceCustomFieldsQueryHandler implements QueryHandler<GetReso
 
     logger.info("Fetching custom fields for resource name: {}", resourceName);
 
-    ResourceEntity resource = resourceRepository.findByName(resourceName)
+    ResourceEntity resource = resourceRepository.findByNameAndStatusNot(resourceName, Status.DELETED)
             .orElseThrow(() -> {
               logger.warn("Resource not found with name: {}", resourceName);
               return IgrpResponseStatusException.of(

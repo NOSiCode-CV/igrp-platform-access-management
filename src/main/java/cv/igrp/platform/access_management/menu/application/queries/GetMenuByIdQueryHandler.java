@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.menu.application.queries;
 
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
@@ -55,7 +56,7 @@ public class GetMenuByIdQueryHandler implements QueryHandler<GetMenuByIdQuery, R
    */
   @IgrpQueryHandler
   public ResponseEntity<MenuEntryDTO> handle(GetMenuByIdQuery query) {
-    MenuEntryEntity menu = menuEntryRepository.findByCode(query.getCode())
+    MenuEntryEntity menu = menuEntryRepository.findByCodeAndStatusNot(query.getCode(), Status.DELETED)
             .orElseThrow(() -> {
               logger.warn("Menu not found with code: {}", query.getCode());
               return IgrpResponseStatusException.of(

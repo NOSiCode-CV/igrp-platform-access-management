@@ -44,8 +44,6 @@ public interface ApplicationEntityRepository extends
 
     boolean existsByType(AppType type);
 
-    Optional<ApplicationEntity> findByCode(String code);
-
     Optional<ApplicationEntity> findByCodeAndStatusNot(String code, Status status);
 
     List<ApplicationEntity> findByIdInAndStatusNot(Collection<Integer> ids, Status status);

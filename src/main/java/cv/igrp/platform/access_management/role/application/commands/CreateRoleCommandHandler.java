@@ -6,6 +6,7 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
@@ -80,7 +81,7 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
       log.info("Create Role with name: {}.", command.getRoledto().getName());
       RoleDTO request = command.getRoledto();
       RoleEntity parentRole = null;
-      DepartmentEntity department = departmentRepository.findByCode(command.getRoledto().getDepartmentCode())
+      DepartmentEntity department = departmentRepository.findByCodeAndStatusNot(command.getRoledto().getDepartmentCode(), DepartmentStatus.DELETED)
               .orElseThrow(() -> {
                  log.warn("Department with id: {} not found.", command.getRoledto().getDepartmentCode());
                  return IgrpResponseStatusException.of(

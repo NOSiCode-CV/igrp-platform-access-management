@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.resource.application.commands;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -73,8 +74,8 @@ class AddItemsCommandHandlerTest {
         // Arrange
         resource.setItems(new ArrayList<>());
         resourceDTO.setItems(List.of(itemDTO));
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
-        when(permissionRepository.findByName("permission1")).thenReturn(Optional.of(permission));
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
+        when(permissionRepository.findByNameAndStatusNot("permission1", Status.DELETED)).thenReturn(Optional.of(permission));
         when(resourceMapper.toItemEntity(itemDTO, resource, permission)).thenReturn(item);
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
@@ -91,7 +92,7 @@ class AddItemsCommandHandlerTest {
         assertEquals(itemDTO, response.getBody().getItems().getFirst());
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verify(resourceRepository, times(1)).save(resource);
         verify(resourceMapper,times(1)).toDto(resource);
         verify(resourceMapper, times(1)).toItemEntity(itemDTO, resource, permission);
@@ -103,8 +104,8 @@ class AddItemsCommandHandlerTest {
     void testHandle_whenResourceItemsListIsNull_shouldInitializeList() {
         // Arrange
         resource.setItems(null);
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
-        when(permissionRepository.findByName("permission1")).thenReturn(Optional.of(permission));
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
+        when(permissionRepository.findByNameAndStatusNot("permission1", Status.DELETED)).thenReturn(Optional.of(permission));
         when(resourceMapper.toItemEntity(itemDTO, resource, permission)).thenReturn(item);
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
@@ -119,7 +120,7 @@ class AddItemsCommandHandlerTest {
         assertNotNull(resource.getItems());
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verify(resourceRepository, times(1)).save(resource);
         verifyNoMoreInteractions(permissionRepository, resourceMapper, resourceRepository);
     }
@@ -128,7 +129,7 @@ class AddItemsCommandHandlerTest {
     @DisplayName("should throw IgrpResponseStatusException when resource not found")
     void testHandle_shouldThrow_whenResourceNotFound() {
         // Arrange
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.empty());
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.empty());
 
         // Act
         AddItemsCommand command = new AddItemsCommand(List.of(itemDTO), "resource1");
@@ -137,7 +138,7 @@ class AddItemsCommandHandlerTest {
         assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verifyNoInteractions(permissionRepository, resourceMapper);
     }
 
@@ -145,8 +146,8 @@ class AddItemsCommandHandlerTest {
     @DisplayName("should throw IgrpResponseStatusException when permission not found")
     void testHandle_shouldThrow_whenPermissionNotFound() {
         // Arrange
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
-        when(permissionRepository.findByName("permission1")).thenReturn(Optional.empty());
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
+        when(permissionRepository.findByNameAndStatusNot("permission1", Status.DELETED)).thenReturn(Optional.empty());
 
         // Act
         AddItemsCommand command = new AddItemsCommand(List.of(itemDTO), "resource1");
@@ -155,7 +156,7 @@ class AddItemsCommandHandlerTest {
         assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
 
         // Verify
-        verify(permissionRepository).findByName("permission1");
+        verify(permissionRepository).findByNameAndStatusNot("permission1", Status.DELETED);
         verifyNoMoreInteractions(permissionRepository);
     }
 
@@ -163,7 +164,7 @@ class AddItemsCommandHandlerTest {
     @DisplayName("should succeed with empty item list")
     void testHandle_shouldWorkWithEmptyItemList() {
         // Arrange
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 

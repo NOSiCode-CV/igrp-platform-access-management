@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -15,6 +16,6 @@ public interface ResourceEntityRepository extends
     RevisionRepository<ResourceEntity, Integer, Integer>
 {
 
-    Optional<ResourceEntity> findByName(String name);
+    Optional<ResourceEntity> findByNameAndStatusNot(String name, Status status);
 
 }

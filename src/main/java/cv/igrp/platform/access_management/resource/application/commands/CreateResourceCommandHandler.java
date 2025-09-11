@@ -91,7 +91,7 @@ public class CreateResourceCommandHandler implements CommandHandler<CreateResour
 
       ResourceEntity resource = resourceMapper.toEntity(resourceDTO);
 
-      ApplicationEntity application = applicationRepository.findByCode(resourceDTO.getApplicationCode())
+      ApplicationEntity application = applicationRepository.findByCodeAndStatusNot(resourceDTO.getApplicationCode(), Status.DELETED)
               .orElseThrow(() -> {
                  logger.warn("Application not found with code: {}", resourceDTO.getApplicationCode());
                  return IgrpResponseStatusException.of(
@@ -108,7 +108,7 @@ public class CreateResourceCommandHandler implements CommandHandler<CreateResour
        if (resourceDTO.getItems() != null && !resourceDTO.getItems().isEmpty()) {
            logger.info("Adding {} permission item(s) to resource.", resourceDTO.getItems().size());
            var items = resourceDTO.getItems().stream().map(itemDTO -> {
-                       PermissionEntity permission = permissionRepository.findByName(itemDTO.getPermissionName())
+                       PermissionEntity permission = permissionRepository.findByNameAndStatusNot(itemDTO.getPermissionName(), Status.DELETED)
                                .orElseThrow(() -> {
                                    logger.warn("Permission not found with name: {}", itemDTO.getPermissionName());
                                    return IgrpResponseStatusException.of(

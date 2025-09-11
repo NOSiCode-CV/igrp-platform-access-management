@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -61,7 +62,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
         Map<String, Object> fieldsToAdd = Map.of("fieldTest", "valueTest");
         command = addResourceCustomFieldsCommand(fieldsToAdd, "resource1");
 
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 1)).thenReturn(Optional.of(customField));
         when(customFieldRepository.save(any(CustomFieldEntity.class))).thenReturn(customField);
 
@@ -73,7 +74,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
         assertTrue(customField.getFields().containsKey("fieldTest"));
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verify(customFieldRepository, times(1)).findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 1);
         verify(customFieldRepository, times(1)).save(customField);
     }
@@ -86,7 +87,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
         command = addResourceCustomFieldsCommand(fieldsToAdd, "resource1");
         customField.setFields(fieldsToAdd);
 
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.of(resource));
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), 1)).thenReturn(Optional.empty());
         when(customFieldRepository.save(any(CustomFieldEntity.class))).thenReturn(customField);
 
@@ -98,7 +99,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
         assertTrue(customField.getFields().containsKey("fieldTest2"));
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verify(customFieldRepository).save(any(CustomFieldEntity.class));
     }
 
@@ -109,7 +110,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
         Map<String, Object> fields = Map.of("keyTest3", "valueTest3");
         command = addResourceCustomFieldsCommand(fields, "resource1");
 
-        when(resourceRepository.findByName("resource1")).thenReturn(Optional.empty());
+        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
@@ -118,7 +119,7 @@ public class AddResourceCustomFieldsCommandHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
 
         // Verify
-        verify(resourceRepository, times(1)).findByName("resource1");
+        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verifyNoInteractions(customFieldRepository);
     }
 }

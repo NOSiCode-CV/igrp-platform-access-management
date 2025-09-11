@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.resource.application.commands;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -86,7 +87,7 @@ public class AddResourceCustomFieldsCommandHandler implements CommandHandler<Add
 
       logger.info("Handling AddResourceCustomFieldsCommand for resource name: {}", resourceName);
 
-      ResourceEntity resource = resourceRepository.findByName(command.getName())
+      ResourceEntity resource = resourceRepository.findByNameAndStatusNot(command.getName(), Status.DELETED)
               .orElseThrow(() -> {
                  logger.warn("Resource not found with name: {}", resourceName);
                  return IgrpResponseStatusException.of(

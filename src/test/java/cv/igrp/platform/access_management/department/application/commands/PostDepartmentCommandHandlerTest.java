@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.department.application.commands;
 
 import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
@@ -112,7 +113,7 @@ public class PostDepartmentCommandHandlerTest {
         command = postDepartmentCommand(departmentDTO);
 
         when(departmentMapper.toEntity(departmentDTO)).thenReturn(department);
-        when(departmentRepository.findByCode("DEPT_RH")).thenReturn(Optional.of(parentDepartment));
+        when(departmentRepository.findByCodeAndStatusNot("DEPT_RH", DepartmentStatus.DELETED)).thenReturn(Optional.of(parentDepartment));
         when(departmentRepository.save(any(DepartmentEntity.class))).thenReturn(savedDepartment);
         when(departmentMapper.toDto(savedDepartment)).thenReturn(resultDTO);
 
@@ -126,7 +127,7 @@ public class PostDepartmentCommandHandlerTest {
 
         // Verify
         verify(departmentMapper).toEntity(departmentDTO);
-        verify(departmentRepository).findByCode("DEPT_RH");
+        verify(departmentRepository).findByCodeAndStatusNot("DEPT_RH", DepartmentStatus.DELETED);
         verify(departmentRepository).save(department);
         verify(departmentMapper).toDto(savedDepartment);
         verifyNoMoreInteractions(departmentMapper, departmentRepository);

@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.app.application.commands;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
@@ -62,7 +63,7 @@ public class RemoveApplicationCustomFieldsCommandHandler implements CommandHandl
     */
    @IgrpCommandHandler
    public ResponseEntity<String> handle(RemoveApplicationCustomFieldsCommand command) {
-      ApplicationEntity application = applicationRepository.findByCode(command.getCode())
+      ApplicationEntity application = applicationRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
               .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found with code: " + command.getCode()));
       CustomFieldEntity customField = customFieldRepository
               .findByTableNameAndRecordId(CustomFieldTableName.APPLICATION.getName(), application.getId())

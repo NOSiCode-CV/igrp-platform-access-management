@@ -5,6 +5,7 @@ import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.menu.application.domain.service.MenuEntryValidator;
 import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
@@ -110,7 +111,7 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
       MenuEntryEntity menuEntry = menuEntryMapper.toEntity(menuEntryDTO);
 
       if (menuEntryDTO.getApplicationCode() != null) {
-         menuEntry.setApplicationId(applicationRepository.findByCode(menuEntryDTO.getApplicationCode())
+         menuEntry.setApplicationId(applicationRepository.findByCodeAndStatusNot(menuEntryDTO.getApplicationCode(), Status.DELETED)
                  .orElseThrow(() -> {
                     logger.warn("Application not found with code: {}", menuEntryDTO.getApplicationCode());
                     return IgrpResponseStatusException.of(
@@ -120,7 +121,7 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
       }
 
       if (menuEntryDTO.getParentCode() != null) {
-         menuEntry.setParentId(menuEntryRepository.findByCode(menuEntryDTO.getParentCode())
+         menuEntry.setParentId(menuEntryRepository.findByCodeAndStatusNot(menuEntryDTO.getParentCode(), Status.DELETED)
                  .orElseThrow(() -> {
                     logger.warn("Parent menu not found with code: {}", menuEntryDTO.getParentCode());
                     return IgrpResponseStatusException.of(

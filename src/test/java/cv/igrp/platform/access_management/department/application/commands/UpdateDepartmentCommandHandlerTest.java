@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -78,7 +79,7 @@ public class UpdateDepartmentCommandHandlerTest {
     @DisplayName("should update department and return 200 OK when department exists")
     void testHandle_whenDepartmentExists_shouldUpdateAndReturnOk() {
         // Arrange
-        when(departmentRepository.findByCode(DEPARTMENT_CODE)).thenReturn(Optional.of(existingDepartment));
+        when(departmentRepository.findByCodeAndStatusNot(DEPARTMENT_CODE, DepartmentStatus.DELETED)).thenReturn(Optional.of(existingDepartment));
         doNothing().when(departmentMapper).updateEntityFromDto(departmentDTO, existingDepartment);
         when(departmentRepository.save(existingDepartment)).thenReturn(updatedDepartment);
         when(departmentMapper.toDto(updatedDepartment)).thenReturn(updatedDepartmentDTO);
@@ -92,7 +93,7 @@ public class UpdateDepartmentCommandHandlerTest {
         assertEquals(updatedDepartmentDTO, response.getBody());
 
         // Verify
-        verify(departmentRepository, times(1)).findByCode(DEPARTMENT_CODE);
+        verify(departmentRepository, times(1)).findByCodeAndStatusNot(DEPARTMENT_CODE, DepartmentStatus.DELETED);
         verify(departmentMapper, times(1)).updateEntityFromDto(departmentDTO, existingDepartment);
         verify(departmentRepository, times(1)).save(existingDepartment);
         verify(departmentMapper, times(1)).toDto(updatedDepartment);
@@ -104,7 +105,7 @@ public class UpdateDepartmentCommandHandlerTest {
     void testHandle_whenDepartmentDoesNotExist_shouldThrowEntityNotFoundException(){
         // Arrange
         command = updateCommand(departmentDTO);
-        when(departmentRepository.findByCode(DEPARTMENT_CODE)).thenReturn(Optional.empty());
+        when(departmentRepository.findByCodeAndStatusNot(DEPARTMENT_CODE, DepartmentStatus.DELETED)).thenReturn(Optional.empty());
 
         // Act
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
@@ -116,7 +117,7 @@ public class UpdateDepartmentCommandHandlerTest {
         assertEquals("Department not found with code: " + command.getCode(), exception.getBody().getProperties().get("details"));
 
         // Verify
-        verify(departmentRepository, times(1)).findByCode(DEPARTMENT_CODE);
+        verify(departmentRepository, times(1)).findByCodeAndStatusNot(DEPARTMENT_CODE, DepartmentStatus.DELETED);
         verifyNoMoreInteractions(departmentRepository, departmentMapper);
 
     }
@@ -128,7 +129,7 @@ public class UpdateDepartmentCommandHandlerTest {
         departmentDTO.setDescription(null);
         command = updateCommand(departmentDTO);
 
-        when(departmentRepository.findByCode(DEPARTMENT_CODE)).thenReturn(Optional.of(existingDepartment));
+        when(departmentRepository.findByCodeAndStatusNot(DEPARTMENT_CODE, DepartmentStatus.DELETED)).thenReturn(Optional.of(existingDepartment));
         doNothing().when(departmentMapper).updateEntityFromDto(departmentDTO, existingDepartment);
         when(departmentRepository.save(existingDepartment)).thenReturn(updatedDepartment);
         when(departmentMapper.toDto(updatedDepartment)).thenReturn(updatedDepartmentDTO);

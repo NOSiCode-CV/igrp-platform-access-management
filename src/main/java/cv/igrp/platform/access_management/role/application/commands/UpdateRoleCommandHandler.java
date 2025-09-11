@@ -115,7 +115,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
             if (parentName.isBlank()) {
                 parentRole = null;
             } else {
-                parentRole = roleRepository.findByName(parentName)
+                parentRole = roleRepository.findByNameAndStatusNot(parentName, Status.DELETED)
                         .orElseThrow(() -> {
                             log.warn("Parent Role with name: {} not found.", newData.getParentName());
                             return IgrpResponseStatusException.of(

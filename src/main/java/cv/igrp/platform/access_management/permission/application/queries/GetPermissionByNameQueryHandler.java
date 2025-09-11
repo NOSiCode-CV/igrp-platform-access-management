@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.permission.application.queries;
 
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
@@ -34,7 +35,7 @@ public class GetPermissionByNameQueryHandler implements QueryHandler<GetPermissi
     String permissioname = query.getName();
     LOGGER.info("Fetching role with name={}", permissioname);
 
-     PermissionEntity permission = permissionEntityRepository.findByName(permissioname)
+     PermissionEntity permission = permissionEntityRepository.findByNameAndStatusNot(permissioname, Status.DELETED)
              .orElseThrow(() -> {
                LOGGER.warn("permission with name={} not found", permissioname);
                return IgrpResponseStatusException.of(

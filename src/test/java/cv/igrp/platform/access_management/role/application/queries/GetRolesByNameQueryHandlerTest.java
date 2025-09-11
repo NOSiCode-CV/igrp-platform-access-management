@@ -40,7 +40,7 @@ public class GetRolesByNameQueryHandlerTest {
     String roleName = "test";
     GetRolesByNameQuery query = new GetRolesByNameQuery(roleName);
 
-    when(roleRepository.findByName(roleName))
+    when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
             .thenReturn(Optional.empty());
 
     //... When
@@ -65,7 +65,7 @@ public class GetRolesByNameQueryHandlerTest {
     expectedDto.setName(roleName);
     expectedDto.setDescription(roleDesc);
     expectedDto.setStatus(roleStatus);
-    when(roleRepository.findByName(roleName))
+    when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
             .thenReturn(Optional.empty());
 
     //... When
@@ -74,7 +74,7 @@ public class GetRolesByNameQueryHandlerTest {
     //... Then
     assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatus());
 
-    verify(roleRepository, times(1)).findByName(roleName);
+    verify(roleRepository, times(1)).findByNameAndStatusNot(roleName, Status.DELETED);
     verify(roleMapper, times(0)).mapToDto(savedRole);
   }
 
@@ -93,7 +93,7 @@ public class GetRolesByNameQueryHandlerTest {
     expectedDto.setName(roleName);
     expectedDto.setDescription(roleDesc);
     expectedDto.setStatus(roleStatus);
-    when(roleRepository.findByName(roleName))
+    when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
             .thenReturn(Optional.of(savedRole));
     when(roleMapper.mapToDto(savedRole))
             .thenReturn(expectedDto);
@@ -108,7 +108,7 @@ public class GetRolesByNameQueryHandlerTest {
     assertNotNull(response.getBody());
     assertEquals(expectedDto.getName(), response.getBody().getName());
 
-    verify(roleRepository, times(1)).findByName(roleName);
+    verify(roleRepository, times(1)).findByNameAndStatusNot(roleName, Status.DELETED);
     verify(roleMapper, times(1)).mapToDto(savedRole);
   }
 

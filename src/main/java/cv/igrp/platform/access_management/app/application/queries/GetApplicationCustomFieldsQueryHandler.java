@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.app.application.queries;
 
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
@@ -57,7 +58,7 @@ public class GetApplicationCustomFieldsQueryHandler implements QueryHandler<GetA
    */
   @IgrpQueryHandler
   public ResponseEntity<Map<String, ?>> handle(GetApplicationCustomFieldsQuery query) {
-    ApplicationEntity application = applicationRepository.findByCode(query.getCode())
+    ApplicationEntity application = applicationRepository.findByCodeAndStatusNot(query.getCode(), Status.DELETED)
             .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found for code: " + query.getCode()));
 
     CustomFieldEntity customField = customFieldRepository

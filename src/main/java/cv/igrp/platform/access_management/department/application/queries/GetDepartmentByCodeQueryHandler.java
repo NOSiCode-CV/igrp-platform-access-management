@@ -1,6 +1,8 @@
 package cv.igrp.platform.access_management.department.application.queries;
 
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -33,7 +35,7 @@ private final DepartmentMapper departmentMapper;
     String departmentCode = query.getCode();
     LOGGER.info("Fetching department with code={}", departmentCode);
 
-     DepartmentEntity department = departmentEntityRepository.findByCode(departmentCode)
+     DepartmentEntity department = departmentEntityRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)
              .orElseThrow(() -> {
                LOGGER.warn("Department with code={} not found", departmentCode);
                return IgrpResponseStatusException.of(

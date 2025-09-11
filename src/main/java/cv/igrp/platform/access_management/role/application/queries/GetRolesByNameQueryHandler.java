@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.role.application.queries;
 
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
@@ -34,7 +35,7 @@ public class GetRolesByNameQueryHandler implements QueryHandler<GetRolesByNameQu
     String rolename = query.getName();
     LOGGER.info("Fetching role with name={}", rolename);
 
-     RoleEntity role = roleEntityRepository.findByName(rolename)
+     RoleEntity role = roleEntityRepository.findByNameAndStatusNot(rolename, Status.DELETED)
              .orElseThrow(() -> {
                LOGGER.warn("Role with name={} not found", rolename);
                return IgrpResponseStatusException.of(

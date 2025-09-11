@@ -88,7 +88,7 @@ public class GetAppMenusQueryHandlerTest {
 
     when(authenticationHelper.getPreferredUsername()).thenReturn("superadmin");
     when(userRepository.findByUsername("superadmin")).thenReturn(Optional.of(user));
-    when(applicationRepository.findByCode(appCode)).thenReturn(Optional.of(app));
+    when(applicationRepository.findByCodeAndStatusNot(appCode, Status.DELETED)).thenReturn(Optional.of(app));
     when(menuEntryRepository.findByApplicationIdAndStatus(app, Status.ACTIVE)).thenReturn(List.of(menu));
     when(menuEntryMapper.toDTO(menu)).thenReturn(menuDTO);
 
@@ -117,7 +117,7 @@ public class GetAppMenusQueryHandlerTest {
   void testHandle_AppNotFound_Returns404() {
     when(authenticationHelper.getPreferredUsername()).thenReturn("superadmin");
     when(userRepository.findByUsername("superadmin")).thenReturn(Optional.of(user));
-    when(applicationRepository.findByCode("APP_UNKNOWN")).thenReturn(Optional.empty());
+    when(applicationRepository.findByCodeAndStatusNot("APP_UNKNOWN", Status.DELETED)).thenReturn(Optional.empty());
 
     ResponseEntity<List<MenuEntryDTO>> response = handler.handle(new GetAppMenusQuery("APP_UNKNOWN"));
 
@@ -130,7 +130,7 @@ public class GetAppMenusQueryHandlerTest {
 
     when(authenticationHelper.getPreferredUsername()).thenReturn("superadmin");
     when(userRepository.findByUsername("superadmin")).thenReturn(Optional.of(user));
-    when(applicationRepository.findByCode("APP_IGRP")).thenReturn(Optional.of(app));
+    when(applicationRepository.findByCodeAndStatusNot("APP_IGRP", Status.DELETED)).thenReturn(Optional.of(app));
 
     ResponseEntity<List<MenuEntryDTO>> response = handler.handle(new GetAppMenusQuery("APP_IGRP"));
 
