@@ -48,7 +48,6 @@ import static cv.igrp.platform.access_management.shared.application.constants.St
 public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePermissionCommand, ResponseEntity<PermissionDTO>> {
 
    private final PermissionEntityRepository permissionRepository;
-   private final DepartmentEntityRepository departmentRepository;
    private final PermissionMapper permissionMapper;
    private final ApplicationEventPublisher eventPublisher;
 
@@ -56,12 +55,10 @@ public class UpdatePermissionCommandHandler implements CommandHandler<UpdatePerm
     * Constructs the handler with required dependencies.
     *
     * @param permissionRepository     repository to access and persist permission entities
-    * @param departmentRepository    repository to retrieve the associated department entity
     * @param permissionMapper         mapper to convert permission entities to DTOs
     */
-   public UpdatePermissionCommandHandler(PermissionEntityRepository permissionRepository, DepartmentEntityRepository departmentRepository, PermissionMapper permissionMapper, ApplicationEventPublisher eventPublisher) {
+   public UpdatePermissionCommandHandler(PermissionEntityRepository permissionRepository, PermissionMapper permissionMapper, ApplicationEventPublisher eventPublisher) {
       this.permissionRepository = permissionRepository;
-      this.departmentRepository = departmentRepository;
       this.permissionMapper = permissionMapper;
       this.eventPublisher = eventPublisher;
    }
