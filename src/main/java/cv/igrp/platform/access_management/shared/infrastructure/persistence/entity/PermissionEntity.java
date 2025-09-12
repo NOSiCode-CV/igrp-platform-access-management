@@ -28,7 +28,7 @@ public class PermissionEntity extends AuditEntity {
     private Integer id;
 
   
-    @Column(name="name", length=60)
+    @Column(name="name", length=255)
     private String name;
 
   
