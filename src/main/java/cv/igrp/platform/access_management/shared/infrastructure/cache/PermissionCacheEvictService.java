@@ -1,5 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.cache;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.KeyScanOptions;
@@ -13,10 +15,10 @@ import java.util.function.Predicate;
 @Service
 public class PermissionCacheEvictService {
 
+    private static final Logger LOGGER = LoggerFactory.getLogger(PermissionCacheEvictService.class);
+
     private static final String CACHE_PREFIX = "permissionCache::";
     private static final int SCAN_BATCH_SIZE = 1000;
-    private static final int DELETE_BATCH_SIZE = 500;
-
 
     private final RedisTemplate<String, Object> redisTemplate;
 
@@ -42,13 +44,19 @@ public class PermissionCacheEvictService {
     }
 
     public void evictByTriple(String subject, String resource, String action) {
+        if (!isRedisAvailable()) return;
         String key = "%s%s:%s:%s".formatted(CACHE_PREFIX, subject, resource, action);
-        redisTemplate.delete(key);
+        try {
+            redisTemplate.delete(key);
+        } catch (Exception ex) {
+            LOGGER.error("Redis unavailable while evicting triple [{}:{}:{}]", subject, resource, action, ex);
+        }
     }
 
     private void evictMatchingKeys(Predicate<String> predicate) {
-        Set<String> keysToDelete = new HashSet<>();
+        if (!isRedisAvailable()) return;
 
+        Set<String> keysToDelete = new HashSet<>();
         try (Cursor<byte[]> cursor = redisTemplate.getConnectionFactory()
                 .getConnection()
                 .scan(KeyScanOptions.scanOptions().match("%s*".formatted(CACHE_PREFIX)).count(SCAN_BATCH_SIZE).build())) {
@@ -59,10 +67,28 @@ public class PermissionCacheEvictService {
                     keysToDelete.add(key);
                 }
             }
+        } catch (Exception ex) {
+            LOGGER.error("Redis unavailable during scan operation", ex);
+            return;
         }
 
         if (!keysToDelete.isEmpty()) {
-            redisTemplate.delete(keysToDelete);
+            try {
+                redisTemplate.delete(keysToDelete);
+            } catch (Exception ex) {
+                LOGGER.error("Redis unavailable while deleting keys", ex);
+            }
+        }
+    }
+
+    private boolean isRedisAvailable() {
+        try {
+            var connection = redisTemplate.getConnectionFactory().getConnection();
+            String pong = connection.ping();
+            return pong != null;
+        } catch (Exception ex) {
+            LOGGER.warn("Redis is not available: {}", ex.getMessage());
+            return false;
         }
     }
 }
