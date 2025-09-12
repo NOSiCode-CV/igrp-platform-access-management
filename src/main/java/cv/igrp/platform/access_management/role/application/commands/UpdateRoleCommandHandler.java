@@ -1,15 +1,11 @@
 package cv.igrp.platform.access_management.role.application.commands;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
-import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
-import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
@@ -19,9 +15,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Objects;
-
 
 /**
  * Handles the update of a {@link RoleEntity} entity.
@@ -57,19 +50,16 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
     public static final String ERROR_TITLE = "Update Role";
     private final RoleEntityRepository roleRepository;
     private final RoleMapper roleMapper;
-    private final IAdapter adapter;
 
     /**
      * Constructs an {@code UpdateRoleCommandHandler} with the required dependencies.
      *
      * @param roleRepository the repository used to fetch and persist roles
      * @param roleMapper     the mapper used to convert {@link RoleEntity} to {@link RoleDTO}
-     * @param adapter        the adapter interface used to interact with the external Identity and Access Management (IAM) system
      */
-    public UpdateRoleCommandHandler(RoleEntityRepository roleRepository, RoleMapper roleMapper, IAdapter adapter) {
+    public UpdateRoleCommandHandler(RoleEntityRepository roleRepository, RoleMapper roleMapper) {
         this.roleRepository = roleRepository;
         this.roleMapper = roleMapper;
-        this.adapter = adapter;
     }
 
     /**
@@ -118,17 +108,6 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
         roleToUpdate.setParent(parentRole);
         roleToUpdate.setStatus(newData.getStatus());
         RoleEntity updatedRole = roleRepository.save(roleToUpdate);
-        if (!command.getName().equals(roleToUpdate.getName())) {
-            try {
-                adapter.updateRole(roleToUpdate.getDepartment().getCode(), command.getName(), roleToUpdate.getName());
-            } catch (IAMException e) {
-                throw IgrpResponseStatusException.of(
-                        HttpStatus.INTERNAL_SERVER_ERROR,
-                        "Role Update Failed",
-                        e.getMessage()
-                );
-            }
-        }
         log.info("Role with name: {} updated successfully.", command.getRoledto().getName());
         return new ResponseEntity<>(roleMapper.mapToDto(updatedRole), HttpStatus.OK);
     }
