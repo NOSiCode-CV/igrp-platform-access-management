@@ -42,7 +42,7 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     private String externalId;
 
     @Column(name = "email_verified")
-    private boolean emailVerified = false;
+    private Boolean emailVerified = Boolean.FALSE;
 
     @ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
     private List<RoleEntity> roles;
@@ -92,6 +92,7 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
 
     @Override
     public boolean isEmailVerified() {
-        return this.emailVerified;
+        return Boolean.TRUE.equals(this.emailVerified);
     }
+
 }
