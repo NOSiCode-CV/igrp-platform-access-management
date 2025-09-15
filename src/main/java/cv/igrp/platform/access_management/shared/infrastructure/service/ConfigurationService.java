@@ -62,7 +62,7 @@ public class ConfigurationService {
             Long permissionId = permissionExists ? getId("SELECT id FROM t_permission WHERE name='%s'".formatted(IGRP_PERMISSION)) :
                     createDefaultPermission(appId, departmentId);
 
-            Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE name='%s'".formatted(SUPER_ADMIN_USERNAME)) :
+            Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE name='%s'".formatted(SUPER_ADMIN_ROLE)) :
                     createDefaultRole(departmentId, permissionId);
 
             Long userId = superAdminExists ? getId("SELECT id FROM t_user WHERE username='%s'".formatted(SUPER_ADMIN_USERNAME)) :
