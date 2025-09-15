@@ -7,6 +7,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import lombok.extern.slf4j.Slf4j;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -64,14 +65,44 @@ public class GetRolesQueryHandler implements QueryHandler<GetRolesQuery, Respons
   @IgrpQueryHandler
   @Transactional(readOnly = true)
   public ResponseEntity<List<RoleDTO>> handle(GetRolesQuery query) {
-    log.info("Get Roles");
-    Status active = Status.ACTIVE;
-    Status inactive = Status.INACTIVE;
-    List<RoleEntity> allRoles = roleRepository.findByStatusIn(List.of(active, inactive));
+    log.info("Get Roles with filters - departmentCode: {}, username: {}", query.getDepartmentCode(), query.getUsername());
+    Specification<RoleEntity> specs = buildSpecification(query.getDepartmentCode(), query.getUsername());
+    List<RoleEntity> allRoles = roleRepository.findAll(specs);
     List<RoleDTO> collectedRole = allRoles.stream()
             .map(roleMapper::mapToDto)
             .toList();
     return new ResponseEntity<>(collectedRole, HttpStatus.OK);
+  }
+
+  /**
+   * Builds a dynamic JPA {@link Specification} based on optional code and name filters.
+   *
+   * @param departmentCode the exact department code to match (optional)
+   * @param username the username to search for (optional)
+   * @return a {@link Specification} representing the composed query filters
+   */
+  private Specification<RoleEntity> buildSpecification(String departmentCode, String username) {
+
+    Specification<RoleEntity> specs = Specification.allOf();
+
+    if(departmentCode != null && !departmentCode.isBlank()) {
+        specs = specs.and((root, _, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("department").get("code"), departmentCode)
+        );
+    }
+
+    if(username != null && !username.isBlank()) {
+        specs = specs.and((root, _, criteriaBuilder) ->
+                criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), "%" + username.toLowerCase() + "%")
+        );
+    }
+
+    specs = specs.and((root, _, _) ->
+            root.get("status").in(Status.ACTIVE, Status.INACTIVE)
+    );
+
+    return specs;
+
   }
 
 }
