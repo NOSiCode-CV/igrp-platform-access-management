@@ -123,7 +123,7 @@ class ConfigurationServiceTest {
         verify(jdbcTemplate).queryForObject(
                 contains("INSERT INTO t_permission"),
                 eq(Long.class),
-                eq("manage_access"), eq("iGRP Manage Access Permission"),
+                eq("DEPT_IGRP.manage_access"), eq("iGRP Manage Access Permission"),
                 eq(1L), eq(1L), eq("system"), eq("system")
         );
     }
@@ -140,7 +140,7 @@ class ConfigurationServiceTest {
         when(jdbcTemplate.queryForObject(
                 startsWith("INSERT INTO t_role"),
                 eq(Long.class),
-                eq("superadmin"),
+                eq("DEPT_IGRP.superadmin"),
                 eq("iGRP Superadmin"),
                 eq(1L),
                 eq("system"),
