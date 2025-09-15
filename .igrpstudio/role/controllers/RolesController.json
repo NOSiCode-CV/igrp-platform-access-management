@@ -64,13 +64,13 @@
           "type": "string",
           "name": "departmentCode",
           "description": "Department Code",
-          "isRequired": true
+          "isRequired": false
         },
         {
           "type": "string",
           "name": "username",
           "description": "Username",
-          "isRequired": true
+          "isRequired": false
         }
       ]
     },
