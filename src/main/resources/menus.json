@@ -3,60 +3,59 @@
     "code": "MAIN",
     "name": "Main",
     "type": "GROUP",
-    "icon": "fa-layer-group",
+    "icon": null,
     "children": [
       {
         "code": "HOME_PAGE",
-        "name": "Home Page",
+        "name": "Página Inicial",
         "type": "SYSTEM_PAGE",
-        "pageSlug": "home"
+        "pageSlug": "/",
+        "icon": "House"
       },
       {
         "code": "LIBRARIES",
-        "name": "Libraries",
+        "name": "Biblotecas",
         "type": "SYSTEM_PAGE",
-        "pageSlug": "libraries"
+        "pageSlug": "libraries",
+        "icon": "Library"
       }
     ]
   },
   {
     "code": "ACCESS_MANAGEMENT_GROUP",
-    "name": "Access Management",
+    "name": "Gestão de Acessos",
     "type": "GROUP",
-    "icon": "fa-lock",
+    "icon": null,
     "children": [
       {
         "code": "APPS_MANAGEMENT",
-        "name": "Apps Management",
+        "name": "Gestão de Aplicações",
         "type": "SYSTEM_PAGE",
-        "pageSlug": "apps"
+        "pageSlug": "apps",
+        "icon": "AppWindow"
       },
       {
         "code": "ACCESS_MANAGEMENT_FOLDER",
-        "name": "Access Management",
+        "name": "Gestão de Acessos",
         "type": "FOLDER",
-        "icon": "fa-folder",
+        "icon": "UserCog",
         "children": [
           {
             "code": "USER_MANAGEMENT",
-            "name": "User Management",
+            "name": "Gestão de Utilizadores",
             "type": "SYSTEM_PAGE",
-            "pageSlug": "users"
+            "pageSlug": "users",
+            "icon": null
           },
           {
             "code": "DEPARTMENT_MANAGEMENT",
-            "name": "Department Management",
+            "name": "Gestão de Departamentos",
             "type": "SYSTEM_PAGE",
-            "pageSlug": "departments"
+            "pageSlug": "departments",
+            "icon": null
           }
         ]
       }
     ]
-  },
-  {
-    "code": "SETTINGS",
-    "name": "Settings",
-    "type": "SYSTEM_PAGE",
-    "pageSlug": "settings"
   }
 ]
