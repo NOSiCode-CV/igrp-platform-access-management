@@ -104,8 +104,8 @@ public class RolesController {
   )
   
   public ResponseEntity<List<RoleDTO>> getRoles(
-    @RequestParam(value = "departmentCode") String departmentCode,
-    @RequestParam(value = "username") String username)
+    @RequestParam(value = "departmentCode", required = false) String departmentCode,
+    @RequestParam(value = "username", required = false) String username)
   {
 
       LOGGER.debug("Operation started");

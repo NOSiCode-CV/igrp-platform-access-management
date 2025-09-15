@@ -24,6 +24,8 @@ public class ConfigurationService {
     private static final String SYSTEM_USER = "system";
     private static final String SUPER_ADMIN_USERNAME = "superadmin";
     private static final String IGRP_DEPARTMENT = "DEPT_IGRP";
+    private static final String SUPER_ADMIN_ROLE = "DEPT_IGRP.superadmin";
+    private static final String IGRP_PERMISSION = "DEPT_IGRP.manage_access";
     private static final String IGRP_APP = "APP_IGRP_CENTER";
 
     private final JdbcTemplate jdbcTemplate;
@@ -47,7 +49,7 @@ public class ConfigurationService {
             boolean superAdminExists = exists("SELECT 1 FROM t_user WHERE username='%s' LIMIT 1".formatted(SUPER_ADMIN_USERNAME));
             boolean departmentExists = exists("SELECT 1 FROM t_department WHERE code='%s' LIMIT 1".formatted(IGRP_DEPARTMENT));
             boolean appExists = exists("SELECT 1 FROM t_application WHERE type='SYSTEM' LIMIT 1");
-            boolean permissionExists = exists("SELECT 1 FROM t_permission WHERE name='manage_access' LIMIT 1");
+            boolean permissionExists = exists("SELECT 1 FROM t_permission WHERE name='%s' LIMIT 1".formatted(IGRP_PERMISSION));
             boolean roleExists = exists("SELECT 1 FROM t_role WHERE name='%s' LIMIT 1".formatted(SUPER_ADMIN_USERNAME));
 
             // 2. Create missing entities in optimized order
@@ -57,7 +59,7 @@ public class ConfigurationService {
             Long appId = appExists ? getId("SELECT id FROM t_application WHERE type='SYSTEM' LIMIT 1") :
                     createDefaultApp(departmentId);
 
-            Long permissionId = permissionExists ? getId("SELECT id FROM t_permission WHERE name='manage_access'") :
+            Long permissionId = permissionExists ? getId("SELECT id FROM t_permission WHERE name='%s'".formatted(IGRP_PERMISSION)) :
                     createDefaultPermission(appId, departmentId);
 
             Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE name='%s'".formatted(SUPER_ADMIN_USERNAME)) :
@@ -119,7 +121,7 @@ public class ConfigurationService {
 
     Long createDefaultPermission(Long appId, Long deptId) throws IAMException {
 
-        adapter.createPermission("manage_access", "iGRP Manage Access Permission");
+        adapter.createPermission(IGRP_PERMISSION, "iGRP Manage Access Permission");
 
         String sql = """
                     INSERT INTO t_permission
@@ -130,7 +132,7 @@ public class ConfigurationService {
                 """;
         var query = jdbcTemplate.queryForObject(sql,
                 Long.class,
-                "manage_access", "iGRP Manage Access Permission", appId, deptId,
+                IGRP_PERMISSION, "iGRP Manage Access Permission", appId, deptId,
                 SYSTEM_USER, SYSTEM_USER);
         LOGGER.info("[Startup Config] Default Permission created");
         return query;
@@ -139,7 +141,7 @@ public class ConfigurationService {
     Long createDefaultRole(Long deptId, Long permId) throws IAMException {
         // Insert role
 
-        adapter.createRole(IGRP_DEPARTMENT, "superadmin");
+        adapter.createRole(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE);
 
         String sqlRole = """
                     INSERT INTO t_role
@@ -150,12 +152,12 @@ public class ConfigurationService {
                 """;
         Long roleId = jdbcTemplate.queryForObject(sqlRole,
                 Long.class,
-                "superadmin", "iGRP Superadmin", deptId,
+                SUPER_ADMIN_ROLE, "iGRP Superadmin", deptId,
                 SYSTEM_USER, SYSTEM_USER);
 
         // Insert role-permission relation
 
-        adapter.assignPermissionsToRole(Set.of("manage_access"), "superadmin");
+        adapter.assignPermissionsToRole(Set.of(IGRP_PERMISSION), SUPER_ADMIN_ROLE);
 
         String sqlRolePerm = """
                     INSERT INTO t_role_permission
@@ -188,7 +190,7 @@ public class ConfigurationService {
 
     void assignRoleToSuperAdminUser(Long roleId, Long userId) throws IAMException {
 
-        adapter.assignRoleToUser(IGRP_DEPARTMENT, "superadmin", SUPER_ADMIN_USERNAME);
+        adapter.assignRoleToUser(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE, SUPER_ADMIN_USERNAME);
 
         String sql = """
                     INSERT INTO t_role_users
