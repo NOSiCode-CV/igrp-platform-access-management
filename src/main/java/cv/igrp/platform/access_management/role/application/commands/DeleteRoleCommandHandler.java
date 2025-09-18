@@ -26,7 +26,7 @@ import java.util.List;
  * If the role has no parent (i.e., it is a root role), this handler will also
  * cascade the deletion status to all its non-deleted child roles.
  * <p>
- * This ensures integrity of role hierarchies and prevents orphaned child roles.
+ * This ensures the integrity of role hierarchies and prevents orphaned child roles.
  * @see DeleteRoleCommand
  * @see RoleEntity
  * @see RoleEntityRepository
