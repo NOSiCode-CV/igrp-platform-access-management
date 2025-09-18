@@ -24,8 +24,8 @@ public class ConfigurationService {
     private static final String SYSTEM_USER = "system";
     private static final String SUPER_ADMIN_USERNAME = "superadmin";
     private static final String IGRP_DEPARTMENT = "DEPT_IGRP";
-    private static final String SUPER_ADMIN_ROLE = "DEPT_IGRP.superadmin";
-    private static final String IGRP_PERMISSION = "DEPT_IGRP.manage_access";
+    private static final String SUPER_ADMIN_ROLE = IGRP_DEPARTMENT + ".superadmin";
+    private static final String IGRP_PERMISSION = IGRP_DEPARTMENT + ".manage_access";
     private static final String IGRP_APP = "APP_IGRP_CENTER";
 
     private final JdbcTemplate jdbcTemplate;
