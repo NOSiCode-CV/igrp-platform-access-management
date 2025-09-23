@@ -241,11 +241,6 @@ public class ResourceItemAbacEntity {
 * Menus → **Roles & Users (RBAC only)**
 * Resources → **Roles (RBAC) + Permissions (legacy RBAC) + ABAC conditions**
 
-Great question 👍
-Since you’re moving from **menu–permission association** → **menu–role association**, your `GetAppMenusQueryHandler` must also be updated.
-
-Here’s the updated **snippet specification**:
-
 ## App Menus Fetching Changes
 
 ### Current Logic
