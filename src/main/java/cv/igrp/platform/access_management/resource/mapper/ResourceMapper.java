@@ -1,7 +1,7 @@
 package cv.igrp.platform.access_management.resource.mapper;
 
-import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
-import cv.igrp.platform.access_management.resource.application.dto.ResourceItemDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceItemDTO;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;

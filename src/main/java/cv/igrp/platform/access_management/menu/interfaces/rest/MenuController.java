@@ -23,7 +23,7 @@ import cv.igrp.platform.access_management.menu.application.queries.*;
 
 
 import java.util.List;
-import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
+import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 
 @IgrpController

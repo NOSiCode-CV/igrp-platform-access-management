@@ -12,7 +12,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class DeleteDepartmentCommand implements Command {
 
-  @NotBlank(message = "The field <code> is required.")
+  @NotBlank(message = "The field <code> is required")
   private String code;
 
 }

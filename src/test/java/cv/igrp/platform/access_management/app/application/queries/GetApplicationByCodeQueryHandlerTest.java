@@ -2,7 +2,7 @@ package cv.igrp.platform.access_management.app.application.queries;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;

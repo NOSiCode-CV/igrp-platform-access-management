@@ -22,7 +22,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
+import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 
 @Component
 public class GetAppMenusQueryHandler implements QueryHandler<GetAppMenusQuery, ResponseEntity<List<MenuEntryDTO>>> {

@@ -1,6 +1,6 @@
 {
   "type": "dto",
-  "module": "app",
+  "module": "shared",
   "name": "ApplicationDTO",
   "template": "classic",
   "enableCustonValidation": false,

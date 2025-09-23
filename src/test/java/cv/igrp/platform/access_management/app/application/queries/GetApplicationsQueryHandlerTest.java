@@ -19,7 +19,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import cv.igrp.platform.access_management.app.application.dto.*;
+import cv.igrp.platform.access_management.shared.application.dto.*;
 
 import java.net.URI;
 import java.util.List;

@@ -12,7 +12,7 @@ import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 
 /**
  * Query handler responsible for retrieving a {@link ResourceDTO} by its unique identifier.

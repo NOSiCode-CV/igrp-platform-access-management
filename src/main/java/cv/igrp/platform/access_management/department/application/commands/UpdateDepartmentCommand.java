@@ -14,7 +14,7 @@ public class UpdateDepartmentCommand implements Command {
 
   
   private DepartmentDTO departmentdto;
-  @NotBlank(message = "The field <code> is required.")
+  @NotBlank(message = "The field <code> is required")
   private String code;
 
 }

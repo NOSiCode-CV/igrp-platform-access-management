@@ -22,7 +22,7 @@ import cv.igrp.platform.access_management.app.application.commands.*;
 import cv.igrp.platform.access_management.app.application.queries.*;
 
 
-import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import java.util.List;
 import java.util.Map;
 

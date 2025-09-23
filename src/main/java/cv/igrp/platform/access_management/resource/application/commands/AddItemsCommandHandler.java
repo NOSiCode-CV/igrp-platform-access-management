@@ -16,7 +16,7 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 
 import java.util.ArrayList;
 import java.util.List;
