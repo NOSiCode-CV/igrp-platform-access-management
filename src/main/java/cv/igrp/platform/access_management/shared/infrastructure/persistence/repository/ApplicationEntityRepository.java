@@ -29,15 +29,16 @@ public interface ApplicationEntityRepository extends
     );
 
     @Query("""
-        SELECT a FROM ApplicationEntity a
-        WHERE NOT EXISTS (
-            SELECT null FROM ApplicationEntity app
-            JOIN app.departmentId d
-            JOIN d.roles r
-            JOIN r.users u
-            WHERE app.id=a.id and u.username = :uid OR u.email = :uid
-        )
-    """)
+                SELECT a FROM ApplicationEntity a
+                     WHERE NOT EXISTS (
+                         SELECT 1
+                         FROM ApplicationEntity app
+                         JOIN app.departments d
+                         JOIN d.roles r
+                         JOIN r.users u
+                         WHERE app.id = a.id AND (u.username = :uid OR u.email = :uid)
+                     )
+            """)
     List<ApplicationEntity> findDeniedApplications(@Param("uid") String uid);
 
     Optional<ApplicationEntity> findFirstByType(AppType type);

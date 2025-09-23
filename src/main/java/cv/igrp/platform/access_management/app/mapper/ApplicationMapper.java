@@ -11,6 +11,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Stream;
 
 import static java.util.Optional.ofNullable;
 
@@ -62,7 +65,13 @@ public class ApplicationMapper {
         dto.setUrl(entity.getUrl() != null ? URI.create(entity.getUrl()) : null);
         dto.setSlug(entity.getSlug());
         dto.setCreatedBy(entity.getCreatedBy());
-        dto.setDepartmentCode(ofNullable(entity.getDepartmentId()).map(DepartmentEntity::getCode).orElse(null));
+
+        var departmentCodes = Stream.ofNullable(entity.getDepartments())
+                .flatMap(Set::stream)
+                        .map(DepartmentEntity::getCode)
+                                .toList();
+        dto.setDepartmentCode(departmentCodes);
+
         if(entity.getCreatedDate() != null)
             dto.setCreatedDate(entity.getCreatedDate().toString());
         dto.setLastModifiedBy(entity.getLastModifiedBy());
@@ -91,8 +100,16 @@ public class ApplicationMapper {
         entity.setPicture(dto.getPicture());
         entity.setUrl(dto.getUrl() != null ? dto.getUrl().toString() : null);
         entity.setSlug(dto.getSlug());
-        entity.setDepartmentId(departmentEntityRepository.findByCodeAndStatusNot(dto.getDepartmentCode(), DepartmentStatus.DELETED).orElseThrow(
-                () -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Department not found", "Department not found for code: " + dto.getDepartmentCode())));
+
+        var departments = new HashSet<DepartmentEntity>();
+
+        for (var code : dto.getDepartmentCode()) {
+            var department = departmentEntityRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
+                    .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Department not found", "Department not found for code: " + dto.getDepartmentCode()));
+            departments.add(department);
+        }
+
+        entity.setDepartments(departments);
 
         return entity;
     }

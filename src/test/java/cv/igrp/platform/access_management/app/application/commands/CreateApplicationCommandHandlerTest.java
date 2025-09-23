@@ -26,7 +26,8 @@ import cv.igrp.platform.access_management.shared.application.dto.*;
 
 import java.net.URI;
 import java.util.ArrayList;
-import java.util.Optional;
+import java.util.HashSet;
+import java.util.List;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateApplicationCommandHandlerTest {
@@ -62,7 +63,7 @@ public class CreateApplicationCommandHandlerTest {
         department.setCode("HR");
         department.setDescription("Test Description");
         department.setStatus(DepartmentStatus.ACTIVE);
-        department.setApplications(new ArrayList<>());
+        department.setApplications(new HashSet<>());
 
         ApplicationDTO applicationDTO = new ApplicationDTO(
                 null,
@@ -79,7 +80,7 @@ public class CreateApplicationCommandHandlerTest {
                 "2024-04-15T12:00:00",
                 null,
                 null,
-                "HR"
+                List.of("HR")
         );
         CreateApplicationCommand command = new CreateApplicationCommand(applicationDTO);
 
@@ -115,7 +116,7 @@ public class CreateApplicationCommandHandlerTest {
             dto.setId(savedApplication.getId());
             dto.setCode(savedApplication.getCode());
             dto.setName(savedApplication.getName());
-            dto.setDepartmentCode("HR");
+            dto.setDepartmentCode(List.of("HR"));
             dto.setStatus(savedApplication.getStatus());
             return dto;
         });
@@ -128,7 +129,7 @@ public class CreateApplicationCommandHandlerTest {
         assertEquals(1, response.getBody().getId());
         assertEquals("APP001", response.getBody().getCode());
         assertEquals("Test Application", response.getBody().getName());
-        assertEquals("HR", response.getBody().getDepartmentCode());
+        assertTrue(response.getBody().getDepartmentCode().contains("HR"));
         assertEquals(Status.ACTIVE, response.getBody().getStatus());
 
         verify(applicationRepository).save(Mockito.any(ApplicationEntity.class));
