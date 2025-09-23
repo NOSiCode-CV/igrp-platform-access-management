@@ -82,8 +82,11 @@ public class MenuEntryEntity extends AuditEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", referencedColumnName = "id")
-    private ApplicationEntity applicationId;   @ManyToMany(mappedBy = "menuEntryIds", fetch = FetchType.LAZY)
-private Set<PermissionEntity> permissions;
+    private ApplicationEntity applicationId;
 
+
+  
+    @ManyToMany(fetch = FetchType.LAZY)
+private Set<RoleEntity> roles;
 
 }

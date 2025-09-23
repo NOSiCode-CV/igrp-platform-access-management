@@ -231,10 +231,10 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "PermissionDTO",
+                "type": "MenuEntryDTO",
                 "objectType": "dto",
                 "name": "data",
-                "collectionType": "list",
+                "collectionType": "none",
                 "module": "shared"
               }
             }
@@ -271,10 +271,10 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "PermissionDTO",
+                "type": "MenuEntryDTO",
                 "objectType": "dto",
                 "name": "data",
-                "collectionType": "list",
+                "collectionType": "none",
                 "module": "shared"
               }
             }
@@ -290,5 +290,5 @@
       ]
     }
   ],
-  "id": "tw5fo7aoed-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"
+  "id": "tw5fo7aoed-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissionsToMenu-removePermissionsFromMenu"
 }

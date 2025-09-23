@@ -208,7 +208,7 @@
       "primaryKey": false
     },
     {
-      "name": "permissions",
+      "name": "roles",
       "objectType": "java",
       "type": "string",
       "required": false,

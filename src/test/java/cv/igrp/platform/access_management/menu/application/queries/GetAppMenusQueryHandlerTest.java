@@ -45,19 +45,14 @@ public class GetAppMenusQueryHandlerTest {
   private IGRPUserEntity user;
   private ApplicationEntity app;
   private RoleEntity role;
-  private PermissionEntity permission;
   private MenuEntryEntity menu;
   private MenuEntryDTO menuDTO;
 
   @BeforeEach
   void setUp() {
-    permission = new PermissionEntity();
-    permission.setId(100);
-    permission.setName("view_menu");
-    permission.setStatus(Status.ACTIVE);
-
     role = new RoleEntity();
-    role.setPermissions(Set.of(permission));
+    role.setId(100);
+    role.setName("admin");
     role.setStatus(Status.ACTIVE);
 
     user = new IGRPUserEntity();
@@ -72,7 +67,7 @@ public class GetAppMenusQueryHandlerTest {
     menu = new MenuEntryEntity();
     menu.setId(10);
     menu.setStatus(Status.ACTIVE);
-    menu.setPermissions(Set.of(permission));
+    menu.setRoles(Set.of(role));
 
     menuDTO = new MenuEntryDTO();
     menuDTO.setId(10);
@@ -126,7 +121,7 @@ public class GetAppMenusQueryHandlerTest {
   }
 
   @Test
-  void testHandle_UserHasNoPermissions_ReturnsEmptyList() {
+  void testHandle_UserHasNoRoles_ReturnsEmptyList() {
 
     when(authenticationHelper.getPreferredUsername()).thenReturn("superadmin");
     when(userRepository.findByUsername("superadmin")).thenReturn(Optional.of(user));

@@ -77,6 +77,6 @@ public class MenuEntryDTO  {
   private String lastModifiedDate ;
   
   
-  private List<String> permissions = new ArrayList<>();
+  private List<String> roles = new ArrayList<>();
 
 }

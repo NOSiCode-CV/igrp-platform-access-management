@@ -24,7 +24,6 @@ import cv.igrp.platform.access_management.menu.application.queries.*;
 
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
-import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 
 @IgrpController
 @RestController
@@ -285,14 +284,14 @@ public class MenuController {
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
-                  implementation = PermissionDTO.class,
+                  implementation = MenuEntryDTO.class,
                   type = "object")
           )
       )
     }
   )
   
-  public ResponseEntity<List<PermissionDTO>> addPermissionsToMenu(@RequestBody List<String> addPermissionsToMenuRequest
+  public ResponseEntity<MenuEntryDTO> addPermissionsToMenu(@RequestBody List<String> addPermissionsToMenuRequest
     , @PathVariable(value = "code") String code)
   {
 
@@ -300,7 +299,7 @@ public class MenuController {
 
       final var command = new AddPermissionsToMenuCommand(addPermissionsToMenuRequest, code);
 
-       ResponseEntity<List<PermissionDTO>> response = commandBus.send(command);
+       ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 
        LOGGER.debug("Operation finished");
 
@@ -322,14 +321,14 @@ public class MenuController {
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
-                  implementation = PermissionDTO.class,
+                  implementation = MenuEntryDTO.class,
                   type = "object")
           )
       )
     }
   )
   
-  public ResponseEntity<List<PermissionDTO>> removePermissionsFromMenu(@RequestBody List<String> removePermissionsFromMenuRequest
+  public ResponseEntity<MenuEntryDTO> removePermissionsFromMenu(@RequestBody List<String> removePermissionsFromMenuRequest
     , @PathVariable(value = "code") String code)
   {
 
@@ -337,7 +336,7 @@ public class MenuController {
 
       final var command = new RemovePermissionsFromMenuCommand(removePermissionsFromMenuRequest, code);
 
-       ResponseEntity<List<PermissionDTO>> response = commandBus.send(command);
+       ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 
        LOGGER.debug("Operation finished");
 
