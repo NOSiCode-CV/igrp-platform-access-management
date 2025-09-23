@@ -11,9 +11,9 @@ import lombok.AllArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class GetDepartmentByIdQuery implements Query {
+public class GetMenusAvailableForDepartmentQuery implements Query {
 
-  @NotNull(message = "The field <id> is required")
-  private Integer id;
+  @NotBlank(message = "The field <code> is required")
+  private String code;
 
 }

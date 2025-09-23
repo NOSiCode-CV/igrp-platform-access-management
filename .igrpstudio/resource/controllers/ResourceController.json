@@ -19,7 +19,7 @@
                 "objectType": "dto",
                 "name": "data",
                 "collectionType": "list",
-                "module": "resource"
+                "module": "shared"
               }
             }
           }
@@ -72,7 +72,7 @@
                 "objectType": "dto",
                 "name": "data",
                 "collectionType": "none",
-                "module": "resource"
+                "module": "shared"
               }
             }
           }
@@ -97,7 +97,7 @@
               "type": "ResourceDTO",
               "name": "undefined",
               "objectType": "dto",
-              "module": "resource",
+              "module": "shared",
               "description": "The Resource Data"
             }
           }
@@ -129,7 +129,7 @@
               "type": "ResourceDTO",
               "name": "undefined",
               "objectType": "dto",
-              "module": "resource"
+              "module": "shared"
             }
           }
         }
@@ -144,7 +144,7 @@
                 "objectType": "dto",
                 "name": "data",
                 "collectionType": "none",
-                "module": "resource"
+                "module": "shared"
               }
             }
           }
@@ -195,7 +195,7 @@
               "type": "ResourceItemDTO",
               "name": "undefined",
               "objectType": "dto",
-              "module": "resource",
+              "module": "shared",
               "collectionType": "list"
             }
           }
@@ -211,7 +211,7 @@
                 "objectType": "dto",
                 "name": "data",
                 "collectionType": "none",
-                "module": "resource"
+                "module": "shared"
               }
             }
           }

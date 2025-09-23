@@ -1,7 +1,7 @@
 package cv.igrp.platform.access_management.app.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;

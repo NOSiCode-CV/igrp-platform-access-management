@@ -19,7 +19,7 @@
                 "objectType": "dto",
                 "name": "data",
                 "collectionType": "list",
-                "module": "menu"
+                "module": "shared"
               }
             }
           }
@@ -95,7 +95,7 @@
               "type": "MenuEntryDTO",
               "name": "menuEntry",
               "objectType": "dto",
-              "module": "menu",
+              "module": "shared",
               "description": "The Menu Entry Data"
             }
           }
@@ -127,7 +127,7 @@
               "type": "MenuEntryDTO",
               "name": "undefined",
               "objectType": "dto",
-              "module": "menu",
+              "module": "shared",
               "description": "The Menu Data"
             }
           }
@@ -195,7 +195,7 @@
                 "objectType": "dto",
                 "name": "data",
                 "collectionType": "list",
-                "module": "menu"
+                "module": "shared"
               }
             }
           }

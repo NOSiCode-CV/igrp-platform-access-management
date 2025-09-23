@@ -18,7 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import cv.igrp.platform.access_management.resource.application.dto.*;
+import cv.igrp.platform.access_management.shared.application.dto.*;
 
 import java.util.Objects;
 import java.util.Optional;

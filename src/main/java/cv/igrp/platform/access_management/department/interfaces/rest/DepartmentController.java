@@ -24,6 +24,9 @@ import cv.igrp.platform.access_management.department.application.queries.*;
 
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import java.util.List;
+import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 
 @IgrpController
 @RestController
@@ -262,6 +265,117 @@ public class DepartmentController {
       final var query = new GetDepartmentByCodeQuery(code);
 
       ResponseEntity<DepartmentDTO> response = queryBus.handle(query);
+
+      LOGGER.debug("Operation finished");
+
+      return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+  @GetMapping(
+    value = "departments/{code}/applications/available"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getAvailableApplicationsForDepartment",
+    description = "GET method to handle operations for getAvailableApplicationsForDepartment",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ApplicationDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<ApplicationDTO>> getAvailableApplicationsForDepartment(
+    @PathVariable(value = "code") String code)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var query = new GetAvailableApplicationsForDepartmentQuery(code);
+
+      ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
+
+      LOGGER.debug("Operation finished");
+
+      return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+  @GetMapping(
+    value = "departments/{code}/menus/available"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getMenusAvailableForDepartment",
+    description = "GET method to handle operations for getMenusAvailableForDepartment",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = MenuEntryDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<MenuEntryDTO>> getMenusAvailableForDepartment(
+    @PathVariable(value = "code") String code)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var query = new GetMenusAvailableForDepartmentQuery(code);
+
+      ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
+
+      LOGGER.debug("Operation finished");
+
+      return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+  @GetMapping(
+    value = "departments/{code}/resources/available"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getAvailableResourcesForDepartment",
+    description = "GET method to handle operations for getAvailableResourcesForDepartment",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ResourceDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<ResourceDTO>> getAvailableResourcesForDepartment(
+    @PathVariable(value = "code") String code)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var query = new GetAvailableResourcesForDepartmentQuery(code);
+
+      ResponseEntity<List<ResourceDTO>> response = queryBus.handle(query);
 
       LOGGER.debug("Operation finished");
 

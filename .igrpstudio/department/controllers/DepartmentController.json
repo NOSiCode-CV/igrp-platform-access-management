@@ -206,6 +206,90 @@
           "isRequired": true
         }
       ]
+    },
+    {
+      "actionName": "getAvailableApplicationsForDepartment",
+      "path": "departments/{code}/applications/available",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getMenusAvailableForDepartment",
+      "path": "departments/{code}/menus/available",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getAvailableResourcesForDepartment",
+      "path": "departments/{code}/resources/available",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ResourceDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
     }
   ],
   "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"

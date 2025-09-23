@@ -5,7 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 
 @Data
 @NoArgsConstructor

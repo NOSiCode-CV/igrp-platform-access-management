@@ -2,7 +2,7 @@ package cv.igrp.platform.access_management.app.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.app.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.domain.service.ApplicationValidator;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
