@@ -187,12 +187,6 @@ graph TD
 
 ## 4. Model Changes
 
-### DDL Changes:
-```sql
--- Departments become top-level
-ALTER TABLE ...
-```
-
 To support **sharing + recursive inheritance**:
 
 ---
@@ -302,9 +296,7 @@ private Set<DepartmentEntity> departments = new HashSet<>();
 * **Response Example:**
 
   ```json
-  {
-    "departmentId": 2,
-    "availableApplications": [
+   [
       {
         "id": 10,
         "code": "FIN_APP",
@@ -317,8 +309,7 @@ private Set<DepartmentEntity> departments = new HashSet<>();
         "ownedBy": "Logistics",
         "sharedFrom": "IT"
       }
-    ]
-  }
+   ]
   ```
 
 ---
@@ -339,13 +330,10 @@ private Set<DepartmentEntity> departments = new HashSet<>();
 * **Response Example:**
 
   ```json
-  {
-    "departmentId": 2,
-    "availableMenus": [
+  [
       { "id": 100, "name": "Salaries", "application": "Finance", "sharedFrom": "Finance" },
       { "id": 101, "name": "Reports", "application": "Finance", "sharedFrom": "IT" }
-    ]
-  }
+  ]
   ```
 
 ---
@@ -364,13 +352,10 @@ private Set<DepartmentEntity> departments = new HashSet<>();
 * **Response Example:**
 
   ```json
-  {
-    "departmentId": 2,
-    "availableResourceItems": [
+  [
       { "id": 200, "name": "Salary List", "permission": "ViewSalary", "sharedFrom": "Finance" },
       { "id": 201, "name": "Budget Report", "permission": "ViewBudget", "sharedFrom": "IT" }
-    ]
-  }
+  ]
   ```
 
 ---
@@ -388,13 +373,10 @@ private Set<DepartmentEntity> departments = new HashSet<>();
   ```
 
   ```json
-  {
-    "roleId": 50,
-    "availablePermissions": [
+  [
       { "id": 300, "name": "GPT", "fromParent": true },
       { "id": 301, "name": "XPTO", "fromChild": true }
-    ]
-  }
+  ]
   ```
 
 ---
@@ -411,10 +393,13 @@ private Set<DepartmentEntity> departments = new HashSet<>();
   ```json
   {
     "departmentId": 2,
-    "targetType": "MENU", // APPLICATION | MENU | RESOURCE | ROLE | PERMISSION
+    "targetType": "MENU",
     "targetId": 101
   }
   ```
+  
+targetType possible values: APPLICATION | MENU | RESOURCE | ROLE | PERMISSION  
+
 * **Response Example:**
 
   ```json
@@ -445,11 +430,6 @@ public class ResourceDTO {
 public class PermissionDTO {
 -   private Integer departmentId;
 +   private String departmentCode;
-}
-
-+   public class <entity>AvaliabilityDTO {
-+      private String <identifier>,
-+      private List<RelatedEntityDTO> avialable<relatedEntity>s;
 }
 ```
 
