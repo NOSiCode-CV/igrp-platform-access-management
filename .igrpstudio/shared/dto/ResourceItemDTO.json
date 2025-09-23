@@ -1,14 +1,15 @@
 {
   "type": "dto",
   "module": "shared",
-  "name": "ResourceItem",
-  "template": "record",
+  "name": "ResourceItemDTO",
+  "template": "classic",
+  "enableCustonValidation": false,
   "attributes": [
     {
       "name": "id",
       "objectType": "java",
       "type": "integer",
-      "required": true,
+      "required": false,
       "before": false,
       "after": false,
       "positive": false,
@@ -21,6 +22,20 @@
       "objectType": "java",
       "type": "string",
       "required": true,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "minLength": 3,
+      "maxLength": 100,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "description",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
       "before": false,
       "after": false,
       "positive": false,
@@ -38,10 +53,24 @@
       "positive": false,
       "isEmail": false,
       "isUrl": false,
+      "primaryKey": false,
+      "minLength": 5,
+      "maxLength": 255
+    },
+    {
+      "name": "permissionName",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
       "primaryKey": false
     },
     {
-      "name": "permission_name",
+      "name": "resourceName",
       "objectType": "java",
       "type": "string",
       "required": true,
@@ -53,7 +82,43 @@
       "primaryKey": false
     },
     {
-      "name": "resource_name",
+      "name": "createdBy",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "createdDate",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "lastModifiedBy",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "lastModifiedDate",
       "objectType": "java",
       "type": "string",
       "required": false,
@@ -65,5 +130,5 @@
       "primaryKey": false
     }
   ],
-  "id": "j7liivrh9g"
+  "id": "pso9w38qbq"
 }

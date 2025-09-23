@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.menu.application.queries;
 
-import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
+import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.*;

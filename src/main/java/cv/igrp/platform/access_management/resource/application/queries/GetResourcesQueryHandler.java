@@ -16,7 +16,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import java.util.List;
-import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 
 /**
  * Handles queries for retrieving a list of {@link ResourceDTO}s filtered by optional criteria

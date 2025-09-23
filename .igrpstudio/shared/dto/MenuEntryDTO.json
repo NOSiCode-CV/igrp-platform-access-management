@@ -1,7 +1,7 @@
 {
   "type": "dto",
-  "module": "resource",
-  "name": "ResourceItemDTO",
+  "module": "shared",
+  "name": "MenuEntryDTO",
   "template": "classic",
   "enableCustonValidation": false,
   "attributes": [
@@ -9,6 +9,18 @@
       "name": "id",
       "objectType": "java",
       "type": "integer",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "code",
+      "objectType": "java",
+      "type": "string",
       "required": false,
       "before": false,
       "after": false,
@@ -32,13 +44,67 @@
       "primaryKey": false
     },
     {
-      "name": "description",
+      "name": "type",
+      "objectType": "enum",
+      "type": "MenuEntryType",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "module": "shared"
+    },
+    {
+      "name": "position",
+      "objectType": "java",
+      "type": "short",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "icon",
       "objectType": "java",
       "type": "string",
       "required": false,
       "before": false,
       "after": false,
       "positive": false,
+      "minLength": 1,
+      "maxLength": 255,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "status",
+      "objectType": "enum",
+      "type": "Status",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "module": "shared"
+    },
+    {
+      "name": "target",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "minLength": 3,
+      "maxLength": 10,
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false
@@ -51,14 +117,14 @@
       "before": false,
       "after": false,
       "positive": false,
+      "minLength": 5,
+      "maxLength": 255,
       "isEmail": false,
       "isUrl": false,
-      "primaryKey": false,
-      "minLength": 5,
-      "maxLength": 255
+      "primaryKey": false
     },
     {
-      "name": "permissionName",
+      "name": "pageSlug",
       "objectType": "java",
       "type": "string",
       "required": false,
@@ -70,10 +136,22 @@
       "primaryKey": false
     },
     {
-      "name": "resourceName",
+      "name": "parentCode",
       "objectType": "java",
       "type": "string",
-      "required": true,
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "applicationCode",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
       "before": false,
       "after": false,
       "positive": false,
@@ -128,7 +206,20 @@
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false
+    },
+    {
+      "name": "permissions",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "collectionType": "list"
     }
   ],
-  "id": "pso9w38qbq"
+  "id": "my09bz5kcp"
 }

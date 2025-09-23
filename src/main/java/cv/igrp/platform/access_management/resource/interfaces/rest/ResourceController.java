@@ -23,8 +23,8 @@ import cv.igrp.platform.access_management.resource.application.queries.*;
 
 
 import java.util.List;
-import cv.igrp.platform.access_management.resource.application.dto.ResourceDTO;
-import cv.igrp.platform.access_management.resource.application.dto.ResourceItemDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceItemDTO;
 import java.util.Map;
 
 @IgrpController

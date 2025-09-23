@@ -5,7 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import cv.igrp.platform.access_management.menu.application.dto.MenuEntryDTO;
+import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 
 @Data
 @NoArgsConstructor
