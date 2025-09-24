@@ -136,7 +136,7 @@ graph TD
 ## 3. Endpoint Changes:
 
 | **Endpoint**                                   | **Context** | **Description**                                                    | **Notes / Rule Alignment**                                           |
-| ---------------------------------------------- | ----------- | ------------------------------------------------------------------ | -------------------------------------------------------------------- |
+|------------------------------------------------|-------------|--------------------------------------------------------------------|----------------------------------------------------------------------|
 | `GET /applications`                            | Attribution | List all applications for management.                              | Used to attribute apps to departments (Rule 2).                      |
 | `POST /applications`                           | Attribution | Create a new application.                                          | Owned by a department (Rule 2).                                      |
 | `GET /applications/{id}`                       | Attribution | Fetch details of an application for management.                    | Shows ownership + which departments it can be shared to (Rule 2).    |
@@ -144,6 +144,7 @@ graph TD
 | `DELETE /applications/{id}`                    | Attribution | Remove an application.                                             | Only owning department can delete (Rule 1 & 2).                      |
 | `GET /applications/{appCode}/menus`            | Usage/Check | Fetch menus the current user can access.                           | Menus = role-based only (Rule 3).                                    |
 | `GET /applications/{appCode}/resources`        | Usage/Check | Fetch resources accessible in an app.                              | Resources = role + permission check (Rule 4).                        |
+| `GET /applications/{id}/menus/available`       | Attribution | List menus an application can attribute.                           | Only menus that the apps has (Rule 2).                               |
 | `GET /departments`                             | Attribution | List departments.                                                  | Departments are top-level (Rule 1).                                  |
 | `POST /departments`                            | Attribution | Create a new department.                                           | Can create children; parent inherits (Rule 1).                       |
 | `GET /departments/{id}`                        | Attribution | Fetch department details.                                          | Includes parent/child links (Rule 1).                                |
