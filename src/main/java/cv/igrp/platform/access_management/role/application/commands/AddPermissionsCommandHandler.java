@@ -96,6 +96,12 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
                             HttpStatus.NOT_FOUND, "Add Permission", "Role with name: " + command.getName() + " not found."
                     );
                 });
+
+        if(foundRole.getParent() != null)
+            permissionList = permissionList.stream()
+                    .filter(p -> foundRole.getParent().getPermissions().contains(p))
+                    .toList();
+
         foundRole.getPermissions().addAll(permissionList);
         RoleEntity savedRole = roleRepository.save(foundRole);
 
