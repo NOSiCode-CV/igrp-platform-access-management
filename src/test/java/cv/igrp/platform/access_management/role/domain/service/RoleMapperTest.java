@@ -9,6 +9,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.HashSet;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -30,6 +32,7 @@ class RoleMapperTest {
         String roleName = "admin";
         role.setId(roleId);
         role.setName(roleName);
+        role.setPermissions(new HashSet<>());
         String roleDescription = "Developer";
         role.setDescription(roleDescription);
         role.setStatus(Status.ACTIVE);
@@ -70,8 +73,10 @@ class RoleMapperTest {
         RoleEntity parentRole = new RoleEntity();
         parentRole.setId(parentRoleId);
         parentRole.setName(parentRoleName);
+        parentRole.setPermissions(new HashSet<>());
         role.setId(roleId);
         role.setName(roleName);
+        role.setPermissions(new HashSet<>());
         String roleDescription = "Developer";
         role.setDescription(roleDescription);
         role.setStatus(Status.ACTIVE);
@@ -114,6 +119,7 @@ class RoleMapperTest {
         RoleEntity parentRole = new RoleEntity();
         parentRole.setId(parentRoleId);
         parentRole.setName(parentRoleName);
+        parentRole.setPermissions(new HashSet<>());
         RoleEntity role = new RoleEntity();
 
         role.setId(roleId);
@@ -123,6 +129,7 @@ class RoleMapperTest {
         role.setStatus(Status.INACTIVE);
         role.setDepartment(department);
         role.setParent(parentRole);
+        role.setPermissions(new HashSet<>());
 
         // When
         RoleDTO result = underTest.mapToDto(role);
@@ -209,6 +216,7 @@ class RoleMapperTest {
 
         RoleEntity parentRole = new RoleEntity();
         parentRole.setId(parentRoleId);
+        parentRole.setPermissions(new HashSet<>());
         String parentRoleName = "Manager";
         parentRole.setName(parentRoleName);
 

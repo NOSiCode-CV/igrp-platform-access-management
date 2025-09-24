@@ -36,7 +36,7 @@ public class GetUserRolesQueryHandlerTest {
     private GetUserRolesQueryHandler getUserRolesQueryHandler;
 
     private GetUserRolesQuery getUserRolesQuery(String username){
-     return new GetUserRolesQuery(1, username);
+     return new GetUserRolesQuery(username);
     }
 
     private GetUserRolesQuery query;
@@ -71,7 +71,9 @@ public class GetUserRolesQueryHandlerTest {
     @DisplayName("handle(): should return user roles when user exists")
     void handle_whenUserHasRoles_shouldReturnRoleDTOList() {
         // Arrange
-        user.setRoles(List.of(role1, role2));
+        var roles = List.of(role1, role2);
+        user.setRoles(new ArrayList<>());
+        user.getRoles().addAll(roles);
         when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
         when(roleMapper.mapToDto(role1)).thenReturn(roleDto1);
         when(roleMapper.mapToDto(role2)).thenReturn(roleDto2);
@@ -145,7 +147,9 @@ public class GetUserRolesQueryHandlerTest {
     @DisplayName("should skip roles when mapper returns null")
     void testHandle_whenMapperReturnsNull_shouldIgnoreThatRole() {
         // Arrange
-        user.setRoles(new ArrayList<>(List.of(role1, role2)));
+        var roles = List.of(role1, role2);
+        user.setRoles(new ArrayList<>());
+        user.getRoles().addAll(roles);
         when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
         when(roleMapper.mapToDto(role1)).thenReturn(roleDto1);
         when(roleMapper.mapToDto(role2)).thenReturn(null);
