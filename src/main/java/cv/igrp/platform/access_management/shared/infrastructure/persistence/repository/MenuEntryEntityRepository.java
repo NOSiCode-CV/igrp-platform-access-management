@@ -4,7 +4,6 @@ import cv.igrp.platform.access_management.shared.application.constants.MenuEntry
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
-import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -26,4 +25,36 @@ public interface MenuEntryEntityRepository extends
     List<MenuEntryEntity> findByApplicationIdAndStatus(ApplicationEntity appId, Status status);
 
     Optional<MenuEntryEntity> findByCodeAndStatusNot(String code, Status status);
+
+    @Query("""
+    SELECT DISTINCT m
+    FROM MenuEntryEntity m
+    JOIN m.applicationId a
+    JOIN a.departments dParent
+    WHERE (
+        dParent.code = :code
+        OR EXISTS (
+            SELECT 1
+            FROM DepartmentEntity d
+            JOIN d.sharedMenus sm
+            WHERE d.code = :code AND sm.id = m.id
+        )
+        OR EXISTS (
+            SELECT 1
+            FROM DepartmentEntity child
+            JOIN child.parentId p
+            JOIN p.menus pm
+            WHERE child.code = :code AND pm.id = m.id
+        )
+    )
+    AND NOT EXISTS (
+        SELECT 1
+        FROM DepartmentEntity d2
+        JOIN d2.menus dm
+        WHERE d2.code = :code AND dm.id = m.id
+    )
+""")
+    List<MenuEntryEntity> findAvailableMenusForDepartment(@Param("code") String code);
+
+
 }
