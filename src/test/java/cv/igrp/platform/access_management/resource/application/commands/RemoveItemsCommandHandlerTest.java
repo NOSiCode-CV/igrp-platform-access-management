@@ -55,17 +55,19 @@ public class RemoveItemsCommandHandlerTest {
         ResourceItemEntity item1 = new ResourceItemEntity();
         item1.setId(1);
         item1.setName("Dashboard");
-        item1.setResourceId(resource);
 
         ResourceItemEntity item2 = new ResourceItemEntity();
         item2.setId(2);
         item2.setName("Settings");
-        item2.setResourceId(resource);
 
         ResourceItemEntity item3 = new ResourceItemEntity();
         item3.setId(3);
         item3.setName("Reports");
-        item3.setResourceId(resource);
+
+        resource.getItems().add(item1);
+        resource.getItems().add(item2);
+        resource.getItems().add(item3);
+
         resourceDTO = new ResourceDTO();
     }
 
@@ -128,7 +130,7 @@ public class RemoveItemsCommandHandlerTest {
         // Assert
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(resourceDTO, response.getBody());
-        assertEquals(2, resource.getItems().size()); // TODO: verify why this assert is failing
+        assertEquals(2, resource.getItems().size());
         assertEquals(1, resource.getItems().getFirst().getId());
 
         // Verify
