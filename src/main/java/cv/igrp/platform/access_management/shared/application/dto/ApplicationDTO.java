@@ -12,6 +12,8 @@ import lombok.AllArgsConstructor;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -68,8 +70,10 @@ public class ApplicationDTO  {
   
   
   private String lastModifiedDate ;
-  
-  
-  private String departmentCode ;
+
+  @NotNull(message = "The field <departmentCode> is required")
+  @NotEmpty(message = "The field <departmentCode> must not be empty")
+  @Size(min = 1, message = "The field length <departmentCode> must be at least 1 characters")
+  private List<String> departmentCode = new ArrayList<>();
 
 }

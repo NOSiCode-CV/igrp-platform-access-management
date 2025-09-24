@@ -188,13 +188,15 @@
       "name": "departmentCode",
       "objectType": "java",
       "type": "string",
-      "required": false,
+      "required": true,
       "before": false,
       "after": false,
       "positive": false,
       "isEmail": false,
       "isUrl": false,
-      "primaryKey": false
+      "primaryKey": false,
+      "collectionType": "list",
+      "minLength": 1
     }
   ],
   "id": "2fh2z2x9s8"
