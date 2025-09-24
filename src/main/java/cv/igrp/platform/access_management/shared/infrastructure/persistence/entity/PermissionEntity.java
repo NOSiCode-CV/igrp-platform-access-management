@@ -51,17 +51,7 @@ public class PermissionEntity extends AuditEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department", referencedColumnName = "id")
-    private DepartmentEntity department;
-
-
-  
-    @ManyToMany(fetch = FetchType.LAZY)
-    @JoinTable(
-            name = "t_menu_entry_permission",
-            joinColumns = @JoinColumn(name = "permission_id"),
-            inverseJoinColumns = @JoinColumn(name = "menu_entry_id")
-    )
-private Set<MenuEntryEntity> menuEntryIds;   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
+    private DepartmentEntity department;   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
 private Set<RoleEntity> roles;
 
 

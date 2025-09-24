@@ -231,10 +231,10 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "PermissionDTO",
+                "type": "MenuEntryDTO",
                 "objectType": "dto",
                 "name": "data",
-                "collectionType": "list",
+                "collectionType": "none",
                 "module": "shared"
               }
             }
@@ -271,10 +271,88 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "PermissionDTO",
+                "type": "MenuEntryDTO",
                 "objectType": "dto",
                 "name": "data",
-                "collectionType": "list",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "addDepartmentsToMenu",
+      "path": "menus/{code}/addDepartments",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "collectionType": "list",
+              "name": "data",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "removeDepartmentsFromMenu",
+      "path": "menus/{code}/removeDepartments",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "collectionType": "list",
+              "name": "data",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
                 "module": "shared"
               }
             }
@@ -290,5 +368,5 @@
       ]
     }
   ],
-  "id": "tw5fo7aoed-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"
+  "id": "tw5fo7aoed-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissionsToMenu-removePermissionsFromMenu"
 }

@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotNull;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import java.util.List;
+import java.util.Set;
 
 @Audited
 @Getter
@@ -71,12 +72,7 @@ public class ApplicationEntity extends AuditEntity {
     @Column(name="slug", length=50)
     private String slug;
 
-  
-
-
-  @ManyToOne(fetch = FetchType.LAZY, cascade = { CascadeType.ALL })
-    @JoinColumn(name = "department_id", referencedColumnName = "id")
-    private DepartmentEntity departmentId;   @OneToMany(mappedBy = "applicationId")
+     @OneToMany(mappedBy = "applicationId")
 private List<MenuEntryEntity> menus;
 
    @OneToMany(mappedBy = "applicationId")
@@ -84,6 +80,9 @@ private List<ResourceEntity> resources;
 
    @OneToMany(mappedBy = "application")
 private List<PermissionEntity> permissions;
+
+   @ManyToMany(mappedBy = "applications", fetch = FetchType.LAZY)
+private Set<DepartmentEntity> departments;
 
 
 }

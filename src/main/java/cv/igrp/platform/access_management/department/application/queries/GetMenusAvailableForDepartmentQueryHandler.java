@@ -1,10 +1,11 @@
 package cv.igrp.platform.access_management.department.application.queries;
 
+import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
-import org.springframework.context.event.EventListener;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -16,15 +17,26 @@ public class GetMenusAvailableForDepartmentQueryHandler implements QueryHandler<
 
   private static final Logger LOGGER = LoggerFactory.getLogger(GetMenusAvailableForDepartmentQueryHandler.class);
 
+  private final MenuEntryEntityRepository menuEntryEntityRepository;
+  private final MenuEntryMapper menuEntryMapper;
 
-  public GetMenusAvailableForDepartmentQueryHandler() {
-
-  }
+    public GetMenusAvailableForDepartmentQueryHandler(MenuEntryEntityRepository menuEntryEntityRepository, MenuEntryMapper menuEntryMapper) {
+        this.menuEntryEntityRepository = menuEntryEntityRepository;
+        this.menuEntryMapper = menuEntryMapper;
+    }
 
    @IgrpQueryHandler
   public ResponseEntity<List<MenuEntryDTO>> handle(GetMenusAvailableForDepartmentQuery query) {
-    // TODO: Implement the query handling logic here
-    return null;
+    LOGGER.info("Getting Menus Available for department: {}", query.getCode());
+
+    List<MenuEntryDTO> menus = menuEntryEntityRepository.findAvailableMenusForDepartment(query.getCode())
+            .stream()
+            .map(menuEntryMapper::toDTO)
+            .toList();
+
+    LOGGER.info("Found {} menus for department: {}", menus.size(), query.getCode());
+
+    return ResponseEntity.ok(menus);
   }
 
 }
