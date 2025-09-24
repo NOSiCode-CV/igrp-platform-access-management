@@ -56,12 +56,14 @@ class RemoveDepartmentsFromMenuCommandHandlerTest {
         department1.setCode("DEPT_A");
         department1.setName("Department A");
         department1.setStatus(DepartmentStatus.ACTIVE);
+        department1.setMenuentries(new HashSet<>());
 
         department2 = new DepartmentEntity();
         department2.setId(200);
         department2.setCode("DEPT_B");
         department2.setName("Department B");
         department2.setStatus(DepartmentStatus.ACTIVE);
+        department2.setMenuentries(new HashSet<>());
 
         menuEntry = new MenuEntryEntity();
         menuEntry.setId(1);
