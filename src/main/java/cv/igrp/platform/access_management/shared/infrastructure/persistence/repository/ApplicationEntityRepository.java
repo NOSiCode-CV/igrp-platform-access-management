@@ -25,7 +25,9 @@ public interface ApplicationEntityRepository extends
             JOIN a.departments d
             JOIN d.roles r
             JOIN r.users u
-            WHERE a.status <> :status AND (u.username = :username OR u.email = :email)
+            WHERE a.status <> :status
+                   AND (u.username = :username OR u.email = :email)
+                   AND r.department = d
             """)
     List<ApplicationEntity> findApplicationsByUserOrEmailAndStatusNot(
             @Param("username") String username,
