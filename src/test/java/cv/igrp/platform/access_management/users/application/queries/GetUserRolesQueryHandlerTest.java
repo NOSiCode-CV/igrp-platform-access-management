@@ -62,8 +62,8 @@ public class GetUserRolesQueryHandlerTest {
         role2.setName("User");
         role2.setDescription("User Role");
 
-        roleDto1 = new RoleDTO(100, "Admin", "Admin Role", null, null, null);
-        roleDto2 = new RoleDTO(200, "User", "User Role", null, null, null);
+        roleDto1 = new RoleDTO(100, "Admin", "Admin Role", null, null, null, null);
+        roleDto2 = new RoleDTO(200, "User", "User Role", null, null, null, null);
 
     }
 

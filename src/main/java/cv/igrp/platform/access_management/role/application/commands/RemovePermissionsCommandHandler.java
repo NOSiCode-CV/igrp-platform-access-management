@@ -3,8 +3,10 @@ package cv.igrp.platform.access_management.role.application.commands;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
@@ -14,9 +16,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Command handler responsible for removing a list of permissions from a specific role.
@@ -28,7 +27,7 @@ import java.util.List;
  *     <li>If the permission exists in the role, it is removed and mapped to a {@link PermissionDTO}</li>
  *     <li>Saves the updated role</li>
  * </ul>
- * The result is a list of {@link PermissionDTO}s that were successfully removed from the role.
+ * The result is an updated {@link RoleDTO} without the permissions successfully removed from the role.
  * @see RemovePermissionsCommand
  * @see RoleEntity
  * @see PermissionEntity
@@ -41,20 +40,20 @@ import java.util.List;
  */
 @Slf4j
 @Component
-public class RemovePermissionsCommandHandler implements CommandHandler<RemovePermissionsCommand, ResponseEntity<List<PermissionDTO>>> {
+public class RemovePermissionsCommandHandler implements CommandHandler<RemovePermissionsCommand, ResponseEntity<RoleDTO>> {
 
    private final RoleEntityRepository roleRepository;
-   private final PermissionMapper permissionMapper;
+    private final RoleMapper roleMapper;
 
    /**
     * Constructs a new instance of {@code RemovePermissionsCommandHandler} with the necessary dependencies.
     *
     * @param roleRepository    the repository used to retrieve and persist role entities
-    * @param permissionMapper  mapper used to convert {@link PermissionEntity} entities into {@link PermissionDTO}
+    * @param roleMapper        mapper used to convert {@link RoleEntity} entities into {@link RoleDTO}
     */
-   public RemovePermissionsCommandHandler(RoleEntityRepository roleRepository, PermissionMapper permissionMapper) {
+   public RemovePermissionsCommandHandler(RoleEntityRepository roleRepository, RoleMapper roleMapper) {
       this.roleRepository = roleRepository;
-      this.permissionMapper = permissionMapper;
+       this.roleMapper = roleMapper;
    }
 
    /**
@@ -65,14 +64,13 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
     * in the response.
     *
     * @param command the command containing the role ID and a list of permission IDs to remove
-    * @return a {@link ResponseEntity} with the list of removed permissions as {@link PermissionDTO}s and HTTP status {@code 200 OK}
+    * @return a {@link ResponseEntity} with the updated role and HTTP status {@code 200 OK}
     * @throws IgrpResponseStatusException if the role does not exist or is marked as {@link Status#DELETED}
     */
    @IgrpCommandHandler
    @Transactional
-   public ResponseEntity<List<PermissionDTO>> handle(RemovePermissionsCommand command) {
+   public ResponseEntity<RoleDTO> handle(RemovePermissionsCommand command) {
       log.info("Remove Permissions with name: {} from Role with name: {}.", command.getRemovePermissionsRequest().stream().toList(), command.getName());
-      List<PermissionDTO> response = new ArrayList<>();
       RoleEntity foundRole = roleRepository.findByNameAndStatusNot(command.getName(), Status.DELETED)
               .orElseThrow(() -> {
                  log.warn("Role with name: {} not found.", command.getName());
@@ -85,13 +83,10 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
                  .stream()
                  .filter(permission -> permission.getName().equals(permissionId))
                  .findFirst()
-                 .ifPresent(permission -> {
-                    foundRole.getPermissions().remove(permission);
-                    response.add(permissionMapper.mapToDTO(permission));
-                 });
+                 .ifPresent(permission -> foundRole.getPermissions().remove(permission));
       }
       log.info("Permissions with IDs {} removed from Role with name: {} successfully.", command.getRemovePermissionsRequest().stream().toList(), command.getName());
-      roleRepository.save(foundRole);
+      var response = roleMapper.mapToDto(roleRepository.save(foundRole));
       return new ResponseEntity<>(response, HttpStatus.OK);
    }
 

@@ -1,8 +1,9 @@
 package cv.igrp.platform.access_management.role.application.commands;
 
-import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
+import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
@@ -31,7 +32,7 @@ public class AddPermissionsCommandHandlerTest {
     @Mock
     private RoleEntityRepository roleRepository;
     @Mock
-    private PermissionMapper permissionMapper;
+    private RoleMapper roleMapper;
 
     @Test
     void itShouldStartContext() {
@@ -109,31 +110,32 @@ public class AddPermissionsCommandHandlerTest {
         role.setStatus(Status.ACTIVE);
         role.setPermissions(new HashSet<>());
 
-        PermissionDTO activePermissionDTO = new PermissionDTO();
-        activePermissionDTO.setId(activePermissionId);
+        RoleDTO roleDTO = new RoleDTO();
+        roleDTO.setId(roleId);
+        roleDTO.setPermissions(List.of(activePermissionName));
 
         when(permissionRepository.findAllByNameIn(permissionIds)).thenReturn(returnedPermissions);
         when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.save(role)).thenReturn(role);
-        when(permissionMapper.mapToDTO(activePermission)).thenReturn(activePermissionDTO);
+        when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
         // When
-        ResponseEntity<List<PermissionDTO>> result = underTest.handle(command);
+        ResponseEntity<RoleDTO> result = underTest.handle(command);
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertNotNull(result.getBody());
-        assertEquals(1, result.getBody().size());
-        assertEquals(activePermissionId, result.getBody().getFirst().getId());
+        assertEquals(1, result.getBody().getPermissions().size());
+        assertEquals(activePermissionName, result.getBody().getPermissions().getFirst());
 
         assertTrue(role.getPermissions().contains(activePermission));
         assertFalse(role.getPermissions().contains(deletedPermission));
 
         verify(roleRepository).save(role);
         verify(roleRepository, times(1)).save(role);
-        verify(permissionMapper, times(1)).mapToDTO(activePermission);
+        verify(roleMapper, times(1)).mapToDto(role);
 
-        verifyNoMoreInteractions(roleRepository, permissionMapper);
+        verifyNoMoreInteractions(roleRepository, roleMapper);
     }
 
     @Test
@@ -171,28 +173,31 @@ public class AddPermissionsCommandHandlerTest {
         savedRole.setStatus(Status.ACTIVE);
         savedRole.setPermissions(new HashSet<>());
 
+        RoleDTO roleDTO = new RoleDTO();
+        roleDTO.setId(roleId);
+        roleDTO.setPermissions(List.of(activePermissionName));
+
         PermissionDTO permissionDTO = new PermissionDTO();
         permissionDTO.setId(activePermissionId);
         when(permissionRepository.findAllByNameIn(permissionList)).thenReturn(savedPermissions);
         when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(savedRole));
         when(roleRepository.save(savedRole)).thenReturn(savedRole);
-        when(permissionMapper.mapToDTO(activePermission)).thenReturn(permissionDTO);
+        when(roleMapper.mapToDto(savedRole)).thenReturn(roleDTO);
 
         // When
-        ResponseEntity<List<PermissionDTO>> result = underTest.handle(command);
+        ResponseEntity<RoleDTO> result = underTest.handle(command);
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertNotNull(result.getBody());
-        assertEquals(1, result.getBody().size());
-        assertEquals(permissionDTO, result.getBody().getFirst());
-        assertEquals(activePermissionId, result.getBody().getFirst().getId());
+        assertEquals(1, result.getBody().getPermissions().size());
+        assertEquals(activePermissionName, result.getBody().getPermissions().getFirst());
 
         verify(roleRepository).save(savedRole);
         verify(roleRepository, times(1)).save(savedRole);
-        verify(permissionMapper, times(1)).mapToDTO(activePermission);
+        verify(roleMapper, times(1)).mapToDto(savedRole);
 
-        verifyNoMoreInteractions(roleRepository, permissionMapper);
+        verifyNoMoreInteractions(roleRepository, roleMapper);
     }
 
     @Test
@@ -213,30 +218,32 @@ public class AddPermissionsCommandHandlerTest {
         RoleEntity savedRole = new RoleEntity();
         savedRole.setId(roleId);
         savedRole.setName(roleName);
-        savedRole.setPermissions(new HashSet<>(Set.of(activePermission)));
+        savedRole.setPermissions(new HashSet<>());
 
-        PermissionDTO permissionDTO = new PermissionDTO();
-        permissionDTO.setId(permissionId);
-        permissionDTO.setName(permissionName);
+        savedRole.getPermissions().add(activePermission);
+
+        RoleDTO roleDTO = new RoleDTO();
+        roleDTO.setId(roleId);
+        roleDTO.setPermissions(List.of(activePermission.getName()));
 
         when(permissionRepository.findAllByNameIn(permissionIds)).thenReturn(List.of(activePermission));
         when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(savedRole));
         when(roleRepository.save(savedRole)).thenReturn(savedRole);
-        when(permissionMapper.mapToDTO(activePermission)).thenReturn(permissionDTO);
+        when(roleMapper.mapToDto(savedRole)).thenReturn(roleDTO);
 
         // When
-        ResponseEntity<List<PermissionDTO>> result = underTest.handle(command);
+        ResponseEntity<RoleDTO> result = underTest.handle(command);
 
         // Then
         assertNotNull(result.getBody());
-        assertEquals(1, result.getBody().size());
-        assertEquals(permissionDTO, result.getBody().getFirst());
+        assertEquals(1, result.getBody().getPermissions().size());
+        assertEquals(activePermission.getName(), result.getBody().getPermissions().getFirst());
         assertEquals(1, savedRole.getPermissions().size());
 
         verify(roleRepository).save(savedRole);
         verify(roleRepository, times(1)).save(savedRole);
-        verify(permissionMapper, times(1)).mapToDTO(activePermission);
+        verify(roleMapper, times(1)).mapToDto(savedRole);
 
-        verifyNoMoreInteractions(roleRepository, permissionMapper);
+        verifyNoMoreInteractions(roleRepository, roleMapper);
     }
 }

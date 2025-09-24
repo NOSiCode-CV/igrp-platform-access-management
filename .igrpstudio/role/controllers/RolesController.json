@@ -16,7 +16,7 @@
               "type": "RoleDTO",
               "name": "CreateRole",
               "objectType": "dto",
-              "module": "role",
+              "module": "shared",
               "description": "Create Role"
             }
           }
@@ -114,7 +114,7 @@
               "type": "RoleDTO",
               "name": "UpdateRoleRequest",
               "objectType": "dto",
-              "module": "role",
+              "module": "shared",
               "description": "Update Role Request"
             }
           }
@@ -193,10 +193,10 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "PermissionDTO",
+                "type": "RoleDTO",
                 "objectType": "dto",
                 "name": "data",
-                "collectionType": "list",
+                "collectionType": "none",
                 "module": "shared"
               }
             }
@@ -262,9 +262,11 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "PermissionDTO",
+                "type": "RoleDTO",
+                "objectType": "dto",
                 "name": "data",
-                "collectionType": "list"
+                "collectionType": "none",
+                "module": "shared"
               }
             }
           }
@@ -307,5 +309,5 @@
       ]
     }
   ],
-  "id": "2b75ptbxyv-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"
+  "id": "2b75ptbxyv-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissions-RemovePermissions"
 }

@@ -21,7 +21,6 @@ import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.role.application.commands.*;
 import cv.igrp.platform.access_management.role.application.queries.*;
 
-
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
@@ -245,14 +244,14 @@ public class RolesController {
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
-                  implementation = PermissionDTO.class,
+                  implementation = RoleDTO.class,
                   type = "object")
           )
       )
     }
   )
   
-  public ResponseEntity<List<PermissionDTO>> removePermissions(@RequestBody List<String> removePermissionsRequest
+  public ResponseEntity<RoleDTO> removePermissions(@RequestBody List<String> removePermissionsRequest
     , @PathVariable(value = "name") String name)
   {
 
@@ -260,7 +259,7 @@ public class RolesController {
 
       final var command = new RemovePermissionsCommand(removePermissionsRequest, name);
 
-       ResponseEntity<List<PermissionDTO>> response = commandBus.send(command);
+       ResponseEntity<RoleDTO> response = commandBus.send(command);
 
        LOGGER.debug("Operation finished");
 
@@ -319,14 +318,14 @@ public class RolesController {
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
-                  implementation = PermissionDTO.class,
-                  type = "")
+                  implementation = RoleDTO.class,
+                  type = "object")
           )
       )
     }
   )
   
-  public ResponseEntity<List<PermissionDTO>> addPermissions(@RequestBody List<String> addPermissionsRequest
+  public ResponseEntity<RoleDTO> addPermissions(@RequestBody List<String> addPermissionsRequest
     , @PathVariable(value = "name") String name)
   {
 
@@ -334,7 +333,7 @@ public class RolesController {
 
       final var command = new AddPermissionsCommand(addPermissionsRequest, name);
 
-       ResponseEntity<List<PermissionDTO>> response = commandBus.send(command);
+       ResponseEntity<RoleDTO> response = commandBus.send(command);
 
        LOGGER.debug("Operation finished");
 
