@@ -135,14 +135,6 @@
           }
         }
       },
-      "requestParams": [
-        {
-          "type": "integer",
-          "name": "applicationCode",
-          "description": "Application Code",
-          "isRequired": true
-        }
-      ],
       "pathVariables": [
         {
           "name": "username",
@@ -343,5 +335,5 @@
       }
     }
   ],
-  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"
+  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles"
 }
