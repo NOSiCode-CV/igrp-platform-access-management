@@ -8,15 +8,13 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
-import java.util.Set;
+import java.util.Optional;
 
 
 /**
@@ -74,7 +72,7 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
         ApplicationDTO appDto = command.getApplicationdto();
 
         ApplicationEntity application = applicationRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
-                .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found with code: " + command.getCode()));
+                .orElseThrow(() -> IgrpResponseStatusException.notFound("Application not found", "Application not found with code: " + command.getCode()));
 
         application.setName(appDto.getName());
         application.setDescription(appDto.getDescription());
@@ -85,17 +83,18 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
         application.setUrl(appDto.getUrl() != null ? appDto.getUrl().toString() : null);
         application.setSlug(appDto.getSlug());
 
-        var addDepartments = application.getDepartments();
+        var departments = Optional.ofNullable(application.getDepartments()).orElse(new HashSet<>());
 
         for (var code : appDto.getDepartmentCode()) {
             var department = departmentEntityRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
-                    .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Department not found", "Department not found for code: " + code));
-            addDepartments.add(department);
+                    .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + code));
+            departments.add(department);
         }
 
-        application.setDepartments(addDepartments);
+        application.setDepartments(departments);
 
         ApplicationEntity updatedApplication = applicationRepository.save(application);
+
         return ResponseEntity.ok(applicationMapper.toDto(updatedApplication));
     }
 
