@@ -84,7 +84,7 @@ class ResourceMapperTest {
         testResourceDTO.setType(ResourceType.API);
         testResourceDTO.setStatus(Status.ACTIVE);
         testResourceDTO.setExternalId("ext-123");
-        testResourceDTO.setApplicationCode(List.of("APP"));
+        testResourceDTO.setApplications(List.of("APP"));
         testResourceDTO.setItems(List.of(testResourceItemDTO));
 
     }
@@ -101,7 +101,7 @@ class ResourceMapperTest {
         assertEquals(testResource.getType(), result.getType());
         assertEquals(testResource.getStatus(), result.getStatus());
         assertEquals(testResource.getExternalId(), result.getExternalId());
-        assertTrue(result.getApplicationCode().contains("APP"));
+        assertTrue(result.getApplications().contains("APP"));
         assertNotNull(result.getItems());
         assertEquals(1, result.getItems().size());
 
@@ -122,7 +122,7 @@ class ResourceMapperTest {
         assertNull(result.getType());
         assertNull(result.getStatus());
         assertNull(result.getExternalId());
-        assertTrue(result.getApplicationCode().isEmpty());
+        assertTrue(result.getApplications().isEmpty());
         assertEquals(result.getItems(), List.of());
     }
 
