@@ -1,11 +1,11 @@
 package cv.igrp.platform.access_management.menu.application.commands;
 
-import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
+import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -30,7 +30,7 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
     private MenuEntryEntityRepository menuEntryRepository;
 
     @Mock
-    private PermissionMapper permissionMapper;
+    private MenuEntryMapper menuEntryMapper;
 
     @Test
     void itShouldStartContext() {
@@ -39,306 +39,282 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
 
     @Test
     void itShouldThrow_NotFoundException_WhenProvided_MenuEntryId_NotFound() {
-        //... Given
+        // Given
         String menuEntryCode = "admin";
-        ArrayList<String> permissionsToRemove = new ArrayList<>();
-        RemovePermissionsFromMenuCommand command = new RemovePermissionsFromMenuCommand(permissionsToRemove, menuEntryCode);
+        ArrayList<String> rolesToRemove = new ArrayList<>();
+        RemovePermissionsFromMenuCommand command = new RemovePermissionsFromMenuCommand(rolesToRemove, menuEntryCode);
 
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED))
                 .thenReturn(Optional.empty());
 
-        //... When
+        // When
         IgrpResponseStatusException response = assertThrows(IgrpResponseStatusException.class,
                 () -> removePermissionsFromMenuCommandHandler.handle(command));
 
-        //... Then
+        // Then
         assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatus());
     }
 
     @Test
-    void itShouldRemovePermissions_WhenMenuEntryAndPermissionsExists() {
-        //... Given
-        int menuEntryId = 1;
-        String menuEntryCode = "admin";
-        int permissionId1 = 1;
-        int permissionId2 = 2;
-        String permissionName1 = "permission1";
-        String permissionName2 = "permission2";
-        MenuEntryEntity savedMenuEntry = new MenuEntryEntity();
-        savedMenuEntry.setStatus(Status.ACTIVE);
-        savedMenuEntry.setId(menuEntryId);
-        PermissionEntity permission1 = new PermissionEntity();
-        PermissionEntity permission2 = new PermissionEntity();
-        permission1.setId(permissionId1);
-        permission2.setId(permissionId2);
-        permission1.setName(permissionName1);
-        permission1.setStatus(Status.ACTIVE);
-        permission2.setName(permissionName2);
-        permission2.setStatus(Status.ACTIVE);
-
-        HashSet<PermissionEntity> permissions = new HashSet<>(Set.of(permission1, permission2));
-        savedMenuEntry.setPermissions(permissions);
-        List<String> permissionsToRemove = List.of(permissionName1, permissionName2);
-        RemovePermissionsFromMenuCommand removePermissionsFromMenuCommand =
-                new RemovePermissionsFromMenuCommand(permissionsToRemove, menuEntryCode);
-
-        when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED))
-                .thenReturn(Optional.of(savedMenuEntry));
-        //... When
-        ResponseEntity<List<PermissionDTO>> result = removePermissionsFromMenuCommandHandler.handle(removePermissionsFromMenuCommand);
-
-        //... Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        List<PermissionDTO> responseBody = result.getBody();
-        assertNotNull(responseBody);
-        assertEquals(2, responseBody.size());
-
-        assertFalse(savedMenuEntry.getPermissions().contains(permission1));
-        assertFalse(savedMenuEntry.getPermissions().contains(permission2));
-
-        verify(menuEntryRepository).save(savedMenuEntry);
-        verify(permissionMapper).mapToDTO(permission1);
-        verify(permissionMapper).mapToDTO(permission2);
-    }
-
-    @Test
-    void itShouldReturnEmptyList_WhenNoneOfPermissionsAreInMenuEntry() {
-        //... Given
-        int menuEntryId = 1;
-        String menuEntryCode = "admin";
-        int permissionId1 = 1;
-        int permissionId2 = 2;
-        int permissionId3 = 3;
-        String permissionName1 = "permission1";
-        String permissionName2 = "permission2";
-        String permissionName3 = "permission3";
-        MenuEntryEntity savedMenuEntry = new MenuEntryEntity();
-        savedMenuEntry.setStatus(Status.ACTIVE);
-        savedMenuEntry.setId(menuEntryId);
-
-        PermissionEntity permission1 = new PermissionEntity();
-        PermissionEntity permission2 = new PermissionEntity();
-        PermissionEntity permission3 = new PermissionEntity();
-
-        permission1.setId(permissionId1);
-        permission1.setName(permissionName1);
-        permission2.setId(permissionId2);
-        permission2.setName(permissionName2);
-        permission3.setId(permissionId3);
-        permission3.setName(permissionName3);
-
-        permission1.setStatus(Status.ACTIVE);
-        permission2.setStatus(Status.ACTIVE);
-        permission3.setStatus(Status.ACTIVE);
-
-        HashSet<PermissionEntity> permissions = new HashSet<>(Set.of(permission3));
-        savedMenuEntry.setPermissions(permissions);
-        List<String> permissionsToRemove = List.of(permissionName1, permissionName2);
-        RemovePermissionsFromMenuCommand removePermissionsFromMenuCommand =
-                new RemovePermissionsFromMenuCommand(permissionsToRemove, menuEntryCode);
-
-        when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED))
-                .thenReturn(Optional.of(savedMenuEntry));
-        //... When
-        ResponseEntity<List<PermissionDTO>> result = removePermissionsFromMenuCommandHandler.handle(removePermissionsFromMenuCommand);
-
-        //... Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        List<PermissionDTO> responseBody = result.getBody();
-        assertNotNull(responseBody);
-        assertEquals(0, responseBody.size());
-
-        assertFalse(savedMenuEntry.getPermissions().contains(permission1));
-        assertFalse(savedMenuEntry.getPermissions().contains(permission2));
-
-        verify(menuEntryRepository).save(savedMenuEntry);
-        verify(permissionMapper, never()).mapToDTO(permission1);
-        verify(permissionMapper, never()).mapToDTO(permission2);
-    }
-
-    @Test
-    void itShouldRemoveOnlyExistingPermissions_AndIgnoreOthers() {
+    void itShouldRemoveRoles_WhenMenuEntryAndRolesExists() {
         // Given
         int menuEntryId = 1;
         String menuEntryCode = "admin";
-        Integer permissionToRemoveId = 100;
-        String permissionToRemoveName = "permissionToRemove";
-        Integer permissionToKeepId = 200;
-        String permissionToKeepName = "permissionToKeep";
+        int roleId1 = 1;
+        int roleId2 = 2;
+        String roleName1 = "role1";
+        String roleName2 = "role2";
+        
+        MenuEntryEntity savedMenuEntry = new MenuEntryEntity();
+        savedMenuEntry.setStatus(Status.ACTIVE);
+        savedMenuEntry.setId(menuEntryId);
+        
+        RoleEntity role1 = new RoleEntity();
+        RoleEntity role2 = new RoleEntity();
+        role1.setId(roleId1);
+        role2.setId(roleId2);
+        role1.setName(roleName1);
+        role1.setStatus(Status.ACTIVE);
+        role2.setName(roleName2);
+        role2.setStatus(Status.ACTIVE);
+
+        HashSet<RoleEntity> roles = new HashSet<>(Set.of(role1, role2));
+        savedMenuEntry.setRoles(roles);
+        
+        List<String> rolesToRemove = List.of(roleName1, roleName2);
+        RemovePermissionsFromMenuCommand removePermissionsFromMenuCommand =
+                new RemovePermissionsFromMenuCommand(rolesToRemove, menuEntryCode);
+
+        MenuEntryDTO menuEntryDTO = new MenuEntryDTO();
+        menuEntryDTO.setId(menuEntryId);
+        menuEntryDTO.setCode(menuEntryCode);
+        menuEntryDTO.setRoles(new ArrayList<>());
+
+        when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED))
+                .thenReturn(Optional.of(savedMenuEntry));
+        when(menuEntryRepository.save(savedMenuEntry)).thenReturn(savedMenuEntry);
+        when(menuEntryMapper.toDTO(savedMenuEntry)).thenReturn(menuEntryDTO);
+        
+        // When
+        ResponseEntity<MenuEntryDTO> result = removePermissionsFromMenuCommandHandler.handle(removePermissionsFromMenuCommand);
+
+        // Then
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        MenuEntryDTO responseBody = result.getBody();
+        assertNotNull(responseBody);
+        assertEquals(0, responseBody.getRoles().size());
+
+        assertFalse(savedMenuEntry.getRoles().contains(role1));
+        assertFalse(savedMenuEntry.getRoles().contains(role2));
+
+        verify(menuEntryRepository).save(savedMenuEntry);
+        verify(menuEntryMapper).toDTO(savedMenuEntry);
+    }
+
+    @Test
+    void itShouldReturnEmptyList_WhenNoneOfRolesAreInMenuEntry() {
+        // Given
+        int menuEntryId = 1;
+        String menuEntryCode = "admin";
+        int roleId1 = 1;
+        int roleId2 = 2;
+        int roleId3 = 3;
+        String roleName1 = "role1";
+        String roleName2 = "role2";
+        String roleName3 = "role3";
+        
+        MenuEntryEntity savedMenuEntry = new MenuEntryEntity();
+        savedMenuEntry.setStatus(Status.ACTIVE);
+        savedMenuEntry.setId(menuEntryId);
+
+        RoleEntity role1 = new RoleEntity();
+        RoleEntity role2 = new RoleEntity();
+        RoleEntity role3 = new RoleEntity();
+
+        role1.setId(roleId1);
+        role1.setName(roleName1);
+        role2.setId(roleId2);
+        role2.setName(roleName2);
+        role3.setId(roleId3);
+        role3.setName(roleName3);
+
+        role1.setStatus(Status.ACTIVE);
+        role2.setStatus(Status.ACTIVE);
+        role3.setStatus(Status.ACTIVE);
+
+        HashSet<RoleEntity> roles = new HashSet<>(Set.of(role3));
+        savedMenuEntry.setRoles(roles);
+        
+        List<String> rolesToRemove = List.of(roleName1, roleName2);
+        RemovePermissionsFromMenuCommand removePermissionsFromMenuCommand =
+                new RemovePermissionsFromMenuCommand(rolesToRemove, menuEntryCode);
+
+        MenuEntryDTO menuEntryDTO = new MenuEntryDTO();
+        menuEntryDTO.setId(menuEntryId);
+        menuEntryDTO.setCode(menuEntryCode);
+        List<String> remainingRoles = new ArrayList<>();
+        remainingRoles.add(roleName3);
+        menuEntryDTO.setRoles(remainingRoles);
+
+        when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED))
+                .thenReturn(Optional.of(savedMenuEntry));
+        when(menuEntryRepository.save(savedMenuEntry)).thenReturn(savedMenuEntry);
+        when(menuEntryMapper.toDTO(savedMenuEntry)).thenReturn(menuEntryDTO);
+        
+        // When
+        ResponseEntity<MenuEntryDTO> result = removePermissionsFromMenuCommandHandler.handle(removePermissionsFromMenuCommand);
+
+        // Then
+        assertEquals(HttpStatus.OK, result.getStatusCode());
+        MenuEntryDTO responseBody = result.getBody();
+        assertNotNull(responseBody);
+        assertEquals(1, responseBody.getRoles().size());
+        assertTrue(responseBody.getRoles().contains(roleName3));
+
+        assertFalse(savedMenuEntry.getRoles().contains(role1));
+        assertFalse(savedMenuEntry.getRoles().contains(role2));
+        assertTrue(savedMenuEntry.getRoles().contains(role3));
+
+        verify(menuEntryRepository).save(savedMenuEntry);
+        verify(menuEntryMapper).toDTO(savedMenuEntry);
+    }
+
+    @Test
+    void itShouldRemoveOnlyExistingRoles_AndIgnoreOthers() {
+        // Given
+        int menuEntryId = 1;
+        String menuEntryCode = "admin";
+        Integer roleToRemoveId = 100;
+        String roleToRemoveName = "roleToRemove";
+        Integer roleToKeepId = 200;
+        String roleToKeepName = "roleToKeep";
 
         RemovePermissionsFromMenuCommand command = new RemovePermissionsFromMenuCommand(
-                List.of(permissionToRemoveName), menuEntryCode);
+                List.of(roleToRemoveName), menuEntryCode);
 
-        PermissionEntity permissionToRemove = new PermissionEntity();
-        permissionToRemove.setId(permissionToRemoveId);
-        permissionToRemove.setName(permissionToRemoveName);
+        RoleEntity roleToRemove = new RoleEntity();
+        roleToRemove.setId(roleToRemoveId);
+        roleToRemove.setName(roleToRemoveName);
 
-        PermissionEntity permissionToKeep = new PermissionEntity();
-        permissionToKeep.setId(permissionToKeepId);
-        permissionToKeep.setName(permissionToKeepName);
+        RoleEntity roleToKeep = new RoleEntity();
+        roleToKeep.setId(roleToKeepId);
+        roleToKeep.setName(roleToKeepName);
 
-        PermissionDTO dtoRemoved = new PermissionDTO();
-        dtoRemoved.setId(permissionToRemoveId);
-        dtoRemoved.setName(permissionToRemoveName);
-
-        Set<PermissionEntity> initialPermissions = new HashSet<>(Set.of(permissionToRemove, permissionToKeep));
+        Set<RoleEntity> initialRoles = new HashSet<>(Set.of(roleToRemove, roleToKeep));
 
         MenuEntryEntity menuEntry = new MenuEntryEntity();
         menuEntry.setId(menuEntryId);
         menuEntry.setStatus(Status.ACTIVE);
-        menuEntry.setPermissions(initialPermissions);
+        menuEntry.setRoles(initialRoles);
+
+        MenuEntryDTO menuEntryDTO = new MenuEntryDTO();
+        menuEntryDTO.setId(menuEntryId);
+        menuEntryDTO.setCode(menuEntryCode);
+        List<String> remainingRoles = new ArrayList<>();
+        remainingRoles.add(roleToKeepName);
+        menuEntryDTO.setRoles(remainingRoles);
 
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(menuEntry));
-        when(permissionMapper.mapToDTO(permissionToRemove)).thenReturn(dtoRemoved);
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
+        when(menuEntryMapper.toDTO(menuEntry)).thenReturn(menuEntryDTO);
 
         // When
-        ResponseEntity<List<PermissionDTO>> result = removePermissionsFromMenuCommandHandler.handle(command);
+        ResponseEntity<MenuEntryDTO> result = removePermissionsFromMenuCommandHandler.handle(command);
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        List<PermissionDTO> responseBody = result.getBody();
+        MenuEntryDTO responseBody = result.getBody();
         assertNotNull(responseBody);
-        assertEquals(1, responseBody.size());
-        assertEquals(permissionToRemoveId, responseBody.getFirst().getId());
+        assertEquals(1, responseBody.getRoles().size());
+        assertTrue(responseBody.getRoles().contains(roleToKeepName));
 
-        assertFalse(menuEntry.getPermissions().contains(permissionToRemove));
-        assertTrue(menuEntry.getPermissions().contains(permissionToKeep));
+        assertFalse(menuEntry.getRoles().contains(roleToRemove));
+        assertTrue(menuEntry.getRoles().contains(roleToKeep));
 
-        verify(permissionMapper).mapToDTO(permissionToRemove);
         verify(menuEntryRepository).save(menuEntry);
+        verify(menuEntryMapper).toDTO(menuEntry);
     }
 
     @Test
-    void itShouldNotFail_WhenMenuEntryHasNoPermissions() {
+    void itShouldNotFail_WhenMenuEntryHasNoRoles() {
         // Given
         int menuEntryId = 1;
         String menuEntryCode = "admin";
-        List<String> permissionIdsToRemove = List.of("read", "write");
-        RemovePermissionsFromMenuCommand command = new RemovePermissionsFromMenuCommand(permissionIdsToRemove, menuEntryCode);
+        List<String> roleIdsToRemove = List.of("read", "write");
+        RemovePermissionsFromMenuCommand command = new RemovePermissionsFromMenuCommand(roleIdsToRemove, menuEntryCode);
 
         MenuEntryEntity menuEntry = new MenuEntryEntity();
         menuEntry.setId(menuEntryId);
         menuEntry.setCode(menuEntryCode);
         menuEntry.setStatus(Status.ACTIVE);
-        menuEntry.setPermissions(new HashSet<>());
+        menuEntry.setRoles(new HashSet<>());
+
+        MenuEntryDTO menuEntryDTO = new MenuEntryDTO();
+        menuEntryDTO.setId(menuEntryId);
+        menuEntryDTO.setCode(menuEntryCode);
+        menuEntryDTO.setRoles(new ArrayList<>());
 
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(menuEntry));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
+        when(menuEntryMapper.toDTO(menuEntry)).thenReturn(menuEntryDTO);
 
         // When
-        ResponseEntity<List<PermissionDTO>> response = removePermissionsFromMenuCommandHandler.handle(command);
+        ResponseEntity<MenuEntryDTO> response = removePermissionsFromMenuCommandHandler.handle(command);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        List<PermissionDTO> responseBody = response.getBody();
+        MenuEntryDTO responseBody = response.getBody();
         assertNotNull(responseBody);
-        assertTrue(responseBody.isEmpty());
+        assertTrue(responseBody.getRoles().isEmpty());
 
         verify(menuEntryRepository).save(menuEntry);
-        verifyNoInteractions(permissionMapper);
+        verify(menuEntryMapper).toDTO(menuEntry);
     }
 
     @Test
-    void itShouldHandleDuplicatePermissionIdsInCommand() {
+    void itShouldHandleDuplicateRoleIdsInCommand() {
         // Given
         int menuEntryId = 1;
         String menuEntryCode = "admin";
-        Integer duplicatedPermissionId = 100;
-        String duplicatedPermissionName = "duplicatedPermission";
+        Integer duplicatedRoleId = 100;
+        String duplicatedRoleName = "duplicatedRole";
 
         RemovePermissionsFromMenuCommand command = new RemovePermissionsFromMenuCommand(
-                List.of(duplicatedPermissionName, duplicatedPermissionName), menuEntryCode);
+                List.of(duplicatedRoleName, duplicatedRoleName), menuEntryCode);
 
-        PermissionEntity permission = new PermissionEntity();
-        permission.setId(duplicatedPermissionId);
-        permission.setName(duplicatedPermissionName);
+        RoleEntity role = new RoleEntity();
+        role.setId(duplicatedRoleId);
+        role.setName(duplicatedRoleName);
 
-        PermissionDTO permissionDTO = new PermissionDTO();
-        permissionDTO.setId(duplicatedPermissionId);
-        permissionDTO.setName(duplicatedPermissionName);
-
-        Set<PermissionEntity> menuEntryPermissions = new HashSet<>(Set.of(permission));
+        Set<RoleEntity> menuEntryRoles = new HashSet<>(Set.of(role));
 
         MenuEntryEntity menuEntry = new MenuEntryEntity();
         menuEntry.setId(menuEntryId);
         menuEntry.setCode(menuEntryCode);
         menuEntry.setStatus(Status.ACTIVE);
-        menuEntry.setPermissions(menuEntryPermissions);
+        menuEntry.setRoles(menuEntryRoles);
+
+        MenuEntryDTO menuEntryDTO = new MenuEntryDTO();
+        menuEntryDTO.setId(menuEntryId);
+        menuEntryDTO.setCode(menuEntryCode);
+        menuEntryDTO.setRoles(new ArrayList<>());
 
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(menuEntry));
-        when(permissionMapper.mapToDTO(permission)).thenReturn(permissionDTO);
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
+        when(menuEntryMapper.toDTO(menuEntry)).thenReturn(menuEntryDTO);
 
         // When
-        ResponseEntity<List<PermissionDTO>> result = removePermissionsFromMenuCommandHandler.handle(command);
+        ResponseEntity<MenuEntryDTO> result = removePermissionsFromMenuCommandHandler.handle(command);
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        List<PermissionDTO> responseBody = result.getBody();
+        MenuEntryDTO responseBody = result.getBody();
         assertNotNull(responseBody);
-        assertEquals(1, responseBody.size());
-        assertEquals(duplicatedPermissionId, responseBody.getFirst().getId());
+        assertEquals(0, responseBody.getRoles().size());
 
-        assertFalse(menuEntry.getPermissions().contains(permission));
-
-        verify(permissionMapper, times(1)).mapToDTO(permission);
-        verify(menuEntryRepository).save(menuEntry);
-    }
-
-    @Test
-    void itShouldMapRemovedPermissionsToDTOsOnly() {
-        // Given
-        int menuEntryId = 1;
-        String menuEntryCode = "admin";
-        Integer permissionToRemoveId = 100;
-        String permissionToRemoveName = "permissionToRemove";
-        Integer permissionToKeepId = 200;
-        String permissionToKeepName = "permissionToKeep";
-
-        RemovePermissionsFromMenuCommand command = new RemovePermissionsFromMenuCommand(
-                List.of(permissionToRemoveName), menuEntryCode);
-
-        PermissionEntity permissionToRemove = new PermissionEntity();
-        permissionToRemove.setId(permissionToRemoveId);
-        permissionToRemove.setName(permissionToRemoveName);
-
-        PermissionEntity permissionToKeep = new PermissionEntity();
-        permissionToKeep.setId(permissionToKeepId);
-        permissionToKeep.setName(permissionToKeepName);
-
-        PermissionDTO dtoToRemove = new PermissionDTO();
-        dtoToRemove.setId(permissionToRemoveId);
-        dtoToRemove.setName(permissionToKeepName);
-
-        Set<PermissionEntity> menuEntryPermissions = new HashSet<>(Set.of(permissionToRemove, permissionToKeep));
-
-        MenuEntryEntity menuEntry = new MenuEntryEntity();
-        menuEntry.setId(menuEntryId);
-        menuEntry.setCode(menuEntryCode);
-        menuEntry.setStatus(Status.ACTIVE);
-        menuEntry.setPermissions(menuEntryPermissions);
-
-        when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(menuEntry));
-        when(permissionMapper.mapToDTO(permissionToRemove)).thenReturn(dtoToRemove);
-        when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
-
-        // When
-        ResponseEntity<List<PermissionDTO>> result = removePermissionsFromMenuCommandHandler.handle(command);
-
-        // Then
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        List<PermissionDTO> responseBody = result.getBody();
-        assertNotNull(responseBody);
-        assertEquals(1, responseBody.size());
-        assertEquals(dtoToRemove, responseBody.getFirst());
-
-        verify(permissionMapper).mapToDTO(permissionToRemove);
-        verify(permissionMapper, never()).mapToDTO(permissionToKeep);
-
-        assertFalse(menuEntry.getPermissions().contains(permissionToRemove));
-        assertTrue(menuEntry.getPermissions().contains(permissionToKeep));
+        assertFalse(menuEntry.getRoles().contains(role));
 
         verify(menuEntryRepository).save(menuEntry);
+        verify(menuEntryMapper).toDTO(menuEntry);
     }
 }
