@@ -115,8 +115,10 @@ public class RemoveItemsCommandHandlerTest {
     void testHandle_whenValidItemsProvided_shouldRemoveItems() {
         // Arrange
 
-        command = removeItemsCommand(List.of(2), "resource1");
-        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
+        var resourceName = "resource1";
+
+        command = removeItemsCommand(List.of(2), resourceName);
+        when(resourceRepository.findByNameAndStatusNot(resourceName, Status.DELETED)).thenReturn(Optional.of(resource));
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
@@ -130,7 +132,7 @@ public class RemoveItemsCommandHandlerTest {
         assertEquals(1, resource.getItems().getFirst().getId());
 
         // Verify
-        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
+        verify(resourceRepository, times(1)).findByNameAndStatusNot(resourceName, Status.DELETED);
         verify(resourceRepository, times(1)).save(resource);
         verify(resourceMapper, times(1)).toDto(resource);
         verifyNoMoreInteractions(resourceRepository, resourceMapper);

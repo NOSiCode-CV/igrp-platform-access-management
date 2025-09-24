@@ -68,7 +68,7 @@ class ResourceMapperTest {
         testResource.setApplications(Set.of(testApplication));
         testResource.setItems(new ArrayList<>(List.of(testResourceItem)));
 
-        //testResource.setItems(Collections.singletonList(testResourceItem));
+        testResourceItem.setResourceId(testResource);
 
         testResourceItemDTO = new ResourceItemDTO();
         testResourceItemDTO.setId(789);
@@ -122,7 +122,7 @@ class ResourceMapperTest {
         assertNull(result.getType());
         assertNull(result.getStatus());
         assertNull(result.getExternalId());
-        assertNull(result.getApplicationCode());
+        assertTrue(result.getApplicationCode().isEmpty());
         assertEquals(result.getItems(), List.of());
     }
 
@@ -133,6 +133,7 @@ class ResourceMapperTest {
 
     @Test
     void toItemDto_shouldMapAllFieldsCorrectly() {
+
         when(permissionRepository.findById(456)).thenReturn(Optional.of(testPermission));
 
         ResourceItemDTO result = mapper.toItemDto(testResourceItem);
@@ -194,7 +195,9 @@ class ResourceMapperTest {
 
     @Test
     void toItemEntity_shouldMapBasicFieldsCorrectly() {
-        when(resourceItemRepository.save(Mockito.any(ResourceItemEntity.class))).thenReturn(testResourceItem);
+
+        when(resourceItemRepository.save(Mockito.any(ResourceItemEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         ResourceItemEntity result = mapper.toItemEntity(testResourceItemDTO, testResource, testPermission);
 
