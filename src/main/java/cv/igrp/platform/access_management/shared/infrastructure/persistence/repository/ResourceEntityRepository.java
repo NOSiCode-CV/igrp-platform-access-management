@@ -2,9 +2,13 @@ package cv.igrp.platform.access_management.shared.infrastructure.persistence.rep
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.data.repository.history.RevisionRepository;
@@ -17,5 +21,36 @@ public interface ResourceEntityRepository extends
 {
 
     Optional<ResourceEntity> findByNameAndStatusNot(String name, Status status);
+
+    @Query("""
+    SELECT DISTINCT r
+    FROM ResourceEntity r
+    JOIN r.applicationId a
+    JOIN a.departments dParent
+    WHERE (
+        dParent.code = :code
+        OR EXISTS (
+            SELECT 1
+            FROM DepartmentEntity d
+            JOIN d.sharedResources sr
+            WHERE d.code = :code AND sr.id = r.id
+        )
+        OR EXISTS (
+            SELECT 1
+            FROM DepartmentEntity child
+            JOIN child.parent p
+            JOIN p.resources pr
+            WHERE child.code = :code AND pr.id = r.id
+        )
+    )
+    AND NOT EXISTS (
+        SELECT 1
+        FROM DepartmentEntity d2
+        JOIN d2.resources dr
+        WHERE d2.code = :code AND dr.id = r.id
+    )
+""")
+    List<ResourceEntity> findAvailableResourcesForDepartment(@Param("code") String code);
+
 
 }
