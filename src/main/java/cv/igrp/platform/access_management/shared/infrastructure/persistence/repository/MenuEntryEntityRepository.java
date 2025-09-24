@@ -35,22 +35,16 @@ public interface MenuEntryEntityRepository extends
         dParent.code = :code
         OR EXISTS (
             SELECT 1
-            FROM DepartmentEntity d
-            JOIN d.sharedMenus sm
-            WHERE d.code = :code AND sm.id = m.id
-        )
-        OR EXISTS (
-            SELECT 1
             FROM DepartmentEntity child
             JOIN child.parentId p
-            JOIN p.menus pm
+            JOIN p.menuentries pm
             WHERE child.code = :code AND pm.id = m.id
         )
     )
     AND NOT EXISTS (
         SELECT 1
         FROM DepartmentEntity d2
-        JOIN d2.menus dm
+        JOIN d2.menuentries dm
         WHERE d2.code = :code AND dm.id = m.id
     )
 """)
