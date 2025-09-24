@@ -76,17 +76,20 @@ public class ApplicationEntity extends AuditEntity {
     @Column(name = "slug", length = 50)
     private String slug;
 
-    @OneToMany(mappedBy = "applicationId")
-    private List<MenuEntryEntity> menus;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "t_application_resource",
+            joinColumns = @JoinColumn(name = "application_id"),
+            inverseJoinColumns = @JoinColumn(name = "resource_id")
+    )
+    private Set<ResourceEntity> resources;
 
     @OneToMany(mappedBy = "applicationId")
-    private List<ResourceEntity> resources;
+    private List<MenuEntryEntity> menus;
 
     @OneToMany(mappedBy = "application")
     private List<PermissionEntity> permissions;
 
     @ManyToMany(mappedBy = "applications", fetch = FetchType.LAZY)
     private Set<DepartmentEntity> departments;
-
-
 }

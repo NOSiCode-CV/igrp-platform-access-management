@@ -101,6 +101,26 @@
       "unique": false,
       "primaryKey": false,
       "skipFieldRevision": false
+    },
+    {
+      "name": "resources",
+      "type": "relation",
+      "length": 255,
+      "nullable": true,
+      "unique": false,
+      "primaryKey": false,
+      "skipFieldRevision": false,
+      "relation": {
+        "type": "ManyToMany",
+        "entity": "ResourceEntity",
+        "referencedColumnName": "id",
+        "cardinality": "twoWay",
+        "inverseJoinColumn": "resource_id",
+        "joinTable": "t_application_resource",
+        "fetchType": "lazy",
+        "module": "shared",
+        "orphanRemoval": false
+      }
     }
   ],
   "id": "ruiuobd7zq",
@@ -110,14 +130,6 @@
       "entity": "MenuEntryEntity",
       "fetchType": "lazy",
       "fieldName": "menu",
-      "mappedBy": "application_id",
-      "module": "shared"
-    },
-    {
-      "type": "ManyToOne",
-      "entity": "ResourceEntity",
-      "fetchType": "lazy",
-      "fieldName": "resource",
       "mappedBy": "application_id",
       "module": "shared"
     },
