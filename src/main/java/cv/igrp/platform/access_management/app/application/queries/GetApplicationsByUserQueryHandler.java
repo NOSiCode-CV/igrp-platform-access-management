@@ -57,8 +57,9 @@ public class GetApplicationsByUserQueryHandler implements QueryHandler<GetApplic
    */
   @IgrpQueryHandler
   public ResponseEntity<List<ApplicationDTO>> handle(GetApplicationsByUserQuery query) {
-    List<ApplicationEntity> applications = applicationRepository
-            .findDistinctByDepartmentId_Roles_Users_UsernameOrDepartmentId_Roles_Users_EmailAndStatusNot(query.getUid(), query.getUid(), Status.DELETED);
+
+      List<ApplicationEntity> applications = applicationRepository
+            .findApplicationsByUserOrEmailAndStatusNot(query.getUid(), query.getUid(), Status.DELETED);
 
     List<ApplicationDTO> applicationDTOs = applications.stream()
             .map(applicationMapper::toDto)

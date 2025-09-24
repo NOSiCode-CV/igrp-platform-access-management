@@ -20,8 +20,8 @@ import org.springframework.stereotype.Component;
 public class GetApplicationByCodeQueryHandler implements QueryHandler<GetApplicationByCodeQuery, ResponseEntity<ApplicationDTO>>{
 
   private static final Logger LOGGER = LoggerFactory.getLogger(GetApplicationByCodeQueryHandler.class);
-  private ApplicationEntityRepository applicationRepository;
-  private ApplicationMapper applicationMapper;
+  private final ApplicationEntityRepository applicationRepository;
+  private final ApplicationMapper applicationMapper;
 
     /**
      * Constructs a new {@code GetApplicationByIdQueryHandler} with required dependencies.

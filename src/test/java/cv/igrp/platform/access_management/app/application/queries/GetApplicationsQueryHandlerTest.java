@@ -23,6 +23,7 @@ import cv.igrp.platform.access_management.shared.application.dto.*;
 
 import java.net.URI;
 import java.util.List;
+import java.util.Set;
 
 @SuppressWarnings("unchecked")
 @ExtendWith(MockitoExtension.class)
@@ -41,15 +42,18 @@ public class GetApplicationsQueryHandlerTest {
         getApplicationsQueryHandler = new GetApplicationsQueryHandler(applicationRepository, applicationMapper);
     }
 
-    DepartmentEntity department;
+    private DepartmentEntity buildDepartmentEntity(){
+        var departmentEntity = new DepartmentEntity();
+        departmentEntity.setName("Test Department");
+        departmentEntity.setDescription("Test Description");
+        departmentEntity.setCode("HR");
+        return departmentEntity;
+    }
+
+    DepartmentEntity departmentEntity;
 
     @Test
     void testHandleGetApplicationsQuery_shouldReturnFilteredList() {
-
-        department = new DepartmentEntity();
-        department.setName("Test Department");
-        department.setDescription("Test Description");
-        department.setCode("HR");
 
         // Given
         String code = "APP001";
@@ -117,6 +121,8 @@ public class GetApplicationsQueryHandlerTest {
         String name = "portal";
         GetApplicationsQuery query = new GetApplicationsQuery(null, name, null, "HR", null); // code is null
 
+        var departmentEntity = buildDepartmentEntity();
+
         ApplicationEntity app1 = new ApplicationEntity();
         app1.setId(1);
         app1.setCode("APP001");
@@ -124,7 +130,7 @@ public class GetApplicationsQueryHandlerTest {
         app1.setSlug("my-app-one");
         app1.setType(AppType.INTERNAL);
         app1.setStatus(Status.ACTIVE);
-        app1.setDepartmentId(department);
+        app1.setDepartments(Set.of(departmentEntity));
 
         ApplicationEntity app2 = new ApplicationEntity();
         app2.setId(2);
@@ -133,7 +139,7 @@ public class GetApplicationsQueryHandlerTest {
         app2.setSlug("my-app-two");
         app2.setType(AppType.EXTERNAL);
         app2.setStatus(Status.INACTIVE);
-        app2.setDepartmentId(department);
+        app2.setDepartments(Set.of(departmentEntity));
 
         ApplicationDTO app1Dto = new ApplicationDTO();
         app1Dto.setId(1);
@@ -179,6 +185,8 @@ public class GetApplicationsQueryHandlerTest {
         // Given
         GetApplicationsQuery query = new GetApplicationsQuery(null, null, null, null, null); // No filters
 
+        var departmentEntity = buildDepartmentEntity();
+
         ApplicationEntity app1 = new ApplicationEntity();
         app1.setId(1);
         app1.setCode("APP001");
@@ -186,7 +194,7 @@ public class GetApplicationsQueryHandlerTest {
         app1.setSlug("my-app-one");
         app1.setType(AppType.INTERNAL);
         app1.setStatus(Status.ACTIVE);
-        app1.setDepartmentId(department);
+        app1.setDepartments(Set.of(departmentEntity));
 
         ApplicationEntity app2 = new ApplicationEntity();
         app2.setId(2);
@@ -195,7 +203,7 @@ public class GetApplicationsQueryHandlerTest {
         app2.setUrl("https://my-app-two.com");
         app2.setType(AppType.EXTERNAL);
         app2.setStatus(Status.ACTIVE);
-        app2.setDepartmentId(department);
+        app2.setDepartments(Set.of(departmentEntity));
 
         ApplicationDTO app1Dto = new ApplicationDTO();
 
