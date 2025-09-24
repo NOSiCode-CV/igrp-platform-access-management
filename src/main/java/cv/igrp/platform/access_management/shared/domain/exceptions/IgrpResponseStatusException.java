@@ -42,6 +42,10 @@ public class IgrpResponseStatusException extends ErrorResponseException {
         return of(HttpStatus.BAD_REQUEST, title);
     }
 
+    public static <T> IgrpResponseStatusException badRequest(String title, T details) {
+        return of(HttpStatus.BAD_REQUEST, title, details);
+    }
+
     public static IgrpResponseStatusException notFound(String title) {
         return notFound(title, null);
     }

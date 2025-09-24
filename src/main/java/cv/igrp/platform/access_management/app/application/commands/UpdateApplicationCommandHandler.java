@@ -13,9 +13,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
-import java.util.Optional;
-
 
 /**
  * Command handler responsible for updating an existing {@link ApplicationEntity} entity.
@@ -83,15 +80,27 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
         application.setUrl(appDto.getUrl() != null ? appDto.getUrl().toString() : null);
         application.setSlug(appDto.getSlug());
 
-        var departments = Optional.ofNullable(application.getDepartments()).orElse(new HashSet<>());
-
         for (var code : appDto.getDepartmentCode()) {
+
             var department = departmentEntityRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
                     .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + code));
-            departments.add(department);
-        }
 
-        application.setDepartments(departments);
+            var parent = department.getParentId();
+
+            if (parent != null) {
+                var parentApplications = parent.getApplications();
+                if (parentApplications != null) {
+                    if (parentApplications.stream().noneMatch(app -> app.getId().equals(application.getId())))
+                        throw IgrpResponseStatusException.badRequest(
+                                "Department access denied",
+                                "Department with code %s cannot be granted access to application %s because its parent department does not have access."
+                                        .formatted(code, application.getCode())
+                        );
+                }
+            }
+
+            application.getDepartments().add(department);
+        }
 
         ApplicationEntity updatedApplication = applicationRepository.save(application);
 
