@@ -86,7 +86,7 @@ public class ApplicationMapper {
     public ApplicationEntity toEntity(ApplicationDTO dto) {
         if (dto == null) return null;
 
-        ApplicationEntity entity = new ApplicationEntity();
+        var entity = new ApplicationEntity();
         entity.setId(dto.getId());
         entity.setCode(dto.getCode());
         entity.setName(dto.getName());
@@ -97,16 +97,15 @@ public class ApplicationMapper {
         entity.setPicture(dto.getPicture());
         entity.setUrl(dto.getUrl() != null ? dto.getUrl().toString() : null);
         entity.setSlug(dto.getSlug());
-
-        var departments = new HashSet<DepartmentEntity>();
+        entity.setDepartments(new HashSet<>());
 
         for (var code : dto.getDepartmentCode()) {
+
             var department = departmentEntityRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
                     .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + code));
-            departments.add(department);
-        }
 
-        entity.setDepartments(departments);
+            entity.getDepartments().add(department);
+        }
 
         return entity;
     }
