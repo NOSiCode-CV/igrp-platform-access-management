@@ -47,27 +47,15 @@ public interface ApplicationEntityRepository extends
     List<ApplicationEntity> findDeniedApplications(@Param("uid") String uid);
 
     // Case 1: Application is directly owned by the department
-    // Case 2: Application is shared with the department
-    // Case 3: Application is inherited from the parent department
+    // Case 2: Application is inherited from the parent department
     // Exclude applications already attributed to this department
     @Query("""
     SELECT DISTINCT a
     FROM ApplicationEntity a
-    JOIN a.departments dParent
+    JOIN a.departments d
     WHERE (
-       
-        dParent.code = :code
-        OR
-        
-        EXISTS (
-            SELECT 1
-            FROM DepartmentEntity d
-            JOIN d.sharedApplications sa
-            WHERE d.code = :code AND sa.id = a.id
-        )
-        OR
-        
-        EXISTS (
+        d.code = :code
+        OR EXISTS (
             SELECT 1
             FROM DepartmentEntity child
             JOIN child.parentId p
@@ -76,7 +64,6 @@ public interface ApplicationEntityRepository extends
         )
     )
     AND NOT EXISTS (
-        
         SELECT 1
         FROM DepartmentEntity d2
         JOIN d2.applications da
