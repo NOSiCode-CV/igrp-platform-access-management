@@ -272,7 +272,7 @@ public class MenuController {
   }
 
   @PostMapping(
-    value = "menus/{code}/addPermissions"
+    value = "menus/{code}/addRoles"
   )
   @Operation(
     summary = "POST method to handle operations for addPermissionsToMenu",
@@ -309,7 +309,7 @@ public class MenuController {
   }
 
   @PostMapping(
-    value = "menus/{code}/removePermissions"
+    value = "menus/{code}/removeRoles"
   )
   @Operation(
     summary = "POST method to handle operations for removePermissionsFromMenu",
