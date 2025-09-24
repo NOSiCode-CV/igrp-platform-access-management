@@ -13,11 +13,11 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import java.util.Set;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import java.util.List;
 
 @Audited
 @Getter
 @Setter
-@ToString(exclude = {"department", "users"})
 @IgrpEntity
 @Entity
 @NoArgsConstructor
@@ -32,7 +32,7 @@ public class RoleEntity extends AuditEntity {
 
   
     @NotBlank(message = "name is mandatory")
-    @Column(name="name", nullable = false, length=255)
+    @Column(name="name", nullable = false)
     private String name;
 
   
@@ -71,5 +71,8 @@ private Set<PermissionEntity> permissions;
   
     @ManyToMany(fetch = FetchType.LAZY)
 private Set<IGRPUserEntity> users;
+   @OneToMany(mappedBy = "parent")
+private List<RoleEntity> children;
+
 
 }

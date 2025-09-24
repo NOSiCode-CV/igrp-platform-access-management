@@ -307,6 +307,34 @@
           "isRequired": true
         }
       ]
+    },
+    {
+      "actionName": "getAvailablePermissionsForRoles",
+      "path": "roles/{name}/permissions/available",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "PermissionDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "name",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
     }
   ],
   "id": "2b75ptbxyv-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissions-RemovePermissions"

@@ -21,6 +21,7 @@ import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.role.application.commands.*;
 import cv.igrp.platform.access_management.role.application.queries.*;
 
+
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
@@ -371,6 +372,43 @@ public class RolesController {
       final var query = new GetRolesByNameQuery(name);
 
       ResponseEntity<RoleDTO> response = queryBus.handle(query);
+
+      LOGGER.debug("Operation finished");
+
+      return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+  @GetMapping(
+    value = "roles/{name}/permissions/available"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getAvailablePermissionsForRoles",
+    description = "GET method to handle operations for getAvailablePermissionsForRoles",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = PermissionDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<PermissionDTO>> getAvailablePermissionsForRoles(
+    @PathVariable(value = "name") String name)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var query = new GetAvailablePermissionsForRolesQuery(name);
+
+      ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
 
       LOGGER.debug("Operation finished");
 
