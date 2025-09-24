@@ -1,10 +1,8 @@
 package cv.igrp.platform.access_management.resource.application.commands;
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
-
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
@@ -18,11 +16,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import cv.igrp.platform.access_management.shared.application.dto.*;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("RemoveItemsCommandHandler Unit Tests")
@@ -54,17 +55,19 @@ public class RemoveItemsCommandHandlerTest {
         ResourceItemEntity item1 = new ResourceItemEntity();
         item1.setId(1);
         item1.setName("Dashboard");
-        item1.setResourceId(resource);
 
         ResourceItemEntity item2 = new ResourceItemEntity();
         item2.setId(2);
         item2.setName("Settings");
-        item2.setResourceId(resource);
 
         ResourceItemEntity item3 = new ResourceItemEntity();
         item3.setId(3);
         item3.setName("Reports");
-        item3.setResourceId(resource);
+
+        resource.getItems().add(item1);
+        resource.getItems().add(item2);
+        resource.getItems().add(item3);
+
         resourceDTO = new ResourceDTO();
     }
 
@@ -114,8 +117,10 @@ public class RemoveItemsCommandHandlerTest {
     void testHandle_whenValidItemsProvided_shouldRemoveItems() {
         // Arrange
 
-        command = removeItemsCommand(List.of(2), "resource1");
-        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
+        var resourceName = "resource1";
+
+        command = removeItemsCommand(List.of(2), resourceName);
+        when(resourceRepository.findByNameAndStatusNot(resourceName, Status.DELETED)).thenReturn(Optional.of(resource));
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
@@ -129,7 +134,7 @@ public class RemoveItemsCommandHandlerTest {
         assertEquals(1, resource.getItems().getFirst().getId());
 
         // Verify
-        verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
+        verify(resourceRepository, times(1)).findByNameAndStatusNot(resourceName, Status.DELETED);
         verify(resourceRepository, times(1)).save(resource);
         verify(resourceMapper, times(1)).toDto(resource);
         verifyNoMoreInteractions(resourceRepository, resourceMapper);

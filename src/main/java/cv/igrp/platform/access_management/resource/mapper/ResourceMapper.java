@@ -1,8 +1,9 @@
 package cv.igrp.platform.access_management.resource.mapper;
 
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceItemDTO;
-import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
@@ -32,17 +33,29 @@ public class ResourceMapper {
         dto.setType(resource.getType());
         dto.setStatus(resource.getStatus());
         dto.setExternalId(resource.getExternalId());
-        dto.setApplicationCode(resource.getApplicationId() != null ? resource.getApplicationId().getCode() : null);
+        dto.setCreatedBy(resource.getCreatedBy());
+        dto.setLastModifiedBy(resource.getLastModifiedBy());
+
+        if (resource.getApplications() != null) {
+
+            var apps = resource.getApplications().stream()
+                    .map(ApplicationEntity::getCode)
+                    .toList();
+
+            dto.setApplicationCode(apps);
+        }
+
         if (resource.getItems() != null) {
             List<ResourceItemDTO> items = resource.getItems().stream().map(this::toItemDto).toList();
             dto.setItems(items);
         }
-        dto.setCreatedBy(resource.getCreatedBy());
-        if(resource.getCreatedDate() != null)
+
+        if (resource.getCreatedDate() != null)
             dto.setCreatedDate(resource.getCreatedDate().toString());
-        dto.setLastModifiedBy(resource.getLastModifiedBy());
-        if(resource.getLastModifiedDate() != null)
+
+        if (resource.getLastModifiedDate() != null)
             dto.setLastModifiedDate(resource.getLastModifiedDate().toString());
+
         return dto;
     }
 
@@ -55,12 +68,12 @@ public class ResourceMapper {
         dto.setUrl(item.getUrl());
         dto.setResourceName(item.getResourceId() != null ? item.getResourceId().getName() : null);
         dto.setPermissionName(item.getPermissionId() != null ? permissionRepository.findById(
-                item.getPermissionId()).map(PermissionEntity::getName).orElse(null): null);
+                item.getPermissionId()).map(PermissionEntity::getName).orElse(null) : null);
         dto.setCreatedBy(item.getCreatedBy());
-        if(item.getCreatedDate() != null)
+        if (item.getCreatedDate() != null)
             dto.setCreatedDate(item.getCreatedDate().toString());
         dto.setLastModifiedBy(item.getLastModifiedBy());
-        if(item.getLastModifiedDate() != null)
+        if (item.getLastModifiedDate() != null)
             dto.setLastModifiedDate(item.getLastModifiedDate().toString());
         return dto;
     }

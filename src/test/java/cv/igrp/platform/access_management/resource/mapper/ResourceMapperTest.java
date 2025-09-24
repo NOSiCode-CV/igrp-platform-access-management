@@ -1,9 +1,9 @@
 package cv.igrp.platform.access_management.resource.mapper;
 
-import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
-import cv.igrp.platform.access_management.shared.application.dto.ResourceItemDTO;
 import cv.igrp.platform.access_management.shared.application.constants.ResourceType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceItemDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -38,13 +38,12 @@ class ResourceMapperTest {
     private ResourceItemEntity testResourceItem;
     private ResourceItemDTO testResourceItemDTO;
     private PermissionEntity testPermission;
-    private ApplicationEntity testApplication;
 
     @BeforeEach
     void setUp() {
         mapper = new ResourceMapper(permissionRepository, resourceItemRepository);
 
-        testApplication = new ApplicationEntity();
+        var testApplication = new ApplicationEntity();
         testApplication.setId(123);
         testApplication.setCode("APP");
 
@@ -66,10 +65,10 @@ class ResourceMapperTest {
         testResource.setType(ResourceType.API);
         testResource.setStatus(Status.ACTIVE);
         testResource.setExternalId("ext-123");
-        testResource.setApplicationId(testApplication);
+        testResource.setApplications(Set.of(testApplication));
         testResource.setItems(new ArrayList<>(List.of(testResourceItem)));
 
-        //testResource.setItems(Collections.singletonList(testResourceItem));
+        testResourceItem.setResourceId(testResource);
 
         testResourceItemDTO = new ResourceItemDTO();
         testResourceItemDTO.setId(789);
@@ -85,7 +84,7 @@ class ResourceMapperTest {
         testResourceDTO.setType(ResourceType.API);
         testResourceDTO.setStatus(Status.ACTIVE);
         testResourceDTO.setExternalId("ext-123");
-        testResourceDTO.setApplicationCode("APP");
+        testResourceDTO.setApplicationCode(List.of("APP"));
         testResourceDTO.setItems(List.of(testResourceItemDTO));
 
     }
@@ -102,7 +101,7 @@ class ResourceMapperTest {
         assertEquals(testResource.getType(), result.getType());
         assertEquals(testResource.getStatus(), result.getStatus());
         assertEquals(testResource.getExternalId(), result.getExternalId());
-        assertEquals("APP", result.getApplicationCode());
+        assertTrue(result.getApplicationCode().contains("APP"));
         assertNotNull(result.getItems());
         assertEquals(1, result.getItems().size());
 
@@ -123,7 +122,7 @@ class ResourceMapperTest {
         assertNull(result.getType());
         assertNull(result.getStatus());
         assertNull(result.getExternalId());
-        assertNull(result.getApplicationCode());
+        assertTrue(result.getApplicationCode().isEmpty());
         assertEquals(result.getItems(), List.of());
     }
 
@@ -134,6 +133,7 @@ class ResourceMapperTest {
 
     @Test
     void toItemDto_shouldMapAllFieldsCorrectly() {
+
         when(permissionRepository.findById(456)).thenReturn(Optional.of(testPermission));
 
         ResourceItemDTO result = mapper.toItemDto(testResourceItem);
@@ -176,7 +176,7 @@ class ResourceMapperTest {
         assertEquals(testResourceDTO.getStatus(), result.getStatus());
         assertEquals(testResourceDTO.getExternalId(), result.getExternalId());
         assertNull(result.getId());
-        assertNull(result.getApplicationId());
+        assertNull(result.getApplications());
     }
 
     @Test
@@ -195,7 +195,9 @@ class ResourceMapperTest {
 
     @Test
     void toItemEntity_shouldMapBasicFieldsCorrectly() {
-        when(resourceItemRepository.save(Mockito.any(ResourceItemEntity.class))).thenReturn(testResourceItem);
+
+        when(resourceItemRepository.save(Mockito.any(ResourceItemEntity.class)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
 
         ResourceItemEntity result = mapper.toItemEntity(testResourceItemDTO, testResource, testPermission);
 

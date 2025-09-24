@@ -3,15 +3,19 @@
 
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.entity;
 
-import cv.igrp.platform.access_management.shared.config.AuditEntity;
 import cv.igrp.framework.stereotype.IgrpEntity;
+import cv.igrp.platform.access_management.shared.application.constants.AppType;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.config.AuditEntity;
 import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.application.constants.AppType;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.envers.Audited;
+
 import java.util.List;
 import java.util.Set;
 
@@ -30,59 +34,62 @@ public class ApplicationEntity extends AuditEntity {
     @Column(name = "id", unique = true, nullable = false)
     private Integer id;
 
-  
+
     @NotBlank(message = "code is mandatory")
-    @Column(name="code", nullable = false, length=15)
+    @Column(name = "code", nullable = false, length = 15)
     private String code;
 
-  
+
     @NotBlank(message = "name is mandatory")
-    @Column(name="name", nullable = false, length=50)
+    @Column(name = "name", nullable = false, length = 50)
     private String name;
 
-  
-    @Column(name="description")
+
+    @Column(name = "description")
     private String description;
 
-  
+
     @NotNull(message = "status is mandatory")
     @Enumerated(EnumType.STRING)
-    @Column(name="status", nullable = false)
+    @Column(name = "status", nullable = false)
     private Status status;
 
-  
+
     @NotNull(message = "type is mandatory")
     @Enumerated(EnumType.STRING)
-    @Column(name="type", nullable = false)
+    @Column(name = "type", nullable = false)
     private AppType type;
 
-  
-    @Column(name="owner")
+
+    @Column(name = "owner")
     private String owner;
 
-  
-    @Column(name="picture")
+
+    @Column(name = "picture")
     private String picture;
 
-  
-    @Column(name="url")
+
+    @Column(name = "url")
     private String url;
 
-  
-    @Column(name="slug", length=50)
+
+    @Column(name = "slug", length = 50)
     private String slug;
 
-     @OneToMany(mappedBy = "applicationId")
-private List<MenuEntryEntity> menus;
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "t_application_resource",
+            joinColumns = @JoinColumn(name = "application_id"),
+            inverseJoinColumns = @JoinColumn(name = "resource_id")
+    )
+    private Set<ResourceEntity> resources;
 
-   @OneToMany(mappedBy = "applicationId")
-private List<ResourceEntity> resources;
+    @OneToMany(mappedBy = "applicationId")
+    private List<MenuEntryEntity> menus;
 
-   @OneToMany(mappedBy = "application")
-private List<PermissionEntity> permissions;
+    @OneToMany(mappedBy = "application")
+    private List<PermissionEntity> permissions;
 
-   @ManyToMany(mappedBy = "applications", fetch = FetchType.LAZY)
-private Set<DepartmentEntity> departments;
-
-
+    @ManyToMany(mappedBy = "applications", fetch = FetchType.LAZY)
+    private Set<DepartmentEntity> departments;
 }

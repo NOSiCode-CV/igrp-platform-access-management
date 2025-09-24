@@ -79,7 +79,8 @@
       "positive": false,
       "isEmail": false,
       "isUrl": false,
-      "primaryKey": false
+      "primaryKey": false,
+      "collectionType": "list"
     },
     {
       "name": "items",

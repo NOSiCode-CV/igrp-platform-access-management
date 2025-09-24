@@ -2,9 +2,9 @@ package cv.igrp.platform.access_management.resource.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
@@ -13,13 +13,13 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import java.util.HashSet;
 
 
 /**
@@ -45,90 +45,93 @@ import java.util.List;
 @Component
 public class CreateResourceCommandHandler implements CommandHandler<CreateResourceCommand, ResponseEntity<ResourceDTO>> {
 
-   private static final Logger logger =
-           LoggerFactory.getLogger(CreateResourceCommandHandler.class);
+    private static final Logger logger =
+            LoggerFactory.getLogger(CreateResourceCommandHandler.class);
 
-   private final ResourceEntityRepository resourceRepository;
-   private final PermissionEntityRepository permissionRepository;
-   private final ApplicationEntityRepository applicationRepository;
-   private final ResourceMapper resourceMapper;
+    private final ResourceEntityRepository resourceRepository;
+    private final PermissionEntityRepository permissionRepository;
+    private final ApplicationEntityRepository applicationRepository;
+    private final ResourceMapper resourceMapper;
 
-   /**
-    * Constructs a new {@code CreateResourceCommandHandler} with the required repositories and mapper.
-    *
-    * @param resourceRepository     the repository used to persist {@link ResourceEntity} entities
-    * @param applicationRepository  the repository used to resolve linked {@link ApplicationEntity} entities
-    * @param resourceMapper         the mapper to convert between DTOs and domain models
-    * @param permissionRepository   the repository used to validate {@link PermissionEntity} references
-    */
-   public CreateResourceCommandHandler(
-           ResourceEntityRepository resourceRepository,
-           ApplicationEntityRepository applicationRepository,
-           ResourceMapper resourceMapper,
-           PermissionEntityRepository permissionRepository) {
-      this.resourceRepository = resourceRepository;
-      this.applicationRepository = applicationRepository;
-      this.resourceMapper = resourceMapper;
-      this.permissionRepository = permissionRepository;
-   }
+    /**
+     * Constructs a new {@code CreateResourceCommandHandler} with the required repositories and mapper.
+     *
+     * @param resourceRepository    the repository used to persist {@link ResourceEntity} entities
+     * @param applicationRepository the repository used to resolve linked {@link ApplicationEntity} entities
+     * @param resourceMapper        the mapper to convert between DTOs and domain models
+     * @param permissionRepository  the repository used to validate {@link PermissionEntity} references
+     */
+    public CreateResourceCommandHandler(
+            ResourceEntityRepository resourceRepository,
+            ApplicationEntityRepository applicationRepository,
+            ResourceMapper resourceMapper,
+            PermissionEntityRepository permissionRepository) {
+        this.resourceRepository = resourceRepository;
+        this.applicationRepository = applicationRepository;
+        this.resourceMapper = resourceMapper;
+        this.permissionRepository = permissionRepository;
+    }
 
-   /**
-    * Handles the {@link CreateResourceCommand} by validating, mapping, and persisting the resource.
-    * <p>
-    * If an associated application or permission ID cannot be found, a structured business exception
-    * is thrown with details using {@link IgrpResponseStatusException}.
-    *
-    * @param command the command containing the {@link ResourceDTO} to create
-    * @return a {@link ResponseEntity} with status {@code 201 Created} and the saved {@link ResourceDTO}
-    * @throws IgrpResponseStatusException if application or permission IDs are invalid
-    */
-   @IgrpCommandHandler
-   public ResponseEntity<ResourceDTO> handle(CreateResourceCommand command) {
+    /**
+     * Handles the {@link CreateResourceCommand} by validating, mapping, and persisting the resource.
+     * <p>
+     * If an associated application or permission ID cannot be found, a structured business exception
+     * is thrown with details using {@link IgrpResponseStatusException}.
+     *
+     * @param command the command containing the {@link ResourceDTO} to create
+     * @return a {@link ResponseEntity} with status {@code 201 Created} and the saved {@link ResourceDTO}
+     * @throws IgrpResponseStatusException if application or permission IDs are invalid
+     */
+    @IgrpCommandHandler
+    public ResponseEntity<ResourceDTO> handle(CreateResourceCommand command) {
 
-      var resourceDTO = command.getResourcedto();
+        var resourceDTO = command.getResourcedto();
 
-      logger.info("Creating resource with applicationCode: {}", resourceDTO.getApplicationCode());
+        logger.info("Creating resource with applicationCode: {}", resourceDTO.getApplicationCode());
 
-      ResourceEntity resource = resourceMapper.toEntity(resourceDTO);
+        ResourceEntity resource = resourceMapper.toEntity(resourceDTO);
 
-      ApplicationEntity application = applicationRepository.findByCodeAndStatusNot(resourceDTO.getApplicationCode(), Status.DELETED)
-              .orElseThrow(() -> {
-                 logger.warn("Application not found with code: {}", resourceDTO.getApplicationCode());
-                 return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND,
-                         "Application not found",
-                         "Application not found with code: " + resourceDTO.getApplicationCode());
-              });
+        var apps = new HashSet<ApplicationEntity>();
 
-      resource.setApplicationId(application);
+        for (var code : resourceDTO.getApplicationCode()) {
 
-      ResourceEntity savedResource = resourceRepository.save(resource);
-      logger.info("Resource created successfully with name: {}", savedResource.getName());
+            var app = applicationRepository.findByCodeAndStatusNot(code, Status.DELETED)
+                    .orElseThrow(() -> IgrpResponseStatusException.notFound(
+                            "Application not found",
+                            "Application not found with code: " + code));
 
-       if (resourceDTO.getItems() != null && !resourceDTO.getItems().isEmpty()) {
-           logger.info("Adding {} permission item(s) to resource.", resourceDTO.getItems().size());
-           var items = resourceDTO.getItems().stream().map(itemDTO -> {
-                       PermissionEntity permission = permissionRepository.findByNameAndStatusNot(itemDTO.getPermissionName(), Status.DELETED)
-                               .orElseThrow(() -> {
-                                   logger.warn("Permission not found with name: {}", itemDTO.getPermissionName());
-                                   return IgrpResponseStatusException.of(
-                                           HttpStatus.NOT_FOUND,
-                                           "Permission not found",
-                                           "Permission not found with name: " + itemDTO.getPermissionName());
-                               });
-                       return resourceMapper.toItemEntity(itemDTO, savedResource, permission);
-                   }).toList();
+            apps.add(app);
+        }
 
-                   resource.setItems(items);
+        resource.setApplications(apps);
 
-           logger.info("Mapped {} permission item(s) for resource.", resourceDTO.getItems().size());
-       } else {
-           logger.info("No permission items provided for this resource.");
-       }
+        ResourceEntity savedResource = resourceRepository.save(resource);
+        logger.info("Resource created successfully with name: {}", savedResource.getName());
 
-      ResourceDTO responseDto = resourceMapper.toDto(savedResource);
-      return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
-   }
+        if (resourceDTO.getItems() != null && !resourceDTO.getItems().isEmpty()) {
+            logger.info("Adding {} permission item(s) to resource.", resourceDTO.getItems().size());
+            var items = resourceDTO.getItems().stream().map(itemDTO -> {
+                PermissionEntity permission = permissionRepository.findByNameAndStatusNot(itemDTO.getPermissionName(), Status.DELETED)
+                        .orElseThrow(() -> {
+                            logger.warn("Permission not found with name: {}", itemDTO.getPermissionName());
+                            return IgrpResponseStatusException.of(
+                                    HttpStatus.NOT_FOUND,
+                                    "Permission not found",
+                                    "Permission not found with name: " + itemDTO.getPermissionName());
+                        });
+                return resourceMapper.toItemEntity(itemDTO, savedResource, permission);
+            }).toList();
+
+            resource.setItems(items);
+
+            logger.info("Mapped {} permission item(s) for resource.", resourceDTO.getItems().size());
+        } else {
+            logger.info("No permission items provided for this resource.");
+        }
+
+        ResourceDTO responseDto = resourceMapper.toDto(savedResource);
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseDto);
+    }
 
 
 }

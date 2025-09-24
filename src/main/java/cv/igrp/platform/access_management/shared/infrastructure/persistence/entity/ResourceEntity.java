@@ -3,21 +3,25 @@
 
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.entity;
 
-import cv.igrp.platform.access_management.shared.config.AuditEntity;
 import cv.igrp.framework.stereotype.IgrpEntity;
-import jakarta.persistence.*;
-import lombok.*;
-import org.hibernate.envers.Audited;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import cv.igrp.platform.access_management.shared.application.constants.ResourceType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.config.AuditEntity;
+import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.envers.Audited;
+
 import java.util.List;
+import java.util.Set;
 
 @Audited
 @Getter
 @Setter
-@ToString
 @IgrpEntity
 @Entity
 @NoArgsConstructor
@@ -30,40 +34,31 @@ public class ResourceEntity extends AuditEntity {
     @Column(name = "id", unique = true, nullable = false)
     private Integer id;
 
-  
+
     @NotBlank(message = "name is mandatory")
-    @Column(name="name", nullable = false, length=100)
+    @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-  
     @NotBlank(message = "description is mandatory")
-    @Column(name="description", nullable = false)
+    @Column(name = "description", nullable = false)
     private String description;
 
-  
     @NotNull(message = "type is mandatory")
     @Enumerated(EnumType.STRING)
-    @Column(name="type", nullable = false)
+    @Column(name = "type", nullable = false)
     private ResourceType type;
 
-  
     @NotNull(message = "status is mandatory")
     @Enumerated(EnumType.STRING)
-    @Column(name="status", nullable = false)
+    @Column(name = "status", nullable = false)
     private Status status;
 
-  
-    @NotNull(message = "applicationId is mandatory")
-
-
-  @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "application_id", referencedColumnName = "id")
-    private ApplicationEntity applicationId;
-    @Column(name="external_id")
+    @Column(name = "external_id")
     private String externalId;
 
-     @OneToMany(mappedBy = "resourceId")
-private List<ResourceItemEntity> items;
+    @OneToMany(mappedBy = "resourceId")
+    private List<ResourceItemEntity> items;
 
-
+    @ManyToMany(mappedBy = "resources", fetch = FetchType.LAZY)
+    private Set<ApplicationEntity> applications;
 }
