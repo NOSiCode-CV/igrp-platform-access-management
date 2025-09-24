@@ -8,6 +8,7 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -98,7 +99,19 @@ public class AddDepartmentsToMenuCommandHandler implements CommandHandler<AddDep
             }
             var department = departmentOpt.get();
             if (!menuEntry.getDepartments().contains(department)) {
-                menuEntry.getDepartments().add(department);
+                if(department.getParentId() != null) {
+                    if(department.getParentId().getMenuentries().contains(menuEntry)) {
+                        menuEntry.getDepartments().add(department);
+                    } else {
+                        log.warn("Cannot add department <{}> to menu <{}> because its parent department <{}> is not associated with the menu", deptId, command.getCode(), department.getParentId().getCode());
+                        throw IgrpResponseStatusException.of(
+                                HttpStatus.BAD_REQUEST,
+                                "Invalid Department Association",
+                                "Cannot add department " + deptId + " to menu " + command.getCode() + " because its parent department " + department.getParentId().getCode() + " is not associated with the menu");
+                    }
+                } else {
+                    menuEntry.getDepartments().add(department);
+                }
                 log.info("Added department <{}> to menu <{}>", deptId, command.getCode());
             } else {
                 log.info("Department <{}> is already associated with menu <{}>", deptId, command.getCode());
