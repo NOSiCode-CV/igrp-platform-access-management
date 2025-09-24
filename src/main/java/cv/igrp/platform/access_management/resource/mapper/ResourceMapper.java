@@ -42,7 +42,7 @@ public class ResourceMapper {
                     .map(ApplicationEntity::getCode)
                     .toList();
 
-            dto.setApplicationCode(apps);
+            dto.setApplications(apps);
         }
 
         if (resource.getItems() != null) {

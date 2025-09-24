@@ -65,7 +65,7 @@ public class CreateResourceCommandHandlerTest {
     @BeforeEach
     void setUp() {
         resourceDTO = new ResourceDTO();
-        resourceDTO.setApplicationCode(List.of("APP"));
+        resourceDTO.setApplications(List.of("APP"));
 
         itemDTO = new ResourceItemDTO();
         itemDTO.setPermissionName("manage");

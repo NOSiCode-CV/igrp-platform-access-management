@@ -87,13 +87,13 @@ public class CreateResourceCommandHandler implements CommandHandler<CreateResour
 
         var resourceDTO = command.getResourcedto();
 
-        logger.info("Creating resource with applicationCode: {}", resourceDTO.getApplicationCode());
+        logger.info("Creating resource with applicationCode: {}", resourceDTO.getApplications());
 
         ResourceEntity resource = resourceMapper.toEntity(resourceDTO);
 
         var apps = new HashSet<ApplicationEntity>();
 
-        for (var code : resourceDTO.getApplicationCode()) {
+        for (var code : resourceDTO.getApplications()) {
 
             var app = applicationRepository.findByCodeAndStatusNot(code, Status.DELETED)
                     .orElseThrow(() -> IgrpResponseStatusException.notFound(
