@@ -185,7 +185,7 @@
       "primaryKey": false
     },
     {
-      "name": "departmentCode",
+      "name": "departments",
       "objectType": "java",
       "type": "string",
       "required": true,

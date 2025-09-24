@@ -1,14 +1,11 @@
 package cv.igrp.platform.access_management.app.application.commands;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import cv.igrp.platform.access_management.app.domain.service.ApplicationValidator;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -22,12 +19,15 @@ import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import cv.igrp.platform.access_management.shared.application.dto.*;
 
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateApplicationCommandHandlerTest {
@@ -116,7 +116,7 @@ public class CreateApplicationCommandHandlerTest {
             dto.setId(savedApplication.getId());
             dto.setCode(savedApplication.getCode());
             dto.setName(savedApplication.getName());
-            dto.setDepartmentCode(List.of("HR"));
+            dto.setDepartments(List.of("HR"));
             dto.setStatus(savedApplication.getStatus());
             return dto;
         });
@@ -129,7 +129,7 @@ public class CreateApplicationCommandHandlerTest {
         assertEquals(1, response.getBody().getId());
         assertEquals("APP001", response.getBody().getCode());
         assertEquals("Test Application", response.getBody().getName());
-        assertTrue(response.getBody().getDepartmentCode().contains("HR"));
+        assertTrue(response.getBody().getDepartments().contains("HR"));
         assertEquals(Status.ACTIVE, response.getBody().getStatus());
 
         verify(applicationRepository).save(Mockito.any(ApplicationEntity.class));

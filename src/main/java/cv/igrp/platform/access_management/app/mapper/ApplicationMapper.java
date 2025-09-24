@@ -67,7 +67,7 @@ public class ApplicationMapper {
                 .flatMap(Set::stream)
                 .map(DepartmentEntity::getCode)
                 .toList();
-        dto.setDepartmentCode(departmentCodes);
+        dto.setDepartments(departmentCodes);
 
         if (entity.getCreatedDate() != null)
             dto.setCreatedDate(entity.getCreatedDate().toString());
@@ -99,7 +99,7 @@ public class ApplicationMapper {
         entity.setSlug(dto.getSlug());
         entity.setDepartments(new HashSet<>());
 
-        for (var code : dto.getDepartmentCode()) {
+        for (var code : dto.getDepartments()) {
 
             var department = departmentEntityRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
                     .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + code));
