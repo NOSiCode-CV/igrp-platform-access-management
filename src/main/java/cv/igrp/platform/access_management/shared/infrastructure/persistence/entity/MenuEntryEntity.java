@@ -89,4 +89,14 @@ public class MenuEntryEntity extends AuditEntity {
     @ManyToMany(fetch = FetchType.LAZY)
 private Set<RoleEntity> roles;
 
+
+
+  
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "t_department_menuentry",
+            joinColumns = @JoinColumn(name = "menuentry_id"),
+            inverseJoinColumns = @JoinColumn(name = "department_id")
+    )
+private Set<DepartmentEntity> departments;
 }

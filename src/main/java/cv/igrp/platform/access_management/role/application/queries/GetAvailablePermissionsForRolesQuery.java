@@ -11,7 +11,7 @@ import lombok.AllArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class GetRolesByNameQuery implements Query {
+public class GetAvailablePermissionsForRolesQuery implements Query {
 
   @NotBlank(message = "The field <name> is required")
   private String name;

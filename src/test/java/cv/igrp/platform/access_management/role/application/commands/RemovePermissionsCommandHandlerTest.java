@@ -1,8 +1,9 @@
 package cv.igrp.platform.access_management.role.application.commands;
 
-import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
+import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
@@ -28,8 +29,7 @@ public class RemovePermissionsCommandHandlerTest {
     @Mock
     private RoleEntityRepository roleRepository;
     @Mock
-    private PermissionMapper permissionMapper;
-
+    private RoleMapper roleMapper;
 
     @Test
     void itShouldStartContext() {
@@ -75,29 +75,38 @@ public class RemovePermissionsCommandHandlerTest {
         permission2.setName(permissionName2);
         permission2.setStatus(Status.ACTIVE);
 
+        RoleDTO roleDTO = new RoleDTO();
+        roleDTO.setId(roleId);
+        roleDTO.setPermissions(List.of());
+
         HashSet<PermissionEntity> permissions = new HashSet<>(Set.of(permission1, permission2));
-        savedRole.setPermissions(permissions);
+
+        savedRole.setPermissions(new HashSet<>());
+
+        savedRole.getPermissions().addAll(permissions);
+
         List<String> permissionsToRemove = List.of(permissionName1, permissionName2);
         RemovePermissionsCommand removePermissionsCommand =
                 new RemovePermissionsCommand(permissionsToRemove, roleName);
 
         when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
                 .thenReturn(Optional.of(savedRole));
+        when(roleRepository.save(savedRole)).thenReturn(savedRole);
+        when(roleMapper.mapToDto(savedRole)).thenReturn(roleDTO);
         //... When
-        ResponseEntity<List<PermissionDTO>> result = underTest.handle(removePermissionsCommand);
+        ResponseEntity<RoleDTO> result = underTest.handle(removePermissionsCommand);
 
         //... Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        List<PermissionDTO> responseBody = result.getBody();
+        RoleDTO responseBody = result.getBody();
         assertNotNull(responseBody);
-        assertEquals(2, responseBody.size());
+        assertEquals(0, responseBody.getPermissions().size());
 
         assertFalse(savedRole.getPermissions().contains(permission1));
         assertFalse(savedRole.getPermissions().contains(permission2));
 
         verify(roleRepository).save(savedRole);
-        verify(permissionMapper).mapToDTO(permission1);
-        verify(permissionMapper).mapToDTO(permission2);
+        verify(roleMapper).mapToDto(savedRole);
     }
 
     @Test
@@ -130,29 +139,38 @@ public class RemovePermissionsCommandHandlerTest {
         permission2.setStatus(Status.ACTIVE);
         permission3.setStatus(Status.ACTIVE);
 
+        RoleDTO roleDTO = new RoleDTO();
+        roleDTO.setId(roleId);
+        roleDTO.setPermissions(new ArrayList<>());
+
         HashSet<PermissionEntity> permissions = new HashSet<>(Set.of(permission3));
-        savedRole.setPermissions(permissions);
+
+        savedRole.setPermissions(new HashSet<>());
+
+        savedRole.getPermissions().addAll(permissions);
+
         List<String> permissionsToRemove = List.of(permissionName1, permissionName2);
         RemovePermissionsCommand removePermissionsCommand =
                 new RemovePermissionsCommand(permissionsToRemove, roleName);
 
         when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
                 .thenReturn(Optional.of(savedRole));
+        when(roleRepository.save(savedRole)).thenReturn(savedRole);
+        when(roleMapper.mapToDto(savedRole)).thenReturn(roleDTO);
         //... When
-        ResponseEntity<List<PermissionDTO>> result = underTest.handle(removePermissionsCommand);
+        ResponseEntity<RoleDTO> result = underTest.handle(removePermissionsCommand);
 
         //... Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        List<PermissionDTO> responseBody = result.getBody();
+        RoleDTO responseBody = result.getBody();
         assertNotNull(responseBody);
-        assertEquals(0, responseBody.size());
+        assertEquals(0, responseBody.getPermissions().size());
 
         assertFalse(savedRole.getPermissions().contains(permission1));
         assertFalse(savedRole.getPermissions().contains(permission2));
 
         verify(roleRepository).save(savedRole);
-        verify(permissionMapper, never()).mapToDTO(permission1);
-        verify(permissionMapper, never()).mapToDTO(permission2);
+        verify(roleMapper).mapToDto(savedRole);
     }
 
     @Test
@@ -180,31 +198,39 @@ public class RemovePermissionsCommandHandlerTest {
         dtoRemoved.setId(permissionToRemoveId);
         dtoRemoved.setName(permissionToRemoveName);
 
+        RoleDTO roleDTO = new RoleDTO();
+        roleDTO.setId(roleId);
+        roleDTO.setPermissions(new ArrayList<>());
+
+        roleDTO.getPermissions().add(permissionToKeepName);
+
         Set<PermissionEntity> initialPermissions = new HashSet<>(Set.of(permissionToRemove, permissionToKeep));
 
         RoleEntity role = new RoleEntity();
         role.setId(roleId);
         role.setStatus(Status.ACTIVE);
-        role.setPermissions(initialPermissions);
+        role.setPermissions(new HashSet<>());
+
+        role.getPermissions().addAll(initialPermissions);
 
         when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
-        when(permissionMapper.mapToDTO(permissionToRemove)).thenReturn(dtoRemoved);
+        when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
         when(roleRepository.save(role)).thenReturn(role);
 
         // When
-        ResponseEntity<List<PermissionDTO>> result = underTest.handle(command);
+        ResponseEntity<RoleDTO> result = underTest.handle(command);
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        List<PermissionDTO> responseBody = result.getBody();
+        RoleDTO responseBody = result.getBody();
         assertNotNull(responseBody);
-        assertEquals(1, responseBody.size());
-        assertEquals(permissionToRemoveId, responseBody.getFirst().getId());
+        assertEquals(1, responseBody.getPermissions().size());
+        assertEquals(permissionToKeepName, responseBody.getPermissions().getFirst());
 
         assertFalse(role.getPermissions().contains(permissionToRemove));
         assertTrue(role.getPermissions().contains(permissionToKeep));
 
-        verify(permissionMapper).mapToDTO(permissionToRemove);
+        verify(roleMapper).mapToDto(role);
         verify(roleRepository).save(role);
     }
 
@@ -222,20 +248,25 @@ public class RemovePermissionsCommandHandlerTest {
         role.setStatus(Status.ACTIVE);
         role.setPermissions(new HashSet<>());
 
+        RoleDTO roleDTO = new RoleDTO();
+        roleDTO.setId(roleId);
+        roleDTO.setPermissions(List.of());
+
         when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.save(role)).thenReturn(role);
+        when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
         // When
-        ResponseEntity<List<PermissionDTO>> response = underTest.handle(command);
+        ResponseEntity<RoleDTO> response = underTest.handle(command);
 
         // Then
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        List<PermissionDTO> responseBody = response.getBody();
+        RoleDTO responseBody = response.getBody();
         assertNotNull(responseBody);
-        assertTrue(responseBody.isEmpty());
+        assertTrue(responseBody.getPermissions().isEmpty());
 
         verify(roleRepository).save(role);
-        verifyNoInteractions(permissionMapper);
+        verify(roleMapper).mapToDto(role);
     }
 
     @Test
@@ -263,25 +294,30 @@ public class RemovePermissionsCommandHandlerTest {
         role.setId(roleId);
         role.setName(roleName);
         role.setStatus(Status.ACTIVE);
-        role.setPermissions(rolePermissions);
+        role.setPermissions(new HashSet<>());
+
+        role.getPermissions().addAll(rolePermissions);
+
+        RoleDTO roleDTO = new RoleDTO();
+        roleDTO.setId(roleId);
+        roleDTO.setPermissions(List.of());
 
         when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
-        when(permissionMapper.mapToDTO(permission)).thenReturn(permissionDTO);
+        when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
         when(roleRepository.save(role)).thenReturn(role);
 
         // When
-        ResponseEntity<List<PermissionDTO>> result = underTest.handle(command);
+        ResponseEntity<RoleDTO> result = underTest.handle(command);
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        List<PermissionDTO> responseBody = result.getBody();
+        RoleDTO responseBody = result.getBody();
         assertNotNull(responseBody);
-        assertEquals(1, responseBody.size());
-        assertEquals(duplicatedPermissionId, responseBody.getFirst().getId());
+        assertEquals(0, responseBody.getPermissions().size());
 
         assertFalse(role.getPermissions().contains(permission));
 
-        verify(permissionMapper, times(1)).mapToDTO(permission);
+        verify(roleMapper, times(1)).mapToDto(role);
         verify(roleRepository).save(role);
     }
 
@@ -316,24 +352,29 @@ public class RemovePermissionsCommandHandlerTest {
         role.setId(roleId);
         role.setName(roleName);
         role.setStatus(Status.ACTIVE);
-        role.setPermissions(rolePermissions);
+        role.setPermissions(new HashSet<>());
+
+        role.getPermissions().addAll(rolePermissions);
+
+        RoleDTO roleDTO = new RoleDTO();
+        roleDTO.setId(roleId);
+        roleDTO.setPermissions(List.of(permissionToKeepName));
 
         when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
-        when(permissionMapper.mapToDTO(permissionToRemove)).thenReturn(dtoToRemove);
+        when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
         when(roleRepository.save(role)).thenReturn(role);
 
         // When
-        ResponseEntity<List<PermissionDTO>> result = underTest.handle(command);
+        ResponseEntity<RoleDTO> result = underTest.handle(command);
 
         // Then
         assertEquals(HttpStatus.OK, result.getStatusCode());
-        List<PermissionDTO> responseBody = result.getBody();
+        RoleDTO responseBody = result.getBody();
         assertNotNull(responseBody);
-        assertEquals(1, responseBody.size());
-        assertEquals(dtoToRemove, responseBody.getFirst());
+        assertEquals(1, responseBody.getPermissions().size());
+        assertEquals(permissionToKeepName, responseBody.getPermissions().getFirst());
 
-        verify(permissionMapper).mapToDTO(permissionToRemove);
-        verify(permissionMapper, never()).mapToDTO(permissionToKeep);
+        verify(roleMapper).mapToDto(role);
 
         assertFalse(role.getPermissions().contains(permissionToRemove));
         assertTrue(role.getPermissions().contains(permissionToKeep));

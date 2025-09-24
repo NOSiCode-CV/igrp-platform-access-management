@@ -345,4 +345,78 @@ public class MenuController {
               .body(response.getBody());
   }
 
+  @PostMapping(
+    value = "menus/{code}/addDepartments"
+  )
+  @Operation(
+    summary = "POST method to handle operations for addDepartmentsToMenu",
+    description = "POST method to handle operations for addDepartmentsToMenu",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = MenuEntryDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<MenuEntryDTO> addDepartmentsToMenu(@RequestBody List<String> addDepartmentsToMenuRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var command = new AddDepartmentsToMenuCommand(addDepartmentsToMenuRequest, code);
+
+       ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
+
+       LOGGER.debug("Operation finished");
+
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+  @PostMapping(
+    value = "menus/{code}/removeDepartments"
+  )
+  @Operation(
+    summary = "POST method to handle operations for removeDepartmentsFromMenu",
+    description = "POST method to handle operations for removeDepartmentsFromMenu",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = MenuEntryDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<MenuEntryDTO> removeDepartmentsFromMenu(@RequestBody List<String> removeDepartmentsFromMenuRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var command = new RemoveDepartmentsFromMenuCommand(removeDepartmentsFromMenuRequest, code);
+
+       ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
+
+       LOGGER.debug("Operation finished");
+
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
 }

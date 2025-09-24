@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetRoleByIdQuery implements Query {
 
-  @NotNull(message = "The field <id> is required.")
+  @NotNull(message = "The field <id> is required")
   private Integer id;
 
 }

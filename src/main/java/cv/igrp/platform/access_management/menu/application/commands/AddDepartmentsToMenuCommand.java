@@ -1,4 +1,4 @@
-package cv.igrp.platform.access_management.users.application.commands;
+package cv.igrp.platform.access_management.menu.application.commands;
 
 import cv.igrp.framework.core.domain.Command;
 import jakarta.validation.constraints.*;
@@ -11,11 +11,11 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RemoveRolesFromUserCommand implements Command {
+public class AddDepartmentsToMenuCommand implements Command {
 
   
-  private List<String> removeRolesFromUserRequest;
-  @NotBlank(message = "The field <username> is required")
-  private String username;
+  private List<String> addDepartmentsToMenuRequest;
+  @NotBlank(message = "The field <code> is required")
+  private String code;
 
 }

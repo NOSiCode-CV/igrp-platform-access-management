@@ -3,19 +3,15 @@
 
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.entity;
 
-import cv.igrp.framework.stereotype.IgrpEntity;
-import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.config.AuditEntity;
+import cv.igrp.framework.stereotype.IgrpEntity;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.envers.Audited;
-
-import java.util.List;
+import jakarta.validation.constraints.NotBlank;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import java.util.Set;
+import java.util.List;
 
 @Audited
 @Getter
@@ -32,46 +28,50 @@ public class DepartmentEntity extends AuditEntity {
     @Column(name = "id", unique = true, nullable = false)
     private Integer id;
 
-
-    @Column(name = "code")
+  
+    @Column(name="code")
     private String code;
 
-
-    @Column(name = "name")
+  
+    @Column(name="name")
     private String name;
 
-
+  
     @NotBlank(message = "description is mandatory")
-    @Column(name = "description", nullable = false)
+    @Column(name="description", nullable = false)
     private String description;
 
-
+  
     @Enumerated(EnumType.STRING)
-    @Column(name = "status")
+    @Column(name="status")
     private DepartmentStatus status;
 
+  
 
-    @ManyToOne(fetch = FetchType.LAZY)
+
+  @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id", referencedColumnName = "id")
     private DepartmentEntity parentId;
 
 
+  
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
             name = "department_applications",
             joinColumns = @JoinColumn(name = "department_id"),
             inverseJoinColumns = @JoinColumn(name = "application_id")
     )
-    private Set<ApplicationEntity> applications;
+private Set<ApplicationEntity> applications;   @OneToMany(mappedBy = "parentId")
+private List<DepartmentEntity> childrenids;
 
-    @OneToMany(mappedBy = "parentId")
-    private List<DepartmentEntity> childrenids;
+   @OneToMany(mappedBy = "department")
+private List<PermissionEntity> permissions;
 
-    @OneToMany(mappedBy = "department")
-    private List<PermissionEntity> permissions;
+   @OneToMany(mappedBy = "department")
+private List<RoleEntity> roles;
 
-    @OneToMany(mappedBy = "department")
-    private List<RoleEntity> roles;
+   @ManyToMany(mappedBy = "departments", fetch = FetchType.LAZY)
+private Set<MenuEntryEntity> menuentries;
 
 
 }

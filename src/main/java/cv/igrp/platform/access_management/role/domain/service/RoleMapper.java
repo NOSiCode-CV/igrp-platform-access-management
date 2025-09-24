@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.role.domain.service;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import org.springframework.stereotype.Component;
 
@@ -31,6 +32,7 @@ public class RoleMapper {
         roleDTO.setDescription(role.getDescription());
         roleDTO.setDepartmentCode(role.getDepartment().getCode());
         roleDTO.setStatus(role.getStatus());
+        roleDTO.setPermissions(role.getPermissions().stream().map(PermissionEntity::getName).toList());
         return roleDTO;
     }
 

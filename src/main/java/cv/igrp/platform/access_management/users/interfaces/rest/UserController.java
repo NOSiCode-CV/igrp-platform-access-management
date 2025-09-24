@@ -188,12 +188,12 @@ public class UserController {
   )
   
   public ResponseEntity<List<RoleDTO>> getUserRoles(
-    @RequestParam(value = "applicationCode") Integer applicationCode, @PathVariable(value = "username") String username)
+    @PathVariable(value = "username") String username)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetUserRolesQuery(applicationCode, username);
+      final var query = new GetUserRolesQuery(username);
 
       ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
 

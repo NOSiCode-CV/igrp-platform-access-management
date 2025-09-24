@@ -15,7 +15,7 @@ public class AddPermissionsCommand implements Command {
 
   
   private List<String> addPermissionsRequest;
-  @NotBlank(message = "The field <name> is required.")
+  @NotBlank(message = "The field <name> is required")
   private String name;
 
 }
