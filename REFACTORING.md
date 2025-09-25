@@ -427,11 +427,315 @@ public class MenuEntryDTO {
 public class ResourceDTO {
 +   private List<String> departments;
 }
+```
 
-public class PermissionDTO {
--   private Integer departmentId;
-+   private String departmentCode;
+## Testing
+
+This section defines **test cases** for each of the access control rules.  
+For each rule, we include **success**, **forbid**, and **error** scenarios.  
+All endpoints and payloads follow the separation between **attribution context** and **usage/check context**.
+
+---
+
+### 1. Departments (Top-level access)
+
+#### ✅ Success - Child inherits parent applications
+**Description:** Child department should inherit applications accessible by the parent.
+- **Endpoint:** `GET /departments/{code}/applications/available`
+- **Example Request:** `/departments/payroll/applications/available`
+- **Expected Response (200):**
+```json
+[
+  { "id": 1, "code": "finance-app", "name": "Finance App" }
+]
+````
+
+#### 🚫 Forbid - Child accessing application parent doesn’t have
+
+**Description:** Child department cannot get applications outside parent’s access.
+
+* **Endpoint:** `GET /departments/payroll/applications/available`
+* **Example Request:** `/departments/payroll/applications/available`
+* **Expected Response (200):**
+
+```json
+[]
+```
+
+#### ❌ Error - Department not found
+
+**Description:** Invalid department code should return error.
+
+* **Endpoint:** `GET /departments/unknown/applications/available`
+* **Expected Response (404):**
+
+```json
+{ "error": "Department not found" }
+```
+
+---
+
+### 2. Applications
+
+#### ✅ Success - Application shared with multiple departments
+
+**Description:** Application can be attributed to more than one department.
+
+* **Endpoint:** `POST /applications`
+* **Example Request:**
+
+```json
+{
+  "code": "event-app",
+  "name": "Event Management",
+  "owner": "superadmin",
+  "departments": ["DEPT_IT", "DEPT_LOGISTICS"]
 }
+```
+
+* **Expected Response (201):**
+
+```json
+{
+  "id": 2,
+  "code": "event-app",
+  "name": "Event Management",
+  "owner": "superadmin",
+  "departments": ["DEPT_IT", "DEPT_LOGISTICS"]
+}
+```
+
+#### 🚫 Forbid - Department assigning application outside hierarchy
+
+**Description:** Department cannot assign an application not available from parent.
+
+* **Endpoint:** `POST /applications/logistics-app/addDepartments`
+* **Example Request:**
+
+```json
+["payroll"]
+```
+
+* **Expected Response (403):**
+
+```json
+{ "error": "Application cannot be attributed to this department" }
+```
+
+#### ❌ Error - Invalid application code
+
+**Description:** Using an invalid application code.
+
+* **Endpoint:** `POST /applications/invalid-app/addDepartments`
+* **Example Request:**
+
+```json
+["payroll"]
+```
+
+* **Expected Response (404):**
+
+```json
+{ "error": "Application not found" }
+```
+
+---
+
+### 3. Menus (Role-based only)
+
+#### ✅ Success - Role sees its menu
+
+* **Endpoint:** `GET /applications/{appCode}/menus`
+* **Example Request:** `/applications/finance/menus`
+* **Role:** `HR_MANAGER`
+* **Expected Response (200):**
+
+```json
+[
+  { "id": 10, "name": "Salaries" }
+]
+```
+
+#### 🚫 Forbid - Role without menu access
+
+* **Endpoint:** `GET /applications/{appCode}/menus`
+* **Example Request:** `/applications/finance/menus`
+* **Role:** `GUEST`
+* **Expected Response (200):**
+
+```json
+[]
+```
+
+#### ❌ Error - Menu not found
+
+* **Endpoint:** `GET /menus/invalid-menu`
+* **Expected Response (404):**
+
+```json
+{ "error": "Menu not found" }
+```
+
+---
+
+### 4. Resources (RBAC + ABAC)
+
+#### ✅ Success - Role and permission grant access
+
+* **Endpoint:** `GET /resources/{id}/items/{itemId}/check`
+* **Example Request:** `/resources/5/items/100/check?role=HR_MANAGER&permission=VIEW_SALARY`
+* **Expected Response (200):**
+
+```json
+{ "access": true }
+```
+
+#### 🚫 Forbid - Role present but permission missing
+
+* **Endpoint:** `/resources/5/items/100/check?role=HR_MANAGER`
+* **Expected Response (403):**
+
+```json
+{ "access": false, "reason": "Missing required permission" }
+```
+
+#### ❌ Error - Invalid resource item
+
+* **Endpoint:** `/resources/5/items/999/check?role=HR_MANAGER`
+* **Expected Response (404):**
+
+```json
+{ "error": "Resource item not found" }
+```
+
+---
+
+### 5. Roles
+
+#### ✅ Success - Child role inherits from parent
+
+* **Endpoint:** `GET /roles/{name}/permissions/available`
+* **Example Request:** `/roles/JUNIOR_ACCOUNTANT/permissions/available`
+* **Expected Response (200):**
+
+```json
+[
+  { "id": 50, "name": "VIEW_BUDGET" }
+]
+```
+
+#### 🚫 Forbid - Child assigning permission outside parent
+
+* **Endpoint:** `POST /roles/JUNIOR_ACCOUNTANT/addPermissions`
+* **Example Request:**
+
+```json
+["view_logistics"]
+```
+
+* **Expected Response (403):**
+
+```json
+{ "error": "Permission cannot be attributed to child role" }
+```
+
+#### ❌ Error - Role not found
+
+* **Endpoint:** `/roles/UNKNOWN/permissions/available`
+* **Expected Response (404):**
+
+```json
+{ "error": "Role not found" }
+```
+
+---
+
+### 6. Permissions
+
+#### ✅ Success - Permission check through ABAC
+
+* **Endpoint:** `POST /authorize/check`
+* **Example Request:**
+
+```json
+{ "username": "alice", "permission": "VIEW_SALARY" }
+```
+
+* **Expected Response (200):**
+
+```json
+{ "allowed": true }
+```
+
+#### 🚫 Forbid - Permission missing
+
+* **Endpoint:** `POST /permissions/check`
+* **Example Request:**
+
+```json
+{ "username": "bob", "permission": "APPROVE_PAYMENT" }
+```
+
+* **Expected Response (403):**
+
+```json
+{ "granted": false }
+```
+
+#### ❌ Error - Permission does not exist
+
+* **Endpoint:** `POST /authorize/check`
+* **Example Request:**
+
+```json
+{ "username": "alice", "permission": "NON_EXISTENT" }
+```
+
+* **Expected Response (404):**
+
+```json
+{ "error": "Permission not found" }
+```
+
+---
+
+### 7. Users
+
+#### ✅ Success - User inherits multiple role permissions
+
+* **Endpoint:** `GET /users/{username}/roles`
+* **Example Request:** `/users/alice/roles`
+* **Expected Response (200):**
+
+```json
+[
+  {
+    "id": 1,
+    "name": "ADMIN",
+    "permissions": [
+      { "id": 50, "name": "VIEW_SALARY" },
+      { "id": 51, "name": "APPROVE_EXPENSES" }
+    ]
+  }
+]
+```
+
+#### 🚫 Forbid - User without role
+
+* **Endpoint:** `/users/bob/roles`
+* **Expected Response (200):**
+
+```json
+[]
+```
+
+#### ❌ Error - User not found
+
+* **Endpoint:** `/users/unknown/roles`
+* **Expected Response (404):**
+
+```json
+{ "error": "User not found" }
 ```
 
 ## Migration Strategy
