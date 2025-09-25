@@ -121,6 +121,26 @@
         "module": "shared",
         "orphanRemoval": false
       }
+    },
+    {
+      "name": "roles",
+      "type": "relation",
+      "length": 255,
+      "nullable": true,
+      "unique": false,
+      "primaryKey": false,
+      "skipFieldRevision": false,
+      "relation": {
+        "type": "ManyToMany",
+        "entity": "RoleEntity",
+        "referencedColumnName": "id",
+        "cardinality": "twoWay",
+        "inverseJoinColumn": "roles",
+        "joinTable": "t_application_role",
+        "fetchType": "lazy",
+        "module": "shared",
+        "orphanRemoval": false
+      }
     }
   ],
   "id": "ruiuobd7zq",

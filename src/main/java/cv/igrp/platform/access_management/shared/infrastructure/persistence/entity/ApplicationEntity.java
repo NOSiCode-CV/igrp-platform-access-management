@@ -36,35 +36,44 @@ public class ApplicationEntity extends AuditEntity {
     @Column(name = "id", unique = true, nullable = false)
     private Integer id;
 
+
     @NotBlank(message = "code is mandatory")
     @Column(name = "code", nullable = false, length = 15)
     private String code;
+
 
     @NotBlank(message = "name is mandatory")
     @Column(name = "name", nullable = false, length = 50)
     private String name;
 
+
     @Column(name = "description")
     private String description;
+
 
     @NotNull(message = "status is mandatory")
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private Status status;
 
+
     @NotNull(message = "type is mandatory")
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private AppType type;
 
+
     @Column(name = "owner")
     private String owner;
+
 
     @Column(name = "picture")
     private String picture;
 
+
     @Column(name = "url")
     private String url;
+
 
     @Column(name = "slug", length = 50)
     private String slug;
@@ -76,6 +85,14 @@ public class ApplicationEntity extends AuditEntity {
             inverseJoinColumns = @JoinColumn(name = "resource_id")
     )
     private Set<ResourceEntity> resources = new HashSet<>();
+
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "t_application_role",
+            joinColumns = @JoinColumn(name = "application_id"),
+            inverseJoinColumns = @JoinColumn(name = "roles")
+    )
+    private Set<RoleEntity> roles = new HashSet<>();
 
     @OneToMany(mappedBy = "applicationId")
     private List<MenuEntryEntity> menus = new ArrayList<>();
