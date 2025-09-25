@@ -10,6 +10,9 @@ import lombok.*;
 import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 
 @Audited
@@ -50,17 +53,27 @@ public class DepartmentEntity extends AuditEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "parent_id", referencedColumnName = "id")
-    private DepartmentEntity parentId;   @OneToMany(mappedBy = "parentId")
-private List<DepartmentEntity> childrenids;
+    private DepartmentEntity parentId;
+
+
+  
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "department_applications",
+            joinColumns = @JoinColumn(name = "department_id"),
+            inverseJoinColumns = @JoinColumn(name = "application_id")
+    )
+private Set<ApplicationEntity> applications = new HashSet<>();   @OneToMany(mappedBy = "parentId")
+private List<DepartmentEntity> childrenids = new ArrayList<>();
 
    @OneToMany(mappedBy = "department")
-private List<PermissionEntity> permissions;
-
-   @OneToMany(mappedBy = "departmentId")
-private List<ApplicationEntity> applications;
+private List<PermissionEntity> permissions = new ArrayList<>();
 
    @OneToMany(mappedBy = "department")
-private List<RoleEntity> roles;
+private List<RoleEntity> roles = new ArrayList<>();
+
+   @ManyToMany(mappedBy = "departments", fetch = FetchType.LAZY)
+private Set<MenuEntryEntity> menuentries = new HashSet<>();
 
 
 }

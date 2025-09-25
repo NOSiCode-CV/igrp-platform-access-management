@@ -2,10 +2,7 @@ package cv.igrp.platform.access_management.menu.application.queries;
 
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.*;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
@@ -70,32 +67,31 @@ public class GetAppMenusQueryHandler implements QueryHandler<GetAppMenusQuery, R
 
         ApplicationEntity app = optionalApp.get();
 
-        // Step 2: Get user's permission IDs from roles
-        Set<Integer> userPermissionIds = user.getRoles().stream()
+        // Step 2: Get user's role IDs from roles
+        Set<Integer> userRoleIds = user.getRoles().stream()
                 .filter(role -> Objects.nonNull(role) && !role.getStatus().equals(Status.DELETED))
-                .flatMap(role -> role.getPermissions().stream())
-                .map(PermissionEntity::getId)
+                .map(RoleEntity::getId)
                 .collect(Collectors.toSet());
 
-        if (userPermissionIds.isEmpty()) {
-            LOGGER.warn("User {} has no permissions assigned", username);
+        if (userRoleIds.isEmpty()) {
+            LOGGER.warn("User {} has no roles assigned", username);
             return ResponseEntity.ok(Collections.emptyList());
         }
 
         // Step 3: Fetch all active menus for the app (via repository)
         List<MenuEntryEntity> allMenus = menuEntryRepository.findByApplicationIdAndStatus(app, Status.ACTIVE);
 
-        // Step 4: Filter only menus user has permission for (or no permission required)
+        // Step 4: Filter only menus user has role for (or no role required)
         List<MenuEntryDTO> accessibleMenus = allMenus.stream()
                 .filter(menu -> {
-                    Set<PermissionEntity> menuPermissions = menu.getPermissions();
-                    if(menuPermissions == null || menuPermissions.isEmpty()) {
+                    Set<RoleEntity> menuRoles = menu.getRoles();
+                    if(menuRoles == null || menuRoles.isEmpty()) {
                         return false;
                     }
-                    return menuPermissions.stream()
-                                    .filter(permission -> permission.getStatus() == Status.ACTIVE)
-                                    .map(PermissionEntity::getId)
-                                    .anyMatch(userPermissionIds::contains);
+                    return menuRoles.stream()
+                                    .filter(role -> role.getStatus() == Status.ACTIVE)
+                                    .map(RoleEntity::getId)
+                                    .anyMatch(userRoleIds::contains);
                 })
                 .map(menuEntryMapper::toDTO)
                 .collect(Collectors.toList());

@@ -396,6 +396,35 @@
           "isRequired": true
         }
       ]
+    },
+    {
+      "actionName": "getApplicationMenus",
+      "path": "/applications/{id}/menus/available",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "description": "Get all application menus",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true
+        }
+      ]
     }
   ],
   "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications"

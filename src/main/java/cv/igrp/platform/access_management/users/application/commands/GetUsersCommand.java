@@ -15,15 +15,15 @@ public class GetUsersCommand implements Command {
 
   
   private List<Integer> getUsersRequest;
-  @NotNull(message = "The field <applicationCode> is required.")
+  @NotNull(message = "The field <applicationCode> is required")
   private Integer applicationCode;
-  @NotNull(message = "The field <departmentCode> is required.")
+  @NotNull(message = "The field <departmentCode> is required")
   private Integer departmentCode;
-  @NotBlank(message = "The field <name> is required.")
+  @NotBlank(message = "The field <name> is required")
   private String name;
-  @NotBlank(message = "The field <username> is required.")
+  @NotBlank(message = "The field <username> is required")
   private String username;
-  @NotBlank(message = "The field <email> is required.")
+  @NotBlank(message = "The field <email> is required")
   private String email;
 
 }

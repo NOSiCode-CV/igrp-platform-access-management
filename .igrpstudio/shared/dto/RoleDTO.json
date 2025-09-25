@@ -80,6 +80,19 @@
       "isUrl": false,
       "primaryKey": false,
       "module": "shared"
+    },
+    {
+      "name": "permissions",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "collectionType": "list"
     }
   ],
   "id": "2xsfscjnlo"
