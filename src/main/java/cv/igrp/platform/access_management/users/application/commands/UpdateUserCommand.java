@@ -14,7 +14,7 @@ public class UpdateUserCommand implements Command {
 
   
   private IGRPUserDTO igrpuserdto;
-  @NotBlank(message = "The field <username> is required.")
+  @NotBlank(message = "The field <username> is required")
   private String username;
 
 }

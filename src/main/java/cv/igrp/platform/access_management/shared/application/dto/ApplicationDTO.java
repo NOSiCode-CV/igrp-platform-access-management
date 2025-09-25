@@ -4,14 +4,16 @@
 package cv.igrp.platform.access_management.shared.application.dto;
 
 import cv.igrp.framework.stereotype.IgrpDTO;
-import jakarta.validation.*;
-import jakarta.validation.constraints.*;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.AllArgsConstructor;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import jakarta.validation.constraints.*;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -68,8 +70,10 @@ public class ApplicationDTO  {
   
   
   private String lastModifiedDate ;
-  
-  
-  private String departmentCode ;
+
+    @NotNull(message = "The field <departments> is required")
+    @NotEmpty(message = "The field <departments> must not be empty")
+    @Size(min = 1, message = "The field length <departments> must be at least 1 characters")
+    private List<String> departments = new ArrayList<>();
 
 }

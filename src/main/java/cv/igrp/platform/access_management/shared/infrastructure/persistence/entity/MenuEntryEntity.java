@@ -13,6 +13,7 @@ import jakarta.validation.constraints.NotNull;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import java.util.Set;
+import java.util.HashSet;
 
 @Audited
 @Getter
@@ -82,8 +83,21 @@ public class MenuEntryEntity extends AuditEntity {
 
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "application_id", referencedColumnName = "id")
-    private ApplicationEntity applicationId;   @ManyToMany(mappedBy = "menuEntryIds", fetch = FetchType.LAZY)
-private Set<PermissionEntity> permissions;
+    private ApplicationEntity applicationId;
 
 
+  
+    @ManyToMany(fetch = FetchType.LAZY)
+private Set<RoleEntity> roles = new HashSet<>();
+
+
+
+  
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "t_department_menuentry",
+            joinColumns = @JoinColumn(name = "menuentry_id"),
+            inverseJoinColumns = @JoinColumn(name = "department_id")
+    )
+private Set<DepartmentEntity> departments = new HashSet<>();
 }

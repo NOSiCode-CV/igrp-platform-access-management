@@ -13,9 +13,9 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetRolesQuery implements Query {
 
-  @NotBlank(message = "The field <departmentCode> is required.")
+  @NotBlank(message = "The field <departmentCode> is required")
   private String departmentCode;
-  @NotBlank(message = "The field <username> is required.")
+  @NotBlank(message = "The field <username> is required")
   private String username;
 
 }

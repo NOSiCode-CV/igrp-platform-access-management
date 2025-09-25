@@ -15,7 +15,7 @@ public class RemoveRolesFromUserCommand implements Command {
 
   
   private List<String> removeRolesFromUserRequest;
-  @NotBlank(message = "The field <username> is required.")
+  @NotBlank(message = "The field <username> is required")
   private String username;
 
 }

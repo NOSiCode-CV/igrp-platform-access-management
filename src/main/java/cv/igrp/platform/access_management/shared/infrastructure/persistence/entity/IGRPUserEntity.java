@@ -8,9 +8,7 @@ import lombok.*;
 import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Audited
 @Getter
@@ -45,13 +43,13 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     private Boolean emailVerified = Boolean.FALSE;
 
     @ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
-    private List<RoleEntity> roles;
+    private List<RoleEntity> roles = new ArrayList<>();
 
     @ElementCollection
     @CollectionTable(name = "t_user_custom_fields", joinColumns = @JoinColumn(name = "user_id"))
     @MapKeyColumn(name = "field_key")
     @Column(name = "field_value")
-    private Map<String, String> customFields;
+    private Map<String, String> customFields = new HashMap<>();
 
     // Implementação da interface UserIdentity
 

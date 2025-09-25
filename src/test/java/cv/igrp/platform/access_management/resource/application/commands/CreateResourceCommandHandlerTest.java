@@ -1,11 +1,10 @@
 package cv.igrp.platform.access_management.resource.application.commands;
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
-
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
 import cv.igrp.platform.access_management.shared.application.constants.ResourceType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceItemDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
@@ -23,9 +22,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import cv.igrp.platform.access_management.shared.application.dto.*;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("CreateResourceCommandHandler Unit Tests")
@@ -61,7 +65,7 @@ public class CreateResourceCommandHandlerTest {
     @BeforeEach
     void setUp() {
         resourceDTO = new ResourceDTO();
-        resourceDTO.setApplicationCode("APP");
+        resourceDTO.setApplications(List.of("APP"));
 
         itemDTO = new ResourceItemDTO();
         itemDTO.setPermissionName("manage");

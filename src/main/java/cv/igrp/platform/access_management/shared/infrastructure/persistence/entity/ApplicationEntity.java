@@ -12,6 +12,9 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.ArrayList;
 import java.util.List;
 
 @Audited
@@ -74,16 +77,21 @@ public class ApplicationEntity extends AuditEntity {
   
 
 
-  @ManyToOne(fetch = FetchType.LAZY, cascade = { CascadeType.ALL })
-    @JoinColumn(name = "department_id", referencedColumnName = "id")
-    private DepartmentEntity departmentId;   @OneToMany(mappedBy = "applicationId")
-private List<MenuEntryEntity> menus;
-
-   @OneToMany(mappedBy = "applicationId")
-private List<ResourceEntity> resources;
+  
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "t_application_resource",
+            joinColumns = @JoinColumn(name = "application_id"),
+            inverseJoinColumns = @JoinColumn(name = "resource_id")
+    )
+private Set<ResourceEntity> resources = new HashSet<>();   @OneToMany(mappedBy = "applicationId")
+private List<MenuEntryEntity> menus = new ArrayList<>();
 
    @OneToMany(mappedBy = "application")
-private List<PermissionEntity> permissions;
+private List<PermissionEntity> permissions = new ArrayList<>();
+
+   @ManyToMany(mappedBy = "applications", fetch = FetchType.LAZY)
+private Set<DepartmentEntity> departments = new HashSet<>();
 
 
 }

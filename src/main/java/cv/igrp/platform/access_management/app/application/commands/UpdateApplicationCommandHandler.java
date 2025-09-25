@@ -2,17 +2,16 @@ package cv.igrp.platform.access_management.app.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
-import org.springframework.http.HttpStatus;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -36,50 +35,76 @@ import org.slf4j.LoggerFactory;
 @Component
 public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApplicationCommand, ResponseEntity<ApplicationDTO>> {
 
-   private final ApplicationEntityRepository applicationRepository;
-   private final ApplicationMapper applicationMapper;
+    private final ApplicationEntityRepository applicationRepository;
+    private final ApplicationMapper applicationMapper;
+    private final DepartmentEntityRepository departmentEntityRepository;
 
-   /**
-    * Constructs a new {@code UpdateApplicationCommandHandler} with the required dependencies.
-    *
-    * @param applicationRepository the repository used to retrieve and persist {@link ApplicationEntity} entities
-    * @param applicationMapper     the mapper used to convert between {@link ApplicationEntity} and {@link ApplicationDTO}
-    */
-   public UpdateApplicationCommandHandler(ApplicationEntityRepository applicationRepository, ApplicationMapper applicationMapper) {
-      this.applicationRepository = applicationRepository;
-      this.applicationMapper = applicationMapper;
-   }
+    /**
+     * Constructs a new {@code UpdateApplicationCommandHandler} with the required dependencies.
+     *
+     * @param applicationRepository the repository used to retrieve and persist {@link ApplicationEntity} entities
+     * @param applicationMapper     the mapper used to convert between {@link ApplicationEntity} and {@link ApplicationDTO}
+     */
+    public UpdateApplicationCommandHandler(ApplicationEntityRepository applicationRepository, ApplicationMapper applicationMapper, DepartmentEntityRepository departmentEntityRepository) {
+        this.applicationRepository = applicationRepository;
+        this.applicationMapper = applicationMapper;
+        this.departmentEntityRepository = departmentEntityRepository;
+    }
 
-   /**
-    * Handles the update of an {@link ApplicationEntity} based on the data provided in the {@link UpdateApplicationCommand}.
-    * <ul>
-    *     <li>Retrieves the application by ID.</li>
-    *     <li>Updates the entity's fields with values from the {@link ApplicationDTO}.</li>
-    *     <li>Persists the updated entity and returns the result as a DTO.</li>
-    * </ul>
-    *
-    * @param command the command containing the application ID and updated data
-    * @return a {@link ResponseEntity} containing the updated {@link ApplicationDTO}
-    * @throws IgrpResponseStatusException if the application is not found
-    */
-   @IgrpCommandHandler
-   public ResponseEntity<ApplicationDTO> handle(UpdateApplicationCommand command) {
-      ApplicationEntity application = applicationRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
-              .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found with code: " + command.getCode()));
+    /**
+     * Handles the update of an {@link ApplicationEntity} based on the data provided in the {@link UpdateApplicationCommand}.
+     * <ul>
+     *     <li>Retrieves the application by ID.</li>
+     *     <li>Updates the entity's fields with values from the {@link ApplicationDTO}.</li>
+     *     <li>Persists the updated entity and returns the result as a DTO.</li>
+     * </ul>
+     *
+     * @param command the command containing the application ID and updated data
+     * @return a {@link ResponseEntity} containing the updated {@link ApplicationDTO}
+     * @throws IgrpResponseStatusException if the application is not found
+     */
+    @IgrpCommandHandler
+    public ResponseEntity<ApplicationDTO> handle(UpdateApplicationCommand command) {
 
-      ApplicationDTO appDto = command.getApplicationdto();
-      application.setCode(appDto.getCode());
-      application.setName(appDto.getName());
-      application.setDescription(appDto.getDescription());
-      application.setStatus(appDto.getStatus());
-      application.setType(appDto.getType());
-      application.setOwner(appDto.getOwner());
-      application.setPicture(appDto.getPicture());
-      application.setUrl(appDto.getUrl() != null ? appDto.getUrl().toString() : null);
-      application.setSlug(appDto.getSlug());
+        ApplicationDTO appDto = command.getApplicationdto();
 
-      ApplicationEntity updatedApplication = applicationRepository.save(application);
-      return ResponseEntity.ok(applicationMapper.toDto(updatedApplication));
-   }
+        ApplicationEntity application = applicationRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
+                .orElseThrow(() -> IgrpResponseStatusException.notFound("Application not found", "Application not found with code: " + command.getCode()));
+
+        application.setName(appDto.getName());
+        application.setDescription(appDto.getDescription());
+        application.setStatus(appDto.getStatus());
+        application.setType(appDto.getType());
+        application.setOwner(appDto.getOwner());
+        application.setPicture(appDto.getPicture());
+        application.setUrl(appDto.getUrl() != null ? appDto.getUrl().toString() : null);
+        application.setSlug(appDto.getSlug());
+
+        for (var code : appDto.getDepartments()) {
+
+            var department = departmentEntityRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
+                    .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + code));
+
+            var parent = department.getParentId();
+
+            if (parent != null) {
+                var parentApplications = parent.getApplications();
+                if (parentApplications != null) {
+                    if (parentApplications.stream().noneMatch(app -> app.getId().equals(application.getId())))
+                        throw IgrpResponseStatusException.badRequest(
+                                "Department access denied",
+                                "Department with code %s cannot be granted access to application %s because its parent department does not have access."
+                                        .formatted(code, application.getCode())
+                        );
+                }
+            }
+
+            application.getDepartments().add(department);
+        }
+
+        ApplicationEntity updatedApplication = applicationRepository.save(application);
+
+        return ResponseEntity.ok(applicationMapper.toDto(updatedApplication));
+    }
 
 }

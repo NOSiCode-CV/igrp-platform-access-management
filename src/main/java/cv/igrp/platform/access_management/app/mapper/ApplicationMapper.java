@@ -1,18 +1,18 @@
 package cv.igrp.platform.access_management.app.mapper;
 
-import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
-
-import static java.util.Optional.ofNullable;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Stream;
 
 /**
  * Mapper component responsible for converting between {@link ApplicationEntity} entities
@@ -62,11 +62,17 @@ public class ApplicationMapper {
         dto.setUrl(entity.getUrl() != null ? URI.create(entity.getUrl()) : null);
         dto.setSlug(entity.getSlug());
         dto.setCreatedBy(entity.getCreatedBy());
-        dto.setDepartmentCode(ofNullable(entity.getDepartmentId()).map(DepartmentEntity::getCode).orElse(null));
-        if(entity.getCreatedDate() != null)
+
+        var departmentCodes = Stream.ofNullable(entity.getDepartments())
+                .flatMap(Set::stream)
+                .map(DepartmentEntity::getCode)
+                .toList();
+        dto.setDepartments(departmentCodes);
+
+        if (entity.getCreatedDate() != null)
             dto.setCreatedDate(entity.getCreatedDate().toString());
         dto.setLastModifiedBy(entity.getLastModifiedBy());
-        if(entity.getLastModifiedDate() != null)
+        if (entity.getLastModifiedDate() != null)
             dto.setLastModifiedDate(entity.getLastModifiedDate().toString());
         return dto;
     }
@@ -80,7 +86,7 @@ public class ApplicationMapper {
     public ApplicationEntity toEntity(ApplicationDTO dto) {
         if (dto == null) return null;
 
-        ApplicationEntity entity = new ApplicationEntity();
+        var entity = new ApplicationEntity();
         entity.setId(dto.getId());
         entity.setCode(dto.getCode());
         entity.setName(dto.getName());
@@ -91,8 +97,15 @@ public class ApplicationMapper {
         entity.setPicture(dto.getPicture());
         entity.setUrl(dto.getUrl() != null ? dto.getUrl().toString() : null);
         entity.setSlug(dto.getSlug());
-        entity.setDepartmentId(departmentEntityRepository.findByCodeAndStatusNot(dto.getDepartmentCode(), DepartmentStatus.DELETED).orElseThrow(
-                () -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Department not found", "Department not found for code: " + dto.getDepartmentCode())));
+        entity.setDepartments(new HashSet<>());
+
+        for (var code : dto.getDepartments()) {
+
+            var department = departmentEntityRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
+                    .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + code));
+
+            entity.getDepartments().add(department);
+        }
 
         return entity;
     }

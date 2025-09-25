@@ -19,6 +19,14 @@ public interface RoleEntityRepository extends
 {
 
     /**
+     * Finds a role by its name.
+     *
+     * @param name the name of the role
+     * @return an {@link Optional} containing the {@link RoleEntity} if found, or empty if not found
+     */
+    List<RoleEntity> findAllByNameIn(List<String> name);
+
+    /**
      * Retrieves all roles whose status is included in the given list.
      *
      * @param statuses the list of {@link Status} values to filter by
