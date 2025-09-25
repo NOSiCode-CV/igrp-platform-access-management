@@ -55,13 +55,11 @@ The sync system must:
 
 ### Goals
 - Ensure eventual consistency with startup verification to speed up convergence.
-- Minimize a provider load using delta checks and batched updates.
-- Expose on-demand APIs for immediate checks and repairs.
+- Expose on-demand APIs for immediate checks and syncs.
 - Maintain full auditability using Envers.
 
 ### Non-Goals
 - Provide real-time strict consistency across globally distributed databases (we allow eventual consistency).
-- Replace provider-native authentication flows or features (e.g., provider-managed MFA remains provider-owned).
 - Implement UI in this specification — operational APIs and data models only.
 
 ---
@@ -73,8 +71,7 @@ The sync system must:
 2. Startup check: on API boot, verify DB vs. provider and repair differences.
 3. On-demand API endpoints: `/sync/check`, `/sync/repair`, `/sync/status`.
 4. Support multiple provider adapters implementing a shared `IAdapter`.
-5. Provider-originated events must be consumable and able to create or update DB records (e.g., social user created).
-6. Soft-delete semantics for lifecycle management.
+5. Soft-delete semantics for lifecycle management.
 
 ### Non-functional Requirements
 1. Scalable to millions of users and hundreds of thousands of roles/resources.
@@ -112,7 +109,7 @@ The sync system must:
            |                                 v                            |
            |                          +------+-------+                    |
            |                          | Provider SDK | ------------>  Providers
-           |                          +------+-------+                   |
+           |                          +------+-------+                    |
            |                                 |                            |
            +---------------------------------+----------------------------+
 ```
@@ -120,10 +117,10 @@ The sync system must:
 Components:
 - **Business DB**: Entities.
 - **Sync Core**:
-    - Reconciler: startup and periodic reconciliation calls adapters.
+    - Reconciler: startup reconciliation calls adapters.
     - Conflict resolver: DB wins.
 - **Adapters**: KeycloakAdapter, WSO2Adapter, etc.
-- **Admin API**: allows manual checks and repairs.
+- **Admin API**: allows manual checks and syncs.
 
 ---
 
@@ -768,11 +765,11 @@ This approach allows maintaining a single application image while providing the 
 - Validate mapping generation and role assignment.
 
 ### 14.4 Performance & Scalability Tests
-- Load test: bulk create 100k users and measure outbox processing time.
-- Reconciliation test: compute time to reconcile 100k users with two providers.
+- Load test: bulk create 100k users and measure processing time.
+- Reconciliation test: compute time to reconcile 100k users with two providers (one active by its time).
 
 ### 14.5 Security Tests
-- Pen tests for outbox endpoint, check injection attacks in payload.
+- Pen tests for sync endpoint, check injection attacks in payload.
 - Validate secret handling and key access.
 
 ### 14.6 Example Test Cases (detailed)
