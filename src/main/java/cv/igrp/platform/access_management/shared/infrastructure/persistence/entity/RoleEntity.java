@@ -11,8 +11,10 @@ import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import java.util.Set;
+import java.util.HashSet;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
+import java.util.ArrayList;
 import java.util.List;
 
 @Audited
@@ -65,14 +67,14 @@ public class RoleEntity extends AuditEntity {
             inverseJoinColumns = @JoinColumn(name = "permission")
     )
     @OnDelete(action = OnDeleteAction.SET_NULL)
-private Set<PermissionEntity> permissions;
+private Set<PermissionEntity> permissions = new HashSet<>();
 
 
   
     @ManyToMany(fetch = FetchType.LAZY)
-private Set<IGRPUserEntity> users;
+private Set<IGRPUserEntity> users = new HashSet<>();
    @OneToMany(mappedBy = "parent")
-private List<RoleEntity> children;
+private List<RoleEntity> children = new ArrayList<>();
 
 
 }

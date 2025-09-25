@@ -10,6 +10,7 @@ import lombok.*;
 import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import java.util.HashSet;
 import java.util.Set;
 
 @Audited
@@ -52,7 +53,7 @@ public class PermissionEntity extends AuditEntity {
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department", referencedColumnName = "id")
     private DepartmentEntity department;   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
-private Set<RoleEntity> roles;
+private Set<RoleEntity> roles = new HashSet<>();
 
 
 }

@@ -14,7 +14,6 @@ import jakarta.validation.constraints.NotNull;
 @Audited
 @Getter
 @Setter
-@ToString
 @IgrpEntity
 @Entity
 @NoArgsConstructor
