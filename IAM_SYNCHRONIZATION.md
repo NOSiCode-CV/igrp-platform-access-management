@@ -29,12 +29,13 @@
     - Startup reconciliation (mandatory)
     - Conflict detection & resolution policies
 9. Soft delete & lifecycle management
-10. Federated/social login flows (Google example)
-11. Mapping & transformation rules
-12. Provider Configuration Standardization
-13. Security considerations
-14. Testing strategy and test cases (unit, integration, e2e, performance)
-15. Migration & rollout plan
+10. User Synchronization Rules
+11. Federated/social login flows (Google example)
+12. Mapping & transformation rules
+13. Provider Configuration Standardization
+14. Security considerations
+15. Testing strategy and test cases (unit, integration, e2e, performance)
+16. Migration & rollout plan
 
 ---
 
@@ -179,6 +180,10 @@ Implementation details:
         - Call adapter and fetch data lists.
         - Compare with DB data.
         - For differences, call adapter upsert/delete as needed.
+    - Special case for users: 
+        - Fetch provider users and compare against DB users.
+        - If `external_id` in DB not found in provider → mark user `INACTIVE`
+        - If `external_id` in provider not found in DB → log discrepancy.
 
 #### 8.2.1 Ordering & Dependencies
 - Always sync definitions before assignments:
@@ -186,7 +191,8 @@ Implementation details:
 - This avoids transient failures when creating users with roles referencing missing roles.
 
 ### 8.3 Conflict Detection & Resolution
-- Decision: DB always wins by default.
+- For roles, permissions and departments: DB always wins by default.
+- For users: provider wins.
 
 ---
 
@@ -202,40 +208,74 @@ Implementation details:
 
 ---
 
-## 10. Federated / Social Login Flow (Google Example)
+## 10. User Synchronization Rules
+
+1. **User Creation**
+
+    * Creation in DB only possible via **Invite** flow:
+
+        * Admin invites user in your system.
+        * Service layer queries IAM provider by username/email.
+        * If user exists in provider → fetch `external_id`, `email`, `username`.
+        * Insert into DB.
+    * If the user does **not** exist in provider → reject invitation.
+
+2. **User Synchronization**
+
+    * **No DB → Provider sync** for users.
+    * **Provider → DB sync** only:
+
+        * If a user in the DB is missing in provider → set `status = INACTIVE` in DB.
+        * If a user in the provider is missing in DB → ignores (invite-only strict mode).
+    * On sync check:
+
+        * Compare DB users with provider users.
+        * Apply rule: **DB user must always reflect provider presence**.
+
+3. **User Deletion**
+
+    * Deletion in DB = set `status = INACTIVE`.
+    * If a user is deleted in the provider:
+
+        * Mark user `INACTIVE` in DB.
+        * Keep Envers audit history.
+
+---
+
+## 11. Federated / Social Login Flow (Google Example)
 
 This section explains the canonical flow and edge cases.
 
-### 10.1 Goals
+### 11.1 Goals
 - When a user logs in via Google (federated through Keycloak or direct), ensure a DB user exists and is linked to the provider.
 - Avoid unwanted account merging or takeover.
 - If the user does not exist in DB, that means the user wasn't invited yet, and it will not be able to access the platform.
 
-### 10.2 Data to store on user tables by invite feature
+### 11.2 Data to store on user tables by invite feature
 - `external_id` (`google:` Google `sub` or Keycloak federation link) (format: `provider:sub`)
 - `email`, `email_verified` (copy)
 
-### 10.3 Account Merge & Collision Handling
+### 11.3 Account Merge & Collision Handling
 - If a provider `external_id` appears with email matching an existing `t_user` but `email_verified=false`, do **not auto-merge**. Instead, request user confirmation via email.
 - Provide admin endpoints to manually link accounts, with audit trail.
 
-### 10.4 Security considerations for federated creation
+### 11.4 Security considerations for federated creation
 - Treat `email_verified` as authoritative only when coming from trusted provider and validated by Keycloak (i.e., Keycloak's `email_verified` is reliable).
 - Avoid auto-linking if the risk of takeover exists (email is not unique, temporary emails, etc.).
 - Keep an approval flow for sensitive roles assignment post-creation.
 
 ---
 
-## 11. Mapping & Transformation Rules
+## 12. Mapping & Transformation Rules
 
 Different providers have different models. Provide a mapping layer to transform a canonical DB model to provider-specific constructs.
 
-### 11.1 Examples
+### 12.1 Examples
 - Canonical `Role` → Keycloak realm role or client role depending on `role.scope`.
 - Canonical `Department` (code `DEPT_GPT`) → Keycloak group with name `DEPT_GPT` and attribute `business_code=DEPT_GPT`.
 - Canonical `Permission` → provider-specific permission or scope. If the provider lacks fine-grained permissions, emulate using roles.
 
-## 12. IAM Provider Configuration Standardization Analysis
+## 13. IAM Provider Configuration Standardization Analysis
 
 ### Current State Analysis
 
@@ -260,13 +300,13 @@ igrp.keycloak.grant-type=client_credentials
 #### Target Configuration Structure
 ```properties
 # Standardized OAuth2 configuration
-igrp.iam.provider=keycloak
-igrp.iam.server-url=http://localhost:8080
-igrp.iam.realm=igrp
-igrp.iam.client-id=access-management
-igrp.iam.client-secret=*****
-igrp.iam.grant-type=client_credentials
-igrp.iam.scope=openid profile email
+igrp.iam.provider.active=keycloak
+igrp.iam.provider.server-url=http://localhost:8080
+igrp.iam.provider.realm=igrp
+igrp.iam.provider.client-id=access-management
+igrp.iam.provider.client-secret=*****
+igrp.iam.provider.grant-type=client_credentials
+igrp.iam.provider.scope=openid profile email
 
 # Provider-specific extensions (optional)
 igrp.iam.keycloak.admin-client-id=admin-cli
@@ -279,9 +319,9 @@ igrp.iam.wso2.tenant=carbon.super
 
 _Core IAM Properties Class_
 ```java
-@ConfigurationProperties(prefix = "igrp.iam")
+@ConfigurationProperties(prefix = "igrp.iam.provider")
 public class IAMProperties {
-    private String provider;
+    private String active;
     private String serverUrl;
     private String realm;
     private String clientId;
@@ -325,7 +365,7 @@ public class IAMAdapterFactory {
     public static IAdapter createAdapter(IAMProperties properties) {
         String provider = properties.getProvider();
         if (provider == null || provider.isBlank()) {
-            throw new IllegalArgumentException("Property 'igrp.iam.provider' must not be empty");
+            throw new IllegalArgumentException("Property 'igrp.iam.provider.active' must not be empty");
         }
 
         try {
@@ -406,7 +446,7 @@ public class IAMProviderCondition implements Condition {
 
         String requiredProvider = (String) attributes.get("value");
         String configuredProvider = context.getEnvironment()
-                .getProperty("igrp.iam.provider", "keycloak")
+                .getProperty("igrp.iam.provider.active", "keycloak")
                 .toLowerCase();
 
         return requiredProvider.equalsIgnoreCase(configuredProvider);
@@ -540,7 +580,7 @@ _Spring Boot integration layer_
 
 Contains:
 
-* `@ConfigurationProperties` binding for `igrp.iam.*`.
+* `@ConfigurationProperties` binding for `igrp.iam.provider.*`.
 * Autoconfiguration class that discovers the correct adapter using the ServiceLoader or direct instantiation.
 * Spring Boot annotations only.
 
@@ -549,7 +589,7 @@ Example (`Keycloak`):
 ```java
 @Configuration
 @EnableConfigurationProperties(IAMPropertiesSpring.class)
-@ConditionalOnProperty(name = "igrp.iam.provider", havingValue = "keycloak")
+@ConditionalOnProperty(name = "igrp.iam.provider.active", havingValue = "keycloak")
 public class KeycloakIAMAutoConfiguration {
 
     @Bean
@@ -563,9 +603,9 @@ public class KeycloakIAMAutoConfiguration {
 `IAMPropertiesSpring` is just a wrapper that converts Spring’s `@ConfigurationProperties` into the core `IAMProperties` POJO.
 
 ```java
-@ConfigurationProperties(prefix = "igrp.iam")
+@ConfigurationProperties(prefix = "igrp.iam.provider")
 public class IAMPropertiesSpring {
-    private String provider;
+    private String active;
     private String url;
     private String clientId;
     private String secret;
@@ -606,10 +646,10 @@ _Spring Boot_
 Add the `-spring-boot` dependency for the provider you need, set properties:
 
 ```properties
-igrp.iam.provider=keycloak
-igrp.iam.url=http://localhost:8080
-igrp.iam.client-id=my-client
-igrp.iam.secret=my-secret
+igrp.iam.provider.active=keycloak
+igrp.iam.provider.url=http://localhost:8080
+igrp.iam.provider.client-id=my-client
+igrp.iam.provider.secret=my-secret
 ```
 
 And inject:
@@ -735,44 +775,44 @@ The **Spring DataSource-like approach** is recommended because:
 
 This approach allows maintaining a single application image while providing the flexibility to support multiple IAM providers through configuration changes, similar to how Spring DataSource supports multiple databases with a single application deployment.
 
-## 13. Security Considerations
+## 14. Security Considerations
 
-### 13.1 Secrets & Credentials
+### 14.1 Secrets & Credentials
 - Store provider credentials in Vault (or equivalent); do not store in plaintext.
 - Rotate service account keys regularly.
 - Limit scopes to the least privilege (admin user dedicated to sync).
 
-### 13.2 Rate Limiting & Quotas
+### 14.2 Rate Limiting & Quotas
 - Respect provider rate-limits and provide circuit-breaker patterns.
 - Use exponential backoff for retryable errors.
 
 ---
 
-## 14. Testing Strategy & Test Cases
+## 15. Testing Strategy & Test Cases
 
-### 14.1 Unit Tests
+### 15.1 Unit Tests
 - Adapter tests: mock provider endpoints, validate transformation & idempotency.
 - Conflict resolution tests: simulate DB & provider version differences.
 
-### 14.2 Integration Tests
+### 15.2 Integration Tests
 - Spin up Keycloak/WSO2 test container.
 - Seed DB test dataset.
 - Run command line runner, validate provider objects are in the expected state.
 - Test startup reconciliation by modifying provider objects directly and ensuring reconciler repairs.
 
-### 14.3 End-to-End Tests
+### 15.3 End-to-End Tests
 - Simulate full sign-up flows including social login.
 - Validate mapping generation and role assignment.
 
-### 14.4 Performance & Scalability Tests
+### 15.4 Performance & Scalability Tests
 - Load test: bulk create 100k users and measure processing time.
 - Reconciliation test: compute time to reconcile 100k users with two providers (one active by its time).
 
-### 14.5 Security Tests
+### 15.5 Security Tests
 - Pen tests for sync endpoint, check injection attacks in payload.
 - Validate secret handling and key access.
 
-### 14.6 Example Test Cases (detailed)
+### 15.6 Example Test Cases (detailed)
 
 #### Test Case: Startup Reconciliation — Missing Role in Provider
 - Precondition: DB has three roles; provider has two (ROLE_USER missing).
@@ -791,17 +831,17 @@ This approach allows maintaining a single application image while providing the 
 
 ---
 
-## 15. Migration & Rollout Plan
+## 16. Migration & Rollout Plan
 
-### 15.1 Phase 0 — Outbox + Adapters (Non-intrusive)
+### 16.1 Phase 0 — Outbox + Adapters (Non-intrusive)
 - Implement `IAdapter` skeleton and KeycloakAdapter using a test realm.
 - Run integration tests.
 
-### 15.2 Phase 1 — Enable Processor (Read-only mode)
+### 16.2 Phase 1 — Enable Processor (Read-only mode)
 - Enable processor in `dry-run` mode where it only logs actions (no writes).
 - Run for 1–2 weeks and review logs for unexpected changes.
 
-### 15.3 Phase 2 — Live Sync (Gradual)
+### 16.3 Phase 2 — Live Sync (Gradual)
 - Enable writing to one provider in production (Keycloak).
 - Monitor metrics and adjust batch sizes.
 - Roll out to other providers gradually.
