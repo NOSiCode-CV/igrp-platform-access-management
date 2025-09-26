@@ -1,22 +1,21 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
-import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.repository.history.RevisionRepository;
+import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
 
-import org.springframework.data.repository.history.RevisionRepository;
-
 @Repository
 public interface RoleEntityRepository extends
-    JpaRepository<RoleEntity, Integer>,
-    JpaSpecificationExecutor<RoleEntity>,
-    RevisionRepository<RoleEntity, Integer, Integer>
-{
+        JpaRepository<RoleEntity, Integer>,
+        JpaSpecificationExecutor<RoleEntity>,
+        RevisionRepository<RoleEntity, Integer, Integer> {
 
     /**
      * Finds a role by its name.
@@ -50,6 +49,12 @@ public interface RoleEntityRepository extends
      * @return an {@link Optional} containing the {@link RoleEntity}, if found and not having the excluded status
      */
     Optional<RoleEntity> findByIdAndStatusNot(Integer id, Status status);
+
     Optional<RoleEntity> findByNameAndStatusNot(String name, Status status);
+
+    default RoleEntity findByNameAndStatusNotDeleted(String name) {
+        return findByNameAndStatusNot(name, Status.DELETED)
+                .orElseThrow(() -> IgrpResponseStatusException.notFound("Role not found with name: %s".formatted(name)));
+    }
 
 }

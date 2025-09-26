@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -52,29 +53,34 @@ public interface ApplicationEntityRepository extends
     // Case 2: Application is inherited from the parent department
     // Exclude applications already attributed to this department
     @Query("""
-    SELECT DISTINCT a
-    FROM ApplicationEntity a
-    JOIN a.departments d
-    WHERE (
-        d.code = :code
-        OR EXISTS (
-            SELECT 1
-            FROM DepartmentEntity child
-            JOIN child.parentId p
-            JOIN p.applications pa
-            WHERE child.code = :code AND pa.id = a.id
-        )
-    )
-    AND NOT EXISTS (
-        SELECT 1
-        FROM DepartmentEntity d2
-        JOIN d2.applications da
-        WHERE d2.code = :code AND da.id = a.id
-    )
-""")
+                SELECT DISTINCT a
+                FROM ApplicationEntity a
+                JOIN a.departments d
+                WHERE (
+                    d.code = :code
+                    OR EXISTS (
+                        SELECT 1
+                        FROM DepartmentEntity child
+                        JOIN child.parentId p
+                        JOIN p.applications pa
+                        WHERE child.code = :code AND pa.id = a.id
+                    )
+                )
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM DepartmentEntity d2
+                    JOIN d2.applications da
+                    WHERE d2.code = :code AND da.id = a.id
+                )
+            """)
     List<ApplicationEntity> findAvailableApplicationsForDepartment(@Param("code") String code);
 
     Optional<ApplicationEntity> findByCodeAndStatusNot(String code, Status status);
+
+    default ApplicationEntity findByCodeAndStatusNotDeleted(String code) {
+        return findByCodeAndStatusNot(code, Status.DELETED)
+                .orElseThrow(() -> IgrpResponseStatusException.notFound("Application not found with code: " + code));
+    }
 
     List<ApplicationEntity> findByIdInAndStatusNot(Collection<Integer> ids, Status status);
 
