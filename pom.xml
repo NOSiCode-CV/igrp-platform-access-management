@@ -159,12 +159,12 @@
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
             <artifactId>core</artifactId>
-            <version>0.1.0-beta</version>
+            <version>0.1.0-beta-20250917.114740-2</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
             <artifactId>keycloak-spring-boot</artifactId>
-            <version>${framework.auth.version}</version>
+            <version>0.1.0-beta-20250926.105042-2</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
