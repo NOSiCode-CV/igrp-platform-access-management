@@ -104,7 +104,10 @@ public class ApplicationMapper {
             var department = departmentEntityRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
                     .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + code));
 
-            entity.getDepartments().add(department);
+            department.getApplications().add(entity);
+
+            departmentEntityRepository.save(department);
+
         }
 
         return entity;
