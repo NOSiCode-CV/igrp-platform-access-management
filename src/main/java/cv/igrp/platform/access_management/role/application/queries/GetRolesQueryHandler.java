@@ -65,8 +65,8 @@ public class GetRolesQueryHandler implements QueryHandler<GetRolesQuery, Respons
   @IgrpQueryHandler
   @Transactional(readOnly = true)
   public ResponseEntity<List<RoleDTO>> handle(GetRolesQuery query) {
-    log.info("Get Roles with filters - departmentCode: {}, username: {}", query.getDepartmentCode(), query.getUsername());
-    Specification<RoleEntity> specs = buildSpecification(query.getDepartmentCode(), query.getUsername());
+    log.info("Get Roles with filters - departmentCode: {}, name: {}", query.getDepartmentCode(), query.getName());
+    Specification<RoleEntity> specs = buildSpecification(query.getDepartmentCode(), query.getName());
     List<RoleEntity> allRoles = roleRepository.findAll(specs);
     List<RoleDTO> collectedRole = allRoles.stream()
             .map(roleMapper::mapToDto)
@@ -78,10 +78,10 @@ public class GetRolesQueryHandler implements QueryHandler<GetRolesQuery, Respons
    * Builds a dynamic JPA {@link Specification} based on optional code and name filters.
    *
    * @param departmentCode the exact department code to match (optional)
-   * @param username the username to search for (optional)
+   * @param name the name to search for (optional)
    * @return a {@link Specification} representing the composed query filters
    */
-  private Specification<RoleEntity> buildSpecification(String departmentCode, String username) {
+  private Specification<RoleEntity> buildSpecification(String departmentCode, String name) {
 
     Specification<RoleEntity> specs = Specification.allOf();
 
@@ -91,9 +91,9 @@ public class GetRolesQueryHandler implements QueryHandler<GetRolesQuery, Respons
         );
     }
 
-    if(username != null && !username.isBlank()) {
+    if(name != null && !name.isBlank()) {
         specs = specs.and((root, _, criteriaBuilder) ->
-                criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), "%" + username.toLowerCase() + "%")
+                criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), "%" + name.toLowerCase() + "%")
         );
     }
 

@@ -81,7 +81,7 @@ public class ConfigurationService {
 
             // 5. Create default menus (independent of provider sync)
             if (appId != null) {
-                createDefaultMenus(appId);
+                createDefaultMenus(appId, roleId);
             }
 
             LOGGER.info("[Startup Config] System initialization completed in {} ms",
@@ -356,7 +356,7 @@ public class ConfigurationService {
     // Existing Menu Creation Methods (Unchanged)
     // =====================================================
 
-    void createDefaultMenus(Long appId) {
+    void createDefaultMenus(Long appId, Long roleId) {
         long startTime = System.currentTimeMillis();
         try {
             InputStream jsonStream = new ClassPathResource("menus.json").getInputStream();
@@ -381,7 +381,7 @@ public class ConfigurationService {
             jdbcTemplate.update("DELETE FROM t_menu_entry WHERE application_id = ?", appId);
 
             // Insert new menus recursively
-            insertMenuHierarchy(root, null, (short) 0, appId);
+            insertMenuHierarchy(root, null, (short) 0, appId, roleId);
 
             // Update hash in custom_field
             upsertCustomField(appId, "menus_hash", currentJsonHash);
@@ -393,7 +393,7 @@ public class ConfigurationService {
         }
     }
 
-    private void insertMenuHierarchy(JsonNode node, Long parentId, short position, Long appId) {
+    private void insertMenuHierarchy(JsonNode node, Long parentId, short position, Long appId, Long roleId) {
         for (JsonNode entry : node) {
             try {
                 MenuEntryType type = MenuEntryType.fromCodeOrThrow(entry.get("type").asText());
@@ -419,8 +419,19 @@ public class ConfigurationService {
                         SYSTEM_USER, SYSTEM_USER
                 );
 
+                // Assign menu to role
+                if (roleId != null) {
+                    jdbcTemplate.update("""
+                                    INSERT INTO t_menu_entry_roles (roles_id, menu_entry_entity_id)
+                                    SELECT ?, ?
+                                    WHERE NOT EXISTS (
+                                        SELECT 1 FROM t_menu_entry_roles WHERE roles_id=? AND menu_entry_entity_id=?
+                                    )
+                                """, roleId, menuId, roleId, menuId);
+                }
+
                 if (entry.has("children")) {
-                    insertMenuHierarchy(entry.get("children"), menuId, (short) 0, appId);
+                    insertMenuHierarchy(entry.get("children"), menuId, (short) 0, appId, roleId);
                 }
 
                 position++;

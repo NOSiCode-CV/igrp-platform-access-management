@@ -15,7 +15,7 @@ public class GetRolesQuery implements Query {
 
   @NotBlank(message = "The field <departmentCode> is required")
   private String departmentCode;
-  @NotBlank(message = "The field <username> is required")
-  private String username;
+  @NotBlank(message = "The field <name> is required")
+  private String name;
 
 }
