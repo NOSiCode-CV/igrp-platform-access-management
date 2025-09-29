@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management;
 
 import cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService;
+import cv.igrp.platform.access_management.shared.infrastructure.service.SynchronizationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -29,16 +30,26 @@ public class IgrpPlatformAccessManagementApplication {
     @Bean
     public CommandLineRunner initialConfiguration(ConfigurationService service) {
         try {
-            return args -> service.initializeSystemConfiguration();
+            return _ -> service.initializeSystemConfiguration();
         } catch (Exception e) {
             logger.warn("[Startup Config] Failure in initial configuration check", e);
-            return args -> {};
+            return _ -> {};
+        }
+    }
+
+    @Bean
+    public CommandLineRunner startupReconciliation(SynchronizationService service) {
+        try {
+            return _ -> service.startupReconciliation();
+        } catch (Exception e) {
+            logger.warn("[Startup Sync] Failure in startup reconciliation", e);
+            return _ -> {};
         }
     }
 
     @Bean
     public CommandLineRunner redisCheck(RedisConnectionFactory connectionFactory) {
-        return args -> {
+        return _ -> {
             try {
                 connectionFactory.getConnection().ping();
                 logger.info("✅ Redis connection successful!");

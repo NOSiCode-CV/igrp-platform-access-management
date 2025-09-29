@@ -28,7 +28,10 @@ public class RemoveDepartmentFromApplicationCommandHandler implements CommandHan
 
             var department = departmentRepository.findByCodeAndStatusNotDeleted(departmentCode);
 
-            application.getDepartments().remove(department);
+            department.getApplications().remove(application);
+
+            departmentRepository.save(department);
+
         }
 
         applicationRepository.save(application);
