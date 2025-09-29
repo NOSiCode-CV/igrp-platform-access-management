@@ -66,10 +66,10 @@ public class ConfigurationService {
                     (appExistsInProvider ? createDefaultAppInDB(departmentId) : null);
 
             Long permissionId = permissionExists ? getId("SELECT id FROM t_permission WHERE name='%s'".formatted(IGRP_PERMISSION)) :
-                    (permissionExistsInProvider ? createDefaultPermissionInDB(appId, departmentId) : null);
+                    (permissionExistsInProvider ? createDefaultPermissionInDB(departmentId) : null);
 
             Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE name='%s'".formatted(SUPER_ADMIN_ROLE)) :
-                    (roleExistsInProvider ? createDefaultRoleInDB(departmentId, permissionId) : null);
+                    (roleExistsInProvider ? createDefaultRoleInDB(departmentId, permissionId, appId) : null);
 
             Long userId = superAdminExists ? getId("SELECT id FROM t_user WHERE username='%s'".formatted(SUPER_ADMIN_USERNAME)) :
                     createSuperAdminUserInDB();
@@ -227,37 +227,59 @@ public class ConfigurationService {
     }
 
     Long createDefaultAppInDB(Long deptId) {
-        String sql = """
-                    INSERT INTO t_application
-                    (name, code, description, owner, department_id, status, type,
-                     created_by, created_date, last_modified_by, last_modified_date)
-                    VALUES (?, ?, ?, ?, ?, 'ACTIVE', 'SYSTEM', ?, now(), ?, now())
-                    RETURNING id
-                """;
-        LOGGER.info("[Startup Config] Default App created in DB");
-        return jdbcTemplate.queryForObject(sql,
+        String insertAppSql = """
+        INSERT INTO t_application
+            (name, code, description, owner, status, type,
+             created_by, created_date, last_modified_by, last_modified_date)
+        VALUES (?, ?, ?, ?, 'ACTIVE', 'SYSTEM', ?, now(), ?, now())
+        RETURNING id
+    """;
+
+        // Step 1: Create application
+        Long appId = jdbcTemplate.queryForObject(
+                insertAppSql,
                 Long.class,
-                "iGRP App Center", IGRP_APP, "iGRP Application Center", SUPER_ADMIN_USERNAME, deptId,
-                SYSTEM_USER, SYSTEM_USER);
+                "iGRP App Center",
+                IGRP_APP,
+                "iGRP Application Center",
+                SUPER_ADMIN_USERNAME,
+                SYSTEM_USER,
+                SYSTEM_USER
+        );
+
+        if (appId != null) {
+            // Step 2: Associate with department
+            String insertRelationSql = """
+            INSERT INTO t_department_application (department_id, application_id)
+            VALUES (?, ?)
+        """;
+            jdbcTemplate.update(insertRelationSql, deptId, appId);
+
+            LOGGER.info("[Startup Config] Default App {} associated with Department {}", appId, deptId);
+        } else {
+            LOGGER.warn("[Startup Config] Default App creation failed, no association with Department performed");
+        }
+
+        return appId;
     }
 
-    Long createDefaultPermissionInDB(Long appId, Long deptId) {
+    Long createDefaultPermissionInDB(Long deptId) {
         String sql = """
                     INSERT INTO t_permission
-                    (name, description, status, application, department,
+                    (name, description, status, department,
                      created_by, created_date, last_modified_by, last_modified_date)
-                    VALUES (?, ?, 'ACTIVE', ?, ?, ?, now(), ?, now())
+                    VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
                     RETURNING id
                 """;
         var query = jdbcTemplate.queryForObject(sql,
                 Long.class,
-                IGRP_PERMISSION, "iGRP Manage Access Permission", appId, deptId,
+                IGRP_PERMISSION, "iGRP Manage Access Permission", deptId,
                 SYSTEM_USER, SYSTEM_USER);
         LOGGER.info("[Startup Config] Default Permission created in DB");
         return query;
     }
 
-    Long createDefaultRoleInDB(Long deptId, Long permId) {
+    Long createDefaultRoleInDB(Long deptId, Long permId, Long appId) {
         String sqlRole = """
                     INSERT INTO t_role
                     (name, description, status, department,
@@ -270,7 +292,7 @@ public class ConfigurationService {
                 SUPER_ADMIN_ROLE, "iGRP Superadmin", deptId,
                 SYSTEM_USER, SYSTEM_USER);
 
-        // Insert role-permission relation
+        // Step 1: Insert role-permission relation
         String sqlRolePerm = """
                     INSERT INTO t_role_permission
                     (role_id, permission)
@@ -280,6 +302,14 @@ public class ConfigurationService {
                     )
                 """;
         jdbcTemplate.update(sqlRolePerm, roleId, permId, roleId, permId);
+
+        // Step 2: Associate with application
+        String insertRelationSql = """
+            INSERT INTO t_application_role (roles, application_id)
+            VALUES (?, ?)
+        """;
+        jdbcTemplate.update(insertRelationSql, roleId, appId);
+
         LOGGER.info("[Startup Config] Default Role created in DB");
 
         return roleId;
