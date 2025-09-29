@@ -16,11 +16,11 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.prepost.PreAuthorize;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.users.application.commands.*;
 import cv.igrp.platform.access_management.users.application.queries.*;
-
 
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
@@ -205,7 +205,7 @@ public class UserController {
   }
 
   @PostMapping(
-    value = "getUsers"
+    value = "users/list"
   )
   @Operation(
     summary = "POST method to handle operations for getUsers",
@@ -225,8 +225,8 @@ public class UserController {
   )
   
   public ResponseEntity<List<IGRPUserDTO>> getUsers(@RequestBody List<Integer> getUsersRequest
-    , @RequestParam(value = "applicationCode", required = false) Integer applicationCode,
-    @RequestParam(value = "departmentCode", required = false) Integer departmentCode,
+    , @RequestParam(value = "applicationCode", required = false) String applicationCode,
+    @RequestParam(value = "departmentCode", required = false) String departmentCode,
     @RequestParam(value = "name", required = false) String name,
     @RequestParam(value = "username", required = false) String username,
     @RequestParam(value = "email", required = false) String email)
