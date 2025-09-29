@@ -49,7 +49,7 @@ public class DepartmentController {
   }
 
   @PostMapping(
-    value = "department"
+    value = "departments"
   )
   @Operation(
     summary = "POST method to handle operations for postDepartment",

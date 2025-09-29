@@ -7,7 +7,7 @@
   "actions": [
     {
       "actionName": "postDepartment",
-      "path": "department",
+      "path": "departments",
       "method": "POST",
       "requestBody": {
         "content": {

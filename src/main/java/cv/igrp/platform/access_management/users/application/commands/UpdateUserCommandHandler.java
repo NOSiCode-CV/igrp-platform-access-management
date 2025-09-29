@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -45,21 +44,19 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
 
    private final IGRPUserEntityRepository userRepository;
    private final IGRPUserMapper userMapper;
-   private final IAdapter adapter;
 
    /**
     * Constructs the handler with required dependencies.
     *
     * @param userRepository the repository to retrieve and save user entities
     * @param userMapper     the mapper used to convert entities to DTOs
-    * @param adapter        the adapter to assign role to user in iam
     */
    public UpdateUserCommandHandler(
            IGRPUserEntityRepository userRepository,
-           IGRPUserMapper userMapper, IAdapter adapter) {
+           IGRPUserMapper userMapper
+   ) {
       this.userRepository = userRepository;
       this.userMapper = userMapper;
-       this.adapter = adapter;
    }
 
    /**
@@ -90,13 +87,8 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
       if (dto.getName() != null) {
          user.setName(dto.getName());
       }
-      if (dto.getEmail() != null) {
-         user.setEmail(dto.getEmail());
-      }
 
       var updatedUser = userRepository.save(user);
-
-      //TODO Adapter alter Username.
 
       logger.info("User updated successfully: id={}, username={}", updatedUser.getId(), updatedUser.getUsername());
 

@@ -145,7 +145,7 @@
     },
     {
       "actionName": "getUsers",
-      "path": "getUsers",
+      "path": "users/list",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -175,13 +175,13 @@
       },
       "requestParams": [
         {
-          "type": "integer",
+          "type": "string",
           "name": "applicationCode",
           "description": "Application Code",
           "isRequired": false
         },
         {
-          "type": "integer",
+          "type": "string",
           "name": "departmentCode",
           "description": "Department Code",
           "isRequired": false
@@ -335,5 +335,5 @@
       }
     }
   ],
-  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles"
+  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers"
 }

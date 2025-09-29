@@ -44,10 +44,6 @@ public class PermissionEntity extends AuditEntity {
     private Status status;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "application", referencedColumnName = "id")
-    private ApplicationEntity application;
-
-    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department", referencedColumnName = "id")
     private DepartmentEntity department;
 

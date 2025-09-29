@@ -9,6 +9,7 @@ import cv.igrp.framework.stereotype.IgrpController;
 import cv.igrp.platform.access_management.app.application.commands.*;
 import cv.igrp.platform.access_management.app.application.queries.*;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.application.dto.CodeListRequestDTO;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -508,6 +509,150 @@ public class ApplicationController {
         final var query = new GetApplicationMenusQuery(id);
 
         ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
+
+        LOGGER.debug("Operation finished");
+
+        return ResponseEntity.status(response.getStatusCode())
+                .headers(response.getHeaders())
+                .body(response.getBody());
+    }
+
+    @PostMapping(
+            value = "/applications/{code}/roles"
+    )
+    @Operation(
+            summary = "POST method to handle operations for addRolesToApp",
+            description = "POST method to handle operations for addRolesToApp",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Add roles to an application",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            implementation = String.class,
+                                            type = "String")
+                            )
+                    )
+            }
+    )
+
+    public ResponseEntity<String> addRolesToApp(@Valid @RequestBody CodeListRequestDTO addRolesToAppRequest
+            , @PathVariable(value = "code") String code) {
+
+        LOGGER.debug("Operation started");
+
+        final var command = new AddRolesToAppCommand(addRolesToAppRequest, code);
+
+        ResponseEntity<String> response = commandBus.send(command);
+
+        LOGGER.debug("Operation finished");
+
+        return ResponseEntity.status(response.getStatusCode())
+                .headers(response.getHeaders())
+                .body(response.getBody());
+    }
+
+    @DeleteMapping(
+            value = "applications/{code}/roles"
+    )
+    @Operation(
+            summary = "DELETE method to handle operations for removeRoleFromApplication",
+            description = "DELETE method to handle operations for removeRoleFromApplication",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "204",
+                            description = "Remove a role from an application",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            implementation = String.class,
+                                            type = "String")
+                            )
+                    )
+            }
+    )
+
+    public ResponseEntity<String> removeRoleFromApplication(@Valid @RequestBody CodeListRequestDTO removeRoleFromApplicationRequest
+            , @PathVariable(value = "code") String code) {
+
+        LOGGER.debug("Operation started");
+
+        final var command = new RemoveRoleFromApplicationCommand(removeRoleFromApplicationRequest, code);
+
+        ResponseEntity<String> response = commandBus.send(command);
+
+        LOGGER.debug("Operation finished");
+
+        return ResponseEntity.status(response.getStatusCode())
+                .headers(response.getHeaders())
+                .body(response.getBody());
+    }
+
+    @PostMapping(
+            value = "applications/{code}/departments"
+    )
+    @Operation(
+            summary = "POST method to handle operations for addDepartmentsToApplication",
+            description = "POST method to handle operations for addDepartmentsToApplication",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Add departments to an application",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            implementation = String.class,
+                                            type = "String")
+                            )
+                    )
+            }
+    )
+
+    public ResponseEntity<String> addDepartmentsToApplication(@Valid @RequestBody CodeListRequestDTO addDepartmentsToApplicationRequest
+            , @PathVariable(value = "code") String code) {
+
+        LOGGER.debug("Operation started");
+
+        final var command = new AddDepartmentsToApplicationCommand(addDepartmentsToApplicationRequest, code);
+
+        ResponseEntity<String> response = commandBus.send(command);
+
+        LOGGER.debug("Operation finished");
+
+        return ResponseEntity.status(response.getStatusCode())
+                .headers(response.getHeaders())
+                .body(response.getBody());
+    }
+
+    @DeleteMapping(
+            value = "applications/{code}/departments"
+    )
+    @Operation(
+            summary = "DELETE method to handle operations for removeDepartmentFromApplication",
+            description = "DELETE method to handle operations for removeDepartmentFromApplication",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "204",
+                            description = "Remove a department from an application",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            implementation = String.class,
+                                            type = "String")
+                            )
+                    )
+            }
+    )
+
+    public ResponseEntity<String> removeDepartmentFromApplication(@Valid @RequestBody CodeListRequestDTO removeDepartmentFromApplicationRequest
+            , @PathVariable(value = "code") String code) {
+
+        LOGGER.debug("Operation started");
+
+        final var command = new RemoveDepartmentFromApplicationCommand(removeDepartmentFromApplicationRequest, code);
+
+        ResponseEntity<String> response = commandBus.send(command);
 
         LOGGER.debug("Operation finished");
 

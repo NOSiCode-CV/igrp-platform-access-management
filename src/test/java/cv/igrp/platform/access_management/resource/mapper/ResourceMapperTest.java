@@ -176,7 +176,7 @@ class ResourceMapperTest {
         assertEquals(testResourceDTO.getStatus(), result.getStatus());
         assertEquals(testResourceDTO.getExternalId(), result.getExternalId());
         assertNull(result.getId());
-        assertNull(result.getApplications());
+        assertTrue(result.getApplications().isEmpty());
     }
 
     @Test
