@@ -28,80 +28,89 @@ import java.util.Objects;
 @Component
 public class InviteUserCommandHandler implements CommandHandler<InviteUserCommand, ResponseEntity<IGRPUserDTO>> {
 
-   private static final Logger LOGGER = LoggerFactory.getLogger(InviteUserCommandHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(InviteUserCommandHandler.class);
 
-   private final NotificationAdapter<SendNotificationResponseDTO> notificationAdapter;
-   private final IGRPUserEntityRepository userRepository;
-   private final IGRPUserMapper userMapper;
-   private final IAdapter adapter;
+    private final NotificationAdapter<SendNotificationResponseDTO> notificationAdapter;
+    private final IGRPUserEntityRepository userRepository;
+    private final IGRPUserMapper userMapper;
+    private final IAdapter adapter;
 
-   public InviteUserCommandHandler(NotificationAdapter<SendNotificationResponseDTO> notificationAdapter,
-                                   IGRPUserEntityRepository userRepository,
-                                   IGRPUserMapper userMapper,
-                                   IAdapter adapter
-   ) {
-      this.notificationAdapter = notificationAdapter;
-      this.userRepository = userRepository;
-      this.userMapper = userMapper;
-      this.adapter = adapter;
-   }
+    public InviteUserCommandHandler(NotificationAdapter<SendNotificationResponseDTO> notificationAdapter,
+                                    IGRPUserEntityRepository userRepository,
+                                    IGRPUserMapper userMapper,
+                                    IAdapter adapter
+    ) {
+        this.notificationAdapter = notificationAdapter;
+        this.userRepository = userRepository;
+        this.userMapper = userMapper;
+        this.adapter = adapter;
+    }
 
-   @IgrpCommandHandler
-   @Transactional
-   public ResponseEntity<IGRPUserDTO> handle(InviteUserCommand command) {
+    @IgrpCommandHandler
+    @Transactional
+    public ResponseEntity<IGRPUserDTO> handle(InviteUserCommand command) {
 
-      var dto = command.getIgrpuserdto();
+        var dto = command.getIgrpuserdto();
 
-      LOGGER.info("Creating new user: username={}, email={}", dto.getUsername(), dto.getEmail());
+        LOGGER.info("Creating new user: username={}, email={}", dto.getUsername(), dto.getEmail());
 
-      IGRPUserEntity user = new IGRPUserEntity();
-      user.setName(command.getIgrpuserdto().getName());
-      user.setUsername(command.getIgrpuserdto().getUsername());
-      user.setEmail(command.getIgrpuserdto().getEmail());
-      user.setRoles(new ArrayList<>());
+        // Verify if username exists
+        if (userRepository.existsByUsername(dto.getUsername()))
+            throw IgrpResponseStatusException.of(
+                    HttpStatus.CONFLICT,
+                    "User with username %s was invited already".formatted(dto.getUsername())
+            );
 
-      var savedUser = userRepository.save(user);
+        var providerUser = adapter.resolveUser(dto.getUsername());
 
-      try {
-         adapter.createUser(user);
-      } catch (IAMException e) {
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.INTERNAL_SERVER_ERROR,
-                 "User Creation Failed",
-                 e.getMessage()
-         );
-      }
+        if (providerUser.isPresent()) {
 
-      try {
+            IGRPUserEntity user = new IGRPUserEntity();
+            user.setName(command.getIgrpuserdto().getName());
+            user.setUsername(command.getIgrpuserdto().getUsername());
+            user.setEmail(command.getIgrpuserdto().getEmail());
+            user.setRoles(new ArrayList<>());
 
-         LOGGER.info("Inviting new user: username={}, email={}", dto.getUsername(), dto.getEmail());
+            var savedUser = userRepository.save(user);
 
-         var notification = new Notification();
+            try {
 
-         notification.setRecipients(List.of(savedUser.getEmail()));
-         notification.setSubject("iGRP User Invitation");
-         notification.setContent("""
-                 Dear %s, your account has been created for iGRP. Your credentials are the following:
-                 
-                 Username: %s
-                 Password: %s
-                 
-                 Best Regards.
-                 iGRP
-                 
-                 """.formatted(Objects.nonNull(savedUser.getName()) ? savedUser.getName() : savedUser.getUsername(), savedUser.getUsername(), savedUser.getUsername()));
-         notification.setMetadata(Map.of("userId", savedUser.getId()));
+                LOGGER.info("Inviting new user: username={}, email={}", dto.getUsername(), dto.getEmail());
 
-         notificationAdapter.send(notification);
+                var notification = new Notification();
 
-      } catch (Exception e) {
-         LOGGER.error("Invitation Email failed", e);
-      }
+                notification.setRecipients(List.of(savedUser.getEmail()));
+                notification.setSubject("iGRP User Invitation");
+                notification.setContent("""
+                        Dear %s, your account has been created for iGRP. Your credentials are the following:
+                        
+                        Username: %s
+                        Password: %s
+                        
+                        Best Regards.
+                        iGRP
+                        
+                        """.formatted(Objects.nonNull(savedUser.getName()) ? savedUser.getName() : savedUser.getUsername(), savedUser.getUsername(), savedUser.getUsername()));
+                notification.setMetadata(Map.of("userId", savedUser.getId()));
 
-      LOGGER.info("User created successfully with id={}", savedUser.getId());
+                notificationAdapter.send(notification);
 
-      return ResponseEntity.ok(userMapper.toDto(savedUser));
+            } catch (Exception e) {
+                LOGGER.error("Invitation Email failed", e);
+            }
 
-   }
+            LOGGER.info("User invited successfully with id={}", savedUser.getId());
+
+            return ResponseEntity.ok(userMapper.toDto(savedUser));
+
+        } else {
+            throw IgrpResponseStatusException.of(
+                    HttpStatus.BAD_REQUEST,
+                    "User Invitation Failed",
+                    "The specified user does not exist in the Identity Provider."
+            );
+        }
+
+    }
 
 }

@@ -36,26 +36,32 @@ public class ResourceEntity extends AuditEntity {
     @Column(name = "id", unique = true, nullable = false)
     private Integer id;
 
+
     @NotBlank(message = "name is mandatory")
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
+
     @NotBlank(message = "description is mandatory")
     @Column(name = "description", nullable = false)
     private String description;
+
 
     @NotNull(message = "type is mandatory")
     @Enumerated(EnumType.STRING)
     @Column(name = "type", nullable = false)
     private ResourceType type;
 
+
     @Column(name = "external_id")
     private String externalId;
+
 
     @NotNull(message = "status is mandatory")
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false)
     private Status status;
+
 
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
@@ -64,10 +70,11 @@ public class ResourceEntity extends AuditEntity {
             inverseJoinColumns = @JoinColumn(name = "permission")
     )
     private Set<PermissionEntity> permissions = new HashSet<>();
-
     @OneToMany(mappedBy = "resourceId")
     private List<ResourceItemEntity> items = new ArrayList<>();
 
     @ManyToMany(mappedBy = "resources", fetch = FetchType.LAZY)
     private Set<ApplicationEntity> applications = new HashSet<>();
+
+
 }

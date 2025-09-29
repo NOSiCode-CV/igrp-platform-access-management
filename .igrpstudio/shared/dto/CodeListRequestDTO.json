@@ -1,0 +1,23 @@
+{
+  "type": "dto",
+  "module": "shared",
+  "name": "CodeListRequestDTO",
+  "template": "classic",
+  "enableCustonValidation": false,
+  "attributes": [
+    {
+      "name": "codes",
+      "objectType": "java",
+      "type": "string",
+      "required": true,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "collectionType": "list"
+    }
+  ],
+  "id": "2xsfscjnlozxc"
+}

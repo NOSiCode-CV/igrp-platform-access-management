@@ -68,8 +68,8 @@
         },
         {
           "type": "string",
-          "name": "username",
-          "description": "Username",
+          "name": "name",
+          "description": "Role Name",
           "isRequired": false
         }
       ]
@@ -337,5 +337,5 @@
       ]
     }
   ],
-  "id": "2b75ptbxyv-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissions-RemovePermissions"
+  "id": "2b75ptbxyv-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissions-RemovePermissions-getRoles"
 }

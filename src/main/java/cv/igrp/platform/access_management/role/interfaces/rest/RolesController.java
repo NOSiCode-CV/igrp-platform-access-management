@@ -16,11 +16,11 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.prepost.PreAuthorize;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.role.application.commands.*;
 import cv.igrp.platform.access_management.role.application.queries.*;
-
 
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import java.util.List;
@@ -105,12 +105,12 @@ public class RolesController {
   
   public ResponseEntity<List<RoleDTO>> getRoles(
     @RequestParam(value = "departmentCode", required = false) String departmentCode,
-    @RequestParam(value = "username", required = false) String username)
+    @RequestParam(value = "name", required = false) String name)
   {
 
       LOGGER.debug("Operation started");
 
-      final var query = new GetRolesQuery(departmentCode, username);
+      final var query = new GetRolesQuery(departmentCode, name);
 
       ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
 

@@ -33,7 +33,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
     * Constructs the handler with the required repository dependency.
     *
     * @param userRepository the repository used to retrieve and save {@link IGRPUserEntity} entities
-    * @param adapter the adapter to assign role to user in iam
+    * @param adapter the adapter to assign a role to user in iam
     */
    public RemoveRolesFromUserCommandHandler(
            IGRPUserEntityRepository userRepository, IAdapter adapter) {
@@ -66,15 +66,13 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
               });
 
       if (roleIdsToRemove != null && !roleIdsToRemove.isEmpty()) {
-         List<RoleEntity> currentRoles = new ArrayList<>(user.getRoles());
 
-         List<RoleEntity> rolesToRemove = currentRoles.stream()
+         List<RoleEntity> rolesToRemove = user.getRoles().stream()
                  .filter(role -> roleIdsToRemove.contains(role.getName()))
                  .toList();
 
          if (!rolesToRemove.isEmpty()) {
-            currentRoles.removeAll(rolesToRemove);
-            user.setRoles(currentRoles);
+            user.getRoles().removeAll(rolesToRemove);
             userRepository.save(user);
 
             logger.info("Roles removed successfully from user name={}", username);
