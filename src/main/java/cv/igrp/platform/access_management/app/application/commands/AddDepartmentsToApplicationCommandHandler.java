@@ -28,7 +28,10 @@ public class AddDepartmentsToApplicationCommandHandler implements CommandHandler
 
             var department = departmentRepository.findByCodeAndStatusNotDeleted(departmentCode);
 
-            application.getDepartments().add(department);
+            department.getApplications().add(application);
+
+            departmentRepository.save(department);
+
         }
 
         applicationRepository.save(application);

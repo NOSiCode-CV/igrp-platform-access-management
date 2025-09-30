@@ -41,8 +41,9 @@ class RemoveDepartmentFromApplicationCommandHandlerTest {
 
         department = new DepartmentEntity();
         department.setCode("DEPT001");
+        department.setApplications(new HashSet<>());
 
-        application.getDepartments().add(department);
+        department.getApplications().add(application);
     }
 
     @Test
@@ -69,7 +70,7 @@ class RemoveDepartmentFromApplicationCommandHandlerTest {
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getStatusCode().value()).isEqualTo(204);
 
-        assertThat(application.getDepartments()).doesNotContain(department);
+        assertThat(department.getApplications()).doesNotContain(application);
 
         verify(applicationRepository).findByCodeAndStatusNotDeleted(appCode);
         verify(departmentRepository).findByCodeAndStatusNotDeleted(deptCode);

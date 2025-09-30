@@ -511,9 +511,10 @@ public class SynchronizationService {
 
     private List<ApplicationInfo> getApplicationsFromDatabase() {
         String sql = """
-                SELECT a.code, a.name, a.description, a.status, a.type, d.code as departmentCode 
-                FROM t_application a 
-                JOIN t_department d ON a.department_id = d.id 
+                SELECT a.code, a.name, a.description, a.status, a.type, d.code AS departmentCode
+                FROM t_application a
+                JOIN t_department_application da ON a.id = da.application_id
+                JOIN t_department d ON da.department_id = d.id
                 WHERE a.status = ?
                 """;
         return jdbcTemplate.query(sql, (rs, _) -> {

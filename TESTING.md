@@ -104,7 +104,7 @@
   "code": "DEPT_PAYROLL",
   "name": "Payroll",
   "description": "Payroll dept (child of Finance)",
-  "parentId": <id-of-DEPT_FINANCE>,
+  "parent_code": "DEPT_FINANCE",
   "status": "ACTIVE"
 }
 ```
@@ -124,7 +124,8 @@
   "name": "Finance Application",
   "description": "Finance app",
   "status": "ACTIVE",
-  "type": "SYSTEM"
+  "type": "SYSTEM",
+  "departments": ["DEPT_IGRP"] // this is just because a department is required at app creation, we add iGRP one so we can test add department endpoint later
 }
 ```
 
@@ -153,7 +154,7 @@
 {
   "name": "ROLE_FIN_MGR",
   "description": "Finance Manager",
-  "department": "DEPT_FINANCE",
+  "departmentCode": "DEPT_FINANCE",
   "status": "ACTIVE"
 }
 ```
@@ -164,8 +165,8 @@
 {
   "name": "ROLE_JR_ACCOUNT",
   "description": "Junior Accountant",
-  "department": "DEPT_FINANCE",
-  "parent": "ROLE_FIN_MGR",
+  "departmentCode": "DEPT_FINANCE",
+  "parentName": "DEPT_FINANCE.ROLE_FIN_MGR",
   "status": "ACTIVE"
 }
 ```
@@ -175,7 +176,7 @@
 ```json
 {
   "name": "ROLE_HR_MGR",
-  "department": "DEPT_PAYROLL",
+  "departmentCode": "DEPT_PAYROLL",
   "status": "ACTIVE"
 }
 ```
@@ -188,7 +189,13 @@
 * Example:
 
 ```json
-{ "name": "PERM_VIEW_SALARY", "description": "View salary", "status": "ACTIVE", "application": "APP_FIN" }
+{
+  "name": "PERM_VIEW_SALARY",
+  "description": "View salary",
+  "status": "ACTIVE",
+  "applicationCode": "APP_FIN",
+  "departmentCode": "DEPT_FINANCE"
+}
 ```
 
 * `PERM_VIEW_BUDGET` similar.
@@ -197,16 +204,16 @@
 ### 6) Assign permissions to roles (attribution)
 
 * Endpoint: `POST /api/roles/{name}/addPermissions`
-* Example: grant `PERM_VIEW_SALARY` to `ROLE_FIN_MGR`
+* Example: grant `DEPT_FINANCE.PERM_VIEW_SALARY` to `DEPT_FINANCE.ROLE_FIN_MGR`
 
-    * Path: `/api/roles/ROLE_FIN_MGR/addPermissions`
+    * Path: `/api/roles/DEPT_FINANCE.ROLE_FIN_MGR/addPermissions`
     * Body:
 
 ```json
-[ "PERM_VIEW_SALARY" ]
+[ "DEPT_FINANCE.PERM_VIEW_SALARY" ]
 ```
 
-* Expected: `200 OK`. Role `ROLE_FIN_MGR` now has permission.
+* Expected: `200 OK`. Role `DEPT_FINANCE.ROLE_FIN_MGR` now has permission.
 
 ### 7) Create menus & link to application
 
@@ -218,7 +225,8 @@
   "name": "Salaries",
   "code": "MENU_SALARY",
   "applicationCode": "APP_FIN",
-  "type": "SYSTEM_PAGE",
+  "pageSlug": "salaries",
+  "type": "MENU_PAGE",
   "position": 1,
   "status": "ACTIVE"
 }
@@ -235,7 +243,7 @@
     * Body:
 
 ```json
-[ "ROLE_HR_MGR" ]
+[ "DEPT_PAYROLL.ROLE_HR_MGR" ]
 ```
 
 * Expected: `200 OK`. Now the menu is visible to users that have that role (subject to department sharing).
@@ -252,7 +260,7 @@
   "name": "RES_FIN_API",
   "type": "API",
   "description": "Finance API",
-  "applicationCode": "APP_FIN",
+  "applications": ["APP_FIN"],
   "status": "ACTIVE"
 }
 ```
@@ -262,12 +270,15 @@
     * `POST /api/resources/RES_FIN_API/items` or the endpoint the collection uses (see postman). Body examples:
 
 ```json
-[ {
-  "name": "RI_SALARY_LIST",
-  "description": "Salary List endpoint",
-  "permission": "PERM_VIEW_SALARY",
-  "url": "/api/finance/salary-list"
-} ]
+[
+  {
+    "name": "RI_SALARY_LIST",
+    "description": "Salary List endpoint",
+    "permissionName": "DEPT_FINANCE.PERM_VIEW_SALARY",
+    "resourceName": "RES_FIN_API",
+    "url": "/api/finance/salary-list"
+  }
+]
 ```
 
 * Expected: `200 OK` or `201 Created` depending on implementation.
@@ -593,9 +604,9 @@ curl -s -X POST "$BASE_URL/api/departments" \
   }'
 ```
 
-### 2) Create child department (Payroll) with parentId obtained from previous call
+### 2) Create child department (Payroll) with parent code obtained from previous call
 
-(assume parent id is 1 — adjust as needed)
+(assume parent code is DEPT_FINANCE — adjust as needed)
 
 ```bash
 curl -s -X POST "$BASE_URL/api/departments" \
@@ -605,7 +616,7 @@ curl -s -X POST "$BASE_URL/api/departments" \
     "code":"DEPT_PAYROLL",
     "name":"Payroll",
     "description":"Payroll",
-    "parentId": 1,
+    "parent_code": "DEPT_FINANCE",
     "status":"ACTIVE"
   }'
 ```
