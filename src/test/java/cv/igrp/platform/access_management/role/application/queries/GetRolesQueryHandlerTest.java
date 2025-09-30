@@ -129,7 +129,7 @@ class GetRolesQueryHandlerTest {
     void itShouldApplyUsernameFilter() {
         // Given
         GetRolesQuery query = new GetRolesQuery();
-        query.setUsername("manager");
+        query.setName("manager");
 
         RoleEntity role = new RoleEntity();
         role.setId(400);

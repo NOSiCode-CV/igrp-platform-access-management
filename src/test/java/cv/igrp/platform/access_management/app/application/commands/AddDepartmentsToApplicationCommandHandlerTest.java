@@ -70,7 +70,8 @@ class AddDepartmentsToApplicationCommandHandlerTest {
         // then
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
 
-        assertThat(application.getDepartments()).containsExactlyInAnyOrder(department1, department2);
+        assertThat(department1.getApplications()).containsExactlyInAnyOrder(application);
+        assertThat(department2.getApplications()).containsExactlyInAnyOrder(application);
 
         verify(applicationRepository).findByCodeAndStatusNotDeleted(appCode);
         verify(departmentRepository).findByCodeAndStatusNotDeleted(deptCode1);
