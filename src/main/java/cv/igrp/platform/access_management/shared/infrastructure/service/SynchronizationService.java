@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.shared.infrastructure.service;
 import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.auth.core.model.*;
+import jakarta.ws.rs.ClientErrorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -41,7 +42,7 @@ public class SynchronizationService {
      * Startup reconciliation - called on application startup
      * Follows the order: Definitions before assignments
      */
-    @Async
+    @Async(value = "igrpTaskExecutor")
     @Transactional
     public void startupReconciliation() {
         LOGGER.info("[Sync] Starting startup reconciliation...");
@@ -104,7 +105,7 @@ public class SynchronizationService {
     /**
      * On-demand synchronization repair
      */
-    @Async
+    @Async(value = "igrpTaskExecutor")
     @Transactional
     public void repairSynchronization() {
         LOGGER.info("[Sync] Starting repair synchronization...");
@@ -156,6 +157,11 @@ public class SynchronizationService {
                     adapter.createDepartment(dbDept.getCode(), dbDept.getParentDepartment());
                     LOGGER.info("[Sync] Created department in provider: {}", dbDept.getCode());
                 } catch (IAMException e) {
+                    if(e.getCause() != null && e.getCause() instanceof ClientErrorException clEx) {
+                        if (clEx.getResponse().getStatus() == 409) {
+                            LOGGER.info("[Sync] The department {} is already present in the provider", dbDept.getCode());
+                        }
+                    }
                     LOGGER.warn("[Sync] Failed to create department {} in provider: {}", dbDept.getCode(), e.getMessage());
                 }
             }
@@ -185,21 +191,26 @@ public class SynchronizationService {
 
         // Create composite key: departmentCode + ":" + applicationCode
         Set<String> dbAppKeys = dbApplications.stream()
-                .map(app -> app.getDepartmentCode() + ":" + app.getCode())
+                .map(ApplicationInfo::getCode)
                 .collect(Collectors.toSet());
 
         Set<String> providerAppKeys = providerApplications.stream()
-                .map(app -> app.getDepartmentCode() + ":" + app.getCode())
+                .map(ApplicationInfo::getCode)
                 .collect(Collectors.toSet());
 
         // Create in provider if missing
         for (ApplicationInfo dbApp : dbApplications) {
-            String key = dbApp.getDepartmentCode() + ":" + dbApp.getCode();
+            String key = dbApp.getCode();
             if (!providerAppKeys.contains(key)) {
                 try {
                     adapter.createApplication(dbApp.getDepartmentCode(), dbApp.getCode());
                     LOGGER.info("[Sync] Created application in provider: {}", key);
                 } catch (IAMException e) {
+                    if(e.getCause() != null && e.getCause() instanceof ClientErrorException clEx) {
+                        if (clEx.getResponse().getStatus() == 409) {
+                            LOGGER.info("[Sync] The application {} is already present in the provider", key);
+                        }
+                    }
                     LOGGER.warn("[Sync] Failed to create application {} in provider: {}", key, e.getMessage());
                 }
             }
@@ -207,7 +218,7 @@ public class SynchronizationService {
 
         // Delete from provider if not in DB
         for (ApplicationInfo providerApp : providerApplications) {
-            String key = providerApp.getDepartmentCode() + ":" + providerApp.getCode();
+            String key = providerApp.getCode();
             if (!dbAppKeys.contains(key)) {
                 try {
                     adapter.deleteApplication(providerApp.getDepartmentCode(), providerApp.getCode());
@@ -228,23 +239,31 @@ public class SynchronizationService {
         List<RoleInfo> dbRoles = getRolesFromDatabase();
         List<RoleInfo> providerRoles = adapter.getAllRoles();
 
-        // Create composite key: departmentCode + ":" + roleName
+        // Considering composite key: $departmentCode + $roleName
         Set<String> dbRoleKeys = dbRoles.stream()
-                .map(role -> role.getDepartmentCode() + ":" + role.getName())
+                .map(RoleInfo::getName)
                 .collect(Collectors.toSet());
 
         Set<String> providerRoleKeys = providerRoles.stream()
-                .map(role -> role.getDepartmentCode() + ":" + role.getName())
+                .map(RoleInfo::getName)
                 .collect(Collectors.toSet());
 
         // Create in provider if missing
         for (RoleInfo dbRole : dbRoles) {
-            String key = dbRole.getDepartmentCode() + ":" + dbRole.getName();
+            String key = dbRole.getName();
+            LOGGER.info("[[IGRP_DEBUG {}]]: Syncing role key: {}", dbRole.getName(), key);
+            LOGGER.info("[[IGRP_DEBUG {}]]: DB Role Keys: {}", dbRole.getName(), dbRoleKeys);
+            LOGGER.info("[[IGRP_DEBUG {}]]: Provider Role Keys: {}", dbRole.getName(), providerRoleKeys);
             if (!providerRoleKeys.contains(key)) {
                 try {
                     adapter.createRole(dbRole.getDepartmentCode(), dbRole.getName());
                     LOGGER.info("[Sync] Created role in provider: {}", key);
                 } catch (IAMException e) {
+                    if(e.getCause() != null && e.getCause() instanceof ClientErrorException clEx) {
+                        if (clEx.getResponse().getStatus() == 409) {
+                            LOGGER.info("[Sync] The role {} is already present in the provider", key);
+                        }
+                    }
                     LOGGER.warn("[Sync] Failed to create role {} in provider: {}", key, e.getMessage());
                 }
             }
@@ -252,7 +271,7 @@ public class SynchronizationService {
 
         // Delete it from provider if not in DB
         for (RoleInfo providerRole : providerRoles) {
-            String key = providerRole.getDepartmentCode() + ":" + providerRole.getName();
+            String key = providerRole.getName();
             if (!dbRoleKeys.contains(key)) {
                 try {
                     adapter.deleteRole(providerRole.getDepartmentCode(), providerRole.getName());
@@ -288,6 +307,11 @@ public class SynchronizationService {
                     adapter.createPermission(dbPerm.getName(), dbPerm.getDescription());
                     LOGGER.info("[Sync] Created permission in provider: {}", dbPerm.getName());
                 } catch (IAMException e) {
+                    if(e.getCause() != null && e.getCause() instanceof ClientErrorException clEx) {
+                        if (clEx.getResponse().getStatus() == 409) {
+                            LOGGER.info("[Sync] The permission {} is already present in the provider", dbPerm.getName());
+                        }
+                    }
                     LOGGER.warn("[Sync] Failed to create permission {} in provider: {}", dbPerm.getName(), e.getMessage());
                 }
             }
@@ -331,6 +355,11 @@ public class SynchronizationService {
                             dbResource.getUris(), dbResource.getScopes());
                     LOGGER.info("[Sync] Created resource in provider: {}", dbResource.getName());
                 } catch (IAMException e) {
+                    if(e.getCause() != null && e.getCause() instanceof ClientErrorException clEx) {
+                        if (clEx.getResponse().getStatus() == 409) {
+                            LOGGER.info("[Sync] The resource {} is already present in the provider", dbResource.getName());
+                        }
+                    }
                     LOGGER.warn("[Sync] Failed to create resource {} in provider: {}", dbResource.getName(), e.getMessage());
                 }
             }
@@ -497,7 +526,13 @@ public class SynchronizationService {
     // =====================================================
 
     private List<DepartmentInfo> getDepartmentsFromDatabase() {
-        String sql = "SELECT code, name, description, parent_id as parentDepartment, status FROM t_department WHERE status = ?";
+        String sql = """
+                SELECT d.code, d.name, d.description, pd.code as parentDepartment, d.status
+                FROM t_department d
+                LEFT JOIN t_department pd on d.parent_id = pd.id
+                WHERE d.status = ?
+                ORDER BY d.parent_id NULLS FIRST
+                """;
         return jdbcTemplate.query(sql, (rs, _) -> {
             DepartmentInfo dept = new DepartmentInfo();
             dept.setCode(rs.getString("code"));
@@ -531,10 +566,11 @@ public class SynchronizationService {
 
     private List<RoleInfo> getRolesFromDatabase() {
         String sql = """
-                SELECT r.name, r.description, r.status, d.code as departmentCode 
+                SELECT r.name, r.description, r.status, d.code as departmentCode
                 FROM t_role r 
-                JOIN t_department d ON r.department = d.id 
+                LEFT JOIN t_department d ON r.department = d.id 
                 WHERE r.status = ?
+                ORDER BY r.parent NULLS FIRST
                 """;
         return jdbcTemplate.query(sql, (rs, _) -> {
             RoleInfo role = new RoleInfo();
@@ -612,8 +648,8 @@ public class SynchronizationService {
         String sql = """
                 SELECT p.name as permission_name, r.name as role_name 
                 FROM t_role_permission rp 
-                JOIN t_permission p ON rp.permission = p.id 
-                JOIN t_role r ON rp.role_id = r.id 
+                LEFT JOIN t_permission p ON rp.permission = p.id 
+                LEFT JOIN t_role r ON rp.role_id = r.id 
                 WHERE p.status = ? AND r.status = ?
                 """;
 
@@ -632,9 +668,9 @@ public class SynchronizationService {
         String sql = """
                 SELECT u.username, d.code as department_code, r.name as role_name 
                 FROM t_role_users ru 
-                JOIN t_user u ON ru.users_id = u.id 
-                JOIN t_role r ON ru.roles_id = r.id 
-                JOIN t_department d ON r.department = d.id 
+                LEFT JOIN t_user u ON ru.users_id = u.id 
+                LEFT JOIN t_role r ON ru.roles_id = r.id 
+                LEFT JOIN t_department d ON r.department = d.id 
                 WHERE u.status = ? AND r.status = ? AND d.status = ?
                 """;
 
@@ -677,10 +713,10 @@ public class SynchronizationService {
         List<ApplicationInfo> providerApps = adapter.getAllApplications();
 
         Set<String> dbKeys = dbApps.stream()
-                .map(app -> app.getDepartmentCode() + ":" + app.getCode())
+                .map(ApplicationInfo::getCode)
                 .collect(Collectors.toSet());
         Set<String> providerKeys = providerApps.stream()
-                .map(app -> app.getDepartmentCode() + ":" + app.getCode())
+                .map(ApplicationInfo::getCode)
                 .collect(Collectors.toSet());
 
         return calculateDifferences(dbKeys, providerKeys);
@@ -691,10 +727,10 @@ public class SynchronizationService {
         List<RoleInfo> providerRoles = adapter.getAllRoles();
 
         Set<String> dbKeys = dbRoles.stream()
-                .map(role -> role.getDepartmentCode() + ":" + role.getName())
+                .map(RoleInfo::getName)
                 .collect(Collectors.toSet());
         Set<String> providerKeys = providerRoles.stream()
-                .map(role -> role.getDepartmentCode() + ":" + role.getName())
+                .map(RoleInfo::getName)
                 .collect(Collectors.toSet());
 
         return calculateDifferences(dbKeys, providerKeys);

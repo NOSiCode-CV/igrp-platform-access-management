@@ -41,6 +41,12 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     @Column(name = "external_id", unique = true)
     private String externalId;
 
+    @Column(name = "picture")
+    private String picture;
+
+    @Column(name = "signature")
+    private String signature;
+
     @Column(name = "email_verified")
     private Boolean emailVerified = Boolean.FALSE;
 

@@ -39,7 +39,7 @@ public class ConfigurationService {
     }
 
     @Transactional
-    @Async
+    @Async(value = "igrpTaskExecutor")
     public void initializeSystemConfiguration() {
         long startTime = System.currentTimeMillis();
         LOGGER.info("[Startup Config] Starting system initialization...");
