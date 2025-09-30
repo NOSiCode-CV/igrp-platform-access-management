@@ -92,6 +92,8 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
          user.setName(dto.getName());
          user.setUsername(dto.getUsername());
          user.setEmail(dto.getEmail());
+         user.setPicture(dto.getPicture());
+         user.setSignature(dto.getSignature());
          user.setRoles(new ArrayList<>());
          var savedUser = userRepository.save(user);
          logger.info("User created successfully with id={}", savedUser.getId());
