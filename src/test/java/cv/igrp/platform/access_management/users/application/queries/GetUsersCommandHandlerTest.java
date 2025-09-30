@@ -56,8 +56,8 @@ public class GetUsersCommandHandlerTest {
         // Given
         GetUsersCommand command = new GetUsersCommand(
                 List.of(1),
-                1,
-                1,
+                "APP",
+                "DEPT",
                 "John",
                 "jdoe",
                 "jdoe@example.com"

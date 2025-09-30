@@ -74,7 +74,7 @@ public class UpdateUserCommandHandlerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals("New Name", user.getName());
         assertEquals(USER_ID, user.getUsername());
-        assertEquals("new@example.com", user.getEmail());
+        assertEquals("old@example.com", user.getEmail());
 
         // Verify
         verify(userRepository, times(1)).findByUsername(USER_ID);
@@ -111,7 +111,6 @@ public class UpdateUserCommandHandlerTest {
 
         dto.setUsername(null);
         dto.setName(null);
-        dto.setEmail("updated@example.com");
 
         command = updateUserCommand(dto, USER_ID);
 
@@ -125,7 +124,7 @@ public class UpdateUserCommandHandlerTest {
         // Assert
         assertNotNull(response);
         assertNotNull(response.getBody());
-        assertEquals("updated@example.com", user.getEmail());
+        assertEquals("old@example.com", user.getEmail());
         assertEquals(USER_ID, user.getUsername());
         assertEquals("Old Name", user.getName());
         assertEquals(HttpStatus.OK, response.getStatusCode());

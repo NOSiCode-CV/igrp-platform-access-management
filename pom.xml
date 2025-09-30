@@ -164,7 +164,7 @@
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
             <artifactId>keycloak-spring-boot</artifactId>
-            <version>0.1.0-beta-20250929.094547-3</version>
+            <version>0.1.0-beta-20250930.101410-4</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
