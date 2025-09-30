@@ -28,6 +28,8 @@ public class IGRPUserMapper {
         dto.setName(user.getName());
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
+        dto.setPicture(user.getPicture());
+        dto.setSignature(user.getSignature());
         return dto;
     }
 
@@ -45,6 +47,8 @@ public class IGRPUserMapper {
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
         user.setName(dto.getName());
+        user.setPicture(dto.getPicture());
+        user.setSignature(dto.getSignature());
         return user;
     }
 }

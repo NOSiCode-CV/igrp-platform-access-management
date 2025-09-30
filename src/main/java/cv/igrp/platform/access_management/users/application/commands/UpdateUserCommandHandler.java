@@ -40,59 +40,67 @@ import org.springframework.transaction.annotation.Transactional;
 @Component
 public class UpdateUserCommandHandler implements CommandHandler<UpdateUserCommand, ResponseEntity<IGRPUserDTO>> {
 
-   private static final Logger logger = LoggerFactory.getLogger(UpdateUserCommandHandler.class);
+    private static final Logger logger = LoggerFactory.getLogger(UpdateUserCommandHandler.class);
 
-   private final IGRPUserEntityRepository userRepository;
-   private final IGRPUserMapper userMapper;
+    private final IGRPUserEntityRepository userRepository;
+    private final IGRPUserMapper userMapper;
 
-   /**
-    * Constructs the handler with required dependencies.
-    *
-    * @param userRepository the repository to retrieve and save user entities
-    * @param userMapper     the mapper used to convert entities to DTOs
-    */
-   public UpdateUserCommandHandler(
-           IGRPUserEntityRepository userRepository,
-           IGRPUserMapper userMapper
-   ) {
-      this.userRepository = userRepository;
-      this.userMapper = userMapper;
-   }
+    /**
+     * Constructs the handler with required dependencies.
+     *
+     * @param userRepository the repository to retrieve and save user entities
+     * @param userMapper     the mapper used to convert entities to DTOs
+     */
+    public UpdateUserCommandHandler(
+            IGRPUserEntityRepository userRepository,
+            IGRPUserMapper userMapper
+    ) {
+        this.userRepository = userRepository;
+        this.userMapper = userMapper;
+    }
 
-   /**
-    * Handles the update of an existing user.
-    *
-    * @param command the command containing the user ID and the updated user data
-    * @return a {@link ResponseEntity} containing the updated {@link IGRPUserDTO}
-    * @throws EntityNotFoundException if no user exists with the given ID
-    */
-   @IgrpCommandHandler
-   @Transactional
-   public ResponseEntity<IGRPUserDTO> handle(UpdateUserCommand command) {
-      String username = command.getUsername();
+    /**
+     * Handles the update of an existing user.
+     *
+     * @param command the command containing the user ID and the updated user data
+     * @return a {@link ResponseEntity} containing the updated {@link IGRPUserDTO}
+     * @throws EntityNotFoundException if no user exists with the given ID
+     */
+    @IgrpCommandHandler
+    @Transactional
+    public ResponseEntity<IGRPUserDTO> handle(UpdateUserCommand command) {
+        String username = command.getUsername();
 
-      logger.info("Updating user with id={}", username);
+        logger.info("Updating user with id={}", username);
 
-      IGRPUserEntity user = userRepository.findByUsername(command.getUsername())
-              .orElseThrow(() -> {
-                 logger.warn("User with username={} not found", username);
-                 return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND,
-                         "Invalid User",
-                         "User not found with username: " + username);
-              });
+        IGRPUserEntity user = userRepository.findByUsername(command.getUsername())
+                .orElseThrow(() -> {
+                    logger.warn("User with username={} not found", username);
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND,
+                            "Invalid User",
+                            "User not found with username: " + username);
+                });
 
-      IGRPUserDTO dto = command.getIgrpuserdto();
+        IGRPUserDTO dto = command.getIgrpuserdto();
 
-      if (dto.getName() != null) {
-         user.setName(dto.getName());
-      }
+        if (dto.getName() != null) {
+            user.setName(dto.getName());
+        }
 
-      var updatedUser = userRepository.save(user);
+        if (dto.getPicture() != null) {
+            user.setPicture(dto.getPicture());
+        }
 
-      logger.info("User updated successfully: id={}, username={}", updatedUser.getId(), updatedUser.getUsername());
+        if (dto.getSignature() != null) {
+            user.setSignature(dto.getSignature());
+        }
 
-      return ResponseEntity.ok(userMapper.toDto(updatedUser));
-   }
+        var updatedUser = userRepository.save(user);
+
+        logger.info("User updated successfully: id={}, username={}", updatedUser.getId(), updatedUser.getUsername());
+
+        return ResponseEntity.ok(userMapper.toDto(updatedUser));
+    }
 
 }

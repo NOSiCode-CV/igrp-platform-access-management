@@ -53,11 +53,11 @@ public class SynchronizationService {
             syncDepartments();
             syncApplications();
             syncRoles();
-            syncPermissions();
-            syncResources();
+            //syncPermissions(); disabled for now as permissions are only managed in IGRP
+            //syncResources(); disabled for now as resources are only managed in IGRP
 
             // Phase 2: Sync assignments (after definitions)
-            syncRolePermissionAssignments();
+            //syncRolePermissionAssignments(); disabled for now as permissions are only managed in IGRP
             syncUserRoleAssignments();
 
             // Phase 3: User synchronization (special rules apply)
