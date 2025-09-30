@@ -7,17 +7,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.scheduling.annotation.EnableAsync;
 
 @SpringBootApplication(
   exclude = WebFluxAutoConfiguration.class
 )
-@EnableAsync
 @ComponentScan(basePackages = "cv.igrp")
 public class IgrpPlatformAccessManagementApplication {
 
@@ -28,33 +25,18 @@ public class IgrpPlatformAccessManagementApplication {
     }
 
     @Bean
-    public CommandLineRunner initialConfiguration(ConfigurationService service) {
-        try {
-            return _ -> service.initializeSystemConfiguration();
-        } catch (Exception e) {
-            logger.warn("[Startup Config] Failure in initial configuration check", e);
-            return _ -> {};
-        }
-    }
-
-    @Bean
-    public CommandLineRunner startupReconciliation(SynchronizationService service) {
-        try {
-            return _ -> service.startupReconciliation();
-        } catch (Exception e) {
-            logger.warn("[Startup Sync] Failure in startup reconciliation", e);
-            return _ -> {};
-        }
-    }
-
-    @Bean
-    public CommandLineRunner redisCheck(RedisConnectionFactory connectionFactory) {
+    public CommandLineRunner startupRunner(ConfigurationService configService,
+                                           SynchronizationService syncService,
+                                           RedisConnectionFactory connectionFactory
+    ) {
         return _ -> {
             try {
+                configService.initializeSystemConfiguration();
+                syncService.startupReconciliation();
                 connectionFactory.getConnection().ping();
                 logger.info("✅ Redis connection successful!");
             } catch (Exception e) {
-                logger.error("❌ Redis connection failed!", e);
+                logger.warn("[Startup] Failure in startup sequence", e);
             }
         };
     }

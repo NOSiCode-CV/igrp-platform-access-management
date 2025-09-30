@@ -54,6 +54,32 @@
       "isEmail": true,
       "isUrl": false,
       "primaryKey": false
+    },
+    {
+      "name": "picture",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "collectionType": "none"
+    },
+    {
+      "name": "signature",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "collectionType": "none"
     }
   ],
   "id": "plmvfsaeug"

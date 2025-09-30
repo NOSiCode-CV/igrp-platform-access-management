@@ -34,4 +34,8 @@ public class IGRPUserDTO {
   
   private String email ;
 
+  private String picture ;
+
+  private String signature;
+
 }
