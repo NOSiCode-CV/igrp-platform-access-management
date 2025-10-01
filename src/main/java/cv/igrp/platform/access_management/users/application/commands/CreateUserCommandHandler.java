@@ -74,43 +74,35 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<IGRPUserDTO> handle(CreateUserCommand command) {
-      var dto =command.getIgrpuserdto();
+      var dto = command.getIgrpuserdto();
 
       logger.info("Creating new user: username={}, email={}", dto.getUsername(), dto.getEmail());
-
-      IGRPUserEntity user = new IGRPUserEntity();
-      user.setName(dto.getName());
-      user.setUsername(dto.getUsername());
-      user.setEmail(dto.getEmail());
-      user.setRoles(new ArrayList<>());
 
       // Verify if username exists
       if (userRepository.existsByUsername(dto.getUsername()))
          throw IgrpResponseStatusException.of(
                  HttpStatus.CONFLICT,
-                 "Username %s already exists".formatted(dto.getUsername())
+                 "User with username %s exists already".formatted(dto.getUsername())
          );
 
-      try {
+      var providerUser = adapter.resolveUser(dto.getUsername());
 
+      if(providerUser.isPresent()) {
+         IGRPUserEntity user = new IGRPUserEntity();
+         user.setName(dto.getName());
+         user.setUsername(dto.getUsername());
+         user.setEmail(dto.getEmail());
+         user.setPicture(dto.getPicture());
+         user.setSignature(dto.getSignature());
+         user.setRoles(new ArrayList<>());
          var savedUser = userRepository.save(user);
-
-         adapter.createUser(savedUser);
-
          logger.info("User created successfully with id={}", savedUser.getId());
-
          return ResponseEntity.ok(userMapper.toDto(savedUser));
-      } catch (IAMException e) {
-         logger.error(e.getMessage(), e);
-         throw IgrpResponseStatusException.internalServerError(
+      } else {
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.BAD_REQUEST,
                  "User Creation Failed",
-                 e.getMessage()
-         );
-      } catch (Exception e) {
-         logger.error("Unexpected User Creation Error: {}", e.getMessage(), e);
-         throw IgrpResponseStatusException.internalServerError(
-                 "Unexpected User Creation Error",
-                 e.getMessage()
+                 "The specified user does not exist in the Identity Provider."
          );
       }
 

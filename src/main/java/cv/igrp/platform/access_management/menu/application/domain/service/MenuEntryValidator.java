@@ -63,12 +63,7 @@ public class MenuEntryValidator {
 
             if(menuEntry.getPageSlug() == null)
                 throw IgrpResponseStatusException.of(
-                        HttpStatus.BAD_REQUEST, "Page Slug Required", "Page Slug must be provided for system menu types"
-                );
-
-            if(menuEntry.getUrl() == null)
-                throw IgrpResponseStatusException.of(
-                        HttpStatus.BAD_REQUEST, "Page URL Required", "Page URL must be provided for system menu types"
+                        HttpStatus.BAD_REQUEST, "Page Slug Required", "Page Slug must be provided for menu page types"
                 );
 
         }
@@ -77,7 +72,7 @@ public class MenuEntryValidator {
 
             if(menuEntry.getUrl() == null)
                 throw IgrpResponseStatusException.of(
-                        HttpStatus.BAD_REQUEST, "Page URL Required", "Page URL must be provided for system menu types"
+                        HttpStatus.BAD_REQUEST, "Page URL Required", "Page URL must be provided for external menu types"
                 );
 
         }

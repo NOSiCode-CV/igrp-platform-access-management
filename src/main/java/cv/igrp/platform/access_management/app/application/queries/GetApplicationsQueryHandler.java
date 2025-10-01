@@ -5,9 +5,12 @@ import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
+import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -59,7 +62,7 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
    */
   @IgrpQueryHandler
   public ResponseEntity<List<ApplicationDTO>> handle(GetApplicationsQuery applicationsQuery) {
-    Specification<ApplicationEntity> spec = buildSpecification(applicationsQuery.getCode(), applicationsQuery.getName(), applicationsQuery.getSlug(), applicationsQuery.getType());
+    Specification<ApplicationEntity> spec = buildSpecification(applicationsQuery.getCode(), applicationsQuery.getName(), applicationsQuery.getSlug(), applicationsQuery.getType(), applicationsQuery.getDepartmentCode());
     List<ApplicationDTO> applications = applicationRepository.findAll(spec)
             .stream()
             .map(applicationMapper::toDto)
@@ -74,7 +77,7 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
    * @param name the name substring to search for, case-insensitive (optional)
    * @return a {@link Specification} representing the composed query filters
    */
-  private Specification<ApplicationEntity> buildSpecification(final String code, final String name, final String slug, final String type) {
+  private Specification<ApplicationEntity> buildSpecification(final String code, final String name, final String slug, final String type, final String departmentCode) {
     Specification<ApplicationEntity> spec = Specification.allOf();
     if (code != null && !code.isEmpty()) {
       spec = spec.and((root, _, cb) ->
@@ -93,10 +96,16 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
     }
     if (type != null && !type.isEmpty()) {
       spec = spec.and((root, _, cb) ->
-              cb.equal(cb.lower(root.get("type")), AppType.fromCodeOrThrow(type))
+              cb.equal(root.get("type"), AppType.fromCodeOrThrow(type))
       );
     }
 
+    if (departmentCode != null && !departmentCode.isEmpty()) {
+      spec = spec.and((root, q, cb) -> {
+        Join<Object, Object> departmentJoin = root.join("departments", JoinType.INNER);
+        return cb.equal(cb.lower(departmentJoin.get("code")), departmentCode.toLowerCase());
+      });
+    }
 
     // Exclude deleted applications
     spec = spec.and((root, _, cb) ->

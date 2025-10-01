@@ -59,7 +59,7 @@ public class DepartmentEntity extends AuditEntity {
   
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(
-            name = "department_applications",
+            name = "t_department_application",
             joinColumns = @JoinColumn(name = "department_id"),
             inverseJoinColumns = @JoinColumn(name = "application_id")
     )

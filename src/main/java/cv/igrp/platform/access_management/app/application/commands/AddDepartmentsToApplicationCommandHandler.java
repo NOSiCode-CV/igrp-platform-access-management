@@ -41,7 +41,9 @@ public class AddDepartmentsToApplicationCommandHandler implements CommandHandler
                     );
             }
 
-            application.getDepartments().add(department);
+            department.getApplications().add(application);
+
+            departmentRepository.save(department);
         }
 
         applicationRepository.save(application);

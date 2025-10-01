@@ -364,6 +364,70 @@
           "isRequired": true
         }
       ]
+    },
+    {
+      "actionName": "shareResourceToAnotherApplication",
+      "path": "resources/{resourceId}/applications/{applicationId}",
+      "method": "POST",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "description": "Share a resource to another application",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "name",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "applicationCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "removeResourceFromApplication",
+      "path": "resources/{resourceId}/applications/{applicationId}",
+      "method": "DELETE",
+      "responses": {
+        "204": {
+          "name": "OK",
+          "description": "Remove a resource from an application",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "name",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "applicationCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
     }
   ],
   "id": "74cqm14nbd-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"

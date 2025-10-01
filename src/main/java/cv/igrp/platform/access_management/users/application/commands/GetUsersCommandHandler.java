@@ -51,7 +51,7 @@ public class GetUsersCommandHandler implements CommandHandler<GetUsersCommand, R
          spec = spec.and((root, q, cb) -> {
             Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
             Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
-            Join<Object, Object> applicationJoin = departmentJoin.join("applicationId", JoinType.INNER);
+            Join<Object, Object> applicationJoin = departmentJoin.join("applications", JoinType.INNER);
             return cb.equal(applicationJoin.get("code"), command.getApplicationCode());
          });
       }

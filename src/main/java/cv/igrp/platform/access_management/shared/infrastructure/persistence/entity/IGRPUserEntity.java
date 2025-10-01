@@ -1,9 +1,11 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.entity;
 
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.config.AuditEntity;
 import cv.igrp.framework.stereotype.IgrpEntity;
 import cv.igrp.framework.auth.core.model.UserIdentity;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
@@ -39,8 +41,19 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     @Column(name = "external_id", unique = true)
     private String externalId;
 
+    @Column(name = "picture")
+    private String picture;
+
+    @Column(name = "signature")
+    private String signature;
+
     @Column(name = "email_verified")
     private Boolean emailVerified = Boolean.FALSE;
+
+    @NotNull(message = "status is mandatory")
+    @Enumerated(EnumType.STRING)
+    @Column(name="status", nullable = false)
+    private Status status = Status.ACTIVE;
 
     @ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
     private List<RoleEntity> roles = new ArrayList<>();

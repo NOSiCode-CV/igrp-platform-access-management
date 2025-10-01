@@ -3,28 +3,27 @@
 
 package cv.igrp.platform.access_management.resource.interfaces.rest;
 
+import cv.igrp.framework.core.domain.CommandBus;
+import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.framework.stereotype.IgrpController;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
-import org.springframework.http.HttpStatus;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import cv.igrp.platform.access_management.resource.application.commands.*;
+import cv.igrp.platform.access_management.resource.application.queries.GetResourceByIdQuery;
+import cv.igrp.platform.access_management.resource.application.queries.GetResourceCustomFieldsQuery;
+import cv.igrp.platform.access_management.resource.application.queries.GetResourcesQuery;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ResourceItemDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import cv.igrp.framework.core.domain.CommandBus;
-import cv.igrp.framework.core.domain.QueryBus;
-import cv.igrp.platform.access_management.resource.application.commands.*;
-import cv.igrp.platform.access_management.resource.application.queries.*;
-
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
-import cv.igrp.platform.access_management.shared.application.dto.ResourceItemDTO;
 import java.util.Map;
 
 @IgrpController
@@ -417,6 +416,78 @@ public class ResourceController {
       LOGGER.debug("Operation finished");
 
       return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+    @PostMapping(
+            value = "resources/{resourceId}/applications/{applicationId}"
+    )
+    @Operation(
+            summary = "POST method to handle operations for shareResourceToAnotherApplication",
+            description = "POST method to handle operations for shareResourceToAnotherApplication",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "200",
+                            description = "Share a resource to another application",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            implementation = String.class,
+                                            type = "String")
+                            )
+                    )
+            }
+    )
+
+    public ResponseEntity<String> shareResourceToAnotherApplication(
+            @PathVariable(value = "name") String name, @PathVariable(value = "applicationCode") String applicationCode) {
+
+        LOGGER.debug("Operation started");
+
+        final var command = new ShareResourceToAnotherApplicationCommand(name, applicationCode);
+
+        ResponseEntity<String> response = commandBus.send(command);
+
+        LOGGER.debug("Operation finished");
+
+        return ResponseEntity.status(response.getStatusCode())
+                .headers(response.getHeaders())
+                .body(response.getBody());
+    }
+
+    @DeleteMapping(
+            value = "resources/{resourceId}/applications/{applicationId}"
+    )
+    @Operation(
+            summary = "DELETE method to handle operations for removeResourceFromApplication",
+            description = "DELETE method to handle operations for removeResourceFromApplication",
+            responses = {
+                    @ApiResponse(
+                            responseCode = "204",
+                            description = "Remove a resource from an application",
+                            content = @Content(
+                                    mediaType = "application/json",
+                                    schema = @Schema(
+                                            implementation = String.class,
+                                            type = "String")
+                            )
+                    )
+            }
+    )
+
+    public ResponseEntity<String> removeResourceFromApplication(
+            @PathVariable(value = "name") String name, @PathVariable(value = "applicationCode") String applicationCode) {
+
+        LOGGER.debug("Operation started");
+
+        final var command = new RemoveResourceFromApplicationCommand(name, applicationCode);
+
+        ResponseEntity<String> response = commandBus.send(command);
+
+        LOGGER.debug("Operation finished");
+
+        return ResponseEntity.status(response.getStatusCode())
               .headers(response.getHeaders())
               .body(response.getBody());
   }
