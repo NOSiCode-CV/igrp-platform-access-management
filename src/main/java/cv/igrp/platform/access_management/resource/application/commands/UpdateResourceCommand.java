@@ -14,7 +14,7 @@ public class UpdateResourceCommand implements Command {
 
   
   private ResourceDTO resourcedto;
-  @NotBlank(message = "The field <name> is required.")
+  @NotBlank(message = "The field <name> is required")
   private String name;
 
 }

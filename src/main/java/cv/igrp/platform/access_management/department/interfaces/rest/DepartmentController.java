@@ -31,7 +31,7 @@ import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 @IgrpController
 @RestController
 @RequestMapping(path = "api")
-@Tag(name = "Department", description = "postDepartment")
+@Tag(name = "Department", description = "Department Management")
 public class DepartmentController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(DepartmentController.class);

@@ -2,7 +2,7 @@
   "type": "controller",
   "name": "Department",
   "module": "department",
-  "description": "postDepartment",
+  "description": "Department Management",
   "basePath": "api",
   "actions": [
     {

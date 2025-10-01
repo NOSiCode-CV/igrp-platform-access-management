@@ -1,7 +1,9 @@
 package cv.igrp.platform.access_management.app.application.commands;
 
 import cv.igrp.platform.access_management.shared.application.dto.CodeListRequestDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
@@ -15,8 +17,11 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assertions.assertAll;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,11 +52,23 @@ class AddRolesToAppCommandHandlerTest {
         var roleName1 = "ROLE_ADMIN";
         var roleName2 = "ROLE_USER";
 
+        var department1 = new DepartmentEntity();
+        department1.setCode("DEPT001");
+        department1.setApplications(Set.of(application));
+
+        var department2 = new DepartmentEntity();
+        department2.setCode("DEPT002");
+        department2.setApplications(Set.of(application));
+
         var role1 = new RoleEntity();
         role1.setName(roleName1);
+        role1.setDepartment(department1);
 
         var role2 = new RoleEntity();
         role2.setName(roleName2);
+        role2.setDepartment(department2);
+
+        application.setDepartments(Set.of(department1, department2));
 
         var command = mock(AddRolesToAppCommand.class);
         var codesDto = mock(CodeListRequestDTO.class);
@@ -77,5 +94,51 @@ class AddRolesToAppCommandHandlerTest {
         verify(roleRepository).findByNameAndStatusNotDeleted(roleName1);
         verify(roleRepository).findByNameAndStatusNotDeleted(roleName2);
         verify(applicationRepository).save(application);
+    }
+
+    @Test
+    void testHandle_ThrowsForbidden_WhenRoleDepartmentNotAssignedToApp() {
+        // given
+        var appCode = "APP001";
+        var roleName = "ROLE_MANAGER";
+        var unassignedDepartmentCode = "UNASSIGNED_DEPARTMENT";
+
+        var unassignedDepartment = new DepartmentEntity();
+        unassignedDepartment.setCode(unassignedDepartmentCode);
+
+        var role = new RoleEntity();
+        role.setName(roleName);
+        role.setDepartment(unassignedDepartment); // department not in application
+
+        var command = mock(AddRolesToAppCommand.class);
+        var codesDto = mock(CodeListRequestDTO.class);
+
+        when(command.getCode()).thenReturn(appCode);
+        when(command.getCodelistrequestdto()).thenReturn(codesDto);
+        when(codesDto.getCodes()).thenReturn(List.of(roleName));
+        when(applicationRepository.findByCodeAndStatusNotDeleted(appCode)).thenReturn(application);
+        when(roleRepository.findByNameAndStatusNotDeleted(roleName)).thenReturn(role);
+
+        // when / then
+        var ex = assertThrows(
+                IgrpResponseStatusException.class,
+                () -> handler.handle(command)
+        );
+
+        assertAll(
+                () -> assertThat(ex.getStatusCode().value()).isEqualTo(403),
+                () -> assertThat(ex.getBody().getTitle()).contains(
+                        "Cannot assign role '%s' because its department '%s' is not assigned to the application '%s'".formatted(
+                                roleName,
+                                unassignedDepartmentCode,
+                                application.getCode()
+                        )
+                )
+        );
+
+        // verify save is never called
+        verify(applicationRepository).findByCodeAndStatusNotDeleted(appCode);
+        verify(roleRepository).findByNameAndStatusNotDeleted(roleName);
+        verify(applicationRepository, never()).save(application);
     }
 }

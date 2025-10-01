@@ -1,16 +1,12 @@
 package cv.igrp.platform.access_management.app.mapper;
 
-import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -35,12 +31,6 @@ import java.util.stream.Stream;
  */
 @Component
 public class ApplicationMapper {
-
-    private final DepartmentEntityRepository departmentEntityRepository;
-
-    public ApplicationMapper(DepartmentEntityRepository departmentEntityRepository) {
-        this.departmentEntityRepository = departmentEntityRepository;
-    }
 
     /**
      * Converts an {@link ApplicationEntity} entity to an {@link ApplicationDTO}.
@@ -97,18 +87,6 @@ public class ApplicationMapper {
         entity.setPicture(dto.getPicture());
         entity.setUrl(dto.getUrl() != null ? dto.getUrl().toString() : null);
         entity.setSlug(dto.getSlug());
-        entity.setDepartments(new HashSet<>());
-
-        for (var code : dto.getDepartments()) {
-
-            var department = departmentEntityRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
-                    .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + code));
-
-            department.getApplications().add(entity);
-
-            departmentEntityRepository.save(department);
-
-        }
 
         return entity;
     }

@@ -38,7 +38,7 @@ public class ApplicationEntity extends AuditEntity {
 
 
     @NotBlank(message = "code is mandatory")
-    @Column(name = "code", nullable = false, length = 15)
+    @Column(name = "code", nullable = false, length = 60)
     private String code;
 
 

@@ -24,7 +24,7 @@ import cv.igrp.platform.access_management.global_configuration.application.dto.G
 @IgrpController
 @RestController
 @RequestMapping(path = "api")
-@Tag(name = "GlobalConfiguration", description = "global configuration")
+@Tag(name = "GlobalConfiguration", description = "Global Configuration")
 public class GlobalConfigurationController {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(GlobalConfigurationController.class);

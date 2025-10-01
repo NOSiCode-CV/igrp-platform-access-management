@@ -5,17 +5,16 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import java.util.ArrayList;
-import java.util.List;
+
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class RemoveResourceCustomFieldsCommand implements Command {
+public class ShareResourceToAnotherApplicationCommand implements Command {
 
-  
-  private List<String> removeResourceCustomFieldsRequest;
   @NotBlank(message = "The field <name> is required")
   private String name;
+  @NotBlank(message = "The field <applicationCode> is required")
+  private String applicationCode;
 
 }

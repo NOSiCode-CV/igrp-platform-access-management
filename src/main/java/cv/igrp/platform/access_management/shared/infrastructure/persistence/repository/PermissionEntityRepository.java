@@ -42,31 +42,44 @@ public interface PermissionEntityRepository extends
     List<PermissionEntity> findAllByNameIn(List<String> name);
 
     @Query("""
-    SELECT DISTINCT p
-    FROM PermissionEntity p
-    WHERE (
-        p.id IN (
-            SELECT pp.id
-            FROM RoleEntity r
-            JOIN r.parent pr
-            JOIN pr.permissions pp
-            WHERE r.name = :name
-        )
-        OR p.id IN (
-            SELECT cp.id
-            FROM RoleEntity r
-            JOIN r.children cr
-            JOIN cr.permissions cp
-            WHERE r.name = :name
-        )
-    )
-    AND p.id NOT IN (
-        SELECT rp.id
-        FROM RoleEntity r2
-        JOIN r2.permissions rp
-        WHERE r2.name = :name
-    )
-""")
+                SELECT DISTINCT p
+                FROM PermissionEntity p
+                WHERE (
+                    (p.id IN (
+                        SELECT pp.id
+                        FROM RoleEntity r
+                        JOIN r.parent pr
+                        JOIN pr.permissions pp
+                        WHERE r.name = :name
+                    ))
+            
+                    OR
+            
+                    (p.id IN (
+                        SELECT cp.id
+                        FROM RoleEntity r
+                        JOIN r.children cr
+                        JOIN cr.permissions cp
+                        WHERE r.name = :name
+                    ))
+            
+                    OR
+            
+                    (p.id IN (
+                        SELECT dp.id
+                        FROM RoleEntity r
+                        JOIN r.department d
+                        JOIN d.permissions dp
+                        WHERE r.name = :name AND r.parent IS NULL
+                    ))
+                )
+                AND p.id NOT IN (
+                    SELECT rp.id
+                    FROM RoleEntity r2
+                    JOIN r2.permissions rp
+                    WHERE r2.name = :name
+                )
+            """)
     List<PermissionEntity> findAvailablePermissionsForRole(@Param("name") String name);
 
 
