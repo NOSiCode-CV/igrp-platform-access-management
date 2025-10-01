@@ -1,10 +1,10 @@
 package cv.igrp.platform.access_management.resource.application.commands;
 
 import cv.igrp.framework.core.domain.Command;
-import jakarta.validation.constraints.NotBlank;
-import lombok.AllArgsConstructor;
+import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 
 @Data
@@ -12,9 +12,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ShareResourceToAnotherApplicationCommand implements Command {
 
-    @NotBlank(message = "The field <name> is required")
-    private String name;
-    @NotBlank(message = "The field <applicationCode> is required")
-    private String applicationCode;
+  @NotBlank(message = "The field <name> is required")
+  private String name;
+  @NotBlank(message = "The field <applicationCode> is required")
+  private String applicationCode;
 
 }

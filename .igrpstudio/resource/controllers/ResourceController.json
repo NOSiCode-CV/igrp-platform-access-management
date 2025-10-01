@@ -367,7 +367,7 @@
     },
     {
       "actionName": "shareResourceToAnotherApplication",
-      "path": "resources/{resourceId}/applications/{applicationId}",
+      "path": "resources/{name}/applications/{applicationCode}",
       "method": "POST",
       "responses": {
         "200": {
@@ -399,7 +399,7 @@
     },
     {
       "actionName": "removeResourceFromApplication",
-      "path": "resources/{resourceId}/applications/{applicationId}",
+      "path": "resources/{name}/applications/{applicationCode}",
       "method": "DELETE",
       "responses": {
         "204": {
@@ -430,5 +430,5 @@
       ]
     }
   ],
-  "id": "74cqm14nbd-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER"
+  "id": "74cqm14nbd-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-shareResourceToAnotherApplication-removeResourceFromApplication"
 }

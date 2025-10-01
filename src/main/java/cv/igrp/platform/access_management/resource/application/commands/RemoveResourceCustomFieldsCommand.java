@@ -15,7 +15,7 @@ public class RemoveResourceCustomFieldsCommand implements Command {
 
   
   private List<String> removeResourceCustomFieldsRequest;
-  @NotBlank(message = "The field <name> is required.")
+  @NotBlank(message = "The field <name> is required")
   private String name;
 
 }

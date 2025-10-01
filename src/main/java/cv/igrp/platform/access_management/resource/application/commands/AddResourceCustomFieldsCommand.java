@@ -15,7 +15,7 @@ public class AddResourceCustomFieldsCommand implements Command {
 
   
   private Map<String, ?> addResourceCustomFieldsRequest;
-  @NotBlank(message = "The field <name> is required.")
+  @NotBlank(message = "The field <name> is required")
   private String name;
 
 }
