@@ -349,7 +349,8 @@ For each of the 7 rules below we provide **Success**, **Forbid** and **Error** t
 {
   "code": "APP_PAYROLL_CHILD",
   "name": "Payroll Child App",
-  "departmentCode": "DEPT_PAYROLL",
+  "description": "A child app for payroll department",
+  "departments": ["DEPT_PAYROLL"],
   "status": "ACTIVE",
   "type": "INTERNAL"
 }

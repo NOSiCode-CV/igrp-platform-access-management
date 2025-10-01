@@ -14,7 +14,7 @@ public class UpdateApplicationCommand implements Command {
 
   
   private ApplicationDTO applicationdto;
-  @NotBlank(message = "The field <code> is required.")
+  @NotBlank(message = "The field <code> is required")
   private String code;
 
 }

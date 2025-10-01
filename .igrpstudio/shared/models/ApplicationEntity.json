@@ -20,7 +20,7 @@
     {
       "name": "code",
       "type": "string",
-      "length": 15,
+      "length": 60,
       "nullable": false,
       "unique": false,
       "primaryKey": false,

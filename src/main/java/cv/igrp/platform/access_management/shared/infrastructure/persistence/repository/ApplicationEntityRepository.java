@@ -62,6 +62,13 @@ public interface ApplicationEntityRepository extends
                         SELECT 1
                         FROM DepartmentEntity child
                         JOIN child.parentId p
+                        JOIN child.applications ca
+                        WHERE p.code = :code AND ca.id = a.id
+                    )
+                    OR EXISTS (
+                        SELECT 1
+                        FROM DepartmentEntity child
+                        JOIN child.parentId p
                         JOIN p.applications pa
                         WHERE child.code = :code AND pa.id = a.id
                     )

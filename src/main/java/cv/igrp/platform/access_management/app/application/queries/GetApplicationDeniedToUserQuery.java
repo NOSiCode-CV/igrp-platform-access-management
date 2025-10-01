@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetApplicationDeniedToUserQuery implements Query {
 
-  @NotBlank(message = "The field <uid> is required.")
+  @NotBlank(message = "The field <uid> is required")
   private String uid;
 
 }

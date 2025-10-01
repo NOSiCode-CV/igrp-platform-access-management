@@ -36,10 +36,11 @@ public interface ResourceEntityRepository extends
                     dParent.code = :code
                     OR EXISTS (
                         SELECT 1
-                        FROM DepartmentEntity d
-                        JOIN d.applications da
-                        JOIN da.resources sr
-                        WHERE d.code = :code AND sr.id = r.id
+                        FROM DepartmentEntity child
+                        JOIN child.parentId p
+                        JOIN child.applications ca
+                        JOIN ca.resources cr
+                        WHERE p.code = :code AND cr.id = r.id
                     )
                     OR EXISTS (
                         SELECT 1
@@ -59,4 +60,5 @@ public interface ResourceEntityRepository extends
                 )
             """)
     List<ResourceEntity> findAvailableResourcesForDepartment(@Param("code") String code);
+
 }

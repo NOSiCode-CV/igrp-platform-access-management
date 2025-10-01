@@ -37,6 +37,13 @@ public interface MenuEntryEntityRepository extends
             SELECT 1
             FROM DepartmentEntity child
             JOIN child.parentId p
+            JOIN child.menuentries cm
+            WHERE p.code = :code AND cm.id = m.id
+        )
+        OR EXISTS (
+            SELECT 1
+            FROM DepartmentEntity child
+            JOIN child.parentId p
             JOIN p.menuentries pm
             WHERE child.code = :code AND pm.id = m.id
         )
