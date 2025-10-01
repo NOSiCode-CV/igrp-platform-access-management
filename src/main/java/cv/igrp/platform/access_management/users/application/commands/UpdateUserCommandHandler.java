@@ -96,6 +96,10 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
             user.setSignature(dto.getSignature());
         }
 
+        if (dto.getStatus() != null) {
+            user.setStatus(dto.getStatus());
+        }
+
         var updatedUser = userRepository.save(user);
 
         logger.info("User updated successfully: id={}, username={}", updatedUser.getId(), updatedUser.getUsername());
