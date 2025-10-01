@@ -1,8 +1,11 @@
 package cv.igrp.platform.access_management.users.mapper;
 
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import org.springframework.stereotype.Component;
+
+import java.util.Objects;
 
 /**
  * Mapper component responsible for converting between {@link IGRPUserEntity} entities
@@ -28,6 +31,7 @@ public class IGRPUserMapper {
         dto.setName(user.getName());
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
+        dto.setStatus(Status.ACTIVE);
         dto.setPicture(user.getPicture());
         dto.setSignature(user.getSignature());
         return dto;
@@ -47,6 +51,7 @@ public class IGRPUserMapper {
         user.setUsername(dto.getUsername());
         user.setEmail(dto.getEmail());
         user.setName(dto.getName());
+        user.setStatus(Objects.nonNull(dto.getStatus()) ? dto.getStatus() : Status.ACTIVE);
         user.setPicture(dto.getPicture());
         user.setSignature(dto.getSignature());
         return user;

@@ -56,6 +56,19 @@
       "primaryKey": false
     },
     {
+      "name": "status",
+      "objectType": "enum",
+      "type": "Status",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "module": "shared"
+    },
+    {
       "name": "picture",
       "objectType": "java",
       "type": "string",

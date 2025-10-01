@@ -16,10 +16,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.hibernate.envers.Audited;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Audited
 @Getter
@@ -99,4 +96,15 @@ public class ApplicationEntity extends AuditEntity {
 
     @ManyToMany(mappedBy = "applications", fetch = FetchType.LAZY)
     private Set<DepartmentEntity> departments = new HashSet<>();
+
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof ApplicationEntity that)) return false;
+        return Objects.equals(id, that.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
 }

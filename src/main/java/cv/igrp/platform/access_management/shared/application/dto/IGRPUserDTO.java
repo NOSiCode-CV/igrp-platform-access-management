@@ -9,7 +9,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 
 @Data
 @NoArgsConstructor
@@ -17,25 +17,30 @@ import lombok.AllArgsConstructor;
 
 
 @IgrpDTO
-public class IGRPUserDTO {
+public class IGRPUserDTO  {
 
   
   
   private Integer id ;
-  @NotBlank(message = "The field <name> is required.")
+  @NotBlank(message = "The field <name> is required")
   
   private String name ;
-  @NotBlank(message = "The field <username> is required.")
+  @NotBlank(message = "The field <username> is required")
 	@Pattern(message = "Invalid value format for field <username>.", regexp = "^[A-Za-z0-9_-]+$")
   
   private String username ;
-  @NotBlank(message = "The field <email> is required.")
-	@Email(message = "Invalid email format for field <email>.")
+  @NotBlank(message = "The field <email> is required")
+	@Email(message = "Invalid email format for field <email>")
   
   private String email ;
-
+  
+  
+  private Status status ;
+  
+  
   private String picture ;
-
-  private String signature;
+  
+  
+  private String signature ;
 
 }
