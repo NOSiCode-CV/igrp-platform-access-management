@@ -6,6 +6,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 @Component
 public class RemoveResourceFromApplicationCommandHandler implements CommandHandler<RemoveResourceFromApplicationCommand, ResponseEntity<String>> {
@@ -18,6 +19,7 @@ public class RemoveResourceFromApplicationCommandHandler implements CommandHandl
         this.resourceEntityRepository = resourceEntityRepository;
     }
 
+    @Transactional
     @IgrpCommandHandler
     public ResponseEntity<String> handle(RemoveResourceFromApplicationCommand command) {
 
@@ -26,10 +28,8 @@ public class RemoveResourceFromApplicationCommandHandler implements CommandHandl
         var application = applicationEntityRepository.findByCodeAndStatusNotDeleted(command.getApplicationCode());
 
         application.getResources().remove(resource);
-        resource.getApplications().remove(application);
 
         applicationEntityRepository.save(application);
-        resourceEntityRepository.save(resource);
 
         return ResponseEntity.noContent().build();
     }
