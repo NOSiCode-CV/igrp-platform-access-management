@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -20,6 +21,11 @@ public interface ResourceEntityRepository extends
 {
 
     Optional<ResourceEntity> findByNameAndStatusNot(String name, Status status);
+
+    default ResourceEntity findByNameNotDeleted(String name) {
+        return findByNameAndStatusNot(name, Status.DELETED)
+                .orElseThrow(() -> IgrpResponseStatusException.badRequest("Resource not found with name: " + name));
+    }
 
     @Query("""
                 SELECT DISTINCT r
