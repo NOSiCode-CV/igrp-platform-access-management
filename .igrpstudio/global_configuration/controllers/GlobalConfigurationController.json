@@ -2,7 +2,7 @@
   "type": "controller",
   "name": "GlobalConfiguration",
   "module": "global_configuration",
-  "description": "global configuration",
+  "description": "Global Configuration",
   "basePath": "api",
   "actions": [
     {

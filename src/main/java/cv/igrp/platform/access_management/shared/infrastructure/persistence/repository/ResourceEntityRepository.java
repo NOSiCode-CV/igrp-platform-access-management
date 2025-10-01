@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -21,6 +22,11 @@ public interface ResourceEntityRepository extends
 
     Optional<ResourceEntity> findByNameAndStatusNot(String name, Status status);
 
+    default ResourceEntity findByNameNotDeleted(String name) {
+        return findByNameAndStatusNot(name, Status.DELETED)
+                .orElseThrow(() -> IgrpResponseStatusException.badRequest("Resource not found with name: " + name));
+    }
+
     @Query("""
                 SELECT DISTINCT r
                 FROM ResourceEntity r
@@ -30,10 +36,11 @@ public interface ResourceEntityRepository extends
                     dParent.code = :code
                     OR EXISTS (
                         SELECT 1
-                        FROM DepartmentEntity d
-                        JOIN d.applications da
-                        JOIN da.resources sr
-                        WHERE d.code = :code AND sr.id = r.id
+                        FROM DepartmentEntity child
+                        JOIN child.parentId p
+                        JOIN child.applications ca
+                        JOIN ca.resources cr
+                        WHERE p.code = :code AND cr.id = r.id
                     )
                     OR EXISTS (
                         SELECT 1
@@ -53,4 +60,5 @@ public interface ResourceEntityRepository extends
                 )
             """)
     List<ResourceEntity> findAvailableResourcesForDepartment(@Param("code") String code);
+
 }

@@ -30,8 +30,7 @@ public class GetApplicationMenusQueryHandler implements QueryHandler<GetApplicat
     @IgrpQueryHandler
     public ResponseEntity<List<MenuEntryDTO>> handle(GetApplicationMenusQuery query) {
 
-        var app = applicationRepository.findById(query.getId()).orElseThrow(
-                () -> IgrpResponseStatusException.notFound("No application found with id: %s".formatted(query.getId())));
+        var app = applicationRepository.findByCodeAndStatusNotDeleted(query.getCode());
 
         var menus = menuEntryRepository.findByApplicationIdAndStatus(app, Status.ACTIVE)
                 .stream()

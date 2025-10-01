@@ -399,7 +399,7 @@
     },
     {
       "actionName": "getApplicationMenus",
-      "path": "/applications/{id}/menus/available",
+      "path": "/applications/{code}/menus/available",
       "method": "GET",
       "responses": {
         "200": {
@@ -420,8 +420,8 @@
       },
       "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
+          "name": "code",
+          "type": "string",
           "isRequired": true
         }
       ]
@@ -591,5 +591,5 @@
       ]
     }
   ],
-  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications-removeDepartementFromApplication"
+  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications-removeDepartementFromApplication-getApplicationMenus"
 }

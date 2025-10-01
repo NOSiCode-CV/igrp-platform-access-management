@@ -1,10 +1,11 @@
 package cv.igrp.platform.access_management.app.application.queries;
 
 import cv.igrp.framework.core.domain.Query;
-import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
+import jakarta.validation.constraints.*;
+
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
 
 
 @Data
@@ -12,7 +13,7 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class GetApplicationMenusQuery implements Query {
 
-    @NotNull(message = "The field <id> is required")
-    private Integer id;
+  @NotBlank(message = "The field <code> is required")
+  private String code;
 
 }

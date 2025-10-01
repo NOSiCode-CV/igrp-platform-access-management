@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.app.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.domain.service.ApplicationValidator;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
@@ -9,6 +10,7 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -37,6 +39,7 @@ import org.springframework.stereotype.Component;
 public class CreateApplicationCommandHandler implements CommandHandler<CreateApplicationCommand, ResponseEntity<ApplicationDTO>> {
 
    private final ApplicationEntityRepository applicationRepository;
+   private final DepartmentEntityRepository departmentEntityRepository;
    private final ApplicationMapper applicationMapper;
    private final ApplicationValidator applicationValidator;
 
@@ -44,10 +47,13 @@ public class CreateApplicationCommandHandler implements CommandHandler<CreateApp
     * Constructs the handler with the required dependencies.
     *
     * @param applicationRepository the repository used to persist the application entity
+    * @param departmentEntityRepository the repository used to access department entities
     * @param applicationMapper     the mapper used to convert between {@link ApplicationEntity} and {@link ApplicationDTO}
+    * @param applicationValidator the validator used to validate application data
     */
-   public CreateApplicationCommandHandler(ApplicationEntityRepository applicationRepository, ApplicationMapper applicationMapper, ApplicationValidator applicationValidator) {
+   public CreateApplicationCommandHandler(ApplicationEntityRepository applicationRepository, DepartmentEntityRepository departmentEntityRepository, ApplicationMapper applicationMapper, ApplicationValidator applicationValidator) {
       this.applicationRepository = applicationRepository;
+        this.departmentEntityRepository = departmentEntityRepository;
       this.applicationMapper = applicationMapper;
       this.applicationValidator = applicationValidator;
    }
@@ -76,7 +82,23 @@ public class CreateApplicationCommandHandler implements CommandHandler<CreateApp
       ApplicationEntity application = applicationMapper.toEntity(command.getApplicationdto());
       application.setId(null);
       ApplicationEntity savedApplication = applicationRepository.save(application);
-      ApplicationDTO applicationDTO =  applicationMapper.toDto(savedApplication);
+
+      for (var code : command.getApplicationdto().getDepartments()) {
+
+         var department = departmentEntityRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
+                 .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + code));
+
+         department.getApplications().add(savedApplication);
+
+         departmentEntityRepository.save(department);
+
+      }
+
+      ApplicationEntity currentApplication = applicationRepository.findById(savedApplication.getId()).orElseThrow(() -> IgrpResponseStatusException.of(
+              HttpStatus.INTERNAL_SERVER_ERROR, "Create Application", "Failed to retrieve the created application."
+      ));
+
+      ApplicationDTO applicationDTO =  applicationMapper.toDto(currentApplication);
       return ResponseEntity.status(HttpStatus.CREATED).body(applicationDTO);
    }
 

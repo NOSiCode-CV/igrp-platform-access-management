@@ -13,15 +13,15 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetResourcesQuery implements Query {
 
-  @NotBlank(message = "The field <name> is required.")
+  @NotBlank(message = "The field <name> is required")
   private String name;
-  @NotBlank(message = "The field <type> is required.")
+  @NotBlank(message = "The field <type> is required")
   private String type;
-  @NotBlank(message = "The field <externalID> is required.")
+  @NotBlank(message = "The field <externalID> is required")
   private String externalID;
-  @NotBlank(message = "The field <applicationCode> is required.")
+  @NotBlank(message = "The field <applicationCode> is required")
   private String applicationCode;
-  @NotBlank(message = "The field <description> is required.")
+  @NotBlank(message = "The field <description> is required")
   private String description;
 
 }

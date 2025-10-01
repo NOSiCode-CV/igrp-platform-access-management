@@ -15,7 +15,7 @@ public class RemoveApplicationCustomFieldsCommand implements Command {
 
   
   private List<String> removeApplicationCustomFieldsRequest;
-  @NotBlank(message = "The field <code> is required.")
+  @NotBlank(message = "The field <code> is required")
   private String code;
 
 }

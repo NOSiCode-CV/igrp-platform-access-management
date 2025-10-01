@@ -42,6 +42,10 @@ public class IgrpResponseStatusException extends ErrorResponseException {
         return of(HttpStatus.BAD_REQUEST, title);
     }
 
+    public static IgrpResponseStatusException forbidden(String title) {
+        return of(HttpStatus.FORBIDDEN, title);
+    }
+
     public static <T> IgrpResponseStatusException badRequest(String title, T details) {
         return of(HttpStatus.BAD_REQUEST, title, details);
     }
@@ -52,6 +56,11 @@ public class IgrpResponseStatusException extends ErrorResponseException {
 
     public static IgrpResponseStatusException internalServerError(String title, String details) {
         return of(HttpStatus.INTERNAL_SERVER_ERROR, title, details);
+
+    }
+
+    public static IgrpResponseStatusException internalServerError(String title) {
+        return of(HttpStatus.INTERNAL_SERVER_ERROR, title);
     }
 
 }
