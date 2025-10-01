@@ -4,6 +4,7 @@ package cv.igrp.platform.access_management.shared.config;
 import org.springframework.data.domain.AuditorAware;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import java.util.Optional;
 
@@ -20,7 +21,7 @@ public class ApplicationAuditorAware implements AuditorAware<String> {
             return Optional.of("system");
         }
 
-        return Optional.ofNullable(authentication.getName());
+        return authentication.getPrincipal() instanceof Jwt jwt ? Optional.of(jwt.getClaimAsString("preferred_username")) : Optional.ofNullable(authentication.getName());
     }
 
 }
