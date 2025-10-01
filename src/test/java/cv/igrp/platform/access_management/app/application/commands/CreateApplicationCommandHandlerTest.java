@@ -24,6 +24,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.verify;
@@ -50,7 +51,7 @@ public class CreateApplicationCommandHandlerTest {
 
     @BeforeEach
     void setUp() {
-        createApplicationCommandHandler = new CreateApplicationCommandHandler(applicationRepository, applicationMapper, applicationValidator);
+        createApplicationCommandHandler = new CreateApplicationCommandHandler(applicationRepository, departmentRepository, applicationMapper, applicationValidator);
         resourceValidationResponse = new ResourceValidationResponse();
         resourceValidationResponse.setValid(true);
         resourceValidationResponse.setFailureMessage(new ArrayList<>());
@@ -111,6 +112,8 @@ public class CreateApplicationCommandHandlerTest {
         when(applicationValidator.validateApplicationCode(applicationDTO)).thenReturn(resourceValidationResponse);
         when(applicationMapper.toEntity(applicationDTO)).thenReturn(expectedToSave);
         when(applicationRepository.save(Mockito.any(ApplicationEntity.class))).thenReturn(savedApplication);
+        when(departmentRepository.findByCodeAndStatusNot("HR", DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
+        when(applicationRepository.findById(1)).thenReturn(Optional.of(savedApplication));
         when(applicationMapper.toDto(savedApplication)).thenAnswer(inv -> {
             ApplicationDTO dto = new ApplicationDTO();
             dto.setId(savedApplication.getId());
