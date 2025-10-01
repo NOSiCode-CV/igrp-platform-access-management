@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.app.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import org.springframework.http.ResponseEntity;
@@ -27,6 +28,18 @@ public class AddDepartmentsToApplicationCommandHandler implements CommandHandler
         for (var departmentCode : command.getCodelistrequestdto().getCodes()) {
 
             var department = departmentRepository.findByCodeAndStatusNotDeleted(departmentCode);
+
+            var parentDepartment = department.getParentId();
+            if (parentDepartment != null) {
+                if (!parentDepartment.getApplications().contains(application))
+                    throw IgrpResponseStatusException.forbidden(
+                            "Cannot associate department '%s' because its parent department '%s' is not assigned to the application '%s'".formatted(
+                                    department.getCode(),
+                                    parentDepartment.getCode(),
+                                    application.getCode()
+                            )
+                    );
+            }
 
             application.getDepartments().add(department);
         }
