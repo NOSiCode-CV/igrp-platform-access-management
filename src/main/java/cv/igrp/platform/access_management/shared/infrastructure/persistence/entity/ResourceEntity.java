@@ -10,16 +10,10 @@ import cv.igrp.platform.access_management.shared.config.AuditEntity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.envers.Audited;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Audited
 @Getter
@@ -29,11 +23,13 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @Table(name = "t_resource")
+@ToString(onlyExplicitlyIncluded = true)
 public class ResourceEntity extends AuditEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", unique = true, nullable = false)
+    @ToString.Include
     private Integer id;
 
 
@@ -76,5 +72,14 @@ public class ResourceEntity extends AuditEntity {
     @ManyToMany(mappedBy = "resources", fetch = FetchType.LAZY)
     private Set<ApplicationEntity> applications = new HashSet<>();
 
+    @Override
+    public final boolean equals(Object o) {
+        if (!(o instanceof ResourceEntity that)) return false;
+        return Objects.equals(id, that.id);
+    }
 
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
 }

@@ -26,8 +26,10 @@ public class RemoveResourceFromApplicationCommandHandler implements CommandHandl
         var application = applicationEntityRepository.findByCodeAndStatusNotDeleted(command.getApplicationCode());
 
         application.getResources().remove(resource);
+        resource.getApplications().remove(application);
 
         applicationEntityRepository.save(application);
+        resourceEntityRepository.save(resource);
 
         return ResponseEntity.noContent().build();
     }
