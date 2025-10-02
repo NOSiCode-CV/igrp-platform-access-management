@@ -25,7 +25,7 @@ public class GetPrivateFileUrlQueryHandler implements QueryHandler<GetPrivateFil
   private final StorageService fileManagerService;
 
   @Setter
-  @Value("${igrp.minio.url-expiration-time}")
+  @Value("${igrp.s3.aws-url-expiration-time}")
   private int urlExpirationTimeInSeconds;
 
   public GetPrivateFileUrlQueryHandler(StorageService fileManagerService) {
