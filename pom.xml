@@ -180,7 +180,7 @@
         <dependency>
             <groupId>cv.igrp.framework.filemanager</groupId>
             <artifactId>aws-s3</artifactId>
-            <version>0.1.0-beta.2</version>
+            <version>0.1.0-beta.3</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework</groupId>
@@ -403,6 +403,7 @@
                                 <buildArg>-H:IncludeResources=application-.*\.properties</buildArg>
                                 <buildArg>--no-fallback</buildArg>
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                                <buildArg>-H:ResourceConfigurationFiles=!META-INF/native-image/software.amazon.awssdk/**</buildArg>
                                 <buildArg>--enable-url-protocols=http,https</buildArg>
                                 <buildArg>-O1</buildArg>
                                 <buildArg>--gc=serial</buildArg>
