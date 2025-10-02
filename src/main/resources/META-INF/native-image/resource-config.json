@@ -62,6 +62,9 @@
     },
     {
       "pattern": "META-INF/services/com.fasterxml.jackson.databind.Module"
+    },
+    {
+      "pattern": "\\Qsoftware.amazon.awssdk.http.SdkHttpService\\E"
     }
   ],
   "bundles": [
