@@ -3,7 +3,7 @@ WORKDIR /app
 COPY pom.xml ./
 RUN --mount=type=cache,target=/root/.m2 mvn -B -q dependency:go-offline
 COPY src ./src
-RUN --mount=type=cache,target=/root/.m2 mvn -B -DskipTests clean package \ 
+RUN --mount=type=cache,target=/root/.m2 mvn -B -DskipTests clean package \
  && ls -lh target
 
 
