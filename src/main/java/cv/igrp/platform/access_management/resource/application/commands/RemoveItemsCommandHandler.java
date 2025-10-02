@@ -9,6 +9,7 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceItemEntityRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -39,18 +40,22 @@ public class RemoveItemsCommandHandler implements CommandHandler<RemoveItemsComm
            LoggerFactory.getLogger(RemoveItemsCommandHandler.class);
 
    private final ResourceEntityRepository resourceRepository;
+   private final ResourceItemEntityRepository resourceItemEntityRepository;
    private final ResourceMapper resourceMapper;
 
    /**
     * Constructs a {@code RemoveItemsCommandHandler} with required dependencies.
     *
     * @param resourceRepository the repository for retrieving and saving resources
+    * @param resourceItemEntityRepository the repository for retrieving and saving resource items
     * @param resourceMapper     the mapper for converting {@link ResourceEntity} to {@link ResourceDTO}
     */
    public RemoveItemsCommandHandler(
            ResourceEntityRepository resourceRepository,
+              ResourceItemEntityRepository resourceItemEntityRepository,
            ResourceMapper resourceMapper) {
       this.resourceRepository = resourceRepository;
+        this.resourceItemEntityRepository = resourceItemEntityRepository;
       this.resourceMapper = resourceMapper;
    }
 
@@ -76,7 +81,7 @@ public class RemoveItemsCommandHandler implements CommandHandler<RemoveItemsComm
                          "Resource not found with name: " + resourceName);
               });
 
-      List<Integer> itemsToRemove = command.getRemoveItemsRequest();
+      List<String> itemsToRemove = command.getRemoveItemsRequest();
       if (itemsToRemove == null || itemsToRemove.isEmpty()) {
          logger.info("No item IDs provided for removal; skipping item removal.");
          return ResponseEntity.ok(resourceMapper.toDto(resource));
@@ -85,7 +90,13 @@ public class RemoveItemsCommandHandler implements CommandHandler<RemoveItemsComm
       List<ResourceItemEntity> items = Optional.ofNullable(resource.getItems()).orElse(new ArrayList<>());
 
       int beforeRemove = itemsToRemove.size();
-      items.removeIf(item -> itemsToRemove.contains(item.getId()));
+      items.stream().filter(item -> itemsToRemove.contains(item.getName())).forEach(
+              i -> {
+                 var it = resourceItemEntityRepository.findById(i.getId()).orElse(null);
+                 if (it == null) return;
+                 resourceItemEntityRepository.delete(it);
+              }
+      );
       int afterRemove = beforeRemove - itemsToRemove.size();
 
       logger.info("Removed {} item(s) from resource ID: {}", afterRemove, resource.getId());

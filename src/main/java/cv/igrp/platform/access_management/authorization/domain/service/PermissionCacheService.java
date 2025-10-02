@@ -3,6 +3,8 @@ package cv.igrp.platform.access_management.authorization.domain.service;
 
 import cv.igrp.framework.auth.core.authorization.model.PermissionCheckRequest;
 import cv.igrp.platform.access_management.authorization.application.dto.PermissionCacheEntryDTO;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,10 +24,13 @@ public class PermissionCacheService {
 
     private final JdbcTemplate jdbcTemplate;
 
+    private final IGRPUserEntityRepository userRepository;
+
     @Getter
     private boolean fromCache;
 
-    public PermissionCacheService(JdbcTemplate jdbcTemplate) {
+    public PermissionCacheService(JdbcTemplate jdbcTemplate, IGRPUserEntityRepository userRepository) {
+        this.userRepository = userRepository;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -60,6 +65,13 @@ public class PermissionCacheService {
     }
 
     private Boolean checkPermission(String username, String resourceItem, String permissionName) {
+
+        // Verifica se o utilizador existe ou está inativo/deletado
+        var userOpt = userRepository.findByUsername(username);
+        if (userOpt.isEmpty() || userOpt.get().getStatus() == Status.DELETED || userOpt.get().getStatus() == Status.INACTIVE) {
+            return false;
+        }
+
         String sql = """
                 WITH target_user AS (
                             SELECT id

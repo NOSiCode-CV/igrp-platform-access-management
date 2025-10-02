@@ -14,7 +14,7 @@ import java.util.List;
 public class RemoveItemsCommand implements Command {
 
   
-  private List<Integer> removeItemsRequest;
+  private List<String> removeItemsRequest;
   @NotBlank(message = "The field <name> is required")
   private String name;
 

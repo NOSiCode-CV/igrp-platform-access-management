@@ -422,12 +422,12 @@ public class SynchronizationService {
     }
 
     /**
-     * Sync user-role assignments (only for users that exist in provider)
+     * Sync user-role assignments (only for ACTIVE users that exist in provider)
      */
     private void syncUserRoleAssignments() throws IAMException {
         LOGGER.info("[Sync] Synchronizing user-role assignments...");
 
-        // Get all user-role mappings from database
+        // Get all user-role mappings from database (only active users)
         Map<String, Map<String, Set<String>>> dbUserRoles = getUserRolesFromDatabase();
         // Get all user-role mappings from provider
         Map<String, Map<String, Set<String>>> providerUserRoles = adapter.getAllUserRoles();
@@ -437,10 +437,16 @@ public class SynchronizationService {
             Map<String, Set<String>> dbUserRolesByDept = userEntry.getValue();
             Map<String, Set<String>> providerUserRolesByDept = providerUserRoles.getOrDefault(username, Map.of());
 
-            // Check if user exists in provider
+            // Check if user exists in provider AND is active
             Optional<UserIdentity> user = adapter.resolveUser(username);
             if (user.isEmpty()) {
                 LOGGER.warn("[Sync] User {} not found in provider, skipping role assignments", username);
+                continue;
+            }
+
+            // Additional safety check: Verify user is active in our database
+            if (!isUserActiveInDatabase(username)) {
+                LOGGER.info("[Sync] User {} is INACTIVE in database, skipping role assignments", username);
                 continue;
             }
 
@@ -666,13 +672,13 @@ public class SynchronizationService {
 
     private Map<String, Map<String, Set<String>>> getUserRolesFromDatabase() {
         String sql = """
-                SELECT u.username, d.code as department_code, r.name as role_name 
-                FROM t_role_users ru 
-                LEFT JOIN t_user u ON ru.users_id = u.id 
-                LEFT JOIN t_role r ON ru.roles_id = r.id 
-                LEFT JOIN t_department d ON r.department = d.id 
-                WHERE u.status = ? AND r.status = ? AND d.status = ?
-                """;
+            SELECT u.username, d.code as department_code, r.name as role_name
+            FROM t_role_users ru
+            LEFT JOIN t_user u ON ru.users_id = u.id
+            LEFT JOIN t_role r ON ru.roles_id = r.id
+            LEFT JOIN t_department d ON r.department = d.id
+            WHERE u.status = ? AND r.status = ? AND d.status = ?
+            """;
 
         Map<String, Map<String, Set<String>>> result = new HashMap<>();
         jdbcTemplate.query(sql, (rs, _) -> {
@@ -684,7 +690,7 @@ public class SynchronizationService {
                     .computeIfAbsent(departmentCode, _ -> new HashSet<>())
                     .add(roleName);
             return null;
-        }, ACTIVE_STATUS, ACTIVE_STATUS, ACTIVE_STATUS);
+        }, ACTIVE_STATUS, ACTIVE_STATUS, ACTIVE_STATUS); // Only ACTIVE users
 
         return result;
     }
@@ -692,6 +698,20 @@ public class SynchronizationService {
     private void markUserAsInactive(String username) {
         String sql = "UPDATE t_user SET status = ? WHERE username = ?";
         jdbcTemplate.update(sql, INACTIVE_STATUS, username);
+    }
+
+    /**
+     * Check if user is active in database
+     */
+    private boolean isUserActiveInDatabase(String username) {
+        try {
+            String sql = "SELECT status FROM t_user WHERE username = ?";
+            String status = jdbcTemplate.queryForObject(sql, String.class, username);
+            return ACTIVE_STATUS.equals(status);
+        } catch (Exception e) {
+            LOGGER.warn("[Sync] Failed to check status for user {}: {}", username, e.getMessage());
+            return false; // If we can't verify status, assume inactive for safety
+        }
     }
 
     // =====================================================

@@ -31,7 +31,7 @@ public class IGRPUserMapper {
         dto.setName(user.getName());
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
-        dto.setStatus(Status.ACTIVE);
+        dto.setStatus(user.getStatus());
         dto.setPicture(user.getPicture());
         dto.setSignature(user.getSignature());
         return dto;
