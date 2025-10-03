@@ -12,19 +12,19 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class EmailConfig {
 
-    @Value("${spring.mail.host}")
+    @Value("${igrp.mail.host}")
     private String host;
 
-    @Value("${spring.mail.port}")
+    @Value("${igrp.mail.port}")
     private int port;
 
-    @Value("${spring.mail.username}")
+    @Value("${igrp.mail.username}")
     private String username;
 
-    @Value("${spring.mail.password}")
+    @Value("${igrp.mail.password}")
     private String password;
 
-    @Value("${spring.mail.properties.sender-id}")
+    @Value("${igrp.mail.properties.sender-id}")
     private String senderId;
 
     @Bean
