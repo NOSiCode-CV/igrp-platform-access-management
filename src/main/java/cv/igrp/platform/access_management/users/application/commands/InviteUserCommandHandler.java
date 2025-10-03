@@ -1,7 +1,6 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.auth.core.adapter.IAdapter;
-import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.model.Notification;
@@ -11,6 +10,7 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -23,12 +23,20 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
 @Component
 public class InviteUserCommandHandler implements CommandHandler<InviteUserCommand, ResponseEntity<IGRPUserDTO>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InviteUserCommandHandler.class);
+
+    @Value("${igrp.mail.invite.template}")
+    private String emailTemplate = """
+                        Dear {{user}}, your were successfully invited to iGRP. Your data are the following:
+                        Username: {{user}}
+                        
+                        Best Regards.
+                        iGRP
+                        """;
 
     private final NotificationAdapter<SendNotificationResponseDTO> notificationAdapter;
     private final IGRPUserEntityRepository userRepository;
@@ -81,17 +89,8 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
                 notification.setRecipients(List.of(savedUser.getEmail()));
                 notification.setSubject("iGRP User Invitation");
-                notification.setContent("""
-                        Dear %s, your account has been created for iGRP. Your credentials are the following:
-                        
-                        Username: %s
-                        Password: %s
-                        
-                        Best Regards.
-                        iGRP
-                        
-                        """.formatted(Objects.nonNull(savedUser.getName()) ? savedUser.getName() : savedUser.getUsername(), savedUser.getUsername(), savedUser.getUsername()));
-                notification.setMetadata(Map.of("userId", savedUser.getId()));
+                notification.setContent(emailTemplate.replace("{{user}}", user.getUsername()));
+                notification.setMetadata(Map.of("userId", savedUser.getId(), "username", savedUser.getUsername()));
 
                 notificationAdapter.send(notification);
 

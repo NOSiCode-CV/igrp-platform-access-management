@@ -24,10 +24,10 @@ public class ConfigurationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationService.class);
     private static final String SYSTEM_USER = "system";
 
-    @Value("${igrp.superadmin.username:superadmin}")
+    @Value("${igrp.superadmin.username}")
     private static final String SUPER_ADMIN_USERNAME = "superadmin";
 
-    @Value("${igrp.superadmin.email:superadmin@igrp.cv}")
+    @Value("${igrp.superadmin.email}")
     private static final String SUPER_ADMIN_EMAIL = "%s@igrp.cv".formatted(SUPER_ADMIN_USERNAME);
 
     private static final String IGRP_DEPARTMENT = "DEPT_IGRP";
