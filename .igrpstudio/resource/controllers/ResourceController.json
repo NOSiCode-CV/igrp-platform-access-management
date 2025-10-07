@@ -233,7 +233,7 @@
         "content": {
           "application/json": {
             "schema": {
-              "type": "integer",
+              "type": "string",
               "name": "itemIds",
               "collectionType": "list"
             }
@@ -430,5 +430,5 @@
       ]
     }
   ],
-  "id": "74cqm14nbd-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-shareResourceToAnotherApplication-removeResourceFromApplication"
+  "id": "74cqm14nbd-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-shareResourceToAnotherApplication-removeResourceFromApplication-removeItems"
 }

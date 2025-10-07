@@ -293,7 +293,7 @@ public class ResourceController {
     }
   )
   
-  public ResponseEntity<ResourceDTO> removeItems(@RequestBody List<Integer> removeItemsRequest
+  public ResponseEntity<ResourceDTO> removeItems(@RequestBody List<String> removeItemsRequest
     , @PathVariable(value = "name") String name)
   {
 

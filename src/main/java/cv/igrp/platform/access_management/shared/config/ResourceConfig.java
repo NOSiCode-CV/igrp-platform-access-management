@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 
 @Endpoint(id = "resources")
 @Component
+@SuppressWarnings("unused")
 public class ResourceConfig {
 
     private final RequestMappingHandlerMapping handlerMapping;
@@ -29,7 +30,6 @@ public class ResourceConfig {
             RequestMappingInfo info = entry.getKey();
             HandlerMethod method = entry.getValue();
 
-            // ✅ Handle paths (Spring Boot 2 & 3 compatibility)
             Set<String> paths = new HashSet<>();
             if (info.getPathPatternsCondition() != null) {
                 paths.addAll(info.getPathPatternsCondition().getPatterns()
@@ -40,7 +40,6 @@ public class ResourceConfig {
                 paths.addAll(info.getPatternsCondition().getPatterns());
             }
 
-            // ✅ Handle HTTP methods (default to ALL if empty)
             Set<String> httpMethods = info.getMethodsCondition().getMethods()
                     .stream()
                     .map(Enum::name)
@@ -52,8 +51,9 @@ public class ResourceConfig {
             for (String path : paths) {
                 for (String httpMethod : httpMethods) {
                     Map<String, String> endpoint = new LinkedHashMap<>();
-                    endpoint.put("url", path);
+                    endpoint.put("name", method.getMethod().getName());
                     endpoint.put("description", method.getMethod().getName());
+                    endpoint.put("url", path);
                     endpoint.put("resource", method.getBeanType().getSimpleName());
                     endpoint.put("method", httpMethod);
                     result.add(endpoint);

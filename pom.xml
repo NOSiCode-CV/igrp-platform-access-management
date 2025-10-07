@@ -87,10 +87,6 @@
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-mail</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
         </dependency>
@@ -164,7 +160,7 @@
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
             <artifactId>keycloak-spring-boot</artifactId>
-            <version>0.1.0-beta-20251001.125128-10</version>
+            <version>0.1.0-beta-20251007.111910-12</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -179,8 +175,8 @@
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework.filemanager</groupId>
-            <artifactId>minio</artifactId>
-            <version>0.1.0-beta.2</version>
+            <artifactId>aws-s3</artifactId>
+            <version>0.1.0-beta.3</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework</groupId>
@@ -403,6 +399,7 @@
                                 <buildArg>-H:IncludeResources=application-.*\.properties</buildArg>
                                 <buildArg>--no-fallback</buildArg>
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
+                                <buildArg>-H:ResourceConfigurationFiles=!META-INF/native-image/software.amazon.awssdk/**</buildArg>
                                 <buildArg>--enable-url-protocols=http,https</buildArg>
                                 <buildArg>-O1</buildArg>
                                 <buildArg>--gc=serial</buildArg>

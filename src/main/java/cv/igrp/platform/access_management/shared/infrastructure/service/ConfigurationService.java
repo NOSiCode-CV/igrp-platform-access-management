@@ -7,6 +7,7 @@ import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -22,7 +23,13 @@ public class ConfigurationService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationService.class);
     private static final String SYSTEM_USER = "system";
+
+    @Value("${igrp.superadmin.username}")
     private static final String SUPER_ADMIN_USERNAME = "superadmin";
+
+    @Value("${igrp.superadmin.email}")
+    private static final String SUPER_ADMIN_EMAIL = "%s@igrp.cv".formatted(SUPER_ADMIN_USERNAME);
+
     private static final String IGRP_DEPARTMENT = "DEPT_IGRP";
     private static final String SUPER_ADMIN_ROLE = IGRP_DEPARTMENT + ".superadmin";
     private static final String IGRP_PERMISSION = IGRP_DEPARTMENT + ".manage_access";
@@ -326,7 +333,7 @@ public class ConfigurationService {
         LOGGER.info("[Startup Config] Super admin user created in DB");
         return jdbcTemplate.queryForObject(sql,
                 Long.class,
-                "iGRP Super Admin", SUPER_ADMIN_USERNAME, "%s@igrp.cv".formatted(SUPER_ADMIN_USERNAME), "ACTIVE",
+                "iGRP Super Admin", SUPER_ADMIN_USERNAME, SUPER_ADMIN_EMAIL, "ACTIVE",
                 SYSTEM_USER, SYSTEM_USER);
     }
 
