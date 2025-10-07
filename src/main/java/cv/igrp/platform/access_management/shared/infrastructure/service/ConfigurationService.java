@@ -62,8 +62,8 @@ public class ConfigurationService {
             // 2. Check provider existence before attempting sync
             boolean departmentExistsInProvider = checkAndCreateDepartment(departmentExists);
             boolean appExistsInProvider = checkAndCreateApplication(appExists, departmentExistsInProvider);
-            boolean permissionExistsInProvider = checkAndCreatePermission(permissionExists, appExists);
-            boolean roleExistsInProvider = checkAndCreateRole(roleExists, departmentExistsInProvider, permissionExistsInProvider);
+            //boolean permissionExistsInProvider = checkAndCreatePermission(permissionExists, appExists);
+            boolean roleExistsInProvider = checkAndCreateRole(roleExists, departmentExistsInProvider, true);
 
             // 3. Create missing entities in optimized order (only if provider sync was successful)
             Long departmentId = departmentExists ? getId("SELECT id FROM t_department WHERE code='%s'".formatted(IGRP_DEPARTMENT)) :
@@ -73,7 +73,7 @@ public class ConfigurationService {
                     (appExistsInProvider ? createDefaultAppInDB(departmentId) : null);
 
             Long permissionId = permissionExists ? getId("SELECT id FROM t_permission WHERE name='%s'".formatted(IGRP_PERMISSION)) :
-                    (permissionExistsInProvider ? createDefaultPermissionInDB(departmentId) : null);
+                    createDefaultPermissionInDB(departmentId);
 
             Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE name='%s'".formatted(SUPER_ADMIN_ROLE)) :
                     (roleExistsInProvider ? createDefaultRoleInDB(departmentId, permissionId, appId) : null);

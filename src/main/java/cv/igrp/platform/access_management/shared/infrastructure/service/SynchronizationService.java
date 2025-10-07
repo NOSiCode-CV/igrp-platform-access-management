@@ -251,9 +251,9 @@ public class SynchronizationService {
         // Create in provider if missing
         for (RoleInfo dbRole : dbRoles) {
             String key = dbRole.getName();
-            LOGGER.info("[[IGRP_DEBUG {}]]: Syncing role key: {}", dbRole.getName(), key);
-            LOGGER.info("[[IGRP_DEBUG {}]]: DB Role Keys: {}", dbRole.getName(), dbRoleKeys);
-            LOGGER.info("[[IGRP_DEBUG {}]]: Provider Role Keys: {}", dbRole.getName(), providerRoleKeys);
+            //LOGGER.info("[[IGRP_DEBUG {}]]: Syncing role key: {}", dbRole.getName(), key);
+            //LOGGER.info("[[IGRP_DEBUG {}]]: DB Role Keys: {}", dbRole.getName(), dbRoleKeys);
+            //LOGGER.info("[[IGRP_DEBUG {}]]: Provider Role Keys: {}", dbRole.getName(), providerRoleKeys);
             if (!providerRoleKeys.contains(key)) {
                 try {
                     adapter.createRole(dbRole.getDepartmentCode(), dbRole.getName());
@@ -272,7 +272,7 @@ public class SynchronizationService {
         // Delete it from provider if not in DB
         for (RoleInfo providerRole : providerRoles) {
             String key = providerRole.getName();
-            if (!dbRoleKeys.contains(key)) {
+            if (!dbRoleKeys.contains(key) && key.contains(".")) {
                 try {
                     adapter.deleteRole(providerRole.getDepartmentCode(), providerRole.getName());
                     LOGGER.info("[Sync] Deleted role from provider: {}", key);
