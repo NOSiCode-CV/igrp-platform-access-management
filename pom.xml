@@ -171,7 +171,7 @@
         <dependency>
             <groupId>cv.igrp.platform</groupId>
             <artifactId>filemanager</artifactId>
-            <version>${igrp.version}</version>
+            <version>0.1.0-beta.2</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework.filemanager</groupId>

@@ -12,5 +12,5 @@
                  __/ |        | |
                 |___/         |_|
 
-           IGRP 3.0 Server Application :: 0.0.1-alpha
+           IGRP 3.0 Server Application :: 0.1.0-beta
            Powered by Spring Boot ${spring-boot.version}
