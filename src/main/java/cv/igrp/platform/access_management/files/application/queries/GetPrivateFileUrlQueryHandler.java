@@ -18,42 +18,62 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 @Component
-public class GetPrivateFileUrlQueryHandler implements QueryHandler<GetPrivateFileUrlQuery, ResponseEntity<FileUrlDTO>>{
+public class GetPrivateFileUrlQueryHandler implements QueryHandler<GetPrivateFileUrlQuery, ResponseEntity<FileUrlDTO>> {
 
-  //private static final Logger LOGGER = LoggerFactory.getLogger(GetPrivateFileUrlQueryHandler.class);
+    private final StorageService fileManagerService;
 
-  private final StorageService fileManagerService;
+    @Setter
+    @Value("${igrp.s3.aws-url-expiration-time}")
+    private int urlExpirationTimeInSeconds;
 
-  @Setter
-  @Value("${igrp.s3.aws-url-expiration-time}")
-  private int urlExpirationTimeInSeconds;
+    @Value("${igrp.s3.aws-endpoint}")
+    private String awsEndpoint;
 
-  public GetPrivateFileUrlQueryHandler(StorageService fileManagerService) {
-    this.fileManagerService = fileManagerService;
-  }
+    @Value("${igrp.s3.aws-bucket}")
+    private String awsBucket;
 
-   @IgrpQueryHandler
-  public ResponseEntity<FileUrlDTO> handle(GetPrivateFileUrlQuery query) {
-     var privateFilePath = query.getPrivateFilePath();
+    public GetPrivateFileUrlQueryHandler(StorageService fileManagerService) {
+        this.fileManagerService = fileManagerService;
+    }
 
-     if(privateFilePath == null || privateFilePath.isBlank()) {
-       throw IgrpResponseStatusException.of(
-               HttpStatus.BAD_REQUEST,
-               "No path provided",
-               "There's no path provided. Please check and try again."
-       );
-     }
+    @IgrpQueryHandler
+    public ResponseEntity<FileUrlDTO> handle(GetPrivateFileUrlQuery query) {
+        var filePath = query.getPrivateFilePath();
 
-     LocalDateTime localExpiration = LocalDateTime.now()
-               .plusSeconds(urlExpirationTimeInSeconds);
+        if (filePath == null || filePath.isBlank()) {
+            throw IgrpResponseStatusException.of(
+                    HttpStatus.BAD_REQUEST,
+                    "No path provided",
+                    "There's no path provided. Please check and try again."
+            );
+        }
 
-     DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
-     String expirationIso = localExpiration.format(formatter);
+        var fileUrlDto = new FileUrlDTO();
 
-     var fileUrlDto = new FileUrlDTO();
-     fileUrlDto.setUrl(fileManagerService.getFileUrl(privateFilePath));
-     fileUrlDto.setExpiration(expirationIso);
+        if (filePath.startsWith("private")) {
+            // Private file: generate pre-signed URL with expiration
+            LocalDateTime localExpiration = LocalDateTime.now()
+                    .plusSeconds(urlExpirationTimeInSeconds);
 
-     return ResponseEntity.ok(fileUrlDto);
-  }
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
+            String expirationIso = localExpiration.format(formatter);
+
+            fileUrlDto.setUrl(fileManagerService.getFileUrl(filePath));
+            fileUrlDto.setExpiration(expirationIso);
+
+        } else if (filePath.startsWith("public")) {
+            // Public file: construct plain URL without expiration
+            String url = String.format("%s/%s/%s", awsEndpoint, awsBucket, filePath);
+            fileUrlDto.setUrl(url);
+            fileUrlDto.setExpiration(null); // no expiration
+        } else {
+            throw IgrpResponseStatusException.of(
+                    HttpStatus.BAD_REQUEST,
+                    "Invalid path type",
+                    "Path must start with 'private' or 'public'."
+            );
+        }
+
+        return ResponseEntity.ok(fileUrlDto);
+    }
 }
