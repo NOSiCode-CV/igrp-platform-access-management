@@ -197,9 +197,9 @@ public class ConfigurationService {
                 adapter.createRole(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE);
 
                 // Assign permission to a role if permission exists
-                if (permissionExistsInProvider) {
-                    adapter.assignPermissionsToRole(Set.of(IGRP_PERMISSION), SUPER_ADMIN_ROLE);
-                }
+                //if (permissionExistsInProvider) {
+                //    adapter.assignPermissionsToRole(Set.of(IGRP_PERMISSION), SUPER_ADMIN_ROLE);
+                //}
                 return true;
             } else if (existsInProvider) {
                 LOGGER.info("[Startup Config] Role exists in provider: {}", SUPER_ADMIN_ROLE);
