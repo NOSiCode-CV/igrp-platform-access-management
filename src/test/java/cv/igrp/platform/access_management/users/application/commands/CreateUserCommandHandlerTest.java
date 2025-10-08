@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.framework.auth.core.adapter.IAdapter;
+import cv.igrp.framework.auth.core.model.UserIdentity;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
@@ -20,6 +21,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 public class CreateUserCommandHandlerTest {
@@ -72,12 +74,12 @@ public class CreateUserCommandHandlerTest {
 
     @Test
     @DisplayName("should create user and return DTO in 200 OK response")
-    @Disabled // TODO : fix this unit test later
     void testHandle_whenValidCommand_shouldReturnCreatedUserDto() {
       // Arrange
         when(userRepository.save(any(IGRPUserEntity.class))).thenReturn(userEntity);
         when(userMapper.toDto(userEntity)).thenReturn(expectedDto);
         when(userRepository.existsByUsername(expectedDto.getUsername())).thenReturn(false);
+        when(iAdapter.resolveUser(expectedDto.getUsername())).thenReturn(Optional.of(userEntity));
 
         // Act
         ResponseEntity<IGRPUserDTO> response = createUserCommandHandler.handle(command);
@@ -113,7 +115,6 @@ public class CreateUserCommandHandlerTest {
 
     @Test
     @DisplayName("should still persist user if email is syntactically invalid (no validation in handler)")
-    @Disabled //TODO: fix this unit test later
     void testHandle_whenEmailIsInvalidFormat_shouldStillPersistUser() {
         // Arrange
         inputDto.setEmail("not-an-email");
@@ -122,6 +123,7 @@ public class CreateUserCommandHandlerTest {
 
         when(userRepository.save(any(IGRPUserEntity.class))).thenReturn(userEntity);
         when(userMapper.toDto(userEntity)).thenReturn(expectedDto);
+        when(iAdapter.resolveUser(expectedDto.getUsername())).thenReturn(Optional.of(userEntity));
 
         // Act
         ResponseEntity<IGRPUserDTO> response = createUserCommandHandler.handle(command);
