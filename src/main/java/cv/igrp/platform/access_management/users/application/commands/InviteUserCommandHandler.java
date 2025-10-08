@@ -4,7 +4,7 @@ import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.model.Notification;
-import cv.igrp.framework.notifications.mail.smtp.dto.SendNotificationResponseDTO;
+import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
@@ -38,12 +38,12 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
                         iGRP
                         """;
 
-    private final NotificationAdapter<SendNotificationResponseDTO> notificationAdapter;
+    private final NotificationAdapter<NotificationResult> notificationAdapter;
     private final IGRPUserEntityRepository userRepository;
     private final IGRPUserMapper userMapper;
     private final IAdapter adapter;
 
-    public InviteUserCommandHandler(NotificationAdapter<SendNotificationResponseDTO> notificationAdapter,
+    public InviteUserCommandHandler(NotificationAdapter<NotificationResult> notificationAdapter,
                                     IGRPUserEntityRepository userRepository,
                                     IGRPUserMapper userMapper,
                                     IAdapter adapter
