@@ -19,10 +19,10 @@ public class NoOpNotificationAdapter implements NotificationAdapter<Notification
 
     @Override
     public NotificationResult send(Notification notification) {
-        LOGGER.warn("Notifications are disabled. No email sent.");
+        LOGGER.warn("Notifications are disabled. No notification sent");
         NotificationResult result = new NotificationResult();
         result.setSuccess(false);
-        result.setMessage("Notifications are disabled. No email sent.");
+        result.setMessage("Notifications are disabled. No notification sent");
         result.setTimestamp(Instant.now());
         return result;
     }
