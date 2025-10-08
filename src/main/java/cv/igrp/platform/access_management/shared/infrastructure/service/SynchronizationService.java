@@ -63,6 +63,8 @@ public class SynchronizationService {
             // Phase 3: User synchronization (special rules apply)
             syncUsers();
 
+            syncMappers();
+
             long duration = System.currentTimeMillis() - startTime;
             LOGGER.info("[Sync] Startup reconciliation completed in {} ms", duration);
             syncResults.put("startup", new SyncResult(true, "Startup reconciliation completed", duration));
@@ -525,6 +527,20 @@ public class SynchronizationService {
         if (!usersMissingInDB.isEmpty()) {
             LOGGER.info("[Sync] Users present in provider but not in DB (invite-only mode): {}", usersMissingInDB);
         }
+    }
+
+    private void syncMappers() throws IAMException {
+
+        boolean existRolesClaimMapper = adapter.protocolMapperExists("iGRP Roles");
+
+        if(!existRolesClaimMapper) {
+            LOGGER.info("[Sync] Creating JWT Protocol Mapper in the provider...");
+            adapter.createJwtRolesClaimMapper("igrp_roles", "iGRP Roles");
+            LOGGER.info("[Sync] JWT Protocol Mapper created successfully in the provider");
+        } else {
+            LOGGER.info("[Sync] JWT Protocol Mapper is already present in the provider");
+        }
+
     }
 
     // =====================================================
