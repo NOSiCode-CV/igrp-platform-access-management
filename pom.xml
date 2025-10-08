@@ -31,7 +31,7 @@
         <igrp.framework.stereotype.version>0.0.1-alpha</igrp.framework.stereotype.version>
         <framework.auth.version>0.1.0-beta-SNAPSHOT</framework.auth.version>
         <filemanager.version>0.0.3-alpha</filemanager.version>
-        <notification.email.version>0.0.1-alpha</notification.email.version>
+        <igrp.framework.notification.core.version>0.0.1-alpha</igrp.framework.notification.core.version>
     </properties>
 
     <dependencyManagement>
@@ -81,6 +81,10 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-mail</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -155,12 +159,12 @@
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
             <artifactId>core</artifactId>
-            <version>0.1.0-beta-20250917.114740-2</version>
+            <version>0.1.0-beta-20251008.122918-4</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
             <artifactId>keycloak-spring-boot</artifactId>
-            <version>0.1.0-beta-20251007.111910-12</version>
+            <version>0.1.0-beta-20251008.132613-15</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
@@ -180,8 +184,8 @@
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework</groupId>
-            <artifactId>notification-email-smtp</artifactId>
-            <version>${notification.email.version}</version>
+            <artifactId>notifications-core</artifactId>
+            <version>${igrp.framework.notification.core.version}</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
