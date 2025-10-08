@@ -51,7 +51,7 @@ public class CreatePermissionCommandHandlerTest {
         String departmentCode = "DEPT";
         String permissionName = "permissionName";
         String permissionDescription = "permissionDescription";
-        PermissionDTO permissiondto = new PermissionDTO(null, permissionName, permissionDescription, null, departmentCode);
+        PermissionDTO permissiondto = new PermissionDTO(null, permissionName, permissionDescription, Status.ACTIVE, departmentCode);
         CreatePermissionCommand command = new CreatePermissionCommand(permissiondto);
 
         when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED))
@@ -135,15 +135,19 @@ public class CreatePermissionCommandHandlerTest {
         PermissionEntity permissionToSave = new PermissionEntity();
         permissionToSave.setName(permissionName);
         permissionToSave.setDepartment(department);
+        permissionToSave.setStatus(Status.ACTIVE);
 
         PermissionEntity savedPermission = new PermissionEntity();
         savedPermission.setId(10);
         savedPermission.setName(permissionName);
         savedPermission.setDepartment(department);
+        savedPermission.setStatus(Status.ACTIVE);
 
         PermissionDTO expectedResponse = new PermissionDTO();
         expectedResponse.setId(10);
         expectedResponse.setName(permissionName);
+        expectedResponse.setStatus(Status.ACTIVE);
+        expectedResponse.setDepartmentCode(departmentCode);
 
         // When
         when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
@@ -163,7 +167,7 @@ public class CreatePermissionCommandHandlerTest {
 
         assertEquals(permissionName, capturedPermission.getName());
         assertEquals(deptId, capturedPermission.getDepartment().getId());
-        assertNull(capturedPermission.getStatus());
+        assertEquals(Status.ACTIVE, capturedPermission.getStatus());
     }
 
     @Test
@@ -176,6 +180,7 @@ public class CreatePermissionCommandHandlerTest {
         PermissionDTO dto = new PermissionDTO();
         dto.setName(permissionName);
         dto.setDepartmentCode(departmentCode);
+        dto.setStatus(Status.ACTIVE);
 
         CreatePermissionCommand command = new CreatePermissionCommand(dto);
 
@@ -186,11 +191,13 @@ public class CreatePermissionCommandHandlerTest {
         PermissionEntity permissionToSave = new PermissionEntity();
         permissionToSave.setName(permissionName);
         permissionToSave.setDepartment(department);
+        permissionToSave.setStatus(Status.ACTIVE);
 
         PermissionEntity savedPermission = new PermissionEntity();
         savedPermission.setId(20);
         savedPermission.setName(permissionName);
         savedPermission.setDepartment(department);
+        savedPermission.setStatus(Status.ACTIVE);
 
         PermissionDTO mappedDTO = new PermissionDTO();
         mappedDTO.setId(20);
