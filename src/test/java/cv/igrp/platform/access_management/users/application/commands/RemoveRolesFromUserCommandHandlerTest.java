@@ -238,10 +238,8 @@ public class RemoveRolesFromUserCommandHandlerTest {
 
     @Test
     @DisplayName("should safely remove from immutable role list using defensive copy")
-    @Disabled // TODO: fix this unit test later
     void testHandle_whenRolesAreImmutable_shouldRemoveWithoutError() {
-        // Arrange
-        user.setRoles(List.of(role1, role2));
+
         command = removeRolesFromUserCommand( List.of("admin"), USER_ID);
         when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
 

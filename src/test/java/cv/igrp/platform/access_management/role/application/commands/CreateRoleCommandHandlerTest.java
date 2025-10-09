@@ -2,10 +2,12 @@ package cv.igrp.platform.access_management.role.application.commands;
 
 import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
@@ -15,6 +17,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +43,8 @@ public class CreateRoleCommandHandlerTest {
     @Mock
     private RoleMapper roleMapper;
     @Mock
-    private IAdapter adapter;
+    @SuppressWarnings("unused")
+    private IAdapter iAdapter;
 
     @Test
     void itShouldStartContext() {
@@ -131,7 +135,6 @@ public class CreateRoleCommandHandlerTest {
     }
 
     @Test
-    @Disabled
     void itShouldThrowBadRequestException_WhenNewRoleName_Exists_InThe_SameDepartment() {
         // Given
         String departmentCode = "RH";
@@ -140,14 +143,13 @@ public class CreateRoleCommandHandlerTest {
         department.setCode(departmentCode);
         department.setName("Department Name");
         department.setStatus(DepartmentStatus.ACTIVE);
+        department.setRoles(new ArrayList<>());
 
         RoleDTO role = new RoleDTO();
         String roleName = "create_resource";
-        String roleDescription = "Role Description";
-
         role.setDepartmentCode(departmentCode);
         role.setName(roleName);
-        role.setDescription(roleDescription);
+        role.setDescription("Role Description");
         role.setStatus(Status.ACTIVE);
         role.setParentName(null);
 
@@ -156,32 +158,36 @@ public class CreateRoleCommandHandlerTest {
         RoleEntity existingRole = new RoleEntity();
         existingRole.setId(1);
         existingRole.setName(roleName);
-        existingRole.setDescription(roleDescription);
         existingRole.setStatus(Status.ACTIVE);
         existingRole.setParent(null);
+        department.getRoles().add(existingRole);
 
         RoleEntity savedRole = new RoleEntity();
         savedRole.setName(roleName);
-        savedRole.setDescription(roleDescription);
         savedRole.setStatus(Status.ACTIVE);
-        savedRole.setParent(null);
 
-        department.setRoles(new ArrayList<>(List.of(existingRole)));
+        ResourceValidationResponse invalidResponse = new ResourceValidationResponse();
+        invalidResponse.setValid(false);
+        invalidResponse.setFailureMessage(List.of("Role already exists in department RH"));
 
-        when(roleRepository.save(savedRole)).thenReturn(savedRole);
         when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED))
                 .thenReturn(Optional.of(department));
-        when(roleMapper.mapToEntity(role, department, null)).thenReturn(savedRole);
 
-        // When
-        IgrpResponseStatusException ex = assertThrows(
-                IgrpResponseStatusException.class,
-                () -> underTest.handle(command)
-        );
+        // Mock static RoleValidator during the service call
+        try (MockedStatic<RoleValidator> mocked = mockStatic(RoleValidator.class)) {
+            mocked.when(() -> RoleValidator.validateRoleDto(role, department))
+                    .thenReturn(invalidResponse);
 
-        // Then
-        assertEquals(HttpStatus.CONFLICT.value(), ex.getBody().getStatus());
-        verify(roleRepository).save(savedRole);
+            // When
+            IgrpResponseStatusException ex = assertThrows(
+                    IgrpResponseStatusException.class,
+                    () -> underTest.handle(command)
+            );
+
+            // Then
+            assertEquals(HttpStatus.CONFLICT.value(), ex.getBody().getStatus());
+            mocked.verify(() -> RoleValidator.validateRoleDto(role, department));
+        }
     }
 
     @Test

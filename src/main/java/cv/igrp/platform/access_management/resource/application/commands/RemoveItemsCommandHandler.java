@@ -90,14 +90,22 @@ public class RemoveItemsCommandHandler implements CommandHandler<RemoveItemsComm
       List<ResourceItemEntity> items = Optional.ofNullable(resource.getItems()).orElse(new ArrayList<>());
 
       int beforeRemove = itemsToRemove.size();
-      items.stream().filter(item -> itemsToRemove.contains(item.getName())).forEach(
-              i -> {
-                 var it = resourceItemEntityRepository.findById(i.getId()).orElse(null);
-                 if (it == null) return;
-                 resourceItemEntityRepository.delete(it);
-              }
-      );
-      int afterRemove = beforeRemove - itemsToRemove.size();
+
+      // Collect items to remove first to avoid ConcurrentModificationException
+      List<ResourceItemEntity> itemsToBeRemoved = items.stream()
+           .filter(item -> item != null && itemsToRemove.contains(item.getName()))
+           .toList();
+
+      // Remove items from repository and from resource's items list
+      for (ResourceItemEntity item : itemsToBeRemoved) {
+          var it = resourceItemEntityRepository.findById(item.getId()).orElse(null);
+          if (it != null) {
+              resourceItemEntityRepository.delete(it);
+              items.remove(item);
+          }
+      }
+
+      int afterRemove = itemsToBeRemoved.size();
 
       logger.info("Removed {} item(s) from resource ID: {}", afterRemove, resource.getId());
 
