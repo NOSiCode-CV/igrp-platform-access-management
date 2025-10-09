@@ -1,37 +1,15 @@
 package cv.igrp.platform.access_management.files.application.commands;
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
-
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
 public class UploadPrivateFileCommandHandlerTest {
 
-    @InjectMocks
-    private UploadPrivateFileCommandHandler uploadFileCommandHandler;
-
-    @BeforeEach
-    void setUp() {
-        // TODO: initialize mock dependencies if needed
-    }
-
     @Test
     void testHandle() {
-        // TODO: Implement unit test for handle method
-        // Example:
-        // Given
-        // UploadFileCommand command = new UploadFileCommand(...);
-        //
-        // When
-        // ResponseEntity<String> response = uploadFileCommandHandler.handle(command);
-        //
-        // Then
-        // assertNotNull(response);
-        // assertEquals(..., response.getBody());
+        // Check the handler/UploadFileCommandHandlerTest
+        // This handler just sends the UploadFileCommand with upload type 'PRIVATE'
     }
 }
