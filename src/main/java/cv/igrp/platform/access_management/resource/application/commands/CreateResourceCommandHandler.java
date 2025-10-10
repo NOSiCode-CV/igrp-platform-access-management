@@ -7,11 +7,9 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +47,6 @@ public class CreateResourceCommandHandler implements CommandHandler<CreateResour
             LoggerFactory.getLogger(CreateResourceCommandHandler.class);
 
     private final ResourceEntityRepository resourceRepository;
-    private final PermissionEntityRepository permissionRepository;
     private final ApplicationEntityRepository applicationRepository;
     private final ResourceMapper resourceMapper;
 
@@ -59,17 +56,14 @@ public class CreateResourceCommandHandler implements CommandHandler<CreateResour
      * @param resourceRepository    the repository used to persist {@link ResourceEntity} entities
      * @param applicationRepository the repository used to resolve linked {@link ApplicationEntity} entities
      * @param resourceMapper        the mapper to convert between DTOs and domain models
-     * @param permissionRepository  the repository used to validate {@link PermissionEntity} references
      */
     public CreateResourceCommandHandler(
             ResourceEntityRepository resourceRepository,
             ApplicationEntityRepository applicationRepository,
-            ResourceMapper resourceMapper,
-            PermissionEntityRepository permissionRepository) {
+            ResourceMapper resourceMapper) {
         this.resourceRepository = resourceRepository;
         this.applicationRepository = applicationRepository;
         this.resourceMapper = resourceMapper;
-        this.permissionRepository = permissionRepository;
     }
 
     /**
@@ -110,17 +104,7 @@ public class CreateResourceCommandHandler implements CommandHandler<CreateResour
 
         if (resourceDTO.getItems() != null && !resourceDTO.getItems().isEmpty()) {
             logger.info("Adding {} permission item(s) to resource.", resourceDTO.getItems().size());
-            var items = resourceDTO.getItems().stream().map(itemDTO -> {
-                PermissionEntity permission = permissionRepository.findByNameAndStatusNot(itemDTO.getPermissionName(), Status.DELETED)
-                        .orElseThrow(() -> {
-                            logger.warn("Permission not found with name: {}", itemDTO.getPermissionName());
-                            return IgrpResponseStatusException.of(
-                                    HttpStatus.NOT_FOUND,
-                                    "Permission not found",
-                                    "Permission not found with name: " + itemDTO.getPermissionName());
-                        });
-                return resourceMapper.toItemEntity(itemDTO, savedResource, permission);
-            }).toList();
+            var items = resourceDTO.getItems().stream().map(itemDTO -> resourceMapper.toItemEntity(itemDTO, savedResource)).toList();
 
             resource.setItems(items);
 

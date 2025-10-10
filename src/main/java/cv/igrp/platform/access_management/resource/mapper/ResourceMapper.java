@@ -7,7 +7,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceItemEntityRepository;
 import org.springframework.stereotype.Component;
 
@@ -16,11 +15,9 @@ import java.util.List;
 @Component
 public class ResourceMapper {
 
-    private final PermissionEntityRepository permissionRepository;
     private final ResourceItemEntityRepository resourceItemRepository;
 
-    public ResourceMapper(PermissionEntityRepository permissionRepository, ResourceItemEntityRepository resourceItemRepository) {
-        this.permissionRepository = permissionRepository;
+    public ResourceMapper(ResourceItemEntityRepository resourceItemRepository) {
         this.resourceItemRepository = resourceItemRepository;
     }
 
@@ -67,8 +64,7 @@ public class ResourceMapper {
         dto.setDescription(item.getDescription());
         dto.setUrl(item.getUrl());
         dto.setResourceName(item.getResourceId() != null ? item.getResourceId().getName() : null);
-        dto.setPermissionName(item.getPermissionId() != null ? permissionRepository.findById(
-                item.getPermissionId()).map(PermissionEntity::getName).orElse(null) : null);
+        dto.setPermissions(item.getPermissions().stream().map(PermissionEntity::getName).toList());
         dto.setCreatedBy(item.getCreatedBy());
         if (item.getCreatedDate() != null)
             dto.setCreatedDate(item.getCreatedDate().toString());
@@ -91,14 +87,13 @@ public class ResourceMapper {
         return resource;
     }
 
-    public ResourceItemEntity toItemEntity(ResourceItemDTO dto, ResourceEntity parentResource, PermissionEntity permission) {
+    public ResourceItemEntity toItemEntity(ResourceItemDTO dto, ResourceEntity parentResource) {
         if (dto == null) return null;
         ResourceItemEntity item = new ResourceItemEntity();
         item.setName(dto.getName());
         item.setDescription(dto.getDescription());
         item.setUrl(dto.getUrl());
         item.setResourceId(parentResource);
-        item.setPermissionId(permission.getId());
         return resourceItemRepository.save(item);
     }
 }
