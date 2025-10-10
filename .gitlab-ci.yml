@@ -39,7 +39,7 @@ build-native-arm64:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
   #  - docker build -f Dockerfile_native --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
-    - docker build -f Dockerfile_native --platform linux/arm64 -t "$IMAGE_NAME_FULL-native:arm64" -t "$IMAGE_NAME_FULL-native:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-native:arm64",push=true .
+    - docker build -f Dockerfile_native --platform linux/arm64 -t "$IMAGE_NAME_FULL-native:arm64" -t "$IMAGE_NAME_FULL-native:arm64-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-native:arm64",push=true .
     
   tags:
     - arm64
@@ -53,7 +53,7 @@ build-native-amd64:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
   #  - docker build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
-    - docker build -f Dockerfile_native --platform linux/amd64 -t "$IMAGE_NAME_FULL-native:amd64" -t "$IMAGE_NAME_FULL-native:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-native:amd64",push=true .
+    - docker build -f Dockerfile_native --platform linux/amd64 -t "$IMAGE_NAME_FULL-native:amd64" -t "$IMAGE_NAME_FULL-native:amd64-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-native:amd64",push=true .
   only:
     - deploy/base-native
 
@@ -78,7 +78,7 @@ build-jvm-arm64:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
   #  - docker build --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
-    - docker build -f Dockerfile --platform linux/arm64 -t "$IMAGE_NAME_FULL-jvm:arm64" -t "$IMAGE_NAME_FULL-jvm:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-jvm:arm64",push=true .
+    - docker build -f Dockerfile --platform linux/arm64 -t "$IMAGE_NAME_FULL-jvm:arm64" -t "$IMAGE_NAME_FULL-jvm:arm64-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-jvm:arm64",push=true .
   tags:
     - arm64
   only:
@@ -91,7 +91,7 @@ build-jvm-amd64:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
   #  - docker build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
-    - docker build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_FULL-jvm:amd64" -t "$IMAGE_NAME_FULL-jvm:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-jvm:amd64",push=true .
+    - docker build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_FULL-jvm:amd64" -t "$IMAGE_NAME_FULL-jvm:amd64-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-jvm:amd64",push=true .
   only:
     - deploy/base-jvm
 
@@ -128,7 +128,7 @@ build-native-arm64-az:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
     #  - docker build -f Dockerfile_native --platform linux/arm64 -t $IMAGE_NAME_AZ_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_AZ_FULL:arm64",push=true .
-    - docker build -f Dockerfile_native --platform linux/arm64 -t "$IMAGE_NAME_AZ_FULL-native:arm64" -t "$IMAGE_NAME_AZ_FULL-native:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-native:arm64",push=true .
+    - docker build -f Dockerfile_native --platform linux/arm64 -t "$IMAGE_NAME_AZ_FULL-native:arm64" -t "$IMAGE_NAME_AZ_FULL-native:arm64-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-native:arm64",push=true .
   tags:
     - arm64
   only:
@@ -141,7 +141,7 @@ build-native-amd64-az:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
     #  - docker build --platform linux/amd64 -t $IMAGE_NAME_AZ_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_AZ_FULL:amd64",push=true .
-    - docker build -f Dockerfile_native --platform linux/amd64 -t "$IMAGE_NAME_AZ_FULL-native:amd64" -t "$IMAGE_NAME_AZ_FULL-native:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-native:amd64",push=true .
+    - docker build -f Dockerfile_native --platform linux/amd64 -t "$IMAGE_NAME_AZ_FULL-native:amd64" -t "$IMAGE_NAME_AZ_FULL-native:amd64-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-native:amd64",push=true .
   only:
     - azure
 
@@ -166,7 +166,7 @@ build-jvm-arm64-az:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
     #  - docker build --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
-    - docker build -f Dockerfile --platform linux/arm64 -t "$IMAGE_NAME_AZ_FULL-jvm:arm64" -t "$IMAGE_NAME_AZ_FULL-jvm:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-jvm:arm64",push=true .
+    - docker build -f Dockerfile --platform linux/arm64 -t "$IMAGE_NAME_AZ_FULL-jvm:arm64" -t "$IMAGE_NAME_AZ_FULL-jvm:arm64-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-jvm:arm64",push=true .
   tags:
     - arm64
   only:
@@ -179,7 +179,7 @@ build-jvm-amd64-az:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
     #  - docker build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
-    - docker build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_AZ_FULL-jvm:amd64" -t "$IMAGE_NAME_AZ_FULL-jvm:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-jvm:amd64",push=true .
+    - docker build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_AZ_FULL-jvm:amd64" -t "$IMAGE_NAME_AZ_FULL-jvm:amd64-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-jvm:amd64",push=true .
   only:
     - azure-jvm
 
