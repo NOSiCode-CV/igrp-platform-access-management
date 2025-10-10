@@ -11,6 +11,7 @@ variables:
   IMAGE_NAME: "access-management-api"
   CI_PROJECT: "igrp"
   VERSION_TAG: "$CI_COMMIT_SHORT_SHA"
+  PIPELINE_TAG: "$CI_PIPELINE_ID"
   IMAGE_NAME_FULL: "$REGISTRY_URL/$CI_PROJECT/$IMAGE_NAME"
   IMAGE_NAME_AZ_FULL: "$REGISTRY_AZ_URL/$CI_PROJECT/$IMAGE_NAME"
   IMAGE_TAG: latest
@@ -38,7 +39,7 @@ build-native-arm64:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
   #  - docker build -f Dockerfile_native --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
-    - docker build -f Dockerfile_native --platform linux/arm64 -t "$IMAGE_NAME_FULL-native:arm64" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-native:arm64",push=true .
+    - docker build -f Dockerfile_native --platform linux/arm64 -t "$IMAGE_NAME_FULL-native:arm64" -t "$IMAGE_NAME_FULL-native:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-native:arm64",push=true .
     
   tags:
     - arm64
@@ -52,7 +53,7 @@ build-native-amd64:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
   #  - docker build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
-    - docker build -f Dockerfile_native --platform linux/amd64 -t "$IMAGE_NAME_FULL-native:amd64" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-native:amd64",push=true .
+    - docker build -f Dockerfile_native --platform linux/amd64 -t "$IMAGE_NAME_FULL-native:amd64" -t "$IMAGE_NAME_FULL-native:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-native:amd64",push=true .
   only:
     - deploy/base-native
 
@@ -61,7 +62,9 @@ create-native-manifest:
   script:
     - docker login -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD" "$REGISTRY_URL"
     - docker manifest create "$IMAGE_NAME_FULL-native:$IMAGE_TAG" --amend "$IMAGE_NAME_FULL-native:amd64" --amend "$IMAGE_NAME_FULL-native:arm64"
+    - docker manifest create "$IMAGE_NAME_FULL-native:$PIPELINE_TAG" --amend "$IMAGE_NAME_FULL-native:amd64" --amend "$IMAGE_NAME_FULL-native:arm64"
     - docker manifest push "$IMAGE_NAME_FULL-native:$IMAGE_TAG"
+    - docker manifest push "$IMAGE_NAME_FULL-native:$PIPELINE_TAG"
   needs:
     - build-native-amd64
     - build-native-arm64
@@ -75,8 +78,7 @@ build-jvm-arm64:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
   #  - docker build --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
-    - docker build -f Dockerfile --platform linux/arm64 -t "$IMAGE_NAME_FULL-jvm:arm64" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-jvm:arm64",push=true .
-
+    - docker build -f Dockerfile --platform linux/arm64 -t "$IMAGE_NAME_FULL-jvm:arm64" -t "$IMAGE_NAME_FULL-jvm:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-jvm:arm64",push=true .
   tags:
     - arm64
   only:
@@ -89,7 +91,7 @@ build-jvm-amd64:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
   #  - docker build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
-    - docker build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_FULL-jvm:amd64" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-jvm:amd64",push=true .
+    - docker build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_FULL-jvm:amd64" -t "$IMAGE_NAME_FULL-jvm:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-jvm:amd64",push=true .
   only:
     - deploy/base-jvm
 
@@ -98,7 +100,9 @@ create-jvm-manifest:
   script:
     - docker login -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD" "$REGISTRY_URL"
     - docker manifest create "$IMAGE_NAME_FULL-jvm:$IMAGE_TAG" --amend "$IMAGE_NAME_FULL-jvm:amd64" --amend "$IMAGE_NAME_FULL-jvm:arm64"
+    - docker manifest create "$IMAGE_NAME_FULL-jvm:$PIPELINE_TAG" --amend "$IMAGE_NAME_FULL-jvm:amd64" --amend "$IMAGE_NAME_FULL-jvm:arm64"
     - docker manifest push "$IMAGE_NAME_FULL-jvm:$IMAGE_TAG"
+    - docker manifest push "$IMAGE_NAME_FULL-jvm:$PIPELINE_TAG"
   needs:
     - build-jvm-amd64
     - build-jvm-arm64
@@ -124,7 +128,7 @@ build-native-arm64-az:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
     #  - docker build -f Dockerfile_native --platform linux/arm64 -t $IMAGE_NAME_AZ_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_AZ_FULL:arm64",push=true .
-    - docker build -f Dockerfile_native --platform linux/arm64 -t "$IMAGE_NAME_AZ_FULL-native:arm64" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-native:arm64",push=true .
+    - docker build -f Dockerfile_native --platform linux/arm64 -t "$IMAGE_NAME_AZ_FULL-native:arm64" -t "$IMAGE_NAME_AZ_FULL-native:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-native:arm64",push=true .
   tags:
     - arm64
   only:
@@ -137,7 +141,7 @@ build-native-amd64-az:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
     #  - docker build --platform linux/amd64 -t $IMAGE_NAME_AZ_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_AZ_FULL:amd64",push=true .
-    - docker build -f Dockerfile_native --platform linux/amd64 -t "$IMAGE_NAME_AZ_FULL-native:amd64" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-native:amd64",push=true .
+    - docker build -f Dockerfile_native --platform linux/amd64 -t "$IMAGE_NAME_AZ_FULL-native:amd64" -t "$IMAGE_NAME_AZ_FULL-native:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-native:amd64",push=true .
   only:
     - azure
 
@@ -146,7 +150,9 @@ create-native-manifest-az:
   script:
     - docker login -u "$AZURE_REGISTRY_USERNAME" -p "$AZURE_REGISTRY_PASSWORD" "$REGISTRY_AZ_URL"
     - docker manifest create "$IMAGE_NAME_AZ_FULL-native:$IMAGE_TAG" --amend "$IMAGE_NAME_AZ_FULL-native:amd64" --amend "$IMAGE_NAME_AZ_FULL-native:arm64"
+    - docker manifest create "$IMAGE_NAME_AZ_FULL-native:$PIPELINE_TAG" --amend "$IMAGE_NAME_AZ_FULL-native:amd64" --amend "$IMAGE_NAME_AZ_FULL-native:arm64"
     - docker manifest push "$IMAGE_NAME_AZ_FULL-native:$IMAGE_TAG"
+    - docker manifest push "$IMAGE_NAME_AZ_FULL-native:$PIPELINE_TAG"
   needs:
     - build-native-amd64-az
     - build-native-arm64-az
@@ -160,7 +166,7 @@ build-jvm-arm64-az:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
     #  - docker build --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
-    - docker build -f Dockerfile --platform linux/arm64 -t "$IMAGE_NAME_AZ_FULL-jvm:arm64" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-jvm:arm64",push=true .
+    - docker build -f Dockerfile --platform linux/arm64 -t "$IMAGE_NAME_AZ_FULL-jvm:arm64" -t "$IMAGE_NAME_AZ_FULL-jvm:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-jvm:arm64",push=true .
   tags:
     - arm64
   only:
@@ -173,7 +179,7 @@ build-jvm-amd64-az:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
     #  - docker build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
-    - docker build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_AZ_FULL-jvm:amd64" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-jvm:amd64",push=true .
+    - docker build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_AZ_FULL-jvm:amd64" -t "$IMAGE_NAME_AZ_FULL-jvm:$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_AZ_FULL-jvm:amd64",push=true .
   only:
     - azure-jvm
 
@@ -182,7 +188,9 @@ create-jvm-manifest-az:
   script:
     - docker login -u "$AZURE_REGISTRY_USERNAME" -p "$AZURE_REGISTRY_PASSWORD" "$REGISTRY_AZ_URL"
     - docker manifest create "$IMAGE_NAME_AZ_FULL-jvm:$IMAGE_TAG" --amend "$IMAGE_NAME_AZ_FULL-jvm:amd64" --amend "$IMAGE_NAME_AZ_FULL-jvm:arm64"
+    - docker manifest create "$IMAGE_NAME_AZ_FULL-jvm:$PIPELINE_TAG" --amend "$IMAGE_NAME_AZ_FULL-jvm:amd64" --amend "$IMAGE_NAME_AZ_FULL-jvm:arm64"
     - docker manifest push "$IMAGE_NAME_AZ_FULL-jvm:$IMAGE_TAG"
+    - docker manifest push "$IMAGE_NAME_AZ_FULL-jvm:$PIPELINE_TAG"
   needs:
     - build-jvm-amd64-az
     - build-jvm-arm64-az
