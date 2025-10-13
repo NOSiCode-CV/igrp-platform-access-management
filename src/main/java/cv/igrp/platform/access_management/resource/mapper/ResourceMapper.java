@@ -47,6 +47,13 @@ public class ResourceMapper {
             dto.setItems(items);
         }
 
+        if (resource.getPermissions() != null) {
+            var perms = resource.getPermissions().stream()
+                    .map(PermissionEntity::getName)
+                    .toList();
+            dto.setPermissions(perms);
+        }
+
         if (resource.getCreatedDate() != null)
             dto.setCreatedDate(resource.getCreatedDate().toString());
 

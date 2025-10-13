@@ -18,7 +18,8 @@ public class IgrpResponseStatusException extends ErrorResponseException {
     }
 
     public static IgrpResponseStatusException of(HttpStatus status) {
-        return new IgrpResponseStatusException(status);
+        var problemDetail = ProblemDetail.forStatus(status);
+        return new IgrpResponseStatusException(status, problemDetail, null);
     }
 
     public static IgrpResponseStatusException of(HttpStatus status, String title) {
@@ -30,24 +31,40 @@ public class IgrpResponseStatusException extends ErrorResponseException {
     public static <T> IgrpResponseStatusException of(HttpStatus status, String title, T details) {
         var problemDetail = ProblemDetail.forStatus(status);
         problemDetail.setTitle(title);
-        problemDetail.setProperties(Map.of("details", details));
+        if (details != null) {
+            problemDetail.setProperties(Map.of("details", details));
+        }
         return new IgrpResponseStatusException(status, problemDetail, null);
     }
 
     public static <T> IgrpResponseStatusException notFound(String title, T details) {
-        return of(HttpStatus.NOT_FOUND, title, details);
+        var problemDetail = ProblemDetail.forStatus(HttpStatus.NOT_FOUND);
+        problemDetail.setTitle(title);
+        if (details != null) {
+            problemDetail.setProperties(Map.of("details", details));
+        }
+        return new IgrpResponseStatusException(HttpStatus.NOT_FOUND, problemDetail, null);
     }
 
     public static IgrpResponseStatusException badRequest(String title) {
-        return of(HttpStatus.BAD_REQUEST, title);
+        var problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problemDetail.setTitle(title);
+        return new IgrpResponseStatusException(HttpStatus.BAD_REQUEST, problemDetail, null);
     }
 
     public static IgrpResponseStatusException forbidden(String title) {
-        return of(HttpStatus.FORBIDDEN, title);
+        var problemDetail = ProblemDetail.forStatus(HttpStatus.FORBIDDEN);
+        problemDetail.setTitle(title);
+        return new IgrpResponseStatusException(HttpStatus.FORBIDDEN, problemDetail, null);
     }
 
     public static <T> IgrpResponseStatusException badRequest(String title, T details) {
-        return of(HttpStatus.BAD_REQUEST, title, details);
+        var problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
+        problemDetail.setTitle(title);
+        if (details != null) {
+            problemDetail.setProperties(Map.of("details", details));
+        }
+        return new IgrpResponseStatusException(HttpStatus.BAD_REQUEST, problemDetail, null);
     }
 
     public static IgrpResponseStatusException notFound(String title) {
@@ -55,12 +72,18 @@ public class IgrpResponseStatusException extends ErrorResponseException {
     }
 
     public static IgrpResponseStatusException internalServerError(String title, String details) {
-        return of(HttpStatus.INTERNAL_SERVER_ERROR, title, details);
-
+        var problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        problemDetail.setTitle(title);
+        if (details != null) {
+            problemDetail.setProperties(Map.of("details", details));
+        }
+        return new IgrpResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, problemDetail, null);
     }
 
     public static IgrpResponseStatusException internalServerError(String title) {
-        return of(HttpStatus.INTERNAL_SERVER_ERROR, title);
+        var problemDetail = ProblemDetail.forStatus(HttpStatus.INTERNAL_SERVER_ERROR);
+        problemDetail.setTitle(title);
+        return new IgrpResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, problemDetail, null);
     }
 
 }
