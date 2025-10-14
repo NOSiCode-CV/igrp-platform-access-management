@@ -1,6 +1,8 @@
 package cv.igrp.platform.access_management.department.application.queries;
 
 import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -21,8 +23,10 @@ public class GetAvailableResourcesForDepartmentQueryHandler implements QueryHand
 
     private final ResourceMapper resourceMapper;
     private final ResourceEntityRepository resourceEntityRepository;
+    private final DepartmentEntityRepository departmentEntityRepository;
 
-    public GetAvailableResourcesForDepartmentQueryHandler(ResourceMapper resourceMapper, ResourceEntityRepository resourceEntityRepository) {
+    public GetAvailableResourcesForDepartmentQueryHandler(ResourceMapper resourceMapper, ResourceEntityRepository resourceEntityRepository, DepartmentEntityRepository departmentEntityRepository) {
+        this.departmentEntityRepository = departmentEntityRepository;
         this.resourceMapper = resourceMapper;
         this.resourceEntityRepository = resourceEntityRepository;
     }
@@ -30,6 +34,9 @@ public class GetAvailableResourcesForDepartmentQueryHandler implements QueryHand
     @IgrpQueryHandler
     public ResponseEntity<List<ResourceDTO>> handle(GetAvailableResourcesForDepartmentQuery query) {
         LOGGER.info("Getting Available Resources for department: {}", query.getCode());
+
+        // Verify if the department exists
+        departmentEntityRepository.findByCodeAndStatusNotDeleted(query.getCode());
 
         List<ResourceDTO> availableResources = resourceEntityRepository.findAvailableResourcesForDepartment(query.getCode())
                 .stream()
