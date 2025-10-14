@@ -38,68 +38,70 @@ import org.springframework.stereotype.Component;
 @Component
 public class CreateApplicationCommandHandler implements CommandHandler<CreateApplicationCommand, ResponseEntity<ApplicationDTO>> {
 
-   private final ApplicationEntityRepository applicationRepository;
-   private final DepartmentEntityRepository departmentEntityRepository;
-   private final ApplicationMapper applicationMapper;
-   private final ApplicationValidator applicationValidator;
+    private final ApplicationEntityRepository applicationRepository;
+    private final DepartmentEntityRepository departmentEntityRepository;
+    private final ApplicationMapper applicationMapper;
+    private final ApplicationValidator applicationValidator;
 
-   /**
-    * Constructs the handler with the required dependencies.
-    *
-    * @param applicationRepository the repository used to persist the application entity
-    * @param departmentEntityRepository the repository used to access department entities
-    * @param applicationMapper     the mapper used to convert between {@link ApplicationEntity} and {@link ApplicationDTO}
-    * @param applicationValidator the validator used to validate application data
-    */
-   public CreateApplicationCommandHandler(ApplicationEntityRepository applicationRepository, DepartmentEntityRepository departmentEntityRepository, ApplicationMapper applicationMapper, ApplicationValidator applicationValidator) {
-      this.applicationRepository = applicationRepository;
+    /**
+     * Constructs the handler with the required dependencies.
+     *
+     * @param applicationRepository      the repository used to persist the application entity
+     * @param departmentEntityRepository the repository used to access department entities
+     * @param applicationMapper          the mapper used to convert between {@link ApplicationEntity} and {@link ApplicationDTO}
+     * @param applicationValidator       the validator used to validate application data
+     */
+    public CreateApplicationCommandHandler(ApplicationEntityRepository applicationRepository, DepartmentEntityRepository departmentEntityRepository, ApplicationMapper applicationMapper, ApplicationValidator applicationValidator) {
+        this.applicationRepository = applicationRepository;
         this.departmentEntityRepository = departmentEntityRepository;
-      this.applicationMapper = applicationMapper;
-      this.applicationValidator = applicationValidator;
-   }
+        this.applicationMapper = applicationMapper;
+        this.applicationValidator = applicationValidator;
+    }
 
-   /**
-    * Handles the creation of a new application.
-    *
-    * <ul>
-    *   <li>Maps the DTO from the command to a new {@link ApplicationEntity} entity.</li>
-    *   <li>Sets the entity's ID to {@code null} to enforce insertion.</li>
-    *   <li>Sets the default status to {@link Status#ACTIVE}.</li>
-    *   <li>Saves the entity and maps it back to a DTO.</li>
-    * </ul>
-    *
-    * @param command the {@link CreateApplicationCommand} containing the new application data
-    * @return a {@link ResponseEntity} with status {@code 201 Created} and the persisted {@link ApplicationDTO}
-    */
-   @IgrpCommandHandler
-   public ResponseEntity<ApplicationDTO> handle(CreateApplicationCommand command) {
-      var validation = applicationValidator.validateApplicationCode(command.getApplicationdto());
-      if(!validation.isValid()) {
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.CONFLICT, "Create Application", validation.getFailureMessage()
-         );
-      }
-      ApplicationEntity application = applicationMapper.toEntity(command.getApplicationdto());
-      application.setId(null);
-      ApplicationEntity savedApplication = applicationRepository.save(application);
+    /**
+     * Handles the creation of a new application.
+     *
+     * <ul>
+     *   <li>Maps the DTO from the command to a new {@link ApplicationEntity} entity.</li>
+     *   <li>Sets the entity's ID to {@code null} to enforce insertion.</li>
+     *   <li>Sets the default status to {@link Status#ACTIVE}.</li>
+     *   <li>Saves the entity and maps it back to a DTO.</li>
+     * </ul>
+     *
+     * @param command the {@link CreateApplicationCommand} containing the new application data
+     * @return a {@link ResponseEntity} with status {@code 201 Created} and the persisted {@link ApplicationDTO}
+     */
+    @IgrpCommandHandler
+    public ResponseEntity<ApplicationDTO> handle(CreateApplicationCommand command) {
+        var validation = applicationValidator.validateApplicationCode(command.getApplicationdto());
+        if (!validation.isValid()) {
+            throw IgrpResponseStatusException.of(
+                    HttpStatus.CONFLICT, "Create Application", validation.getFailureMessage()
+            );
+        }
+        ApplicationEntity application = applicationMapper.toEntity(command.getApplicationdto());
+        application.setId(null);
+        ApplicationEntity savedApplication = applicationRepository.save(application);
 
-      for (var code : command.getApplicationdto().getDepartments()) {
+        if (command.getApplicationdto().getDepartments() != null) {
+            for (var code : command.getApplicationdto().getDepartments()) {
 
-         var department = departmentEntityRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
-                 .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + code));
+                var department = departmentEntityRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
+                        .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + code));
 
-         department.getApplications().add(savedApplication);
+                department.getApplications().add(savedApplication);
 
-         departmentEntityRepository.save(department);
+                departmentEntityRepository.save(department);
 
-      }
+            }
+        }
 
-      ApplicationEntity currentApplication = applicationRepository.findById(savedApplication.getId()).orElseThrow(() -> IgrpResponseStatusException.of(
-              HttpStatus.INTERNAL_SERVER_ERROR, "Create Application", "Failed to retrieve the created application."
-      ));
+        ApplicationEntity currentApplication = applicationRepository.findById(savedApplication.getId()).orElseThrow(() -> IgrpResponseStatusException.of(
+                HttpStatus.INTERNAL_SERVER_ERROR, "Create Application", "Failed to retrieve the created application."
+        ));
 
-      ApplicationDTO applicationDTO =  applicationMapper.toDto(currentApplication);
-      return ResponseEntity.status(HttpStatus.CREATED).body(applicationDTO);
-   }
+        ApplicationDTO applicationDTO = applicationMapper.toDto(currentApplication);
+        return ResponseEntity.status(HttpStatus.CREATED).body(applicationDTO);
+    }
 
 }
