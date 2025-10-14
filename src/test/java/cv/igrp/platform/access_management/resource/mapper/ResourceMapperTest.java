@@ -8,7 +8,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceItemEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -26,9 +25,6 @@ import static org.mockito.Mockito.when;
 class ResourceMapperTest {
 
     @Mock
-    private PermissionEntityRepository permissionRepository;
-
-    @Mock
     ResourceItemEntityRepository resourceItemRepository;
 
     private ResourceMapper mapper;
@@ -37,26 +33,26 @@ class ResourceMapperTest {
     private ResourceDTO testResourceDTO;
     private ResourceItemEntity testResourceItem;
     private ResourceItemDTO testResourceItemDTO;
-    private PermissionEntity testPermission;
 
     @BeforeEach
     void setUp() {
-        mapper = new ResourceMapper(permissionRepository, resourceItemRepository);
+        mapper = new ResourceMapper(resourceItemRepository);
 
         var testApplication = new ApplicationEntity();
         testApplication.setId(123);
         testApplication.setCode("APP");
-
-        testPermission = new PermissionEntity();
-        testPermission.setId(456);
-        testPermission.setName("permission456");
 
         testResourceItem = new ResourceItemEntity();
         testResourceItem.setId(789);
         testResourceItem.setName("test");
         testResourceItem.setDescription("Test Item");
         testResourceItem.setUrl("/api/test");
-        testResourceItem.setPermissionId(testPermission.getId());
+        testResourceItem.setPermissions(new ArrayList<>());
+
+        PermissionEntity permissionEntity = new PermissionEntity();
+        permissionEntity.setName("permission456");
+
+        testResourceItem.getPermissions().add(permissionEntity);
 
         testResource = new ResourceEntity();
         testResource.setId(123);
@@ -76,7 +72,8 @@ class ResourceMapperTest {
         testResourceItemDTO.setDescription("Test Item");
         testResourceItemDTO.setUrl("/api/test");
         testResourceItemDTO.setResourceName("test");
-        testResourceItemDTO.setPermissionName("permission456");
+        testResourceItemDTO.setPermissions(new ArrayList<>());
+        testResourceItemDTO.getPermissions().add("permission456");
 
         testResourceDTO = new ResourceDTO();
         testResourceDTO.setName("test");
@@ -91,7 +88,6 @@ class ResourceMapperTest {
 
     @Test
     void toDto_shouldMapAllFieldsCorrectly() {
-        when(permissionRepository.findById(456)).thenReturn(Optional.of(testPermission));
 
         ResourceDTO result = mapper.toDto(testResource);
 
@@ -106,7 +102,7 @@ class ResourceMapperTest {
         assertEquals(1, result.getItems().size());
 
         ResourceItemDTO itemDto = result.getItems().getFirst();
-        assertEquals("permission456", itemDto.getPermissionName());
+        assertTrue(itemDto.getPermissions().contains("permission456"));
     }
 
     @Test
@@ -134,8 +130,6 @@ class ResourceMapperTest {
     @Test
     void toItemDto_shouldMapAllFieldsCorrectly() {
 
-        when(permissionRepository.findById(456)).thenReturn(Optional.of(testPermission));
-
         ResourceItemDTO result = mapper.toItemDto(testResourceItem);
 
         assertNotNull(result);
@@ -143,7 +137,7 @@ class ResourceMapperTest {
         assertEquals(testResourceItem.getName(), result.getName());
         assertEquals(testResourceItem.getUrl(), result.getUrl());
         assertEquals(testResourceItem.getResourceId().getName(), result.getResourceName());
-        assertEquals("permission456", result.getPermissionName());
+        assertTrue(result.getPermissions().contains("permission456"));
     }
 
     @Test
@@ -158,7 +152,7 @@ class ResourceMapperTest {
         assertNull(result.getName());
         assertNull(result.getUrl());
         assertNull(result.getResourceName());
-        assertNull(result.getPermissionName());
+        assertTrue(result.getPermissions().isEmpty());
     }
 
     @Test
@@ -199,18 +193,17 @@ class ResourceMapperTest {
         when(resourceItemRepository.save(Mockito.any(ResourceItemEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
-        ResourceItemEntity result = mapper.toItemEntity(testResourceItemDTO, testResource, testPermission);
+        ResourceItemEntity result = mapper.toItemEntity(testResourceItemDTO, testResource);
 
         assertNotNull(result);
         assertEquals(testResourceItemDTO.getName(), result.getName());
         assertEquals(testResourceItemDTO.getUrl(), result.getUrl());
         assertSame(testResource, result.getResourceId());
-        assertSame(testPermission.getId(), result.getPermissionId());
     }
 
     @Test
     void toItemEntity_shouldReturnNullForNullInput() {
-        assertNull(mapper.toItemEntity(null, testResource, testPermission));
+        assertNull(mapper.toItemEntity(null, testResource));
     }
 
     @Test
@@ -219,17 +212,13 @@ class ResourceMapperTest {
         item1.setId(1);
         item1.setName("Item1");
         item1.setResourceId(testResource);
-        item1.setPermissionId(testPermission.getId());
 
         ResourceItemEntity item2 = new ResourceItemEntity();
         item2.setId(2);
         item2.setName("Item2");
         item2.setResourceId(testResource);
-        item2.setPermissionId(testPermission.getId());
 
         testResource.setItems(Arrays.asList(item1, item2));
-
-        when(permissionRepository.findById(testPermission.getId())).thenReturn(Optional.of(testPermission));
 
         ResourceDTO result = mapper.toDto(testResource);
 

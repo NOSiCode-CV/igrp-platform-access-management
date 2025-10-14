@@ -8,7 +8,6 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -31,9 +30,6 @@ class AddItemsCommandHandlerTest {
 
     @Mock
     private ResourceEntityRepository resourceRepository;
-
-    @Mock
-    private PermissionEntityRepository permissionRepository;
 
     @Mock
     private ResourceMapper resourceMapper;
@@ -61,7 +57,8 @@ class AddItemsCommandHandlerTest {
         permission.setId(1);
         permission.setName("permission1");
         itemDTO = new ResourceItemDTO();
-        itemDTO.setPermissionName("permission1");
+        itemDTO.setPermissions(new ArrayList<>());
+        itemDTO.getPermissions().add("permission1");
         itemDTO.setName("Dashboard");
         itemDTO.setUrl("/dashboard");
         item = new ResourceItemEntity();
@@ -75,8 +72,7 @@ class AddItemsCommandHandlerTest {
         resource.setItems(new ArrayList<>());
         resourceDTO.setItems(List.of(itemDTO));
         when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
-        when(permissionRepository.findByNameAndStatusNot("permission1", Status.DELETED)).thenReturn(Optional.of(permission));
-        when(resourceMapper.toItemEntity(itemDTO, resource, permission)).thenReturn(item);
+        when(resourceMapper.toItemEntity(itemDTO, resource)).thenReturn(item);
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
@@ -95,8 +91,8 @@ class AddItemsCommandHandlerTest {
         verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verify(resourceRepository, times(1)).save(resource);
         verify(resourceMapper,times(1)).toDto(resource);
-        verify(resourceMapper, times(1)).toItemEntity(itemDTO, resource, permission);
-        verifyNoMoreInteractions(resourceRepository, permissionRepository, resourceMapper);
+        verify(resourceMapper, times(1)).toItemEntity(itemDTO, resource);
+        verifyNoMoreInteractions(resourceRepository, resourceMapper);
     }
 
     @Test
@@ -105,8 +101,7 @@ class AddItemsCommandHandlerTest {
         // Arrange
         resource.setItems(null);
         when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
-        when(permissionRepository.findByNameAndStatusNot("permission1", Status.DELETED)).thenReturn(Optional.of(permission));
-        when(resourceMapper.toItemEntity(itemDTO, resource, permission)).thenReturn(item);
+        when(resourceMapper.toItemEntity(itemDTO, resource)).thenReturn(item);
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
@@ -122,7 +117,7 @@ class AddItemsCommandHandlerTest {
         // Verify
         verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
         verify(resourceRepository, times(1)).save(resource);
-        verifyNoMoreInteractions(permissionRepository, resourceMapper, resourceRepository);
+        verifyNoMoreInteractions(resourceMapper, resourceRepository);
     }
 
     @Test
@@ -139,25 +134,7 @@ class AddItemsCommandHandlerTest {
 
         // Verify
         verify(resourceRepository, times(1)).findByNameAndStatusNot("resource1", Status.DELETED);
-        verifyNoInteractions(permissionRepository, resourceMapper);
-    }
-
-    @Test
-    @DisplayName("should throw IgrpResponseStatusException when permission not found")
-    void testHandle_shouldThrow_whenPermissionNotFound() {
-        // Arrange
-        when(resourceRepository.findByNameAndStatusNot("resource1", Status.DELETED)).thenReturn(Optional.of(resource));
-        when(permissionRepository.findByNameAndStatusNot("permission1", Status.DELETED)).thenReturn(Optional.empty());
-
-        // Act
-        AddItemsCommand command = new AddItemsCommand(List.of(itemDTO), "resource1");
-
-        // Assert
-        assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
-
-        // Verify
-        verify(permissionRepository).findByNameAndStatusNot("permission1", Status.DELETED);
-        verifyNoMoreInteractions(permissionRepository);
+        verifyNoInteractions(resourceMapper);
     }
 
     @Test
