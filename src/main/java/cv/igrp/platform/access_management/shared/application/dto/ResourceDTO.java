@@ -40,8 +40,7 @@ public class ResourceDTO  {
   
   
   private Status status ;
-  @NotNull(message = "The field <applications> is required")
-	@NotEmpty(message = "The field <applications> must not be empty")
+  
   
   private List<String> applications = new ArrayList<>();
   
