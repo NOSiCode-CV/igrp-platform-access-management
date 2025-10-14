@@ -6,7 +6,6 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
-import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
@@ -84,6 +83,16 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
       var departmentDto = command.getDepartmentdto();
 
       logger.info("Creating department: name={}, code={}", departmentDto.getName(), departmentDto.getCode());
+
+      // Validate another department with same code does not exist
+      departmentRepository.findByCodeAndStatusNot(departmentDto.getCode(), DepartmentStatus.DELETED)
+              .ifPresent(_ -> {
+                 logger.warn("Department code already exists: {}", departmentDto.getCode());
+                 throw IgrpResponseStatusException.of(
+                         HttpStatus.BAD_REQUEST,
+                         "Department code already exists",
+                         "Another department with code '" + departmentDto.getCode() + "' already exists.");
+              });
 
       DepartmentEntity department = departmentMapper.toEntity(departmentDto);
 
