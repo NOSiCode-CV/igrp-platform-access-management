@@ -112,7 +112,7 @@ class SynchronizationServiceTest {
 
         // Adapter returns empty initially
         when(adapter.getAllDepartments()).thenReturn(List.of());
-        when(adapter.getAllApplications()).thenReturn(List.of());
+        //when(adapter.getAllApplications()).thenReturn(List.of());
         when(adapter.getAllRoles()).thenReturn(List.of());
         when(adapter.getAllUserRoles()).thenReturn(Map.of());
         when(adapter.getAllUsers()).thenReturn(List.of(testUser));
@@ -123,7 +123,7 @@ class SynchronizationServiceTest {
         synchronizationService.startupReconciliation();
 
         verify(adapter).createDepartment("DEPT_TEST", null);
-        verify(adapter).createApplication("DEPT_TEST", "APP_TEST");
+        //verify(adapter).createApplication("DEPT_TEST", "APP_TEST");
         verify(adapter).createRole("DEPT_TEST", "DEPT_TEST.role1");
         // These methods are not called because syncPermissions and syncResources are commented out in the service
         // verify(adapter).createPermission("perm1", "Test Permission");

@@ -1,9 +1,12 @@
 package cv.igrp.platform.access_management.department.application.queries;
 
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -28,6 +32,9 @@ class GetAvailableApplicationsForDepartmentQueryHandlerTest {
 
   @Mock
   private ApplicationEntityRepository applicationEntityRepository;
+
+  @Mock
+  private DepartmentEntityRepository departmentEntityRepository;
 
   @Mock
   private ApplicationMapper applicationMapper;
@@ -69,6 +76,7 @@ class GetAvailableApplicationsForDepartmentQueryHandlerTest {
     List<ApplicationEntity> mockEntities = List.of(appEntity1, appEntity2);
 
     // Mock repository and mapper behavior
+    when(departmentEntityRepository.findByCodeAndStatusNotDeleted(departmentCode)).thenReturn(new DepartmentEntity());
     when(applicationEntityRepository.findAvailableApplicationsForDepartment(departmentCode)).thenReturn(mockEntities);
     when(applicationMapper.toDto(appEntity1)).thenReturn(appDTO1);
     when(applicationMapper.toDto(appEntity2)).thenReturn(appDTO2);
@@ -91,6 +99,7 @@ class GetAvailableApplicationsForDepartmentQueryHandlerTest {
     GetAvailableApplicationsForDepartmentQuery query = new GetAvailableApplicationsForDepartmentQuery(departmentCode);
 
     // Mock repository to return an empty list
+    when(departmentEntityRepository.findByCodeAndStatusNotDeleted(departmentCode)).thenReturn(new DepartmentEntity());
     when(applicationEntityRepository.findAvailableApplicationsForDepartment(departmentCode)).thenReturn(Collections.emptyList());
 
     // When the handler is called
