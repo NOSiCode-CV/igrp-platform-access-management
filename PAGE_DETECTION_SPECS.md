@@ -515,75 +515,587 @@ If the permissions file does not exist or is empty, the service logs a warning a
 * This approach allows **developers to manage permissions declaratively** in iGRP Studio while automating the synchronization process at server startup.
 * Can be extended to **watch the `.igrpstudio/permissions.json` file** for changes and dynamically update permissions without restarting the server.
 
-### 4.3 Docker Integration Alternatives
+## **5. Machine-to-Machine Synchronization Endpoints**
 
-#### Alternative 1: Multi-stage Build with Detection Stage
+### **Overview**
 
-```dockerfile
-FROM node:16-alpine AS detector
-WORKDIR /app
-COPY . .
-RUN npm run generate-routes
+These endpoints are intended for backend system integrations (not user-facing), to synchronize **permissions** and **resources** from external systems or configuration management services.
 
-FROM node:16-alpine AS runtime
-COPY --from=detector /app/routes.json /app/routes.json
-# ... rest of build process
+They require authentication using **client credentials flow (machine token)** and must ensure **idempotent synchronization** — the same payload received twice should not alter the database.
+
+---
+
+### **5.1 Permissions Synchronization**
+
+#### **Endpoint**
+
+```
+POST /api/m2m/sync/permissions
 ```
 
-**Pros**:
-- Clean separation of concerns
-- No runtime dependencies
-- Works across cloud providers
+#### **Request Body**
 
-**Cons**:
-- Build-time detection only
-- Doesn't capture runtime changes
+An array of `PermissionDTO`:
 
-#### Alternative 2: Runtime Detection Sidecar
-
-**Approach**: Use sidecar container that detects resources at runtime
-
-**Pros**:
-- Real-time detection
-- Works with running applications
-- Decoupled from application code
-
-**Cons**:
-- Complex orchestration
-- Additional resource consumption
-- Network latency
-
-#### Alternative 3: Hybrid Docker Approach (Recommended)
-
-**Approach**: Combine build-time detection with runtime verification
-
-```dockerfile
-# Build-time detection
-FROM node:16-alpine AS build-detector
-# ... detection logic
-
-# Runtime image
-FROM node:16-alpine
-COPY --from=build-detector /app/routes.json /app/routes.json
-# ... application setup
-
-# Runtime verification script
-COPY scripts/verify-resources.sh /app/scripts/
-CMD ["/app/scripts/start-with-verification.sh"]
+```json
+[
+  {
+    "code": "PERM_USER_VIEW",
+    "name": "View Users",
+    "description": "Allows viewing of user list",
+    "status": "ACTIVE"
+  },
+  {
+    "code": "PERM_USER_EDIT",
+    "name": "Edit Users",
+    "description": "Allows editing of users",
+    "status": "ACTIVE"
+  }
+]
 ```
 
-**Pros**:
-- Comprehensive coverage
-- Flexible deployment
-- Provider-agnostic
+#### **Response**
 
-**Cons**:
-- Increased complexity
-- Additional build steps
+| Status | Description                                                  |
+| ------ | ------------------------------------------------------------ |
+| 204    | Synchronization successful (no content returned).            |
+| 400    | Invalid request (e.g. schema or business validation errors). |
+| 500    | Internal server error.                                       |
 
-## 5. Performance Analysis
+#### **Controller Example**
 
-### 5.1 Next.js Detection Performance
+```java
+@RestController
+@RequestMapping("/api/m2m/sync")
+public class PermissionSyncController {
+
+    private final PermissionSyncService permissionSyncService;
+
+    public PermissionSyncController(PermissionSyncService permissionSyncService) {
+        this.permissionSyncService = permissionSyncService;
+    }
+
+    @PostMapping("/permissions")
+    public ResponseEntity<Void> synchronizePermissions(@RequestBody List<@Valid PermissionDTO> permissions) {
+        try {
+            permissionSyncService.synchronizePermissions(permissions);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+}
+```
+
+#### **Service Layer**
+
+The following service handles the synchronization logic:
+
+* The incoming payload is a list of PermissionDTO.
+
+* Each permission is global, i.e., not associated with any department or application.
+
+* The synchronization is idempotent — if the permission already exists with identical data, no change is made.
+
+* The response should return 204 No Content on success, and validation or runtime errors handled elsewhere.
+
+```java
+/**
+ * Synchronizes system permissions via machine-to-machine integration.
+ * This service ensures that the permissions in the database match the list
+ * received from the external system. The synchronization is idempotent.
+ */
+@Service
+public class PermissionSyncService {
+
+   private static final Logger LOGGER = LoggerFactory.getLogger(PermissionSyncService.class);
+
+   private final PermissionEntityRepository permissionRepository;
+   private final ObjectMapper objectMapper;
+
+   public PermissionSyncService(PermissionEntityRepository permissionRepository, ObjectMapper objectMapper) {
+      this.permissionRepository = permissionRepository;
+      this.objectMapper = objectMapper;
+   }
+
+   /**
+    * Synchronizes the permissions list with the database.
+    * <p>
+    * - Creates new permissions if they don't exist.<br>
+    * - Updates permissions if they differ.<br>
+    * - Deletes permissions that are no longer in the incoming list.<br>
+    * - Ignores departmentCode, since M2M permissions are global.<br>
+    * </p>
+    *
+    * @param permissions the list of permissions to synchronize
+    */
+   @Transactional
+   public void synchronizePermissions(List<PermissionDTO> permissions) {
+      if (permissions == null || permissions.isEmpty()) {
+         LOGGER.warn("[PermissionSync] Received empty permission list, skipping synchronization.");
+         return;
+      }
+
+      LOGGER.info("[PermissionSync] Starting synchronization for {} permissions", permissions.size());
+
+      // Normalize input
+      List<PermissionDTO> validPermissions = permissions.stream()
+              .filter(Objects::nonNull)
+              .filter(dto -> dto.getName() != null && !dto.getName().isBlank())
+              .collect(Collectors.toList());
+
+      if (validPermissions.isEmpty()) {
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.BAD_REQUEST,
+                 "Invalid data",
+                 "Permission list cannot be empty or contain null names"
+         );
+      }
+
+      // Get all existing permissions
+      List<PermissionEntity> existingPermissions = permissionRepository.findAll();
+      Map<String, PermissionEntity> existingByName = existingPermissions.stream()
+              .collect(Collectors.toMap(
+                      p -> p.getName().toLowerCase(Locale.ROOT),
+                      p -> p
+              ));
+
+      Set<String> incomingNames = validPermissions.stream()
+              .map(dto -> dto.getName().toLowerCase(Locale.ROOT))
+              .collect(Collectors.toSet());
+
+      // Create or update incoming permissions
+      for (PermissionDTO dto : validPermissions) {
+         String key = dto.getName().toLowerCase(Locale.ROOT);
+         PermissionEntity existing = existingByName.get(key);
+
+         if (existing == null) {
+            // Create new
+            PermissionEntity newPerm = new PermissionEntity();
+            newPerm.setName(dto.getName());
+            newPerm.setDescription(dto.getDescription());
+            newPerm.setStatus(dto.getStatus() != null ? dto.getStatus() : Status.ACTIVE);
+            permissionRepository.save(newPerm);
+            LOGGER.info("[PermissionSync] Created new permission '{}'", dto.getName());
+         } else {
+            // Check for difference using structural hash
+            String existingHash = computeStructuralHash(existing);
+            String incomingHash = computeStructuralHash(dto);
+
+            if (!existingHash.equals(incomingHash)) {
+               existing.setDescription(dto.getDescription());
+               existing.setStatus(dto.getStatus() != null ? dto.getStatus() : Status.ACTIVE);
+               permissionRepository.save(existing);
+               LOGGER.info("[PermissionSync] Updated permission '{}'", dto.getName());
+            } else {
+               LOGGER.debug("[PermissionSync] Permission '{}' already up to date", dto.getName());
+            }
+         }
+      }
+
+      // Delete permissions not present in the incoming list
+      List<PermissionEntity> toDelete = existingPermissions.stream()
+              .filter(p -> !incomingNames.contains(p.getName().toLowerCase(Locale.ROOT)))
+              .collect(Collectors.toList());
+
+      if (!toDelete.isEmpty()) {
+         for (PermissionEntity perm : toDelete) {
+            permissionRepository.delete(perm);
+            LOGGER.info("[PermissionSync] Deleted permission '{}'", perm.getName());
+         }
+      }
+
+      LOGGER.info("[PermissionSync] Synchronization completed successfully.");
+   }
+
+   private String computeStructuralHash(PermissionEntity entity) {
+      try {
+         Map<String, Object> canonical = new LinkedHashMap<>();
+         canonical.put("name", entity.getName());
+         canonical.put("description", entity.getDescription());
+         canonical.put("status", entity.getStatus());
+         return DigestUtils.sha256Hex(objectMapper.writeValueAsString(canonical));
+      } catch (Exception e) {
+         throw new RuntimeException("Error computing hash for PermissionEntity", e);
+      }
+   }
+
+   private String computeStructuralHash(PermissionDTO dto) {
+      try {
+         Map<String, Object> canonical = new LinkedHashMap<>();
+         canonical.put("name", dto.getName());
+         canonical.put("description", dto.getDescription());
+         canonical.put("status", dto.getStatus());
+         return DigestUtils.sha256Hex(objectMapper.writeValueAsString(canonical));
+      } catch (Exception e) {
+         throw new RuntimeException("Error computing hash for PermissionDTO", e);
+      }
+   }
+}
+```
+
+---
+
+### **5.2 Resources Synchronization**
+
+#### **Endpoint**
+
+```
+POST /api/m2m/sync/resources
+```
+
+#### **Request Body**
+
+A single `ResourceDTO` representing the latest authoritative resource definition:
+
+In backend cases, the resource will typically have no items (endpoints) but will have permissions associated.
+```json
+{
+  "name": "RES_USER_MANAGEMENT",
+  "description": "User management module",
+  "status": "ACTIVE",
+  "type": "API",
+  "items": [],
+  "permissions": ["PERM_USER_VIEW", "PERM_USER_CREATE"]
+}
+```
+
+In frontend cases, the resource will have items (pages) but typically no permissions directly associated.
+```json
+{
+  "name": "RES_WEB_APP",
+  "description": "Web application pages",
+  "status": "ACTIVE",
+  "type": "UI",
+  "items": [
+    {
+      "name": "Home Page",
+      "url": "/",
+      "status": "ACTIVE"
+    },
+    {
+      "name": "User Profile",
+      "url": "/users/[id]",
+      "status": "ACTIVE"
+    }
+  ],
+  "permissions": []
+}
+```
+
+#### **Response**
+
+| Status | Description                                                      |
+| ------ | ---------------------------------------------------------------- |
+| 204    | Synchronization successful (database now matches incoming data). |
+| 400    | Validation error (missing required fields or invalid structure). |
+| 500    | Internal error during synchronization.                           |
+
+---
+
+### **5.2.1 Resource Synchronization Service**
+
+#### **Logic**
+
+1. Retrieve the incoming `ResourceDTO`.
+2. Check if a `ResourceEntity` with the same `name` exists.
+3. If it doesn’t exist → **create new** resource with all items and permissions.
+4. If it exists:
+
+   * Compute the **structural hash** (serialized form of the DTO minus transient fields) to determine if there’s a difference.
+   * If hashes match → log and exit (no update).
+   * If hashes differ → update:
+
+      * Add new items.
+      * Update existing items.
+      * Remove items not in the DTO.
+      * Sync permissions (create, remove, or update associations).
+5. Return **204 No Content**.
+
+---
+
+#### **Implementation Example**
+
+```java
+@Service
+public class ResourceSyncService {
+
+    private static final Logger logger = LoggerFactory.getLogger(ResourceSyncService.class);
+
+    private final ResourceEntityRepository resourceRepository;
+    private final ResourceItemEntityRepository itemRepository;
+    private final PermissionEntityRepository permissionRepository;
+    private final ResourceMapper resourceMapper;
+
+    public ResourceSyncService(ResourceEntityRepository resourceRepository,
+                               ResourceItemEntityRepository itemRepository,
+                               PermissionEntityRepository permissionRepository,
+                               ResourceMapper resourceMapper) {
+        this.resourceRepository = resourceRepository;
+        this.itemRepository = itemRepository;
+        this.permissionRepository = permissionRepository;
+        this.resourceMapper = resourceMapper;
+    }
+
+    @Transactional
+    public void synchronizeResource(ResourceDTO resourceDTO) {
+        logger.info("[ResourceSync] Starting synchronization for resource '{}'", resourceDTO.getName());
+
+        ResourceEntity existing = resourceRepository.findByName(resourceDTO.getName()).orElse(null);
+
+        String incomingHash = computeStructuralHash(resourceDTO);
+
+        if (existing != null) {
+            String existingHash = computeStructuralHash(resourceMapper.toDto(existing));
+            if (incomingHash.equals(existingHash)) {
+                logger.info("[ResourceSync] Resource '{}' already up-to-date.", resourceDTO.getName());
+                return;
+            }
+
+            logger.info("[ResourceSync] Updating existing resource '{}'", resourceDTO.getName());
+            updateResource(existing, resourceDTO);
+        } else {
+            logger.info("[ResourceSync] Creating new resource '{}'", resourceDTO.getName());
+            ResourceEntity entity = resourceMapper.toEntity(resourceDTO);
+            resourceRepository.save(entity);
+        }
+    }
+
+    private void updateResource(ResourceEntity existing, ResourceDTO dto) {
+        existing.setDescription(dto.getDescription());
+        existing.setStatus(dto.getStatus());
+
+        // Update items
+        Set<String> incomingNames = dto.getItems().stream().map(ResourceItemDTO::getName).collect(Collectors.toSet());
+        existing.getItems().removeIf(item -> !incomingNames.contains(item.getName()));
+
+        for (ResourceItemDTO itemDto : dto.getItems()) {
+            existing.getItems().stream()
+                    .filter(it -> it.getName().equals(itemDto.getName()))
+                    .findFirst()
+                    .ifPresentOrElse(
+                            it -> it.updateFromDTO(itemDto),
+                            () -> existing.getItems().add(resourceMapper.toEntity(itemDto))
+                    );
+        }
+
+        // Update permissions
+        Set<String> incomingPerms = dto.getPermissions().stream().map(PermissionDTO::getCode).collect(Collectors.toSet());
+        existing.getPermissions().removeIf(p -> !incomingPerms.contains(p.getCode()));
+
+        for (PermissionDTO permDto : dto.getPermissions()) {
+            PermissionEntity permission = permissionRepository.findByCode(permDto.getCode())
+                    .orElseGet(() -> permissionRepository.save(new PermissionEntity(permDto.getCode(), permDto.getName())));
+            existing.getPermissions().add(permission);
+        }
+
+        resourceRepository.save(existing);
+    }
+
+    private String computeStructuralHash(ResourceDTO dto) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            String canonicalJson = mapper.writeValueAsString(dto);
+            return DigestUtils.sha256Hex(canonicalJson);
+        } catch (Exception e) {
+            throw new RuntimeException("Error computing resource hash", e);
+        }
+    }
+}
+```
+
+---
+
+#### **Controller Example**
+
+```java
+@RestController
+@RequestMapping("/api/m2m/sync")
+public class ResourceSyncController {
+
+    private final ResourceSyncService resourceSyncService;
+
+    public ResourceSyncController(ResourceSyncService resourceSyncService) {
+        this.resourceSyncService = resourceSyncService;
+    }
+
+    @PostMapping("/resources")
+    public ResponseEntity<Void> synchronizeResources(@RequestBody @Valid ResourceDTO resourceDTO) {
+        try {
+            resourceSyncService.synchronizeResource(resourceDTO);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+}
+```
+
+---
+
+#### **Validation Considerations**
+
+* Ensure `@Valid` on DTOs (via `jakarta.validation` annotations).
+* Handle constraint violations with a global `@ControllerAdvice`.
+* Log structural differences for audit traceability.
+
+---
+
+#### **Logging and Observability**
+
+| Level | Event      | Message Example                                                      |
+| ----- | ---------- | -------------------------------------------------------------------- |
+| INFO  | Start      | `[ResourceSync] Starting synchronization for resource 'RES_FIN_API'` |
+| INFO  | No change  | `[ResourceSync] Resource 'RES_FIN_API' already up-to-date.`          |
+| INFO  | Update     | `[ResourceSync] Updating existing resource 'RES_FIN_API'`            |
+| WARN  | Validation | `[ResourceSync] Invalid payload received`                            |
+| ERROR | Exception  | `[ResourceSync] Failed synchronization: {exception}`                 |
+
+---
+
+#### **Test Cases**
+
+| Case | Description                    | Expected                                         |
+| ---- | ------------------------------ | ------------------------------------------------ |
+| 1    | New resource DTO arrives       | Resource created with all items and permissions. |
+| 2    | Same DTO arrives again         | No changes applied (hash match).                 |
+| 3    | DTO arrives with new items     | Only new items added.                            |
+| 4    | DTO arrives missing an item    | Old item removed from DB.                        |
+| 5    | DTO arrives missing permission | Old permission association removed.              |
+| 6    | Validation error               | HTTP 400 with field errors.                      |
+| 7    | Internal error                 | HTTP 500.                                        |
+
+
+### 5.3. Application Synchronization
+
+This endpoint allows synchronizing application definitions from external systems.
+
+#### Endpoint
+
+```
+POST /api/m2m/sync/applications
+```
+
+#### Request Body
+
+A single `ApplicationDTO` request body:
+
+```json
+{
+  "name": "My Application", // provided from package.json config
+  "description": "Description of my application", // provided from package.json config
+  "status": "ACTIVE", // always 'ACTIVE' status
+  "code": "MY_APP", // provided from package.json config
+  "slug": "my_app", // lowercase of code 
+  "type": "INTERNAL" // always 'INTERNAL' type
+}
+```
+
+#### Response
+| Status | Description                                                  |
+| ------ | ------------------------------------------------------------ |
+| 204    | Synchronization successful (no content returned).            |
+| 400    | Invalid request (e.g. schema or business validation errors). |
+| 500    | Internal server error.                                       |
+
+#### Controller Example
+
+```java
+@RestController
+@RequestMapping("/api/m2m/sync")
+public class ApplicationSyncController {
+    private final ApplicationSyncService applicationSyncService;
+
+    public ApplicationSyncController(ApplicationSyncService applicationSyncService) {
+        this.applicationSyncService = applicationSyncService;
+    }
+
+    @PostMapping("/applications")
+    public ResponseEntity<Void> synchronizeApplication(@RequestBody @Valid ApplicationDTO applicationDTO) {
+        try {
+            applicationSyncService.synchronizeApplication(applicationDTO);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
+        } catch (Exception e) {
+            return ResponseEntity.internalServerError().build();
+        }
+    }
+}
+```
+
+#### Service Layer
+```java
+@Service
+public class ApplicationSyncService {
+    private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationSyncService.class);
+
+    private final ApplicationEntityRepository applicationRepository;
+
+    public ApplicationSyncService(ApplicationEntityRepository applicationRepository) {
+        this.applicationRepository = applicationRepository;
+    }
+
+    /**
+     * Synchronizes the application definition with the database.
+     * <p>
+     * - Creates new application if it doesn't exist.<br>
+     * - Updates application if it differs.<br>
+     * - Ignores fields not relevant for synchronization.<br>
+     * </p>
+     *
+     * @param applicationDTO the application definition to synchronize
+     */
+    @Transactional
+    public void synchronizeApplication(ApplicationDTO applicationDTO) {
+        if (applicationDTO == null || applicationDTO.getCode() == null || applicationDTO.getCode().isBlank()) {
+            throw new IllegalArgumentException("Application code is required");
+        }
+
+        LOGGER.info("[ApplicationSync] Starting synchronization for application '{}'", applicationDTO.getCode());
+
+        ApplicationEntity existing = applicationRepository.findByCode(applicationDTO.getCode()).orElse(null);
+
+        if (existing != null) {
+            // Check for differences
+            if (!existing.getName().equals(applicationDTO.getName()) ||
+                !existing.getDescription().equals(applicationDTO.getDescription()) ||
+                !existing.getStatus().equals(applicationDTO.getStatus()) ||
+                !existing.getType().equals(applicationDTO.getType())) {
+
+                existing.setName(applicationDTO.getName());
+                existing.setDescription(applicationDTO.getDescription());
+                existing.setStatus(applicationDTO.getStatus());
+                existing.setType(applicationDTO.getType());
+                applicationRepository.save(existing);
+                LOGGER.info("[ApplicationSync] Updated application '{}'", applicationDTO.getCode());
+            } else {
+                LOGGER.info("[ApplicationSync] Application '{}' already up to date.", applicationDTO.getCode());
+            }
+        } else {
+            // Create new
+            ApplicationEntity newApp = new ApplicationEntity();
+            newApp.setCode(applicationDTO.getCode());
+            newApp.setName(applicationDTO.getName());
+            newApp.setDescription(applicationDTO.getDescription());
+            newApp.setStatus(applicationDTO.getStatus());
+            newApp.setType(applicationDTO.getType());
+            applicationRepository.save(newApp);
+            LOGGER.info("[ApplicationSync] Created new application '{}'", applicationDTO.getCode());
+        }
+    }
+}
+```
+
+## 6. Permission Checks
+
+## 7. Performance Analysis
+
+### 7.1 Next.js Detection Performance
 
 | Approach | Memory Impact | CPU Impact | Detection Time |
 |----------|---------------|------------|----------------|
@@ -591,7 +1103,7 @@ CMD ["/app/scripts/start-with-verification.sh"]
 | Runtime API | Medium | Medium | < 100ms |
 | Hybrid | Medium | Low-Medium | < 1s |
 
-### 5.2 Spring Boot Detection Performance
+### 7.2 Spring Boot Detection Performance
 
 | Approach | Memory Impact | CPU Impact | Detection Time |
 |----------|---------------|------------|----------------|
@@ -599,23 +1111,23 @@ CMD ["/app/scripts/start-with-verification.sh"]
 | Annotation Processing | Low | Low | < 100ms |
 | Actuator Integration | Low | Low | < 50ms |
 
-### 5.3 Overall System Performance Considerations
+### 7.3 Overall System Performance Considerations
 
 1. **Caching Strategies**: Implement caching for detection results
 2. **Incremental Detection**: Only detect changed resources
 3. **Background Processing**: Perform detection asynchronously
 4. **Rate Limiting**: Protect detection endpoints from abuse
 
-## 6. Security Considerations
+## 8. Security Considerations
 
 1. **Authentication**: Secure detection endpoints
 2. **Authorization**: Limit access to resource metadata
 3. **Data Sanitization**: Prevent information leakage
 4. **Input Validation**: Protect against injection attacks
 
-## 7. Test Scenarios
+## 9. Test Scenarios
 
-### 7.1 Unit Tests
+### 9.1 Unit Tests
 
 1. **Next.js CLI Tool Tests**
     - Page detection accuracy
@@ -632,7 +1144,7 @@ CMD ["/app/scripts/start-with-verification.sh"]
     - Type mapping validation
     - URL normalization
 
-### 7.2 Integration Tests
+### 9.2 Integration Tests
 
 1. **Docker Build Tests**
     - Multi-stage build success
@@ -649,7 +1161,7 @@ CMD ["/app/scripts/start-with-verification.sh"]
     - Error handling
     - Update scenarios
 
-### 7.3 Performance Tests
+### 9.3 Performance Tests
 
 1. **Detection Time Tests**
     - Baseline performance measurements
@@ -661,14 +1173,14 @@ CMD ["/app/scripts/start-with-verification.sh"]
     - CPU utilization
     - Network overhead
 
-### 7.4 Cross-Provider Tests
+### 9.4 Cross-Provider Tests
 
 1. **AWS Deployment Tests**
 2. **Azure Deployment Tests**
 3. **GCP Deployment Tests**
 4. **On-Premises Deployment Tests**
 
-## 8. Recommended Implementation
+## 10. Recommended Implementation
 
 Based on the analysis, the recommended approach is:
 
@@ -679,7 +1191,7 @@ Based on the analysis, the recommended approach is:
 
 This combination provides the best balance of accuracy, performance, and provider flexibility.
 
-## 9. References
+## 11. References
 
 1. Next.js Documentation: "https://nextjs.org/docs"
 2. Spring Boot Actuator: "https://docs.spring.io/spring-boot/docs/current/reference/html/actuator.html"
