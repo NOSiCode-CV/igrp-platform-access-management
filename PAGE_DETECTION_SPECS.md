@@ -1093,6 +1093,29 @@ public class ApplicationSyncService {
 
 ## 6. Permission Checks
 
+The permissions naming convention are based on Google Cloud IAM's best practices, adapted for iGRP context.
+
+```text
+<service>.<resource>.<verb>
+```
+
+### Example
+- `cadastro.contribuinte.create`
+
+| Component    | Description                                   | Guidelines                                                                                                  |
+| ------------ |-----------------------------------------------| ----------------------------------------------------------------------------------------------------------- |
+| **service**  | Module that owns the resource.                | Lowercase, short, consistent identifier for your app or subsystem (e.g. `finance`, `hr`, `project`, `app`). |
+| **resource** | The entity or domain object being acted upon. | Lowercase, singular noun (e.g. `user`, `document`, `invoice`).                                              |
+| **verb**     | The allowed operation.                        | Lowercase verb that expresses the action (e.g. `get`, `list`, `create`, `update`, `delete`).                |
+
+The RBAC checks are made through the Spring Security layer in the microservice. ABAC checks are made through the iGRP Access Management API via SDK integrated in the microservices projects.
+
+The ABAC check process is as follows:
+
+1. **Extract User Identity**: From the JWT token or session, extract the username.
+2. **Extract Resource and Action**: From the incoming request, determine the permission required.
+3. **Database Query**: Query the Access Management API database to check if the user has the required permission through its role.
+
 ## 7. Performance Analysis
 
 ### 7.1 Next.js Detection Performance
