@@ -61,7 +61,7 @@ public class ConfigurationService {
 
             // 2. Check provider existence before attempting sync
             boolean departmentExistsInProvider = checkAndCreateDepartment(departmentExists);
-            boolean appExistsInProvider = checkAndCreateApplication(appExists, departmentExistsInProvider);
+            //boolean appExistsInProvider = checkAndCreateApplication(appExists, departmentExistsInProvider);
             //boolean permissionExistsInProvider = checkAndCreatePermission(permissionExists, appExists);
             boolean roleExistsInProvider = checkAndCreateRole(roleExists, departmentExistsInProvider, true);
 
@@ -70,7 +70,7 @@ public class ConfigurationService {
                     (departmentExistsInProvider ? createDefaultDepartmentInDB() : null);
 
             Long appId = appExists ? getId("SELECT id FROM t_application WHERE type='SYSTEM' LIMIT 1") :
-                    (appExistsInProvider ? createDefaultAppInDB(departmentId) : null);
+                    createDefaultAppInDB(departmentId);
 
             Long permissionId = permissionExists ? getId("SELECT id FROM t_permission WHERE name='%s'".formatted(IGRP_PERMISSION)) :
                     createDefaultPermissionInDB(departmentId);

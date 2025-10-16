@@ -10,6 +10,8 @@ import lombok.*;
 import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import java.util.List;
+import java.util.ArrayList;
 
 @Audited
 @Getter
@@ -47,8 +49,8 @@ public class ResourceItemEntity extends AuditEntity {
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "resource_id", referencedColumnName = "id")
     private ResourceEntity resourceId;
-    @Column(name="permission_id")
-    private Integer permissionId;
 
-  
+
+  @OneToMany(mappedBy = "", fetch = FetchType.LAZY)
+private List<PermissionEntity> permissions = new ArrayList<>();
 }

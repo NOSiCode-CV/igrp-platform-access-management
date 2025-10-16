@@ -495,4 +495,152 @@ public class ResourceController {
               .body(response.getBody());
   }
 
+  @PostMapping(
+    value = "resources/{name}/addPermissions"
+  )
+  @Operation(
+    summary = "POST method to handle operations for addPermissionsToResource",
+    description = "POST method to handle operations for addPermissionsToResource",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ResourceDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<ResourceDTO> addPermissionsToResource(@RequestBody List<String> addPermissionsToResourceRequest
+    , @PathVariable(value = "name") String name)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var command = new AddPermissionsToResourceCommand(addPermissionsToResourceRequest, name);
+
+       ResponseEntity<ResourceDTO> response = commandBus.send(command);
+
+       LOGGER.debug("Operation finished");
+
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+  @DeleteMapping(
+    value = "resources/{name}/removePermission"
+  )
+  @Operation(
+    summary = "DELETE method to handle operations for removePermissionsFromResource",
+    description = "DELETE method to handle operations for removePermissionsFromResource",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ResourceDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<ResourceDTO> removePermissionsFromResource(@RequestBody List<String> removePermissionsFromResourceRequest
+    , @PathVariable(value = "name") String name)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var command = new RemovePermissionsFromResourceCommand(removePermissionsFromResourceRequest, name);
+
+       ResponseEntity<ResourceDTO> response = commandBus.send(command);
+
+       LOGGER.debug("Operation finished");
+
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+  @PostMapping(
+    value = "resources/item/{name}/addPermissions"
+  )
+  @Operation(
+    summary = "POST method to handle operations for addPermissionsToResourceItem",
+    description = "POST method to handle operations for addPermissionsToResourceItem",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ResourceItemDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<ResourceItemDTO> addPermissionsToResourceItem(@RequestBody List<String> addPermissionsToResourceItemRequest
+    , @PathVariable(value = "name") String name)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var command = new AddPermissionsToResourceItemCommand(addPermissionsToResourceItemRequest, name);
+
+       ResponseEntity<ResourceItemDTO> response = commandBus.send(command);
+
+       LOGGER.debug("Operation finished");
+
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
+  @DeleteMapping(
+    value = "resources/item/{name}/removePermissions"
+  )
+  @Operation(
+    summary = "DELETE method to handle operations for removePermissionsFromResourceItem",
+    description = "DELETE method to handle operations for removePermissionsFromResourceItem",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ResourceItemDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<ResourceItemDTO> removePermissionsFromResourceItem(@RequestBody List<String> removePermissionsFromResourceItemRequest
+    , @PathVariable(value = "name") String name)
+  {
+
+      LOGGER.debug("Operation started");
+
+      final var command = new RemovePermissionsFromResourceItemCommand(removePermissionsFromResourceItemRequest, name);
+
+       ResponseEntity<ResourceItemDTO> response = commandBus.send(command);
+
+       LOGGER.debug("Operation finished");
+
+        return ResponseEntity.status(response.getStatusCode())
+              .headers(response.getHeaders())
+              .body(response.getBody());
+  }
+
 }
