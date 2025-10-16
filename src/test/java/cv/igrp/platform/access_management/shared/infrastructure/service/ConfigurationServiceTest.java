@@ -104,7 +104,7 @@ class ConfigurationServiceTest {
 
         // Verify provider creations were called
         verify(adapter).createDepartment(IGRP_DEPARTMENT, null);
-        verify(adapter).createApplication(IGRP_DEPARTMENT, IGRP_APP);
+        //verify(adapter).createApplication(IGRP_DEPARTMENT, IGRP_APP);
         //verify(adapter).createPermission(IGRP_PERMISSION, "iGRP Manage Access Permission");
         verify(adapter).createRole(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE);
         //verify(adapter).assignPermissionsToRole(Set.of(IGRP_PERMISSION), SUPER_ADMIN_ROLE);
@@ -122,7 +122,7 @@ class ConfigurationServiceTest {
 
         // Mock provider existence checks - all return true
         doReturn(true).when(adapter).departmentExists(IGRP_DEPARTMENT);
-        doReturn(true).when(adapter).applicationExists(IGRP_DEPARTMENT, IGRP_APP);
+        //doReturn(true).when(adapter).applicationExists(IGRP_DEPARTMENT, IGRP_APP);
         //doReturn(true).when(adapter).permissionExists(IGRP_PERMISSION);
         doReturn(true).when(adapter).roleExists(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE);
 
@@ -172,13 +172,13 @@ class ConfigurationServiceTest {
 
             // Mock provider existence checks - all return false
             doReturn(false).when(adapter).departmentExists(IGRP_DEPARTMENT);
-            doReturn(false).when(adapter).applicationExists(IGRP_DEPARTMENT, IGRP_APP);
+            //doReturn(false).when(adapter).applicationExists(IGRP_DEPARTMENT, IGRP_APP);
             //doReturn(false).when(adapter).permissionExists(anyString());
             doReturn(false).when(adapter).roleExists(anyString(), anyString());
 
             // Mock department creation success but application creation failure
             doNothing().when(adapter).createDepartment(IGRP_DEPARTMENT, null);
-            doThrow(new IAMException("Provider error")).when(adapter).createApplication(IGRP_DEPARTMENT, IGRP_APP);
+            //doThrow(new IAMException("Provider error")).when(adapter).createApplication(IGRP_DEPARTMENT, IGRP_APP);
 
             // Mock successful department creation in DB
             doReturn(1L).when(jdbcTemplate).queryForObject(contains("INSERT INTO t_department"), eq(Long.class), any(Object[].class));
@@ -191,10 +191,10 @@ class ConfigurationServiceTest {
             verify(jdbcTemplate).queryForObject(contains("INSERT INTO t_department"), eq(Long.class), any(Object[].class));
 
             // Verify application creation was attempted but failed
-            verify(adapter).createApplication(IGRP_DEPARTMENT, IGRP_APP);
+            //verify(adapter).createApplication(IGRP_DEPARTMENT, IGRP_APP);
 
             // Verify no further DB insertions after failure
-            verify(jdbcTemplate, times(4)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
+            verify(jdbcTemplate, times(5)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
         } catch (Exception e) {
             fail("Exception should be caught by the service: " + e.getMessage());
         }
@@ -235,7 +235,7 @@ class ConfigurationServiceTest {
 
         // Make sure application is never called by returning false for department exists
         // but true for application exists (so it won't try to create it)
-        when(adapter.applicationExists(anyString(), anyString())).thenReturn(true);
+        //when(adapter.applicationExists(anyString(), anyString())).thenReturn(true);
         //when(adapter.permissionExists(anyString())).thenReturn(true);
         when(adapter.roleExists(anyString(), anyString())).thenReturn(true);
 
@@ -463,7 +463,7 @@ class ConfigurationServiceTest {
 
             // Verify that the method continues execution despite the exception
             // and no database insertions were attempted
-            verify(jdbcTemplate, times(2)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
+            verify(jdbcTemplate, times(3)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
         } catch (Exception e) {
             fail("Exception should be caught by the service: " + e.getMessage());
         }

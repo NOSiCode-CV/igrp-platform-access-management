@@ -73,36 +73,37 @@ public class PermissionCacheService {
         }
 
         String sql = """
-                WITH target_user AS (
-                            SELECT id
-                            FROM t_user
-                            WHERE username = ?
-                        ),
-                        user_roles AS (
-                            SELECT ru.roles_id
-                            FROM t_role_users ru
-                            JOIN target_user tu ON ru.users_id = tu.id
-                        ),
-                        role_permissions AS (
-                            SELECT rp.permission
-                            FROM t_role_permission rp
-                            JOIN user_roles ur ON rp.role_id = ur.roles_id
-                        ),
-                        target_permission AS (
-                            SELECT p.id
-                            FROM t_permission p
-                            JOIN role_permissions rp ON p.id = rp.permission
-                            WHERE p.name = ?
-                        ),
-                        resource_check AS (
-                            SELECT 1 AS result
-                            FROM t_resource_item ri
-                            JOIN target_permission tp ON ri.permission_id = tp.id
-                            WHERE ri.name = ?
-                        )
-                        SELECT result FROM resource_check
-                        LIMIT 1;
-               """;
+                 WITH target_user AS (
+                                     SELECT id
+                                     FROM t_user
+                                     WHERE username = ?
+                                 ),
+                                      user_roles AS (
+                                          SELECT ru.roles_id
+                                          FROM t_role_users ru
+                                                   JOIN target_user tu ON ru.users_id = tu.id
+                                      ),
+                                      role_permissions AS (
+                                          SELECT rp.permission
+                                          FROM t_role_permission rp
+                                                   JOIN user_roles ur ON rp.role_id = ur.roles_id
+                                      ),
+                                      target_permission AS (
+                                          SELECT p.id
+                                          FROM t_permission p
+                                                   JOIN role_permissions rp ON p.id = rp.permission
+                                          WHERE p.name = ?
+                                      ),
+                                      resource_check AS (
+                                          SELECT 1 AS result
+                                          FROM t_resource_item ri
+                                              JOIN t_resource_item_permissions rpp ON ri.id = rpp.resource_item_entity_id
+                                              JOIN target_permission tp ON rpp.permissions_id = tp.id
+                                          WHERE ri.name = ?
+                                      )
+                                 SELECT result FROM resource_check
+                                 LIMIT 1;
+                """;
 
         List<Integer> results = jdbcTemplate.query(sql, (_,_) -> 1, username, permissionName, resourceItem);
 

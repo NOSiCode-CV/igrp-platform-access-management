@@ -4,7 +4,9 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.framework.auth.core.adapter.IAdapter;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -15,6 +17,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+
+import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("DeleteDepartmentCommandHandler Tests")
@@ -47,6 +51,8 @@ public class DeleteDepartmentCommandHandlerTest {
     void testHandle_whenDepartmentExists_shouldDeleteAndReturnNoContent() {
         // Arrange
         when(departmentRepository.existsByCode(DEPARTMENT_CODE)).thenReturn(true);
+        when(departmentRepository.findByCodeAndStatusNot(DEPARTMENT_CODE, DepartmentStatus.DELETED))
+                .thenReturn(Optional.of(new DepartmentEntity()));
 
         // Act
         ResponseEntity<Void> response = deleteDepartmentCommandHandler.handle(command);
@@ -57,6 +63,7 @@ public class DeleteDepartmentCommandHandlerTest {
 
         // Verify
         verify(departmentRepository).existsByCode(DEPARTMENT_CODE);
+        verify(departmentRepository).findByCodeAndStatusNot(DEPARTMENT_CODE, DepartmentStatus.DELETED);
         verify(departmentRepository).deleteByCode(DEPARTMENT_CODE);
         verifyNoMoreInteractions(departmentRepository);
     }

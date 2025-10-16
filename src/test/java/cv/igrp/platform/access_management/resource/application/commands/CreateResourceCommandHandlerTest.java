@@ -7,11 +7,9 @@ import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceItemDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -23,10 +21,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -42,9 +37,6 @@ public class CreateResourceCommandHandlerTest {
     private ApplicationEntityRepository applicationRepository;
 
     @Mock
-    private PermissionEntityRepository permissionRepository;
-
-    @Mock
     private ResourceMapper resourceMapper;
 
     @InjectMocks
@@ -53,7 +45,6 @@ public class CreateResourceCommandHandlerTest {
     private ResourceDTO resourceDTO;
     private ResourceEntity resource;
     private ApplicationEntity application;
-    private PermissionEntity permission;
     private ResourceItemDTO itemDTO;
     private ResourceItemEntity resourceItem;
     private CreateResourceCommand command;
@@ -68,7 +59,8 @@ public class CreateResourceCommandHandlerTest {
         resourceDTO.setApplications(List.of("APP"));
 
         itemDTO = new ResourceItemDTO();
-        itemDTO.setPermissionName("manage");
+        itemDTO.setPermissions(new ArrayList<>());
+        itemDTO.getPermissions().add("manage");
         itemDTO.setName("Item1");
         itemDTO.setUrl("url1");
 
@@ -83,9 +75,6 @@ public class CreateResourceCommandHandlerTest {
         application = new ApplicationEntity();
         application.setId(1);
 
-        permission = new PermissionEntity();
-        permission.setId(10);
-
         resourceItem = new ResourceItemEntity();
     }
 
@@ -96,8 +85,7 @@ public class CreateResourceCommandHandlerTest {
         command = createResourceCommand(resourceDTO);
         when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
         when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));
-        when(permissionRepository.findByNameAndStatusNot("manage", Status.DELETED)).thenReturn(Optional.of(permission));
-        when(resourceMapper.toItemEntity(itemDTO, resource, permission)).thenReturn(resourceItem);
+        when(resourceMapper.toItemEntity(itemDTO, resource)).thenReturn(resourceItem);
         when(resourceRepository.save(resource)).thenReturn(resource);
         when(resourceMapper.toDto(resource)).thenReturn(resourceDTO);
 
@@ -113,8 +101,7 @@ public class CreateResourceCommandHandlerTest {
         // Verify
         verify(resourceMapper).toEntity(resourceDTO);
         verify(applicationRepository,times(1)).findByCodeAndStatusNot("APP", Status.DELETED);
-        verify(permissionRepository, times(1)).findByNameAndStatusNot("manage", Status.DELETED);
-        verify(resourceMapper, times(1)).toItemEntity(itemDTO, resource, permission);
+        verify(resourceMapper, times(1)).toItemEntity(itemDTO, resource);
         verify(resourceRepository, times(1)).save(resource);
         verify(resourceMapper, times(1)).toDto(resource);
     }
@@ -139,33 +126,6 @@ public class CreateResourceCommandHandlerTest {
         // Verify
         verify(resourceMapper, times(1)).toEntity(resourceDTO);
         verify(applicationRepository, times(1)).findByCodeAndStatusNot("APP", Status.DELETED);
-        verifyNoMoreInteractions(permissionRepository, resourceRepository);
-    }
-
-    @Test
-    @DisplayName("should throw IgrpResponseStatusException if permission not found")
-    void testHandle_whenPermissionNotFound_shouldThrow() {
-        // Arrange
-        command = createResourceCommand(resourceDTO);
-        when(resourceMapper.toEntity(resourceDTO)).thenReturn(resource);
-        when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));
-        when(permissionRepository.findByNameAndStatusNot("manage", Status.DELETED)).thenReturn(Optional.empty());
-        when(resourceRepository.save(resource)).thenReturn(resource);
-
-        // Act
-        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
-
-        // Assert
-        assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
-        assertNotNull(exception.getBody().getProperties());
-        assertTrue(exception.getBody().getProperties().getOrDefault("details", "").toString().contains("Permission not found with name: manage"));
-
-        // Verify
-        verify(resourceMapper, times(1)).toEntity(resourceDTO);
-        verify(applicationRepository, times(1)).findByCodeAndStatusNot("APP", Status.DELETED);
-        verify(permissionRepository, times(1)).findByNameAndStatusNot("manage", Status.DELETED);
-        verify(resourceRepository, times(1)).save(resource);
-        verifyNoMoreInteractions(permissionRepository, resourceRepository, resourceMapper);
     }
 
     @Test
@@ -189,6 +149,5 @@ public class CreateResourceCommandHandlerTest {
         // Verify
         verify(applicationRepository, times(1)).findByCodeAndStatusNot("APP", Status.DELETED);
         verify(resourceRepository, times(1)).save(resource);
-        verifyNoInteractions(permissionRepository);
     }
 }

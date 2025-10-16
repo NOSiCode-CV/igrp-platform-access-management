@@ -51,7 +51,7 @@ public class SynchronizationService {
         try {
             // Phase 1: Sync definitions (order matters)
             syncDepartments();
-            syncApplications();
+            //syncApplications(); disabled for now as applications are only managed in IGRP, no need for provider management
             syncRoles();
             //syncPermissions(); disabled for now as permissions are only managed in IGRP
             //syncResources(); disabled for now as resources are only managed in IGRP
@@ -568,10 +568,8 @@ public class SynchronizationService {
 
     private List<ApplicationInfo> getApplicationsFromDatabase() {
         String sql = """
-                SELECT a.code, a.name, a.description, a.status, a.type, d.code AS departmentCode
+                SELECT a.code, a.name, a.description, a.status, a.type
                 FROM t_application a
-                JOIN t_department_application da ON a.id = da.application_id
-                JOIN t_department d ON da.department_id = d.id
                 WHERE a.status = ?
                 """;
         return jdbcTemplate.query(sql, (rs, _) -> {
@@ -579,7 +577,7 @@ public class SynchronizationService {
             app.setCode(rs.getString("code"));
             app.setName(rs.getString("name"));
             app.setDescription(rs.getString("description"));
-            app.setDepartmentCode(rs.getString("departmentCode"));
+            //app.setDepartmentCode(rs.getString("departmentCode"));
             app.setStatus(rs.getString("status"));
             app.setType(rs.getString("type"));
             return app;
