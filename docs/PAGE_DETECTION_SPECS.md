@@ -540,7 +540,7 @@ At runtime, the **Spring Boot IAM SDK** (specific to each provider) synchronizes
  │                               ↓                             │
  │     Source Generator → Generates PermissionsRegistry.java   │
  │                               ↓ (Runtime)                   │
- │                   IAM SDK (Provider-Specific)               │
+ │                          IAM Core SDK                       │
  │                       PermissionSyncRunner                  │
  │                               ↓                             │
  │          AccessManagementClient → Access Management API     │   
@@ -834,10 +834,9 @@ cv.igrp.framework.auth.core.autoconfig.AutoConfiguration
 ```java
 package cv.igrp.framework.auth.core.autoconfig;
 
-import cv.igrp.framework.auth.core.client.AccessManagementClient;
+import cv.igrp.platform.access.client.ApiClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
-import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
