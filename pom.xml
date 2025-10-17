@@ -208,6 +208,11 @@
             <version>0.1.0-beta.3</version>
         </dependency>
         <dependency>
+            <groupId>cv.igrp.framework.filemanager</groupId>
+            <artifactId>minio</artifactId>
+            <version>0.1.0-beta.4</version>
+        </dependency>
+        <dependency>
             <groupId>cv.igrp.framework</groupId>
             <artifactId>notifications-core</artifactId>
             <version>${igrp.framework.notification.core.version}</version>
