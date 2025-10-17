@@ -91,7 +91,7 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
                  );
               });
 
-      command.getPermissiondto().setName(PermissionValidator.normalizePermissionName(command.getPermissiondto().getName(), foundDepartment.getCode()));
+      command.getPermissiondto().setName(command.getPermissiondto().getName());
 
       log.info("Create permission with name: {}", command.getPermissiondto().getName());
 
