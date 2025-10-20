@@ -883,7 +883,7 @@ public class AutoConfiguration {
 
 ---
 
-**9. Configuration Example**
+**8. Configuration Example**
 
 In the business microservice:
 
@@ -903,7 +903,7 @@ The SDK will automatically:
 
 ---
 
-**10. @PreAuthorize Integration**
+**9. @PreAuthorize Integration**
 
 For a Strapi based approach, we must define the following bean in the Spring context:
 
@@ -1010,7 +1010,7 @@ public ResponseEntity<?> updateUser(...) {
 ```
 ---
 
-**11. Advantages**
+**10. Advantages**
 
 | Aspect                          | Description                                                                    |
 | ------------------------------- |--------------------------------------------------------------------------------|
@@ -1023,7 +1023,7 @@ public ResponseEntity<?> updateUser(...) {
 
 ---
 
-**12. Extensions**
+**11. Extensions**
 
 * **iGRP Studio Integration:**
   The iGRP Studio could parse these annotated classes, display them in a UI, allow editing, and regenerate the corresponding annotated permission files.
