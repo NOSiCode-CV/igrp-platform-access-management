@@ -29,7 +29,7 @@
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false,
-      "regex": "^[A-Za-z0-9_-]+$"
+      "regex": "^[A-Za-z0-9._-]+$"
     },
     {
       "name": "description",
@@ -61,7 +61,7 @@
       "name": "departmentCode",
       "objectType": "java",
       "type": "string",
-      "required": true,
+      "required": false,
       "before": false,
       "after": false,
       "positive": false,
