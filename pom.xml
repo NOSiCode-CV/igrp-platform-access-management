@@ -184,7 +184,7 @@
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
             <artifactId>core</artifactId>
-            <version>0.1.0-beta-20251008.122918-4</version>
+            <version>0.1.0-beta-20251020.111014-6</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
@@ -206,6 +206,11 @@
             <groupId>cv.igrp.framework.filemanager</groupId>
             <artifactId>aws-s3</artifactId>
             <version>0.1.0-beta.3</version>
+        </dependency>
+        <dependency>
+            <groupId>cv.igrp.framework.filemanager</groupId>
+            <artifactId>minio</artifactId>
+            <version>0.1.0-beta.4</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework</groupId>
