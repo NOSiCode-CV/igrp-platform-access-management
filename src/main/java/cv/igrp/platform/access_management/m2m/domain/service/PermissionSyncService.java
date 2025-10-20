@@ -107,7 +107,6 @@ public class PermissionSyncService {
                 newPerm.setStatus(dto.getStatus() != null ? dto.getStatus() : Status.ACTIVE);
                 PermissionEntity savedPerm = permissionRepository.save(newPerm);
                 resource.getPermissions().add(savedPerm);
-                resourceEntityRepository.save(resource);
                 LOGGER.info("[PermissionSync] Created new permission '{}'", dto.getName());
             } else {
                 // Check for difference using structural hash
@@ -124,6 +123,8 @@ public class PermissionSyncService {
                 }
             }
         }
+
+        resourceEntityRepository.save(resource);
 
         // Delete permissions not present in the incoming list
         List<PermissionEntity> toDelete = existingPermissions.stream()

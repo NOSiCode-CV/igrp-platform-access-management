@@ -62,35 +62,29 @@ public class ResourceSyncService {
 
     private void updateResource(ResourceEntity existing, ResourceDTO dto) {
         existing.setDescription(dto.getDescription());
-        existing.setStatus(dto.getStatus());
+
+        if(dto.getStatus() != null)
+            existing.setStatus(dto.getStatus());
 
         // Update items
-        Set<String> incomingNames = dto.getItems().stream().map(ResourceItemDTO::getName).collect(Collectors.toSet());
-        existing.getItems().removeIf(item -> !incomingNames.contains(item.getName()));
+        if (dto.getItems() != null) {
+            Set<String> incomingNames = dto.getItems().stream().map(ResourceItemDTO::getName).collect(Collectors.toSet());
+            existing.getItems().removeIf(item -> !incomingNames.contains(item.getName()));
 
-        for (ResourceItemDTO itemDto : dto.getItems()) {
-            existing.getItems().stream()
-                    .filter(it -> it.getName().equals(itemDto.getName()))
-                    .findFirst()
-                    .ifPresentOrElse(
-                            it -> {
-                                var permissions = permissionRepository.findAllByNameIn(itemDto.getPermissions());
-                                var permissionsToAdd = permissions.stream().filter(permission -> !it.getPermissions().contains(permission)).toList();
-                                it.getPermissions().addAll(permissionsToAdd);
-                                it.getPermissions().removeIf(permission -> !incomingNames.contains(permission.getName()));
-                            },
-                            () -> existing.getItems().add(resourceMapper.toItemEntity(itemDto, existing))
-                    );
-        }
-
-        // Update permissions
-        Set<String> incomingPerms = new HashSet<>(dto.getPermissions());
-        existing.getPermissions().removeIf(p -> !incomingPerms.contains(p.getName()));
-
-        for (String perm : dto.getPermissions()) {
-            PermissionEntity permission = permissionRepository.findByNameAndStatusNot(perm, Status.DELETED)
-                    .orElseGet(() -> permissionRepository.save(new PermissionEntity(null, perm, perm, Status.ACTIVE, null, null, null)));
-            existing.getPermissions().add(permission);
+            for (ResourceItemDTO itemDto : dto.getItems()) {
+                existing.getItems().stream()
+                        .filter(it -> it.getName().equals(itemDto.getName()))
+                        .findFirst()
+                        .ifPresentOrElse(
+                                it -> {
+                                    var permissions = permissionRepository.findAllByNameIn(itemDto.getPermissions());
+                                    var permissionsToAdd = permissions.stream().filter(permission -> !it.getPermissions().contains(permission)).toList();
+                                    it.getPermissions().addAll(permissionsToAdd);
+                                    it.getPermissions().removeIf(permission -> !incomingNames.contains(permission.getName()));
+                                },
+                                () -> existing.getItems().add(resourceMapper.toItemEntity(itemDto, existing))
+                        );
+            }
         }
 
         resourceRepository.save(existing);

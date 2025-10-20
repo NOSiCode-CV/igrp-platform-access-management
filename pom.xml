@@ -184,7 +184,7 @@
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
             <artifactId>core</artifactId>
-            <version>0.1.0-beta-20251008.122918-4</version>
+            <version>0.1.0-beta-20251020.111014-6</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
