@@ -5,7 +5,10 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
+import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +29,15 @@ public class PermissionSyncService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PermissionSyncService.class);
 
+    private final AuthenticationHelper authenticationHelper;
     private final PermissionEntityRepository permissionRepository;
+    private final ResourceEntityRepository resourceEntityRepository;
     private final ObjectMapper objectMapper;
 
-    public PermissionSyncService(PermissionEntityRepository permissionRepository, ObjectMapper objectMapper) {
+    public PermissionSyncService(PermissionEntityRepository permissionRepository, ResourceEntityRepository resourceEntityRepository, ObjectMapper objectMapper, AuthenticationHelper authenticationHelper) {
+        this.authenticationHelper = authenticationHelper;
         this.permissionRepository = permissionRepository;
+        this.resourceEntityRepository = resourceEntityRepository;
         this.objectMapper = objectMapper;
     }
 
@@ -68,8 +75,15 @@ public class PermissionSyncService {
             );
         }
 
-        // Get all existing permissions
-        List<PermissionEntity> existingPermissions = permissionRepository.findAll();
+        // Get all existing permissions for the current resource
+        ResourceEntity resource = resourceEntityRepository.findByNameAndStatusNot(authenticationHelper.getPreferredUsername(), Status.DELETED)
+                .orElseThrow(() -> IgrpResponseStatusException.notFound("Resource not found", "Resource with name: " + authenticationHelper.getPreferredUsername() + " not found."));
+
+        Set<ResourceEntity> resourceEntities = new HashSet<>();
+        resourceEntities.add(resource);
+
+        List<PermissionEntity> existingPermissions = permissionRepository.findAllByResourcesAndStatusNot(resourceEntities, Status.DELETED);
+
         Map<String, PermissionEntity> existingByName = existingPermissions.stream()
                 .collect(Collectors.toMap(
                         p -> p.getName().toLowerCase(Locale.ROOT),
@@ -91,7 +105,9 @@ public class PermissionSyncService {
                 newPerm.setName(dto.getName());
                 newPerm.setDescription(dto.getDescription());
                 newPerm.setStatus(dto.getStatus() != null ? dto.getStatus() : Status.ACTIVE);
-                permissionRepository.save(newPerm);
+                PermissionEntity savedPerm = permissionRepository.save(newPerm);
+                resource.getPermissions().add(savedPerm);
+                resourceEntityRepository.save(resource);
                 LOGGER.info("[PermissionSync] Created new permission '{}'", dto.getName());
             } else {
                 // Check for difference using structural hash
@@ -116,7 +132,8 @@ public class PermissionSyncService {
 
         if (!toDelete.isEmpty()) {
             for (PermissionEntity perm : toDelete) {
-                permissionRepository.delete(perm);
+                perm.setStatus(Status.DELETED);
+                permissionRepository.save(perm);
                 LOGGER.info("[PermissionSync] Deleted permission '{}'", perm.getName());
             }
         }

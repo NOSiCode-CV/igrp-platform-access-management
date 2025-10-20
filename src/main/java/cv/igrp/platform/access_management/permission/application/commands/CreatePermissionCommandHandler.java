@@ -83,13 +83,18 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
    @Transactional
    public ResponseEntity<PermissionDTO> handle(CreatePermissionCommand command) {
       PermissionDTO request = command.getPermissiondto();
-      DepartmentEntity foundDepartment = departmentRepository.findByCodeAndStatusNot(command.getPermissiondto().getDepartmentCode(), DepartmentStatus.DELETED)
-              .orElseThrow(() -> {
-                 log.warn("Department with code {} not found.", command.getPermissiondto().getDepartmentCode());
-                 return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Create Permission", "Department with code: " + command.getPermissiondto().getDepartmentCode() + " not found."
-                 );
-              });
+      DepartmentEntity foundDepartment = null;
+
+      if(command.getPermissiondto().getDepartmentCode() != null && !command.getPermissiondto().getDepartmentCode().isEmpty()) {
+         log.info("Finding Department with code: {}", command.getPermissiondto().getDepartmentCode());
+         foundDepartment = departmentRepository.findByCodeAndStatusNot(command.getPermissiondto().getDepartmentCode(), DepartmentStatus.DELETED)
+                 .orElseThrow(() -> {
+                    log.warn("Department with code {} not found.", command.getPermissiondto().getDepartmentCode());
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Create Permission", "Department with code: " + command.getPermissiondto().getDepartmentCode() + " not found."
+                    );
+                 });
+      }
 
       command.getPermissiondto().setName(command.getPermissiondto().getName());
 

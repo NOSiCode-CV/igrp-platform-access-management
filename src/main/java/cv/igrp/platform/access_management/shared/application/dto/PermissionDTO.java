@@ -33,7 +33,7 @@ public class PermissionDTO  {
   
   
   private Status status ;
-  @NotBlank(message = "The field <departmentCode> is required")
+  
   
   private String departmentCode ;
 
