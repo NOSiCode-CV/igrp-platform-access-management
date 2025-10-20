@@ -541,7 +541,7 @@ At runtime, the **Spring Boot IAM SDK** (specific to each provider) synchronizes
  │     Source Generator → Generates PermissionsRegistry.java   │
  │                               ↓ (Runtime)                   │
  │                          IAM Core SDK                       │
- │                       PermissionSyncRunner                  │
+ │                    AuthorizationSyncRunner                  │
  │                               ↓                             │
  │          AccessManagementClient → Access Management API     │   
  │                                                             │
@@ -749,7 +749,7 @@ public final class PermissionsRegistry {
 
 **5. Runtime Synchronization via Provider SDK**
 
-The IAM Core has a **Spring Boot SDK module** that includes an autoconfigured `PermissionSyncRunner`.
+The IAM Core has a **Spring Boot SDK module** that includes an autoconfigured `AuthorizationSyncRunner`.
 
 This runner:
 
@@ -764,19 +764,21 @@ This runner:
 **Package**:
 `cv.igrp.framework.auth.core.autoconfig`
 
-**PermissionSyncRunner.java**
+**AuthorizationSyncRunner.java**
 
 ```java
 package cv.igrp.framework.auth.core.autoconfig;
 
 import cv.igrp.framework.auth.generated.PermissionsRegistry;
 import cv.igrp.platform.access.client.ApiClient;
+import cv.igrp.platform.access.client.api.M2MApi;
 import cv.igrp.platform.access.client.constants.Status;
 import cv.igrp.platform.access.client.model.PermissionDTO;
+import cv.igrp.platform.access.client.model.ResourceDTO;
 import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.Conditional;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -786,33 +788,59 @@ import java.util.List;
  * Automatically synchronizes code-defined permissions with the Access Management API.
  */
 @Component
-public class PermissionSyncRunner {
+public class AuthorizationSyncRunner {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PermissionSyncRunner.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationSyncRunner.class);
 
     private final ApiClient accessClient;
 
-    public PermissionSyncRunner(ApiClient accessClient) {
+    @Value("${igrp.access.m2m.sync-token:}")
+    private String m2mToken;
+
+    @Value("${spring.application.name:}")
+    private String applicationName;
+
+    public AuthorizationSyncRunner(ApiClient accessClient) {
         this.accessClient = accessClient;
     }
 
     @PostConstruct
-    public void syncPermissions() {
+    public void syncAuthorization() {
         try {
-            LOGGER.info("[Permission Sync] Starting permission synchronization with Access Management API...");
+            LOGGER.info("[Authorization Sync] Starting authorization synchronization with Access Management API...");
 
             List<PermissionDTO> permissions = Arrays.stream(PermissionsRegistry.Permission.values())
-                    .map(p -> new PermissionDTO()
-                            .setName(p.getCode())
-                            .setDescription(p.getDescription())
-                            .setStatus(p.enabled() ? Status.ACTIVE : Status.INACTIVE))
+                    .map(p -> {
+                        var perm = new PermissionDTO();
+                        perm.setName(p.getCode());
+                        perm.setDescription(p.getDescription());
+                        perm.setStatus(p.enabled() ? Status.ACTIVE : Status.INACTIVE);
+                        return perm;
+                    })
                     .toList();
 
-            accessClient.syncPermissions(permissions);
+            M2MApi m2mApi = new M2MApi(accessClient);
+
+            ResourceDTO resource = new ResourceDTO();
+
+            resource.setName(applicationName);
+            resource.setType("API");
+            resource.setDescription("Resource for application: " + applicationName);
+
+            LOGGER.info("[Authorization Sync] Synchronizing resource for application '{}'", applicationName);
+
+            m2mApi.syncResources(resource, m2mToken, applicationName);
+
+            LOGGER.info("[Authorization Sync] Resource synchronization completed.");
+
+            LOGGER.info("[Authorization Sync] Synchronizing {} permissions for application '{}'", permissions.size(), applicationName);
+
+            m2mApi.syncPermissions(permissions, m2mToken, applicationName);
 
             LOGGER.info("[Permission Sync] Successfully synchronized {} permissions.", permissions.size());
+
         } catch (Exception ex) {
-            LOGGER.error("[Permission Sync] Failed to synchronize permissions with Access Management API", ex);
+            LOGGER.error("[Permission Sync] Failed to synchronize authorization with Access Management API", ex);
         }
     }
 }
@@ -859,15 +887,19 @@ public class AutoConfiguration {
 
 In the business microservice:
 
+- Must indicate the URL of the Access Management API
+- Provide the machine-to-machine sync token
+
 ```properties
 igrp.access.api.base-url=http://access-management-service:8080
+igrp.access.m2m.sync-token=igrp-access-m2m-sync-token-1234
 ```
 
 The SDK will automatically:
 
 * Generate `PermissionsRegistry` at build time
-* Run `PermissionSyncRunner` on startup
-* Sync all permissions to the Access Management API
+* Run `AuthorizationSyncRunner` on startup
+* Sync the resource and all permissions to the Access Management API
 
 ---
 
@@ -893,13 +925,38 @@ import java.util.stream.Collectors;
 public class PermissionsBeanConfig {
 
     @Bean(name = "permissions")
-    public Map<String, String> permissions() {
-        return Map.ofEntries(
-                PermissionsRegistry.Permission.values()
-                        .stream()
+    public PermissionAccessor permissions() {
+        Map<String, String> map = Map.ofEntries(
+                Arrays.stream(PermissionsRegistry.Permission.values())
                         .map(p -> Map.entry(p.name(), p.getCode()))
                         .toArray(Map.Entry[]::new)
         );
+        return new PermissionAccessor(map);
+    }
+}
+```
+
+To use an accessor for the permissions entries we define the following class:
+
+```java
+package cv.igrp.framework.auth.core.config;
+
+import java.util.Map;
+
+public class PermissionAccessor {
+
+    private final Map<String, String> permissions;
+
+    public PermissionAccessor(Map<String, String> permissions) {
+        this.permissions = permissions;
+    }
+
+    public String get(String key) {
+        return permissions.get(key);
+    }
+
+    public Object getProperty(String name) {
+        return permissions.get(name);
     }
 }
 ```
@@ -926,14 +983,14 @@ public class IgrpAuthorizationService {
         this.authHelper = authHelper;
     }
 
-    public boolean checkPermission(String resource, String action) {
+    public boolean checkPermission(String action) {
         try {
             String token = authHelper.getToken();
             client.setAuthToken(token);
             AuthorizeApi authorizeApi = new AuthorizeApi(client);
 
             return authorizeApi.checkAuthorization(
-                    new PermissionCheckRequestDTO(resource,
+                    new PermissionCheckRequestDTO(null,
                             action)
             ).isAllowed();
         } catch (Exception e) {
@@ -946,7 +1003,7 @@ public class IgrpAuthorizationService {
 Permissions can be referenced directly in code with constants generated at build time:
 
 ```java
-@PreAuthorize("@igrpAuthorization.checkPermission(permissions.USER_EDIT)")
+@PreAuthorize("@igrpAuthorization.checkPermission(@permissions.get('USER_EDIT'))")
 public ResponseEntity<?> updateUser(...) {
     // business logic
 }
