@@ -6,6 +6,7 @@
 |---------|-------------------|------------|-----------------------------------------|
 | 1.0.0   | @Marcelo.Monteiro | 2025-07-11 | Initial documentation                   |
 | 1.0.1   | @Marcelo.Monteiro | 2025-09-23 | 2nd Revision - Cross Department Sharing |
+| 1.0.2   | @Marcelo.Monteiro | 2025-10-23 | 2nd Revision - Application Detachment   |
 | ...     | ...               | ...        | ...                                     |
 
 ## Table of Contents
@@ -23,7 +24,7 @@
 
 2. **Applications**
 
-   * Applications belong to one or more departments.
+   * Applications belong to none, one or more departments.
    * An application contains **menus** and **resources**.
    * Access to an application is controlled by **both department and role**.
    * **Example:** Application Finance can be linked to Department Finance and Department IT. Users in IT with the right roles can access Application Finance menus and resources.
@@ -36,7 +37,10 @@
 
 4. **Resources**
 
-   * Resources belong to applications.
+   * Resources are automatically synced on server startup
+   * Resources are created independently, and later they can be associated with applications.
+   * Frontend Resources contains **Resource Items** (e.g., page routes).
+   * Backend Resources contains the permissions to access APIs.
    * Resource access is **controlled by both roles and permissions**.
    * **Example:** A Resource Item "Salary List" can be accessed if the user has the "HR Manager" role **and/or** the "View Salary" permission.
 
@@ -53,9 +57,10 @@
 
 6. **Permissions**
 
+   * Permissions are synced on server startup.
+   * Permissions are created **in-code only** by the developer in microservices projects, and later they can be associated with resources and roles.
    * Permissions can exist independently or be linked to a resource or role (or both).
    * Permissions can be checked:
-
       * Directly against a resource item (ABAC check)
       * Or indirectly, through roles a user holds.
    * **Example:** Permission "View Budget" is linked to Resource Item "Budget Report". If the user’s role has this permission, they can access that resource.

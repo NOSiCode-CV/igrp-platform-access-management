@@ -17,16 +17,16 @@ import cv.igrp.platform.access_management.shared.application.constants.Departmen
 
 
 @IgrpDTO
-public class DepartmentDTO {
+public class DepartmentDTO  {
 
   
   
   private Integer id ;
-  @NotBlank(message = "The field <code> is required.")
+  @NotBlank(message = "The field <code> is required")
 	@Pattern(message = "Invalid value format for field <code>.", regexp = "^[A-Za-z0-9_-]+$")
   
   private String code ;
-  @NotBlank(message = "The field <name> is required.")
+  @NotBlank(message = "The field <name> is required")
   
   private String name ;
   
@@ -35,6 +35,9 @@ public class DepartmentDTO {
   
   
   private DepartmentStatus status ;
+  
+  
+  private String icon ;
   
   
   private String parent_code ;

@@ -135,10 +135,10 @@ function collectRoutes(dir: string, baseSegments: string[] = []): string[] {
  * Write the routes array to a TypeScript file
  */
 function generateRoutesFile(): void {
-   console.log(`🔍 Scanning directory: ${PAGES_DIR}`);
+   console.log(`Scanning directory...: ${PAGES_DIR}`);
 
    if (!fs.existsSync(PAGES_DIR)) {
-      console.error(`❌ Directory not found: ${PAGES_DIR}`);
+      console.error(`Error: Directory not found: ${PAGES_DIR}`);
       process.exit(1);
    }
 
@@ -154,8 +154,8 @@ export type Route = typeof routes[number];
 
    fs.writeFileSync(OUTPUT_FILE, fileContent, "utf-8");
 
-   console.log(`✅ Generated ${routes.length} routes`);
-   console.log(`📄 Output: ${OUTPUT_FILE}`);
+   console.log(`OK: Generated ${routes.length} routes`);
+   console.log(`Output: ${OUTPUT_FILE}`);
 }
 
 generateRoutesFile();
@@ -357,14 +357,12 @@ public class PermissionsLoader {
   {
     "code": "CREATE_USER",
     "name": "Create User",
-    "description": "Permission to create new users",
-    "application": "USER_MANAGEMENT"
+    "description": "Permission to create new users"
   },
   {
     "code": "VIEW_REPORTS",
     "name": "View Reports",
-    "description": "Permission to view business reports",
-    "application": "REPORTS"
+    "description": "Permission to view business reports"
   }
 ]
 ```
@@ -517,7 +515,7 @@ If the permissions file does not exist or is empty, the service logs a warning a
 
 #### **Alternative 2: Source-Generated Permission Registration via SDK Providers**
 
-This alternative introduces a **build-time source generation** and **runtime synchronization** mechanism for permissions, enabling seamless registration of permissions directly from annotated Java classes across all business microservices.
+This alternative introduces a **build-time source generation** and **runtime synchronization** mechanism for permissions, enabling seamless registration of permissions directly from annotated fields in Java classes across all business microservices.
 This approach eliminates the dependency on iGRP Studio for permission definition, while still allowing it to **scan, display, and regenerate** those permissions in the future via the same metadata.
 
 ---
@@ -536,7 +534,7 @@ At runtime, the **Spring Boot IAM SDK** (specific to each provider) synchronizes
  ┌─────────────────────────────────────────────────────────────┐
  │                   Business Microservice                     │
  │─────────────────────────────────────────────────────────────│
- │                  @IgrpPermission classes                    │
+ │                    @IgrpPermission fields                   │
  │                               ↓                             │
  │     Source Generator → Generates PermissionsRegistry.java   │
  │                               ↓ (Runtime)                   │
@@ -552,24 +550,34 @@ At runtime, the **Spring Boot IAM SDK** (specific to each provider) synchronizes
 
 **1. Developer Workflow**
 
-Developers define permissions using simple annotations:
+Developers define permissions using simple annotations in the fields on a Java class that serves as context group:
 
 ```java
 package com.example.myapp.shared.infrastructure.authorization.permission;
 
 import cv.igrp.framework.stereotype.IgrpPermission;
 
-@IgrpPermission(name = "USER_VIEW", description = "Allows viewing user profiles")
-public class UserViewPermission {}
+public class UserPermissions {
 
-@IgrpPermission(name = "USER_EDIT", description = "Allows editing user information", enabled = false)
-public class UserEditPermission {}
+    @IgrpPermission(name = "USER_VIEW", description = "Allows viewing user profiles")
+    public static String USER_VIEW = "USER_VIEW";
+
+    @IgrpPermission(name = "USER_EDIT", description = "Allows editing user information", enabled = false)
+    public static String USER_EDIT = "USER_EDIT";
+
+}
 ```
 
 **Location convention**:
 
+Domain Driven-Design project style path:
 ```
-src/main/java/<project_package>/shared/infrastructure/authorization/permission/
+src/main/java/<project_package>/[module]/infrastructure/authorization/permission/
+```
+
+Technical project style path:
+```
+src/main/java/<project_package>/authorization/permission/
 ```
 
 ---
@@ -582,10 +590,11 @@ package cv.igrp.framework.stereotype;
 import java.lang.annotation.*;
 
 /**
- * Declares a permission constant to be automatically registered with
- * the Access Management system at build time.
+ * Marks a static field as an iGRP permission definition.
+ * Can be scanned by the PermissionSourceGenerator to auto-generate
+ * registry and constants.
  */
-@Target(ElementType.TYPE)
+@Target({ElementType.FIELD})
 @Retention(RetentionPolicy.SOURCE)
 public @interface IgrpPermission {
     String name();
@@ -605,26 +614,38 @@ Package: `cv.igrp.framework.auth.core.processor`
 ```java
 package cv.igrp.framework.auth.core.processor;
 
+import com.google.auto.service.AutoService;
 import com.squareup.javapoet.*;
 import cv.igrp.framework.stereotype.IgrpPermission;
 
 import javax.annotation.processing.*;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.*;
+import javax.tools.Diagnostic;
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Locale;
 import java.util.Set;
+import java.util.logging.*;
 
 /**
  * Annotation processor that scans for @IgrpPermission
  * and generates a PermissionsRegistry class.
  */
+@AutoService(Processor.class)
 @SupportedAnnotationTypes("cv.igrp.framework.stereotype.IgrpPermission")
 @SupportedSourceVersion(SourceVersion.RELEASE_21)
+@SuppressWarnings("unused")
 public class PermissionSourceGenerator extends AbstractProcessor {
+
+    private final Logger log = Logger.getLogger(PermissionSourceGenerator.class.getName());
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if (annotations.isEmpty()) return false;
+
+        // Track permission names to detect duplicates
+        Set<String> seenNames = new HashSet<>();
 
         TypeSpec.Builder registry = TypeSpec.classBuilder("PermissionsRegistry")
                 .addModifiers(Modifier.PUBLIC, Modifier.FINAL)
@@ -637,12 +658,34 @@ public class PermissionSourceGenerator extends AbstractProcessor {
             IgrpPermission ann = element.getAnnotation(IgrpPermission.class);
             if (ann == null) continue;
 
-            String constName = ann.name().toUpperCase().replace("-", "_");
-            String desc = ann.description().isEmpty() ? ann.name() : ann.description();
-            String enabled = ann.enabled();
+            String rawName = ann.name().trim();
+
+            // Check for duplicate names (case-insensitive to be extra safe)
+            String duplicateKey = rawName.toLowerCase(Locale.ROOT);
+            if (!seenNames.add(duplicateKey)) {
+                processingEnv.getMessager().printMessage(
+                        Diagnostic.Kind.WARNING,
+                        "Duplicate @IgrpPermission name detected: '" + rawName + "' — each permission name must be unique.",
+                        element
+                );
+                continue;
+            }
+
+            // Build enum constant name safely (convert invalid chars)
+            String constName = rawName
+                    .toUpperCase(Locale.ROOT)
+                    .replaceAll("[^A-Z0-9_]", "_");
+
+            // Guarantee uniqueness of enum constant itself (e.g., if two different names normalize to same const)
+            while (seenNames.contains(constName)) {
+                constName = constName + "_DUP";
+            }
+
+            String desc = ann.description().isEmpty() ? rawName : ann.description();
+            boolean enabled = ann.enabled();
 
             enumBuilder.addEnumConstant(constName,
-                    TypeSpec.anonymousClassBuilder("$S, $S, $L", ann.name(), desc, enabled).build());
+                    TypeSpec.anonymousClassBuilder("$S, $S, $L", rawName, desc, enabled).build());
         }
 
         enumBuilder.addField(String.class, "code", Modifier.PRIVATE, Modifier.FINAL);
@@ -669,7 +712,7 @@ public class PermissionSourceGenerator extends AbstractProcessor {
                 .addModifiers(Modifier.PUBLIC)
                 .addStatement("return description")
                 .build());
-        
+
         enumBuilder.addMethod(MethodSpec.methodBuilder("enabled")
                 .returns(boolean.class)
                 .addModifiers(Modifier.PUBLIC)
@@ -679,12 +722,15 @@ public class PermissionSourceGenerator extends AbstractProcessor {
         registry.addType(enumBuilder.build());
 
         JavaFile javaFile = JavaFile.builder("cv.igrp.framework.auth.generated", registry.build())
+                .indent("    ")
                 .build();
 
         try {
             javaFile.writeTo(processingEnv.getFiler());
+            log.info("Generated PermissionsRegistry successfully.");
         } catch (IOException e) {
-            e.printStackTrace();
+            log.log(Level.SEVERE, "Failed to write PermissionsRegistry: " + e.getMessage());
+            return false;
         }
 
         return true;
@@ -905,71 +951,21 @@ The SDK will automatically:
 
 **9. @PreAuthorize Integration**
 
-For a Strapi based approach, we must define the following bean in the Spring context:
-
-```java
-package cv.igrp.framework.auth.core.config;
-
-import cv.igrp.framework.auth.generated.PermissionsRegistry;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-
-import java.util.Map;
-import java.util.stream.Collectors;
-
-/**
- * Exposes all generated permissions as a Spring bean named "permissions".
- * Allows expression usage like: @PreAuthorize("@igrpAuthorization.checkPermission(permissions.USER_EDIT)")
- */
-@Configuration
-public class PermissionsBeanConfig {
-
-    @Bean(name = "permissions")
-    public PermissionAccessor permissions() {
-        Map<String, String> map = Map.ofEntries(
-                Arrays.stream(PermissionsRegistry.Permission.values())
-                        .map(p -> Map.entry(p.name(), p.getCode()))
-                        .toArray(Map.Entry[]::new)
-        );
-        return new PermissionAccessor(map);
-    }
-}
-```
-
-To use an accessor for the permissions entries we define the following class:
-
-```java
-package cv.igrp.framework.auth.core.config;
-
-import java.util.Map;
-
-public class PermissionAccessor {
-
-    private final Map<String, String> permissions;
-
-    public PermissionAccessor(Map<String, String> permissions) {
-        this.permissions = permissions;
-    }
-
-    public String get(String key) {
-        return permissions.get(key);
-    }
-
-    public Object getProperty(String name) {
-        return permissions.get(name);
-    }
-}
-```
-
 For the check permission API call we must define the following bean in the Spring context:
 
 ```java
 package cv.igrp.framework.auth.core.security;
 
+import cv.igrp.framework.auth.generated.PermissionsRegistry;
 import cv.igrp.platform.access.client.ApiClient;
 import cv.igrp.platform.access.client.api.AuthorizeApi;
 import cv.igrp.platform.access.client.model.PermissionCheckRequestDTO;
+import cv.igrp.platform.access.client.model.PermissionCheckResponseDTO;
 import org.springframework.stereotype.Service;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 @Service("igrpAuthorization")
 @SuppressWarnings("unused")
@@ -983,23 +979,91 @@ public class IgrpAuthorizationService {
         this.authHelper = authHelper;
     }
 
-    public boolean checkPermission(String action) {
+    /**
+     * Checks if the current user has a specific permission.
+     *
+     * @param action the permission enum (e.g. "Permission.FINANCE_SALARY_VIEW")
+     * @return true if allowed, false otherwise
+     */
+    public boolean checkPermission(PermissionsRegistry.Permission action) {
         try {
             String token = authHelper.getToken();
             client.setAuthToken(token);
             AuthorizeApi authorizeApi = new AuthorizeApi(client);
 
             return authorizeApi.checkAuthorization(
-                    new PermissionCheckRequestDTO(null,
-                            action)
+                    new PermissionCheckRequestDTO(null, action.getCode())
             ).isAllowed();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException("Error checking permission: " + action, e);
         }
     }
 
+    /**
+     * Checks if the user has ALL the given permissions.
+     *
+     * @param actions list or varargs of permission enums
+     * @return true only if ALL are allowed
+     */
+    public boolean checkAllPermissions(PermissionsRegistry.Permission... actions) {
+        if (actions == null || actions.length == 0) {
+            return false;
+        }
+
+        try {
+            String token = authHelper.getToken();
+            client.setAuthToken(token);
+            AuthorizeApi authorizeApi = new AuthorizeApi(client);
+
+            List<PermissionCheckRequestDTO> requests = new ArrayList<>();
+            Arrays.stream(actions).forEach(a -> requests.add(new PermissionCheckRequestDTO(null, a.getCode())));
+
+            List<PermissionCheckResponseDTO> responses =
+                    authorizeApi.batchCheckAuthorization(requests);
+
+            // Return true only if all are allowed
+            return responses.stream().allMatch(PermissionCheckResponseDTO::isAllowed);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error checking all permissions: " + Arrays.toString(actions), e);
+        }
+    }
+
+    /**
+     * Checks if the user has ANY of the given permissions.
+     *
+     * @param actions list or varargs of permission enums
+     * @return true if at least one is allowed
+     */
+    public boolean checkAnyPermission(PermissionsRegistry.Permission... actions) {
+        if (actions == null || actions.length == 0) {
+            return false;
+        }
+
+        try {
+            String token = authHelper.getToken();
+            client.setAuthToken(token);
+            AuthorizeApi authorizeApi = new AuthorizeApi(client);
+
+            List<PermissionCheckRequestDTO> requests = new ArrayList<>();
+            Arrays.stream(actions).forEach(a -> requests.add(new PermissionCheckRequestDTO(null, a.getCode())));
+
+            List<PermissionCheckResponseDTO> responses =
+                    authorizeApi.batchCheckAuthorization(requests);
+
+            // Return true if at least one permission is allowed
+            return responses.stream().anyMatch(PermissionCheckResponseDTO::isAllowed);
+
+        } catch (Exception e) {
+            throw new RuntimeException("Error checking any permissions: " + Arrays.toString(actions), e);
+        }
+    }
 }
 ```
+
+This service can be injected in a Spring managed class, and it can be used to check permission calls to Access Management API.
+Also, it can be passed to the `@PreAuthorize` annotation, for method level security.
+
 Permissions can be referenced directly in code with constants generated at build time:
 
 ```java

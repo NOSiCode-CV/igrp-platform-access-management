@@ -64,12 +64,12 @@ class GetAvailablePermissionsForRolesQueryHandlerTest {
   @Test
   void testHandle_ReturnsListOfAvailablePermissions() {
     // Given a query and expected data
-    String roleName = "ADMIN";
-    GetAvailablePermissionsForRolesQuery query = new GetAvailablePermissionsForRolesQuery(roleName);
+    String roleCode = "ADMIN";
+    GetAvailablePermissionsForRolesQuery query = new GetAvailablePermissionsForRolesQuery(roleCode);
     List<PermissionEntity> mockEntities = List.of(permissionEntity1, permissionEntity2);
 
     // Mock repository and mapper behavior
-    when(permissionRepository.findAvailablePermissionsForRole(roleName)).thenReturn(mockEntities);
+    when(permissionRepository.findAvailablePermissionsForRole(roleCode)).thenReturn(mockEntities);
     when(permissionMapper.mapToDTO(permissionEntity1)).thenReturn(permissionDTO1);
     when(permissionMapper.mapToDTO(permissionEntity2)).thenReturn(permissionDTO2);
 
@@ -87,11 +87,11 @@ class GetAvailablePermissionsForRolesQueryHandlerTest {
   @Test
   void testHandle_NoPermissionsFound_ReturnsEmptyList() {
     // Given a query for a role with no available permissions
-    String roleName = "USER";
-    GetAvailablePermissionsForRolesQuery query = new GetAvailablePermissionsForRolesQuery(roleName);
+    String roleCode = "USER";
+    GetAvailablePermissionsForRolesQuery query = new GetAvailablePermissionsForRolesQuery(roleCode);
 
     // Mock repository to return an empty list
-    when(permissionRepository.findAvailablePermissionsForRole(roleName)).thenReturn(Collections.emptyList());
+    when(permissionRepository.findAvailablePermissionsForRole(roleCode)).thenReturn(Collections.emptyList());
 
     // When the handler is called
     ResponseEntity<List<PermissionDTO>> response = handler.handle(query);

@@ -60,7 +60,7 @@ class RemoveRoleFromApplicationCommandHandlerTest {
         when(codesDto.getCodes()).thenReturn(List.of(roleCode));
 
         when(applicationRepository.findByCodeAndStatusNotDeleted(appCode)).thenReturn(application);
-        when(roleRepository.findByNameAndStatusNotDeleted(roleCode)).thenReturn(role);
+        when(roleRepository.findByCodeAndStatusNotDeleted(roleCode)).thenReturn(role);
 
         // when
         ResponseEntity<String> response = handler.handle(command);
@@ -70,7 +70,7 @@ class RemoveRoleFromApplicationCommandHandlerTest {
         assertThat(application.getRoles()).doesNotContain(role);
 
         verify(applicationRepository).findByCodeAndStatusNotDeleted(appCode);
-        verify(roleRepository).findByNameAndStatusNotDeleted(roleCode);
+        verify(roleRepository).findByCodeAndStatusNotDeleted(roleCode);
         verify(applicationRepository).save(application);
     }
 }

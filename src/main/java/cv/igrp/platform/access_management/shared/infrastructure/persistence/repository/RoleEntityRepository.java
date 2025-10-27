@@ -50,11 +50,11 @@ public interface RoleEntityRepository extends
      */
     Optional<RoleEntity> findByIdAndStatusNot(Integer id, Status status);
 
-    Optional<RoleEntity> findByNameAndStatusNot(String name, Status status);
+    Optional<RoleEntity> findByCodeAndStatusNot(String code, Status status);
 
-    default RoleEntity findByNameAndStatusNotDeleted(String name) {
-        return findByNameAndStatusNot(name, Status.DELETED)
-                .orElseThrow(() -> IgrpResponseStatusException.notFound("Role not found with name: %s".formatted(name)));
+    default RoleEntity findByCodeAndStatusNotDeleted(String code) {
+        return findByCodeAndStatusNot(code, Status.DELETED)
+                .orElseThrow(() -> IgrpResponseStatusException.notFound("Role not found with code: %s".formatted(code)));
     }
 
 }

@@ -18,6 +18,18 @@
       "primaryKey": false
     },
     {
+      "name": "code",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
       "name": "name",
       "objectType": "java",
       "type": "string",
@@ -57,7 +69,7 @@
       "primaryKey": false
     },
     {
-      "name": "parentName",
+      "name": "parentCode",
       "objectType": "java",
       "type": "string",
       "required": false,
@@ -80,6 +92,18 @@
       "isUrl": false,
       "primaryKey": false,
       "module": "shared"
+    },
+    {
+      "name": "icon",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
     },
     {
       "name": "permissions",

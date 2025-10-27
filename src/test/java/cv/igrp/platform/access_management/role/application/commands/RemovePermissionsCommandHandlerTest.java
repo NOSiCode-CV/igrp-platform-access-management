@@ -39,11 +39,11 @@ public class RemovePermissionsCommandHandlerTest {
     @Test
     void itShouldThrow_NotFoundException_WhenProvided_RoleId_NotFound() {
         //... Given
-        String roleName = "admin";
+        String roleCode = "admin";
         ArrayList<String> permissionsToRemove = new ArrayList<>();
-        RemovePermissionsCommand command = new RemovePermissionsCommand(permissionsToRemove, roleName);
+        RemovePermissionsCommand command = new RemovePermissionsCommand(permissionsToRemove, roleCode);
 
-        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
+        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
                 .thenReturn(Optional.empty());
 
         //... When
@@ -58,7 +58,7 @@ public class RemovePermissionsCommandHandlerTest {
     void itShouldRemovePermissions_WhenRoleAndPermissionsExists() {
         //... Given
         int roleId = 1;
-        String roleName = "admin";
+        String roleCode = "admin";
         int permissionId1 = 1;
         int permissionId2 = 2;
         String permissionName1 = "permission1";
@@ -87,9 +87,9 @@ public class RemovePermissionsCommandHandlerTest {
 
         List<String> permissionsToRemove = List.of(permissionName1, permissionName2);
         RemovePermissionsCommand removePermissionsCommand =
-                new RemovePermissionsCommand(permissionsToRemove, roleName);
+                new RemovePermissionsCommand(permissionsToRemove, roleCode);
 
-        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
+        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
                 .thenReturn(Optional.of(savedRole));
         when(roleRepository.save(savedRole)).thenReturn(savedRole);
         when(roleMapper.mapToDto(savedRole)).thenReturn(roleDTO);
@@ -113,7 +113,7 @@ public class RemovePermissionsCommandHandlerTest {
     void itShouldReturnEmptyList_WhenNoneOfPermissionsAreInRole() {
         //... Given
         int roleId = 1;
-        String roleName = "admin";
+        String roleCode = "admin";
         int permissionId1 = 1;
         int permissionId2 = 2;
         int permissionId3 = 3;
@@ -151,9 +151,9 @@ public class RemovePermissionsCommandHandlerTest {
 
         List<String> permissionsToRemove = List.of(permissionName1, permissionName2);
         RemovePermissionsCommand removePermissionsCommand =
-                new RemovePermissionsCommand(permissionsToRemove, roleName);
+                new RemovePermissionsCommand(permissionsToRemove, roleCode);
 
-        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
+        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
                 .thenReturn(Optional.of(savedRole));
         when(roleRepository.save(savedRole)).thenReturn(savedRole);
         when(roleMapper.mapToDto(savedRole)).thenReturn(roleDTO);
@@ -177,14 +177,14 @@ public class RemovePermissionsCommandHandlerTest {
     void itShouldRemoveOnlyExistingPermissions_AndIgnoreOthers() {
         // Given
         int roleId = 1;
-        String roleName = "admin";
+        String roleCode = "admin";
         Integer permissionToRemoveId = 100;
         String permissionToRemoveName = "permissionToRemove";
         Integer permissionToKeepId = 200;
         String permissionToKeepName = "permissionToKeep";
 
         RemovePermissionsCommand command = new RemovePermissionsCommand(
-                List.of(permissionToRemoveName), roleName);
+                List.of(permissionToRemoveName), roleCode);
 
         PermissionEntity permissionToRemove = new PermissionEntity();
         permissionToRemove.setId(permissionToRemoveId);
@@ -213,7 +213,7 @@ public class RemovePermissionsCommandHandlerTest {
 
         role.getPermissions().addAll(initialPermissions);
 
-        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
         when(roleRepository.save(role)).thenReturn(role);
 
@@ -238,13 +238,13 @@ public class RemovePermissionsCommandHandlerTest {
     void itShouldNotFail_WhenRoleHasNoPermissions() {
         // Given
         int roleId = 1;
-        String roleName = "admin";
+        String roleCode = "admin";
         List<String> permissionIdsToRemove = List.of("read", "write");
-        RemovePermissionsCommand command = new RemovePermissionsCommand(permissionIdsToRemove, roleName);
+        RemovePermissionsCommand command = new RemovePermissionsCommand(permissionIdsToRemove, roleCode);
 
         RoleEntity role = new RoleEntity();
         role.setId(roleId);
-        role.setName(roleName);
+        role.setCode(roleCode);
         role.setStatus(Status.ACTIVE);
         role.setPermissions(new HashSet<>());
 
@@ -252,7 +252,7 @@ public class RemovePermissionsCommandHandlerTest {
         roleDTO.setId(roleId);
         roleDTO.setPermissions(List.of());
 
-        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.save(role)).thenReturn(role);
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
@@ -273,12 +273,12 @@ public class RemovePermissionsCommandHandlerTest {
     void itShouldHandleDuplicatePermissionIdsInCommand() {
         // Given
         int roleId = 1;
-        String roleName = "admin";
+        String roleCode = "admin";
         Integer duplicatedPermissionId = 100;
         String duplicatedPermissionName = "duplicatedPermission";
 
         RemovePermissionsCommand command = new RemovePermissionsCommand(
-                List.of(duplicatedPermissionName, duplicatedPermissionName), roleName);
+                List.of(duplicatedPermissionName, duplicatedPermissionName), roleCode);
 
         PermissionEntity permission = new PermissionEntity();
         permission.setId(duplicatedPermissionId);
@@ -292,7 +292,7 @@ public class RemovePermissionsCommandHandlerTest {
 
         RoleEntity role = new RoleEntity();
         role.setId(roleId);
-        role.setName(roleName);
+        role.setCode(roleCode);
         role.setStatus(Status.ACTIVE);
         role.setPermissions(new HashSet<>());
 
@@ -302,7 +302,7 @@ public class RemovePermissionsCommandHandlerTest {
         roleDTO.setId(roleId);
         roleDTO.setPermissions(List.of());
 
-        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
         when(roleRepository.save(role)).thenReturn(role);
 
@@ -325,14 +325,14 @@ public class RemovePermissionsCommandHandlerTest {
     void itShouldMapRemovedPermissionsToDTOsOnly() {
         // Given
         int roleId = 1;
-        String roleName = "admin";
+        String roleCode = "admin";
         Integer permissionToRemoveId = 100;
         String permissionToRemoveName = "permissionToRemove";
         Integer permissionToKeepId = 200;
         String permissionToKeepName = "permissionToKeep";
 
         RemovePermissionsCommand command = new RemovePermissionsCommand(
-                List.of(permissionToRemoveName), roleName);
+                List.of(permissionToRemoveName), roleCode);
 
         PermissionEntity permissionToRemove = new PermissionEntity();
         permissionToRemove.setId(permissionToRemoveId);
@@ -350,7 +350,7 @@ public class RemovePermissionsCommandHandlerTest {
 
         RoleEntity role = new RoleEntity();
         role.setId(roleId);
-        role.setName(roleName);
+        role.setCode(roleCode);
         role.setStatus(Status.ACTIVE);
         role.setPermissions(new HashSet<>());
 
@@ -360,7 +360,7 @@ public class RemovePermissionsCommandHandlerTest {
         roleDTO.setId(roleId);
         roleDTO.setPermissions(List.of(permissionToKeepName));
 
-        when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
         when(roleRepository.save(role)).thenReturn(role);
 
