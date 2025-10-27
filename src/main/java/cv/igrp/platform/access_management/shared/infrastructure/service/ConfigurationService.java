@@ -16,7 +16,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
-import java.util.Set;
 
 @Service
 public class ConfigurationService {
@@ -57,7 +56,7 @@ public class ConfigurationService {
             boolean departmentExists = exists("SELECT 1 FROM t_department WHERE code='%s' LIMIT 1".formatted(IGRP_DEPARTMENT));
             boolean appExists = exists("SELECT 1 FROM t_application WHERE type='SYSTEM' LIMIT 1");
             boolean permissionExists = exists("SELECT 1 FROM t_permission WHERE name='%s' LIMIT 1".formatted(IGRP_PERMISSION));
-            boolean roleExists = exists("SELECT 1 FROM t_role WHERE name='%s' LIMIT 1".formatted(SUPER_ADMIN_ROLE));
+            boolean roleExists = exists("SELECT 1 FROM t_role WHERE code='%s' LIMIT 1".formatted(SUPER_ADMIN_ROLE));
 
             // 2. Check provider existence before attempting sync
             boolean departmentExistsInProvider = checkAndCreateDepartment(departmentExists);
@@ -75,7 +74,7 @@ public class ConfigurationService {
             Long permissionId = permissionExists ? getId("SELECT id FROM t_permission WHERE name='%s'".formatted(IGRP_PERMISSION)) :
                     createDefaultPermissionInDB(departmentId);
 
-            Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE name='%s'".formatted(SUPER_ADMIN_ROLE)) :
+            Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE code='%s'".formatted(SUPER_ADMIN_ROLE)) :
                     (roleExistsInProvider ? createDefaultRoleInDB(departmentId, permissionId, appId) : null);
 
             Long userId = superAdminExists ? getId("SELECT id FROM t_user WHERE username='%s'".formatted(SUPER_ADMIN_USERNAME)) :
@@ -289,14 +288,14 @@ public class ConfigurationService {
     Long createDefaultRoleInDB(Long deptId, Long permId, Long appId) {
         String sqlRole = """
                     INSERT INTO t_role
-                    (name, description, status, department,
+                    (code, name, description, status, department,
                      created_by, created_date, last_modified_by, last_modified_date)
                     VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
                     RETURNING id
                 """;
         Long roleId = jdbcTemplate.queryForObject(sqlRole,
                 Long.class,
-                SUPER_ADMIN_ROLE, "iGRP Superadmin", deptId,
+                SUPER_ADMIN_ROLE, "iGRP Superadmin", "iGRP Superadmin", deptId,
                 SYSTEM_USER, SYSTEM_USER);
 
         // Step 1: Insert role-permission relation
