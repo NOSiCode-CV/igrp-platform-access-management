@@ -33,6 +33,7 @@ public class RoleMapper {
         roleDTO.setDescription(role.getDescription());
         roleDTO.setDepartmentCode(role.getDepartment().getCode());
         roleDTO.setStatus(role.getStatus());
+        roleDTO.setIcon(role.getIcon());
         roleDTO.setPermissions(role.getPermissions().stream().map(PermissionEntity::getName).toList());
         return roleDTO;
     }
@@ -52,6 +53,7 @@ public class RoleMapper {
         newRole.setName(request.getName());
         newRole.setDescription(request.getDescription());
         newRole.setStatus(request.getStatus() != null ? request.getStatus() : Status.ACTIVE);
+        newRole.setIcon(request.getIcon());
         newRole.setDepartment(department);
         if (parentRole != null) {
             newRole.setParent(parentRole);

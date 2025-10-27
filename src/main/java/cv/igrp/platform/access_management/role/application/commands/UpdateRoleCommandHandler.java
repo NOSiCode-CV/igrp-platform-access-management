@@ -107,6 +107,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
         roleToUpdate.setDescription(newData.getDescription());
         roleToUpdate.setParent(parentRole);
         roleToUpdate.setStatus(newData.getStatus());
+        roleToUpdate.setIcon(newData.getIcon());
         RoleEntity updatedRole = roleRepository.save(roleToUpdate);
         log.info("Role with code: {} updated successfully.", command.getRoledto().getCode());
         return new ResponseEntity<>(roleMapper.mapToDto(updatedRole), HttpStatus.OK);

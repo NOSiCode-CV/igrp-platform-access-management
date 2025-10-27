@@ -51,6 +51,10 @@ public class RoleEntity extends AuditEntity {
     private Status status;
 
   
+    @Column(name="icon")
+    private String icon;
+
+  
 
 
   @ManyToOne(fetch = FetchType.LAZY)

@@ -49,6 +49,10 @@ public class DepartmentEntity extends AuditEntity {
     private DepartmentStatus status;
 
   
+    @Column(name="icon")
+    private String icon;
+
+  
 
 
   @ManyToOne(fetch = FetchType.LAZY)

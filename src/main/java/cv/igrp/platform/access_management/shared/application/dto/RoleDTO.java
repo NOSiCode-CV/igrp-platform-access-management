@@ -46,6 +46,9 @@ public class RoleDTO  {
   private Status status ;
   
   
+  private String icon ;
+  
+  
   private List<String> permissions = new ArrayList<>();
 
 }

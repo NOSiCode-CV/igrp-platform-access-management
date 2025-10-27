@@ -110,7 +110,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
               .map(role -> new RoleDTO(role.getId(), role.getCode(),
                       role.getName(), role.getDescription(),
                       null, null,
-                      null, null))
+                      null, null, null))
               .collect(Collectors.toList());
 
       logger.info("Returning {} remaining roles for user name={}", result.size(), username);
