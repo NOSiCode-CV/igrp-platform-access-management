@@ -85,7 +85,7 @@ public class AddPermissionsToMenuCommandHandler implements CommandHandler<AddPer
    @Transactional
    public ResponseEntity<MenuEntryDTO> handle(AddPermissionsToMenuCommand command) {
 
-      List<String> roleIdList = command.getAddPermissionsToMenuRequest().stream().toList();
+      List<String> roleIdList = command.getAddPermissionsToMenuRequest();
       log.info("Add Roles: {} for menu entry: {}.", roleIdList, command.getCode());
       List<RoleEntity> roleList = roleRepository.findAllByNameIn(roleIdList)
               .stream()

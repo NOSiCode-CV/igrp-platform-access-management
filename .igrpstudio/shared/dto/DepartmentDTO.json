@@ -69,6 +69,18 @@
       "module": "shared"
     },
     {
+      "name": "icon",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
       "name": "parent_code",
       "objectType": "java",
       "type": "string",

@@ -24,14 +24,16 @@ public class RoleMapper {
     public RoleDTO mapToDto(RoleEntity role) {
         RoleDTO roleDTO = new RoleDTO();
         roleDTO.setId(role.getId());
+        roleDTO.setCode(role.getCode());
         roleDTO.setName(role.getName());
         if (role.getParent() != null) {
-            roleDTO.setParentName(role.getParent().getName());
+            roleDTO.setParentCode(role.getParent().getCode());
         }
         roleDTO.setName(role.getName());
         roleDTO.setDescription(role.getDescription());
         roleDTO.setDepartmentCode(role.getDepartment().getCode());
         roleDTO.setStatus(role.getStatus());
+        roleDTO.setIcon(role.getIcon());
         roleDTO.setPermissions(role.getPermissions().stream().map(PermissionEntity::getName).toList());
         return roleDTO;
     }
@@ -47,9 +49,11 @@ public class RoleMapper {
      */
     public RoleEntity mapToEntity(RoleDTO request, DepartmentEntity department, RoleEntity parentRole) {
         RoleEntity newRole = new RoleEntity();
+        newRole.setCode(request.getCode());
         newRole.setName(request.getName());
         newRole.setDescription(request.getDescription());
         newRole.setStatus(request.getStatus() != null ? request.getStatus() : Status.ACTIVE);
+        newRole.setIcon(request.getIcon());
         newRole.setDepartment(department);
         if (parentRole != null) {
             newRole.setParent(parentRole);

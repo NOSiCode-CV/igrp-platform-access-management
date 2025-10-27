@@ -68,11 +68,11 @@ class GetRolesQueryHandlerTest {
 
         RoleDTO activeRoleDTO = new RoleDTO();
         activeRoleDTO.setId(1);
-        activeRoleDTO.setName("Active Role");
+        activeRoleDTO.setCode("Active Role");
 
         RoleDTO inactiveRoleDTO = new RoleDTO();
         inactiveRoleDTO.setId(2);
-        inactiveRoleDTO.setName("Inactive Role");
+        inactiveRoleDTO.setCode("Inactive Role");
 
         when(roleRepository.findAll(any(Specification.class))).thenReturn(List.of(activeRole, inactiveRole));
         when(roleMapper.mapToDto(activeRole)).thenReturn(activeRoleDTO);
@@ -104,7 +104,7 @@ class GetRolesQueryHandlerTest {
 
         RoleDTO roleDTO = new RoleDTO();
         roleDTO.setId(3);
-        roleDTO.setName("HR Role");
+        roleDTO.setCode("HR Role");
 
         when(roleRepository.findAll(any(Specification.class))).thenReturn(List.of(role));
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
@@ -129,7 +129,7 @@ class GetRolesQueryHandlerTest {
     void itShouldApplyUsernameFilter() {
         // Given
         GetRolesQuery query = new GetRolesQuery();
-        query.setName("manager");
+        query.setCode("manager");
 
         RoleEntity role = new RoleEntity();
         role.setId(400);
@@ -137,7 +137,7 @@ class GetRolesQueryHandlerTest {
 
         RoleDTO roleDTO = new RoleDTO();
         roleDTO.setId(4);
-        roleDTO.setName("Manager Role");
+        roleDTO.setCode("Manager Role");
 
         when(roleRepository.findAll(any(Specification.class))).thenReturn(List.of(role));
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);

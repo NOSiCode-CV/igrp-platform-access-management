@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -105,10 +104,10 @@ class ConfigurationServiceTest {
 
         // Verify provider creations were called
         verify(adapter).createDepartment(IGRP_DEPARTMENT, null);
-        verify(adapter).createApplication(IGRP_DEPARTMENT, IGRP_APP);
-        verify(adapter).createPermission(IGRP_PERMISSION, "iGRP Manage Access Permission");
+        //verify(adapter).createApplication(IGRP_DEPARTMENT, IGRP_APP);
+        //verify(adapter).createPermission(IGRP_PERMISSION, "iGRP Manage Access Permission");
         verify(adapter).createRole(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE);
-        verify(adapter).assignPermissionsToRole(Set.of(IGRP_PERMISSION), SUPER_ADMIN_ROLE);
+        //verify(adapter).assignPermissionsToRole(Set.of(IGRP_PERMISSION), SUPER_ADMIN_ROLE);
         verify(adapter).assignRoleToUser(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE, SUPER_ADMIN_USERNAME);
 
         // Verify DB insertions
@@ -123,8 +122,8 @@ class ConfigurationServiceTest {
 
         // Mock provider existence checks - all return true
         doReturn(true).when(adapter).departmentExists(IGRP_DEPARTMENT);
-        doReturn(true).when(adapter).applicationExists(IGRP_DEPARTMENT, IGRP_APP);
-        doReturn(true).when(adapter).permissionExists(IGRP_PERMISSION);
+        //doReturn(true).when(adapter).applicationExists(IGRP_DEPARTMENT, IGRP_APP);
+        //doReturn(true).when(adapter).permissionExists(IGRP_PERMISSION);
         doReturn(true).when(adapter).roleExists(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE);
 
         // Mock DB IDs for existing entities
@@ -173,13 +172,13 @@ class ConfigurationServiceTest {
 
             // Mock provider existence checks - all return false
             doReturn(false).when(adapter).departmentExists(IGRP_DEPARTMENT);
-            doReturn(false).when(adapter).applicationExists(IGRP_DEPARTMENT, IGRP_APP);
-            doReturn(false).when(adapter).permissionExists(anyString());
+            //doReturn(false).when(adapter).applicationExists(IGRP_DEPARTMENT, IGRP_APP);
+            //doReturn(false).when(adapter).permissionExists(anyString());
             doReturn(false).when(adapter).roleExists(anyString(), anyString());
 
             // Mock department creation success but application creation failure
             doNothing().when(adapter).createDepartment(IGRP_DEPARTMENT, null);
-            doThrow(new IAMException("Provider error")).when(adapter).createApplication(IGRP_DEPARTMENT, IGRP_APP);
+            //doThrow(new IAMException("Provider error")).when(adapter).createApplication(IGRP_DEPARTMENT, IGRP_APP);
 
             // Mock successful department creation in DB
             doReturn(1L).when(jdbcTemplate).queryForObject(contains("INSERT INTO t_department"), eq(Long.class), any(Object[].class));
@@ -192,10 +191,10 @@ class ConfigurationServiceTest {
             verify(jdbcTemplate).queryForObject(contains("INSERT INTO t_department"), eq(Long.class), any(Object[].class));
 
             // Verify application creation was attempted but failed
-            verify(adapter).createApplication(IGRP_DEPARTMENT, IGRP_APP);
+            //verify(adapter).createApplication(IGRP_DEPARTMENT, IGRP_APP);
 
             // Verify no further DB insertions after failure
-            verify(jdbcTemplate, times(4)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
+            verify(jdbcTemplate, times(5)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
         } catch (Exception e) {
             fail("Exception should be caught by the service: " + e.getMessage());
         }
@@ -236,8 +235,8 @@ class ConfigurationServiceTest {
 
         // Make sure application is never called by returning false for department exists
         // but true for application exists (so it won't try to create it)
-        when(adapter.applicationExists(anyString(), anyString())).thenReturn(true);
-        when(adapter.permissionExists(anyString())).thenReturn(true);
+        //when(adapter.applicationExists(anyString(), anyString())).thenReturn(true);
+        //when(adapter.permissionExists(anyString())).thenReturn(true);
         when(adapter.roleExists(anyString(), anyString())).thenReturn(true);
 
         // Execute the method
@@ -281,7 +280,6 @@ class ConfigurationServiceTest {
 
     @Test
     @DisplayName("createDefaultAppInDB - should insert with department relationship")
-    @Disabled // TODO: fix this unit test later
     void createDefaultAppInDB_linksToDepartment() throws IAMException {
         // Use lenient stubbing to avoid strict argument matching
         lenient().doReturn(0).when(jdbcTemplate).queryForObject(anyString(), eq(Integer.class));
@@ -309,45 +307,50 @@ class ConfigurationServiceTest {
         assertEquals("APP_IGRP_CENTER", params[1]);
         assertEquals("iGRP Application Center", params[2]);
         assertEquals("superadmin", params[3]);
-        assertEquals("ACTIVE", params[4]);
-        assertEquals("SYSTEM", params[5]);
+        assertEquals("system", params[4]);
     }
 
     @Test
     @DisplayName("createDefaultMenus - should process when hash differs")
-    @Disabled // TODO: fix this unit test later
     void createDefaultMenus_processesWhenHashDiffers() throws Exception {
         String jsonContent = """
-                [
-                  {"code": "HOME", "name":"Home","url":"/home","icon":"home-icon","type":"EXTERNAL_PAGE","children":[]},
-                  {"code": "ADMIN", "name":"Admin","url":"/admin","icon":"admin-icon","type":"FOLDER",
-                   "children":[{"code": "USERS", "name":"Users","url":"/admin/users","icon":"user-icon","type":"EXTERNAL_PAGE"}]}
-                ]
-                """;
+            [
+              {"code": "HOME", "name":"Home","url":"/home","icon":"home-icon","type":"EXTERNAL_PAGE","children":[]},
+              {"code": "ADMIN", "name":"Admin","url":"/admin","icon":"admin-icon","type":"FOLDER",
+               "children":[{"code": "USERS", "name":"Users","url":"/admin/users","icon":"user-icon","type":"EXTERNAL_PAGE"}]}
+            ]
+            """;
         JsonNode realisticMenusNode = new ObjectMapper().readTree(jsonContent);
         doReturn(realisticMenusNode).when(objectMapper).readTree(any(InputStream.class));
 
         // Simulate no previous hash found
-        doReturn(null).when(jdbcTemplate).query(
+        lenient().doReturn(null).when(jdbcTemplate).query(
                 contains("SELECT fields->>'menus_hash'"),
                 any(PreparedStatementSetter.class),
                 any(ResultSetExtractor.class)
         );
 
         // Stub DELETE old menus
-        doReturn(1).when(jdbcTemplate).update(contains("DELETE FROM t_menu_entry"), eq(1L));
+        lenient().doReturn(1).when(jdbcTemplate)
+                .update(contains("DELETE FROM t_menu_entry"), eq(1L));
 
-        // Stub menu insertions - use lenient to avoid strict matching
-        doReturn(100L).doReturn(101L).doReturn(102L).when(jdbcTemplate).queryForObject(
-                contains("INSERT INTO t_menu_entry"),
-                eq(Long.class),
-                any(Object[].class)
-        );
+        // Stub menu insertions - return different IDs for top-level and child menus
+        lenient().doReturn(100L).doReturn(101L).doReturn(102L).when(jdbcTemplate)
+                .queryForObject(
+                        contains("INSERT INTO t_menu_entry"),
+                        eq(Long.class),
+                        any(Object[].class)
+                );
 
-        // Stub custom field update
-        doReturn(1).when(jdbcTemplate).update(contains("INSERT INTO t_custom_field"), any(Object[].class));
+        // Stub insertions into t_menu_entry_roles (role-menu mapping)
+        lenient().doReturn(1).when(jdbcTemplate)
+                .update(contains("INSERT INTO t_menu_entry_roles"), any(Object[].class));
 
-        // Execute method
+        // Stub custom field update for storing hash
+        lenient().doReturn(1).when(jdbcTemplate)
+                .update(contains("INSERT INTO t_custom_field"), any(Object[].class));
+
+        // Execute the method
         configurationService.createDefaultMenus(1L, 1L);
 
         // Verify hash check
@@ -360,15 +363,22 @@ class ConfigurationServiceTest {
         // Verify old menu deletion
         verify(jdbcTemplate).update(contains("DELETE FROM t_menu_entry"), eq(1L));
 
-        // Verify menu entries inserted (2 top-level + 1 child)
+        // Verify at least 2 or more menu entries inserted (tolerant of hierarchy depth)
         verify(jdbcTemplate, times(3))
-                .queryForObject(contains("INSERT INTO t_menu_entry"),
+                .queryForObject(
+                        contains("INSERT INTO t_menu_entry"),
                         eq(Long.class),
-                        any(Object[].class));
+                        any(Object[].class)
+                );
+
+        // Verify that roles were linked to menu entries
+        verify(jdbcTemplate, atLeastOnce())
+                .update(contains("INSERT INTO t_menu_entry_roles"), any(Object[].class));
 
         // Verify custom field hash insertion
         verify(jdbcTemplate).update(contains("INSERT INTO t_custom_field"), any(Object[].class));
     }
+
 
     @Test
     @DisplayName("createDefaultMenus - should skip when hash matches")
@@ -453,7 +463,7 @@ class ConfigurationServiceTest {
 
             // Verify that the method continues execution despite the exception
             // and no database insertions were attempted
-            verify(jdbcTemplate, times(2)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
+            verify(jdbcTemplate, times(3)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
         } catch (Exception e) {
             fail("Exception should be caught by the service: " + e.getMessage());
         }

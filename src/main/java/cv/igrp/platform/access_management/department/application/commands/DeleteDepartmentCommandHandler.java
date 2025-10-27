@@ -4,6 +4,7 @@ import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import org.springframework.http.HttpStatus;
@@ -66,6 +67,20 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
          logger.warn("Department with code={} not found", code);
          throw IgrpResponseStatusException.of(HttpStatus.NOT_FOUND,
                  "Invalid Department Code", "Department not found with code: " + code);
+      }
+
+      // Verify if the department doesn't have children. If it has, prevent deletion.
+      var department = departmentRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
+                      .orElseThrow(() -> {
+                         logger.warn("Department with code={} not found", code);
+                         return IgrpResponseStatusException.of(HttpStatus.NOT_FOUND,
+                                 "Invalid Department Code", "Department not found with code: " + code);
+                      });
+
+      if(!department.getChildrenids().isEmpty()) {
+            logger.warn("Department with code={} has child departments, cannot delete", code);
+            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
+                    "Department Deletion Failed", "Department with code: " + code + " has child departments and cannot be deleted. Delete the associated children first.");
       }
 
       departmentRepository.deleteByCode(code);

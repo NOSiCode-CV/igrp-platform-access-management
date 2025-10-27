@@ -27,7 +27,7 @@ public class RemoveRoleFromApplicationCommandHandler implements CommandHandler<R
 
         for (var roleName : command.getCodelistrequestdto().getCodes()) {
 
-            var role = roleEntityRepository.findByNameAndStatusNotDeleted(roleName);
+            var role = roleEntityRepository.findByCodeAndStatusNotDeleted(roleName);
 
             application.getRoles().remove(role);
         }

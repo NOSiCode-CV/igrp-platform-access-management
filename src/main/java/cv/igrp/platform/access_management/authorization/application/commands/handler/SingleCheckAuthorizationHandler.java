@@ -6,6 +6,7 @@ import cv.igrp.framework.auth.core.authorization.service.AuthorizationCore;
 import cv.igrp.platform.access_management.authorization.application.dto.PermissionCheckResponseDTO;
 import org.springframework.stereotype.Service;
 
+import java.util.Arrays;
 import java.util.concurrent.ExecutionException;
 
 @Service
@@ -33,6 +34,8 @@ public class SingleCheckAuthorizationHandler {
             responseDto.setResolutionTimeMs(permissionCheckResponse.getResolutionTimeMs());
             return responseDto;
         } catch (InterruptedException | ExecutionException e) {
+            System.err.println(e.getMessage());
+            System.err.println(Arrays.toString(e.getStackTrace()));
             throw new RuntimeException(e);
         }
     }

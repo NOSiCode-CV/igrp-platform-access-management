@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.users.application.commands;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
@@ -21,7 +22,6 @@ import org.springframework.http.ResponseEntity;
 import java.util.Optional;
 
 @ExtendWith(MockitoExtension.class)
-@Disabled
 public class UpdateUserCommandHandlerTest {
 
     @Mock
@@ -48,11 +48,13 @@ public class UpdateUserCommandHandlerTest {
         user = new IGRPUserEntity();
         user.setName("Old Name");
         user.setUsername(USER_ID);
+        user.setStatus(Status.ACTIVE);
         user.setEmail("old@example.com");
 
         dto = new IGRPUserDTO();
         dto.setName("New Name");
         dto.setUsername(USER_ID);
+        dto.setStatus(Status.ACTIVE);
         dto.setEmail("new@example.com");
 
         command = updateUserCommand(dto, USER_ID);

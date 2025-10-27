@@ -8,7 +8,6 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -45,7 +44,6 @@ public class AddItemsCommandHandler implements CommandHandler<AddItemsCommand, R
            LoggerFactory.getLogger(AddItemsCommandHandler.class);
 
    private final ResourceEntityRepository resourceRepository;
-   private final PermissionEntityRepository permissionRepository;
    private final ResourceMapper resourceMapper;
 
    /**
@@ -53,15 +51,12 @@ public class AddItemsCommandHandler implements CommandHandler<AddItemsCommand, R
     *
     * @param resourceRepository     the repository used to fetch and persist {@link ResourceEntity} entities
     * @param resourceMapper         the mapper used to convert DTOs and domain models
-    * @param permissionRepository   the repository used to fetch {@link PermissionEntity} entities
     */
    public AddItemsCommandHandler(
            ResourceEntityRepository resourceRepository,
-           ResourceMapper resourceMapper,
-           PermissionEntityRepository permissionRepository) {
+           ResourceMapper resourceMapper) {
       this.resourceRepository = resourceRepository;
       this.resourceMapper = resourceMapper;
-      this.permissionRepository = permissionRepository;
    }
 
    /**
@@ -87,17 +82,7 @@ public class AddItemsCommandHandler implements CommandHandler<AddItemsCommand, R
                          "Resource not found with name: " + command.getName());
               });
       List<ResourceItemEntity> items = command.getResourceitemdto().stream()
-              .map(dto -> {
-                 PermissionEntity permission = permissionRepository.findByNameAndStatusNot(dto.getPermissionName(), Status.DELETED)
-                         .orElseThrow(() -> {
-                            logger.warn("Permission not found with name: {}", dto.getPermissionName());
-                            return IgrpResponseStatusException.of(
-                                    HttpStatus.NOT_FOUND,
-                                    "Permission not found",
-                                    "Permission not found with name: " + dto.getPermissionName());
-                         });
-                 return resourceMapper.toItemEntity(dto, resource, permission);
-              })
+              .map(dto -> resourceMapper.toItemEntity(dto, resource))
               .toList();
 
       if (resource.getItems() == null) {

@@ -118,7 +118,6 @@ public class RemoveItemsCommandHandlerTest {
     }
 
     @Test
-    @Disabled
     @DisplayName("should remove matching items and return 200 OK")
     void testHandle_whenValidItemsProvided_shouldRemoveItems() {
         // Arrange

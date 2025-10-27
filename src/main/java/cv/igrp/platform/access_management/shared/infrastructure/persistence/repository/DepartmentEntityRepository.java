@@ -21,7 +21,8 @@ public interface DepartmentEntityRepository extends
     default DepartmentEntity findByCodeAndStatusNotDeleted(String code) {
         return findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
                 .orElseThrow(() -> IgrpResponseStatusException.notFound(
-                        "Department not found with code: " + code));
+                        "Department not found",
+                        "No department found with code: " + code));
     }
 
     boolean existsByCode(String code);

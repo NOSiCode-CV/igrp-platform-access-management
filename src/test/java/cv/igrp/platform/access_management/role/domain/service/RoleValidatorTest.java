@@ -22,7 +22,7 @@ class RoleValidatorTest {
     void shouldReturnValidResponse_WhenRoleNameIsUnique() {
         // Given
         RoleDTO newRole = new RoleDTO();
-        newRole.setName("Admin");
+        newRole.setCode("Admin");
 
         DepartmentEntity department = new DepartmentEntity();
         department.setRoles(List.of());
@@ -39,8 +39,8 @@ class RoleValidatorTest {
     void shouldReturnInvalidResponse_WhenRoleNameAlreadyExists() {
         // Given
         RoleEntity existingRole = new RoleEntity();
-        String roleName = "Admin";
-        existingRole.setName(roleName);
+        String roleCode = "Admin";
+        existingRole.setCode(roleCode);
         existingRole.setStatus(Status.ACTIVE);
 
         DepartmentEntity department = new DepartmentEntity();
@@ -48,7 +48,7 @@ class RoleValidatorTest {
         department.setRoles(List.of(existingRole));
 
         RoleDTO newRole = new RoleDTO();
-        newRole.setName(roleName);
+        newRole.setCode(roleCode);
         newRole.setStatus(Status.ACTIVE);
 
         // When

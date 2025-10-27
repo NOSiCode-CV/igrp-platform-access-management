@@ -51,7 +51,7 @@ public class SynchronizationService {
         try {
             // Phase 1: Sync definitions (order matters)
             syncDepartments();
-            syncApplications();
+            //syncApplications(); disabled for now as applications are only managed in IGRP, no need for provider management
             syncRoles();
             //syncPermissions(); disabled for now as permissions are only managed in IGRP
             //syncResources(); disabled for now as resources are only managed in IGRP
@@ -62,6 +62,8 @@ public class SynchronizationService {
 
             // Phase 3: User synchronization (special rules apply)
             syncUsers();
+
+            syncMappers();
 
             long duration = System.currentTimeMillis() - startTime;
             LOGGER.info("[Sync] Startup reconciliation completed in {} ms", duration);
@@ -251,9 +253,9 @@ public class SynchronizationService {
         // Create in provider if missing
         for (RoleInfo dbRole : dbRoles) {
             String key = dbRole.getName();
-            LOGGER.info("[[IGRP_DEBUG {}]]: Syncing role key: {}", dbRole.getName(), key);
-            LOGGER.info("[[IGRP_DEBUG {}]]: DB Role Keys: {}", dbRole.getName(), dbRoleKeys);
-            LOGGER.info("[[IGRP_DEBUG {}]]: Provider Role Keys: {}", dbRole.getName(), providerRoleKeys);
+            //LOGGER.info("[[IGRP_DEBUG {}]]: Syncing role key: {}", dbRole.getName(), key);
+            //LOGGER.info("[[IGRP_DEBUG {}]]: DB Role Keys: {}", dbRole.getName(), dbRoleKeys);
+            //LOGGER.info("[[IGRP_DEBUG {}]]: Provider Role Keys: {}", dbRole.getName(), providerRoleKeys);
             if (!providerRoleKeys.contains(key)) {
                 try {
                     adapter.createRole(dbRole.getDepartmentCode(), dbRole.getName());
@@ -272,7 +274,7 @@ public class SynchronizationService {
         // Delete it from provider if not in DB
         for (RoleInfo providerRole : providerRoles) {
             String key = providerRole.getName();
-            if (!dbRoleKeys.contains(key)) {
+            if (!dbRoleKeys.contains(key) && key.contains(".")) {
                 try {
                     adapter.deleteRole(providerRole.getDepartmentCode(), providerRole.getName());
                     LOGGER.info("[Sync] Deleted role from provider: {}", key);
@@ -527,6 +529,20 @@ public class SynchronizationService {
         }
     }
 
+    private void syncMappers() throws IAMException {
+
+        boolean existRolesClaimMapper = adapter.protocolMapperExists("iGRP Roles");
+
+        if(!existRolesClaimMapper) {
+            LOGGER.info("[Sync] Creating JWT Protocol Mapper in the provider...");
+            adapter.createJwtRolesClaimMapper("igrp_roles", "iGRP Roles");
+            LOGGER.info("[Sync] JWT Protocol Mapper created successfully in the provider");
+        } else {
+            LOGGER.info("[Sync] JWT Protocol Mapper is already present in the provider");
+        }
+
+    }
+
     // =====================================================
     // Database Query Methods
     // =====================================================
@@ -552,10 +568,8 @@ public class SynchronizationService {
 
     private List<ApplicationInfo> getApplicationsFromDatabase() {
         String sql = """
-                SELECT a.code, a.name, a.description, a.status, a.type, d.code AS departmentCode
+                SELECT a.code, a.name, a.description, a.status, a.type
                 FROM t_application a
-                JOIN t_department_application da ON a.id = da.application_id
-                JOIN t_department d ON da.department_id = d.id
                 WHERE a.status = ?
                 """;
         return jdbcTemplate.query(sql, (rs, _) -> {
@@ -563,7 +577,7 @@ public class SynchronizationService {
             app.setCode(rs.getString("code"));
             app.setName(rs.getString("name"));
             app.setDescription(rs.getString("description"));
-            app.setDepartmentCode(rs.getString("departmentCode"));
+            //app.setDepartmentCode(rs.getString("departmentCode"));
             app.setStatus(rs.getString("status"));
             app.setType(rs.getString("type"));
             return app;
@@ -572,15 +586,15 @@ public class SynchronizationService {
 
     private List<RoleInfo> getRolesFromDatabase() {
         String sql = """
-                SELECT r.name, r.description, r.status, d.code as departmentCode
-                FROM t_role r 
-                LEFT JOIN t_department d ON r.department = d.id 
+                SELECT r.code, r.description, r.status, d.code as departmentCode
+                FROM t_role r
+                LEFT JOIN t_department d ON r.department = d.id
                 WHERE r.status = ?
                 ORDER BY r.parent NULLS FIRST
                 """;
         return jdbcTemplate.query(sql, (rs, _) -> {
             RoleInfo role = new RoleInfo();
-            role.setName(rs.getString("name"));
+            role.setName(rs.getString("code"));
             role.setDescription(rs.getString("description"));
             role.setDepartmentCode(rs.getString("departmentCode"));
             role.setStatus(rs.getString("status"));
@@ -652,7 +666,7 @@ public class SynchronizationService {
 
     private Map<String, Set<String>> getRolePermissionsFromDatabase() {
         String sql = """
-                SELECT p.name as permission_name, r.name as role_name 
+                SELECT p.name as permission_name, r.code as role_name 
                 FROM t_role_permission rp 
                 LEFT JOIN t_permission p ON rp.permission = p.id 
                 LEFT JOIN t_role r ON rp.role_id = r.id 
@@ -672,7 +686,7 @@ public class SynchronizationService {
 
     private Map<String, Map<String, Set<String>>> getUserRolesFromDatabase() {
         String sql = """
-            SELECT u.username, d.code as department_code, r.name as role_name
+            SELECT u.username, d.code as department_code, r.code as role_name
             FROM t_role_users ru
             LEFT JOIN t_user u ON ru.users_id = u.id
             LEFT JOIN t_role r ON ru.roles_id = r.id

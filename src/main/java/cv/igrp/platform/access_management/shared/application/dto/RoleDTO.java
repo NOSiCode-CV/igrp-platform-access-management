@@ -24,6 +24,9 @@ public class RoleDTO  {
   
   
   private Integer id ;
+  
+  
+  private String code ;
   @NotBlank(message = "The field <name> is required")
 	@Size(max = 25, message = "The field length <name> cannot be more than 25 characters")
 	@Pattern(message = "Invalid value format for field <name>.", regexp = "^[A-Za-z0-9_-]+$")
@@ -37,10 +40,13 @@ public class RoleDTO  {
   private String departmentCode ;
   
   
-  private String parentName ;
+  private String parentCode ;
   
   
   private Status status ;
+  
+  
+  private String icon ;
   
   
   private List<String> permissions = new ArrayList<>();

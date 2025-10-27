@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.shared.infrastructure.persistence.rep
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -11,6 +12,7 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.data.repository.history.RevisionRepository;
 
@@ -50,7 +52,7 @@ public interface PermissionEntityRepository extends
                         FROM RoleEntity r
                         JOIN r.parent pr
                         JOIN pr.permissions pp
-                        WHERE r.name = :name
+                        WHERE r.code = :code
                     ))
             
                     OR
@@ -60,7 +62,7 @@ public interface PermissionEntityRepository extends
                         FROM RoleEntity r
                         JOIN r.children cr
                         JOIN cr.permissions cp
-                        WHERE r.name = :name
+                        WHERE r.code = :code
                     ))
             
                     OR
@@ -70,17 +72,18 @@ public interface PermissionEntityRepository extends
                         FROM RoleEntity r
                         JOIN r.department d
                         JOIN d.permissions dp
-                        WHERE r.name = :name AND r.parent IS NULL
+                        WHERE r.code = :code AND r.parent IS NULL
                     ))
                 )
                 AND p.id NOT IN (
                     SELECT rp.id
                     FROM RoleEntity r2
                     JOIN r2.permissions rp
-                    WHERE r2.name = :name
+                    WHERE r2.code = :code
                 )
             """)
-    List<PermissionEntity> findAvailablePermissionsForRole(@Param("name") String name);
+    List<PermissionEntity> findAvailablePermissionsForRole(@Param("code") String code);
 
+    List<PermissionEntity> findAllByResourcesAndStatusNot(Set<ResourceEntity> resources, Status status);
 
 }

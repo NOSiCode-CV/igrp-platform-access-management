@@ -55,12 +55,14 @@ public class PostDepartmentCommandHandlerTest {
         // Setup test data
         departmentDTO = new DepartmentDTO();
         departmentDTO.setName("Test Department");
+        departmentDTO.setCode("DEPT_TEST");
         departmentDTO.setDescription("Test Description");
         departmentDTO.setParent_code(null);
 
         command = postDepartmentCommand(departmentDTO);
 
         department = new DepartmentEntity();
+        department.setCode("DEPT_TEST");
         department.setName("Test Department");
         department.setDescription("Test Description");
 
@@ -71,11 +73,13 @@ public class PostDepartmentCommandHandlerTest {
 
         savedDepartment = new DepartmentEntity();
         savedDepartment.setId(3);
+        savedDepartment.setCode("DEPT_TEST");
         savedDepartment.setName("Test Department");
         savedDepartment.setDescription("Test Description");
 
         resultDTO = new DepartmentDTO();
         resultDTO.setId(3);
+        resultDTO.setCode("DEPT_TEST");
         resultDTO.setName("Test Department");
         resultDTO.setDescription("Test Description");
     }
@@ -85,6 +89,7 @@ public class PostDepartmentCommandHandlerTest {
     void testHandle_whenValidInput_shouldCreateDepartmentAndReturn201() {
         // Arrange
         when(departmentMapper.toEntity(departmentDTO)).thenReturn(department);
+        when(departmentRepository.findByCodeAndStatusNot("DEPT_TEST", DepartmentStatus.DELETED)).thenReturn(Optional.empty());
         when(departmentRepository.save(any(DepartmentEntity.class))).thenReturn(savedDepartment);
         when(departmentMapper.toDto(savedDepartment)).thenReturn(resultDTO);
 
@@ -99,6 +104,7 @@ public class PostDepartmentCommandHandlerTest {
         // Verify
         verify(departmentMapper).toEntity(departmentDTO);
         verify(departmentRepository).save(department);
+        verify(departmentRepository).findByCodeAndStatusNot("DEPT_TEST", DepartmentStatus.DELETED);
         verify(departmentMapper).toDto(savedDepartment);
         verifyNoMoreInteractions(departmentMapper, departmentRepository);
     }
@@ -113,8 +119,10 @@ public class PostDepartmentCommandHandlerTest {
         command = postDepartmentCommand(departmentDTO);
 
         when(departmentMapper.toEntity(departmentDTO)).thenReturn(department);
+        when(departmentRepository.findByCodeAndStatusNot("DEPT_TEST", DepartmentStatus.DELETED)).thenReturn(Optional.empty());
         when(departmentRepository.findByCodeAndStatusNot("DEPT_RH", DepartmentStatus.DELETED)).thenReturn(Optional.of(parentDepartment));
         when(departmentRepository.save(any(DepartmentEntity.class))).thenReturn(savedDepartment);
+
         when(departmentMapper.toDto(savedDepartment)).thenReturn(resultDTO);
 
         // Act
@@ -127,6 +135,7 @@ public class PostDepartmentCommandHandlerTest {
 
         // Verify
         verify(departmentMapper).toEntity(departmentDTO);
+        verify(departmentRepository).findByCodeAndStatusNot("DEPT_TEST", DepartmentStatus.DELETED);
         verify(departmentRepository).findByCodeAndStatusNot("DEPT_RH", DepartmentStatus.DELETED);
         verify(departmentRepository).save(department);
         verify(departmentMapper).toDto(savedDepartment);
