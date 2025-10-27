@@ -110,7 +110,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
             }
 
             logger.info("Assigning role name={} to user name={}", role, username);
-            RoleEntity roleEntity = roleRepository.findByNameAndStatusNot(role, Status.DELETED)
+            RoleEntity roleEntity = roleRepository.findByCodeAndStatusNot(role, Status.DELETED)
                     .orElseThrow(() -> {
                        logger.warn("Role not found with name={}", role);
                        return IgrpResponseStatusException.of(

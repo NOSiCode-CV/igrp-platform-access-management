@@ -70,12 +70,12 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<RoleDTO> handle(RemovePermissionsCommand command) {
-      log.info("Remove Permissions with name: {} from Role with name: {}.", command.getRemovePermissionsRequest().stream().toList(), command.getName());
-      RoleEntity foundRole = roleRepository.findByNameAndStatusNot(command.getName(), Status.DELETED)
+      log.info("Remove Permissions with name: {} from Role with code: {}.", command.getRemovePermissionsRequest().stream().toList(), command.getCode());
+      RoleEntity foundRole = roleRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
               .orElseThrow(() -> {
-                 log.warn("Role with name: {} not found.", command.getName());
+                 log.warn("Role with code: {} not found.", command.getCode());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Remove Permission By Role ID", "Role with id: " + command.getName() + " not found."
+                         HttpStatus.NOT_FOUND, "Remove Permission By Role ID", "Role with code: " + command.getCode() + " not found."
                  );
               });
       for (String permissionId : command.getRemovePermissionsRequest()) {
@@ -85,7 +85,7 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
                  .findFirst()
                  .ifPresent(permission -> foundRole.getPermissions().remove(permission));
       }
-      log.info("Permissions with IDs {} removed from Role with name: {} successfully.", command.getRemovePermissionsRequest().stream().toList(), command.getName());
+      log.info("Permissions with IDs {} removed from Role with code: {} successfully.", command.getRemovePermissionsRequest().stream().toList(), command.getCode());
       var response = roleMapper.mapToDto(roleRepository.save(foundRole));
       return new ResponseEntity<>(response, HttpStatus.OK);
    }

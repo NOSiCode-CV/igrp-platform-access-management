@@ -14,7 +14,6 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -108,7 +107,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
 
 
       List<RoleDTO> result = user.getRoles().stream()
-              .map(role -> new RoleDTO(role.getId(),
+              .map(role -> new RoleDTO(role.getId(), role.getCode(),
                       role.getName(), role.getDescription(),
                       null, null,
                       null, null))

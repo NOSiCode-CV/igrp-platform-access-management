@@ -14,7 +14,7 @@ public class UpdateRoleCommand implements Command {
 
   
   private RoleDTO roledto;
-  @NotBlank(message = "The field <name> is required")
-  private String name;
+  @NotBlank(message = "The field <code> is required")
+  private String code;
 
 }

@@ -6,7 +6,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
-import org.springframework.context.event.EventListener;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -30,14 +29,14 @@ public class GetAvailablePermissionsForRolesQueryHandler implements QueryHandler
 
     @IgrpQueryHandler
     public ResponseEntity<List<PermissionDTO>> handle(GetAvailablePermissionsForRolesQuery query) {
-        LOGGER.info("Fetching all available permissions for role: {}", query.getName());
+        LOGGER.info("Fetching all available permissions for role: {}", query.getCode());
 
-        List<PermissionDTO> permissions = permissionRepository.findAvailablePermissionsForRole(query.getName())
+        List<PermissionDTO> permissions = permissionRepository.findAvailablePermissionsForRole(query.getCode())
                 .stream()
                 .map(permissionMapper::mapToDTO)
                 .toList();
 
-        LOGGER.info("Found {} available permissions for role {}", permissions.size(), query.getName());
+        LOGGER.info("Found {} available permissions for role {}", permissions.size(), query.getCode());
         return ResponseEntity.ok(permissions);
     }
 

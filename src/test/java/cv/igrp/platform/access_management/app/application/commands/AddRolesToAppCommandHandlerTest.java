@@ -78,8 +78,8 @@ class AddRolesToAppCommandHandlerTest {
         when(codesDto.getCodes()).thenReturn(List.of(roleName1, roleName2));
 
         when(applicationRepository.findByCodeAndStatusNotDeleted(appCode)).thenReturn(application);
-        when(roleRepository.findByNameAndStatusNotDeleted(roleName1)).thenReturn(role1);
-        when(roleRepository.findByNameAndStatusNotDeleted(roleName2)).thenReturn(role2);
+        when(roleRepository.findByCodeAndStatusNotDeleted(roleName1)).thenReturn(role1);
+        when(roleRepository.findByCodeAndStatusNotDeleted(roleName2)).thenReturn(role2);
 
         // when
         ResponseEntity<String> response = handler.handle(command);
@@ -91,8 +91,8 @@ class AddRolesToAppCommandHandlerTest {
                 .containsExactlyInAnyOrder(role1, role2);
 
         verify(applicationRepository).findByCodeAndStatusNotDeleted(appCode);
-        verify(roleRepository).findByNameAndStatusNotDeleted(roleName1);
-        verify(roleRepository).findByNameAndStatusNotDeleted(roleName2);
+        verify(roleRepository).findByCodeAndStatusNotDeleted(roleName1);
+        verify(roleRepository).findByCodeAndStatusNotDeleted(roleName2);
         verify(applicationRepository).save(application);
     }
 
@@ -117,7 +117,7 @@ class AddRolesToAppCommandHandlerTest {
         when(command.getCodelistrequestdto()).thenReturn(codesDto);
         when(codesDto.getCodes()).thenReturn(List.of(roleName));
         when(applicationRepository.findByCodeAndStatusNotDeleted(appCode)).thenReturn(application);
-        when(roleRepository.findByNameAndStatusNotDeleted(roleName)).thenReturn(role);
+        when(roleRepository.findByCodeAndStatusNotDeleted(roleName)).thenReturn(role);
 
         // when / then
         var ex = assertThrows(
@@ -138,7 +138,7 @@ class AddRolesToAppCommandHandlerTest {
 
         // verify save is never called
         verify(applicationRepository).findByCodeAndStatusNotDeleted(appCode);
-        verify(roleRepository).findByNameAndStatusNotDeleted(roleName);
+        verify(roleRepository).findByCodeAndStatusNotDeleted(roleName);
         verify(applicationRepository, never()).save(application);
     }
 }

@@ -4,7 +4,6 @@ import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.permission.domain.service.PermissionValidator;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
@@ -83,15 +82,15 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
       RoleEntity parentRole = null;
       DepartmentEntity department = departmentRepository.findByCodeAndStatusNot(command.getRoledto().getDepartmentCode(), DepartmentStatus.DELETED)
               .orElseThrow(() -> {
-                 log.warn("Department with id: {} not found.", command.getRoledto().getDepartmentCode());
+                 log.warn("Department with code: {} not found.", command.getRoledto().getDepartmentCode());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Create Role", "Department with id: " + command.getRoledto().getDepartmentCode() + " not found."
+                         HttpStatus.NOT_FOUND, "Create Role", "Department with code: " + command.getRoledto().getDepartmentCode() + " not found."
                  );
               });
 
-      command.getRoledto().setName(RoleValidator.normalizeRoleName(command.getRoledto().getName(), department.getCode()));
+      command.getRoledto().setCode(RoleValidator.normalizeRoleCode(command.getRoledto().getCode(), department.getCode()));
 
-      log.info("Create Role with name: {}.", command.getRoledto().getName());
+      log.info("Create Role with code: {}.", command.getRoledto().getCode());
 
       ResourceValidationResponse roleValidationResponse = RoleValidator.validateRoleDto(command.getRoledto(), department);
       if(!roleValidationResponse.isValid()){
@@ -100,13 +99,13 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
          );
       }
 
-      if (command.getRoledto().getParentName() != null) {
-         String parentRoleName = command.getRoledto().getParentName();
-         parentRole = roleRepository.findByNameAndStatusNot(parentRoleName, Status.DELETED)
+      if (command.getRoledto().getParentCode() != null) {
+         String parentRoleCode = command.getRoledto().getParentCode();
+         parentRole = roleRepository.findByCodeAndStatusNot(parentRoleCode, Status.DELETED)
                  .orElseThrow(() -> {
-                    log.warn("Parent Role with id: {} not found.", command.getRoledto().getParentName());
+                    log.warn("Parent Role with code: {} not found.", command.getRoledto().getParentCode());
                     return IgrpResponseStatusException.of(
-                            HttpStatus.NOT_FOUND, "Create Role", "Parent Role with name: " + parentRoleName + " not found."
+                            HttpStatus.NOT_FOUND, "Create Role", "Parent Role with code: " + parentRoleCode + " not found."
                     );
                  });
       }
@@ -115,7 +114,7 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
       RoleEntity savedRole = roleRepository.save(newRole);
 
       try {
-          adapter.createRole(department.getCode(), savedRole.getName());
+          adapter.createRole(department.getCode(), savedRole.getCode());
       } catch (IAMException e) {
           throw IgrpResponseStatusException.of(
                   HttpStatus.INTERNAL_SERVER_ERROR,
@@ -125,7 +124,7 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
       }
 
       RoleDTO roleDTO = roleMapper.mapToDto(savedRole);
-      log.info("Role with name: {} created successfully.", command.getRoledto().getName());
+      log.info("Role with code: {} created successfully.", command.getRoledto().getCode());
       return new ResponseEntity<>(roleDTO, HttpStatus.CREATED);
    }
 

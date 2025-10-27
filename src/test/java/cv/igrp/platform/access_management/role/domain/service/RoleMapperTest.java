@@ -56,26 +56,26 @@ class RoleMapperTest {
         assertEquals(roleDescription, result.getDescription());
         assertEquals(departmentCode, result.getDepartmentCode());
         assertEquals(Status.ACTIVE, result.getStatus());
-        assertNull(result.getParentName(), "Expected parentName to be null when role has no parent");
+        assertNull(result.getParentCode(), "Expected parentName to be null when role has no parent");
     }
 
     @Test
     void itShouldMapRoleToDto_WhenParentIsPresent() {
         // Given
         int roleId = 10;
-        String roleName = "admin";
+        String roleCode = "admin";
         int parentRoleId = 1;
-        String parentRoleName = "developer";
+        String parentRoleCode = "developer";
         int departmentId = 10;
         String departmentCode = "HR";
 
         RoleEntity role = new RoleEntity();
         RoleEntity parentRole = new RoleEntity();
         parentRole.setId(parentRoleId);
-        parentRole.setName(parentRoleName);
+        parentRole.setCode(parentRoleCode);
         parentRole.setPermissions(new HashSet<>());
         role.setId(roleId);
-        role.setName(roleName);
+        role.setCode(roleCode);
         role.setPermissions(new HashSet<>());
         String roleDescription = "Developer";
         role.setDescription(roleDescription);
@@ -94,23 +94,23 @@ class RoleMapperTest {
         // Then
         assertNotNull(result);
         assertEquals(roleId, result.getId());
-        assertEquals(roleName, result.getName());
+        assertEquals(roleCode, result.getCode());
         assertEquals(roleDescription, result.getDescription());
         assertEquals(departmentCode, result.getDepartmentCode());
         assertEquals(Status.ACTIVE, result.getStatus());
-        assertNotNull(result.getParentName());
-        assertEquals(parentRoleName, result.getParentName());
+        assertNotNull(result.getParentCode());
+        assertEquals(parentRoleCode, result.getParentCode());
     }
 
     @Test
     void itShouldMapAllFieldsCorrectly_FromRoleToDto() {
         // Given
         int roleId = 1;
-        String roleName = "admin";
+        String roleCode = "admin";
         int departmentId = 20;
         String departmentCode = "HR";
         int parentRoleId = 99;
-        String parentRoleName = "developer";
+        String parentRoleCode = "developer";
 
         DepartmentEntity department = new DepartmentEntity();
         department.setId(departmentId);
@@ -118,12 +118,12 @@ class RoleMapperTest {
 
         RoleEntity parentRole = new RoleEntity();
         parentRole.setId(parentRoleId);
-        parentRole.setName(parentRoleName);
+        parentRole.setCode(parentRoleCode);
         parentRole.setPermissions(new HashSet<>());
         RoleEntity role = new RoleEntity();
 
         role.setId(roleId);
-        role.setName(roleName);
+        role.setCode(roleCode);
         String roleDescription = "Team Lead";
         role.setDescription(roleDescription);
         role.setStatus(Status.INACTIVE);
@@ -137,11 +137,11 @@ class RoleMapperTest {
         // Then
         assertNotNull(result);
         assertEquals(roleId, result.getId());
-        assertEquals(roleName, result.getName());
+        assertEquals(roleCode, result.getCode());
         assertEquals(roleDescription, result.getDescription());
         assertEquals(Status.INACTIVE, result.getStatus());
         assertEquals(departmentCode, result.getDepartmentCode());
-        assertEquals(parentRoleName, result.getParentName());
+        assertEquals(parentRoleCode, result.getParentCode());
     }
 
 
@@ -150,25 +150,25 @@ class RoleMapperTest {
         // Given
         int departmentId = 10;
         String departmentCode = "HR";
-        String roleName = "admin";
+        String roleCode = "admin";
         DepartmentEntity department = new DepartmentEntity();
         department.setId(departmentId);
         department.setCode(departmentCode);
 
         RoleDTO dto = new RoleDTO();
-        dto.setName(roleName);
+        dto.setCode(roleCode);
         String roleDescription = "Developer";
         dto.setDescription(roleDescription);
         dto.setStatus(Status.ACTIVE);
         dto.setDepartmentCode(department.getCode());
-        dto.setParentName(null);
+        dto.setParentCode(null);
 
         // When
         RoleEntity result = underTest.mapToEntity(dto, department, null);
 
         // Then
         assertNotNull(result);
-        assertEquals(roleName, result.getName());
+        assertEquals(roleCode, result.getCode());
         assertEquals(roleDescription, result.getDescription());
         assertEquals(Status.ACTIVE, result.getStatus());
         assertEquals(department, result.getDepartment());
@@ -178,7 +178,7 @@ class RoleMapperTest {
     @Test
     void itShouldSetStatusToActive_WhenNotProvided() {
         // Given
-        String roleName = "admin";
+        String roleCode = "admin";
         int departmentId = 10;
         String departmentCode = "HR";
         DepartmentEntity department = new DepartmentEntity();
@@ -187,18 +187,18 @@ class RoleMapperTest {
 
         RoleDTO dto = new RoleDTO();
         String roleDescription = "Developer";
-        dto.setName(roleName);
+        dto.setCode(roleCode);
         dto.setDescription(roleDescription);
         dto.setStatus(null);
         dto.setDepartmentCode(department.getCode());
-        dto.setParentName(null);
+        dto.setParentCode(null);
 
         // When
         RoleEntity result = underTest.mapToEntity(dto, department, null);
 
         // Then
         assertNotNull(result);
-        assertEquals(roleName, result.getName());
+        assertEquals(roleCode, result.getCode());
         assertEquals(roleDescription, result.getDescription());
         assertEquals(Status.ACTIVE, result.getStatus());
         assertEquals(department, result.getDepartment());
@@ -210,30 +210,30 @@ class RoleMapperTest {
         // Given
         int departmentId = 10;
         int parentRoleId = 99;
-        String roleName = "admin";
+        String roleCode = "admin";
         DepartmentEntity department = new DepartmentEntity();
         department.setId(departmentId);
 
         RoleEntity parentRole = new RoleEntity();
         parentRole.setId(parentRoleId);
         parentRole.setPermissions(new HashSet<>());
-        String parentRoleName = "Manager";
-        parentRole.setName(parentRoleName);
+        String parentRoleCode = "Manager";
+        parentRole.setCode(parentRoleCode);
 
         RoleDTO dto = new RoleDTO();
         String roleDescription = "Team Lead";
-        dto.setName(roleName);
+        dto.setCode(roleCode);
         dto.setDescription(roleDescription);
         dto.setStatus(Status.INACTIVE);
         dto.setDepartmentCode(department.getCode());
-        dto.setParentName(parentRole.getName());
+        dto.setParentCode(parentRole.getName());
 
         // When
         RoleEntity result = underTest.mapToEntity(dto, department, parentRole);
 
         // Then
         assertNotNull(result);
-        assertEquals(roleName, result.getName());
+        assertEquals(roleCode, result.getCode());
         assertEquals(roleDescription, result.getDescription());
         assertEquals(Status.INACTIVE, result.getStatus());
         assertEquals(department, result.getDepartment());

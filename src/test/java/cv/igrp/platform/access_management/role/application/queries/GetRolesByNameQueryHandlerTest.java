@@ -37,10 +37,10 @@ public class GetRolesByNameQueryHandlerTest {
   @Test
   void itShouldThrowRecordNotFoundException_When_ProvidedRoleName_NotFound() {
     //... Given
-    String roleName = "test";
-    GetRolesByNameQuery query = new GetRolesByNameQuery(roleName);
+    String roleCode = "test";
+    GetRolesByNameQuery query = new GetRolesByNameQuery(roleCode);
 
-    when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
+    when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
             .thenReturn(Optional.empty());
 
     //... When
@@ -53,19 +53,19 @@ public class GetRolesByNameQueryHandlerTest {
   @Test
   void itShouldNotCallMapper_WhenRoleNotFound() {
     //... Given
-    String roleName = "admin";
-    GetRolesByNameQuery query = new GetRolesByNameQuery(roleName);
+    String roleCode = "admin";
+    GetRolesByNameQuery query = new GetRolesByNameQuery(roleCode);
     RoleEntity savedRole = new RoleEntity();
     String roleDesc = "RoleName";
-    savedRole.setName(roleName);
+    savedRole.setCode(roleCode);
     savedRole.setDescription(roleDesc);
     Status roleStatus = Status.ACTIVE;
     savedRole.setStatus(roleStatus);
     RoleDTO expectedDto = new RoleDTO();
-    expectedDto.setName(roleName);
+    expectedDto.setCode(roleCode);
     expectedDto.setDescription(roleDesc);
     expectedDto.setStatus(roleStatus);
-    when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
+    when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
             .thenReturn(Optional.empty());
 
     //... When
@@ -74,26 +74,26 @@ public class GetRolesByNameQueryHandlerTest {
     //... Then
     assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatus());
 
-    verify(roleRepository, times(1)).findByNameAndStatusNot(roleName, Status.DELETED);
+    verify(roleRepository, times(1)).findByCodeAndStatusNot(roleCode, Status.DELETED);
     verify(roleMapper, times(0)).mapToDto(savedRole);
   }
 
   @Test
   void itShouldReturnRoleDTO_WhenRoleExists() {
     //... Given
-    String roleName = "admin";
-    GetRolesByNameQuery query = new GetRolesByNameQuery(roleName);
+    String roleCode = "admin";
+    GetRolesByNameQuery query = new GetRolesByNameQuery(roleCode);
     RoleEntity savedRole = new RoleEntity();
     String roleDesc = "RoleName";
-    savedRole.setName(roleName);
+    savedRole.setCode(roleCode);
     savedRole.setDescription(roleDesc);
     Status roleStatus = Status.ACTIVE;
     savedRole.setStatus(roleStatus);
     RoleDTO expectedDto = new RoleDTO();
-    expectedDto.setName(roleName);
+    expectedDto.setCode(roleCode);
     expectedDto.setDescription(roleDesc);
     expectedDto.setStatus(roleStatus);
-    when(roleRepository.findByNameAndStatusNot(roleName, Status.DELETED))
+    when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
             .thenReturn(Optional.of(savedRole));
     when(roleMapper.mapToDto(savedRole))
             .thenReturn(expectedDto);
@@ -104,11 +104,11 @@ public class GetRolesByNameQueryHandlerTest {
     //... Then
     assertEquals(HttpStatus.OK, response.getStatusCode());
     assertNotNull(response.getBody());
-    assertEquals(roleName, response.getBody().getName());
+    assertEquals(roleCode, response.getBody().getCode());
     assertNotNull(response.getBody());
-    assertEquals(expectedDto.getName(), response.getBody().getName());
+    assertEquals(expectedDto.getCode(), response.getBody().getCode());
 
-    verify(roleRepository, times(1)).findByNameAndStatusNot(roleName, Status.DELETED);
+    verify(roleRepository, times(1)).findByCodeAndStatusNot(roleCode, Status.DELETED);
     verify(roleMapper, times(1)).mapToDto(savedRole);
   }
 

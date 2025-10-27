@@ -79,27 +79,27 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
     @IgrpCommandHandler
     @Transactional
     public ResponseEntity<RoleDTO> handle(UpdateRoleCommand command) {
-        log.info("Update Role with name: {}.", command.getRoledto().getName());
+        log.info("Update Role with code: {}.", command.getRoledto().getCode());
         RoleDTO newData = command.getRoledto();
-        RoleEntity roleToUpdate = roleRepository.findByNameAndStatusNot(command.getName(), Status.DELETED)
+        RoleEntity roleToUpdate = roleRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
                 .orElseThrow(() -> {
-                    log.warn("Role with name: {} not found.", command.getRoledto().getName());
+                    log.warn("Role with code: {} not found.", command.getRoledto().getCode());
                     return IgrpResponseStatusException.of(
-                            HttpStatus.NOT_FOUND, ERROR_TITLE, "Role with name: " + command.getRoledto().getName() + " not found."
+                            HttpStatus.NOT_FOUND, ERROR_TITLE, "Role with code: " + command.getRoledto().getCode() + " not found."
                     );
                 });
 
         RoleEntity parentRole = roleToUpdate.getParent();
-        String parentName = newData.getParentName();
-        if (parentName != null) {
-            if (parentName.isBlank()) {
+        String parentCode = newData.getParentCode();
+        if (parentCode != null) {
+            if (parentCode.isBlank()) {
                 parentRole = null;
             } else {
-                parentRole = roleRepository.findByNameAndStatusNot(parentName, Status.DELETED)
+                parentRole = roleRepository.findByCodeAndStatusNot(parentCode, Status.DELETED)
                         .orElseThrow(() -> {
-                            log.warn("Parent Role with name: {} not found.", newData.getParentName());
+                            log.warn("Parent Role with code: {} not found.", newData.getParentCode());
                             return IgrpResponseStatusException.of(
-                                    HttpStatus.NOT_FOUND, ERROR_TITLE, "Parent Role with name: %s not found.".formatted(newData.getParentName())
+                                    HttpStatus.NOT_FOUND, ERROR_TITLE, "Parent Role with code: %s not found.".formatted(newData.getParentCode())
                             );
                         });
             }
@@ -108,7 +108,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
         roleToUpdate.setParent(parentRole);
         roleToUpdate.setStatus(newData.getStatus());
         RoleEntity updatedRole = roleRepository.save(roleToUpdate);
-        log.info("Role with name: {} updated successfully.", command.getRoledto().getName());
+        log.info("Role with code: {} updated successfully.", command.getRoledto().getCode());
         return new ResponseEntity<>(roleMapper.mapToDto(updatedRole), HttpStatus.OK);
     }
 
