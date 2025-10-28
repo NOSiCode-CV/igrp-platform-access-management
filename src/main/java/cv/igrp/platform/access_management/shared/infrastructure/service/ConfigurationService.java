@@ -290,7 +290,7 @@ public class ConfigurationService {
                     INSERT INTO t_role
                     (code, name, description, status, department,
                      created_by, created_date, last_modified_by, last_modified_date)
-                    VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
+                    VALUES (?, ?, ?, 'ACTIVE', ?, ?, now(), ?, now())
                     RETURNING id
                 """;
         Long roleId = jdbcTemplate.queryForObject(sqlRole,
