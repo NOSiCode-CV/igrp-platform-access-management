@@ -23,5 +23,7 @@ public class GetMenusQuery implements Query {
   private String applicationCode;
   @NotBlank(message = "The field <code> is required")
   private String code;
+  @NotBlank(message = "The field <departmentCode> is required")
+  private String departmentCode;
 
 }
