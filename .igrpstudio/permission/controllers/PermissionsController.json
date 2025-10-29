@@ -188,14 +188,14 @@
       "requestParams": [
         {
           "type": "integer",
-          "name": "departmentId",
-          "description": "Department ID",
+          "name": "resourceId",
+          "description": "Resource ID",
           "isRequired": false
         },
         {
           "type": "string",
-          "name": "departmentCode",
-          "description": "Department Code",
+          "name": "resourceName",
+          "description": "Resource Name",
           "isRequired": false
         }
       ]
@@ -229,5 +229,5 @@
       ]
     }
   ],
-  "id": "faon6pyr23-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getPermissionByApplicationId"
+  "id": "faon6pyr23-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getPermissionByApplicationId-getPermissionByApplicationId"
 }
