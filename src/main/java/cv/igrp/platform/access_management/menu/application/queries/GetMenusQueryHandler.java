@@ -5,9 +5,11 @@ import cv.igrp.platform.access_management.shared.application.constants.MenuEntry
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import jakarta.persistence.criteria.Join;
+import jakarta.persistence.criteria.JoinType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
@@ -51,7 +53,7 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
    */
   @IgrpQueryHandler
   public ResponseEntity<List<MenuEntryDTO>> handle(GetMenusQuery query) {
-    Specification<MenuEntryEntity> spec = buildMenuEntrySpecification(query.getName(), query.getType(), query.getStatus(), query.getApplicationCode());
+    Specification<MenuEntryEntity> spec = buildMenuEntrySpecification(query.getName(), query.getType(), query.getStatus(), query.getApplicationCode(), query.getDepartmentCode());
     List<MenuEntryEntity> menus =  menuEntryRepository.findAll(spec);
     List<MenuEntryDTO> menuEntryDTOs = menus.stream()
             .map(menuEntryMapper::toDTO)
@@ -61,7 +63,7 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
     return ResponseEntity.ok(menuEntryDTOs);
   }
 
-  private Specification<MenuEntryEntity> buildMenuEntrySpecification(String name, String type, String status, String applicationCode) {
+  private Specification<MenuEntryEntity> buildMenuEntrySpecification(String name, String type, String status, String applicationCode, String departmentCode) {
     Specification<MenuEntryEntity> spec = Specification.anyOf();
     if (name != null && !name.isEmpty()) {
       spec = spec.and((root, _, cb) ->
@@ -89,6 +91,21 @@ public class GetMenusQueryHandler implements QueryHandler<GetMenusQuery, Respons
               }
       );
     }
+
+    if (departmentCode != null && !departmentCode.isBlank()) {
+      spec = spec.and((root, query, cb) -> {
+        // Ensure duplicates are avoided when joining a many-to-many table
+        if(query != null) query.distinct(true);
+
+        // Perform the join on the "departments" collection
+        Join<MenuEntryEntity, DepartmentEntity> departmentJoin =
+                root.join("departments", JoinType.INNER);
+
+        // Filter where the department code matches
+        return cb.equal(departmentJoin.get("code"), departmentCode);
+      });
+    }
+
 
     // Exclude deleted menus
     spec = spec.and((root, _, cb) ->

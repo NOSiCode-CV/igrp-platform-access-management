@@ -5,6 +5,7 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import lombok.extern.slf4j.Slf4j;
 import cv.igrp.framework.core.domain.QueryHandler;
@@ -63,7 +64,7 @@ public class GetPermissionByApplicationIdQueryHandler implements QueryHandler<Ge
   @IgrpQueryHandler
   @Transactional(readOnly = true)
   public ResponseEntity<List<PermissionDTO>> handle(GetPermissionByApplicationIdQuery query) {
-    log.info("Get Permission with Department ID {}", query.getDepartmentId());
+    log.info("Get Permission with Resource ID {}", query.getResourceId());
     Set<PermissionEntity> permissionList = permissionRepository.findAll()
             .stream()
             .filter(permission -> resolveCondition(permission, query)
@@ -78,18 +79,18 @@ public class GetPermissionByApplicationIdQueryHandler implements QueryHandler<Ge
 
   private boolean resolveCondition(PermissionEntity permission, GetPermissionByApplicationIdQuery query) {
 
-    if(query.getDepartmentId() != null && query.getDepartmentId() > 0) {
-      return permission.getDepartment().getId().equals(query.getDepartmentId());
+    if(query.getResourceId() != null && query.getResourceId() > 0) {
+      return permission.getResources().stream().map(ResourceEntity::getId).toList().contains(query.getResourceId());
     }
 
-    if(query.getDepartmentCode() != null && !query.getDepartmentCode().isEmpty()) {
-      return permission.getDepartment().getCode().equals(query.getDepartmentCode());
+    if(query.getResourceName() != null && !query.getResourceName().isEmpty()) {
+      return permission.getResources().stream().map(ResourceEntity::getName).toList().contains(query.getResourceName());
     }
 
     throw IgrpResponseStatusException.of(
             HttpStatus.BAD_REQUEST,
-            "No department filter provided",
-            "No department filter provided in the request. Must either be <departmentId> or <departmentCode>"
+            "No resource filter provided",
+            "No resource filter provided in the request. Must either be <resourceId> or <resourceCode>"
     );
 
   }

@@ -14,14 +14,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import cv.igrp.framework.core.domain.CommandBus;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import cv.igrp.framework.core.domain.QueryBus;
-import cv.igrp.platform.access_management.menu.application.commands.*;
 import cv.igrp.platform.access_management.menu.application.queries.*;
-
-
+import cv.igrp.framework.core.domain.CommandBus;
+import cv.igrp.platform.access_management.menu.application.commands.*;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 
@@ -31,21 +29,15 @@ import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 @Tag(name = "Menu", description = "Menu Management")
 public class MenuController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(MenuController.class);
-
   
-  private final CommandBus commandBus;
   private final QueryBus queryBus;
+  private final CommandBus commandBus;
 
-  
-  public MenuController(
-    CommandBus commandBus, QueryBus queryBus
-  ) {
-    this.commandBus = commandBus;
-    this.queryBus = queryBus;
+  public MenuController(QueryBus queryBus, CommandBus commandBus) {
+          this.queryBus = queryBus;
+          this.commandBus = commandBus;
   }
-
-  @GetMapping(
+   @GetMapping(
     value = "menus"
   )
   @Operation(
@@ -70,23 +62,18 @@ public class MenuController {
     @RequestParam(value = "type", required = false) String type,
     @RequestParam(value = "status", required = false) String status,
     @RequestParam(value = "applicationCode", required = false) String applicationCode,
-    @RequestParam(value = "code", required = false) String code)
+    @RequestParam(value = "code", required = false) String code,
+    @RequestParam(value = "departmentCode", required = false) String departmentCode)
   {
 
-      LOGGER.debug("Operation started");
-
-      final var query = new GetMenusQuery(name, type, status, applicationCode, code);
+      final var query = new GetMenusQuery(name, type, status, applicationCode, code, departmentCode);
 
       ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "menus/{code}"
   )
   @Operation(
@@ -110,20 +97,14 @@ public class MenuController {
     @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetMenuByIdQuery(code);
 
       ResponseEntity<MenuEntryDTO> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "menus"
   )
   @Operation(
@@ -147,20 +128,14 @@ public class MenuController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new CreateMenuCommand(createMenuRequest);
 
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PutMapping(
+   @PutMapping(
     value = "menus/{code}"
   )
   @Operation(
@@ -184,20 +159,14 @@ public class MenuController {
     , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new UpdateMenuCommand(updateMenuRequest, code);
 
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @DeleteMapping(
+   @DeleteMapping(
     value = "menus/{code}"
   )
   @Operation(
@@ -221,20 +190,14 @@ public class MenuController {
     @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new DeleteMenuCommand(code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "menus/app/{appCode}"
   )
   @Operation(
@@ -258,20 +221,14 @@ public class MenuController {
     @PathVariable(value = "appCode") String appCode)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetAppMenusQuery(appCode);
 
       ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "menus/{code}/addRoles"
   )
   @Operation(
@@ -295,20 +252,14 @@ public class MenuController {
     , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new AddPermissionsToMenuCommand(addPermissionsToMenuRequest, code);
 
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "menus/{code}/removeRoles"
   )
   @Operation(
@@ -332,20 +283,14 @@ public class MenuController {
     , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new RemovePermissionsFromMenuCommand(removePermissionsFromMenuRequest, code);
 
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "menus/{code}/addDepartments"
   )
   @Operation(
@@ -369,20 +314,14 @@ public class MenuController {
     , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new AddDepartmentsToMenuCommand(addDepartmentsToMenuRequest, code);
 
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "menus/{code}/removeDepartments"
   )
   @Operation(
@@ -406,17 +345,11 @@ public class MenuController {
     , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new RemoveDepartmentsFromMenuCommand(removeDepartmentsFromMenuRequest, code);
 
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
 }
