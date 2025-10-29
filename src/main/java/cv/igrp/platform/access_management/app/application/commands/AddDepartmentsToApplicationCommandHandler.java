@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.app.application.commands;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import org.springframework.http.ResponseEntity;
@@ -29,9 +30,13 @@ public class AddDepartmentsToApplicationCommandHandler implements CommandHandler
 
             var department = departmentRepository.findByCodeAndStatusNotDeleted(departmentCode);
 
-            var parentDepartment = department.getParentId();
-            if (parentDepartment != null) {
-                if (!parentDepartment.getApplications().contains(application))
+            var optParentDepartment = department.getParentId();
+
+            if (optParentDepartment != null) {
+                var parentDepartment = departmentRepository.findById(optParentDepartment.getId()).orElseThrow(
+                        () -> IgrpResponseStatusException.notFound("Parent Department was not found: " + optParentDepartment.getCode())
+                );
+                if (!parentDepartment.getApplications().stream().map(ApplicationEntity::getCode).toList().contains(application.getCode()))
                     throw IgrpResponseStatusException.forbidden(
                             "Cannot associate department '%s' because its parent department '%s' is not assigned to the application '%s'".formatted(
                                     department.getCode(),
