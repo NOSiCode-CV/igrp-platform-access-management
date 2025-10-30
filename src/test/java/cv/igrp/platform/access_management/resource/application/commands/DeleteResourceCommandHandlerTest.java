@@ -55,7 +55,6 @@ public class DeleteResourceCommandHandlerTest {
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resourceId))
                 .thenReturn(Optional.of(customField));
 
-        doNothing().when(resourceRepository).delete(resource);
         doNothing().when(customFieldRepository).delete(customField);
 
         // When
@@ -65,7 +64,7 @@ public class DeleteResourceCommandHandlerTest {
         assertNotNull(response);
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
 
-        verify(resourceRepository, times(1)).delete(resource);
+        verify(resourceRepository, times(1)).save(resource);
         verify(customFieldRepository, times(1)).delete(customField);
     }
 
@@ -106,8 +105,6 @@ public class DeleteResourceCommandHandlerTest {
         when(customFieldRepository.findByTableNameAndRecordId(CustomFieldTableName.RESOURCE.getName(), resourceId))
                 .thenReturn(Optional.empty());
 
-        doNothing().when(resourceRepository).delete(resource);
-
         // When
         ResponseEntity<String> response = deleteResourceCommandHandler.handle(command);
 
@@ -115,7 +112,7 @@ public class DeleteResourceCommandHandlerTest {
         assertNotNull(response);
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
 
-        verify(resourceRepository, times(1)).delete(resource);
+        verify(resourceRepository, times(1)).save(resource);
         verify(customFieldRepository, times(0)).delete(any(CustomFieldEntity.class));
     }
 }

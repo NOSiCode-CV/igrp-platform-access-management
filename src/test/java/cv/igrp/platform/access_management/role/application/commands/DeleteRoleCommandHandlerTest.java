@@ -111,7 +111,10 @@ public class DeleteRoleCommandHandlerTest {
         child3.setDepartment(department);
 
         when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(parenteRole));
-        when(roleRepository.findByParent(parenteRole)).thenReturn(List.of(child1, child2, child3));
+        when(roleRepository.save(parenteRole)).thenReturn(parenteRole);
+        when(roleRepository.save(child1)).thenReturn(child1);
+        when(roleRepository.save(child2)).thenReturn(child2);
+        when(roleRepository.save(child3)).thenReturn(child3);
 
         DeleteRoleCommand command = new DeleteRoleCommand(roleCode);
 
@@ -124,6 +127,9 @@ public class DeleteRoleCommandHandlerTest {
         assertEquals(Status.DELETED, child2.getStatus());
         assertEquals(Status.DELETED, child3.getStatus());
         verify(roleRepository).save(parenteRole);
+        verify(roleRepository).save(child1);
+        verify(roleRepository).save(child2);
+        verify(roleRepository).save(child3);
     }
 
     @Test
@@ -141,7 +147,6 @@ public class DeleteRoleCommandHandlerTest {
         role.setDepartment(department);
 
         when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(role));
-        when(roleRepository.findByParent(role)).thenReturn(List.of());
 
         DeleteRoleCommand command = new DeleteRoleCommand(roleCode);
 
@@ -168,7 +173,6 @@ public class DeleteRoleCommandHandlerTest {
         role.setDepartment(department);
 
         when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(role));
-        when(roleRepository.findByParent(role)).thenReturn(null);
 
         DeleteRoleCommand command = new DeleteRoleCommand(roleCode);
 
@@ -199,14 +203,14 @@ public class DeleteRoleCommandHandlerTest {
         child.setDepartment(department);
 
         when(roleRepository.findByCodeAndStatusNot("admin", Status.DELETED)).thenReturn(Optional.of(parent));
-        when(roleRepository.findByParent(parent)).thenReturn(List.of(child));
+        when(roleRepository.save(parent)).thenReturn(parent);
+        when(roleRepository.save(child)).thenReturn(child);
 
         // When
         underTest.handle(new DeleteRoleCommand("admin"));
 
         // Then
         verify(roleRepository, times(1)).save(parent);
-        // Jpa Cascade is assumed
-        verify(roleRepository, never()).save(child);
+        verify(roleRepository, times(1)).save(child);
     }
 }

@@ -17,6 +17,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+
 /**
  * Command handler responsible for removing a list of permissions from a specific role.
  * <p>
@@ -43,7 +45,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RemovePermissionsCommandHandler implements CommandHandler<RemovePermissionsCommand, ResponseEntity<RoleDTO>> {
 
    private final RoleEntityRepository roleRepository;
-    private final RoleMapper roleMapper;
+   private final RoleMapper roleMapper;
 
    /**
     * Constructs a new instance of {@code RemovePermissionsCommandHandler} with the necessary dependencies.
@@ -85,9 +87,40 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
                  .findFirst()
                  .ifPresent(permission -> foundRole.getPermissions().remove(permission));
       }
-      log.info("Permissions with IDs {} removed from Role with code: {} successfully.", command.getRemovePermissionsRequest().stream().toList(), command.getCode());
+      log.info("Permissions with IDs {} removed from Role with code: {} successfully.", command.getRemovePermissionsRequest(), command.getCode());
+      removePermissionsForChildren(foundRole, command.getRemovePermissionsRequest());
       var response = roleMapper.mapToDto(roleRepository.save(foundRole));
       return new ResponseEntity<>(response, HttpStatus.OK);
+   }
+
+   private void removePermissionsForChildren(RoleEntity role, List<String> permissionNames) {
+
+       if(!role.getChildren().isEmpty()) {
+
+           for (var child : role.getChildren()) {
+
+               var childRole = roleRepository.findByCodeAndStatusNotDeleted(child.getCode());
+
+               for (var permissionName : permissionNames) {
+
+                   childRole.getPermissions()
+                           .stream()
+                           .filter(permission -> permission.getName().equals(permissionName))
+                           .findFirst()
+                           .ifPresent(permission -> childRole.getPermissions().remove(permission));
+
+               }
+
+               roleRepository.save(childRole);
+
+               removePermissionsForChildren(childRole, permissionNames);
+
+               log.info("Permissions with IDs {} removed from child role with code: {} successfully.", permissionNames, childRole.getCode());
+
+           }
+
+       }
+
    }
 
 }

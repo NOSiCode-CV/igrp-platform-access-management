@@ -53,6 +53,7 @@ public class DeleteDepartmentCommandHandlerTest {
         when(departmentRepository.existsByCode(DEPARTMENT_CODE)).thenReturn(true);
         when(departmentRepository.findByCodeAndStatusNot(DEPARTMENT_CODE, DepartmentStatus.DELETED))
                 .thenReturn(Optional.of(new DepartmentEntity()));
+        when(departmentRepository.save(any(DepartmentEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
         ResponseEntity<Void> response = deleteDepartmentCommandHandler.handle(command);
@@ -64,7 +65,7 @@ public class DeleteDepartmentCommandHandlerTest {
         // Verify
         verify(departmentRepository).existsByCode(DEPARTMENT_CODE);
         verify(departmentRepository).findByCodeAndStatusNot(DEPARTMENT_CODE, DepartmentStatus.DELETED);
-        verify(departmentRepository).deleteByCode(DEPARTMENT_CODE);
+        verify(departmentRepository).save(any(DepartmentEntity.class));
         verifyNoMoreInteractions(departmentRepository);
     }
 
