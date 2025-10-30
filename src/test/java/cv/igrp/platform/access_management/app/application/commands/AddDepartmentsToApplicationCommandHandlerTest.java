@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.app.application.commands;
 
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.dto.CodeListRequestDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
@@ -15,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -40,6 +42,7 @@ class AddDepartmentsToApplicationCommandHandlerTest {
     @BeforeEach
     void setUp() {
         application = new ApplicationEntity();
+        application.setCode("APP001");
         application.setDepartments(new HashSet<>());
     }
 
@@ -84,7 +87,6 @@ class AddDepartmentsToApplicationCommandHandlerTest {
     }
 
     @Test
-    @Disabled // TODO: check this unit test later
     void testHandle_ThrowsForbidden_WhenParentDepartmentNotAssigned() {
 
         // given
@@ -93,23 +95,30 @@ class AddDepartmentsToApplicationCommandHandlerTest {
         var deptCodeParent = "DEPT_PARENT";
 
         var parentDepartment = new DepartmentEntity();
+        parentDepartment.setId(1);
         parentDepartment.setCode(deptCodeParent);
-        parentDepartment.setApplications(new HashSet<>()); // parent not assigned to app
+        parentDepartment.setStatus(DepartmentStatus.ACTIVE);
+        parentDepartment.setApplications(new HashSet<>());
 
         var childDepartment = new DepartmentEntity();
+        childDepartment.setId(2);
         childDepartment.setCode(deptCodeChild);
+        childDepartment.setStatus(DepartmentStatus.ACTIVE);
         childDepartment.setParentId(parentDepartment);
 
-        var command = mock(AddDepartmentsToApplicationCommand.class);
-        var codesDto = mock(CodeListRequestDTO.class);
+        CodeListRequestDTO codesDto = new CodeListRequestDTO();
 
-        when(command.getCode()).thenReturn(appCode);
-        when(command.getCodelistrequestdto()).thenReturn(codesDto);
-        when(codesDto.getCodes()).thenReturn(List.of(deptCodeChild));
+        List<String> departmentCodes = new ArrayList<>();
 
-        when(applicationRepository.findByCodeAndStatusNotDeleted(appCode)).thenReturn(application);
-        when(departmentRepository.findByCodeAndStatusNotDeleted(deptCodeChild)).thenReturn(childDepartment);
+        departmentCodes.add(deptCodeChild);
+
+        codesDto.setCodes(departmentCodes);
+
+        var command = new AddDepartmentsToApplicationCommand(codesDto, appCode);
+
         when(departmentRepository.findByCodeAndStatusNotDeleted(deptCodeParent)).thenReturn(parentDepartment);
+        when(departmentRepository.findByCodeAndStatusNotDeleted(deptCodeChild)).thenReturn(childDepartment);
+        when(applicationRepository.findByCodeAndStatusNotDeleted(appCode)).thenReturn(application);
 
         var ex = assertThrows(
                 IgrpResponseStatusException.class,
@@ -127,6 +136,7 @@ class AddDepartmentsToApplicationCommandHandlerTest {
         );
 
         verify(applicationRepository).findByCodeAndStatusNotDeleted(appCode);
+        verify(departmentRepository).findByCodeAndStatusNotDeleted(deptCodeParent);
         verify(departmentRepository).findByCodeAndStatusNotDeleted(deptCodeChild);
         verify(applicationRepository, never()).save(application);
     }

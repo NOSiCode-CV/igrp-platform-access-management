@@ -86,4 +86,6 @@ public interface PermissionEntityRepository extends
 
     List<PermissionEntity> findAllByResourcesAndStatusNot(Set<ResourceEntity> resources, Status status);
 
+    boolean existsByName(String name);
+
 }

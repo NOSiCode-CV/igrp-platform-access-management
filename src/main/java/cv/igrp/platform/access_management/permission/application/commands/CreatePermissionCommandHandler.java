@@ -85,6 +85,12 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
       PermissionDTO request = command.getPermissiondto();
       DepartmentEntity foundDepartment = null;
 
+      if(!validatePermissionUniqueness(request)) {
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.CONFLICT, "Create Permission", "Permission with name: " + command.getPermissiondto().getName() + " is already present in the system."
+         );
+      }
+
       if(command.getPermissiondto().getDepartmentCode() != null && !command.getPermissiondto().getDepartmentCode().isEmpty()) {
          log.info("Finding Department with code: {}", command.getPermissiondto().getDepartmentCode());
          foundDepartment = departmentRepository.findByCodeAndStatusNot(command.getPermissiondto().getDepartmentCode(), DepartmentStatus.DELETED)
@@ -100,17 +106,15 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
 
       log.info("Create permission with name: {}", command.getPermissiondto().getName());
 
-      ResourceValidationResponse validationResponse = PermissionValidator.validatePermissionName(command.getPermissiondto(), foundDepartment);
-      if (!validationResponse.isValid()) {
-         log.warn("Invalid Permission Dto with name {}.", command.getPermissiondto().getName());
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.CONFLICT, "Create Permission", validationResponse.getFailureMessage());
-      }
       PermissionEntity newPermission = permissionMapper.mapDtoToEntity(request, foundDepartment);
       PermissionEntity savedPermission = repository.save(newPermission);
       PermissionDTO permissionDTO = permissionMapper.mapToDTO(savedPermission);
       log.info("Permission with name: {} created successfully.", command.getPermissiondto().getName());
       return new ResponseEntity<>(permissionDTO, HttpStatus.CREATED);
+   }
+
+   private boolean validatePermissionUniqueness(PermissionDTO permissionDTO) {
+      return !repository.existsByName(permissionDTO.getName());
    }
 
 }
