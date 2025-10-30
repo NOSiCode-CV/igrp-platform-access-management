@@ -55,7 +55,7 @@ public interface ApplicationEntityRepository extends
     @Query("""
                 SELECT DISTINCT a
                      FROM ApplicationEntity a
-                     WHERE (
+                     WHERE ((
                              1=1 AND
                              NOT EXISTS (
                                  SELECT 1
@@ -83,7 +83,8 @@ public interface ApplicationEntityRepository extends
                                        JOIN d3.applications da3
                                        WHERE d3.code = :code
                                    )
-                             )
+                             ))
+                             AND a.status != 'DELETED'
             """)
     List<ApplicationEntity> findAvailableApplicationsForDepartment(@Param("code") String code);
 

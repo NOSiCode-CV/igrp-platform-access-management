@@ -31,7 +31,7 @@ public interface MenuEntryEntityRepository extends
     FROM MenuEntryEntity m
     JOIN m.applicationId a
     JOIN a.departments dParent
-    WHERE (
+    WHERE ((
         dParent.code = :code
         OR EXISTS (
             SELECT 1
@@ -53,7 +53,7 @@ public interface MenuEntryEntityRepository extends
         FROM DepartmentEntity d2
         JOIN d2.menuentries dm
         WHERE d2.code = :code AND dm.id = m.id
-    )
+    )) AND m.status != 'DELETED'
 """)
     List<MenuEntryEntity> findAvailableMenusForDepartment(@Param("code") String code);
 
