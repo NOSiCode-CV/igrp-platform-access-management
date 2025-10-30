@@ -46,7 +46,7 @@ public interface PermissionEntityRepository extends
     @Query("""
                 SELECT DISTINCT p
                 FROM PermissionEntity p
-                WHERE (
+                WHERE ((
                     (p.id IN (
                         SELECT pp.id
                         FROM RoleEntity r
@@ -80,7 +80,7 @@ public interface PermissionEntityRepository extends
                     FROM RoleEntity r2
                     JOIN r2.permissions rp
                     WHERE r2.code = :code
-                )
+                )) AND p.status != 'DELETED'
             """)
     List<PermissionEntity> findAvailablePermissionsForRole(@Param("code") String code);
 

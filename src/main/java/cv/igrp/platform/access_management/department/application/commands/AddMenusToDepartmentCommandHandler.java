@@ -5,6 +5,7 @@ import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.springframework.http.HttpStatus;
@@ -52,8 +53,14 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
          }
          var menuEntry = menuEntryOpt.get();
          if (!menuEntry.getDepartments().contains(department)) {
-            if(department.getParentId() != null) {
-               if(department.getParentId().getMenuentries().contains(menuEntry)) {
+            var optParentDepartment = department.getParentId();
+            if(optParentDepartment != null) {
+
+               var parentDepartment = departmentRepository.findById(optParentDepartment.getId()).orElseThrow(
+                       () -> IgrpResponseStatusException.notFound("Parent Department was not found: " + optParentDepartment.getCode())
+               );
+
+               if(parentDepartment.getMenuentries().stream().map(MenuEntryEntity::getCode).toList().contains(menuCode)) {
                   menuEntry.getDepartments().add(department);
                } else {
                   LOGGER.warn("Cannot add menu <{}> to department <{}> because its parent department <{}> is not associated with the menu", menuCode, command.getCode(), department.getParentId().getCode());
