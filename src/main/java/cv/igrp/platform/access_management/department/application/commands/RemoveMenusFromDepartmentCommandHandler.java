@@ -5,6 +5,7 @@ import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.springframework.http.HttpStatus;
@@ -23,7 +24,6 @@ public class RemoveMenusFromDepartmentCommandHandler implements CommandHandler<R
 
    private final MenuEntryEntityRepository menuEntryRepository;
    private final DepartmentEntityRepository departmentEntityRepository;
-
 
    public RemoveMenusFromDepartmentCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentEntityRepository) {
       this.menuEntryRepository = menuEntryRepository;
@@ -50,7 +50,7 @@ public class RemoveMenusFromDepartmentCommandHandler implements CommandHandler<R
                     "Menu Entry not found",
                     "Menu Entry not found with code: " + menuCode);
          });
-         if (menuEntry.getDepartments().contains(department)) {
+         if (menuEntry.getDepartments().stream().map(DepartmentEntity::getCode).toList().contains(department.getCode())) {
             menuEntry.getDepartments().remove(department);
             LOGGER.info("Menu entry with code: {} removed from department with code: {}.", menuCode, command.getCode());
             menuEntryRepository.save(menuEntry);
@@ -59,7 +59,45 @@ public class RemoveMenusFromDepartmentCommandHandler implements CommandHandler<R
          }
       });
 
+      removeMenusForChildren(department, command.getRemoveMenusFromDepartmentRequest());
+
       return ResponseEntity.noContent().build();
+
+   }
+
+   private void removeMenusForChildren(DepartmentEntity department, List<String> menuCodes) {
+
+      if(!department.getChildrenids().isEmpty()) {
+
+         for (var child : department.getChildrenids()) {
+
+            var childDepartment = departmentEntityRepository.findByCodeAndStatusNotDeleted(child.getCode());
+
+            for (var menuCode : menuCodes) {
+
+               var menuEntry = menuEntryRepository.findByCodeAndStatusNot(menuCode, Status.DELETED).orElseThrow(() -> {
+                  LOGGER.warn("Menu Entry not found with code: <{}>", menuCode);
+                  return IgrpResponseStatusException.of(
+                          HttpStatus.NOT_FOUND,
+                          "Menu Entry not found",
+                          "Menu Entry not found with code: " + menuCode);
+               });
+
+               if (menuEntry.getDepartments().stream().map(DepartmentEntity::getCode).toList().contains(childDepartment.getCode())) {
+                  menuEntry.getDepartments().remove(department);
+                  LOGGER.info("Menu entry with code: {} removed from child department with code: {}.", menuCode, childDepartment.getCode());
+                  menuEntryRepository.save(menuEntry);
+               } else {
+                  LOGGER.info("Menu entry with code: {} not associated with child department with code: {}.", menuCode, childDepartment.getCode());
+               }
+
+               removeMenusForChildren(childDepartment, menuCodes);
+
+            }
+
+         }
+
+      }
 
    }
 

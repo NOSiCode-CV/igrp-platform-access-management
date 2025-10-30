@@ -5,8 +5,12 @@ import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -31,19 +35,21 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
            LoggerFactory.getLogger(DeleteDepartmentCommandHandler.class);
 
    private final DepartmentEntityRepository departmentRepository;
+   private final RoleEntityRepository roleRepository;
    private final IAdapter adapter;
 
    /**
     * Constructs a new instance of {@code DeleteDepartmentCommandHandler} with the given repository.
     *
     * @param departmentRepository the repository used to access and delete departments
+    * @param roleRepository the repository used to access and delete roles
     * @param adapter               the adapter interface used to interact with the external Identity and Access Management (IAM) system
     */
-   public DeleteDepartmentCommandHandler(DepartmentEntityRepository departmentRepository, IAdapter adapter) {
+   public DeleteDepartmentCommandHandler(DepartmentEntityRepository departmentRepository, RoleEntityRepository roleRepository, IAdapter adapter) {
       this.departmentRepository = departmentRepository;
+      this.roleRepository = roleRepository;
       this.adapter = adapter;
    }
-
 
    /**
     * Handles the delete department command.
@@ -77,13 +83,15 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
                                  "Invalid Department Code", "Department not found with code: " + code);
                       });
 
+      deleteDepartmentRoles(department);
+
       if(!department.getChildrenids().isEmpty()) {
-            logger.warn("Department with code={} has child departments, cannot delete", code);
-            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
-                    "Department Deletion Failed", "Department with code: " + code + " has child departments and cannot be deleted. Delete the associated children first.");
+            deleteChildDepartments(department);
       }
 
-      departmentRepository.deleteByCode(code);
+      department.setStatus(DepartmentStatus.DELETED);
+
+      departmentRepository.save(department);
 
       try {
          adapter.deleteDepartment(code);
@@ -96,6 +104,38 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
       }
       logger.info("Successfully deleted department with code={}", code);
       return ResponseEntity.noContent().build();
+   }
+
+   private void deleteDepartmentRoles(DepartmentEntity department) {
+
+      var roles = department.getRoles();
+
+       for (RoleEntity role : roles) {
+           if (role.getStatus().equals(Status.DELETED)) continue;
+           var roleEntity = roleRepository.findByCodeAndStatusNotDeleted(role.getCode());
+           roleEntity.setStatus(Status.DELETED);
+           roleRepository.save(roleEntity);
+       }
+
+   }
+
+   private void deleteChildDepartments(DepartmentEntity department) {
+
+      for (var child : department.getChildrenids()) {
+
+         if(child.getStatus().equals(DepartmentStatus.DELETED)) continue;
+
+         var childDepartment = departmentRepository.findByCodeAndStatusNotDeleted(child.getCode());
+
+         if(!childDepartment.getChildrenids().isEmpty()) {
+            deleteChildDepartments(childDepartment);
+         }
+
+         childDepartment.setStatus(DepartmentStatus.DELETED);
+         departmentRepository.save(childDepartment);
+
+      }
+
    }
 
 }
