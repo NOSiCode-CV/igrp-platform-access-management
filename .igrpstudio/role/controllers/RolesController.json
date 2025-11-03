@@ -172,8 +172,8 @@
     },
     {
       "actionName": "RemovePermissions",
-      "path": "roles/{code}/removePermissions",
-      "method": "POST",
+      "path": "roles/{code}/permissions",
+      "method": "DELETE",
       "requestBody": {
         "content": {
           "application/json": {
@@ -241,7 +241,7 @@
     },
     {
       "actionName": "addPermissions",
-      "path": "roles/{code}/addPermissions",
+      "path": "roles/{code}/permissions",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -337,5 +337,5 @@
       ]
     }
   ],
-  "id": "2b75ptbxyv-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissions-RemovePermissions-getRoles-getRoles-getRolesByName-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getAvailablePermissionsForRoles"
+  "id": "2b75ptbxyv-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissions-RemovePermissions-getRoles-getRoles-getRolesByName-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getAvailablePermissionsForRoles-RemovePermissions-addPermissions"
 }

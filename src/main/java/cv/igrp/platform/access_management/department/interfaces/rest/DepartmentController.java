@@ -323,7 +323,7 @@ public class DepartmentController {
   }
 
    @PostMapping(
-    value = "departments/{code}/addApplications"
+    value = "departments/{code}/applications"
   )
   @Operation(
     summary = "POST method to handle operations for addApplicationsToDepartment",
@@ -354,7 +354,7 @@ public class DepartmentController {
   }
 
    @PostMapping(
-    value = "departments/{code}/addMenus"
+    value = "departments/{code}/menus"
   )
   @Operation(
     summary = "POST method to handle operations for addMenusToDepartment",
@@ -385,7 +385,7 @@ public class DepartmentController {
   }
 
    @DeleteMapping(
-    value = "departments/{code}/removeApplications"
+    value = "departments/{code}/applications"
   )
   @Operation(
     summary = "DELETE method to handle operations for removeApplicationsFromDepartment",
@@ -416,7 +416,7 @@ public class DepartmentController {
   }
 
    @DeleteMapping(
-    value = "departments/{code}/removeMenus"
+    value = "departments/{code}/menus"
   )
   @Operation(
     summary = "DELETE method to handle operations for removeMenusFromDepartment",

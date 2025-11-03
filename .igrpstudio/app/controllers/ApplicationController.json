@@ -306,8 +306,20 @@
     },
     {
       "actionName": "removeApplicationCustomFields",
-      "path": "/applications/{code}/custom-fields/remove",
-      "method": "POST",
+      "path": "/applications/{code}/custom-fields",
+      "method": "DELETE",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "fieldKeys",
+              "collectionType": "list",
+              "isRequired": true
+            }
+          }
+        }
+      },
       "responses": {
         "204": {
           "description": "No Content",
@@ -328,19 +340,7 @@
           "type": "string",
           "isRequired": true
         }
-      ],
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "string",
-              "name": "fieldKeys",
-              "collectionType": "list",
-              "isRequired": true
-            }
-          }
-        }
-      }
+      ]
     },
     {
       "actionName": "getApplicationCustomFields",
@@ -591,5 +591,5 @@
       ]
     }
   ],
-  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications-removeDepartementFromApplication-getApplicationMenus"
+  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications-removeDepartementFromApplication-getApplicationMenus-removeApplicationCustomFields"
 }

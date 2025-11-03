@@ -293,7 +293,7 @@
     },
     {
       "actionName": "addApplicationsToDepartment",
-      "path": "departments/{code}/addApplications",
+      "path": "departments/{code}/applications",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -330,7 +330,7 @@
     },
     {
       "actionName": "addMenusToDepartment",
-      "path": "departments/{code}/addMenus",
+      "path": "departments/{code}/menus",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -367,7 +367,7 @@
     },
     {
       "actionName": "removeApplicationsFromDepartment",
-      "path": "departments/{code}/removeApplications",
+      "path": "departments/{code}/applications",
       "method": "DELETE",
       "requestBody": {
         "content": {
@@ -404,7 +404,7 @@
     },
     {
       "actionName": "removeMenusFromDepartment",
-      "path": "departments/{code}/removeMenus",
+      "path": "departments/{code}/menus",
       "method": "DELETE",
       "requestBody": {
         "content": {
@@ -440,5 +440,5 @@
       ]
     }
   ],
-  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment"
+  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment"
 }
