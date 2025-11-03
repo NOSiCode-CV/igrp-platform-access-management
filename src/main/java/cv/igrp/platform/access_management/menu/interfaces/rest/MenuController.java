@@ -229,7 +229,7 @@ public class MenuController {
   }
 
    @PostMapping(
-    value = "menus/{code}/addRoles"
+    value = "menus/{code}/roles"
   )
   @Operation(
     summary = "POST method to handle operations for addPermissionsToMenu",
@@ -259,12 +259,12 @@ public class MenuController {
        return response;
   }
 
-   @PostMapping(
-    value = "menus/{code}/removeRoles"
+   @DeleteMapping(
+    value = "menus/{code}/roles"
   )
   @Operation(
-    summary = "POST method to handle operations for removePermissionsFromMenu",
-    description = "POST method to handle operations for removePermissionsFromMenu",
+    summary = "DELETE method to handle operations for removePermissionsFromMenu",
+    description = "DELETE method to handle operations for removePermissionsFromMenu",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -291,7 +291,7 @@ public class MenuController {
   }
 
    @PostMapping(
-    value = "menus/{code}/addDepartments"
+    value = "menus/{code}/departments"
   )
   @Operation(
     summary = "POST method to handle operations for addDepartmentsToMenu",
@@ -321,12 +321,12 @@ public class MenuController {
        return response;
   }
 
-   @PostMapping(
-    value = "menus/{code}/removeDepartments"
+   @DeleteMapping(
+    value = "menus/{code}/departments"
   )
   @Operation(
-    summary = "POST method to handle operations for removeDepartmentsFromMenu",
-    description = "POST method to handle operations for removeDepartmentsFromMenu",
+    summary = "DELETE method to handle operations for removeDepartmentsFromMenu",
+    description = "DELETE method to handle operations for removeDepartmentsFromMenu",
     responses = {
       @ApiResponse(
           responseCode = "200",

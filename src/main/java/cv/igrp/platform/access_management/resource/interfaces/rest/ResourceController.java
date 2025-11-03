@@ -14,14 +14,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
-import cv.igrp.framework.core.domain.CommandBus;
-import cv.igrp.framework.core.domain.QueryBus;
-import cv.igrp.platform.access_management.resource.application.commands.*;
-import cv.igrp.platform.access_management.resource.application.queries.*;
 
+import cv.igrp.framework.core.domain.QueryBus;
+import cv.igrp.platform.access_management.resource.application.queries.*;
+import cv.igrp.framework.core.domain.CommandBus;
+import cv.igrp.platform.access_management.resource.application.commands.*;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceItemDTO;
@@ -33,21 +31,15 @@ import java.util.Map;
 @Tag(name = "Resource", description = "Resource Management")
 public class ResourceController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ResourceController.class);
-
   
-  private final CommandBus commandBus;
   private final QueryBus queryBus;
+  private final CommandBus commandBus;
 
-  
-  public ResourceController(
-    CommandBus commandBus, QueryBus queryBus
-  ) {
-    this.commandBus = commandBus;
-    this.queryBus = queryBus;
+  public ResourceController(QueryBus queryBus, CommandBus commandBus) {
+          this.queryBus = queryBus;
+          this.commandBus = commandBus;
   }
-
-  @GetMapping(
+   @GetMapping(
     value = "resources"
   )
   @Operation(
@@ -75,20 +67,14 @@ public class ResourceController {
     @RequestParam(value = "description", required = false) String description)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetResourcesQuery(name, type, externalID, applicationCode, description);
 
       ResponseEntity<List<ResourceDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "resources/{name}"
   )
   @Operation(
@@ -112,20 +98,14 @@ public class ResourceController {
     @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetResourceByIdQuery(name);
 
       ResponseEntity<ResourceDTO> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "resources"
   )
   @Operation(
@@ -149,20 +129,14 @@ public class ResourceController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new CreateResourceCommand(createResourceRequest);
 
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PutMapping(
+   @PutMapping(
     value = "resources/{name}"
   )
   @Operation(
@@ -186,20 +160,14 @@ public class ResourceController {
     , @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new UpdateResourceCommand(updateResourceRequest, name);
 
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @DeleteMapping(
+   @DeleteMapping(
     value = "resources/{name}"
   )
   @Operation(
@@ -223,21 +191,15 @@ public class ResourceController {
     @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new DeleteResourceCommand(name);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
-    value = "resources/{name}/add-items"
+   @PostMapping(
+    value = "resources/{name}/items"
   )
   @Operation(
     summary = "POST method to handle operations for addItems",
@@ -260,25 +222,19 @@ public class ResourceController {
     , @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new AddItemsCommand(addItemsRequest, name);
 
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
-    value = "resources/{name}/remove-items"
+   @DeleteMapping(
+    value = "resources/{name}/items"
   )
   @Operation(
-    summary = "POST method to handle operations for removeItems",
-    description = "POST method to handle operations for removeItems",
+    summary = "DELETE method to handle operations for removeItems",
+    description = "DELETE method to handle operations for removeItems",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -297,20 +253,14 @@ public class ResourceController {
     , @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new RemoveItemsCommand(removeItemsRequest, name);
 
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "resources/{name}/custom-fields"
   )
   @Operation(
@@ -334,25 +284,19 @@ public class ResourceController {
     , @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new AddResourceCustomFieldsCommand(addResourceCustomFieldsRequest, name);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
-    value = "resources/{name}/custom-fields/remove"
+   @DeleteMapping(
+    value = "resources/{name}/custom-fields"
   )
   @Operation(
-    summary = "POST method to handle operations for removeResourceCustomFields",
-    description = "POST method to handle operations for removeResourceCustomFields",
+    summary = "DELETE method to handle operations for removeResourceCustomFields",
+    description = "DELETE method to handle operations for removeResourceCustomFields",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -371,20 +315,14 @@ public class ResourceController {
     , @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new RemoveResourceCustomFieldsCommand(removeResourceCustomFieldsRequest, name);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "/resources/{name}/custom-fields"
   )
   @Operation(
@@ -408,20 +346,14 @@ public class ResourceController {
     @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetResourceCustomFieldsQuery(name);
 
       ResponseEntity<Map<String, ?>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "resources/{name}/applications/{applicationCode}"
   )
   @Operation(
@@ -445,20 +377,14 @@ public class ResourceController {
     @PathVariable(value = "name") String name,@PathVariable(value = "applicationCode") String applicationCode)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new ShareResourceToAnotherApplicationCommand(name, applicationCode);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @DeleteMapping(
+   @DeleteMapping(
     value = "resources/{name}/applications/{applicationCode}"
   )
   @Operation(
@@ -482,21 +408,15 @@ public class ResourceController {
     @PathVariable(value = "name") String name,@PathVariable(value = "applicationCode") String applicationCode)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new RemoveResourceFromApplicationCommand(name, applicationCode);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
-    value = "resources/{name}/addPermissions"
+   @PostMapping(
+    value = "resources/{name}/permissions"
   )
   @Operation(
     summary = "POST method to handle operations for addPermissionsToResource",
@@ -519,21 +439,15 @@ public class ResourceController {
     , @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new AddPermissionsToResourceCommand(addPermissionsToResourceRequest, name);
 
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @DeleteMapping(
-    value = "resources/{name}/removePermission"
+   @DeleteMapping(
+    value = "resources/{name}/permissions"
   )
   @Operation(
     summary = "DELETE method to handle operations for removePermissionsFromResource",
@@ -556,21 +470,15 @@ public class ResourceController {
     , @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new RemovePermissionsFromResourceCommand(removePermissionsFromResourceRequest, name);
 
        ResponseEntity<ResourceDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
-    value = "resources/item/{name}/addPermissions"
+   @PostMapping(
+    value = "resources/item/{name}/permissions"
   )
   @Operation(
     summary = "POST method to handle operations for addPermissionsToResourceItem",
@@ -593,21 +501,15 @@ public class ResourceController {
     , @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new AddPermissionsToResourceItemCommand(addPermissionsToResourceItemRequest, name);
 
        ResponseEntity<ResourceItemDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @DeleteMapping(
-    value = "resources/item/{name}/removePermissions"
+   @DeleteMapping(
+    value = "resources/item/{name}/permissions"
   )
   @Operation(
     summary = "DELETE method to handle operations for removePermissionsFromResourceItem",
@@ -630,17 +532,11 @@ public class ResourceController {
     , @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new RemovePermissionsFromResourceItemCommand(removePermissionsFromResourceItemRequest, name);
 
        ResponseEntity<ResourceItemDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
 }

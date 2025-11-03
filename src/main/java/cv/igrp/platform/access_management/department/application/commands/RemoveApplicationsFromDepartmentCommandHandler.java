@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -27,6 +28,7 @@ public class RemoveApplicationsFromDepartmentCommandHandler implements CommandHa
       this.departmentRepository = departmentRepository;
    }
 
+   @Transactional
    @IgrpCommandHandler
    public ResponseEntity<String> handle(RemoveApplicationsFromDepartmentCommand command) {
 
@@ -41,6 +43,8 @@ public class RemoveApplicationsFromDepartmentCommandHandler implements CommandHa
          department.getApplications().remove(app);
 
          departmentRepository.save(department);
+
+         applicationRepository.save(app);
 
          removeApplicationsForChildren(department, command.getRemoveApplicationsFromDepartmentRequest());
 
@@ -67,9 +71,11 @@ public class RemoveApplicationsFromDepartmentCommandHandler implements CommandHa
 
                departmentRepository.save(childDepartment);
 
+               applicationRepository.save(app);
+
                removeApplicationsForChildren(childDepartment, appCodes);
 
-               LOGGER.info("Application <{}> was removed from child department <{}> successfully", appCode, child);
+               LOGGER.info("Application <{}> was removed from child department <{}> successfully", appCode, child.getCode());
 
             }
 

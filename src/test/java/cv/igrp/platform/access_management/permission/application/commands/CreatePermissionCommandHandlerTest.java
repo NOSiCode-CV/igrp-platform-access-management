@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
+import java.util.ArrayList;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -27,7 +28,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@Disabled // TODO: fix this later
 public class CreatePermissionCommandHandlerTest {
 
     @InjectMocks
@@ -57,6 +57,7 @@ public class CreatePermissionCommandHandlerTest {
 
         when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED))
                 .thenReturn(Optional.empty());
+        when(permissionRepository.existsByName(permissionName)).thenReturn(false);
         //... When
         IgrpResponseStatusException response = assertThrows(IgrpResponseStatusException.class, () -> underTest.handle(command));
         //... Then
@@ -79,6 +80,8 @@ public class CreatePermissionCommandHandlerTest {
         DepartmentEntity department = new DepartmentEntity();
         department.setId(1);
         department.setCode(departmentCode);
+        department.setStatus(DepartmentStatus.ACTIVE);
+        department.setPermissions(new ArrayList<>());
 
         PermissionEntity permissionToSave = new PermissionEntity();
         permissionToSave.setName(permissionName);
@@ -99,6 +102,7 @@ public class CreatePermissionCommandHandlerTest {
         // When
         when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
         when(permissionMapper.mapDtoToEntity(dto, department)).thenReturn(permissionToSave);
+        when(permissionRepository.existsByName(permissionName)).thenReturn(false);
         when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(expectedResponse);
 
@@ -123,6 +127,7 @@ public class CreatePermissionCommandHandlerTest {
         int deptId = 1;
         String departmentCode = "DEPT";
         String permissionName = "read.users";
+
         PermissionDTO dto = new PermissionDTO();
         dto.setName(permissionName);
         dto.setDepartmentCode(departmentCode);
@@ -132,6 +137,8 @@ public class CreatePermissionCommandHandlerTest {
         DepartmentEntity department = new DepartmentEntity();
         department.setId(deptId);
         department.setCode(departmentCode);
+        department.setStatus(DepartmentStatus.ACTIVE);
+        department.setPermissions(new ArrayList<>());
 
         PermissionEntity permissionToSave = new PermissionEntity();
         permissionToSave.setName(permissionName);
@@ -151,8 +158,10 @@ public class CreatePermissionCommandHandlerTest {
         expectedResponse.setDepartmentCode(departmentCode);
 
         // When
-        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
+        when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED))
+                .thenReturn(Optional.of(department));
         when(permissionMapper.mapDtoToEntity(dto, department)).thenReturn(permissionToSave);
+        when(permissionRepository.existsByName(permissionName)).thenReturn(false);
         when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(expectedResponse);
 
@@ -188,6 +197,8 @@ public class CreatePermissionCommandHandlerTest {
         DepartmentEntity department = new DepartmentEntity();
         department.setId(deptId);
         department.setCode(departmentCode);
+        department.setStatus(DepartmentStatus.ACTIVE);
+        department.setPermissions(new ArrayList<>());
 
         PermissionEntity permissionToSave = new PermissionEntity();
         permissionToSave.setName(permissionName);
@@ -207,6 +218,7 @@ public class CreatePermissionCommandHandlerTest {
         // When
         when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
         when(permissionMapper.mapDtoToEntity(dto, department)).thenReturn(permissionToSave);
+        when(permissionRepository.existsByName(permissionName)).thenReturn(false);
         when(permissionRepository.save(permissionToSave)).thenReturn(savedPermission);
         when(permissionMapper.mapToDTO(savedPermission)).thenReturn(mappedDTO);
 
@@ -218,4 +230,45 @@ public class CreatePermissionCommandHandlerTest {
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals(mappedDTO, response.getBody());
     }
+
+    @Test
+    void itShouldThrowConflict_WhenPermissionWithSameNameAlreadyExistsInDepartment() {
+        // Given
+        String departmentCode = "DEPT";
+        String permissionName = "read.users";
+
+        PermissionDTO dto = new PermissionDTO();
+        dto.setName(permissionName);
+        dto.setDepartmentCode(departmentCode);
+        dto.setStatus(Status.ACTIVE);
+
+        CreatePermissionCommand command = new CreatePermissionCommand(dto);
+
+        DepartmentEntity department = new DepartmentEntity();
+        department.setId(1);
+        department.setCode(departmentCode);
+        department.setStatus(DepartmentStatus.ACTIVE);
+
+        PermissionEntity existingPermission = new PermissionEntity();
+        existingPermission.setId(5);
+        existingPermission.setName(permissionName);
+        existingPermission.setStatus(Status.ACTIVE);
+        existingPermission.setDepartment(department);
+
+        department.setPermissions(new ArrayList<>(java.util.List.of(existingPermission)));
+
+        when(permissionRepository.existsByName(permissionName)).thenReturn(true);
+
+        // When / Then
+        IgrpResponseStatusException exception = assertThrows(
+                IgrpResponseStatusException.class,
+                () -> underTest.handle(command)
+        );
+
+        assertEquals(HttpStatus.CONFLICT.value(), exception.getBody().getStatus());
+        assertNotNull(exception.getBody().getProperties());
+        assertTrue(exception.getBody().getProperties().get("details").toString().contains("Permission with name: " + permissionName));
+    }
+
+
 }

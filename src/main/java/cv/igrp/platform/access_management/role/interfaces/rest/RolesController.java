@@ -194,12 +194,12 @@ public class RolesController {
        return response;
   }
 
-   @PostMapping(
-    value = "roles/{code}/removePermissions"
+   @DeleteMapping(
+    value = "roles/{code}/permissions"
   )
   @Operation(
-    summary = "POST method to handle operations for RemovePermissions",
-    description = "POST method to handle operations for RemovePermissions",
+    summary = "DELETE method to handle operations for RemovePermissions",
+    description = "DELETE method to handle operations for RemovePermissions",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -257,7 +257,7 @@ public class RolesController {
   }
 
    @PostMapping(
-    value = "roles/{code}/addPermissions"
+    value = "roles/{code}/permissions"
   )
   @Operation(
     summary = "POST method to handle operations for addPermissions",

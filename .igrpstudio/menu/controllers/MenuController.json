@@ -217,7 +217,7 @@
     },
     {
       "actionName": "addPermissionsToMenu",
-      "path": "menus/{code}/addRoles",
+      "path": "menus/{code}/roles",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -257,8 +257,8 @@
     },
     {
       "actionName": "removePermissionsFromMenu",
-      "path": "menus/{code}/removeRoles",
-      "method": "POST",
+      "path": "menus/{code}/roles",
+      "method": "DELETE",
       "requestBody": {
         "content": {
           "application/json": {
@@ -297,7 +297,7 @@
     },
     {
       "actionName": "addDepartmentsToMenu",
-      "path": "menus/{code}/addDepartments",
+      "path": "menus/{code}/departments",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -336,8 +336,8 @@
     },
     {
       "actionName": "removeDepartmentsFromMenu",
-      "path": "menus/{code}/removeDepartments",
-      "method": "POST",
+      "path": "menus/{code}/departments",
+      "method": "DELETE",
       "requestBody": {
         "content": {
           "application/json": {
@@ -374,5 +374,5 @@
       ]
     }
   ],
-  "id": "tw5fo7aoed-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissionsToMenu-removePermissionsFromMenu-addPermissionsToMenu-removePermissionsFromMenu-getMenus"
+  "id": "tw5fo7aoed-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissionsToMenu-removePermissionsFromMenu-addPermissionsToMenu-removePermissionsFromMenu-getMenus-addPermissionsToMenu-removePermissionsFromMenu-addDepartmentsToMenu-removeDepartmentsFromMenu-removeDepartmentsFromMenu"
 }

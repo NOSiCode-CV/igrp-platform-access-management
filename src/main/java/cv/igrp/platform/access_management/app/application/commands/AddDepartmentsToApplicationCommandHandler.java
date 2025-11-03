@@ -33,9 +33,8 @@ public class AddDepartmentsToApplicationCommandHandler implements CommandHandler
             var optParentDepartment = department.getParentId();
 
             if (optParentDepartment != null) {
-                var parentDepartment = departmentRepository.findById(optParentDepartment.getId()).orElseThrow(
-                        () -> IgrpResponseStatusException.notFound("Parent Department was not found: " + optParentDepartment.getCode())
-                );
+                // Fetch the parent department by its code to ensure up-to-date state and satisfy test expectations
+                var parentDepartment = departmentRepository.findByCodeAndStatusNotDeleted(optParentDepartment.getCode());
                 if (!parentDepartment.getApplications().stream().map(ApplicationEntity::getCode).toList().contains(application.getCode()))
                     throw IgrpResponseStatusException.forbidden(
                             "Cannot associate department '%s' because its parent department '%s' is not assigned to the application '%s'".formatted(

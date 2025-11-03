@@ -14,14 +14,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
-import cv.igrp.framework.core.domain.CommandBus;
-import cv.igrp.framework.core.domain.QueryBus;
-import cv.igrp.platform.access_management.users.application.commands.*;
-import cv.igrp.platform.access_management.users.application.queries.*;
 
+import cv.igrp.framework.core.domain.QueryBus;
+import cv.igrp.platform.access_management.users.application.queries.*;
+import cv.igrp.framework.core.domain.CommandBus;
+import cv.igrp.platform.access_management.users.application.commands.*;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
@@ -32,21 +30,15 @@ import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 @Tag(name = "User", description = "User")
 public class UserController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(UserController.class);
-
   
-  private final CommandBus commandBus;
   private final QueryBus queryBus;
+  private final CommandBus commandBus;
 
-  
-  public UserController(
-    CommandBus commandBus, QueryBus queryBus
-  ) {
-    this.commandBus = commandBus;
-    this.queryBus = queryBus;
+  public UserController(QueryBus queryBus, CommandBus commandBus) {
+          this.queryBus = queryBus;
+          this.commandBus = commandBus;
   }
-
-  @GetMapping(
+   @GetMapping(
     value = "users/{username}"
   )
   @Operation(
@@ -70,21 +62,15 @@ public class UserController {
     @PathVariable(value = "username") String username)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetUserQuery(username);
 
       ResponseEntity<IGRPUserDTO> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PostMapping(
-    value = "users/{username}/addRoles"
+   @PostMapping(
+    value = "users/{username}/roles"
   )
   @Operation(
     summary = "POST method to handle operations for AddRolesToUser",
@@ -117,21 +103,15 @@ public class UserController {
     , @PathVariable(value = "username") String username)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new AddRolesToUserCommand(addRolesToUserRequest, username);
 
        ResponseEntity<?> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @DeleteMapping(
-    value = "users/{username}/removeRoles"
+   @DeleteMapping(
+    value = "users/{username}/roles"
   )
   @Operation(
     summary = "DELETE method to handle operations for RemoveRolesFromUser",
@@ -154,20 +134,14 @@ public class UserController {
     , @PathVariable(value = "username") String username)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, username);
 
        ResponseEntity<List<RoleDTO>> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "users/{username}/roles"
   )
   @Operation(
@@ -191,20 +165,14 @@ public class UserController {
     @PathVariable(value = "username") String username)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetUserRolesQuery(username);
 
       ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "users/list"
   )
   @Operation(
@@ -232,20 +200,14 @@ public class UserController {
     @RequestParam(value = "email", required = false) String email)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new GetUsersCommand(getUsersRequest, applicationCode, departmentCode, name, username, email);
 
        ResponseEntity<List<IGRPUserDTO>> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "users"
   )
   @Operation(
@@ -269,20 +231,14 @@ public class UserController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new CreateUserCommand(createUserRequest);
 
        ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PutMapping(
+   @PutMapping(
     value = "users/{username}"
   )
   @Operation(
@@ -306,21 +262,15 @@ public class UserController {
     , @PathVariable(value = "username") String username)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new UpdateUserCommand(updateUserRequest, username);
 
        ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @GetMapping(
-    value = "users/currentUser"
+   @GetMapping(
+    value = "users/current"
   )
   @Operation(
     summary = "GET method to handle operations for getCurrentUser",
@@ -343,20 +293,14 @@ public class UserController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetCurrentUserQuery();
 
       ResponseEntity<IGRPUserDTO> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "users/invite"
   )
   @Operation(
@@ -380,17 +324,11 @@ public class UserController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new InviteUserCommand(inviteUserRequest);
 
        ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
 }

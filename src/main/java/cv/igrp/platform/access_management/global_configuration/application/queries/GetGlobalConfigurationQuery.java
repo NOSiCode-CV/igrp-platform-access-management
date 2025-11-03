@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetGlobalConfigurationQuery implements Query {
 
-  @NotBlank(message = "The field <type> is required.")
+  @NotBlank(message = "The field <type> is required")
   private String type;
 
 }
