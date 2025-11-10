@@ -32,6 +32,7 @@ public class ConfigurationService {
     private static final String IGRP_DEPARTMENT = "DEPT_IGRP";
     private static final String SUPER_ADMIN_ROLE = IGRP_DEPARTMENT + ".superadmin";
     private static final String IGRP_PERMISSION = IGRP_DEPARTMENT + ".manage_access";
+    private static final String IGRP_RESOURCE = "igrp-access-management";
     private static final String IGRP_APP = "APP_IGRP_CENTER";
 
     private final JdbcTemplate jdbcTemplate;
@@ -56,6 +57,7 @@ public class ConfigurationService {
             boolean departmentExists = exists("SELECT 1 FROM t_department WHERE code='%s' LIMIT 1".formatted(IGRP_DEPARTMENT));
             boolean appExists = exists("SELECT 1 FROM t_application WHERE type='SYSTEM' LIMIT 1");
             boolean permissionExists = exists("SELECT 1 FROM t_permission WHERE name='%s' LIMIT 1".formatted(IGRP_PERMISSION));
+            boolean resourceExists = exists("SELECT 1 FROM t_resource WHERE name='%s' LIMIT 1".formatted(IGRP_RESOURCE));
             boolean roleExists = exists("SELECT 1 FROM t_role WHERE code='%s' LIMIT 1".formatted(SUPER_ADMIN_ROLE));
 
             // 2. Check provider existence before attempting sync
@@ -73,6 +75,9 @@ public class ConfigurationService {
 
             Long permissionId = permissionExists ? getId("SELECT id FROM t_permission WHERE name='%s'".formatted(IGRP_PERMISSION)) :
                     createDefaultPermissionInDB(departmentId);
+
+            Long resourceId = resourceExists? getId("SELECT id FROM t_resource WHERE name='%s'".formatted(IGRP_RESOURCE)) :
+                    createDefaultResourceInDB(permissionId, appId);
 
             Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE code='%s'".formatted(SUPER_ADMIN_ROLE)) :
                     (roleExistsInProvider ? createDefaultRoleInDB(departmentId, permissionId, appId) : null);
@@ -283,6 +288,42 @@ public class ConfigurationService {
                 SYSTEM_USER, SYSTEM_USER);
         LOGGER.info("[Startup Config] Default Permission created in DB");
         return query;
+    }
+
+    Long createDefaultResourceInDB(Long permId, Long appId) {
+        String sqlRole = """
+                    INSERT INTO t_resource
+                    (name, description, type, status,
+                     created_by, created_date, last_modified_by, last_modified_date)
+                    VALUES (?, ?, 'API', 'ACTIVE', ?, now(), ?, now())
+                    RETURNING id
+                """;
+        Long resourceId = jdbcTemplate.queryForObject(sqlRole,
+                Long.class,
+                IGRP_RESOURCE, "iGRP Access Management API",
+                SYSTEM_USER, SYSTEM_USER);
+
+        // Step 1: Insert resource-permission relation
+        String sqlRolePerm = """
+                    INSERT INTO t_resource_permission
+                    (resource_id, permission)
+                    SELECT ?, ?
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM t_resource_permission WHERE resource_id=? AND permission=?
+                    )
+                """;
+        jdbcTemplate.update(sqlRolePerm, resourceId, permId, resourceId, permId);
+
+        // Step 2: Associate with application
+        String insertRelationSql = """
+            INSERT INTO t_application_resource (resource_id, application_id)
+            VALUES (?, ?)
+        """;
+        jdbcTemplate.update(insertRelationSql, resourceId, appId);
+
+        LOGGER.info("[Startup Config] Default Resource created in DB");
+
+        return resourceId;
     }
 
     Long createDefaultRoleInDB(Long deptId, Long permId, Long appId) {

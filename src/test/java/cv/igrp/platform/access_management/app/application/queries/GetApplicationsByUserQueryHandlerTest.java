@@ -63,7 +63,7 @@ public class GetApplicationsByUserQueryHandlerTest {
 
         List<ApplicationEntity> applications = List.of(app1, app2);
 
-        when(applicationRepository.findApplicationsByUserOrEmailAndStatus(uid, uid, Status.DELETED))
+        when(applicationRepository.findApplicationsByUserOrEmailAndStatus(uid, uid, Status.ACTIVE))
                 .thenReturn(applications);
         when(applicationMapper.toDto(app1)).thenReturn(app1Dto);
         when(applicationMapper.toDto(app2)).thenReturn(app2Dto);

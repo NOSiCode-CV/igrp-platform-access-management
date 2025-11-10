@@ -28,6 +28,7 @@ class ConfigurationServiceTest {
     private static final String IGRP_DEPARTMENT = "DEPT_IGRP";
     private static final String SUPER_ADMIN_ROLE = "DEPT_IGRP.superadmin";
     private static final String IGRP_PERMISSION = "DEPT_IGRP.manage_access";
+    private static final String IGRP_RESOURCE = "igrp-access-management";
     private static final String IGRP_APP = "APP_IGRP_CENTER";
     private static final String SUPER_ADMIN_USERNAME = "superadmin";
 
@@ -63,6 +64,7 @@ class ConfigurationServiceTest {
         doReturn(false).when(adapter).departmentExists(IGRP_DEPARTMENT);
         doReturn(false).when(adapter).applicationExists(IGRP_DEPARTMENT, IGRP_APP);
         doReturn(false).when(adapter).permissionExists(IGRP_PERMISSION);
+        doReturn(false).when(adapter).resourceExists(IGRP_RESOURCE);
         doReturn(false).when(adapter).roleExists(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE);
 
         // Mock successful provider creations
@@ -79,6 +81,7 @@ class ConfigurationServiceTest {
         doReturn(3L).when(jdbcTemplate).queryForObject(contains("INSERT INTO t_permission"), eq(Long.class), any(Object[].class));
         doReturn(4L).when(jdbcTemplate).queryForObject(contains("INSERT INTO t_role"), eq(Long.class), any(Object[].class));
         doReturn(5L).when(jdbcTemplate).queryForObject(contains("INSERT INTO t_user"), eq(Long.class), any(Object[].class));
+        doReturn(6L).when(jdbcTemplate).queryForObject(contains("INSERT INTO t_resource"), eq(Long.class), any(Object[].class));
         doReturn(1).when(jdbcTemplate).update(contains("INSERT INTO t_role_permission"), any(Object[].class));
         doReturn(1).when(jdbcTemplate).update(contains("INSERT INTO t_role_users"), any(Object[].class));
 
@@ -111,7 +114,7 @@ class ConfigurationServiceTest {
         verify(adapter).assignRoleToUser(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE, SUPER_ADMIN_USERNAME);
 
         // Verify DB insertions
-        verify(jdbcTemplate, atLeast(5)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
+        verify(jdbcTemplate, atLeast(6)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
     }
 
     @Test
@@ -194,7 +197,7 @@ class ConfigurationServiceTest {
             //verify(adapter).createApplication(IGRP_DEPARTMENT, IGRP_APP);
 
             // Verify no further DB insertions after failure
-            verify(jdbcTemplate, times(5)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
+            verify(jdbcTemplate, times(6)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
         } catch (Exception e) {
             fail("Exception should be caught by the service: " + e.getMessage());
         }
@@ -463,7 +466,7 @@ class ConfigurationServiceTest {
 
             // Verify that the method continues execution despite the exception
             // and no database insertions were attempted
-            verify(jdbcTemplate, times(3)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
+            verify(jdbcTemplate, times(4)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
         } catch (Exception e) {
             fail("Exception should be caught by the service: " + e.getMessage());
         }
