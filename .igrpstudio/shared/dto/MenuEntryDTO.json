@@ -136,28 +136,30 @@
       "primaryKey": false
     },
     {
-      "name": "parentCode",
-      "objectType": "java",
-      "type": "string",
+      "name": "parent",
+      "objectType": "dto",
+      "type": "CodeDescriptionDTO",
       "required": false,
       "before": false,
       "after": false,
       "positive": false,
       "isEmail": false,
       "isUrl": false,
-      "primaryKey": false
+      "primaryKey": false,
+      "module": "shared"
     },
     {
-      "name": "applicationCode",
-      "objectType": "java",
-      "type": "string",
+      "name": "application",
+      "objectType": "dto",
+      "type": "CodeDescriptionDTO",
       "required": false,
       "before": false,
       "after": false,
       "positive": false,
       "isEmail": false,
       "isUrl": false,
-      "primaryKey": false
+      "primaryKey": false,
+      "module": "shared"
     },
     {
       "name": "createdBy",
@@ -209,8 +211,8 @@
     },
     {
       "name": "roles",
-      "objectType": "java",
-      "type": "string",
+      "objectType": "dto",
+      "type": "CodeDescriptionDTO",
       "required": false,
       "before": false,
       "after": false,
@@ -218,7 +220,8 @@
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false,
-      "collectionType": "list"
+      "collectionType": "list",
+      "module": "shared"
     }
   ],
   "id": "my09bz5kcp"

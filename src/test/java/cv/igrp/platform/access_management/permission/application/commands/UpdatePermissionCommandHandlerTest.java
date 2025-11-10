@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.permission.application.commands;
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -93,7 +94,7 @@ public class UpdatePermissionCommandHandlerTest {
         dto.setDescription(permissionNewDescription);
         dto.setName(permissionName);
         dto.setStatus(Status.ACTIVE);
-        dto.setDepartmentCode(departmentCode);
+        dto.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
 
         UpdatePermissionCommand command = new UpdatePermissionCommand(dto, permissionName);
 

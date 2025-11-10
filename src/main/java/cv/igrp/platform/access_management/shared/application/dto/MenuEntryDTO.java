@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -58,11 +59,11 @@ public class MenuEntryDTO  {
   
   private String pageSlug ;
   
+  @Valid
+  private CodeDescriptionDTO parent ;
   
-  private String parentCode ;
-  
-  
-  private String applicationCode ;
+  @Valid
+  private CodeDescriptionDTO application ;
   
   
   private String createdBy ;
@@ -76,7 +77,7 @@ public class MenuEntryDTO  {
   
   private String lastModifiedDate ;
   
-  
-  private List<String> roles = new ArrayList<>();
+  @Valid
+  private List<CodeDescriptionDTO> roles = new ArrayList<>();
 
 }

@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.permission.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
@@ -35,7 +36,7 @@ class PermissionValidatorTest {
 
         PermissionDTO newPermissionDTO = new PermissionDTO();
         newPermissionDTO.setName("read_user");
-        newPermissionDTO.setDepartmentCode("DEPT");
+        newPermissionDTO.setDepartment(new CodeDescriptionDTO("DEPT", ""));
         newPermissionDTO.setStatus(Status.ACTIVE);
 
         // When
@@ -57,7 +58,7 @@ class PermissionValidatorTest {
 
         PermissionDTO dto = new PermissionDTO();
         dto.setName("NEW_PERMISSION");
-        dto.setDepartmentCode("DEPT");
+        dto.setDepartment(new CodeDescriptionDTO("DEPT", ""));
 
         // When
         ResourceValidationResponse response = PermissionValidator.validatePermissionName(dto, department);

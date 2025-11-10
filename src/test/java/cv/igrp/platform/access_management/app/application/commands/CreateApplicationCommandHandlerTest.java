@@ -6,6 +6,7 @@ import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -81,7 +82,7 @@ public class CreateApplicationCommandHandlerTest {
                 "2024-04-15T12:00:00",
                 null,
                 null,
-                List.of("HR")
+                List.of(new CodeDescriptionDTO("HR", ""))
         );
         CreateApplicationCommand command = new CreateApplicationCommand(applicationDTO);
 
@@ -119,7 +120,7 @@ public class CreateApplicationCommandHandlerTest {
             dto.setId(savedApplication.getId());
             dto.setCode(savedApplication.getCode());
             dto.setName(savedApplication.getName());
-            dto.setDepartments(List.of("HR"));
+            dto.setDepartments(List.of(new CodeDescriptionDTO("HR", "")));
             dto.setStatus(savedApplication.getStatus());
             return dto;
         });
@@ -132,7 +133,7 @@ public class CreateApplicationCommandHandlerTest {
         assertEquals(1, response.getBody().getId());
         assertEquals("APP001", response.getBody().getCode());
         assertEquals("Test Application", response.getBody().getName());
-        assertTrue(response.getBody().getDepartments().contains("HR"));
+        assertTrue(response.getBody().getDepartments().stream().map(CodeDescriptionDTO::getCode).toList().contains("HR"));
         assertEquals(Status.ACTIVE, response.getBody().getStatus());
 
         verify(applicationRepository).save(Mockito.any(ApplicationEntity.class));

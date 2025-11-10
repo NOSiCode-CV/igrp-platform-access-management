@@ -2,8 +2,8 @@ package cv.igrp.platform.access_management.app.mapper;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import org.springframework.stereotype.Component;
 
 import java.net.URI;
@@ -55,7 +55,7 @@ public class ApplicationMapper {
 
         var departmentCodes = Stream.ofNullable(entity.getDepartments())
                 .flatMap(Set::stream)
-                .map(DepartmentEntity::getCode)
+                .map(it -> new CodeDescriptionDTO(it.getCode(), it.getName()))
                 .toList();
         dto.setDepartments(departmentCodes);
 

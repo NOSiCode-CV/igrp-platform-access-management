@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.role.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
@@ -54,9 +55,9 @@ class RoleMapperTest {
         assertEquals(roleId, result.getId());
         assertEquals(roleName, result.getName());
         assertEquals(roleDescription, result.getDescription());
-        assertEquals(departmentCode, result.getDepartmentCode());
+        assertEquals(departmentCode, result.getDepartment().getCode());
         assertEquals(Status.ACTIVE, result.getStatus());
-        assertNull(result.getParentCode(), "Expected parentName to be null when role has no parent");
+        assertNull(result.getParent(), "Expected parentName to be null when role has no parent");
     }
 
     @Test
@@ -96,10 +97,10 @@ class RoleMapperTest {
         assertEquals(roleId, result.getId());
         assertEquals(roleCode, result.getCode());
         assertEquals(roleDescription, result.getDescription());
-        assertEquals(departmentCode, result.getDepartmentCode());
+        assertEquals(departmentCode, result.getDepartment().getCode());
         assertEquals(Status.ACTIVE, result.getStatus());
-        assertNotNull(result.getParentCode());
-        assertEquals(parentRoleCode, result.getParentCode());
+        assertNotNull(result.getParent().getCode());
+        assertEquals(parentRoleCode, result.getParent().getCode());
     }
 
     @Test
@@ -140,8 +141,8 @@ class RoleMapperTest {
         assertEquals(roleCode, result.getCode());
         assertEquals(roleDescription, result.getDescription());
         assertEquals(Status.INACTIVE, result.getStatus());
-        assertEquals(departmentCode, result.getDepartmentCode());
-        assertEquals(parentRoleCode, result.getParentCode());
+        assertEquals(departmentCode, result.getDepartment().getCode());
+        assertEquals(parentRoleCode, result.getParent().getCode());
     }
 
 
@@ -160,8 +161,8 @@ class RoleMapperTest {
         String roleDescription = "Developer";
         dto.setDescription(roleDescription);
         dto.setStatus(Status.ACTIVE);
-        dto.setDepartmentCode(department.getCode());
-        dto.setParentCode(null);
+        dto.setDepartment(new CodeDescriptionDTO(department.getCode(), ""));
+        dto.setParent(null);
 
         // When
         RoleEntity result = underTest.mapToEntity(dto, department, null);
@@ -190,8 +191,8 @@ class RoleMapperTest {
         dto.setCode(roleCode);
         dto.setDescription(roleDescription);
         dto.setStatus(null);
-        dto.setDepartmentCode(department.getCode());
-        dto.setParentCode(null);
+        dto.setDepartment(new CodeDescriptionDTO(department.getCode(), ""));
+        dto.setParent(null);
 
         // When
         RoleEntity result = underTest.mapToEntity(dto, department, null);
@@ -225,8 +226,8 @@ class RoleMapperTest {
         dto.setCode(roleCode);
         dto.setDescription(roleDescription);
         dto.setStatus(Status.INACTIVE);
-        dto.setDepartmentCode(department.getCode());
-        dto.setParentCode(parentRole.getName());
+        dto.setDepartment(new CodeDescriptionDTO(department.getCode(), ""));
+        dto.setParent(new CodeDescriptionDTO(parentRole.getName(), ""));
 
         // When
         RoleEntity result = underTest.mapToEntity(dto, department, parentRole);

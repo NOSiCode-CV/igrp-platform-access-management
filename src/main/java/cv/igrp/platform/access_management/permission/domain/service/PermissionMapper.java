@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.permission.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
@@ -30,7 +31,9 @@ public class PermissionMapper {
         permissionDTO.setName(permission.getName());
         permissionDTO.setDescription(permission.getDescription());
         permissionDTO.setStatus(permission.getStatus());
-        permissionDTO.setDepartmentCode(permission.getDepartment().getCode());
+        if(permission.getDepartment() != null) {
+            permissionDTO.setDepartment(new CodeDescriptionDTO(permission.getDepartment().getCode(), permission.getDepartment().getName()));
+        }
         return permissionDTO;
     }
 

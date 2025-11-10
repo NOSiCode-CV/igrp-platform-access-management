@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 
 @Data
 @NoArgsConstructor
@@ -39,7 +40,7 @@ public class DepartmentDTO  {
   
   private String icon ;
   
-  
-  private String parent_code ;
+  @Valid
+  private CodeDescriptionDTO parent ;
 
 }

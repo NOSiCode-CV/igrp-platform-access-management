@@ -186,8 +186,8 @@
     },
     {
       "name": "departments",
-      "objectType": "java",
-      "type": "string",
+      "objectType": "dto",
+      "type": "CodeDescriptionDTO",
       "required": false,
       "before": false,
       "after": false,
@@ -195,7 +195,8 @@
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false,
-      "collectionType": "list"
+      "collectionType": "list",
+      "module": "shared"
     }
   ],
   "id": "2fh2z2x9s8"

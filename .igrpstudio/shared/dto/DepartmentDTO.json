@@ -81,16 +81,17 @@
       "primaryKey": false
     },
     {
-      "name": "parent_code",
-      "objectType": "java",
-      "type": "string",
+      "name": "parent",
+      "objectType": "dto",
+      "type": "CodeDescriptionDTO",
       "required": false,
       "before": false,
       "after": false,
       "positive": false,
       "isEmail": false,
       "isUrl": false,
-      "primaryKey": false
+      "primaryKey": false,
+      "module": "shared"
     }
   ],
   "id": "ibpoxfn0g8"

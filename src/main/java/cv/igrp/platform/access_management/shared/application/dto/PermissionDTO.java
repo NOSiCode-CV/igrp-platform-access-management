@@ -10,6 +10,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 
 @Data
 @NoArgsConstructor
@@ -34,7 +35,7 @@ public class PermissionDTO  {
   
   private Status status ;
   
-  
-  private String departmentCode ;
+  @Valid
+  private CodeDescriptionDTO department ;
 
 }

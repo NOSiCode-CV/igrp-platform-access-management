@@ -80,11 +80,11 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
    public ResponseEntity<RoleDTO> handle(CreateRoleCommand command) {
       RoleDTO request = command.getRoledto();
       RoleEntity parentRole = null;
-      DepartmentEntity department = departmentRepository.findByCodeAndStatusNot(command.getRoledto().getDepartmentCode(), DepartmentStatus.DELETED)
+      DepartmentEntity department = departmentRepository.findByCodeAndStatusNot(command.getRoledto().getDepartment().getCode(), DepartmentStatus.DELETED)
               .orElseThrow(() -> {
-                 log.warn("Department with code: {} not found.", command.getRoledto().getDepartmentCode());
+                 log.warn("Department with code: {} not found.", command.getRoledto().getDepartment().getCode());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Create Role", "Department with code: " + command.getRoledto().getDepartmentCode() + " not found."
+                         HttpStatus.NOT_FOUND, "Create Role", "Department with code: " + command.getRoledto().getDepartment().getCode() + " not found."
                  );
               });
 
@@ -99,11 +99,11 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
          );
       }
 
-      if (command.getRoledto().getParentCode() != null) {
-         String parentRoleCode = command.getRoledto().getParentCode();
+      if (command.getRoledto().getParent() != null && command.getRoledto().getParent().getCode() != null) {
+         String parentRoleCode = command.getRoledto().getParent().getCode();
          parentRole = roleRepository.findByCodeAndStatusNot(parentRoleCode, Status.DELETED)
                  .orElseThrow(() -> {
-                    log.warn("Parent Role with code: {} not found.", command.getRoledto().getParentCode());
+                    log.warn("Parent Role with code: {} not found.", command.getRoledto().getParent().getCode());
                     return IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND, "Create Role", "Parent Role with code: " + parentRoleCode + " not found."
                     );

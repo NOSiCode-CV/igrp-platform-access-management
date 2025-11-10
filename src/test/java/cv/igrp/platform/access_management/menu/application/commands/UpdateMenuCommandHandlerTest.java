@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.menu.application.commands;
 
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
@@ -70,8 +71,8 @@ public class UpdateMenuCommandHandlerTest {
         dto.setStatus(Status.ACTIVE);
         dto.setTarget("_self");
         dto.setUrl("/new-url");
-        dto.setApplicationCode("APP");
-        dto.setParentCode("MENU0");
+        dto.setApplication(new CodeDescriptionDTO("APP", ""));
+        dto.setParent(new CodeDescriptionDTO("MENU0", ""));
 
         application = new ApplicationEntity();
         parentMenu = new MenuEntryEntity();

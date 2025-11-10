@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.menu.application.commands;
 
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
@@ -125,7 +126,7 @@ public class AddPermissionsToMenuCommandHandlerTest {
         menuEntryDTO.setCode(menuEntryCode);
         List<String> roleList = new ArrayList<>();
         roleList.add(activeRoleName);
-        menuEntryDTO.setRoles(roleList);
+        menuEntryDTO.setRoles(roleList.stream().map(it -> new CodeDescriptionDTO(it, "")).toList());
 
         when(roleRepository.findAllByNameIn(roleNames)).thenReturn(returnedRoles);
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(menuEntry));
@@ -140,7 +141,7 @@ public class AddPermissionsToMenuCommandHandlerTest {
         assertNotNull(result.getBody());
         assertEquals(menuEntryId, result.getBody().getId());
         assertEquals(1, result.getBody().getRoles().size());
-        assertTrue(result.getBody().getRoles().contains(activeRoleName));
+        assertTrue(result.getBody().getRoles().stream().map(CodeDescriptionDTO::getCode).toList().contains(activeRoleName));
 
         verify(menuEntryRepository).save(menuEntry);
         verify(menuEntryRepository, times(1)).save(menuEntry);
@@ -182,7 +183,7 @@ public class AddPermissionsToMenuCommandHandlerTest {
         menuEntryDTO.setCode(menuEntryCode);
         List<String> roleNames = new ArrayList<>();
         roleNames.add(activeRoleName);
-        menuEntryDTO.setRoles(roleNames);
+        menuEntryDTO.setRoles(roleNames.stream().map(it -> new CodeDescriptionDTO(it, "")).toList());
 
         when(roleRepository.findAllByNameIn(roleList)).thenReturn(savedRoles);
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(savedMenuEntry));
@@ -197,7 +198,7 @@ public class AddPermissionsToMenuCommandHandlerTest {
         assertNotNull(result.getBody());
         assertEquals(menuEntryId, result.getBody().getId());
         assertEquals(1, result.getBody().getRoles().size());
-        assertTrue(result.getBody().getRoles().contains(activeRoleName));
+        assertTrue(result.getBody().getRoles().stream().map(CodeDescriptionDTO::getCode).toList().contains(activeRoleName));
 
         verify(menuEntryRepository).save(savedMenuEntry);
         verify(menuEntryRepository, times(1)).save(savedMenuEntry);
@@ -231,7 +232,7 @@ public class AddPermissionsToMenuCommandHandlerTest {
         menuEntryDTO.setCode(menuEntryCode);
         List<String> roleList = new ArrayList<>();
         roleList.add(roleName);
-        menuEntryDTO.setRoles(roleList);
+        menuEntryDTO.setRoles(roleList.stream().map(it -> new CodeDescriptionDTO(it, "")).toList());
 
         when(roleRepository.findAllByNameIn(roleNames)).thenReturn(List.of(activeRole));
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(savedMenuEntry));
@@ -245,7 +246,7 @@ public class AddPermissionsToMenuCommandHandlerTest {
         assertNotNull(result.getBody());
         assertEquals(menuEntryId, result.getBody().getId());
         assertEquals(1, result.getBody().getRoles().size());
-        assertTrue(result.getBody().getRoles().contains(roleName));
+        assertTrue(result.getBody().getRoles().stream().map(CodeDescriptionDTO::getCode).toList().contains(roleName));
         assertEquals(1, savedMenuEntry.getRoles().size());
 
         verify(menuEntryRepository).save(savedMenuEntry);

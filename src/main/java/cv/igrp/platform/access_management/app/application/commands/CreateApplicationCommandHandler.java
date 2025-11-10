@@ -84,10 +84,10 @@ public class CreateApplicationCommandHandler implements CommandHandler<CreateApp
         ApplicationEntity savedApplication = applicationRepository.save(application);
 
         if (command.getApplicationdto().getDepartments() != null) {
-            for (var code : command.getApplicationdto().getDepartments()) {
+            for (var dept : command.getApplicationdto().getDepartments()) {
 
-                var department = departmentEntityRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
-                        .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + code));
+                var department = departmentEntityRepository.findByCodeAndStatusNot(dept.getCode(), DepartmentStatus.DELETED)
+                        .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + dept.getCode()));
 
                 department.getApplications().add(savedApplication);
 
