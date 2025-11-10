@@ -80,7 +80,7 @@ public interface PermissionEntityRepository extends
                     FROM RoleEntity r2
                     JOIN r2.permissions rp
                     WHERE r2.code = :code
-                )) AND p.status == 'ACTIVE'
+                )) AND p.status = 'ACTIVE'
             """)
     List<PermissionEntity> findAvailablePermissionsForRole(@Param("code") String code);
 

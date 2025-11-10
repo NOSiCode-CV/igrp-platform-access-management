@@ -84,7 +84,7 @@ public interface ApplicationEntityRepository extends
                                        WHERE d3.code = :code
                                    )
                              ))
-                             AND a.status == 'ACTIVE'
+                             AND a.status = 'ACTIVE'
             """)
     List<ApplicationEntity> findAvailableApplicationsForDepartment(@Param("code") String code);
 
