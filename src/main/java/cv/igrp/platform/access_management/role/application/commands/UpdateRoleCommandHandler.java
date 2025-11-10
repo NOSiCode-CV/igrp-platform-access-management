@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.role.application.commands;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -15,6 +16,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Objects;
 
 /**
  * Handles the update of a {@link RoleEntity} entity.
@@ -89,6 +92,12 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
                     );
                 });
 
+        if(command.getRoledto().getStatus() != null &&
+                !Objects.equals(command.getRoledto().getStatus(), roleToUpdate.getStatus())
+        ) {
+            updateChildrenStatus(roleToUpdate, command.getRoledto().getStatus());
+        }
+
         RoleEntity parentRole = roleToUpdate.getParent();
         String parentCode = newData.getParent() != null ? newData.getParent().getCode() : null;
         if (parentCode != null) {
@@ -111,6 +120,28 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
         RoleEntity updatedRole = roleRepository.save(roleToUpdate);
         log.info("Role with code: {} updated successfully.", command.getRoledto().getCode());
         return new ResponseEntity<>(roleMapper.mapToDto(updatedRole), HttpStatus.OK);
+    }
+
+    private void updateChildrenStatus(RoleEntity role, Status status) {
+
+        for (var child : role.getChildren()) {
+
+            if(child.getStatus().equals(Status.DELETED)) continue;
+
+            if(status != Status.ACTIVE) {
+
+                var childRole = roleRepository.findByCodeAndStatusNotDeleted(child.getCode());
+
+                childRole.setStatus(status);
+
+                updateChildrenStatus(role, status);
+
+                roleRepository.save(childRole);
+
+            }
+
+        }
+
     }
 
 }

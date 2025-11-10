@@ -54,6 +54,16 @@ public class RemoveMenusFromDepartmentCommandHandler implements CommandHandler<R
          });
          if (menuEntry.getDepartments().stream().map(DepartmentEntity::getCode).toList().contains(department.getCode())) {
             menuEntry.getDepartments().remove(department);
+            if(menuEntry.getParentId() != null) {
+               var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
+                       () -> IgrpResponseStatusException.of(
+                               HttpStatus.NOT_FOUND,
+                               "Parent Menu Entry not found",
+                               "Parent Menu Entry not found with code: " + menuEntry.getParentId().getCode())
+               );
+               parentMenuEntry.getDepartments().remove(department);
+               menuEntryRepository.save(parentMenuEntry);
+            }
             LOGGER.info("Menu entry with code: {} removed from department with code: {}.", menuCode, command.getCode());
             menuEntryRepository.save(menuEntry);
          } else {
@@ -86,7 +96,17 @@ public class RemoveMenusFromDepartmentCommandHandler implements CommandHandler<R
                });
 
                if (menuEntry.getDepartments().stream().map(DepartmentEntity::getCode).toList().contains(childDepartment.getCode())) {
-                  menuEntry.getDepartments().remove(department);
+                  menuEntry.getDepartments().remove(childDepartment);
+                  if(menuEntry.getParentId() != null) {
+                     var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
+                             () -> IgrpResponseStatusException.of(
+                                     HttpStatus.NOT_FOUND,
+                                     "Parent Menu Entry not found",
+                                     "Parent Menu Entry not found with code: " + menuEntry.getParentId().getCode())
+                     );
+                     parentMenuEntry.getDepartments().remove(childDepartment);
+                     menuEntryRepository.save(parentMenuEntry);
+                  }
                   LOGGER.info("Menu entry with code: {} removed from child department with code: {}.", menuCode, childDepartment.getCode());
                   menuEntryRepository.save(menuEntry);
                } else {

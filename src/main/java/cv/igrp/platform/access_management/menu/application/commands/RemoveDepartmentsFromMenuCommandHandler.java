@@ -84,6 +84,16 @@ public class RemoveDepartmentsFromMenuCommandHandler implements CommandHandler<R
             });
             if (menuEntry.getDepartments().contains(department)) {
                 menuEntry.getDepartments().remove(department);
+                if(menuEntry.getParentId() != null) {
+                    var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
+                            () -> IgrpResponseStatusException.of(
+                                    HttpStatus.NOT_FOUND,
+                                    "Parent Menu Entry not found",
+                                    "Parent Menu Entry not found with code: " + menuEntry.getParentId().getCode())
+                    );
+                    parentMenuEntry.getDepartments().remove(department);
+                    menuEntryRepository.save(parentMenuEntry);
+                }
                 log.info("Department with code: {} removed from menu entry with code: {}.", departmentId, command.getCode());
             } else {
                 log.info("Department with code: {} not associated with menu entry with code: {}.", departmentId, command.getCode());

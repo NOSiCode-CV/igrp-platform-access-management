@@ -26,11 +26,11 @@ public interface ApplicationEntityRepository extends
             JOIN a.departments d
             JOIN d.roles r
             JOIN r.users u
-            WHERE a.status <> :status
+            WHERE a.status == :status
                    AND (u.username = :username OR u.email = :email)
                    AND r.department = d
             """)
-    List<ApplicationEntity> findApplicationsByUserOrEmailAndStatusNot(
+    List<ApplicationEntity> findApplicationsByUserOrEmailAndStatus(
             @Param("username") String username,
             @Param("email") String email,
             @Param("status") Status status
@@ -84,7 +84,7 @@ public interface ApplicationEntityRepository extends
                                        WHERE d3.code = :code
                                    )
                              ))
-                             AND a.status != 'DELETED'
+                             AND a.status == 'ACTIVE'
             """)
     List<ApplicationEntity> findAvailableApplicationsForDepartment(@Param("code") String code);
 

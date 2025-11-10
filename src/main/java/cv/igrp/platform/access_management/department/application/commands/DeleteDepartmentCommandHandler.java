@@ -114,6 +114,7 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
            if (role.getStatus().equals(Status.DELETED)) continue;
            var roleEntity = roleRepository.findByCodeAndStatusNotDeleted(role.getCode());
            roleEntity.setStatus(Status.DELETED);
+           deleteChildRoles(roleEntity);
            roleRepository.save(roleEntity);
        }
 
@@ -127,6 +128,8 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
 
          var childDepartment = departmentRepository.findByCodeAndStatusNotDeleted(child.getCode());
 
+         deleteDepartmentRoles(childDepartment);
+
          if(!childDepartment.getChildrenids().isEmpty()) {
             deleteChildDepartments(childDepartment);
          }
@@ -134,6 +137,27 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
          childDepartment.setStatus(DepartmentStatus.DELETED);
          departmentRepository.save(childDepartment);
 
+      }
+
+   }
+
+   private void deleteChildRoles(RoleEntity role) {
+
+      if (role == null) return;
+
+      var children = role.getChildren();
+      if (children == null || children.isEmpty()) return;
+
+      for (var child : children) {
+         if (child == null) continue;
+
+         // Recurse down the existing graph instead of reloading from the repository to avoid NPEs
+         deleteChildRoles(child);
+
+         if (!Status.DELETED.equals(child.getStatus())) {
+            child.setStatus(Status.DELETED);
+         }
+         roleRepository.save(child);
       }
 
    }

@@ -22,7 +22,7 @@ public interface MenuEntryEntityRepository extends
     RevisionRepository<MenuEntryEntity, Integer, Integer>
 {
 
-    List<MenuEntryEntity> findByApplicationIdAndStatus(ApplicationEntity appId, Status status);
+    List<MenuEntryEntity> findByApplicationIdAndStatusIn(ApplicationEntity appId, List<Status> status);
 
     Optional<MenuEntryEntity> findByCodeAndStatusNot(String code, Status status);
 
@@ -53,7 +53,7 @@ public interface MenuEntryEntityRepository extends
         FROM DepartmentEntity d2
         JOIN d2.menuentries dm
         WHERE d2.code = :code AND dm.id = m.id
-    )) AND m.status != 'DELETED'
+    )) AND m.status == 'ACTIVE'
 """)
     List<MenuEntryEntity> findAvailableMenusForDepartment(@Param("code") String code);
 

@@ -32,7 +32,7 @@ public class GetApplicationMenusQueryHandler implements QueryHandler<GetApplicat
 
         var app = applicationRepository.findByCodeAndStatusNotDeleted(query.getCode());
 
-        var menus = menuEntryRepository.findByApplicationIdAndStatus(app, Status.ACTIVE)
+        var menus = menuEntryRepository.findByApplicationIdAndStatusIn(app, List.of(Status.ACTIVE, Status.INACTIVE))
                 .stream()
                 .map(menuEntryMapper::toDTO)
                 .toList();

@@ -84,7 +84,7 @@ public class GetAppMenusQueryHandlerTest {
     when(authenticationHelper.getPreferredUsername()).thenReturn("superadmin");
     when(userRepository.findByUsername("superadmin")).thenReturn(Optional.of(user));
     when(applicationRepository.findByCodeAndStatusNot(appCode, Status.DELETED)).thenReturn(Optional.of(app));
-    when(menuEntryRepository.findByApplicationIdAndStatus(app, Status.ACTIVE)).thenReturn(List.of(menu));
+    when(menuEntryRepository.findByApplicationIdAndStatusIn(app, List.of(Status.ACTIVE))).thenReturn(List.of(menu));
     when(menuEntryMapper.toDTO(menu)).thenReturn(menuDTO);
 
     // When

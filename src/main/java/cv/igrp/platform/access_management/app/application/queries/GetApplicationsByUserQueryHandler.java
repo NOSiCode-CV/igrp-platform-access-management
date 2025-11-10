@@ -59,7 +59,7 @@ public class GetApplicationsByUserQueryHandler implements QueryHandler<GetApplic
   public ResponseEntity<List<ApplicationDTO>> handle(GetApplicationsByUserQuery query) {
 
       List<ApplicationEntity> applications = applicationRepository
-            .findApplicationsByUserOrEmailAndStatusNot(query.getUid(), query.getUid(), Status.DELETED);
+            .findApplicationsByUserOrEmailAndStatus(query.getUid(), query.getUid(), Status.ACTIVE);
 
     List<ApplicationDTO> applicationDTOs = applications.stream()
             .map(applicationMapper::toDto)

@@ -79,7 +79,7 @@ public class GetAppMenusQueryHandler implements QueryHandler<GetAppMenusQuery, R
         }
 
         // Step 3: Fetch all active menus for the app (via repository)
-        List<MenuEntryEntity> allMenus = menuEntryRepository.findByApplicationIdAndStatus(app, Status.ACTIVE);
+        List<MenuEntryEntity> allMenus = menuEntryRepository.findByApplicationIdAndStatusIn(app, List.of(Status.ACTIVE));
 
         // Step 4: Filter only menus user has role for (or no role required)
         List<MenuEntryDTO> accessibleMenus = allMenus.stream()

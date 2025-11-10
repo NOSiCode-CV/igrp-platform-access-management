@@ -32,7 +32,7 @@ public interface ResourceEntityRepository extends
                 FROM ResourceEntity r
                 JOIN r.applications a
                 JOIN a.departments dParent
-                WHERE (
+                WHERE ((
                     dParent.code = :code
                     OR EXISTS (
                         SELECT 1
@@ -57,7 +57,7 @@ public interface ResourceEntityRepository extends
                     JOIN d2.applications da2
                     JOIN da2.resources dr
                     WHERE d2.code = :code AND dr.id = r.id
-                )
+                )) AND r.status == 'ACTIVE'
             """)
     List<ResourceEntity> findAvailableResourcesForDepartment(@Param("code") String code);
 

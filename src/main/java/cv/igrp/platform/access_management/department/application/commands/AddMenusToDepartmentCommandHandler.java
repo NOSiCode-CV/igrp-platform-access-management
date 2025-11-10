@@ -62,6 +62,16 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
 
                if(parentDepartment.getMenuentries().stream().map(MenuEntryEntity::getCode).toList().contains(menuCode)) {
                   menuEntry.getDepartments().add(department);
+                  if(menuEntry.getParentId() != null) {
+                     var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
+                             () -> IgrpResponseStatusException.of(
+                                     HttpStatus.NOT_FOUND,
+                                     "Menu Entry not found",
+                                     "Menu Entry not found with code: " + menuEntry.getParentId().getCode()
+                     ));
+                     parentMenuEntry.getDepartments().add(department);
+                     menuEntryRepository.save(parentMenuEntry);
+                  }
                } else {
                   LOGGER.warn("Cannot add menu <{}> to department <{}> because its parent department <{}> is not associated with the menu", menuCode, command.getCode(), department.getParentId().getCode());
                   throw IgrpResponseStatusException.of(
@@ -71,6 +81,16 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
                }
             } else {
                menuEntry.getDepartments().add(department);
+               if(menuEntry.getParentId() != null) {
+                  var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
+                          () -> IgrpResponseStatusException.of(
+                                  HttpStatus.NOT_FOUND,
+                                  "Parent Menu Entry not found",
+                                  "Parent Menu Entry not found with code: " + menuEntry.getParentId().getCode())
+                  );
+                  parentMenuEntry.getDepartments().add(department);
+                  menuEntryRepository.save(parentMenuEntry);
+               }
             }
             menuEntryRepository.save(menuEntry);
             LOGGER.info("Added menu <{}> to department <{}>", menuCode, command.getCode());
