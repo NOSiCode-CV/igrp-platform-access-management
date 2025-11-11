@@ -11,13 +11,6 @@
         "type": "SYSTEM_PAGE",
         "pageSlug": "/",
         "icon": "House"
-      },
-      {
-        "code": "LIBRARIES",
-        "name": "Biblotecas",
-        "type": "SYSTEM_PAGE",
-        "pageSlug": "libraries",
-        "icon": "Library"
       }
     ]
   },
