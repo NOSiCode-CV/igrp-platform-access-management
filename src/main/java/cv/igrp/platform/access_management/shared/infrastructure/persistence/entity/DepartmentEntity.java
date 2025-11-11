@@ -8,7 +8,6 @@ import cv.igrp.framework.stereotype.IgrpEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
-import jakarta.validation.constraints.NotBlank;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import java.util.Set;
 import java.util.HashSet;
@@ -39,8 +38,7 @@ public class DepartmentEntity extends AuditEntity {
     private String name;
 
   
-    @NotBlank(message = "description is mandatory")
-    @Column(name="description", nullable = false)
+    @Column(name="description")
     private String description;
 
   

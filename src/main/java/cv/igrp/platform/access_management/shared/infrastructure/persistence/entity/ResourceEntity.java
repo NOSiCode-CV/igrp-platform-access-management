@@ -38,8 +38,7 @@ public class ResourceEntity extends AuditEntity {
     private String name;
 
   
-    @NotBlank(message = "description is mandatory")
-    @Column(name="description", nullable = false)
+    @Column(name="description")
     private String description;
 
   

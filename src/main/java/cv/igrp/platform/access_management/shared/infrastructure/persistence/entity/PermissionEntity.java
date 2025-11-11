@@ -8,7 +8,6 @@ import cv.igrp.framework.stereotype.IgrpEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
-import jakarta.validation.constraints.NotBlank;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import java.util.HashSet;
 import java.util.Set;
@@ -33,8 +32,7 @@ public class PermissionEntity extends AuditEntity {
     private String name;
 
   
-    @NotBlank(message = "description is mandatory")
-    @Column(name="description", nullable = false)
+    @Column(name="description")
     private String description;
 
   
@@ -48,7 +46,7 @@ public class PermissionEntity extends AuditEntity {
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department", referencedColumnName = "id")
     private DepartmentEntity department;   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
-private Set<RoleEntity> roles = new HashSet<>();
+private Set<ResourceEntity> resources = new HashSet<>();
 
    @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
 private Set<ResourceEntity> resources = new HashSet<>();
