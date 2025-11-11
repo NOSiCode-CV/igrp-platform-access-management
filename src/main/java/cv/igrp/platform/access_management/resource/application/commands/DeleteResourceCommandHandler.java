@@ -6,8 +6,10 @@ import cv.igrp.platform.access_management.shared.application.constants.CustomFie
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -37,18 +39,22 @@ public class DeleteResourceCommandHandler implements CommandHandler<DeleteResour
            LoggerFactory.getLogger(DeleteResourceCommandHandler.class);
 
    private final ResourceEntityRepository resourceRepository;
+   private final PermissionEntityRepository permissionRepository;
    private final CustomFieldEntityRepository customFieldRepository;
 
    /**
     * Constructs the {@code DeleteResourceCommandHandler} with the required repositories.
     *
     * @param resourceRepository      the repository used to access and delete {@link ResourceEntity} entities
+    * @param permissionRepository    the repository used to access and delete {@link PermissionEntity} entities
     * @param customFieldRepository   the repository used to access and delete {@link CustomFieldEntity} entries
     */
    public DeleteResourceCommandHandler(
            ResourceEntityRepository resourceRepository,
+           PermissionEntityRepository permissionRepository,
            CustomFieldEntityRepository customFieldRepository) {
       this.resourceRepository = resourceRepository;
+      this.permissionRepository = permissionRepository;
       this.customFieldRepository = customFieldRepository;
    }
 
@@ -76,7 +82,12 @@ public class DeleteResourceCommandHandler implements CommandHandler<DeleteResour
                          "Resource not found",
                          "Resource not found with name: " + resourceName);
               });
-      resourceRepository.delete(resource);
+
+      deleteResourcePermissions(resource);
+
+      resource.setStatus(Status.DELETED);
+
+      resourceRepository.save(resource);
       logger.info("Deleted resource with name: {}", resourceName);
 
       Optional<CustomFieldEntity> customField = customFieldRepository
@@ -88,6 +99,29 @@ public class DeleteResourceCommandHandler implements CommandHandler<DeleteResour
       });
 
       return ResponseEntity.noContent().build();
+   }
+
+   private void deleteResourcePermissions(ResourceEntity resource) {
+
+      if(!resource.getPermissions().isEmpty()) {
+
+         for (var perm : resource.getPermissions()) {
+
+            if(perm.getStatus().equals(Status.DELETED)) continue;
+
+            var permission = permissionRepository.findByNameAndStatusNot(perm.getName(), Status.DELETED).orElseThrow(() ->
+                    IgrpResponseStatusException
+                            .notFound("Permission with name <%s> not found".formatted(perm.getName()))
+            );
+
+            permission.setStatus(Status.DELETED);
+
+            permissionRepository.save(permission);
+
+         }
+
+      }
+
    }
 
 }

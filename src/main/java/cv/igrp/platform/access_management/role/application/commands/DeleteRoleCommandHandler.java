@@ -67,24 +67,23 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<Boolean> handle(DeleteRoleCommand command) {
-      log.info("Delete Role with name: {}.", command.getName());
-      RoleEntity role = roleRepository.findByNameAndStatusNot(command.getName(), Status.DELETED)
+      log.info("Delete Role with code: {}.", command.getCode());
+      RoleEntity role = roleRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
               .orElseThrow(() -> {
-                 log.warn("Role with name: {} not found.", command.getName());
+                 log.warn("Role with code: {} not found.", command.getCode());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Delete Role", "Role with name: %s not found.".formatted(command.getName())
+                         HttpStatus.NOT_FOUND, "Delete Role", "Role with code: %s not found.".formatted(command.getCode())
                  );
               });
+
+      deleteChildRoles(role);
+
       role.setStatus(Status.DELETED);
-      List<RoleEntity> roleChildList = roleRepository.findByParent(role);
-      if(roleChildList != null){
-         roleChildList.stream()
-                 .filter(roleChild -> !roleChild.getStatus().equals(Status.DELETED))
-                 .forEach(roleChild -> roleChild.setStatus(Status.DELETED));
-      }
+
       roleRepository.save(role);
+
       try {
-         adapter.deleteRole(role.getDepartment().getCode(), role.getName());
+         adapter.deleteRole(role.getDepartment().getCode(), role.getCode());
       } catch (IAMException e) {
          throw IgrpResponseStatusException.of(
                  HttpStatus.INTERNAL_SERVER_ERROR,
@@ -93,8 +92,29 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
          );
       }
 
-      log.info("Role with name: {} deleted successfully.", command.getName());
+      log.info("Role with code: {} deleted successfully.", command.getCode());
       return new ResponseEntity<>(true, HttpStatus.NO_CONTENT);
+   }
+
+   private void deleteChildRoles(RoleEntity role) {
+
+      if (role == null) return;
+
+      var children = role.getChildren();
+      if (children == null || children.isEmpty()) return;
+
+      for (var child : children) {
+         if (child == null) continue;
+
+         // Recurse down the existing graph instead of reloading from the repository to avoid NPEs
+         deleteChildRoles(child);
+
+         if (!Status.DELETED.equals(child.getStatus())) {
+            child.setStatus(Status.DELETED);
+         }
+         roleRepository.save(child);
+      }
+
    }
 
 }

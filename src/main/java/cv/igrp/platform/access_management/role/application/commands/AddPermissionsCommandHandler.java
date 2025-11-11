@@ -78,7 +78,7 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
     @Transactional
     public ResponseEntity<RoleDTO> handle(AddPermissionsCommand command) {
         List<String> permissionIdList = command.getAddPermissionsRequest().stream().toList();
-        log.info("Add Permissions: {} for Role name: {}.", permissionIdList, command.getName());
+        log.info("Add Permissions: {} for Role code: {}.", permissionIdList, command.getCode());
         List<PermissionEntity> permissionList = permissionRepository.findAllByNameIn(permissionIdList)
                 .stream()
                 .filter(permission -> !permission.getStatus().equals(Status.DELETED))
@@ -89,11 +89,11 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
             throw IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Permissions not found", permissionIdList);
         }
 
-        RoleEntity foundRole = roleRepository.findByNameAndStatusNot(command.getName(), Status.DELETED)
+        RoleEntity foundRole = roleRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
                 .orElseThrow(() -> {
-                    log.warn("Role with name: {} not found.", command.getName());
+                    log.warn("Role with code: {} not found.", command.getCode());
                     return IgrpResponseStatusException.of(
-                            HttpStatus.NOT_FOUND, "Add Permission", "Role with name: " + command.getName() + " not found."
+                            HttpStatus.NOT_FOUND, "Add Permission", "Role with code: " + command.getCode() + " not found."
                     );
                 });
 
@@ -111,7 +111,7 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
 
         RoleDTO response = roleMapper.mapToDto(savedRole);
 
-        log.info("Permissions: {} for Role name: {} added successfully.", addedPermissionIds, command.getName());
+        log.info("Permissions: {} for Role code: {} added successfully.", addedPermissionIds, command.getCode());
         return new ResponseEntity<>(response, HttpStatus.OK);
     }
 

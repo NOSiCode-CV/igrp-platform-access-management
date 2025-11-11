@@ -14,14 +14,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import cv.igrp.framework.core.domain.CommandBus;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import cv.igrp.framework.core.domain.QueryBus;
-import cv.igrp.platform.access_management.permission.application.commands.*;
 import cv.igrp.platform.access_management.permission.application.queries.*;
-
-
+import cv.igrp.framework.core.domain.CommandBus;
+import cv.igrp.platform.access_management.permission.application.commands.*;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
@@ -32,21 +30,15 @@ import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 @Tag(name = "Permissions", description = "Permission Management")
 public class PermissionsController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(PermissionsController.class);
-
   
-  private final CommandBus commandBus;
   private final QueryBus queryBus;
+  private final CommandBus commandBus;
 
-  
-  public PermissionsController(
-    CommandBus commandBus, QueryBus queryBus
-  ) {
-    this.commandBus = commandBus;
-    this.queryBus = queryBus;
+  public PermissionsController(QueryBus queryBus, CommandBus commandBus) {
+          this.queryBus = queryBus;
+          this.commandBus = commandBus;
   }
-
-  @PostMapping(
+   @PostMapping(
     value = "permissions"
   )
   @Operation(
@@ -70,20 +62,14 @@ public class PermissionsController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new CreatePermissionCommand(createPermissionRequest);
 
        ResponseEntity<PermissionDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "permissions/{id}"
   )
   @Operation(
@@ -107,20 +93,14 @@ public class PermissionsController {
     @PathVariable(value = "id") Integer id)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetPermissionByIDQuery(id);
 
       ResponseEntity<PermissionDTO> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PutMapping(
+   @PutMapping(
     value = "permissions/{name}"
   )
   @Operation(
@@ -144,20 +124,14 @@ public class PermissionsController {
     , @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new UpdatePermissionCommand(updatePermissionRequest, name);
 
        ResponseEntity<PermissionDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @DeleteMapping(
+   @DeleteMapping(
     value = "permissions/{name}"
   )
   @Operation(
@@ -181,20 +155,14 @@ public class PermissionsController {
     @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new DeletePermissionCommand(name);
 
        ResponseEntity<Boolean> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "permissions/{name}/roles"
   )
   @Operation(
@@ -218,20 +186,14 @@ public class PermissionsController {
     @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetRolesByPermissionIDQuery(name);
 
       ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "permissions"
   )
   @Operation(
@@ -252,24 +214,18 @@ public class PermissionsController {
   )
   
   public ResponseEntity<List<PermissionDTO>> getPermissionByApplicationId(
-    @RequestParam(value = "departmentId", required = false) Integer departmentId,
-    @RequestParam(value = "departmentCode", required = false) String departmentCode)
+    @RequestParam(value = "resourceId", required = false) Integer resourceId,
+    @RequestParam(value = "resourceName", required = false) String resourceName)
   {
 
-      LOGGER.debug("Operation started");
-
-      final var query = new GetPermissionByApplicationIdQuery(departmentId, departmentCode);
+      final var query = new GetPermissionByApplicationIdQuery(resourceId, resourceName);
 
       ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "permissions/by-name/{name}"
   )
   @Operation(
@@ -293,17 +249,11 @@ public class PermissionsController {
     @PathVariable(value = "name") String name)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetPermissionByNameQuery(name);
 
       ResponseEntity<PermissionDTO> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
 }

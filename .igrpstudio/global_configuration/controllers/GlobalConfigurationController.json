@@ -7,7 +7,7 @@
   "actions": [
     {
       "actionName": "setGlobalConfiguration",
-      "path": "globalConfiguration",
+      "path": "global-configuration",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -41,7 +41,7 @@
     },
     {
       "actionName": "getGlobalConfiguration",
-      "path": "globalConfiguration",
+      "path": "global-configuration",
       "method": "GET",
       "responses": {
         "200": {
@@ -68,5 +68,5 @@
       ]
     }
   ],
-  "id": "2vqxcrt9jj-CONTROLLER"
+  "id": "2vqxcrt9jj-CONTROLLER-setGlobalConfiguration-getGlobalConfiguration"
 }

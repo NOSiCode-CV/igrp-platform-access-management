@@ -186,7 +186,7 @@
     },
     {
       "actionName": "addItems",
-      "path": "resources/{name}/add-items",
+      "path": "resources/{name}/items",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -227,8 +227,8 @@
     },
     {
       "actionName": "removeItems",
-      "path": "resources/{name}/remove-items",
-      "method": "POST",
+      "path": "resources/{name}/items",
+      "method": "DELETE",
       "requestBody": {
         "content": {
           "application/json": {
@@ -302,8 +302,8 @@
     },
     {
       "actionName": "removeResourceCustomFields",
-      "path": "resources/{name}/custom-fields/remove",
-      "method": "POST",
+      "path": "resources/{name}/custom-fields",
+      "method": "DELETE",
       "requestBody": {
         "content": {
           "application/json": {
@@ -431,7 +431,7 @@
     },
     {
       "actionName": "addPermissionsToResource",
-      "path": "resources/{name}/addPermissions",
+      "path": "resources/{name}/permissions",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -470,7 +470,7 @@
     },
     {
       "actionName": "removePermissionsFromResource",
-      "path": "resources/{name}/removePermission",
+      "path": "resources/{name}/permissions",
       "method": "DELETE",
       "requestBody": {
         "content": {
@@ -509,7 +509,7 @@
     },
     {
       "actionName": "addPermissionsToResourceItem",
-      "path": "resources/item/{name}/addPermissions",
+      "path": "resources/item/{name}/permissions",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -548,7 +548,7 @@
     },
     {
       "actionName": "removePermissionsFromResourceItem",
-      "path": "resources/item/{name}/removePermissions",
+      "path": "resources/item/{name}/permissions",
       "method": "DELETE",
       "requestBody": {
         "content": {
@@ -586,5 +586,5 @@
       ]
     }
   ],
-  "id": "74cqm14nbd-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-shareResourceToAnotherApplication-removeResourceFromApplication-removeItems"
+  "id": "74cqm14nbd-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-shareResourceToAnotherApplication-removeResourceFromApplication-removeItems-addItems-removeItems-removeResourceCustomFields-addPermissionsToResource-removePermissionsFromResource-addPermissionsToResourceItem-removePermissionsFromResourceItem"
 }

@@ -14,14 +14,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import cv.igrp.framework.core.domain.CommandBus;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import cv.igrp.framework.core.domain.QueryBus;
-import cv.igrp.platform.access_management.department.application.commands.*;
 import cv.igrp.platform.access_management.department.application.queries.*;
-
-
+import cv.igrp.framework.core.domain.CommandBus;
+import cv.igrp.platform.access_management.department.application.commands.*;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
@@ -34,21 +32,15 @@ import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 @Tag(name = "Department", description = "Department Management")
 public class DepartmentController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(DepartmentController.class);
-
   
-  private final CommandBus commandBus;
   private final QueryBus queryBus;
+  private final CommandBus commandBus;
 
-  
-  public DepartmentController(
-    CommandBus commandBus, QueryBus queryBus
-  ) {
-    this.commandBus = commandBus;
-    this.queryBus = queryBus;
+  public DepartmentController(QueryBus queryBus, CommandBus commandBus) {
+          this.queryBus = queryBus;
+          this.commandBus = commandBus;
   }
-
-  @PostMapping(
+   @PostMapping(
     value = "departments"
   )
   @Operation(
@@ -72,20 +64,14 @@ public class DepartmentController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new PostDepartmentCommand(postDepartmentRequest);
 
        ResponseEntity<DepartmentDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "departments"
   )
   @Operation(
@@ -112,20 +98,14 @@ public class DepartmentController {
     @RequestParam(value = "parentCode", required = false) String parentCode)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetDepartmentsQuery(name, status, code, parentCode);
 
       ResponseEntity<List<DepartmentDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "departments/{id}"
   )
   @Operation(
@@ -149,20 +129,14 @@ public class DepartmentController {
     @PathVariable(value = "id") Integer id)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetDepartmentByIdQuery(id);
 
       ResponseEntity<DepartmentDTO> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PutMapping(
+   @PutMapping(
     value = "departments/{code}"
   )
   @Operation(
@@ -186,20 +160,14 @@ public class DepartmentController {
     , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new UpdateDepartmentCommand(updateDepartmentRequest, code);
 
        ResponseEntity<DepartmentDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @DeleteMapping(
+   @DeleteMapping(
     value = "departments/{code}"
   )
   @Operation(
@@ -223,20 +191,14 @@ public class DepartmentController {
     @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new DeleteDepartmentCommand(code);
 
        ResponseEntity<?> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "departments/by-code/{code}"
   )
   @Operation(
@@ -260,20 +222,14 @@ public class DepartmentController {
     @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetDepartmentByCodeQuery(code);
 
       ResponseEntity<DepartmentDTO> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "departments/{code}/applications/available"
   )
   @Operation(
@@ -297,20 +253,14 @@ public class DepartmentController {
     @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetAvailableApplicationsForDepartmentQuery(code);
 
       ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "departments/{code}/menus/available"
   )
   @Operation(
@@ -334,20 +284,14 @@ public class DepartmentController {
     @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetMenusAvailableForDepartmentQuery(code);
 
       ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "departments/{code}/resources/available"
   )
   @Operation(
@@ -371,17 +315,135 @@ public class DepartmentController {
     @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetAvailableResourcesForDepartmentQuery(code);
 
       ResponseEntity<List<ResourceDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
+      return response;
+  }
 
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+   @PostMapping(
+    value = "departments/{code}/applications"
+  )
+  @Operation(
+    summary = "POST method to handle operations for addApplicationsToDepartment",
+    description = "POST method to handle operations for addApplicationsToDepartment",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> addApplicationsToDepartment(@RequestBody List<String> addApplicationsToDepartmentRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      final var command = new AddApplicationsToDepartmentCommand(addApplicationsToDepartmentRequest, code);
+
+       ResponseEntity<String> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @PostMapping(
+    value = "departments/{code}/menus"
+  )
+  @Operation(
+    summary = "POST method to handle operations for addMenusToDepartment",
+    description = "POST method to handle operations for addMenusToDepartment",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> addMenusToDepartment(@RequestBody List<String> addMenusToDepartmentRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      final var command = new AddMenusToDepartmentCommand(addMenusToDepartmentRequest, code);
+
+       ResponseEntity<String> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @DeleteMapping(
+    value = "departments/{code}/applications"
+  )
+  @Operation(
+    summary = "DELETE method to handle operations for removeApplicationsFromDepartment",
+    description = "DELETE method to handle operations for removeApplicationsFromDepartment",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> removeApplicationsFromDepartment(@RequestBody List<String> removeApplicationsFromDepartmentRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      final var command = new RemoveApplicationsFromDepartmentCommand(removeApplicationsFromDepartmentRequest, code);
+
+       ResponseEntity<String> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @DeleteMapping(
+    value = "departments/{code}/menus"
+  )
+  @Operation(
+    summary = "DELETE method to handle operations for removeMenusFromDepartment",
+    description = "DELETE method to handle operations for removeMenusFromDepartment",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> removeMenusFromDepartment(@RequestBody List<String> removeMenusFromDepartmentRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      final var command = new RemoveMenusFromDepartmentCommand(removeMenusFromDepartmentRequest, code);
+
+       ResponseEntity<String> response = commandBus.send(command);
+
+       return response;
   }
 
 }

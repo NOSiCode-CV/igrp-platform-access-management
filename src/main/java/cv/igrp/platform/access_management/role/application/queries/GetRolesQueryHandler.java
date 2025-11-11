@@ -65,8 +65,8 @@ public class GetRolesQueryHandler implements QueryHandler<GetRolesQuery, Respons
   @IgrpQueryHandler
   @Transactional(readOnly = true)
   public ResponseEntity<List<RoleDTO>> handle(GetRolesQuery query) {
-    log.info("Get Roles with filters - departmentCode: {}, name: {}", query.getDepartmentCode(), query.getName());
-    Specification<RoleEntity> specs = buildSpecification(query.getDepartmentCode(), query.getName());
+    log.info("Get Roles with filters - departmentCode: {}, code: {}", query.getDepartmentCode(), query.getCode());
+    Specification<RoleEntity> specs = buildSpecification(query.getDepartmentCode(), query.getCode());
     List<RoleEntity> allRoles = roleRepository.findAll(specs);
     List<RoleDTO> collectedRole = allRoles.stream()
             .map(roleMapper::mapToDto)
@@ -75,13 +75,13 @@ public class GetRolesQueryHandler implements QueryHandler<GetRolesQuery, Respons
   }
 
   /**
-   * Builds a dynamic JPA {@link Specification} based on optional code and name filters.
+   * Builds a dynamic JPA {@link Specification} based on optional code and code filters.
    *
    * @param departmentCode the exact department code to match (optional)
-   * @param name the name to search for (optional)
+   * @param code the code to search for (optional)
    * @return a {@link Specification} representing the composed query filters
    */
-  private Specification<RoleEntity> buildSpecification(String departmentCode, String name) {
+  private Specification<RoleEntity> buildSpecification(String departmentCode, String code) {
 
     Specification<RoleEntity> specs = Specification.allOf();
 
@@ -91,9 +91,9 @@ public class GetRolesQueryHandler implements QueryHandler<GetRolesQuery, Respons
         );
     }
 
-    if(name != null && !name.isBlank()) {
+    if(code != null && !code.isBlank()) {
         specs = specs.and((root, _, criteriaBuilder) ->
-                criteriaBuilder.like(criteriaBuilder.lower(root.get("name")), "%" + name.toLowerCase() + "%")
+                criteriaBuilder.like(criteriaBuilder.lower(root.get("code")), "%" + code.toLowerCase() + "%")
         );
     }
 

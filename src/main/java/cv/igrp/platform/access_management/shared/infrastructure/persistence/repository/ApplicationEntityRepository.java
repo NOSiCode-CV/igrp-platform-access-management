@@ -49,36 +49,42 @@ public interface ApplicationEntityRepository extends
             """)
     List<ApplicationEntity> findDeniedApplications(@Param("uid") String uid);
 
-    // Case 1: Application is directly owned by the department
-    // Case 2: Application is inherited from the parent department
-    // Exclude applications already attributed to this department
+    // Case 1: Department is top-level, all applications that are not assigned will appear
+    // Case 2: Application is inherited from the parent department for attribution
+    // Exclude applications already attributed to this department or that it is not available
     @Query("""
                 SELECT DISTINCT a
-                FROM ApplicationEntity a
-                JOIN a.departments d
-                WHERE (
-                    d.code = :code
-                    OR EXISTS (
-                        SELECT 1
-                        FROM DepartmentEntity child
-                        JOIN child.parentId p
-                        JOIN child.applications ca
-                        WHERE p.code = :code AND ca.id = a.id
-                    )
-                    OR EXISTS (
-                        SELECT 1
-                        FROM DepartmentEntity child
-                        JOIN child.parentId p
-                        JOIN p.applications pa
-                        WHERE child.code = :code AND pa.id = a.id
-                    )
-                )
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM DepartmentEntity d2
-                    JOIN d2.applications da
-                    WHERE d2.code = :code AND da.id = a.id
-                )
+                     FROM ApplicationEntity a
+                     WHERE ((
+                             1=1 AND
+                             NOT EXISTS (
+                                 SELECT 1
+                                 FROM DepartmentEntity d
+                                 WHERE d.code = :code AND d.parentId IS NOT NULL
+                             )
+                             AND a.id NOT IN (
+                                 SELECT da.id
+                                 FROM DepartmentEntity d2
+                                 JOIN d2.applications da
+                                 WHERE d2.code = :code
+                             )
+                         )
+                         OR
+                             EXISTS (
+                                 SELECT 1
+                                 FROM DepartmentEntity child
+                                 JOIN child.parentId p
+                                 JOIN p.applications pa
+                                 WHERE child.code = :code
+                                   AND pa.id = a.id
+                                   AND a.id NOT IN (
+                                       SELECT da3.id
+                                       FROM DepartmentEntity d3
+                                       JOIN d3.applications da3
+                                       WHERE d3.code = :code
+                                   )
+                             ))
+                             AND a.status != 'DELETED'
             """)
     List<ApplicationEntity> findAvailableApplicationsForDepartment(@Param("code") String code);
 

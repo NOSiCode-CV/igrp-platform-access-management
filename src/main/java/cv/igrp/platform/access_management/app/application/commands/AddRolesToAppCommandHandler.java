@@ -26,7 +26,7 @@ public class AddRolesToAppCommandHandler implements CommandHandler<AddRolesToApp
 
         for (var roleName : command.getCodelistrequestdto().getCodes()) {
 
-            var role = roleEntityRepository.findByNameAndStatusNotDeleted(roleName);
+            var role = roleEntityRepository.findByCodeAndStatusNotDeleted(roleName);
 
             var roleDepartment = role.getDepartment();
             if (roleDepartment == null)

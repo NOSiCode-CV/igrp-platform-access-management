@@ -7,11 +7,8 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
-import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -68,12 +65,12 @@ public class GetPermissionsByRoleIdQueryHandler implements QueryHandler<GetPermi
   @IgrpQueryHandler
   @Transactional(readOnly = true)
   public ResponseEntity<List<PermissionDTO>> handle(GetPermissionsByRoleIdQuery query) {
-    log.info("Get Permissions from Role with name {}.", query.getName());
-    RoleEntity foundRole = roleRepository.findByNameAndStatusNot(query.getName(), Status.DELETED)
+    log.info("Get Permissions from Role with code {}.", query.getCode());
+    RoleEntity foundRole = roleRepository.findByCodeAndStatusNot(query.getCode(), Status.DELETED)
             .orElseThrow(() -> {
-              log.warn("Role with name {} not found.", query.getName());
+              log.warn("Role with code {} not found.", query.getCode());
               return IgrpResponseStatusException.of(
-                      HttpStatus.NOT_FOUND, "Get Permission By Role name", "Role with name: " + query.getName() + " not found."
+                      HttpStatus.NOT_FOUND, "Get Permission By Role code", "Role with code: " + query.getCode() + " not found."
               );
             });
     List<PermissionDTO> permissionList = foundRole.getPermissions()

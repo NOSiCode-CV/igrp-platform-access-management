@@ -111,7 +111,7 @@ public class AddRolesToUserCommandHandlerTest {
         AddRolesToUserCommand command = buildCommand(List.of(ROLE_NAME));
 
         when(userRepository.findByUsername(eq(USERNAME))).thenReturn(Optional.of(user));
-        when(roleRepository.findByNameAndStatusNot(eq(ROLE_NAME), eq(Status.DELETED)))
+        when(roleRepository.findByCodeAndStatusNot(eq(ROLE_NAME), eq(Status.DELETED)))
                 .thenReturn(Optional.empty());
 
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
@@ -126,7 +126,7 @@ public class AddRolesToUserCommandHandlerTest {
                 .contains("Role not found with name: %s".formatted(ROLE_NAME)));
 
         verify(userRepository).findByUsername(eq(USERNAME));
-        verify(roleRepository).findByNameAndStatusNot(eq(ROLE_NAME), eq(Status.DELETED));
+        verify(roleRepository).findByCodeAndStatusNot(eq(ROLE_NAME), eq(Status.DELETED));
         verifyNoInteractions(roleMapper);
     }
 
@@ -138,9 +138,9 @@ public class AddRolesToUserCommandHandlerTest {
 
         // Arrange
         when(userRepository.findByUsername(USERNAME)).thenReturn(Optional.of(user));
-        when(roleRepository.findByNameAndStatusNot(eq(ROLE_NAME), eq(Status.DELETED)))
+        when(roleRepository.findByCodeAndStatusNot(eq(ROLE_NAME), eq(Status.DELETED)))
                 .thenReturn(Optional.of(role));
-        when(roleRepository.findByNameAndStatusNot(ROLE_NAME, Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByCodeAndStatusNot(ROLE_NAME, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.save(any(RoleEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
@@ -156,7 +156,7 @@ public class AddRolesToUserCommandHandlerTest {
 
         // Verify
         verify(userRepository).findByUsername(USERNAME);
-        verify(roleRepository).findByNameAndStatusNot(ROLE_NAME, Status.DELETED);
+        verify(roleRepository).findByCodeAndStatusNot(ROLE_NAME, Status.DELETED);
         verify(roleRepository).save(any(RoleEntity.class));
         verify(roleMapper).mapToDto(role);
         verifyNoMoreInteractions(userRepository, roleRepository, roleMapper);
@@ -171,7 +171,7 @@ public class AddRolesToUserCommandHandlerTest {
         // Arrange
         AddRolesToUserCommand command = buildCommand(List.of(ROLE_NAME));
 
-        when(roleRepository.findByNameAndStatusNot(ROLE_NAME,Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByCodeAndStatusNot(ROLE_NAME,Status.DELETED)).thenReturn(Optional.of(role));
         when(userRepository.findByUsername(USERNAME)).thenReturn(Optional.of(user));
         when(roleRepository.save(role)).thenReturn(role);
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
@@ -188,7 +188,7 @@ public class AddRolesToUserCommandHandlerTest {
 
         // Verify
         verify(userRepository, times(1)).findByUsername(USERNAME);
-        verify(roleRepository, times(1)).findByNameAndStatusNot(ROLE_NAME, Status.DELETED);
+        verify(roleRepository, times(1)).findByCodeAndStatusNot(ROLE_NAME, Status.DELETED);
         verify(roleMapper, times(1)).mapToDto(role);
         verify(roleRepository, times(1)).save(role);
         verifyNoMoreInteractions(userRepository,roleRepository,roleMapper);
@@ -202,7 +202,7 @@ public class AddRolesToUserCommandHandlerTest {
         anotherUser.setId(50);
         role.setUsers(new HashSet<>(List.of(anotherUser)));
 
-        when(roleRepository.findByNameAndStatusNot(ROLE_NAME, Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByCodeAndStatusNot(ROLE_NAME, Status.DELETED)).thenReturn(Optional.of(role));
         when(userRepository.findByUsername(USERNAME)).thenReturn(Optional.of(user));
         when(roleRepository.save(role)).thenReturn(role);
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
@@ -221,7 +221,7 @@ public class AddRolesToUserCommandHandlerTest {
 
         // Verify
         verify(userRepository).findByUsername(USERNAME);
-        verify(roleRepository).findByNameAndStatusNot(ROLE_NAME, Status.DELETED);
+        verify(roleRepository).findByCodeAndStatusNot(ROLE_NAME, Status.DELETED);
         verify(roleMapper).mapToDto(role);
         verify(roleRepository).save(role);
         verifyNoMoreInteractions(userRepository,roleRepository,roleMapper);
@@ -233,7 +233,7 @@ public class AddRolesToUserCommandHandlerTest {
         AddRolesToUserCommand command = buildCommand(List.of(ROLE_NAME));
 
         when(userRepository.findByUsername(USERNAME)).thenReturn(Optional.of(user));
-        when(roleRepository.findByNameAndStatusNot(ROLE_NAME, Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByCodeAndStatusNot(ROLE_NAME, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.save(any(RoleEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
@@ -247,7 +247,7 @@ public class AddRolesToUserCommandHandlerTest {
 
         // Verify
         verify(userRepository).findByUsername(USERNAME);
-        verify(roleRepository).findByNameAndStatusNot(ROLE_NAME,Status.DELETED);
+        verify(roleRepository).findByCodeAndStatusNot(ROLE_NAME,Status.DELETED);
         verify(roleRepository).save(role);
         verifyNoMoreInteractions(userRepository,roleRepository);
     }

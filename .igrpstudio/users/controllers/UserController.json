@@ -32,7 +32,7 @@
     },
     {
       "actionName": "AddRolesToUser",
-      "path": "users/{username}/addRoles",
+      "path": "users/{username}/roles",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -80,7 +80,7 @@
     },
     {
       "actionName": "RemoveRolesFromUser",
-      "path": "users/{username}/removeRoles",
+      "path": "users/{username}/roles",
       "method": "DELETE",
       "requestBody": {
         "content": {
@@ -282,7 +282,7 @@
     },
     {
       "actionName": "getCurrentUser",
-      "path": "users/currentUser",
+      "path": "users/current",
       "method": "GET",
       "responses": {
         "200": {
@@ -335,5 +335,5 @@
       }
     }
   ],
-  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers"
+  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser"
 }

@@ -586,15 +586,15 @@ public class SynchronizationService {
 
     private List<RoleInfo> getRolesFromDatabase() {
         String sql = """
-                SELECT r.name, r.description, r.status, d.code as departmentCode
-                FROM t_role r 
-                LEFT JOIN t_department d ON r.department = d.id 
+                SELECT r.code, r.description, r.status, d.code as departmentCode
+                FROM t_role r
+                LEFT JOIN t_department d ON r.department = d.id
                 WHERE r.status = ?
                 ORDER BY r.parent NULLS FIRST
                 """;
         return jdbcTemplate.query(sql, (rs, _) -> {
             RoleInfo role = new RoleInfo();
-            role.setName(rs.getString("name"));
+            role.setName(rs.getString("code"));
             role.setDescription(rs.getString("description"));
             role.setDepartmentCode(rs.getString("departmentCode"));
             role.setStatus(rs.getString("status"));
@@ -666,7 +666,7 @@ public class SynchronizationService {
 
     private Map<String, Set<String>> getRolePermissionsFromDatabase() {
         String sql = """
-                SELECT p.name as permission_name, r.name as role_name 
+                SELECT p.name as permission_name, r.code as role_name 
                 FROM t_role_permission rp 
                 LEFT JOIN t_permission p ON rp.permission = p.id 
                 LEFT JOIN t_role r ON rp.role_id = r.id 
@@ -686,7 +686,7 @@ public class SynchronizationService {
 
     private Map<String, Map<String, Set<String>>> getUserRolesFromDatabase() {
         String sql = """
-            SELECT u.username, d.code as department_code, r.name as role_name
+            SELECT u.username, d.code as department_code, r.code as role_name
             FROM t_role_users ru
             LEFT JOIN t_user u ON ru.users_id = u.id
             LEFT JOIN t_role r ON ru.roles_id = r.id

@@ -14,14 +14,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
-import cv.igrp.framework.core.domain.CommandBus;
-import cv.igrp.framework.core.domain.QueryBus;
-import cv.igrp.platform.access_management.role.application.commands.*;
-import cv.igrp.platform.access_management.role.application.queries.*;
 
+import cv.igrp.framework.core.domain.QueryBus;
+import cv.igrp.platform.access_management.role.application.queries.*;
+import cv.igrp.framework.core.domain.CommandBus;
+import cv.igrp.platform.access_management.role.application.commands.*;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
@@ -32,21 +30,15 @@ import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 @Tag(name = "Roles", description = "Role Management")
 public class RolesController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(RolesController.class);
-
   
-  private final CommandBus commandBus;
   private final QueryBus queryBus;
+  private final CommandBus commandBus;
 
-  
-  public RolesController(
-    CommandBus commandBus, QueryBus queryBus
-  ) {
-    this.commandBus = commandBus;
-    this.queryBus = queryBus;
+  public RolesController(QueryBus queryBus, CommandBus commandBus) {
+          this.queryBus = queryBus;
+          this.commandBus = commandBus;
   }
-
-  @PostMapping(
+   @PostMapping(
     value = "roles"
   )
   @Operation(
@@ -70,20 +62,14 @@ public class RolesController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new CreateRoleCommand(createRoleRequest);
 
        ResponseEntity<RoleDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "roles"
   )
   @Operation(
@@ -105,23 +91,17 @@ public class RolesController {
   
   public ResponseEntity<List<RoleDTO>> getRoles(
     @RequestParam(value = "departmentCode", required = false) String departmentCode,
-    @RequestParam(value = "name", required = false) String name)
+    @RequestParam(value = "code", required = false) String code)
   {
 
-      LOGGER.debug("Operation started");
-
-      final var query = new GetRolesQuery(departmentCode, name);
+      final var query = new GetRolesQuery(departmentCode, code);
 
       ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "roles/{id}"
   )
   @Operation(
@@ -145,21 +125,15 @@ public class RolesController {
     @PathVariable(value = "id") Integer id)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetRoleByIdQuery(id);
 
       ResponseEntity<RoleDTO> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PutMapping(
-    value = "roles/{name}"
+   @PutMapping(
+    value = "roles/{code}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateRole",
@@ -179,24 +153,18 @@ public class RolesController {
   )
   
   public ResponseEntity<RoleDTO> updateRole(@Valid @RequestBody RoleDTO updateRoleRequest
-    , @PathVariable(value = "name") String name)
+    , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
-      final var command = new UpdateRoleCommand(updateRoleRequest, name);
+      final var command = new UpdateRoleCommand(updateRoleRequest, code);
 
        ResponseEntity<RoleDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @DeleteMapping(
-    value = "roles/{name}"
+   @DeleteMapping(
+    value = "roles/{code}"
   )
   @Operation(
     summary = "DELETE method to handle operations for deleteRole",
@@ -216,28 +184,22 @@ public class RolesController {
   )
   
   public ResponseEntity<Boolean> deleteRole(
-    @PathVariable(value = "name") String name)
+    @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
-      final var command = new DeleteRoleCommand(name);
+      final var command = new DeleteRoleCommand(code);
 
        ResponseEntity<Boolean> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
-    value = "roles/{name}/removePermissions"
+   @DeleteMapping(
+    value = "roles/{code}/permissions"
   )
   @Operation(
-    summary = "POST method to handle operations for RemovePermissions",
-    description = "POST method to handle operations for RemovePermissions",
+    summary = "DELETE method to handle operations for RemovePermissions",
+    description = "DELETE method to handle operations for RemovePermissions",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -253,24 +215,18 @@ public class RolesController {
   )
   
   public ResponseEntity<RoleDTO> removePermissions(@RequestBody List<String> removePermissionsRequest
-    , @PathVariable(value = "name") String name)
+    , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
-      final var command = new RemovePermissionsCommand(removePermissionsRequest, name);
+      final var command = new RemovePermissionsCommand(removePermissionsRequest, code);
 
        ResponseEntity<RoleDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @GetMapping(
-    value = "roles/{name}/permissions"
+   @GetMapping(
+    value = "roles/{code}/permissions"
   )
   @Operation(
     summary = "GET method to handle operations for GetPermissionsByRoleId",
@@ -290,24 +246,18 @@ public class RolesController {
   )
   
   public ResponseEntity<List<PermissionDTO>> getPermissionsByRoleId(
-    @PathVariable(value = "name") String name)
+    @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
-      final var query = new GetPermissionsByRoleIdQuery(name);
+      final var query = new GetPermissionsByRoleIdQuery(code);
 
       ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PostMapping(
-    value = "roles/{name}/addPermissions"
+   @PostMapping(
+    value = "roles/{code}/permissions"
   )
   @Operation(
     summary = "POST method to handle operations for addPermissions",
@@ -327,24 +277,18 @@ public class RolesController {
   )
   
   public ResponseEntity<RoleDTO> addPermissions(@RequestBody List<String> addPermissionsRequest
-    , @PathVariable(value = "name") String name)
+    , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
-      final var command = new AddPermissionsCommand(addPermissionsRequest, name);
+      final var command = new AddPermissionsCommand(addPermissionsRequest, code);
 
        ResponseEntity<RoleDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @GetMapping(
-    value = "roles/by-name/{name}"
+   @GetMapping(
+    value = "roles/by-code/{code}"
   )
   @Operation(
     summary = "GET method to handle operations for getRolesByName",
@@ -364,24 +308,18 @@ public class RolesController {
   )
   
   public ResponseEntity<RoleDTO> getRolesByName(
-    @PathVariable(value = "name") String name)
+    @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
-      final var query = new GetRolesByNameQuery(name);
+      final var query = new GetRolesByNameQuery(code);
 
       ResponseEntity<RoleDTO> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @GetMapping(
-    value = "roles/{name}/permissions/available"
+   @GetMapping(
+    value = "roles/{code}/permissions/available"
   )
   @Operation(
     summary = "GET method to handle operations for getAvailablePermissionsForRoles",
@@ -401,20 +339,14 @@ public class RolesController {
   )
   
   public ResponseEntity<List<PermissionDTO>> getAvailablePermissionsForRoles(
-    @PathVariable(value = "name") String name)
+    @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
-      final var query = new GetAvailablePermissionsForRolesQuery(name);
+      final var query = new GetAvailablePermissionsForRolesQuery(code);
 
       ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
 }

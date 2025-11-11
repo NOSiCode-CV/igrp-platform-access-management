@@ -32,18 +32,18 @@ public class GetRolesByNameQueryHandler implements QueryHandler<GetRolesByNameQu
 
    @IgrpQueryHandler
   public ResponseEntity<RoleDTO> handle(GetRolesByNameQuery query) {
-    String rolename = query.getName();
-    LOGGER.info("Fetching role with name={}", rolename);
+    String roleCode = query.getCode();
+    LOGGER.info("Fetching role with code={}", roleCode);
 
-     RoleEntity role = roleEntityRepository.findByNameAndStatusNot(rolename, Status.DELETED)
+     RoleEntity role = roleEntityRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)
              .orElseThrow(() -> {
-               LOGGER.warn("Role with name={} not found", rolename);
+               LOGGER.warn("Role with code={} not found", roleCode);
                return IgrpResponseStatusException.of(
-                       HttpStatus.NOT_FOUND, "Invalide Role NAME", "Role not found with name: " + rolename);
+                       HttpStatus.NOT_FOUND, "Invalid Role code", "Role not found with code: " + roleCode);
 
              });
      RoleDTO dto = roleMapper.mapToDto(role);
-     LOGGER.info("Successfully retrieved role name={} name={}", dto.getName(), dto.getName());
+     LOGGER.info("Successfully retrieved role code={}", dto.getCode());
      return ResponseEntity.ok(dto);
   }
 

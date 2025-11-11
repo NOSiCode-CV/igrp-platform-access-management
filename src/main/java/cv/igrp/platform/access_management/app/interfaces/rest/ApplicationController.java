@@ -14,14 +14,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
-import cv.igrp.framework.core.domain.CommandBus;
-import cv.igrp.framework.core.domain.QueryBus;
-import cv.igrp.platform.access_management.app.application.commands.*;
-import cv.igrp.platform.access_management.app.application.queries.*;
 
+import cv.igrp.framework.core.domain.QueryBus;
+import cv.igrp.platform.access_management.app.application.queries.*;
+import cv.igrp.framework.core.domain.CommandBus;
+import cv.igrp.platform.access_management.app.application.commands.*;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import java.util.List;
 import java.util.Map;
@@ -34,21 +32,15 @@ import cv.igrp.platform.access_management.shared.application.dto.CodeListRequest
 @Tag(name = "Application", description = "Application Management")
 public class ApplicationController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationController.class);
-
   
-  private final CommandBus commandBus;
   private final QueryBus queryBus;
+  private final CommandBus commandBus;
 
-  
-  public ApplicationController(
-    CommandBus commandBus, QueryBus queryBus
-  ) {
-    this.commandBus = commandBus;
-    this.queryBus = queryBus;
+  public ApplicationController(QueryBus queryBus, CommandBus commandBus) {
+          this.queryBus = queryBus;
+          this.commandBus = commandBus;
   }
-
-  @PostMapping(
+   @PostMapping(
     value = "applications"
   )
   @Operation(
@@ -72,20 +64,14 @@ public class ApplicationController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new CreateApplicationCommand(createApplicationRequest);
 
        ResponseEntity<ApplicationDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "applications"
   )
   @Operation(
@@ -113,20 +99,14 @@ public class ApplicationController {
     @RequestParam(value = "type", required = false) String type)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetApplicationsQuery(code, name, slug, departmentCode, type);
 
       ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "applications/{id}"
   )
   @Operation(
@@ -150,20 +130,14 @@ public class ApplicationController {
     @PathVariable(value = "id") Integer id)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetApplicationByIdQuery(id);
 
       ResponseEntity<ApplicationDTO> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PutMapping(
+   @PutMapping(
     value = "applications/{code}"
   )
   @Operation(
@@ -187,20 +161,14 @@ public class ApplicationController {
     , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new UpdateApplicationCommand(updateApplicationRequest, code);
 
        ResponseEntity<ApplicationDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @DeleteMapping(
+   @DeleteMapping(
     value = "applications/{code}"
   )
   @Operation(
@@ -224,20 +192,14 @@ public class ApplicationController {
     @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new DeleteApplicationCommand(code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "applications/by-ids"
   )
   @Operation(
@@ -261,20 +223,14 @@ public class ApplicationController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new GetApplicationsByIdsCommand(getApplicationsByIdsRequest);
 
        ResponseEntity<List<ApplicationDTO>> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "applications/by-user/{uid}"
   )
   @Operation(
@@ -298,20 +254,14 @@ public class ApplicationController {
     @PathVariable(value = "uid") String uid)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetApplicationsByUserQuery(uid);
 
       ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "/applications/denied-to-user/{uid}"
   )
   @Operation(
@@ -335,20 +285,14 @@ public class ApplicationController {
     @PathVariable(value = "uid") String uid)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetApplicationDeniedToUserQuery(uid);
 
       ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "/applications/{code}/custom-fields"
   )
   @Operation(
@@ -372,25 +316,19 @@ public class ApplicationController {
     , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new AddApplicationCustomFieldsCommand(addApplicationCustomFieldsRequest, code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
-    value = "/applications/{code}/custom-fields/remove"
+   @DeleteMapping(
+    value = "/applications/{code}/custom-fields"
   )
   @Operation(
-    summary = "POST method to handle operations for removeApplicationCustomFields",
-    description = "POST method to handle operations for removeApplicationCustomFields",
+    summary = "DELETE method to handle operations for removeApplicationCustomFields",
+    description = "DELETE method to handle operations for removeApplicationCustomFields",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -409,20 +347,14 @@ public class ApplicationController {
     , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new RemoveApplicationCustomFieldsCommand(removeApplicationCustomFieldsRequest, code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "/applications/{code}/custom-fields"
   )
   @Operation(
@@ -446,20 +378,14 @@ public class ApplicationController {
     @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetApplicationCustomFieldsQuery(code);
 
       ResponseEntity<Map<String, ?>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "/applications/by-code/{code}"
   )
   @Operation(
@@ -483,20 +409,14 @@ public class ApplicationController {
     @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetApplicationByCodeQuery(code);
 
       ResponseEntity<ApplicationDTO> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @GetMapping(
+   @GetMapping(
     value = "/applications/{code}/menus/available"
   )
   @Operation(
@@ -520,20 +440,14 @@ public class ApplicationController {
     @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetApplicationMenusQuery(code);
 
       ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "/applications/{code}/roles"
   )
   @Operation(
@@ -557,20 +471,14 @@ public class ApplicationController {
     , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new AddRolesToAppCommand(addRolesToAppRequest, code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @DeleteMapping(
+   @DeleteMapping(
     value = "applications/{code}/roles"
   )
   @Operation(
@@ -594,20 +502,14 @@ public class ApplicationController {
     , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new RemoveRoleFromApplicationCommand(removeRoleFromApplicationRequest, code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
+   @PostMapping(
     value = "applications/{code}/departments"
   )
   @Operation(
@@ -631,20 +533,14 @@ public class ApplicationController {
     , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new AddDepartmentsToApplicationCommand(addDepartmentsToApplicationRequest, code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @DeleteMapping(
+   @DeleteMapping(
     value = "applications/{code}/departments"
   )
   @Operation(
@@ -668,17 +564,11 @@ public class ApplicationController {
     , @PathVariable(value = "code") String code)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new RemoveDepartmentFromApplicationCommand(removeDepartmentFromApplicationRequest, code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
 }
