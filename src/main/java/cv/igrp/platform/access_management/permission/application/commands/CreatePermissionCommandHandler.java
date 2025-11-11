@@ -91,13 +91,13 @@ public class CreatePermissionCommandHandler implements CommandHandler<CreatePerm
          );
       }
 
-      if(command.getPermissiondto().getDepartment() != null && command.getPermissiondto().getDepartment().getCode() != null && !command.getPermissiondto().getDepartment().getCode().isEmpty()) {
-         log.info("Finding Department with code: {}", command.getPermissiondto().getDepartment().getCode());
-         foundDepartment = departmentRepository.findByCodeAndStatusNot(command.getPermissiondto().getDepartment().getCode(), DepartmentStatus.DELETED)
+      if(command.getPermissiondto().getDepartmentCode() != null && !command.getPermissiondto().getDepartmentCode().isEmpty()) {
+         log.info("Finding Department with code: {}", command.getPermissiondto().getDepartmentCode());
+         foundDepartment = departmentRepository.findByCodeAndStatusNot(command.getPermissiondto().getDepartmentCode(), DepartmentStatus.DELETED)
                  .orElseThrow(() -> {
-                    log.warn("Department with code {} not found.", command.getPermissiondto().getDepartment().getCode());
+                    log.warn("Department with code {} not found.", command.getPermissiondto().getDepartmentCode());
                     return IgrpResponseStatusException.of(
-                            HttpStatus.NOT_FOUND, "Create Permission", "Department with code: " + command.getPermissiondto().getDepartment().getCode() + " not found."
+                            HttpStatus.NOT_FOUND, "Create Permission", "Department with code: " + command.getPermissiondto().getDepartmentCode() + " not found."
                     );
                  });
       }

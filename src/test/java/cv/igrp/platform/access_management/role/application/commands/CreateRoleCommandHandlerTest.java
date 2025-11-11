@@ -5,7 +5,6 @@ import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
@@ -57,7 +56,7 @@ public class CreateRoleCommandHandlerTest {
         RoleDTO role = new RoleDTO();
         String departmentCode = "RH";
         String roleCode = "Role Name";
-        role.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
+        role.setDepartmentCode(departmentCode);
         role.setCode(roleCode);
         String roleDescription = "Role Description";
         role.setDescription(roleDescription);
@@ -78,9 +77,9 @@ public class CreateRoleCommandHandlerTest {
         String departmentCode = "RH";
         String roleParentCode = "admin";
         String roleCode = "Role Name";
-        role.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
+        role.setDepartmentCode(departmentCode);
         role.setCode(roleCode);
-        role.setParent(new CodeDescriptionDTO(roleParentCode, ""));
+        role.setParentCode(roleParentCode);
         String roleDescription = "Role Description";
         role.setDescription(roleDescription);
         CreateRoleCommand command = new CreateRoleCommand(role);
@@ -107,10 +106,10 @@ public class CreateRoleCommandHandlerTest {
         String roleCode = "Role Name";
         String roleDescription = "Role Description";
 
-        role.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
+        role.setDepartmentCode(departmentCode);
         role.setCode(roleCode);
         role.setDescription(roleDescription);
-        role.setParent(null);
+        role.setParentCode(null);
 
         CreateRoleCommand command = new CreateRoleCommand(role);
 
@@ -147,11 +146,11 @@ public class CreateRoleCommandHandlerTest {
 
         RoleDTO role = new RoleDTO();
         String roleCode = "create_resource";
-        role.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
+        role.setDepartmentCode(departmentCode);
         role.setCode(roleCode);
         role.setDescription("Role Description");
         role.setStatus(Status.ACTIVE);
-        role.setParent(null);
+        role.setParentCode(null);
 
         CreateRoleCommand command = new CreateRoleCommand(role);
 
@@ -199,10 +198,10 @@ public class CreateRoleCommandHandlerTest {
         String savedRoleCode = "create_resource";
         String roleDescription = "Role Description";
 
-        role.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
+        role.setDepartmentCode(departmentCode);
         role.setCode(roleCode);
         role.setDescription(roleDescription);
-        role.setParent(null);
+        role.setParentCode(null);
 
         CreateRoleCommand command = new CreateRoleCommand(role);
 
@@ -235,10 +234,10 @@ public class CreateRoleCommandHandlerTest {
         String roleCode = "Role Name";
         String roleDescription = "Role Description";
 
-        role.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
+        role.setDepartmentCode(departmentCode);
         role.setCode(roleCode);
         role.setDescription(roleDescription);
-        role.setParent(null);
+        role.setParentCode(null);
 
         CreateRoleCommand command = new CreateRoleCommand(role);
 
@@ -274,10 +273,10 @@ public class CreateRoleCommandHandlerTest {
         String roleCode = "Role Name";
         String roleDescription = "Role Description";
 
-        role.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
+        role.setDepartmentCode(departmentCode);
         role.setCode(roleCode);
         role.setDescription(roleDescription);
-        role.setParent(new CodeDescriptionDTO(parentRoleCode, ""));
+        role.setParentCode(parentRoleCode);
 
         CreateRoleCommand command = new CreateRoleCommand(role);
 
@@ -291,7 +290,7 @@ public class CreateRoleCommandHandlerTest {
         parentRole.setName("Parent Role Name");
         RoleEntity savedRole = new RoleEntity();
         RoleDTO expectedResponse = new RoleDTO();
-        expectedResponse.setParent(new CodeDescriptionDTO(parentRoleCode, ""));
+        expectedResponse.setParentCode(parentRoleCode);
         expectedResponse.setCode(roleCode);
         expectedResponse.setDescription(roleDescription);
 

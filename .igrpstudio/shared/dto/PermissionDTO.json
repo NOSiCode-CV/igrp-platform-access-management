@@ -58,17 +58,16 @@
       "module": "shared"
     },
     {
-      "name": "department",
-      "objectType": "dto",
-      "type": "CodeDescriptionDTO",
+      "name": "departmentCode",
+      "objectType": "java",
+      "type": "string",
       "required": false,
       "before": false,
       "after": false,
       "positive": false,
       "isEmail": false,
       "isUrl": false,
-      "primaryKey": false,
-      "module": "shared"
+      "primaryKey": false
     }
   ],
   "id": "ecx37yuxhk"

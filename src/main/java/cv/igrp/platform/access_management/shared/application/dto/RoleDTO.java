@@ -10,7 +10,6 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,11 +36,11 @@ public class RoleDTO  {
   
   private String description ;
   
-  @Valid
-  private CodeDescriptionDTO department ;
   
-  @Valid
-  private CodeDescriptionDTO parent ;
+  private String departmentCode ;
+  
+  
+  private String parentCode ;
   
   
   private Status status ;

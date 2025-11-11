@@ -96,12 +96,12 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
 
       DepartmentEntity department = departmentMapper.toEntity(departmentDto);
 
-      if(departmentDto.getParent() != null && departmentDto.getParent().getCode() != null && !departmentDto.getParent().getCode().isBlank()) {
-         DepartmentEntity parent = departmentRepository.findByCodeAndStatusNot(command.getDepartmentdto().getParent().getCode(), DepartmentStatus.DELETED)
+      if(departmentDto.getParentCode() != null && !departmentDto.getParentCode().isBlank()) {
+         DepartmentEntity parent = departmentRepository.findByCodeAndStatusNot(command.getDepartmentdto().getParentCode(), DepartmentStatus.DELETED)
                  .orElseThrow(() -> {
-                    logger.warn("Invalid parent Code: {}", departmentDto.getParent().getCode());
+                    logger.warn("Invalid parent Code: {}", departmentDto.getParentCode());
                     return IgrpResponseStatusException.of(
-                            HttpStatus.BAD_REQUEST, "Invalid department Code", "No parent department found with Code: " + departmentDto.getParent().getCode());
+                            HttpStatus.BAD_REQUEST, "Invalid department Code", "No parent department found with Code: " + departmentDto.getParentCode());
                  });
          department.setParentId(parent);
       }

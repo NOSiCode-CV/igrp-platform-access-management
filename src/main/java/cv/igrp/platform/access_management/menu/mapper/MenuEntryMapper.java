@@ -1,9 +1,9 @@
 package cv.igrp.platform.access_management.menu.mapper;
 
-import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -24,13 +24,13 @@ public class MenuEntryMapper {
         dto.setUrl(entity.getUrl());
         dto.setPageSlug(entity.getPageSlug());
         dto.setRoles(entity.getRoles().stream()
-                .map(it -> new CodeDescriptionDTO(it.getCode(), it.getName()))
+                .map(RoleEntity::getCode)
                 .toList());
         if (entity.getParentId() != null)
-            dto.setParent(new CodeDescriptionDTO(entity.getParentId().getCode(), entity.getParentId().getName()));
+            dto.setParentCode(entity.getParentId().getCode());
 
         if (entity.getApplicationId() != null)
-            dto.setApplication(new CodeDescriptionDTO(entity.getApplicationId().getCode(), entity.getApplicationId().getName()));
+            dto.setApplicationCode(entity.getApplicationId().getCode());
 
         dto.setCreatedBy(entity.getCreatedBy());
         if(entity.getCreatedDate() != null)

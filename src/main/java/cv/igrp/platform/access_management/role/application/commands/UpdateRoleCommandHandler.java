@@ -99,16 +99,16 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
         }
 
         RoleEntity parentRole = roleToUpdate.getParent();
-        String parentCode = newData.getParent() != null ? newData.getParent().getCode() : null;
+        String parentCode = newData.getParentCode();
         if (parentCode != null) {
             if (parentCode.isBlank()) {
                 parentRole = null;
             } else {
                 parentRole = roleRepository.findByCodeAndStatusNot(parentCode, Status.DELETED)
                         .orElseThrow(() -> {
-                            log.warn("Parent Role with code: {} not found.", newData.getParent().getCode());
+                            log.warn("Parent Role with code: {} not found.", newData.getParentCode());
                             return IgrpResponseStatusException.of(
-                                    HttpStatus.NOT_FOUND, ERROR_TITLE, "Parent Role with code: %s not found.".formatted(newData.getParent().getCode())
+                                    HttpStatus.NOT_FOUND, ERROR_TITLE, "Parent Role with code: %s not found.".formatted(newData.getParentCode())
                             );
                         });
             }

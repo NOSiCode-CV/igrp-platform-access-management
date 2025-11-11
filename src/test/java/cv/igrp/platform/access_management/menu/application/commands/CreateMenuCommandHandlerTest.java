@@ -1,7 +1,6 @@
 package cv.igrp.platform.access_management.menu.application.commands;
 
 import cv.igrp.platform.access_management.menu.application.domain.service.MenuEntryValidator;
-import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 
@@ -64,8 +63,8 @@ public class CreateMenuCommandHandlerTest {
     @BeforeEach
     void setUp() {
         dto = new MenuEntryDTO();
-        dto.setApplication(new CodeDescriptionDTO("APP", ""));
-        dto.setParent(new CodeDescriptionDTO("MENU1", ""));
+        dto.setApplicationCode("APP");
+        dto.setParentCode("MENU1");
         dto.setType(MenuEntryType.MENU_PAGE);
         dto.setPageSlug("my-page");
         dto.setUrl("/pages/my-page");
@@ -112,7 +111,7 @@ public class CreateMenuCommandHandlerTest {
     @DisplayName("should skip setting resource and parent if null")
     void testHandle_whenResourceAndParentIdAreNull_shouldSkipThem() {
         // Arrange
-        dto.setParent(null);
+        dto.setParentCode(null);
 
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
         when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));

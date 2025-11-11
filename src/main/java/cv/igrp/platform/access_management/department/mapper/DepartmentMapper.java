@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.department.mapper;
 
-import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -19,7 +18,7 @@ public class DepartmentMapper {
         dto.setDescription(entity.getDescription());
         dto.setStatus(entity.getStatus());
         if (entity.getParentId() != null) {
-            dto.setParent(new CodeDescriptionDTO(entity.getParentId().getCode(), entity.getParentId().getName()));
+            dto.setParentCode(entity.getParentId().getCode());
         }
         dto.setIcon(entity.getIcon());
         return dto;

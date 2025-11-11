@@ -1,7 +1,6 @@
 package cv.igrp.platform.access_management.permission.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
@@ -50,7 +49,7 @@ class PermissionMapperTest {
         assertEquals(permissionName, result.getName());
         assertEquals(permissionDescription, result.getDescription());
         assertEquals(permissionStatus, result.getStatus());
-        assertEquals(department.getCode(), result.getDepartment().getCode());
+        assertEquals(department.getCode(), result.getDepartmentCode());
     }
 
     @Test
@@ -64,7 +63,7 @@ class PermissionMapperTest {
         dto.setName(name);
         dto.setDescription(description);
         dto.setStatus(null);
-        dto.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
+        dto.setDepartmentCode(departmentCode);
 
         DepartmentEntity department = new DepartmentEntity();
         department.setCode(departmentCode);
@@ -92,7 +91,7 @@ class PermissionMapperTest {
         dto.setName(name);
         dto.setDescription(description);
         dto.setStatus(status);
-        dto.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
+        dto.setDepartmentCode(departmentCode);
 
         DepartmentEntity department = new DepartmentEntity();
         department.setCode(departmentCode);

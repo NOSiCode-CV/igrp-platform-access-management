@@ -2,7 +2,6 @@ package cv.igrp.platform.access_management.menu.application.commands;
 
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
@@ -155,7 +154,7 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         menuEntryDTO.setCode(menuEntryCode);
         List<String> remainingRoles = new ArrayList<>();
         remainingRoles.add(roleName3);
-        menuEntryDTO.setRoles(remainingRoles.stream().map(it -> new CodeDescriptionDTO(it, "")).toList());
+        menuEntryDTO.setRoles(remainingRoles);
 
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED))
                 .thenReturn(Optional.of(savedMenuEntry));
@@ -170,7 +169,7 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         MenuEntryDTO responseBody = result.getBody();
         assertNotNull(responseBody);
         assertEquals(1, responseBody.getRoles().size());
-        assertTrue(responseBody.getRoles().stream().map(CodeDescriptionDTO::getCode).toList().contains(roleName3));
+        assertTrue(responseBody.getRoles().contains(roleName3));
 
         assertFalse(savedMenuEntry.getRoles().contains(role1));
         assertFalse(savedMenuEntry.getRoles().contains(role2));
@@ -213,7 +212,7 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         menuEntryDTO.setCode(menuEntryCode);
         List<String> remainingRoles = new ArrayList<>();
         remainingRoles.add(roleToKeepName);
-        menuEntryDTO.setRoles(remainingRoles.stream().map(it -> new CodeDescriptionDTO(it, "")).toList());
+        menuEntryDTO.setRoles(remainingRoles);
 
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(menuEntry));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
@@ -227,7 +226,7 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         MenuEntryDTO responseBody = result.getBody();
         assertNotNull(responseBody);
         assertEquals(1, responseBody.getRoles().size());
-        assertTrue(responseBody.getRoles().stream().map(CodeDescriptionDTO::getCode).toList().contains(roleToKeepName));
+        assertTrue(responseBody.getRoles().contains(roleToKeepName));
 
         assertFalse(menuEntry.getRoles().contains(roleToRemove));
         assertTrue(menuEntry.getRoles().contains(roleToKeep));

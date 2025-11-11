@@ -1,7 +1,6 @@
 package cv.igrp.platform.access_management.role.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
@@ -28,11 +27,11 @@ public class RoleMapper {
         roleDTO.setCode(role.getCode());
         roleDTO.setName(role.getName());
         if (role.getParent() != null) {
-            roleDTO.setParent(new CodeDescriptionDTO(role.getParent().getCode(), role.getParent().getName()));
+            roleDTO.setParentCode(role.getParent().getCode());
         }
         roleDTO.setName(role.getName());
         roleDTO.setDescription(role.getDescription());
-        roleDTO.setDepartment(new CodeDescriptionDTO(role.getDepartment().getCode(), role.getDepartment().getName()));
+        roleDTO.setDepartmentCode(role.getDepartment().getCode());
         roleDTO.setStatus(role.getStatus());
         roleDTO.setIcon(role.getIcon());
         roleDTO.setPermissions(role.getPermissions().stream().map(PermissionEntity::getName).toList());

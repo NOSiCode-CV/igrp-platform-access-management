@@ -43,7 +43,7 @@ class DepartmentMapperTest {
         assertEquals("Human Resources", dto.getName());
         assertEquals("Handles HR", dto.getDescription());
         assertEquals(DepartmentStatus.ACTIVE, dto.getStatus());
-        assertEquals("NOSI", dto.getParent().getCode());
+        assertEquals("NOSI", dto.getParentCode());
     }
 
     @Test

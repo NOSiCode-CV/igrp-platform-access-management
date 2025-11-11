@@ -3,14 +3,12 @@ package cv.igrp.platform.access_management.permission.application.commands;
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -53,7 +51,7 @@ public class CreatePermissionCommandHandlerTest {
         String departmentCode = "DEPT";
         String permissionName = "permissionName";
         String permissionDescription = "permissionDescription";
-        PermissionDTO permissiondto = new PermissionDTO(null, permissionName, permissionDescription, Status.ACTIVE, new CodeDescriptionDTO(departmentCode, ""));
+        PermissionDTO permissiondto = new PermissionDTO(null, permissionName, permissionDescription, Status.ACTIVE, departmentCode);
         CreatePermissionCommand command = new CreatePermissionCommand(permissiondto);
 
         when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED))
@@ -73,7 +71,7 @@ public class CreatePermissionCommandHandlerTest {
         String permissionName = "read.user";
         PermissionDTO dto = new PermissionDTO();
         dto.setName(permissionName);
-        dto.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
+        dto.setDepartmentCode(departmentCode);
         dto.setStatus(Status.ACTIVE);
 
         CreatePermissionCommand command = new CreatePermissionCommand(dto);
@@ -131,7 +129,7 @@ public class CreatePermissionCommandHandlerTest {
 
         PermissionDTO dto = new PermissionDTO();
         dto.setName(permissionName);
-        dto.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
+        dto.setDepartmentCode(departmentCode);
 
         CreatePermissionCommand command = new CreatePermissionCommand(dto);
 
@@ -156,7 +154,7 @@ public class CreatePermissionCommandHandlerTest {
         expectedResponse.setId(10);
         expectedResponse.setName(permissionName);
         expectedResponse.setStatus(Status.ACTIVE);
-        expectedResponse.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
+        expectedResponse.setDepartmentCode(departmentCode);
 
         // When
         when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED))
@@ -190,7 +188,7 @@ public class CreatePermissionCommandHandlerTest {
 
         PermissionDTO dto = new PermissionDTO();
         dto.setName(permissionName);
-        dto.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
+        dto.setDepartmentCode(departmentCode);
         dto.setStatus(Status.ACTIVE);
 
         CreatePermissionCommand command = new CreatePermissionCommand(dto);
@@ -240,7 +238,7 @@ public class CreatePermissionCommandHandlerTest {
 
         PermissionDTO dto = new PermissionDTO();
         dto.setName(permissionName);
-        dto.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
+        dto.setDepartmentCode(departmentCode);
         dto.setStatus(Status.ACTIVE);
 
         CreatePermissionCommand command = new CreatePermissionCommand(dto);

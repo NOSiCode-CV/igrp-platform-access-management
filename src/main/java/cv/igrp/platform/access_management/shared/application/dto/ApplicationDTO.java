@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
@@ -72,7 +71,7 @@ public class ApplicationDTO  {
   
   private String lastModifiedDate ;
   
-  @Valid
-  private List<CodeDescriptionDTO> departments = new ArrayList<>();
+  
+  private List<String> departments = new ArrayList<>();
 
 }

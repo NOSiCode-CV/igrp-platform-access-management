@@ -110,23 +110,23 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
 
       MenuEntryEntity menuEntry = menuEntryMapper.toEntity(menuEntryDTO);
 
-      if (menuEntryDTO.getApplication() != null && menuEntryDTO.getApplication().getCode() != null) {
-         menuEntry.setApplicationId(applicationRepository.findByCodeAndStatusNot(menuEntryDTO.getApplication().getCode(), Status.DELETED)
+      if (menuEntryDTO.getApplicationCode() != null) {
+         menuEntry.setApplicationId(applicationRepository.findByCodeAndStatusNot(menuEntryDTO.getApplicationCode(), Status.DELETED)
                  .orElseThrow(() -> {
-                    logger.warn("Application not found with code: {}", menuEntryDTO.getApplication().getCode());
+                    logger.warn("Application not found with code: {}", menuEntryDTO.getApplicationCode());
                     return IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND, "Application not found",
-                            "Application not found with code: " + menuEntryDTO.getApplication().getCode());
+                            "Application not found with code: " + menuEntryDTO.getApplicationCode());
                  }));
       }
 
-      if (menuEntryDTO.getParent() != null && menuEntryDTO.getParent().getCode() != null) {
-         menuEntry.setParentId(menuEntryRepository.findByCodeAndStatusNot(menuEntryDTO.getParent().getCode(), Status.DELETED)
+      if (menuEntryDTO.getParentCode() != null) {
+         menuEntry.setParentId(menuEntryRepository.findByCodeAndStatusNot(menuEntryDTO.getParentCode(), Status.DELETED)
                  .orElseThrow(() -> {
-                    logger.warn("Parent menu not found with code: {}", menuEntryDTO.getParent().getCode());
+                    logger.warn("Parent menu not found with code: {}", menuEntryDTO.getParentCode());
                     return IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND, "Parent Menu not found",
-                            "ParentMenu not found with code: " + menuEntryDTO.getParent().getCode());
+                            "ParentMenu not found with code: " + menuEntryDTO.getParentCode());
                  }));
       }
 

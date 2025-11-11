@@ -75,25 +75,25 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
       menuEntry.setTarget(menuDto.getTarget());
       menuEntry.setUrl(menuDto.getUrl());
 
-      if (menuDto.getParent() != null && menuDto.getParent().getCode() != null) {
-         menuEntry.setParentId(menuEntryRepository.findByCodeAndStatusNot(menuDto.getParent().getCode(), Status.DELETED)
+      if (menuDto.getParentCode() != null) {
+         menuEntry.setParentId(menuEntryRepository.findByCodeAndStatusNot(menuDto.getParentCode(), Status.DELETED)
                  .orElseThrow(() -> {
-                    logger.warn("Parent Menu not found with code: {}", menuDto.getParent().getCode());
+                    logger.warn("Parent Menu not found with code: {}", menuDto.getParentCode());
                     return IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND,
                             "Parent Menu Entry not found",
-                            "Parent Menu Entry not found with code: " + menuDto.getParent().getCode());
+                            "Parent Menu Entry not found with code: " + menuDto.getParentCode());
                  }));
       }
 
-      if (menuDto.getApplication() != null && menuDto.getApplication().getCode() != null){
-         menuEntry.setApplicationId(applicationRepository.findByCodeAndStatusNot(menuDto.getApplication().getCode(), Status.DELETED)
+      if (menuDto.getApplicationCode() != null){
+         menuEntry.setApplicationId(applicationRepository.findByCodeAndStatusNot(menuDto.getApplicationCode(), Status.DELETED)
                  .orElseThrow(() -> {
-                    logger.warn("Application not found with code: {}", menuDto.getApplication().getCode());
+                    logger.warn("Application not found with code: {}", menuDto.getApplicationCode());
                     return IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND,
                             "Application not found",
-                            "Application not found with code: " + menuDto.getApplication().getCode());
+                            "Application not found with code: " + menuDto.getApplicationCode());
                  }));
       }
 

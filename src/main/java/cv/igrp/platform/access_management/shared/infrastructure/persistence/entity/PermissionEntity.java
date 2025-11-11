@@ -46,7 +46,7 @@ public class PermissionEntity extends AuditEntity {
   @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "department", referencedColumnName = "id")
     private DepartmentEntity department;   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
-private Set<ResourceEntity> resources = new HashSet<>();
+private Set<RoleEntity> roles = new HashSet<>();
 
    @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
 private Set<ResourceEntity> resources = new HashSet<>();

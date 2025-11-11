@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.role.application.commands;
 import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -75,8 +74,8 @@ public class UpdateRoleCommandHandlerTest {
 
         RoleDTO roleData = new RoleDTO();
         roleData.setCode(roleCode);
-        roleData.setParent(new CodeDescriptionDTO(nonExistentParentRoleCode, ""));
-        roleData.setDepartment(new CodeDescriptionDTO(existentDepartmentCode, ""));
+        roleData.setParentCode(nonExistentParentRoleCode);
+        roleData.setDepartmentCode(existentDepartmentCode);
         UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleCode);
 
         RoleEntity existingRole = new RoleEntity();
@@ -129,8 +128,8 @@ public class UpdateRoleCommandHandlerTest {
         String roleNewDescription = "Role New Description";
         updatedData.setDescription(roleNewDescription);
         updatedData.setStatus(Status.ACTIVE);
-        updatedData.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
-        updatedData.setParent(null);
+        updatedData.setDepartmentCode(departmentCode);
+        updatedData.setParentCode(null);
 
         UpdateRoleCommand command = new UpdateRoleCommand(updatedData, rolePreviousCode);
 
@@ -185,8 +184,8 @@ public class UpdateRoleCommandHandlerTest {
         String roleNewDescription = "Role New Description";
         updatedData.setDescription(roleNewDescription);
         updatedData.setStatus(Status.ACTIVE);
-        updatedData.setDepartment(new CodeDescriptionDTO(departmentCode, ""));
-        updatedData.setParent(null);
+        updatedData.setDepartmentCode(departmentCode);
+        updatedData.setParentCode(null);
 
         UpdateRoleCommand command = new UpdateRoleCommand(updatedData, rolePreviousCode);
 

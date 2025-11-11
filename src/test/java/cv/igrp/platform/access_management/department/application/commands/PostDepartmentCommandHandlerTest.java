@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.department.application.commands;
 import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
-import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
@@ -58,7 +57,7 @@ public class PostDepartmentCommandHandlerTest {
         departmentDTO.setName("Test Department");
         departmentDTO.setCode("DEPT_TEST");
         departmentDTO.setDescription("Test Description");
-        departmentDTO.setParent(null);
+        departmentDTO.setParentCode(null);
 
         command = postDepartmentCommand(departmentDTO);
 
@@ -116,7 +115,7 @@ public class PostDepartmentCommandHandlerTest {
     void testHandle_whenParentIdIsProvided_shouldCreateDepartmentWithParentSuccessfully() {
 
         // Arrange
-        departmentDTO.setParent(new CodeDescriptionDTO("DEPT_RH", ""));
+        departmentDTO.setParentCode("DEPT_RH");
         command = postDepartmentCommand(departmentDTO);
 
         when(departmentMapper.toEntity(departmentDTO)).thenReturn(department);

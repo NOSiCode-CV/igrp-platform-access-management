@@ -2,10 +2,8 @@ package cv.igrp.platform.access_management.permission.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import org.junit.jupiter.api.Test;
@@ -36,7 +34,7 @@ class PermissionValidatorTest {
 
         PermissionDTO newPermissionDTO = new PermissionDTO();
         newPermissionDTO.setName("read_user");
-        newPermissionDTO.setDepartment(new CodeDescriptionDTO("DEPT", ""));
+        newPermissionDTO.setDepartmentCode("DEPT");
         newPermissionDTO.setStatus(Status.ACTIVE);
 
         // When
@@ -58,7 +56,7 @@ class PermissionValidatorTest {
 
         PermissionDTO dto = new PermissionDTO();
         dto.setName("NEW_PERMISSION");
-        dto.setDepartment(new CodeDescriptionDTO("DEPT", ""));
+        dto.setDepartmentCode("DEPT");
 
         // When
         ResourceValidationResponse response = PermissionValidator.validatePermissionName(dto, department);
