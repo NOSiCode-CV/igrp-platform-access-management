@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.menu.application.queries;
 
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
+import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.*;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
@@ -79,7 +80,7 @@ public class GetAppMenusQueryHandler implements QueryHandler<GetAppMenusQuery, R
         }
 
         // Step 3: Fetch all active menus for the app (via repository)
-        List<MenuEntryEntity> allMenus = menuEntryRepository.findByApplicationIdAndStatusIn(app, List.of(Status.ACTIVE));
+        List<MenuEntryEntity> allMenus = menuEntryRepository.findByApplicationIdAndTypeInAndStatusIn(app, List.of(MenuEntryType.MENU_PAGE, MenuEntryType.SYSTEM_PAGE, MenuEntryType.EXTERNAL_PAGE), List.of(Status.ACTIVE));
 
         // Step 4: Filter only menus user has role for (or no role required)
         List<MenuEntryDTO> accessibleMenus = allMenus.stream()

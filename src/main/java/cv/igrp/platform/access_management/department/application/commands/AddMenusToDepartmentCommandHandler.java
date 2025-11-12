@@ -5,6 +5,7 @@ import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
@@ -62,16 +63,7 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
 
                if(parentDepartment.getMenuentries().stream().map(MenuEntryEntity::getCode).toList().contains(menuCode)) {
                   menuEntry.getDepartments().add(department);
-                  if(menuEntry.getParentId() != null) {
-                     var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
-                             () -> IgrpResponseStatusException.of(
-                                     HttpStatus.NOT_FOUND,
-                                     "Menu Entry not found",
-                                     "Menu Entry not found with code: " + menuEntry.getParentId().getCode()
-                     ));
-                     parentMenuEntry.getDepartments().add(department);
-                     menuEntryRepository.save(parentMenuEntry);
-                  }
+                  //attributeDepartmentToParents(menuEntry, department);
                } else {
                   LOGGER.warn("Cannot add menu <{}> to department <{}> because its parent department <{}> is not associated with the menu", menuCode, command.getCode(), department.getParentId().getCode());
                   throw IgrpResponseStatusException.of(
@@ -81,16 +73,7 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
                }
             } else {
                menuEntry.getDepartments().add(department);
-               if(menuEntry.getParentId() != null) {
-                  var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
-                          () -> IgrpResponseStatusException.of(
-                                  HttpStatus.NOT_FOUND,
-                                  "Parent Menu Entry not found",
-                                  "Parent Menu Entry not found with code: " + menuEntry.getParentId().getCode())
-                  );
-                  parentMenuEntry.getDepartments().add(department);
-                  menuEntryRepository.save(parentMenuEntry);
-               }
+               //attributeDepartmentToParents(menuEntry, department);
             }
             menuEntryRepository.save(menuEntry);
             LOGGER.info("Added menu <{}> to department <{}>", menuCode, command.getCode());
@@ -100,6 +83,24 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
       }
       
       return ResponseEntity.noContent().build();
+   }
+
+   private void attributeDepartmentToParents(MenuEntryEntity menuEntry, DepartmentEntity department) {
+
+      if(menuEntry.getParentId() != null) {
+         var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
+                 () -> IgrpResponseStatusException.of(
+                         HttpStatus.NOT_FOUND,
+                         "Parent Menu Entry not found",
+                         "Parent Menu Entry not found with code: " + menuEntry.getParentId().getCode())
+         );
+         parentMenuEntry.getDepartments().add(department);
+
+         attributeDepartmentToParents(parentMenuEntry, department);
+
+         menuEntryRepository.save(parentMenuEntry);
+      }
+
    }
 
 }

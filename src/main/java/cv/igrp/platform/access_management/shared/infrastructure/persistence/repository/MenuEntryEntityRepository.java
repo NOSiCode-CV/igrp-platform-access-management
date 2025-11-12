@@ -24,6 +24,8 @@ public interface MenuEntryEntityRepository extends
 
     List<MenuEntryEntity> findByApplicationIdAndStatusIn(ApplicationEntity appId, List<Status> status);
 
+    List<MenuEntryEntity> findByApplicationIdAndTypeInAndStatusIn(ApplicationEntity appId, List<MenuEntryType> types, List<Status> status);
+
     Optional<MenuEntryEntity> findByCodeAndStatusNot(String code, Status status);
 
     @Query("""
@@ -53,7 +55,7 @@ public interface MenuEntryEntityRepository extends
         FROM DepartmentEntity d2
         JOIN d2.menuentries dm
         WHERE d2.code = :code AND dm.id = m.id
-    )) AND m.status = 'ACTIVE'
+    )) AND m.status = 'ACTIVE' AND (m.type = 'MENU_PAGE' OR m.type = 'SYSTEM_PAGE' OR m.type = 'EXTERNAL_PAGE')
 """)
     List<MenuEntryEntity> findAvailableMenusForDepartment(@Param("code") String code);
 

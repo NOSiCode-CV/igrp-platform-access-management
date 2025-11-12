@@ -5,6 +5,8 @@ import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -84,16 +86,7 @@ public class RemoveDepartmentsFromMenuCommandHandler implements CommandHandler<R
             });
             if (menuEntry.getDepartments().contains(department)) {
                 menuEntry.getDepartments().remove(department);
-                if(menuEntry.getParentId() != null) {
-                    var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
-                            () -> IgrpResponseStatusException.of(
-                                    HttpStatus.NOT_FOUND,
-                                    "Parent Menu Entry not found",
-                                    "Parent Menu Entry not found with code: " + menuEntry.getParentId().getCode())
-                    );
-                    parentMenuEntry.getDepartments().remove(department);
-                    menuEntryRepository.save(parentMenuEntry);
-                }
+                //removeDepartmentFromParents(menuEntry, department);
                 log.info("Department with code: {} removed from menu entry with code: {}.", departmentId, command.getCode());
             } else {
                 log.info("Department with code: {} not associated with menu entry with code: {}.", departmentId, command.getCode());
@@ -102,6 +95,24 @@ public class RemoveDepartmentsFromMenuCommandHandler implements CommandHandler<R
         var updatedMenuEntry = menuEntryRepository.save(menuEntry);
         log.info("Menu entry with code: {} updated successfully.", command.getCode());
         return ResponseEntity.ok(menuEntryMapper.toDTO(updatedMenuEntry));
+    }
+
+    private void removeDepartmentFromParents(MenuEntryEntity menuEntry, DepartmentEntity department) {
+
+        if(menuEntry.getParentId() != null) {
+            var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
+                    () -> IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND,
+                            "Parent Menu Entry not found",
+                            "Parent Menu Entry not found with code: " + menuEntry.getParentId().getCode())
+            );
+            parentMenuEntry.getDepartments().remove(department);
+
+            removeDepartmentFromParents(parentMenuEntry, department);
+
+            menuEntryRepository.save(parentMenuEntry);
+        }
+
     }
 
 }

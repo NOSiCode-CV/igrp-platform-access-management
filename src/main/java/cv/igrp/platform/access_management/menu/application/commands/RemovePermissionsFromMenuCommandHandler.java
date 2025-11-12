@@ -86,11 +86,11 @@ public class RemovePermissionsFromMenuCommandHandler implements CommandHandler<R
         for (String roleId : command.getRemovePermissionsFromMenuRequest()) {
             foundMenu.getRoles()
                     .stream()
-                    .filter(role -> role.getName().equals(roleId))
+                    .filter(role -> role.getCode().equals(roleId))
                     .findFirst()
                     .ifPresent(role -> foundMenu.getRoles().remove(role));
         }
-        log.info("Roles with IDs {} removed from Role with name: {} successfully.", command.getRemovePermissionsFromMenuRequest().stream().toList(), command.getCode());
+        log.info("Roles with code {} removed from menu with code: {} successfully.", command.getRemovePermissionsFromMenuRequest().stream().toList(), command.getCode());
         var response = menuEntryMapper.toDTO(menuEntryRepository.save(foundMenu));
         return new ResponseEntity<>(response, HttpStatus.OK);
 

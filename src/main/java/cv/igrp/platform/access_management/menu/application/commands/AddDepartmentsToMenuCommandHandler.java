@@ -102,16 +102,7 @@ public class AddDepartmentsToMenuCommandHandler implements CommandHandler<AddDep
                 if(department.getParentId() != null) {
                     if(department.getParentId().getMenuentries().contains(menuEntry)) {
                         menuEntry.getDepartments().add(department);
-                        if(menuEntry.getParentId() != null) {
-                            var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
-                                    () -> IgrpResponseStatusException.of(
-                                            HttpStatus.NOT_FOUND,
-                                            "Parent Menu Entry not found",
-                                            "Parent Menu Entry not found with code: " + menuEntry.getParentId().getCode())
-                            );
-                            parentMenuEntry.getDepartments().add(department);
-                            menuEntryRepository.save(parentMenuEntry);
-                        }
+                        //attributeDepartmentToParents(menuEntry, department);
                     } else {
                         log.warn("Cannot add department <{}> to menu <{}> because its parent department <{}> is not associated with the menu", deptId, command.getCode(), department.getParentId().getCode());
                         throw IgrpResponseStatusException.of(
@@ -121,16 +112,7 @@ public class AddDepartmentsToMenuCommandHandler implements CommandHandler<AddDep
                     }
                 } else {
                     menuEntry.getDepartments().add(department);
-                    if(menuEntry.getParentId() != null) {
-                        var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
-                                () -> IgrpResponseStatusException.of(
-                                        HttpStatus.NOT_FOUND,
-                                        "Parent Menu Entry not found",
-                                        "Parent Menu Entry not found with code: " + menuEntry.getParentId().getCode())
-                        );
-                        parentMenuEntry.getDepartments().add(department);
-                        menuEntryRepository.save(parentMenuEntry);
-                    }
+                    //attributeDepartmentToParents(menuEntry, department);
                 }
                 log.info("Added department <{}> to menu <{}>", deptId, command.getCode());
             } else {
@@ -141,5 +123,23 @@ public class AddDepartmentsToMenuCommandHandler implements CommandHandler<AddDep
         var response = menuEntryMapper.toDTO(updatedMenuEntry);
         return ResponseEntity.ok(response);
    }
+
+    private void attributeDepartmentToParents(MenuEntryEntity menuEntry, DepartmentEntity department) {
+
+        if(menuEntry.getParentId() != null) {
+            var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
+                    () -> IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND,
+                            "Parent Menu Entry not found",
+                            "Parent Menu Entry not found with code: " + menuEntry.getParentId().getCode())
+            );
+            parentMenuEntry.getDepartments().add(department);
+
+            attributeDepartmentToParents(parentMenuEntry, department);
+
+            menuEntryRepository.save(parentMenuEntry);
+        }
+
+    }
 
 }
