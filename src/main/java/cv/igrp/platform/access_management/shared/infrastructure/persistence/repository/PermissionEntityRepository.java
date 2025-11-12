@@ -80,9 +80,9 @@ public interface PermissionEntityRepository extends
                     FROM RoleEntity r2
                     JOIN r2.permissions rp
                     WHERE r2.code = :code
-                )) AND p.status = 'ACTIVE'
+                )) AND p.status = 'ACTIVE' AND p.name != :system_permission
             """)
-    List<PermissionEntity> findAvailablePermissionsForRole(@Param("code") String code);
+    List<PermissionEntity> findAvailablePermissionsForRole(@Param("code") String code, @Param("system_permission") String systemPermission);
 
     List<PermissionEntity> findAllByResourcesAndStatusNot(Set<ResourceEntity> resources, Status status);
 

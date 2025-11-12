@@ -29,6 +29,7 @@ public interface ApplicationEntityRepository extends
             WHERE a.status = :status
                    AND (u.username = :username OR u.email = :email)
                    AND r.department = d
+                   AND a.type != 'SYSTEM'
             """)
     List<ApplicationEntity> findApplicationsByUserOrEmailAndStatus(
             @Param("username") String username,
@@ -44,7 +45,7 @@ public interface ApplicationEntityRepository extends
                          JOIN app.departments d
                          JOIN d.roles r
                          JOIN r.users u
-                         WHERE app.id = a.id AND (u.username = :uid OR u.email = :uid)
+                         WHERE app.id = a.id AND (u.username = :uid OR u.email = :uid) AND a.type != 'SYSTEM'
                      )
             """)
     List<ApplicationEntity> findDeniedApplications(@Param("uid") String uid);
@@ -84,7 +85,7 @@ public interface ApplicationEntityRepository extends
                                        WHERE d3.code = :code
                                    )
                              ))
-                             AND a.status = 'ACTIVE'
+                             AND a.status = 'ACTIVE' AND a.type != 'SYSTEM'
             """)
     List<ApplicationEntity> findAvailableApplicationsForDepartment(@Param("code") String code);
 

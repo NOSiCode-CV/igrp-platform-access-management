@@ -14,11 +14,14 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import org.springframework.transaction.annotation.Transactional;
+
+import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.IGRP_PERMISSION;
 
 /**
  * Query handler responsible for retrieving all active or inactive {@link PermissionEntity} entities
@@ -68,7 +71,9 @@ public class GetPermissionByApplicationIdQueryHandler implements QueryHandler<Ge
     Set<PermissionEntity> permissionList = permissionRepository.findAll()
             .stream()
             .filter(permission -> resolveCondition(permission, query)
-                    && (permission.getStatus().equals(Status.ACTIVE) || permission.getStatus().equals(Status.INACTIVE)))
+                    && (permission.getStatus().equals(Status.ACTIVE) || permission.getStatus().equals(Status.INACTIVE))
+                    && !Objects.equals(permission.getName(), IGRP_PERMISSION)
+            )
             .collect(Collectors.toSet());
 
     List<PermissionDTO> permissionDTO = permissionList.stream()

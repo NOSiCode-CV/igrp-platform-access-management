@@ -15,6 +15,8 @@ import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import org.springframework.transaction.annotation.Transactional;
 
+import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE;
+
 /**
  * Query handler responsible for retrieving all active or inactive {@link RoleDTO} entries.
  *
@@ -99,6 +101,10 @@ public class GetRolesQueryHandler implements QueryHandler<GetRolesQuery, Respons
 
     specs = specs.and((root, _, _) ->
             root.get("status").in(Status.ACTIVE, Status.INACTIVE)
+    );
+
+    specs = specs.and((root, _, criteriaBuilder) ->
+            criteriaBuilder.notEqual(root.get("code"), SUPER_ADMIN_ROLE)
     );
 
     return specs;

@@ -20,6 +20,8 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.List;
 
+import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.IGRP_DEPARTMENT;
+
 /**
  * Query handler responsible for retrieving a list of {@link DepartmentEntity} entities
  * based on optional filtering criteria such as application ID, department name, and status.
@@ -90,6 +92,7 @@ public class GetDepartmentsQueryHandler implements QueryHandler<GetDepartmentsQu
 
       // Exclude deleted departments
       predicates.add(cb.notEqual(root.get("status"), DepartmentStatus.DELETED));
+      predicates.add(cb.notEqual(root.get("code"), IGRP_DEPARTMENT));
 
       return cb.and(predicates.toArray(new Predicate[0]));
     };

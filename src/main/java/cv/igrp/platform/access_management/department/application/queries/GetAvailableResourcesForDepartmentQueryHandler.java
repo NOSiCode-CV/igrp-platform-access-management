@@ -16,6 +16,8 @@ import java.util.List;
 
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 
+import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.IGRP_RESOURCE;
+
 @Component
 public class GetAvailableResourcesForDepartmentQueryHandler implements QueryHandler<GetAvailableResourcesForDepartmentQuery, ResponseEntity<List<ResourceDTO>>> {
 
@@ -38,7 +40,7 @@ public class GetAvailableResourcesForDepartmentQueryHandler implements QueryHand
         // Verify if the department exists
         departmentEntityRepository.findByCodeAndStatusNotDeleted(query.getCode());
 
-        List<ResourceDTO> availableResources = resourceEntityRepository.findAvailableResourcesForDepartment(query.getCode())
+        List<ResourceDTO> availableResources = resourceEntityRepository.findAvailableResourcesForDepartment(query.getCode(), IGRP_RESOURCE)
                 .stream()
                 .map(resourceMapper::toDto)
                 .toList();

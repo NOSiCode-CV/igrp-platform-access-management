@@ -55,7 +55,7 @@ public interface MenuEntryEntityRepository extends
         FROM DepartmentEntity d2
         JOIN d2.menuentries dm
         WHERE d2.code = :code AND dm.id = m.id
-    )) AND m.status = 'ACTIVE' AND (m.type = 'MENU_PAGE' OR m.type = 'SYSTEM_PAGE' OR m.type = 'EXTERNAL_PAGE')
+    )) AND m.status = 'ACTIVE' AND (m.type = 'MENU_PAGE' OR m.type = 'EXTERNAL_PAGE')
 """)
     List<MenuEntryEntity> findAvailableMenusForDepartment(@Param("code") String code);
 

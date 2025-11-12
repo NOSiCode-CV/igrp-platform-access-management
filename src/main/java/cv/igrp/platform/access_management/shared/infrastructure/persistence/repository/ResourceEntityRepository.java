@@ -57,8 +57,8 @@ public interface ResourceEntityRepository extends
                     JOIN d2.applications da2
                     JOIN da2.resources dr
                     WHERE d2.code = :code AND dr.id = r.id
-                )) AND r.status = 'ACTIVE'
+                )) AND r.status = 'ACTIVE' AND r.name != :system_resource
             """)
-    List<ResourceEntity> findAvailableResourcesForDepartment(@Param("code") String code);
+    List<ResourceEntity> findAvailableResourcesForDepartment(@Param("code") String code, @Param("system_resource") String systemResource);
 
 }

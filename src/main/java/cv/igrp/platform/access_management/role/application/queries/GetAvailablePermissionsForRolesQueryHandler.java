@@ -13,6 +13,8 @@ import java.util.List;
 
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 
+import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.IGRP_PERMISSION;
+
 @Component
 public class GetAvailablePermissionsForRolesQueryHandler implements QueryHandler<GetAvailablePermissionsForRolesQuery, ResponseEntity<List<PermissionDTO>>> {
 
@@ -31,7 +33,7 @@ public class GetAvailablePermissionsForRolesQueryHandler implements QueryHandler
     public ResponseEntity<List<PermissionDTO>> handle(GetAvailablePermissionsForRolesQuery query) {
         LOGGER.info("Fetching all available permissions for role: {}", query.getCode());
 
-        List<PermissionDTO> permissions = permissionRepository.findAvailablePermissionsForRole(query.getCode())
+        List<PermissionDTO> permissions = permissionRepository.findAvailablePermissionsForRole(query.getCode(), IGRP_PERMISSION)
                 .stream()
                 .map(permissionMapper::mapToDTO)
                 .toList();

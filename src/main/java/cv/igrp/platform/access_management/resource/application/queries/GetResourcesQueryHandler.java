@@ -16,7 +16,11 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import java.util.List;
+import java.util.Objects;
+
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
+
+import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.IGRP_RESOURCE;
 
 /**
  * Handles queries for retrieving a list of {@link ResourceDTO}s filtered by optional criteria
@@ -64,6 +68,7 @@ public class GetResourcesQueryHandler implements QueryHandler<GetResourcesQuery,
 
     List<ResourceDTO> resources = resourceRepository.findAll(spec)
             .stream()
+            .filter(resourceEntity -> !Objects.equals(resourceEntity.getName(), IGRP_RESOURCE))
             .map(resourceMapper::toDto)
             .toList();
 

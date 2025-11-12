@@ -29,10 +29,10 @@ public class ConfigurationService {
     @Value("${igrp.superadmin.email}")
     private static final String SUPER_ADMIN_EMAIL = "%s@igrp.cv".formatted(SUPER_ADMIN_USERNAME);
 
-    private static final String IGRP_DEPARTMENT = "DEPT_IGRP";
-    private static final String SUPER_ADMIN_ROLE = IGRP_DEPARTMENT + ".superadmin";
-    private static final String IGRP_PERMISSION = IGRP_DEPARTMENT + ".manage_access";
-    private static final String IGRP_RESOURCE = "igrp-access-management";
+    public static final String IGRP_DEPARTMENT = "DEPT_IGRP";
+    public static final String SUPER_ADMIN_ROLE = IGRP_DEPARTMENT + ".superadmin";
+    public static final String IGRP_PERMISSION = IGRP_DEPARTMENT + ".manage_access";
+    public static final String IGRP_RESOURCE = "igrp-access-management";
     private static final String IGRP_APP = "APP_IGRP_CENTER";
 
     private final JdbcTemplate jdbcTemplate;
