@@ -124,7 +124,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
             roleRepository.save(roleEntity);
 //            user.getRoles().add(roleEntity);
 
-            adapter.assignRoleToUser(roleEntity.getDepartment().getCode(), roleEntity.getName(), command.getUsername());
+            adapter.assignRoleToUser(roleEntity.getDepartment().getCode(), roleEntity.getCode(), command.getUsername());
             successfullyAssignedInKeycloak.add(roleEntity);
          }
          //@ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
@@ -135,10 +135,10 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
 
          for (RoleEntity role : successfullyAssignedInKeycloak) {
             try {
-               adapter.unassignRoleFromUser(role.getDepartment().getCode(), role.getName(), command.getUsername());
+               adapter.unassignRoleFromUser(role.getDepartment().getCode(), role.getCode(), command.getUsername());
             } catch (Exception rollbackEx) {
                logger.error("Compensation failed: could not revert role={} in Keycloak for user={}: {}",
-                       role.getName(),
+                       role.getCode(),
                        command.getUsername(),
                        rollbackEx.getMessage());
             }

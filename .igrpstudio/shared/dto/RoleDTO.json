@@ -21,13 +21,15 @@
       "name": "code",
       "objectType": "java",
       "type": "string",
-      "required": false,
+      "required": true,
       "before": false,
       "after": false,
       "positive": false,
       "isEmail": false,
       "isUrl": false,
-      "primaryKey": false
+      "primaryKey": false,
+      "maxLength": 25,
+      "regex": "^[A-Za-z0-9_-]+$"
     },
     {
       "name": "name",
@@ -37,11 +39,9 @@
       "before": false,
       "after": false,
       "positive": false,
-      "maxLength": 25,
       "isEmail": false,
       "isUrl": false,
-      "primaryKey": false,
-      "regex": "^[A-Za-z0-9_-]+$"
+      "primaryKey": false
     },
     {
       "name": "description",

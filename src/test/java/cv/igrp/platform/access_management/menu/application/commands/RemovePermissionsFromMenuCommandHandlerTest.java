@@ -62,8 +62,8 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         String menuEntryCode = "admin";
         int roleId1 = 1;
         int roleId2 = 2;
-        String roleName1 = "role1";
-        String roleName2 = "role2";
+        String roleCode1 = "role1";
+        String roleCode2 = "role2";
         
         MenuEntryEntity savedMenuEntry = new MenuEntryEntity();
         savedMenuEntry.setStatus(Status.ACTIVE);
@@ -73,15 +73,15 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         RoleEntity role2 = new RoleEntity();
         role1.setId(roleId1);
         role2.setId(roleId2);
-        role1.setName(roleName1);
+        role1.setCode(roleCode1);
         role1.setStatus(Status.ACTIVE);
-        role2.setName(roleName2);
+        role2.setCode(roleCode2);
         role2.setStatus(Status.ACTIVE);
 
         HashSet<RoleEntity> roles = new HashSet<>(Set.of(role1, role2));
         savedMenuEntry.setRoles(roles);
         
-        List<String> rolesToRemove = List.of(roleName1, roleName2);
+        List<String> rolesToRemove = List.of(roleCode1, roleCode2);
         RemovePermissionsFromMenuCommand removePermissionsFromMenuCommand =
                 new RemovePermissionsFromMenuCommand(rolesToRemove, menuEntryCode);
 
@@ -119,9 +119,9 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         int roleId1 = 1;
         int roleId2 = 2;
         int roleId3 = 3;
-        String roleName1 = "role1";
-        String roleName2 = "role2";
-        String roleName3 = "role3";
+        String roleCode1 = "role1";
+        String roleCode2 = "role2";
+        String roleCode3 = "role3";
         
         MenuEntryEntity savedMenuEntry = new MenuEntryEntity();
         savedMenuEntry.setStatus(Status.ACTIVE);
@@ -132,11 +132,11 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         RoleEntity role3 = new RoleEntity();
 
         role1.setId(roleId1);
-        role1.setName(roleName1);
+        role1.setCode(roleCode1);
         role2.setId(roleId2);
-        role2.setName(roleName2);
+        role2.setCode(roleCode2);
         role3.setId(roleId3);
-        role3.setName(roleName3);
+        role3.setCode(roleCode3);
 
         role1.setStatus(Status.ACTIVE);
         role2.setStatus(Status.ACTIVE);
@@ -145,7 +145,7 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         HashSet<RoleEntity> roles = new HashSet<>(Set.of(role3));
         savedMenuEntry.setRoles(roles);
         
-        List<String> rolesToRemove = List.of(roleName1, roleName2);
+        List<String> rolesToRemove = List.of(roleCode1, roleCode2);
         RemovePermissionsFromMenuCommand removePermissionsFromMenuCommand =
                 new RemovePermissionsFromMenuCommand(rolesToRemove, menuEntryCode);
 
@@ -153,7 +153,7 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         menuEntryDTO.setId(menuEntryId);
         menuEntryDTO.setCode(menuEntryCode);
         List<String> remainingRoles = new ArrayList<>();
-        remainingRoles.add(roleName3);
+        remainingRoles.add(roleCode3);
         menuEntryDTO.setRoles(remainingRoles);
 
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED))
@@ -169,7 +169,7 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         MenuEntryDTO responseBody = result.getBody();
         assertNotNull(responseBody);
         assertEquals(1, responseBody.getRoles().size());
-        assertTrue(responseBody.getRoles().contains(roleName3));
+        assertTrue(responseBody.getRoles().contains(roleCode3));
 
         assertFalse(savedMenuEntry.getRoles().contains(role1));
         assertFalse(savedMenuEntry.getRoles().contains(role2));
@@ -185,20 +185,20 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         int menuEntryId = 1;
         String menuEntryCode = "admin";
         Integer roleToRemoveId = 100;
-        String roleToRemoveName = "roleToRemove";
+        String roleToRemoveCode = "roleToRemove";
         Integer roleToKeepId = 200;
-        String roleToKeepName = "roleToKeep";
+        String roleToKeepCode = "roleToKeep";
 
         RemovePermissionsFromMenuCommand command = new RemovePermissionsFromMenuCommand(
-                List.of(roleToRemoveName), menuEntryCode);
+                List.of(roleToRemoveCode), menuEntryCode);
 
         RoleEntity roleToRemove = new RoleEntity();
         roleToRemove.setId(roleToRemoveId);
-        roleToRemove.setName(roleToRemoveName);
+        roleToRemove.setCode(roleToRemoveCode);
 
         RoleEntity roleToKeep = new RoleEntity();
         roleToKeep.setId(roleToKeepId);
-        roleToKeep.setName(roleToKeepName);
+        roleToKeep.setCode(roleToKeepCode);
 
         Set<RoleEntity> initialRoles = new HashSet<>(Set.of(roleToRemove, roleToKeep));
 
@@ -211,7 +211,7 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         menuEntryDTO.setId(menuEntryId);
         menuEntryDTO.setCode(menuEntryCode);
         List<String> remainingRoles = new ArrayList<>();
-        remainingRoles.add(roleToKeepName);
+        remainingRoles.add(roleToKeepCode);
         menuEntryDTO.setRoles(remainingRoles);
 
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(menuEntry));
@@ -226,7 +226,7 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         MenuEntryDTO responseBody = result.getBody();
         assertNotNull(responseBody);
         assertEquals(1, responseBody.getRoles().size());
-        assertTrue(responseBody.getRoles().contains(roleToKeepName));
+        assertTrue(responseBody.getRoles().contains(roleToKeepCode));
 
         assertFalse(menuEntry.getRoles().contains(roleToRemove));
         assertTrue(menuEntry.getRoles().contains(roleToKeep));
@@ -277,14 +277,14 @@ public class RemovePermissionsFromMenuCommandHandlerTest {
         int menuEntryId = 1;
         String menuEntryCode = "admin";
         Integer duplicatedRoleId = 100;
-        String duplicatedRoleName = "duplicatedRole";
+        String duplicatedRoleCode = "duplicatedRole";
 
         RemovePermissionsFromMenuCommand command = new RemovePermissionsFromMenuCommand(
-                List.of(duplicatedRoleName, duplicatedRoleName), menuEntryCode);
+                List.of(duplicatedRoleCode, duplicatedRoleCode), menuEntryCode);
 
         RoleEntity role = new RoleEntity();
         role.setId(duplicatedRoleId);
-        role.setName(duplicatedRoleName);
+        role.setCode(duplicatedRoleCode);
 
         Set<RoleEntity> menuEntryRoles = new HashSet<>(Set.of(role));
 

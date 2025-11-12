@@ -67,7 +67,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
       if (roleIdsToRemove != null && !roleIdsToRemove.isEmpty()) {
 
          List<RoleEntity> rolesToRemove = user.getRoles().stream()
-                 .filter(role -> roleIdsToRemove.contains(role.getName()))
+                 .filter(role -> roleIdsToRemove.contains(role.getCode()))
                  .toList();
 
          if (!rolesToRemove.isEmpty()) {
@@ -78,14 +78,14 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
 
             for (RoleEntity role : rolesToRemove) {
                try {
-                  adapter.unassignRoleFromUser(role.getDepartment().getCode(), role.getName(), username);
-                  logger.info("Role name={} from department with code {} unassigned to user name={} in Keycloak",
-                          role.getName(),
+                  adapter.unassignRoleFromUser(role.getDepartment().getCode(), role.getCode(), username);
+                  logger.info("Role code={} from department with code {} unassigned to user name={} in Keycloak",
+                          role.getCode(),
                           role.getDepartment().getCode(),
                           username);
                } catch(IAMException e){
-                  logger.error("Failed to unassign role name={} from {} department to user name={} in Keycloak: {}",
-                          role.getName(),
+                  logger.error("Failed to unassign role code={} from {} department to user name={} in Keycloak: {}",
+                          role.getCode(),
                           role.getDepartment().getCode(),
                           username,
                           e.getMessage(), e);

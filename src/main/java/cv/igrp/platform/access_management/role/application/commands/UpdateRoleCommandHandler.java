@@ -113,6 +113,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
                         });
             }
         }
+        roleToUpdate.setName(newData.getName());
         roleToUpdate.setDescription(newData.getDescription());
         roleToUpdate.setParent(parentRole);
         roleToUpdate.setStatus(newData.getStatus());

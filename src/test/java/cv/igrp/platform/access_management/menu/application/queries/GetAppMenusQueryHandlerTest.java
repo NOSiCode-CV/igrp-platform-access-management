@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.menu.application.queries;
 
+import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -84,7 +85,7 @@ public class GetAppMenusQueryHandlerTest {
     when(authenticationHelper.getPreferredUsername()).thenReturn("superadmin");
     when(userRepository.findByUsername("superadmin")).thenReturn(Optional.of(user));
     when(applicationRepository.findByCodeAndStatusNot(appCode, Status.DELETED)).thenReturn(Optional.of(app));
-    when(menuEntryRepository.findByApplicationIdAndStatusIn(app, List.of(Status.ACTIVE))).thenReturn(List.of(menu));
+    when(menuEntryRepository.findByApplicationIdAndTypeInAndStatusIn(app, List.of(MenuEntryType.MENU_PAGE, MenuEntryType.SYSTEM_PAGE, MenuEntryType.EXTERNAL_PAGE), List.of(Status.ACTIVE))).thenReturn(List.of(menu));
     when(menuEntryMapper.toDTO(menu)).thenReturn(menuDTO);
 
     // When

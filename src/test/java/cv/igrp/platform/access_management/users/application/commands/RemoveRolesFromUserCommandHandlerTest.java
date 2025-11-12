@@ -58,14 +58,14 @@ public class RemoveRolesFromUserCommandHandlerTest {
 
         role1 = new RoleEntity();
         role1.setId(100);
-        role1.setName("admin");
+        role1.setCode("admin");
         role1.setDescription("Admin role");
         role1.setUsers(new HashSet<>());
         role1.setDepartment(department);
 
         role2 = new RoleEntity();
         role2.setId(200);
-        role2.setName("user");
+        role2.setCode("user");
         role2.setDescription("User role");
         role2.setUsers(new HashSet<>());
         role2.setDepartment(department);
