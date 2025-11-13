@@ -24,7 +24,7 @@ public class ConfigurationService {
     private static final String SYSTEM_USER = "system";
 
     @Value("${igrp.superadmin.user-external-id}")
-    public static String SUPER_ADMIN_EXTERNAL_ID = null;
+    public static final String SUPER_ADMIN_EXTERNAL_ID = "";
 
     @Value("${igrp.superadmin.email}")
     private static final String SUPER_ADMIN_EMAIL = "superadmin@igrp.cv";
@@ -51,7 +51,7 @@ public class ConfigurationService {
         long startTime = System.currentTimeMillis();
         LOGGER.info("[Startup Config] Starting system initialization...");
 
-        if(SUPER_ADMIN_EXTERNAL_ID == null) {
+        if(SUPER_ADMIN_EXTERNAL_ID.isEmpty()) {
             LOGGER.warn("[Startup Config] System admin external ID is not set. Skipping system initialization.");
             throw new RuntimeException("No superadmin user external ID provided. Please set IGRP_SUPERADMIN_USER_EXTERNAL_ID in your environment variables.");
         }
