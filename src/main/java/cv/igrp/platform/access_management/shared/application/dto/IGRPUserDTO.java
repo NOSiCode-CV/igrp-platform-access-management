@@ -25,8 +25,7 @@ public class IGRPUserDTO  {
   @NotBlank(message = "The field <name> is required")
   
   private String name ;
-  @NotBlank(message = "The field <username> is required")
-	@Pattern(message = "Invalid value format for field <username>.", regexp = "^[A-Za-z0-9_-]+$")
+  
   
   private String username ;
   @NotBlank(message = "The field <email> is required")
