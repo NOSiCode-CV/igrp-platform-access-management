@@ -63,10 +63,10 @@ public class PermissionCacheService {
         return response;
     }
 
-    private Boolean checkPermission(String username, String permissionName) {
+    private Boolean checkPermission(String subject, String permissionName) {
 
         // Verifica se o utilizador existe ou está inativo/deletado
-        var userOpt = userRepository.findByUsername(username);
+        var userOpt = userRepository.findByExternalId(subject);
         if (userOpt.isEmpty() || userOpt.get().getStatus() == Status.DELETED || userOpt.get().getStatus() == Status.INACTIVE) {
             return false;
         }
@@ -78,14 +78,14 @@ public class PermissionCacheService {
                         JOIN t_role_permission rp ON rp.role_id = ru.roles_id
                         JOIN t_role r ON r.id = ru.roles_id
                         JOIN t_permission p ON p.id = rp.permission
-                        WHERE u.username = ?
+                        WHERE u.external_id = ?
                           AND p.name = ?
                           AND p.status = 'ACTIVE'
                           AND r.status = 'ACTIVE'
                         LIMIT 1;
                 """;
 
-        List<Integer> results = jdbcTemplate.query(sql, (_,_) -> 1, username, permissionName);
+        List<Integer> results = jdbcTemplate.query(sql, (_,_) -> 1, subject, permissionName);
 
         return !results.isEmpty();
     }

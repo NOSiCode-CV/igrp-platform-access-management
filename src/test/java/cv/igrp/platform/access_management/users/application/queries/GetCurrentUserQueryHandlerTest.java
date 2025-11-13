@@ -36,19 +36,18 @@ class GetCurrentUserQueryHandlerTest {
 
     private IGRPUserEntity mockUser;
     private IGRPUserDTO mockDto;
-    private final String mockUsername = "john.doe";
+    private final String mockExternalId = "f8c3de3d-1fea-4d7c-a8b0-29f63c4c3454";
 
     @BeforeEach
     void setUp() {
         mockUser = new IGRPUserEntity();
         mockUser.setId(1);
-        mockUser.setUsername(mockUsername);
+        mockUser.setExternalId(mockExternalId);
         mockUser.setName("John Doe");
         mockUser.setEmail("john@example.com");
 
         mockDto = new IGRPUserDTO();
         mockDto.setId(1);
-        mockDto.setUsername(mockUsername);
         mockDto.setName("John Doe");
         mockDto.setEmail("john@example.com");
     }
@@ -57,8 +56,8 @@ class GetCurrentUserQueryHandlerTest {
     @DisplayName("Should return user DTO when authenticated user is found")
     void testHandle_whenUserExists_shouldReturnUserDTO() {
         // Arrange
-        when(authenticationHelper.getPreferredUsername()).thenReturn(mockUsername);
-        when(userRepository.findByUsername(mockUsername)).thenReturn(Optional.of(mockUser));
+        when(authenticationHelper.getPreferredUsername()).thenReturn(mockExternalId);
+        when(userRepository.findByExternalId(mockExternalId)).thenReturn(Optional.of(mockUser));
         when(userMapper.toDto(mockUser)).thenReturn(mockDto);
 
         // Act
@@ -72,7 +71,7 @@ class GetCurrentUserQueryHandlerTest {
 
         // Verify
         verify(authenticationHelper, times(1)).getPreferredUsername();
-        verify(userRepository, times(1)).findByUsername(mockUsername);
+        verify(userRepository, times(1)).findByExternalId(mockExternalId);
         verify(userMapper, times(1)).toDto(mockUser);
     }
 
@@ -80,8 +79,8 @@ class GetCurrentUserQueryHandlerTest {
     @DisplayName("Should return 404 when authenticated user is not found")
     void testHandle_whenUserNotFound_shouldReturnNotFound() {
         // Arrange
-        when(authenticationHelper.getPreferredUsername()).thenReturn(mockUsername);
-        when(userRepository.findByUsername(mockUsername)).thenReturn(Optional.empty());
+        when(authenticationHelper.getPreferredUsername()).thenReturn(mockExternalId);
+        when(userRepository.findByExternalId(mockExternalId)).thenReturn(Optional.empty());
 
         // Act
         ResponseEntity<IGRPUserDTO> response = handler.handle(new GetCurrentUserQuery());
@@ -92,7 +91,7 @@ class GetCurrentUserQueryHandlerTest {
 
         // Verify
         verify(authenticationHelper, times(1)).getPreferredUsername();
-        verify(userRepository, times(1)).findByUsername(mockUsername);
+        verify(userRepository, times(1)).findByExternalId(mockExternalId);
         verifyNoInteractions(userMapper);
     }
 }

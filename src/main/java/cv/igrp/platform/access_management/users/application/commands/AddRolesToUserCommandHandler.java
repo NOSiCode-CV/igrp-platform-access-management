@@ -79,7 +79,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<List<RoleDTO>> handle(AddRolesToUserCommand command) {
-      String username = command.getUsername();
+      Integer userId = command.getId();
       List<String> rolesToAdd = command.getAddRolesToUserRequest();
 
       if (rolesToAdd.isEmpty())
@@ -87,12 +87,12 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
 
       List<RoleEntity> successfullyAssignedInKeycloak = new ArrayList<>();
 
-      IGRPUserEntity user = userRepository.findByUsername(username)
+      IGRPUserEntity user = userRepository.findById(userId)
               .orElseThrow(() -> {
-                 logger.warn("User not found with name={}", username);
+                 logger.warn("User not found with ID={}", userId);
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND,"Invalid User name",
-                         "User not found with name: %s".formatted(username));
+                         HttpStatus.NOT_FOUND,"Invalid User ID",
+                         "User not found with ID: %s".formatted(userId));
               });
 
       List<RoleEntity> roles = user.getRoles();
@@ -109,13 +109,13 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
                continue;
             }
 
-            logger.info("Assigning role name={} to user name={}", role, username);
+            logger.info("Assigning role name={} to user ID={}", role, userId);
             RoleEntity roleEntity = roleRepository.findByCodeAndStatusNot(role, Status.DELETED)
                     .orElseThrow(() -> {
-                       logger.warn("Role not found with name={}", role);
+                       logger.warn("Role not found with code={}", role);
                        return IgrpResponseStatusException.of(
-                               HttpStatus.NOT_FOUND, "Invalid Role name",
-                               "Role not found with name: %s".formatted(role));
+                               HttpStatus.NOT_FOUND, "Invalid Role code",
+                               "Role not found with code: %s".formatted(role));
                     });
             if(roleEntity.getUsers()==null) {
                roleEntity.setUsers(new HashSet<>());
@@ -124,22 +124,22 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
             roleRepository.save(roleEntity);
 //            user.getRoles().add(roleEntity);
 
-            adapter.assignRoleToUser(roleEntity.getDepartment().getCode(), roleEntity.getCode(), command.getUsername());
+            adapter.assignRoleToUser(roleEntity.getDepartment().getCode(), roleEntity.getCode(), user.getExternalId());
             successfullyAssignedInKeycloak.add(roleEntity);
          }
          //@ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
          //Não funciona : o lado "owner" da relação está em RoleEntity e não no IGRPUserEntity
 //         userRepository.save(user);
       } catch (Exception e) {
-         logger.error("Error while adding roles into Keycloak for username={}. Starting compensation...", username, e);
+         logger.error("Error while adding roles into Keycloak for user ID={}. Starting compensation...", userId, e);
 
          for (RoleEntity role : successfullyAssignedInKeycloak) {
             try {
-               adapter.unassignRoleFromUser(role.getDepartment().getCode(), role.getCode(), command.getUsername());
+               adapter.unassignRoleFromUser(role.getDepartment().getCode(), role.getCode(), user.getExternalId());
             } catch (Exception rollbackEx) {
                logger.error("Compensation failed: could not revert role={} in Keycloak for user={}: {}",
                        role.getCode(),
-                       command.getUsername(),
+                       command.getId(),
                        rollbackEx.getMessage());
             }
          }

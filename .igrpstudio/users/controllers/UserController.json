@@ -7,7 +7,7 @@
   "actions": [
     {
       "actionName": "getUser",
-      "path": "users/{username}",
+      "path": "users/{id}",
       "method": "GET",
       "responses": {
         "200": {
@@ -24,15 +24,15 @@
       },
       "pathVariables": [
         {
-          "name": "username",
-          "type": "string",
+          "name": "id",
+          "type": "integer",
           "isRequired": true
         }
       ]
     },
     {
       "actionName": "AddRolesToUser",
-      "path": "users/{username}/roles",
+      "path": "users/{id}/roles",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -72,15 +72,15 @@
       },
       "pathVariables": [
         {
-          "name": "username",
-          "type": "string",
+          "name": "id",
+          "type": "integer",
           "isRequired": true
         }
       ]
     },
     {
       "actionName": "RemoveRolesFromUser",
-      "path": "users/{username}/roles",
+      "path": "users/{id}/roles",
       "method": "DELETE",
       "requestBody": {
         "content": {
@@ -110,15 +110,15 @@
       },
       "pathVariables": [
         {
-          "name": "username",
-          "type": "string",
+          "name": "id",
+          "type": "integer",
           "isRequired": true
         }
       ]
     },
     {
       "actionName": "getUserRoles",
-      "path": "users/{username}/roles",
+      "path": "users/{id}/roles",
       "method": "GET",
       "responses": {
         "200": {
@@ -137,8 +137,8 @@
       },
       "pathVariables": [
         {
-          "name": "username",
-          "type": "string",
+          "name": "id",
+          "type": "integer",
           "isRequired": true
         }
       ]
@@ -193,9 +193,9 @@
           "isRequired": false
         },
         {
-          "type": "string",
-          "name": "username",
-          "description": "Username",
+          "type": "integer",
+          "name": "id",
+          "description": "ID",
           "isRequired": false
         },
         {
@@ -242,7 +242,7 @@
     },
     {
       "actionName": "updateUser",
-      "path": "users/{username}",
+      "path": "users/{id}",
       "method": "PUT",
       "requestBody": {
         "content": {
@@ -274,8 +274,8 @@
       },
       "pathVariables": [
         {
-          "name": "username",
-          "type": "string",
+          "name": "id",
+          "type": "integer",
           "isRequired": true
         }
       ]
@@ -335,5 +335,5 @@
       }
     }
   ],
-  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser"
+  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser"
 }

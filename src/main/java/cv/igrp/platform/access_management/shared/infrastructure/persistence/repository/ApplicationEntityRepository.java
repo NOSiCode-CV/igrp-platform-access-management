@@ -27,12 +27,12 @@ public interface ApplicationEntityRepository extends
             JOIN d.roles r
             JOIN r.users u
             WHERE a.status = :status
-                   AND (u.username = :username OR u.email = :email)
+                   AND (u.externalId = :externalId OR u.email = :email)
                    AND r.department = d
                    AND a.type != 'SYSTEM'
             """)
     List<ApplicationEntity> findApplicationsByUserOrEmailAndStatus(
-            @Param("username") String username,
+            @Param("externalId") String externalId,
             @Param("email") String email,
             @Param("status") Status status
     );
@@ -45,10 +45,10 @@ public interface ApplicationEntityRepository extends
                          JOIN app.departments d
                          JOIN d.roles r
                          JOIN r.users u
-                         WHERE app.id = a.id AND (u.username = :uid OR u.email = :uid) AND a.type != 'SYSTEM'
+                         WHERE app.id = a.id AND (u.externalId = :externalId OR u.email = :uid) AND a.type != 'SYSTEM'
                      )
             """)
-    List<ApplicationEntity> findDeniedApplications(@Param("uid") String uid);
+    List<ApplicationEntity> findDeniedApplications(@Param("externalId") String externalId);
 
     // Case 1: Department is top-level, all applications that are not assigned will appear
     // Case 2: Application is inherited from the parent department for attribution

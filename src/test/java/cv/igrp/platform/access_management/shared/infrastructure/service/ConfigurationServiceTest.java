@@ -30,7 +30,7 @@ class ConfigurationServiceTest {
     private static final String IGRP_PERMISSION = "DEPT_IGRP.manage_access";
     private static final String IGRP_RESOURCE = "igrp-access-management";
     private static final String IGRP_APP = "APP_IGRP_CENTER";
-    private static final String SUPER_ADMIN_USERNAME = "superadmin";
+    private static final String SUPER_ADMIN_EXTERNAL_ID = "f8c3de3d-1fea-4d7c-a8b0-29f63c4c3454";
 
     // Mocks for each test
     private JdbcTemplate jdbcTemplate;
@@ -47,6 +47,9 @@ class ConfigurationServiceTest {
 
         // Create a fresh service instance for each test
         configurationService = new ConfigurationService(jdbcTemplate, objectMapper, adapter);
+
+        configurationService.SUPER_ADMIN_EXTERNAL_ID=SUPER_ADMIN_EXTERNAL_ID;
+
     }
 
     @Test
@@ -73,7 +76,7 @@ class ConfigurationServiceTest {
         doNothing().when(adapter).createPermission(IGRP_PERMISSION, "iGRP Manage Access Permission");
         doNothing().when(adapter).createRole(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE);
         doNothing().when(adapter).assignPermissionsToRole(Set.of(IGRP_PERMISSION), SUPER_ADMIN_ROLE);
-        doNothing().when(adapter).assignRoleToUser(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE, SUPER_ADMIN_USERNAME);
+        doNothing().when(adapter).assignRoleToUser(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE, SUPER_ADMIN_EXTERNAL_ID);
 
         // Mock DB insertions
         doReturn(1L).when(jdbcTemplate).queryForObject(contains("INSERT INTO t_department"), eq(Long.class), any(Object[].class));
@@ -111,7 +114,7 @@ class ConfigurationServiceTest {
         //verify(adapter).createPermission(IGRP_PERMISSION, "iGRP Manage Access Permission");
         verify(adapter).createRole(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE);
         //verify(adapter).assignPermissionsToRole(Set.of(IGRP_PERMISSION), SUPER_ADMIN_ROLE);
-        verify(adapter).assignRoleToUser(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE, SUPER_ADMIN_USERNAME);
+        verify(adapter).assignRoleToUser(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE, SUPER_ADMIN_EXTERNAL_ID);
 
         // Verify DB insertions
         verify(jdbcTemplate, atLeast(6)).queryForObject(contains("INSERT INTO"), eq(Long.class), any(Object[].class));
@@ -309,7 +312,7 @@ class ConfigurationServiceTest {
         assertEquals("iGRP App Center", params[0]);
         assertEquals("APP_IGRP_CENTER", params[1]);
         assertEquals("iGRP Application Center", params[2]);
-        assertEquals("superadmin", params[3]);
+        assertEquals(1, params[3]);
         assertEquals("system", params[4]);
     }
 

@@ -23,11 +23,11 @@ public class ConfigurationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationService.class);
     private static final String SYSTEM_USER = "system";
 
-    @Value("${igrp.superadmin.username}")
-    private static final String SUPER_ADMIN_USERNAME = "superadmin";
+    @Value("${igrp.superadmin.user-external-id}")
+    public static String SUPER_ADMIN_EXTERNAL_ID = null;
 
     @Value("${igrp.superadmin.email}")
-    private static final String SUPER_ADMIN_EMAIL = "%s@igrp.cv".formatted(SUPER_ADMIN_USERNAME);
+    private static final String SUPER_ADMIN_EMAIL = "superadmin@igrp.cv";
 
     public static final String IGRP_DEPARTMENT = "DEPT_IGRP";
     public static final String SUPER_ADMIN_ROLE = IGRP_DEPARTMENT + ".superadmin";
@@ -51,9 +51,14 @@ public class ConfigurationService {
         long startTime = System.currentTimeMillis();
         LOGGER.info("[Startup Config] Starting system initialization...");
 
+        if(SUPER_ADMIN_EXTERNAL_ID == null) {
+            LOGGER.warn("[Startup Config] System admin external ID is not set. Skipping system initialization.");
+            throw new RuntimeException("No superadmin user external ID provided. Please set IGRP_SUPERADMIN_USER_EXTERNAL_ID in your environment variables.");
+        }
+
         try {
             // 1. Bulk existence checks in database
-            boolean superAdminExists = exists("SELECT 1 FROM t_user WHERE username='%s' LIMIT 1".formatted(SUPER_ADMIN_USERNAME));
+            boolean superAdminExists = exists("SELECT 1 FROM t_user WHERE external_id='%s' LIMIT 1".formatted(SUPER_ADMIN_EXTERNAL_ID));
             boolean departmentExists = exists("SELECT 1 FROM t_department WHERE code='%s' LIMIT 1".formatted(IGRP_DEPARTMENT));
             boolean appExists = exists("SELECT 1 FROM t_application WHERE type='SYSTEM' LIMIT 1");
             boolean permissionExists = exists("SELECT 1 FROM t_permission WHERE name='%s' LIMIT 1".formatted(IGRP_PERMISSION));
@@ -82,7 +87,7 @@ public class ConfigurationService {
             Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE code='%s'".formatted(SUPER_ADMIN_ROLE)) :
                     (roleExistsInProvider ? createDefaultRoleInDB(departmentId, permissionId, appId) : null);
 
-            Long userId = superAdminExists ? getId("SELECT id FROM t_user WHERE username='%s'".formatted(SUPER_ADMIN_USERNAME)) :
+            Long userId = superAdminExists ? getId("SELECT id FROM t_user WHERE external_id='%s'".formatted(SUPER_ADMIN_EXTERNAL_ID)) :
                     createSuperAdminUserInDB();
 
             // 4. Assign role to superadmin user (only if all previous steps succeeded)
@@ -253,7 +258,7 @@ public class ConfigurationService {
                 "iGRP App Center",
                 IGRP_APP,
                 "iGRP Application Center",
-                SUPER_ADMIN_USERNAME,
+                1,
                 SYSTEM_USER,
                 SYSTEM_USER
         );
@@ -365,7 +370,7 @@ public class ConfigurationService {
     private Long createSuperAdminUserInDB() {
         String sql = """
                     INSERT INTO t_user
-                    (name, username, email, status,
+                    (name, external_id, email, status,
                      created_by, created_date, last_modified_by, last_modified_date)
                     VALUES (?, ?, ?, ?, ?, now(), ?, now())
                     RETURNING id
@@ -373,14 +378,14 @@ public class ConfigurationService {
         LOGGER.info("[Startup Config] Super admin user created in DB");
         return jdbcTemplate.queryForObject(sql,
                 Long.class,
-                "iGRP Super Admin", SUPER_ADMIN_USERNAME, SUPER_ADMIN_EMAIL, "ACTIVE",
+                "iGRP Super Admin", SUPER_ADMIN_EXTERNAL_ID, SUPER_ADMIN_EMAIL, "ACTIVE",
                 SYSTEM_USER, SYSTEM_USER);
     }
 
     void assignRoleToSuperAdminUserInDB(Long roleId, Long userId) {
         try {
             // Assign role in provider
-            adapter.assignRoleToUser(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE, SUPER_ADMIN_USERNAME);
+            adapter.assignRoleToUser(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE, SUPER_ADMIN_EXTERNAL_ID);
 
             // Assign role in database
             String sql = """

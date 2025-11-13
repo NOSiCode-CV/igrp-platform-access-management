@@ -76,21 +76,22 @@ public class CreateUserCommandHandler implements CommandHandler<CreateUserComman
    public ResponseEntity<IGRPUserDTO> handle(CreateUserCommand command) {
       var dto = command.getIgrpuserdto();
 
-      logger.info("Creating new user: username={}, email={}", dto.getUsername(), dto.getEmail());
+      logger.info("Creating new user: email={}", dto.getEmail());
 
-      // Verify if username exists
-      if (userRepository.existsByUsername(dto.getUsername()))
+      // Verify if user exists
+      if (userRepository.existsByEmail(dto.getEmail()))
          throw IgrpResponseStatusException.of(
                  HttpStatus.CONFLICT,
-                 "User with username %s exists already".formatted(dto.getUsername())
+                 "User with email %s exists already".formatted(dto.getEmail())
          );
 
-      var providerUser = adapter.resolveUser(dto.getUsername());
+      var providerUser = adapter.resolveUser(dto.getEmail());
 
       if(providerUser.isPresent()) {
          IGRPUserEntity user = new IGRPUserEntity();
          user.setName(dto.getName());
          user.setUsername(dto.getUsername());
+         user.setExternalId(providerUser.get().getExternalId());
          user.setEmail(dto.getEmail());
          user.setPicture(dto.getPicture());
          user.setSignature(dto.getSignature());

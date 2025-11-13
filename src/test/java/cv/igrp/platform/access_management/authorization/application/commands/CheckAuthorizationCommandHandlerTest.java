@@ -45,13 +45,13 @@ class CheckAuthorizationCommandHandlerTest {
 
     @Test
     void testHandle_ShouldReturnOkResponseWithExpectedBody() {
-        String username = "john.doe";
+        String sub = "f8c3de3d-1fea-4d7c-a8b0-29f63c4c3454";
         PermissionCheckResponseDTO expectedResponse = new PermissionCheckResponseDTO();
         expectedResponse.setAllowed(true);
         expectedResponse.setViaRoles(List.of("ADMIN"));
 
-        when(authenticationHelper.getPreferredUsername()).thenReturn(username);
-        when(singleCheckAuthorizationHandler.checkAuthorization(username, "read", "document"))
+        when(authenticationHelper.getPreferredUsername()).thenReturn(sub);
+        when(singleCheckAuthorizationHandler.checkAuthorization(sub, "read", "document"))
                 .thenReturn(expectedResponse);
 
         ResponseEntity<PermissionCheckResponseDTO> response = handler.handle(command);
@@ -61,14 +61,14 @@ class CheckAuthorizationCommandHandlerTest {
         assertEquals(expectedResponse, response.getBody());
 
         verify(authenticationHelper).getPreferredUsername();
-        verify(singleCheckAuthorizationHandler).checkAuthorization(username, "read", "document");
+        verify(singleCheckAuthorizationHandler).checkAuthorization(sub, "read", "document");
     }
 
     @Test
     void testHandle_WhenHandlerReturnsNull_ShouldStillReturnOkResponse() {
-        String username = "jane.doe";
-        when(authenticationHelper.getPreferredUsername()).thenReturn(username);
-        when(singleCheckAuthorizationHandler.checkAuthorization(username, "read", "document"))
+        String sub = "a1b5fc1e-2fab-8e6a-e4d3-10a59b3c1029";
+        when(authenticationHelper.getPreferredUsername()).thenReturn(sub);
+        when(singleCheckAuthorizationHandler.checkAuthorization(sub, "read", "document"))
                 .thenReturn(null);
 
         ResponseEntity<PermissionCheckResponseDTO> response = handler.handle(command);

@@ -21,8 +21,8 @@ public class GetUsersCommand implements Command {
   private String departmentCode;
   @NotBlank(message = "The field <name> is required")
   private String name;
-  @NotBlank(message = "The field <username> is required")
-  private String username;
+  @NotNull(message = "The field <id> is required")
+  private Integer id;
   @NotBlank(message = "The field <email> is required")
   private String email;
 

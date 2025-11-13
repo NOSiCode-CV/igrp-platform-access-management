@@ -15,8 +15,8 @@ public interface IGRPUserEntityRepository extends
     RevisionRepository<IGRPUserEntity, Integer, Integer>
 {
 
-    Optional<IGRPUserEntity> findByUsername(String username);
+    Optional<IGRPUserEntity> findByExternalId(String externalId);
 
-    boolean existsByUsername(String username);
+    boolean existsByEmail(String email);
 
 }

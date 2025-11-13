@@ -58,19 +58,19 @@ public class GetCurrentUserQueryHandler implements QueryHandler<GetCurrentUserQu
    */
   @IgrpQueryHandler
   public ResponseEntity<IGRPUserDTO> handle(GetCurrentUserQuery query) {
-    String username = authenticationHelper.getPreferredUsername();
+    String externalId = authenticationHelper.getPreferredUsername();
 
-    logger.info("Fetching current user with username: {}", username);
+    logger.info("Fetching current user with sub: {}", externalId);
 
 
-    Optional<IGRPUserEntity> optionalUser = igrpUserRepository.findByUsername(username);
+    Optional<IGRPUserEntity> optionalUser = igrpUserRepository.findByExternalId(externalId);
     if (optionalUser.isEmpty()) {
-      logger.warn("No user found with username: {}", username);
+      logger.warn("No user found with sub: {}", externalId);
       return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 
     IGRPUserDTO dto = userMapper.toDto(optionalUser.get());
-    logger.info("User found. ID: {}, Username: {}", dto.getId(), dto.getUsername());
+    logger.info("User found. ID: {}, Email: {}", dto.getId(), dto.getEmail());
 
     return ResponseEntity.ok(dto);
   }

@@ -78,8 +78,8 @@ public class CreateUserCommandHandlerTest {
       // Arrange
         when(userRepository.save(any(IGRPUserEntity.class))).thenReturn(userEntity);
         when(userMapper.toDto(userEntity)).thenReturn(expectedDto);
-        when(userRepository.existsByUsername(expectedDto.getUsername())).thenReturn(false);
-        when(iAdapter.resolveUser(expectedDto.getUsername())).thenReturn(Optional.of(userEntity));
+        when(userRepository.existsByEmail(expectedDto.getEmail())).thenReturn(false);
+        when(iAdapter.resolveUser(expectedDto.getEmail())).thenReturn(Optional.of(userEntity));
 
         // Act
         ResponseEntity<IGRPUserDTO> response = createUserCommandHandler.handle(command);
@@ -123,7 +123,7 @@ public class CreateUserCommandHandlerTest {
 
         when(userRepository.save(any(IGRPUserEntity.class))).thenReturn(userEntity);
         when(userMapper.toDto(userEntity)).thenReturn(expectedDto);
-        when(iAdapter.resolveUser(expectedDto.getUsername())).thenReturn(Optional.of(userEntity));
+        when(iAdapter.resolveUser(expectedDto.getEmail())).thenReturn(Optional.of(userEntity));
 
         // Act
         ResponseEntity<IGRPUserDTO> response = createUserCommandHandler.handle(command);

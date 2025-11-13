@@ -31,7 +31,7 @@ public class AuthenticationHelper {
 
         // Case 1: JWT (OAuth2 user)
         if (authentication.getPrincipal() instanceof Jwt jwt) {
-            return jwt.getClaimAsString("preferred_username");
+            return jwt.getClaimAsString("sub");
         }
 
         // Case 2: M2M authentication (UsernamePasswordAuthenticationToken)

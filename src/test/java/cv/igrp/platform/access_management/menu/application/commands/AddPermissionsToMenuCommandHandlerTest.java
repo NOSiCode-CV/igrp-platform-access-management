@@ -54,7 +54,7 @@ public class AddPermissionsToMenuCommandHandlerTest {
         role.setName("test_role");
         role.setStatus(Status.ACTIVE);
 
-        when(roleRepository.findAllByNameIn(roleList))
+        when(roleRepository.findAllByCodeIn(roleList))
                 .thenReturn(List.of(role));
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED))
                 .thenReturn(Optional.empty());
@@ -78,7 +78,7 @@ public class AddPermissionsToMenuCommandHandlerTest {
 
         ArrayList<RoleEntity> savedRoles = new ArrayList<>();
 
-        when(roleRepository.findAllByNameIn(roleList))
+        when(roleRepository.findAllByCodeIn(roleList))
                 .thenReturn(savedRoles);
 
         // When
@@ -127,7 +127,7 @@ public class AddPermissionsToMenuCommandHandlerTest {
         roleList.add(activeRoleName);
         menuEntryDTO.setRoles(roleList);
 
-        when(roleRepository.findAllByNameIn(roleNames)).thenReturn(returnedRoles);
+        when(roleRepository.findAllByCodeIn(roleNames)).thenReturn(returnedRoles);
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(menuEntry));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(menuEntryDTO);
@@ -184,7 +184,7 @@ public class AddPermissionsToMenuCommandHandlerTest {
         roleNames.add(activeRoleName);
         menuEntryDTO.setRoles(roleNames);
 
-        when(roleRepository.findAllByNameIn(roleList)).thenReturn(savedRoles);
+        when(roleRepository.findAllByCodeIn(roleList)).thenReturn(savedRoles);
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(savedMenuEntry));
         when(menuEntryRepository.save(savedMenuEntry)).thenReturn(savedMenuEntry);
         when(menuEntryMapper.toDTO(savedMenuEntry)).thenReturn(menuEntryDTO);
@@ -233,7 +233,7 @@ public class AddPermissionsToMenuCommandHandlerTest {
         roleList.add(roleName);
         menuEntryDTO.setRoles(roleList);
 
-        when(roleRepository.findAllByNameIn(roleNames)).thenReturn(List.of(activeRole));
+        when(roleRepository.findAllByCodeIn(roleNames)).thenReturn(List.of(activeRole));
         when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(savedMenuEntry));
         when(menuEntryRepository.save(savedMenuEntry)).thenReturn(savedMenuEntry);
         when(menuEntryMapper.toDTO(savedMenuEntry)).thenReturn(menuEntryDTO);

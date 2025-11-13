@@ -31,9 +31,9 @@ public class GetUsersCommandHandler implements CommandHandler<GetUsersCommand, R
 
    @IgrpCommandHandler
    public ResponseEntity<List<IGRPUserDTO>> handle(GetUsersCommand command) {
-      logger.info("Handling GetUsersCommand: applicationCode={}, departmentCode={}, name={}, username={}, email={}",
+      logger.info("Handling GetUsersCommand: applicationCode={}, departmentCode={}, name={}, id={}, email={}",
               command.getApplicationCode(), command.getDepartmentCode(), command.getName(),
-              command.getUsername(), command.getEmail());
+              command.getId(), command.getEmail());
 
       Specification<IGRPUserEntity> spec = buildSpecification(command);
       List<IGRPUserDTO> users = userRepository.findAll(spec)
@@ -68,8 +68,8 @@ public class GetUsersCommandHandler implements CommandHandler<GetUsersCommand, R
          spec = spec.and((root, q, cb) -> cb.like(cb.lower(root.get("name")), "%" + command.getName().toLowerCase() + "%"));
       }
 
-      if (command.getUsername() != null && !command.getUsername().isEmpty()) {
-         spec = spec.and((root, q, cb) -> cb.like(cb.lower(root.get("username")), "%" + command.getUsername().toLowerCase() + "%"));
+      if (command.getId() != null && command.getId() != 0) {
+         spec = spec.and((root, q, cb) -> cb.equal(root.get("id"), command.getId()));
       }
 
       if (command.getEmail() != null && !command.getEmail().isEmpty()) {

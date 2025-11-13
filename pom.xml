@@ -29,7 +29,7 @@
         <javadoc.plugin.version>3.12.0</javadoc.plugin.version>
         <igrp.framework.core.version>0.0.3-alpha</igrp.framework.core.version>
         <igrp.framework.stereotype.version>0.0.1-alpha</igrp.framework.stereotype.version>
-        <framework.auth.version>0.1.0-beta-SNAPSHOT</framework.auth.version>
+        <framework.auth.version>0.1.0-beta.1</framework.auth.version>
         <filemanager.version>0.0.3-alpha</filemanager.version>
         <igrp.framework.notification.core.version>0.0.1-alpha</igrp.framework.notification.core.version>
     </properties>
@@ -184,12 +184,12 @@
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
             <artifactId>core</artifactId>
-            <version>0.1.0-beta-20251020.111014-6</version>
+            <version>${framework.auth.version}</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
             <artifactId>keycloak-spring-boot</artifactId>
-            <version>0.1.0-beta-20251008.132613-15</version>
+            <version>${framework.auth.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>

@@ -60,16 +60,16 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         var dto = command.getIgrpuserdto();
 
-        LOGGER.info("Creating new user: username={}, email={}", dto.getUsername(), dto.getEmail());
+        LOGGER.info("Creating new user: email={}", dto.getEmail());
 
-        // Verify if username exists
-        if (userRepository.existsByUsername(dto.getUsername()))
+        // Verify if user exists
+        if (userRepository.existsByEmail(dto.getEmail()))
             throw IgrpResponseStatusException.of(
                     HttpStatus.CONFLICT,
-                    "User with username %s was invited already".formatted(dto.getUsername())
+                    "User with email %s was invited already".formatted(dto.getEmail())
             );
 
-        var providerUser = adapter.resolveUser(dto.getUsername());
+        var providerUser = adapter.resolveUser(dto.getEmail());
 
         if (providerUser.isPresent()) {
 
@@ -77,20 +77,21 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
             user.setName(command.getIgrpuserdto().getName());
             user.setUsername(command.getIgrpuserdto().getUsername());
             user.setEmail(command.getIgrpuserdto().getEmail());
+            user.setExternalId(providerUser.get().getExternalId());
             user.setRoles(new ArrayList<>());
 
             var savedUser = userRepository.save(user);
 
             try {
 
-                LOGGER.info("Inviting new user: username={}, email={}", dto.getUsername(), dto.getEmail());
+                LOGGER.info("Inviting new user: id={}, email={}", savedUser.getId(), dto.getEmail());
 
                 var notification = new Notification();
 
                 notification.setRecipients(List.of(savedUser.getEmail()));
                 notification.setSubject("iGRP User Invitation");
-                notification.setContent(emailTemplate.replace("{{user}}", user.getUsername()));
-                notification.setMetadata(Map.of("userId", savedUser.getId(), "username", savedUser.getUsername()));
+                notification.setContent(emailTemplate.replace("{{user}}", user.getEmail()));
+                notification.setMetadata(Map.of("userId", savedUser.getId(), "email", savedUser.getEmail()));
 
                 notificationAdapter.send(notification);
 

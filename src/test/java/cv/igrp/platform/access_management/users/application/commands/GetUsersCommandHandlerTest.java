@@ -59,7 +59,7 @@ public class GetUsersCommandHandlerTest {
                 "APP",
                 "DEPT",
                 "John",
-                "jdoe",
+                1,
                 "jdoe@example.com"
         );
 

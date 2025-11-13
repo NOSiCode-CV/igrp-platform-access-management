@@ -87,7 +87,7 @@ public class AddPermissionsToMenuCommandHandler implements CommandHandler<AddPer
 
       List<String> roleIdList = command.getAddPermissionsToMenuRequest();
       log.info("Add Roles: {} for menu entry: {}.", roleIdList, command.getCode());
-      List<RoleEntity> roleList = roleRepository.findAllByNameIn(roleIdList)
+      List<RoleEntity> roleList = roleRepository.findAllByCodeIn(roleIdList)
               .stream()
               .filter(role -> !role.getStatus().equals(Status.DELETED))
               .toList();

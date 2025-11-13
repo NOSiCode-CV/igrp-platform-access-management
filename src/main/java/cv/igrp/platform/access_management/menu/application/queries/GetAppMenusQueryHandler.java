@@ -48,12 +48,12 @@ public class GetAppMenusQueryHandler implements QueryHandler<GetAppMenusQuery, R
 
     @IgrpQueryHandler
     public ResponseEntity<List<MenuEntryDTO>> handle(GetAppMenusQuery query) {
-        String username = authenticationHelper.getPreferredUsername();
-        LOGGER.info("Fetching current user with username: {}", username);
+        String externalId = authenticationHelper.getPreferredUsername();
+        LOGGER.info("Fetching current user with sub: {}", externalId);
 
-        Optional<IGRPUserEntity> optionalUser = igrpUserRepository.findByUsername(username);
+        Optional<IGRPUserEntity> optionalUser = igrpUserRepository.findByExternalId(externalId);
         if (optionalUser.isEmpty()) {
-            LOGGER.warn("No user found with username: {}", username);
+            LOGGER.warn("No user found with sub: {}", externalId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
@@ -75,7 +75,7 @@ public class GetAppMenusQueryHandler implements QueryHandler<GetAppMenusQuery, R
                 .collect(Collectors.toSet());
 
         if (userRoleIds.isEmpty()) {
-            LOGGER.warn("User {} has no roles assigned", username);
+            LOGGER.warn("User {} has no roles assigned", externalId);
             return ResponseEntity.ok(Collections.emptyList());
         }
 
@@ -97,7 +97,7 @@ public class GetAppMenusQueryHandler implements QueryHandler<GetAppMenusQuery, R
                 .map(menuEntryMapper::toDTO)
                 .collect(Collectors.toList());
 
-        LOGGER.info("User {} has access to {} menus in application {}", username, accessibleMenus.size(), query.getAppCode());
+        LOGGER.info("User {} has access to {} menus in application {}", externalId, accessibleMenus.size(), query.getAppCode());
 
         return ResponseEntity.ok(accessibleMenus);
     }

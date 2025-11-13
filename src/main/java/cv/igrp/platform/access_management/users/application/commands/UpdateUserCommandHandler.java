@@ -87,17 +87,17 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
     @IgrpCommandHandler
     @Transactional
     public ResponseEntity<IGRPUserDTO> handle(UpdateUserCommand command) {
-        String username = command.getUsername();
+        Integer userId = command.getId();
 
-        logger.info("Updating user with username={}", username);
+        logger.info("Updating user with ID={}", userId);
 
-        IGRPUserEntity user = userRepository.findByUsername(command.getUsername())
+        IGRPUserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> {
-                    logger.warn("User with username={} not found", username);
+                    logger.warn("User with ID={} not found", userId);
                     return IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND,
                             "Invalid User",
-                            "User not found with username: " + username);
+                            "User not found with ID: " + userId);
                 });
 
         IGRPUserDTO dto = command.getIgrpuserdto();
@@ -106,12 +106,16 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
 
         // Store current roles if status is changing from ACTIVE to INACTIVE
         Map<String, Set<String>> userRolesBackup = new HashMap<>();
-        userRolesBackup = getUserRolesFromDatabase(username);
-        logger.info("Fetching roles for user {}: {}", username, userRolesBackup);
+        userRolesBackup = getUserRolesFromDatabase(userId);
+        logger.info("Fetching roles for user {}: {}", userId, userRolesBackup);
 
         // Update user fields
         if (dto.getName() != null) {
             user.setName(dto.getName());
+        }
+
+        if (dto.getEmail() != null) {
+            user.setEmail(dto.getEmail());
         }
 
         if (dto.getPicture() != null) {
@@ -129,9 +133,9 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
         var updatedUser = userRepository.save(user);
 
         // Handle role assignments based on status change
-        handleRoleAssignmentsOnStatusChange(username, oldStatus, newStatus, userRolesBackup);
+        handleRoleAssignmentsOnStatusChange(user, oldStatus, newStatus, userRolesBackup);
 
-        logger.info("User updated successfully: id={}, username={}", updatedUser.getId(), updatedUser.getUsername());
+        logger.info("User updated successfully: id={}, email={}", updatedUser.getId(), updatedUser.getEmail());
 
         return ResponseEntity.ok(userMapper.toDto(updatedUser));
     }
@@ -139,27 +143,27 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
     /**
      * Handles role assignments when user status changes
      */
-    private void handleRoleAssignmentsOnStatusChange(String username, String oldStatus, String newStatus,
+    private void handleRoleAssignmentsOnStatusChange(IGRPUserEntity user, String oldStatus, String newStatus,
                                                      Map<String, Set<String>> userRolesBackup) {
         try {
             // Case 1: User is being deactivated (ACTIVE -> INACTIVE)
             if (ACTIVE_STATUS.equals(oldStatus) && INACTIVE_STATUS.equals(newStatus)) {
-                removeAllRolesFromUser(username);
-                logger.info("Removed all roles from deactivated user: {}", username);
+                removeAllRolesFromUser(user.getExternalId());
+                logger.info("Removed all roles from deactivated user: {}", user.getEmail());
             }
             // Case 2: User is being reactivated (INACTIVE -> ACTIVE)
             else if (INACTIVE_STATUS.equals(oldStatus) && ACTIVE_STATUS.equals(newStatus)) {
-                restoreRolesToUser(username, userRolesBackup);
-                logger.info("Restored roles to reactivated user: {}", username);
+                restoreRolesToUser(user.getExternalId(), userRolesBackup);
+                logger.info("Restored roles to reactivated user: {}", user.getEmail());
             }
             // Case 3: Status unchanged or other transitions - no role changes needed
             else {
                 logger.debug("No role assignment changes needed for user: {}, status: {} -> {}",
-                        username, oldStatus, newStatus);
+                        user.getEmail(), oldStatus, newStatus);
             }
         } catch (Exception e) {
             logger.error("Failed to handle role assignments for user {} during status change from {} to {}: {}",
-                    username, oldStatus, newStatus, e.getMessage(), e);
+                    user.getEmail(), oldStatus, newStatus, e.getMessage(), e);
             // Don't throw exception to avoid rolling back the user status update
             // The synchronization service will handle any inconsistencies
         }
@@ -168,11 +172,11 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
     /**
      * Remove all roles from a user in the IAM provider
      */
-    private void removeAllRolesFromUser(String username) {
+    private void removeAllRolesFromUser(String externalId) {
         try {
             // Get current roles from provider
             Map<String, Map<String, Set<String>>> providerUserRoles = adapter.getAllUserRoles();
-            Map<String, Set<String>> userRoles = providerUserRoles.getOrDefault(username, new HashMap<>());
+            Map<String, Set<String>> userRoles = providerUserRoles.getOrDefault(externalId, new HashMap<>());
 
             // Remove all roles across all departments
             for (Map.Entry<String, Set<String>> deptEntry : userRoles.entrySet()) {
@@ -181,19 +185,19 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
 
                 for (String roleName : roleNames) {
                     try {
-                        adapter.unassignRoleFromUser(departmentCode, roleName, username);
+                        adapter.unassignRoleFromUser(departmentCode, roleName, externalId);
                         logger.debug("Removed role {} from user {} in department {}",
-                                roleName, username, departmentCode);
+                                roleName, externalId, departmentCode);
                     } catch (IAMException e) {
                         logger.warn("Failed to remove role {} from user {} in department {}: {}",
-                                roleName, username, departmentCode, e.getMessage());
+                                roleName, externalId, departmentCode, e.getMessage());
                     }
                 }
             }
 
-            logger.info("Completed removing all roles from user: {}", username);
+            logger.info("Completed removing all roles from user: {}", externalId);
         } catch (IAMException e) {
-            logger.error("Failed to get user roles from provider for user {}: {}", username, e.getMessage());
+            logger.error("Failed to get user roles from provider for user {}: {}", externalId, e.getMessage());
         }
     }
 
@@ -230,17 +234,17 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
     /**
      * Get user roles from database for backup purposes
      */
-    private Map<String, Set<String>> getUserRolesFromDatabase(String username) {
+    private Map<String, Set<String>> getUserRolesFromDatabase(Integer userId) {
         // This should match the logic in SynchronizationService but for a single user
         // You might want to extract this to a shared service to avoid duplication
 
         String sql = """
                 SELECT d.code as department_code, r.name as role_name
                 FROM t_role_users ru
-                LEFT JOIN t_user u ON ru.users_id = u.id 
-                LEFT JOIN t_role r ON ru.roles_id = r.id 
-                LEFT JOIN t_department d ON r.department = d.id 
-                WHERE u.username = ? AND r.status = ? AND d.status = ?
+                LEFT JOIN t_user u ON ru.users_id = u.id
+                LEFT JOIN t_role r ON ru.roles_id = r.id
+                LEFT JOIN t_department d ON r.department = d.id
+                WHERE u.id = ? AND r.status = ? AND d.status = ?
                 """;
 
         Map<String, Set<String>> result = new HashMap<>();
@@ -253,9 +257,9 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
                 result.computeIfAbsent(departmentCode, _ -> new HashSet<>())
                         .add(roleName);
                 return null;
-            }, username, ACTIVE_STATUS, ACTIVE_STATUS);
+            }, userId, ACTIVE_STATUS, ACTIVE_STATUS);
         } catch (Exception e) {
-            logger.error("Failed to get user roles from database for user {}: {}", username, e.getMessage());
+            logger.error("Failed to get user roles from database for user {}: {}", userId, e.getMessage());
         }
 
         return result;

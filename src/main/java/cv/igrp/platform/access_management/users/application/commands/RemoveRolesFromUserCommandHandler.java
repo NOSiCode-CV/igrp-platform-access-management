@@ -50,18 +50,18 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<List<RoleDTO>> handle(RemoveRolesFromUserCommand command) {
-      String username = command.getUsername();
+      Integer userId = command.getId();
       List<String> roleIdsToRemove = command.getRemoveRolesFromUserRequest();
 
-      logger.info("Attempting to remove roles {} from username={}", roleIdsToRemove, username);
+      logger.info("Attempting to remove roles {} from id={}", roleIdsToRemove, userId);
 
-      IGRPUserEntity user = userRepository.findByUsername(command.getUsername())
+      IGRPUserEntity user = userRepository.findById(userId)
               .orElseThrow(() -> {
-                 logger.warn("User not found with username={}", username);
+                 logger.warn("User not found with id={}", userId);
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
-                         "Invalid Username",
-                         "User not found with username: %s".formatted(username));
+                         "Invalid ID",
+                         "User not found with ID: %s".formatted(userId));
               });
 
       if (roleIdsToRemove != null && !roleIdsToRemove.isEmpty()) {
@@ -74,20 +74,20 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
             user.getRoles().removeAll(rolesToRemove);
             userRepository.save(user);
 
-            logger.info("Roles removed successfully from user name={}", username);
+            logger.info("Roles removed successfully from user ID={}", userId);
 
             for (RoleEntity role : rolesToRemove) {
                try {
-                  adapter.unassignRoleFromUser(role.getDepartment().getCode(), role.getCode(), username);
-                  logger.info("Role code={} from department with code {} unassigned to user name={} in Keycloak",
+                  adapter.unassignRoleFromUser(role.getDepartment().getCode(), role.getCode(), user.getExternalId());
+                  logger.info("Role code={} from department with code {} unassigned to user sub={} in Keycloak",
                           role.getCode(),
                           role.getDepartment().getCode(),
-                          username);
+                          user.getExternalId());
                } catch(IAMException e){
-                  logger.error("Failed to unassign role code={} from {} department to user name={} in Keycloak: {}",
+                  logger.error("Failed to unassign role code={} from {} department to user sub={} in Keycloak: {}",
                           role.getCode(),
                           role.getDepartment().getCode(),
-                          username,
+                          user.getExternalId(),
                           e.getMessage(), e);
                   throw IgrpResponseStatusException.of(
                           HttpStatus.INTERNAL_SERVER_ERROR,
@@ -98,11 +98,11 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
             }
          }
           else {
-            logger.info("No matching roles found to remove for user name={}", username);
+            logger.info("No matching roles found to remove for user ID={}", userId);
          }
 
       } else {
-         logger.info("No roles provided for removal for user name={}", username);
+         logger.info("No roles provided for removal for user ID={}", userId);
       }
 
 
@@ -113,7 +113,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
                       null, null, null))
               .collect(Collectors.toList());
 
-      logger.info("Returning {} remaining roles for user name={}", result.size(), username);
+      logger.info("Returning {} remaining roles for user ID={}", result.size(), userId);
 
       return ResponseEntity.ok(result);
    }

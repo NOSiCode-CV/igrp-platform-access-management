@@ -39,7 +39,7 @@ public class UserController {
           this.commandBus = commandBus;
   }
    @GetMapping(
-    value = "users/{username}"
+   value = "users/{id}"
   )
   @Operation(
     summary = "GET method to handle operations for getUser",
@@ -59,10 +59,10 @@ public class UserController {
   )
   
   public ResponseEntity<IGRPUserDTO> getUser(
-    @PathVariable(value = "username") String username)
+    @PathVariable(value = "id") Integer id)
   {
 
-      final var query = new GetUserQuery(username);
+      final var query = new GetUserQuery(id);
 
       ResponseEntity<IGRPUserDTO> response = queryBus.handle(query);
 
@@ -70,7 +70,7 @@ public class UserController {
   }
 
    @PostMapping(
-    value = "users/{username}/roles"
+   value = "users/{id}/roles"
   )
   @Operation(
     summary = "POST method to handle operations for AddRolesToUser",
@@ -100,10 +100,10 @@ public class UserController {
   )
   
   public ResponseEntity<?> addRolesToUser(@RequestBody List<String> addRolesToUserRequest
-    , @PathVariable(value = "username") String username)
+    , @PathVariable(value = "id") Integer id)
   {
 
-      final var command = new AddRolesToUserCommand(addRolesToUserRequest, username);
+      final var command = new AddRolesToUserCommand(addRolesToUserRequest, id);
 
        ResponseEntity<?> response = commandBus.send(command);
 
@@ -111,7 +111,7 @@ public class UserController {
   }
 
    @DeleteMapping(
-    value = "users/{username}/roles"
+   value = "users/{id}/roles"
   )
   @Operation(
     summary = "DELETE method to handle operations for RemoveRolesFromUser",
@@ -131,10 +131,10 @@ public class UserController {
   )
   
   public ResponseEntity<List<RoleDTO>> removeRolesFromUser(@RequestBody List<String> removeRolesFromUserRequest
-    , @PathVariable(value = "username") String username)
+    , @PathVariable(value = "id") Integer id)
   {
 
-      final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, username);
+      final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, id);
 
        ResponseEntity<List<RoleDTO>> response = commandBus.send(command);
 
@@ -142,7 +142,7 @@ public class UserController {
   }
 
    @GetMapping(
-    value = "users/{username}/roles"
+   value = "users/{id}/roles"
   )
   @Operation(
     summary = "GET method to handle operations for getUserRoles",
@@ -162,10 +162,10 @@ public class UserController {
   )
   
   public ResponseEntity<List<RoleDTO>> getUserRoles(
-    @PathVariable(value = "username") String username)
+    @PathVariable(value = "id") Integer id)
   {
 
-      final var query = new GetUserRolesQuery(username);
+      final var query = new GetUserRolesQuery(id);
 
       ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
 
@@ -173,7 +173,7 @@ public class UserController {
   }
 
    @PostMapping(
-    value = "users/list"
+   value = "users/list"
   )
   @Operation(
     summary = "POST method to handle operations for getUsers",
@@ -196,11 +196,11 @@ public class UserController {
     , @RequestParam(value = "applicationCode", required = false) String applicationCode,
     @RequestParam(value = "departmentCode", required = false) String departmentCode,
     @RequestParam(value = "name", required = false) String name,
-    @RequestParam(value = "username", required = false) String username,
+    @RequestParam(value = "id", required = false) Integer id,
     @RequestParam(value = "email", required = false) String email)
   {
 
-      final var command = new GetUsersCommand(getUsersRequest, applicationCode, departmentCode, name, username, email);
+      final var command = new GetUsersCommand(getUsersRequest, applicationCode, departmentCode, name, id, email);
 
        ResponseEntity<List<IGRPUserDTO>> response = commandBus.send(command);
 
@@ -208,7 +208,7 @@ public class UserController {
   }
 
    @PostMapping(
-    value = "users"
+   value = "users"
   )
   @Operation(
     summary = "POST method to handle operations for createUser",
@@ -239,7 +239,7 @@ public class UserController {
   }
 
    @PutMapping(
-    value = "users/{username}"
+   value = "users/{id}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateUser",
@@ -259,10 +259,10 @@ public class UserController {
   )
   
   public ResponseEntity<IGRPUserDTO> updateUser(@Valid @RequestBody IGRPUserDTO updateUserRequest
-    , @PathVariable(value = "username") String username)
+    , @PathVariable(value = "id") Integer id)
   {
 
-      final var command = new UpdateUserCommand(updateUserRequest, username);
+      final var command = new UpdateUserCommand(updateUserRequest, id);
 
        ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
 
@@ -270,7 +270,7 @@ public class UserController {
   }
 
    @GetMapping(
-    value = "users/current"
+   value = "users/current"
   )
   @Operation(
     summary = "GET method to handle operations for getCurrentUser",
@@ -301,7 +301,7 @@ public class UserController {
   }
 
    @PostMapping(
-    value = "users/invite"
+   value = "users/invite"
   )
   @Operation(
     summary = "POST method to handle operations for inviteUser",
