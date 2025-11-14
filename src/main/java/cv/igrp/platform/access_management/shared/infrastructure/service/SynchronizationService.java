@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.shared.infrastructure.service;
 import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.auth.core.model.*;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import jakarta.ws.rs.ClientErrorException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -439,13 +440,13 @@ public class SynchronizationService {
             Map<String, Set<String>> dbUserRolesByDept = userEntry.getValue();
             Map<String, Set<String>> providerUserRolesByDept = providerUserRoles.getOrDefault(externalId, Map.of());
 
-            var dbUser = getUserFromDatabase(externalId);
+            var dbUserEmail = getUserEmailFromDatabase(externalId);
 
-            if(dbUser != null) {
+            if(dbUserEmail != null) {
                 // Check if user exists in provider AND is active
-                Optional<UserIdentity> user = adapter.resolveUser(dbUser.getEmail());
+                Optional<UserIdentity> user = adapter.resolveUser(dbUserEmail);
                 if (user.isEmpty()) {
-                    LOGGER.warn("[Sync] User {} not found in provider, skipping role assignments", dbUser.getEmail());
+                    LOGGER.warn("[Sync] User {} not found in provider, skipping role assignments", dbUserEmail);
                     continue;
                 }
             }
@@ -713,17 +714,17 @@ public class SynchronizationService {
         return result;
     }
 
-    private UserIdentity getUserFromDatabase(String externalId) {
+    private String getUserEmailFromDatabase(String externalId) {
 
         try {
 
             String sql = """
-                    SELECT u.external_id, d.code as department_code, r.code as role_name
+                    SELECT u.email
                     FROM t_user u
                     WHERE u.status = ? AND u.external_id = ?
                     """;
 
-            return jdbcTemplate.queryForObject(sql, UserIdentity.class, ACTIVE_STATUS, externalId); // Only ACTIVE users
+            return jdbcTemplate.queryForObject(sql, String.class, ACTIVE_STATUS, externalId); // Only ACTIVE users
 
         } catch (Exception e) {
             LOGGER.error("[Sync] Failed to get user {} from database: {}", externalId, e.getMessage(), e);

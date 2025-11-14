@@ -65,7 +65,7 @@ public class MenuEntryEntity extends AuditEntity {
     private String target;
 
   
-    @Column(name="page_slug", unique = true)
+    @Column(name="page_slug")
     private String pageSlug;
 
   

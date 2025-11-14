@@ -430,7 +430,7 @@ public class ConfigurationService {
             }
 
             // Delete old menus for the app
-            jdbcTemplate.update("DELETE FROM t_menu_entry WHERE application_id = ?", appId);
+            jdbcTemplate.update("UPDATE t_menu_entry SET status = 'DELETED' WHERE application_id = ?", appId);
 
             // Insert new menus recursively
             insertMenuHierarchy(root, null, (short) 0, appId, roleId);
