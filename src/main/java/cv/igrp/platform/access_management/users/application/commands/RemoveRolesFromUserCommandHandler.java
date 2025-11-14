@@ -8,6 +8,7 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -26,17 +27,20 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
    private static final Logger logger = LoggerFactory.getLogger(RemoveRolesFromUserCommandHandler.class);
 
    private final IGRPUserEntityRepository userRepository;
+   private final RoleEntityRepository roleRepository;
    private final IAdapter adapter;
 
    /**
     * Constructs the handler with the required repository dependency.
     *
     * @param userRepository the repository used to retrieve and save {@link IGRPUserEntity} entities
+    * @param roleRepository the repository used to retrieve and save {@link RoleEntity} entities
     * @param adapter the adapter to assign a role to user in iam
     */
    public RemoveRolesFromUserCommandHandler(
-           IGRPUserEntityRepository userRepository, IAdapter adapter) {
+           IGRPUserEntityRepository userRepository, RoleEntityRepository roleRepository, IAdapter adapter) {
       this.userRepository = userRepository;
+      this.roleRepository = roleRepository;
       this.adapter = adapter;
    }
 
@@ -71,8 +75,11 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
                  .toList();
 
          if (!rolesToRemove.isEmpty()) {
-            user.getRoles().removeAll(rolesToRemove);
-            userRepository.save(user);
+
+            for(var role : rolesToRemove) {
+               role.getUsers().remove(user);
+               roleRepository.save(role);
+            }
 
             logger.info("Roles removed successfully from user ID={}", userId);
 
