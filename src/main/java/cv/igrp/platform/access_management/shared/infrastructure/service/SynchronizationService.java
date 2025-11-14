@@ -435,20 +435,24 @@ public class SynchronizationService {
         Map<String, Map<String, Set<String>>> providerUserRoles = adapter.getAllUserRoles();
 
         for (Map.Entry<String, Map<String, Set<String>>> userEntry : dbUserRoles.entrySet()) {
-            String username = userEntry.getKey();
+            String externalId = userEntry.getKey();
             Map<String, Set<String>> dbUserRolesByDept = userEntry.getValue();
-            Map<String, Set<String>> providerUserRolesByDept = providerUserRoles.getOrDefault(username, Map.of());
+            Map<String, Set<String>> providerUserRolesByDept = providerUserRoles.getOrDefault(externalId, Map.of());
 
-            // Check if user exists in provider AND is active
-            Optional<UserIdentity> user = adapter.resolveUser(username);
-            if (user.isEmpty()) {
-                LOGGER.warn("[Sync] User {} not found in provider, skipping role assignments", username);
-                continue;
+            var dbUser = getUserFromDatabase(externalId);
+
+            if(dbUser != null) {
+                // Check if user exists in provider AND is active
+                Optional<UserIdentity> user = adapter.resolveUser(dbUser.getEmail());
+                if (user.isEmpty()) {
+                    LOGGER.warn("[Sync] User {} not found in provider, skipping role assignments", dbUser.getEmail());
+                    continue;
+                }
             }
 
             // Additional safety check: Verify user is active in our database
-            if (!isUserActiveInDatabase(username)) {
-                LOGGER.info("[Sync] User {} is INACTIVE in database, skipping role assignments", username);
+            if (!isUserActiveInDatabase(externalId)) {
+                LOGGER.info("[Sync] User {} is INACTIVE in database, skipping role assignments", externalId);
                 continue;
             }
 
@@ -468,20 +472,20 @@ public class SynchronizationService {
                 // Assign new roles
                 for (String roleName : rolesToAssign) {
                     try {
-                        adapter.assignRoleToUser(departmentCode, roleName, username);
-                        LOGGER.info("[Sync] Assigned role {} to user {} in department {}", roleName, username, departmentCode);
+                        adapter.assignRoleToUser(departmentCode, roleName, externalId);
+                        LOGGER.info("[Sync] Assigned role {} to user {} in department {}", roleName, externalId, departmentCode);
                     } catch (IAMException e) {
-                        LOGGER.warn("[Sync] Failed to assign role {} to user {}: {}", roleName, username, e.getMessage());
+                        LOGGER.warn("[Sync] Failed to assign role {} to user {}: {}", roleName, externalId, e.getMessage());
                     }
                 }
 
                 // Unassign removed roles
                 for (String roleName : rolesToUnassign) {
                     try {
-                        adapter.unassignRoleFromUser(departmentCode, roleName, username);
-                        LOGGER.info("[Sync] Unassigned role {} from user {} in department {}", roleName, username, departmentCode);
+                        adapter.unassignRoleFromUser(departmentCode, roleName, externalId);
+                        LOGGER.info("[Sync] Unassigned role {} from user {} in department {}", roleName, externalId, departmentCode);
                     } catch (IAMException e) {
-                        LOGGER.warn("[Sync] Failed to unassign role {} from user {}: {}", roleName, username, e.getMessage());
+                        LOGGER.warn("[Sync] Failed to unassign role {} from user {}: {}", roleName, externalId, e.getMessage());
                     }
                 }
             }
@@ -499,34 +503,34 @@ public class SynchronizationService {
         // Get all users from provider
         List<UserIdentity> providerUsers = adapter.getAllUsers();
 
-        Set<String> dbUsernames = dbUsers.stream()
-                .map(UserIdentity::getUsername)
+        Set<String> dbExternalIds = dbUsers.stream()
+                .map(UserIdentity::getExternalId)
                 .collect(Collectors.toSet());
 
         Set<String> providerUsernames = providerUsers.stream()
-                .map(UserIdentity::getUsername)
+                .map(UserIdentity::getExternalId)
                 .collect(Collectors.toSet());
 
         // Mark users as INACTIVE in DB if they don't exist in provider
-        Set<String> usersMissingInProvider = new HashSet<>(dbUsernames);
+        Set<String> usersMissingInProvider = new HashSet<>(dbExternalIds);
         usersMissingInProvider.removeAll(providerUsernames);
 
-        for (String username : usersMissingInProvider) {
+        for (String externalId : usersMissingInProvider) {
             try {
-                markUserAsInactive(username);
-                LOGGER.info("[Sync] Marked user as INACTIVE in DB: {}", username);
+                markUserAsInactive(externalId);
+                LOGGER.info("[Sync] Marked user as INACTIVE in DB: {}", externalId);
             } catch (Exception e) {
-                LOGGER.warn("[Sync] Failed to mark user {} as INACTIVE: {}", username, e.getMessage());
+                LOGGER.warn("[Sync] Failed to mark user {} as INACTIVE: {}", externalId, e.getMessage());
             }
         }
 
         // Note: Users missing in DB but present in provider are ignored (invite-only mode)
-        Set<String> usersMissingInDB = new HashSet<>(providerUsernames);
-        usersMissingInDB.removeAll(dbUsernames);
+        /*Set<String> usersMissingInDB = new HashSet<>(providerUsernames);
+        usersMissingInDB.removeAll(dbExternalIds);
 
         if (!usersMissingInDB.isEmpty()) {
             LOGGER.info("[Sync] Users present in provider but not in DB (invite-only mode): {}", usersMissingInDB);
-        }
+        }*/
     }
 
     private void syncMappers() throws IAMException {
@@ -666,10 +670,10 @@ public class SynchronizationService {
 
     private Map<String, Set<String>> getRolePermissionsFromDatabase() {
         String sql = """
-                SELECT p.name as permission_name, r.code as role_name 
-                FROM t_role_permission rp 
-                LEFT JOIN t_permission p ON rp.permission = p.id 
-                LEFT JOIN t_role r ON rp.role_id = r.id 
+                SELECT p.name as permission_name, r.code as role_name
+                FROM t_role_permission rp
+                LEFT JOIN t_permission p ON rp.permission = p.id
+                LEFT JOIN t_role r ON rp.role_id = r.id
                 WHERE p.status = ? AND r.status = ?
                 """;
 
@@ -686,7 +690,7 @@ public class SynchronizationService {
 
     private Map<String, Map<String, Set<String>>> getUserRolesFromDatabase() {
         String sql = """
-            SELECT u.username, d.code as department_code, r.code as role_name
+            SELECT u.external_id, d.code as department_code, r.code as role_name
             FROM t_role_users ru
             LEFT JOIN t_user u ON ru.users_id = u.id
             LEFT JOIN t_role r ON ru.roles_id = r.id
@@ -696,11 +700,11 @@ public class SynchronizationService {
 
         Map<String, Map<String, Set<String>>> result = new HashMap<>();
         jdbcTemplate.query(sql, (rs, _) -> {
-            String username = rs.getString("username");
+            String externalId = rs.getString("external_id");
             String departmentCode = rs.getString("department_code");
             String roleName = rs.getString("role_name");
 
-            result.computeIfAbsent(username, _ -> new HashMap<>())
+            result.computeIfAbsent(externalId, _ -> new HashMap<>())
                     .computeIfAbsent(departmentCode, _ -> new HashSet<>())
                     .add(roleName);
             return null;
@@ -709,21 +713,40 @@ public class SynchronizationService {
         return result;
     }
 
-    private void markUserAsInactive(String username) {
-        String sql = "UPDATE t_user SET status = ? WHERE username = ?";
-        jdbcTemplate.update(sql, INACTIVE_STATUS, username);
+    private UserIdentity getUserFromDatabase(String externalId) {
+
+        try {
+
+            String sql = """
+                    SELECT u.external_id, d.code as department_code, r.code as role_name
+                    FROM t_user u
+                    WHERE u.status = ? AND u.external_id = ?
+                    """;
+
+            return jdbcTemplate.queryForObject(sql, UserIdentity.class, ACTIVE_STATUS, externalId); // Only ACTIVE users
+
+        } catch (Exception e) {
+            LOGGER.error("[Sync] Failed to get user {} from database: {}", externalId, e.getMessage(), e);
+            return null;
+        }
+
+    }
+
+    private void markUserAsInactive(String externalId) {
+        String sql = "UPDATE t_user SET status = ? WHERE external_id = ?";
+        jdbcTemplate.update(sql, INACTIVE_STATUS, externalId);
     }
 
     /**
      * Check if user is active in database
      */
-    private boolean isUserActiveInDatabase(String username) {
+    private boolean isUserActiveInDatabase(String externalId) {
         try {
-            String sql = "SELECT status FROM t_user WHERE username = ?";
-            String status = jdbcTemplate.queryForObject(sql, String.class, username);
+            String sql = "SELECT status FROM t_user WHERE external_id = ?";
+            String status = jdbcTemplate.queryForObject(sql, String.class, externalId);
             return ACTIVE_STATUS.equals(status);
         } catch (Exception e) {
-            LOGGER.warn("[Sync] Failed to check status for user {}: {}", username, e.getMessage());
+            LOGGER.warn("[Sync] Failed to check status for user {}: {}", externalId, e.getMessage());
             return false; // If we can't verify status, assume inactive for safety
         }
     }
