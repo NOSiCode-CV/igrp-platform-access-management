@@ -38,7 +38,7 @@ public class GetApplicationsByUserQueryHandlerTest {
     @Test
     void testHandleGetApplicationsByUserQuery() {
         // Given
-        String uid = "lamar.davis";
+        String uid = "1";
         GetApplicationsByUserQuery query = new GetApplicationsByUserQuery(uid);
 
         ApplicationEntity app1 = new ApplicationEntity();
@@ -63,7 +63,7 @@ public class GetApplicationsByUserQueryHandlerTest {
 
         List<ApplicationEntity> applications = List.of(app1, app2);
 
-        when(applicationRepository.findApplicationsByUserOrEmailAndStatus(uid, uid, Status.ACTIVE))
+        when(applicationRepository.findApplicationsByUserOrEmailAndStatus(Integer.valueOf(uid), uid, Status.ACTIVE))
                 .thenReturn(applications);
         when(applicationMapper.toDto(app1)).thenReturn(app1Dto);
         when(applicationMapper.toDto(app2)).thenReturn(app2Dto);

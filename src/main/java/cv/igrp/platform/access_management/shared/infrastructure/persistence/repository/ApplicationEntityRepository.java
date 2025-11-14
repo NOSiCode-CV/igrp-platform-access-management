@@ -27,12 +27,12 @@ public interface ApplicationEntityRepository extends
             JOIN d.roles r
             JOIN r.users u
             WHERE a.status = :status
-                   AND (u.externalId = :externalId OR u.email = :email)
+                   AND (u.id = :id OR u.email = :email)
                    AND r.department = d
                    AND a.type != 'SYSTEM'
             """)
     List<ApplicationEntity> findApplicationsByUserOrEmailAndStatus(
-            @Param("externalId") String externalId,
+            @Param("id") Integer id,
             @Param("email") String email,
             @Param("status") Status status
     );
