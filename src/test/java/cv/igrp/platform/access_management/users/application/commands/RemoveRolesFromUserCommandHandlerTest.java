@@ -10,6 +10,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
@@ -28,6 +29,9 @@ public class RemoveRolesFromUserCommandHandlerTest {
 
     @Mock
     IGRPUserEntityRepository userRepository;
+
+    @Mock
+    RoleEntityRepository roleRepository;
 
     @Mock
     IAdapter adapter;

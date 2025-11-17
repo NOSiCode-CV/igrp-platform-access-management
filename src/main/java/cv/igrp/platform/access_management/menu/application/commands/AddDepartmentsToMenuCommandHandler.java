@@ -5,6 +5,8 @@ import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -49,6 +51,7 @@ public class AddDepartmentsToMenuCommandHandler implements CommandHandler<AddDep
 
    private final MenuEntryEntityRepository menuEntryRepository;
    private final DepartmentEntityRepository departmentRepository;
+   private final ApplicationEntityRepository applicationEntityRepository;
    private final MenuEntryMapper menuEntryMapper;
 
     /**
@@ -56,11 +59,13 @@ public class AddDepartmentsToMenuCommandHandler implements CommandHandler<AddDep
      *
      * @param menuEntryRepository the repository used to retrieve and persist menu entry entities
      * @param departmentRepository the repository used to retrieve department entities
+     * @param applicationEntityRepository the repository used to retrieve application entities
      * @param menuEntryMapper     the mapper used to convert between menu entry entities and DTO
      */
-    public AddDepartmentsToMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentRepository, MenuEntryMapper menuEntryMapper) {
+    public AddDepartmentsToMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentRepository, ApplicationEntityRepository applicationEntityRepository, MenuEntryMapper menuEntryMapper) {
         // Initialize repositories and mapper here
         this.menuEntryRepository = menuEntryRepository;
+        this.applicationEntityRepository = applicationEntityRepository;
         this.departmentRepository = departmentRepository;
         this.menuEntryMapper = menuEntryMapper;
     }
@@ -79,7 +84,11 @@ public class AddDepartmentsToMenuCommandHandler implements CommandHandler<AddDep
    public ResponseEntity<MenuEntryDTO> handle(AddDepartmentsToMenuCommand command) {
 
       List<String> departmentIds = command.getAddDepartmentsToMenuRequest();
-        var menuEntryOpt = menuEntryRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED);
+      String appCode = command.getApplicationCode();
+
+        var application = applicationEntityRepository.findByCodeAndStatusNotDeleted(appCode);
+
+        var menuEntryOpt = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, command.getCode(), Status.DELETED);
         if (menuEntryOpt.isEmpty()) {
             log.warn("Menu not found with code: {}", command.getCode());
             throw cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException.of(
@@ -124,10 +133,10 @@ public class AddDepartmentsToMenuCommandHandler implements CommandHandler<AddDep
         return ResponseEntity.ok(response);
    }
 
-    private void attributeDepartmentToParents(MenuEntryEntity menuEntry, DepartmentEntity department) {
+    private void attributeDepartmentToParents(ApplicationEntity application, MenuEntryEntity menuEntry, DepartmentEntity department) {
 
         if(menuEntry.getParentId() != null) {
-            var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
+            var parentMenuEntry = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
                     () -> IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND,
                             "Parent Menu Entry not found",
@@ -135,7 +144,7 @@ public class AddDepartmentsToMenuCommandHandler implements CommandHandler<AddDep
             );
             parentMenuEntry.getDepartments().add(department);
 
-            attributeDepartmentToParents(parentMenuEntry, department);
+            attributeDepartmentToParents(application, parentMenuEntry, department);
 
             menuEntryRepository.save(parentMenuEntry);
         }

@@ -5,6 +5,8 @@ import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,21 +31,24 @@ public class GetMenuByIdQueryHandler implements QueryHandler<GetMenuByIdQuery, R
   private static final Logger logger = LoggerFactory.getLogger(GetMenuByIdQueryHandler.class);
 
   private final MenuEntryEntityRepository menuEntryRepository;
+  private final ApplicationEntityRepository applicationRepository;
   private final MenuEntryMapper menuEntryMapper;
 
   /**
    * Constructs a new {@code GetMenuByIdQueryHandler} with the required dependencies.
    *
    * @param menuEntryRepository the repository used to fetch {@link MenuEntryEntity} entities from the data source
+   * @param applicationRepository the repository used to fetch {@link ApplicationEntity} entities from the data source
    * @param menuEntryMapper the mapper used to convert {@link MenuEntryEntity} entities into {@link MenuEntryDTO} objects
    */
-  public GetMenuByIdQueryHandler(MenuEntryEntityRepository menuEntryRepository, MenuEntryMapper menuEntryMapper) {
+  public GetMenuByIdQueryHandler(MenuEntryEntityRepository menuEntryRepository, ApplicationEntityRepository applicationRepository, MenuEntryMapper menuEntryMapper) {
     this.menuEntryRepository =  menuEntryRepository;
+    this.applicationRepository = applicationRepository;
     this.menuEntryMapper =  menuEntryMapper;
   }
 
   /**
-   * Handles the {@link cv.igrp.platform.access_management.menu.application.queries.GetMenuByIdQuery} by retrieving the specified {@link MenuEntryEntity}
+   * Handles the {@link GetMenuByIdQuery} by retrieving the specified {@link MenuEntryEntity}
    * and returning it as a {@link MenuEntryDTO}.
    * <p>
    * If no menu entry is found for the provided ID, an {@link IgrpResponseStatusException}
@@ -56,7 +61,12 @@ public class GetMenuByIdQueryHandler implements QueryHandler<GetMenuByIdQuery, R
    */
   @IgrpQueryHandler
   public ResponseEntity<MenuEntryDTO> handle(GetMenuByIdQuery query) {
-    MenuEntryEntity menu = menuEntryRepository.findByCodeAndStatusNot(query.getCode(), Status.DELETED)
+
+    var appCode = query.getApplicationCode();
+
+    var application = applicationRepository.findByCodeAndStatusNotDeleted(appCode);
+
+    MenuEntryEntity menu = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, query.getCode(), Status.DELETED)
             .orElseThrow(() -> {
               logger.warn("Menu not found with code: {}", query.getCode());
               return IgrpResponseStatusException.of(

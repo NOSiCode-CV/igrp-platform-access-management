@@ -82,6 +82,14 @@
           }
         }
       },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": true
+        }
+      ],
       "pathVariables": [
         {
           "name": "code",
@@ -153,6 +161,14 @@
           }
         }
       },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": true
+        }
+      ],
       "pathVariables": [
         {
           "name": "code",
@@ -179,6 +195,14 @@
           }
         }
       },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": true
+        }
+      ],
       "pathVariables": [
         {
           "name": "code",
@@ -247,6 +271,14 @@
           }
         }
       },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": true
+        }
+      ],
       "pathVariables": [
         {
           "name": "code",
@@ -287,6 +319,14 @@
           }
         }
       },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": true
+        }
+      ],
       "pathVariables": [
         {
           "name": "code",
@@ -326,6 +366,14 @@
           }
         }
       },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": true
+        }
+      ],
       "pathVariables": [
         {
           "name": "code",
@@ -365,6 +413,14 @@
           }
         }
       },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": true
+        }
+      ],
       "pathVariables": [
         {
           "name": "code",
@@ -374,5 +430,5 @@
       ]
     }
   ],
-  "id": "tw5fo7aoed-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissionsToMenu-removePermissionsFromMenu-addPermissionsToMenu-removePermissionsFromMenu-getMenus-addPermissionsToMenu-removePermissionsFromMenu-addDepartmentsToMenu-removeDepartmentsFromMenu-removeDepartmentsFromMenu"
+  "id": "tw5fo7aoed-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissionsToMenu-removePermissionsFromMenu-addPermissionsToMenu-removePermissionsFromMenu-getMenus-addPermissionsToMenu-removePermissionsFromMenu-addDepartmentsToMenu-removeDepartmentsFromMenu-removeDepartmentsFromMenu-getMenuById-updateMenu-deleteMenu-addPermissionsToMenu-removePermissionsFromMenu-addDepartmentsToMenu-removeDepartmentsFromMenu"
 }

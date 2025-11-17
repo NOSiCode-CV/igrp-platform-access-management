@@ -357,6 +357,14 @@
           }
         }
       },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": true
+        }
+      ],
       "pathVariables": [
         {
           "name": "code",
@@ -431,6 +439,14 @@
           }
         }
       },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": true
+        }
+      ],
       "pathVariables": [
         {
           "name": "code",
@@ -440,5 +456,5 @@
       ]
     }
   ],
-  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment"
+  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-addMenusToDepartment-removeMenusFromDepartment"
 }

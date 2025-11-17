@@ -7,6 +7,7 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.springframework.http.HttpStatus;
@@ -25,10 +26,12 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
 
    private final MenuEntryEntityRepository menuEntryRepository;
    private final DepartmentEntityRepository departmentRepository;
+   private final ApplicationEntityRepository applicationRepository;
    
-   public AddMenusToDepartmentCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentRepository) {
+   public AddMenusToDepartmentCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentRepository, ApplicationEntityRepository applicationRepository) {
       this.menuEntryRepository = menuEntryRepository;
       this.departmentRepository = departmentRepository;
+      this.applicationRepository = applicationRepository;
    }
 
    @IgrpCommandHandler
@@ -42,9 +45,20 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
                  "Department not found",
                  "Department not found with code: " + command.getCode());
       }
+
+      var applicationOpt = applicationRepository.findByCodeAndStatusNot(command.getApplicationCode(), Status.DELETED);
+      if (applicationOpt.isEmpty()) {
+         LOGGER.warn("Application not found with code: {}", command.getApplicationCode());
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.NOT_FOUND,
+                 "Application not found",
+                 "Application not found with code: " + command.getApplicationCode());
+      }
+
       var department = departmentOpt.get();
+      var application = applicationOpt.get();
       for (String menuCode : menuCodes) {
-         var menuEntryOpt = menuEntryRepository.findByCodeAndStatusNot(menuCode, Status.DELETED);
+         var menuEntryOpt = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, menuCode, Status.DELETED);
          if (menuEntryOpt.isEmpty()) {
             LOGGER.warn("Menu Entry not found with code: {}", menuCode);
             throw IgrpResponseStatusException.of(
@@ -88,7 +102,7 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
    private void attributeDepartmentToParents(MenuEntryEntity menuEntry, DepartmentEntity department) {
 
       if(menuEntry.getParentId() != null) {
-         var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
+         var parentMenuEntry = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(menuEntry.getApplicationId(), menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
                  () -> IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
                          "Parent Menu Entry not found",

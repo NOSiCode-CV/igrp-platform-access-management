@@ -5,8 +5,10 @@ import cv.igrp.platform.access_management.shared.application.constants.Departmen
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -41,11 +43,15 @@ class RemoveDepartmentsFromMenuCommandHandlerTest {
     private DepartmentEntityRepository departmentEntityRepository;
 
     @Mock
+    private ApplicationEntityRepository applicationEntityRepository;
+
+    @Mock
     private MenuEntryMapper menuEntryMapper;
 
     private MenuEntryEntity menuEntry;
     private DepartmentEntity department1;
     private DepartmentEntity department2;
+    private ApplicationEntity application;
     private MenuEntryDTO menuEntryDTO;
 
     @BeforeEach
@@ -65,6 +71,11 @@ class RemoveDepartmentsFromMenuCommandHandlerTest {
         department2.setStatus(DepartmentStatus.ACTIVE);
         department2.setMenuentries(new HashSet<>());
 
+        application = new ApplicationEntity();
+        application.setCode("APP_A");
+        application.setName("Application A");
+        application.setStatus(Status.ACTIVE);
+
         menuEntry = new MenuEntryEntity();
         menuEntry.setId(1);
         menuEntry.setCode("MENU_APP");
@@ -83,10 +94,11 @@ class RemoveDepartmentsFromMenuCommandHandlerTest {
     void testHandle_RemovesDepartmentsFromMenuSuccessfully() {
         // Given a command to remove departments
         List<String> departmentCodesToRemove = List.of("DEPT_A", "DEPT_B");
-        RemoveDepartmentsFromMenuCommand command = new RemoveDepartmentsFromMenuCommand(departmentCodesToRemove, "MENU_APP");
+        RemoveDepartmentsFromMenuCommand command = new RemoveDepartmentsFromMenuCommand(departmentCodesToRemove, "APP_A", "MENU_APP");
 
         // Mock repository and mapper behavior
-        when(menuEntryRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED))
+        when(applicationEntityRepository.findByCodeAndStatusNotDeleted(application.getCode())).thenReturn(application);
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, command.getCode(), Status.DELETED))
                 .thenReturn(Optional.of(menuEntry));
         when(departmentEntityRepository.findByCodeAndStatusNot("DEPT_A", DepartmentStatus.DELETED))
                 .thenReturn(Optional.of(department1));
@@ -111,10 +123,11 @@ class RemoveDepartmentsFromMenuCommandHandlerTest {
         // Given a menu with one department already removed from the command list
         menuEntry.setDepartments(new HashSet<>(List.of(department1)));
         List<String> departmentCodesToRemove = List.of("DEPT_A", "DEPT_B");
-        RemoveDepartmentsFromMenuCommand command = new RemoveDepartmentsFromMenuCommand(departmentCodesToRemove, "MENU_APP");
+        RemoveDepartmentsFromMenuCommand command = new RemoveDepartmentsFromMenuCommand(departmentCodesToRemove, "APP_A", "MENU_APP");
 
         // Mock repository and mapper behavior
-        when(menuEntryRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED))
+        when(applicationEntityRepository.findByCodeAndStatusNotDeleted(application.getCode())).thenReturn(application);
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, command.getCode(), Status.DELETED))
                 .thenReturn(Optional.of(menuEntry));
         when(departmentEntityRepository.findByCodeAndStatusNot("DEPT_A", DepartmentStatus.DELETED))
                 .thenReturn(Optional.of(department1));
@@ -138,10 +151,11 @@ class RemoveDepartmentsFromMenuCommandHandlerTest {
     void testHandle_MenuNotFound_ThrowsException() {
         // Given a command for a non-existent menu
         String nonExistentMenuCode = "NON_EXISTENT_MENU";
-        RemoveDepartmentsFromMenuCommand command = new RemoveDepartmentsFromMenuCommand(List.of("DEPT_A"), nonExistentMenuCode);
+        RemoveDepartmentsFromMenuCommand command = new RemoveDepartmentsFromMenuCommand(List.of("DEPT_A"), "APP_A", nonExistentMenuCode);
 
-        // Mock repository to return empty optional
-        when(menuEntryRepository.findByCodeAndStatusNot(nonExistentMenuCode, Status.DELETED))
+        // Mock repository to return empty optional for non-existent menu
+        when(applicationEntityRepository.findByCodeAndStatusNotDeleted(application.getCode())).thenReturn(application);
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, nonExistentMenuCode, Status.DELETED))
                 .thenReturn(Optional.empty());
 
         // When and Then: Verify exception is thrown and check its properties
@@ -156,10 +170,11 @@ class RemoveDepartmentsFromMenuCommandHandlerTest {
         // Given a command with a non-existent department ID
         String nonExistentDepartmentCode = "NON_EXISTENT_DEPT";
         List<String> departmentCodes = List.of("DEPT_A", nonExistentDepartmentCode);
-        RemoveDepartmentsFromMenuCommand command = new RemoveDepartmentsFromMenuCommand(departmentCodes, "MENU_APP");
+        RemoveDepartmentsFromMenuCommand command = new RemoveDepartmentsFromMenuCommand(departmentCodes, "APP_A", "MENU_APP");
 
-        // Mock repository behavior
-        when(menuEntryRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED))
+        // Mock repository behavior for non-existent department
+        when(applicationEntityRepository.findByCodeAndStatusNotDeleted(application.getCode())).thenReturn(application);
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, command.getCode(), Status.DELETED))
                 .thenReturn(Optional.of(menuEntry));
         when(departmentEntityRepository.findByCodeAndStatusNot("DEPT_A", DepartmentStatus.DELETED))
                 .thenReturn(Optional.of(department1));

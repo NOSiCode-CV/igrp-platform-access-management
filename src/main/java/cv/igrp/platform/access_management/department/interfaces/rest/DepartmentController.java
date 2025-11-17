@@ -41,7 +41,7 @@ public class DepartmentController {
           this.commandBus = commandBus;
   }
    @PostMapping(
-    value = "departments"
+   value = "departments"
   )
   @Operation(
     summary = "POST method to handle operations for postDepartment",
@@ -72,7 +72,7 @@ public class DepartmentController {
   }
 
    @GetMapping(
-    value = "departments"
+   value = "departments"
   )
   @Operation(
     summary = "GET method to handle operations for getDepartments",
@@ -106,7 +106,7 @@ public class DepartmentController {
   }
 
    @GetMapping(
-    value = "departments/{id}"
+   value = "departments/{id}"
   )
   @Operation(
     summary = "GET method to handle operations for getDepartmentById",
@@ -137,7 +137,7 @@ public class DepartmentController {
   }
 
    @PutMapping(
-    value = "departments/{code}"
+   value = "departments/{code}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateDepartment",
@@ -168,7 +168,7 @@ public class DepartmentController {
   }
 
    @DeleteMapping(
-    value = "departments/{code}"
+   value = "departments/{code}"
   )
   @Operation(
     summary = "DELETE method to handle operations for deleteDepartment",
@@ -199,7 +199,7 @@ public class DepartmentController {
   }
 
    @GetMapping(
-    value = "departments/by-code/{code}"
+   value = "departments/by-code/{code}"
   )
   @Operation(
     summary = "GET method to handle operations for getDepartmentByCode",
@@ -230,7 +230,7 @@ public class DepartmentController {
   }
 
    @GetMapping(
-    value = "departments/{code}/applications/available"
+   value = "departments/{code}/applications/available"
   )
   @Operation(
     summary = "GET method to handle operations for getAvailableApplicationsForDepartment",
@@ -261,7 +261,7 @@ public class DepartmentController {
   }
 
    @GetMapping(
-    value = "departments/{code}/menus/available"
+   value = "departments/{code}/menus/available"
   )
   @Operation(
     summary = "GET method to handle operations for getMenusAvailableForDepartment",
@@ -292,7 +292,7 @@ public class DepartmentController {
   }
 
    @GetMapping(
-    value = "departments/{code}/resources/available"
+   value = "departments/{code}/resources/available"
   )
   @Operation(
     summary = "GET method to handle operations for getAvailableResourcesForDepartment",
@@ -323,7 +323,7 @@ public class DepartmentController {
   }
 
    @PostMapping(
-    value = "departments/{code}/applications"
+   value = "departments/{code}/applications"
   )
   @Operation(
     summary = "POST method to handle operations for addApplicationsToDepartment",
@@ -354,7 +354,7 @@ public class DepartmentController {
   }
 
    @PostMapping(
-    value = "departments/{code}/menus"
+   value = "departments/{code}/menus"
   )
   @Operation(
     summary = "POST method to handle operations for addMenusToDepartment",
@@ -374,10 +374,10 @@ public class DepartmentController {
   )
   
   public ResponseEntity<String> addMenusToDepartment(@RequestBody List<String> addMenusToDepartmentRequest
-    , @PathVariable(value = "code") String code)
+    , @RequestParam(value = "applicationCode") String applicationCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new AddMenusToDepartmentCommand(addMenusToDepartmentRequest, code);
+      final var command = new AddMenusToDepartmentCommand(addMenusToDepartmentRequest, applicationCode, code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
@@ -385,7 +385,7 @@ public class DepartmentController {
   }
 
    @DeleteMapping(
-    value = "departments/{code}/applications"
+   value = "departments/{code}/applications"
   )
   @Operation(
     summary = "DELETE method to handle operations for removeApplicationsFromDepartment",
@@ -416,7 +416,7 @@ public class DepartmentController {
   }
 
    @DeleteMapping(
-    value = "departments/{code}/menus"
+   value = "departments/{code}/menus"
   )
   @Operation(
     summary = "DELETE method to handle operations for removeMenusFromDepartment",
@@ -436,10 +436,10 @@ public class DepartmentController {
   )
   
   public ResponseEntity<String> removeMenusFromDepartment(@RequestBody List<String> removeMenusFromDepartmentRequest
-    , @PathVariable(value = "code") String code)
+    , @RequestParam(value = "applicationCode") String applicationCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new RemoveMenusFromDepartmentCommand(removeMenusFromDepartmentRequest, code);
+      final var command = new RemoveMenusFromDepartmentCommand(removeMenusFromDepartmentRequest, applicationCode, code);
 
        ResponseEntity<String> response = commandBus.send(command);
 

@@ -85,7 +85,7 @@ public class CreateMenuCommandHandlerTest {
         // Arrange
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
         when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));
-        when(menuEntryRepository.findByCodeAndStatusNot("MENU1", Status.DELETED)).thenReturn(Optional.of(parentMenu));
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, "MENU1", Status.DELETED)).thenReturn(Optional.of(parentMenu));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(dto);
         when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
@@ -101,7 +101,7 @@ public class CreateMenuCommandHandlerTest {
 
         // Verify
         verify(applicationRepository, times(1)).findByCodeAndStatusNot("APP", Status.DELETED);
-        verify(menuEntryRepository, times(1)).findByCodeAndStatusNot("MENU1", Status.DELETED);
+        verify(menuEntryRepository, times(1)).findByApplicationIdAndCodeAndStatusNot(application, "MENU1", Status.DELETED);
         verify(menuEntryRepository, times(1)).save(menuEntry);
         verify(menuEntryMapper, times(1)).toDTO(menuEntry);
         verifyNoMoreInteractions(menuEntryRepository, applicationRepository, menuEntryMapper);
@@ -173,7 +173,7 @@ public class CreateMenuCommandHandlerTest {
         // Arrange
         when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
-        when(menuEntryRepository.findByCodeAndStatusNot("MENU1", Status.DELETED)).thenReturn(Optional.empty());
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, "MENU1", Status.DELETED)).thenReturn(Optional.empty());
         when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
 
         // Act

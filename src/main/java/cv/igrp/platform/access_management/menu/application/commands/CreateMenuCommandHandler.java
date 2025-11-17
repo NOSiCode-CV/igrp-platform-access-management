@@ -9,7 +9,6 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
@@ -121,7 +120,7 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
       }
 
       if (menuEntryDTO.getParentCode() != null) {
-         menuEntry.setParentId(menuEntryRepository.findByCodeAndStatusNot(menuEntryDTO.getParentCode(), Status.DELETED)
+         menuEntry.setParentId(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(menuEntry.getApplicationId(), menuEntryDTO.getParentCode(), Status.DELETED)
                  .orElseThrow(() -> {
                     logger.warn("Parent menu not found with code: {}", menuEntryDTO.getParentCode());
                     return IgrpResponseStatusException.of(

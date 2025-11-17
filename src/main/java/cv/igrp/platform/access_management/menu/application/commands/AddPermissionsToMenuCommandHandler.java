@@ -8,9 +8,11 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
@@ -49,6 +51,7 @@ public class AddPermissionsToMenuCommandHandler implements CommandHandler<AddPer
 
    private final RoleEntityRepository roleRepository;
    private final MenuEntryEntityRepository menuEntryRepository;
+   private final ApplicationEntityRepository applicationRepository;
    private final MenuEntryMapper menuEntryMapper;
 
    /**
@@ -56,15 +59,18 @@ public class AddPermissionsToMenuCommandHandler implements CommandHandler<AddPer
     *
     * @param roleRepository          repository used to retrieve roles by their names
     * @param menuEntryRepository       repository used to retrieve and save menu entries
+    * @param applicationRepository repository used to retrieve applications by their codes
     * @param menuEntryMapper     mapper for converting {@link MenuEntryEntity} entities to {@link MenuEntryDTO}
     */
    public AddPermissionsToMenuCommandHandler(
                 RoleEntityRepository roleRepository,
            MenuEntryEntityRepository menuEntryRepository,
+                ApplicationEntityRepository applicationRepository,
               MenuEntryMapper menuEntryMapper
    ) {
         this.roleRepository = roleRepository;
       this.menuEntryRepository = menuEntryRepository;
+      this.applicationRepository = applicationRepository;
         this.menuEntryMapper = menuEntryMapper;
    }
 
@@ -97,7 +103,9 @@ public class AddPermissionsToMenuCommandHandler implements CommandHandler<AddPer
          throw IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Roles not found", roleIdList);
       }
 
-      MenuEntryEntity foundMenu = menuEntryRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
+      ApplicationEntity application = applicationRepository.findByCodeAndStatusNotDeleted(command.getApplicationCode());
+
+      MenuEntryEntity foundMenu = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, command.getCode(), Status.DELETED)
               .orElseThrow(() -> {
                  log.warn("Menu Entry with code: {} not found.", command.getCode());
                  return IgrpResponseStatusException.of(

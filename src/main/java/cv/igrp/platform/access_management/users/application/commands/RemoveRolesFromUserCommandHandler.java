@@ -76,10 +76,15 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
 
          if (!rolesToRemove.isEmpty()) {
 
-            for(var role : rolesToRemove) {
+            // Remove association both ways to ensure consistency
+            for (var role : rolesToRemove) {
                role.getUsers().remove(user);
-               roleRepository.save(role);
             }
+            // Also remove roles from user's collection
+            user.getRoles().removeAll(rolesToRemove);
+
+            // Persist changes to the user only when roles were actually removed
+            userRepository.save(user);
 
             logger.info("Roles removed successfully from user ID={}", userId);
 

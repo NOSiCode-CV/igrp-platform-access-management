@@ -5,7 +5,9 @@ import cv.igrp.platform.access_management.shared.application.constants.MenuEntry
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.validation.ResourceValidationResponse;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,9 +31,11 @@ public class MenuEntryValidator {
     private static Logger Log = LoggerFactory.getLogger(MenuEntryValidator.class);
 
     private MenuEntryEntityRepository menuEntryEntityRepository;
+    private ApplicationEntityRepository applicationEntityRepository;
 
-    public MenuEntryValidator(MenuEntryEntityRepository menuEntryEntityRepository) {
+    public MenuEntryValidator(MenuEntryEntityRepository menuEntryEntityRepository, ApplicationEntityRepository applicationEntityRepository) {
         this.menuEntryEntityRepository = menuEntryEntityRepository;
+        this.applicationEntityRepository = applicationEntityRepository;
     }
 
     /**
@@ -43,10 +47,13 @@ public class MenuEntryValidator {
     public ResourceValidationResponse validateMenuEntryCode(MenuEntryDTO menuEntryDTO) {
         ResourceValidationResponse result = new ResourceValidationResponse();
         result.setValid(true);
-        Optional<MenuEntryEntity> app = menuEntryEntityRepository.findByCodeAndStatusNot(menuEntryDTO.getCode(), Status.DELETED);
-        if (app.isPresent()) {
+        ApplicationEntity app = applicationEntityRepository.findByCodeAndStatusNotDeleted(menuEntryDTO.getApplicationCode());
+
+        Optional<MenuEntryEntity> menuEntry = menuEntryEntityRepository.findByApplicationIdAndCodeAndStatusNot(app, menuEntryDTO.getCode(), Status.DELETED);
+        if (menuEntry.isPresent()) {
             result.setValid(false);
         }
+
         return result;
     }
 

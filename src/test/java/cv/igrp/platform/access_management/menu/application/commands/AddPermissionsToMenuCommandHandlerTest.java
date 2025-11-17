@@ -4,8 +4,10 @@ import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import org.junit.jupiter.api.Test;
@@ -34,6 +36,9 @@ public class AddPermissionsToMenuCommandHandlerTest {
     private MenuEntryEntityRepository menuEntryRepository;
 
     @Mock
+    private ApplicationEntityRepository applicationEntityRepository;
+
+    @Mock
     private MenuEntryMapper menuEntryMapper;
 
     @Test
@@ -45,18 +50,27 @@ public class AddPermissionsToMenuCommandHandlerTest {
     void itShouldThrowException_WhenGivenMenuEntry_NotFound() {
         // Given
         String menuEntryCode = "admin";
+        String appCode = "APP";
         ArrayList<String> roleList = new ArrayList<>();
         roleList.add("test_role");
-        AddPermissionsToMenuCommand command = new AddPermissionsToMenuCommand(roleList, menuEntryCode);
+        AddPermissionsToMenuCommand command = new AddPermissionsToMenuCommand(roleList, appCode, menuEntryCode);
 
         RoleEntity role = new RoleEntity();
         role.setId(1);
         role.setName("test_role");
         role.setStatus(Status.ACTIVE);
 
+        ApplicationEntity app = new ApplicationEntity();
+        app.setId(1);
+        app.setCode(appCode);
+        app.setStatus(Status.ACTIVE);
+
+        when(applicationEntityRepository.findByCodeAndStatusNotDeleted(appCode))
+                .thenReturn(app);
+
         when(roleRepository.findAllByCodeIn(roleList))
                 .thenReturn(List.of(role));
-        when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED))
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(app, menuEntryCode, Status.DELETED))
                 .thenReturn(Optional.empty());
 
         // When
@@ -72,11 +86,17 @@ public class AddPermissionsToMenuCommandHandlerTest {
         // Given
         String menuEntryCode = "admin";
         String roleName = "test";
+        String appCode = "APP";
         ArrayList<String> roleList = new ArrayList<>();
         roleList.add(roleName);
-        AddPermissionsToMenuCommand command = new AddPermissionsToMenuCommand(roleList, menuEntryCode);
+        AddPermissionsToMenuCommand command = new AddPermissionsToMenuCommand(roleList, appCode, menuEntryCode);
 
         ArrayList<RoleEntity> savedRoles = new ArrayList<>();
+
+        RoleEntity role = new RoleEntity();
+        role.setId(1);
+        role.setName(roleName);
+        role.setStatus(Status.ACTIVE);
 
         when(roleRepository.findAllByCodeIn(roleList))
                 .thenReturn(savedRoles);
@@ -98,8 +118,14 @@ public class AddPermissionsToMenuCommandHandlerTest {
         Integer deletedRoleId = 2;
         String activeRoleName = "test_active";
         String deletedRoleName = "test_deleted";
+        String appCode = "APP";
         List<String> roleNames = List.of(activeRoleName, deletedRoleName);
-        AddPermissionsToMenuCommand command = new AddPermissionsToMenuCommand(roleNames, menuEntryCode);
+        AddPermissionsToMenuCommand command = new AddPermissionsToMenuCommand(roleNames, appCode, menuEntryCode);
+
+        ApplicationEntity app = new ApplicationEntity();
+        app.setId(1);
+        app.setCode(appCode);
+        app.setStatus(Status.ACTIVE);
 
         RoleEntity activeRole = new RoleEntity();
         activeRole.setId(activeRoleId);
@@ -127,8 +153,11 @@ public class AddPermissionsToMenuCommandHandlerTest {
         roleList.add(activeRoleName);
         menuEntryDTO.setRoles(roleList);
 
+        when(applicationEntityRepository.findByCodeAndStatusNotDeleted(appCode))
+                .thenReturn(app);
+
         when(roleRepository.findAllByCodeIn(roleNames)).thenReturn(returnedRoles);
-        when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(menuEntry));
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(app, menuEntryCode, Status.DELETED)).thenReturn(Optional.of(menuEntry));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(menuEntryDTO);
 
@@ -158,8 +187,9 @@ public class AddPermissionsToMenuCommandHandlerTest {
         Integer deletedRoleId = 2;
         String activeRoleName = "test_active";
         String deletedRoleName = "test_deleted";
+        String appCode = "APP";
         List<String> roleList = List.of(activeRoleName, deletedRoleName);
-        AddPermissionsToMenuCommand command = new AddPermissionsToMenuCommand(roleList, menuEntryCode);
+        AddPermissionsToMenuCommand command = new AddPermissionsToMenuCommand(roleList, appCode, menuEntryCode);
 
         RoleEntity activeRole = new RoleEntity();
         activeRole.setId(activeRoleId);
@@ -167,6 +197,11 @@ public class AddPermissionsToMenuCommandHandlerTest {
         activeRole.setName(activeRoleName);
         String activeRoleDesc = "Active Role";
         activeRole.setDescription(activeRoleDesc);
+
+        ApplicationEntity app = new ApplicationEntity();
+        app.setId(1);
+        app.setCode(appCode);
+        app.setStatus(Status.ACTIVE);
 
         List<RoleEntity> savedRoles = List.of(activeRole);
 
@@ -184,8 +219,9 @@ public class AddPermissionsToMenuCommandHandlerTest {
         roleNames.add(activeRoleName);
         menuEntryDTO.setRoles(roleNames);
 
+        when(applicationEntityRepository.findByCodeAndStatusNotDeleted(appCode)).thenReturn(app);
         when(roleRepository.findAllByCodeIn(roleList)).thenReturn(savedRoles);
-        when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(savedMenuEntry));
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(app, menuEntryCode, Status.DELETED)).thenReturn(Optional.of(savedMenuEntry));
         when(menuEntryRepository.save(savedMenuEntry)).thenReturn(savedMenuEntry);
         when(menuEntryMapper.toDTO(savedMenuEntry)).thenReturn(menuEntryDTO);
 
@@ -213,13 +249,20 @@ public class AddPermissionsToMenuCommandHandlerTest {
         String menuEntryCode = "admin";
         Integer roleId = 1;
         String roleName = "role1";
+        String appCode = "APP";
+
         List<String> roleNames = List.of(roleName);
-        AddPermissionsToMenuCommand command = new AddPermissionsToMenuCommand(roleNames, menuEntryCode);
+        AddPermissionsToMenuCommand command = new AddPermissionsToMenuCommand(roleNames, appCode, menuEntryCode);
 
         RoleEntity activeRole = new RoleEntity();
         activeRole.setId(roleId);
         activeRole.setName(roleName);
         activeRole.setStatus(Status.ACTIVE);
+
+        ApplicationEntity app = new ApplicationEntity();
+        app.setId(1);
+        app.setCode("APP");
+        app.setStatus(Status.ACTIVE);
 
         MenuEntryEntity savedMenuEntry = new MenuEntryEntity();
         savedMenuEntry.setId(menuEntryId);
@@ -233,8 +276,9 @@ public class AddPermissionsToMenuCommandHandlerTest {
         roleList.add(roleName);
         menuEntryDTO.setRoles(roleList);
 
+        when(applicationEntityRepository.findByCodeAndStatusNotDeleted(appCode)).thenReturn(app);
         when(roleRepository.findAllByCodeIn(roleNames)).thenReturn(List.of(activeRole));
-        when(menuEntryRepository.findByCodeAndStatusNot(menuEntryCode, Status.DELETED)).thenReturn(Optional.of(savedMenuEntry));
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(app, menuEntryCode, Status.DELETED)).thenReturn(Optional.of(savedMenuEntry));
         when(menuEntryRepository.save(savedMenuEntry)).thenReturn(savedMenuEntry);
         when(menuEntryMapper.toDTO(savedMenuEntry)).thenReturn(menuEntryDTO);
 

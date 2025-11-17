@@ -81,7 +81,7 @@ public class DeleteApplicationCommandHandler implements CommandHandler<DeleteApp
 
             if(menu.getStatus().equals(Status.DELETED)) continue;
 
-            var menuEntry = menuRepository.findByCodeAndStatusNot(menu.getCode(), Status.DELETED).orElseThrow(() -> IgrpResponseStatusException.of(
+            var menuEntry = menuRepository.findByApplicationIdAndCodeAndStatusNot(application, menu.getCode(), Status.DELETED).orElseThrow(() -> IgrpResponseStatusException.of(
                     HttpStatus.NOT_FOUND,
                     "Menu Entry not found",
                     "Menu Entry not found with code: " + menu.getCode()));

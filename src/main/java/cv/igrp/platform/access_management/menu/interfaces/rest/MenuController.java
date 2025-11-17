@@ -38,7 +38,7 @@ public class MenuController {
           this.commandBus = commandBus;
   }
    @GetMapping(
-    value = "menus"
+   value = "menus"
   )
   @Operation(
     summary = "GET method to handle operations for getMenus",
@@ -74,7 +74,7 @@ public class MenuController {
   }
 
    @GetMapping(
-    value = "menus/{code}"
+   value = "menus/{code}"
   )
   @Operation(
     summary = "GET method to handle operations for getMenuById",
@@ -94,10 +94,10 @@ public class MenuController {
   )
   
   public ResponseEntity<MenuEntryDTO> getMenuById(
-    @PathVariable(value = "code") String code)
+    @RequestParam(value = "applicationCode") String applicationCode, @PathVariable(value = "code") String code)
   {
 
-      final var query = new GetMenuByIdQuery(code);
+      final var query = new GetMenuByIdQuery(applicationCode, code);
 
       ResponseEntity<MenuEntryDTO> response = queryBus.handle(query);
 
@@ -105,7 +105,7 @@ public class MenuController {
   }
 
    @PostMapping(
-    value = "menus"
+   value = "menus"
   )
   @Operation(
     summary = "POST method to handle operations for createMenu",
@@ -136,7 +136,7 @@ public class MenuController {
   }
 
    @PutMapping(
-    value = "menus/{code}"
+   value = "menus/{code}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateMenu",
@@ -156,10 +156,10 @@ public class MenuController {
   )
   
   public ResponseEntity<MenuEntryDTO> updateMenu(@Valid @RequestBody MenuEntryDTO updateMenuRequest
-    , @PathVariable(value = "code") String code)
+    , @RequestParam(value = "applicationCode") String applicationCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new UpdateMenuCommand(updateMenuRequest, code);
+      final var command = new UpdateMenuCommand(updateMenuRequest, applicationCode, code);
 
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 
@@ -167,7 +167,7 @@ public class MenuController {
   }
 
    @DeleteMapping(
-    value = "menus/{code}"
+   value = "menus/{code}"
   )
   @Operation(
     summary = "DELETE method to handle operations for deleteMenu",
@@ -187,10 +187,10 @@ public class MenuController {
   )
   
   public ResponseEntity<String> deleteMenu(
-    @PathVariable(value = "code") String code)
+    @RequestParam(value = "applicationCode") String applicationCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new DeleteMenuCommand(code);
+      final var command = new DeleteMenuCommand(applicationCode, code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
@@ -198,7 +198,7 @@ public class MenuController {
   }
 
    @GetMapping(
-    value = "menus/app/{appCode}"
+   value = "menus/app/{appCode}"
   )
   @Operation(
     summary = "GET method to handle operations for getAppMenus",
@@ -229,7 +229,7 @@ public class MenuController {
   }
 
    @PostMapping(
-    value = "menus/{code}/roles"
+   value = "menus/{code}/roles"
   )
   @Operation(
     summary = "POST method to handle operations for addPermissionsToMenu",
@@ -249,10 +249,10 @@ public class MenuController {
   )
   
   public ResponseEntity<MenuEntryDTO> addPermissionsToMenu(@RequestBody List<String> addPermissionsToMenuRequest
-    , @PathVariable(value = "code") String code)
+    , @RequestParam(value = "applicationCode") String applicationCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new AddPermissionsToMenuCommand(addPermissionsToMenuRequest, code);
+      final var command = new AddPermissionsToMenuCommand(addPermissionsToMenuRequest, applicationCode, code);
 
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 
@@ -260,7 +260,7 @@ public class MenuController {
   }
 
    @DeleteMapping(
-    value = "menus/{code}/roles"
+   value = "menus/{code}/roles"
   )
   @Operation(
     summary = "DELETE method to handle operations for removePermissionsFromMenu",
@@ -280,10 +280,10 @@ public class MenuController {
   )
   
   public ResponseEntity<MenuEntryDTO> removePermissionsFromMenu(@RequestBody List<String> removePermissionsFromMenuRequest
-    , @PathVariable(value = "code") String code)
+    , @RequestParam(value = "applicationCode") String applicationCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new RemovePermissionsFromMenuCommand(removePermissionsFromMenuRequest, code);
+      final var command = new RemovePermissionsFromMenuCommand(removePermissionsFromMenuRequest, applicationCode, code);
 
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 
@@ -291,7 +291,7 @@ public class MenuController {
   }
 
    @PostMapping(
-    value = "menus/{code}/departments"
+   value = "menus/{code}/departments"
   )
   @Operation(
     summary = "POST method to handle operations for addDepartmentsToMenu",
@@ -311,10 +311,10 @@ public class MenuController {
   )
   
   public ResponseEntity<MenuEntryDTO> addDepartmentsToMenu(@RequestBody List<String> addDepartmentsToMenuRequest
-    , @PathVariable(value = "code") String code)
+    , @RequestParam(value = "applicationCode") String applicationCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new AddDepartmentsToMenuCommand(addDepartmentsToMenuRequest, code);
+      final var command = new AddDepartmentsToMenuCommand(addDepartmentsToMenuRequest, applicationCode, code);
 
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 
@@ -322,7 +322,7 @@ public class MenuController {
   }
 
    @DeleteMapping(
-    value = "menus/{code}/departments"
+   value = "menus/{code}/departments"
   )
   @Operation(
     summary = "DELETE method to handle operations for removeDepartmentsFromMenu",
@@ -342,10 +342,10 @@ public class MenuController {
   )
   
   public ResponseEntity<MenuEntryDTO> removeDepartmentsFromMenu(@RequestBody List<String> removeDepartmentsFromMenuRequest
-    , @PathVariable(value = "code") String code)
+    , @RequestParam(value = "applicationCode") String applicationCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new RemoveDepartmentsFromMenuCommand(removeDepartmentsFromMenuRequest, code);
+      final var command = new RemoveDepartmentsFromMenuCommand(removeDepartmentsFromMenuRequest, applicationCode, code);
 
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 

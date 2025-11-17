@@ -53,8 +53,10 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
     */
    @IgrpCommandHandler
    public ResponseEntity<MenuEntryDTO> handle(UpdateMenuCommand command) {
-
-      MenuEntryEntity menuEntry = menuEntryRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
+      // Find the menu entry by ID, application, and status not deleted
+      ApplicationEntity app = applicationRepository.findByCodeAndStatusNotDeleted(command.getApplicationCode());
+      // Find the menu entry by application ID, code, and status not deleted
+      MenuEntryEntity menuEntry = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(app, command.getCode(), Status.DELETED)
               .orElseThrow(() -> {
                  logger.warn("Menu not found with code: {}", command.getCode());
                  return IgrpResponseStatusException.of(
@@ -76,7 +78,7 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
       menuEntry.setUrl(menuDto.getUrl());
 
       if (menuDto.getParentCode() != null) {
-         menuEntry.setParentId(menuEntryRepository.findByCodeAndStatusNot(menuDto.getParentCode(), Status.DELETED)
+         menuEntry.setParentId(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(app, menuDto.getParentCode(), Status.DELETED)
                  .orElseThrow(() -> {
                     logger.warn("Parent Menu not found with code: {}", menuDto.getParentCode());
                     return IgrpResponseStatusException.of(

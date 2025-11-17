@@ -5,8 +5,10 @@ import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -36,6 +38,7 @@ public class RemoveDepartmentsFromMenuCommandHandler implements CommandHandler<R
 
     private final MenuEntryEntityRepository menuEntryRepository;
     private final DepartmentEntityRepository departmentEntityRepository;
+    private final ApplicationEntityRepository applicationEntityRepository;
     private final MenuEntryMapper menuEntryMapper;
 
     /**
@@ -43,11 +46,13 @@ public class RemoveDepartmentsFromMenuCommandHandler implements CommandHandler<R
      *
      * @param menuEntryRepository        the repository used to retrieve and persist menu entry entities
      * @param departmentEntityRepository the repository used to retrieve and manage department entities
+     * @param applicationEntityRepository the repository used to retrieve and manage application entities
      * @param menuEntryMapper            the mapper used to convert between menu entry entities and DTO
      */
-    public RemoveDepartmentsFromMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentEntityRepository, MenuEntryMapper menuEntryMapper) {
+    public RemoveDepartmentsFromMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentEntityRepository, ApplicationEntityRepository applicationEntityRepository, MenuEntryMapper menuEntryMapper) {
         this.menuEntryRepository = menuEntryRepository;
         this.departmentEntityRepository = departmentEntityRepository;
+        this.applicationEntityRepository = applicationEntityRepository;
         this.menuEntryMapper = menuEntryMapper;
     }
 
@@ -68,7 +73,11 @@ public class RemoveDepartmentsFromMenuCommandHandler implements CommandHandler<R
     public ResponseEntity<MenuEntryDTO> handle(RemoveDepartmentsFromMenuCommand command) {
 
         List<String> departmentIds = command.getRemoveDepartmentsFromMenuRequest();
-        var menuEntry = menuEntryRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
+        var appCode = command.getApplicationCode();
+
+        var application = applicationEntityRepository.findByCodeAndStatusNotDeleted(appCode);
+
+        var menuEntry = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, command.getCode(), Status.DELETED)
                 .orElseThrow(() -> {
                     log.warn("Menu not found with code: {}", command.getCode());
                     return IgrpResponseStatusException.of(
@@ -97,10 +106,10 @@ public class RemoveDepartmentsFromMenuCommandHandler implements CommandHandler<R
         return ResponseEntity.ok(menuEntryMapper.toDTO(updatedMenuEntry));
     }
 
-    private void removeDepartmentFromParents(MenuEntryEntity menuEntry, DepartmentEntity department) {
+    private void removeDepartmentFromParents(ApplicationEntity application, MenuEntryEntity menuEntry, DepartmentEntity department) {
 
         if(menuEntry.getParentId() != null) {
-            var parentMenuEntry = menuEntryRepository.findByCodeAndStatusNot(menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
+            var parentMenuEntry = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
                     () -> IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND,
                             "Parent Menu Entry not found",
@@ -108,7 +117,7 @@ public class RemoveDepartmentsFromMenuCommandHandler implements CommandHandler<R
             );
             parentMenuEntry.getDepartments().remove(department);
 
-            removeDepartmentFromParents(parentMenuEntry, department);
+            removeDepartmentFromParents(application, parentMenuEntry, department);
 
             menuEntryRepository.save(parentMenuEntry);
         }

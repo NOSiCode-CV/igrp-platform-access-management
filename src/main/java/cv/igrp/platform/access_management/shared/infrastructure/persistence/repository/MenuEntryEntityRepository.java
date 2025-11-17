@@ -26,7 +26,7 @@ public interface MenuEntryEntityRepository extends
 
     List<MenuEntryEntity> findByApplicationIdAndTypeInAndStatusIn(ApplicationEntity appId, List<MenuEntryType> types, List<Status> status);
 
-    Optional<MenuEntryEntity> findByCodeAndStatusNot(String code, Status status);
+    Optional<MenuEntryEntity> findByApplicationIdAndCodeAndStatusNot(ApplicationEntity appId, String code, Status status);
 
     @Query("""
     SELECT DISTINCT m

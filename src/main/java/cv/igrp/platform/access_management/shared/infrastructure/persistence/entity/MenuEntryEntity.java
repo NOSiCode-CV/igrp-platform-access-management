@@ -22,7 +22,15 @@ import java.util.HashSet;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "t_menu_entry")
+@Table(name = "t_menu_entry",
+  uniqueConstraints = {
+    @UniqueConstraint(
+      name = "application_menu_entry_uk",
+      columnNames = {
+        "application_id","code"
+      }
+    )
+  })
 public class MenuEntryEntity extends AuditEntity {
 
     @Id

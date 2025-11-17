@@ -5,6 +5,8 @@ import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -17,15 +19,18 @@ import org.slf4j.LoggerFactory;
 public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuCommand, ResponseEntity<String>> {
 
    private final MenuEntryEntityRepository menuEntryRepository;
+   private final ApplicationEntityRepository applicationRepository;
    private final Logger logger = LoggerFactory.getLogger(DeleteMenuCommandHandler.class);
 
    /**
     * Constructs a new {@code DeleteMenuCommandHandler} with the required dependencies.
     *
     * @param menuEntryRepository the repository used to access and update {@link MenuEntryEntity} records
+    * @param applicationRepository the repository used to access and update {@link ApplicationEntity} records
     */
-   public DeleteMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository) {
+   public DeleteMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository,  ApplicationEntityRepository applicationRepository) {
       this.menuEntryRepository = menuEntryRepository;
+      this.applicationRepository = applicationRepository;
    }
 
    /**
@@ -42,7 +47,16 @@ public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuComman
    @IgrpCommandHandler
    public ResponseEntity<String> handle(DeleteMenuCommand command) {
 
-      MenuEntryEntity menuEntry = menuEntryRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
+      var appCode = command.getApplicationCode();
+
+      var application = applicationRepository.findByCodeAndStatusNot(appCode, Status.DELETED)
+              .orElseThrow(() -> {
+                 logger.warn("Application with code {} not found", appCode);
+                 return IgrpResponseStatusException.of(
+                         HttpStatus.NOT_FOUND, "Application not found", "Application not found with code: " + appCode);
+              });
+
+      MenuEntryEntity menuEntry = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, command.getCode(), Status.DELETED)
               .orElseThrow(() -> {
                  logger.warn("Menu entry with code {} not found", command.getCode());
                  return IgrpResponseStatusException.of(

@@ -15,6 +15,8 @@ public class RemoveMenusFromDepartmentCommand implements Command {
 
   
   private List<String> removeMenusFromDepartmentRequest;
+  @NotBlank(message = "The field <applicationCode> is required")
+  private String applicationCode;
   @NotBlank(message = "The field <code> is required")
   private String code;
 

@@ -10,6 +10,7 @@ import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -45,6 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class RemovePermissionsFromMenuCommandHandler implements CommandHandler<RemovePermissionsFromMenuCommand, ResponseEntity<MenuEntryDTO>> {
 
     private final MenuEntryEntityRepository menuEntryRepository;
+    private final ApplicationEntityRepository applicationRepository;
     private final MenuEntryMapper menuEntryMapper;
 
     /**
@@ -53,8 +55,10 @@ public class RemovePermissionsFromMenuCommandHandler implements CommandHandler<R
      * @param menuEntryRepository the repository used to retrieve and persist menu entry entities
      * @param menuEntryMapper     the mapper used to convert between menu entry entities and DTO
      */
-    public RemovePermissionsFromMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository, MenuEntryMapper menuEntryMapper) {
+    public RemovePermissionsFromMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository, ApplicationEntityRepository applicationEntityRepository,
+                                                   MenuEntryMapper menuEntryMapper) {
         this.menuEntryRepository = menuEntryRepository;
+        this.applicationRepository = applicationEntityRepository;
         this.menuEntryMapper = menuEntryMapper;
     }
 
@@ -75,7 +79,11 @@ public class RemovePermissionsFromMenuCommandHandler implements CommandHandler<R
 
         log.info("Remove Roles with name: {} from menu entry with code: {}.", command.getRemovePermissionsFromMenuRequest().stream().toList(), command.getCode());
 
-        MenuEntryEntity foundMenu = menuEntryRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
+        String appCode = command.getApplicationCode();
+
+        var application = applicationRepository.findByCodeAndStatusNotDeleted(appCode);
+
+        MenuEntryEntity foundMenu = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, command.getCode(), Status.DELETED)
                 .orElseThrow(() -> {
                     log.warn("Menu Entry with code: {} not found.", command.getCode());
                     return IgrpResponseStatusException.of(

@@ -5,7 +5,9 @@ import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,16 +34,20 @@ public class GetMenuByIdQueryHandlerTest {
     private MenuEntryEntityRepository menuEntryRepository;
 
     @Mock
+    private ApplicationEntityRepository applicationEntityRepository;
+
+    @Mock
     private MenuEntryMapper menuEntryMapper;
 
     @InjectMocks
     private GetMenuByIdQueryHandler getMenuByIdQueryHandler;
 
     private GetMenuByIdQuery getMenuByIdQuery(String code){
-        return new GetMenuByIdQuery(code);
+        return new GetMenuByIdQuery("test", code);
     }
 
     private MenuEntryEntity menuEntry;
+    private ApplicationEntity applicationEntity;
     private MenuEntryDTO dto;
 
     @BeforeEach
@@ -56,6 +62,11 @@ public class GetMenuByIdQueryHandlerTest {
         menuEntry.setStatus(Status.ACTIVE);
         menuEntry.setTarget("_blank");
         menuEntry.setUrl("/test/url");
+
+        applicationEntity = new ApplicationEntity();
+        applicationEntity.setId(1);
+        applicationEntity.setCode("test");
+        applicationEntity.setName("Test Application");
 
         dto = new MenuEntryDTO();
         dto.setId(1);
@@ -74,7 +85,8 @@ public class GetMenuByIdQueryHandlerTest {
     void testHandle_whenMenuExists_shouldReturnOk() {
         // Arrange
         GetMenuByIdQuery query = getMenuByIdQuery("test");
-        when(menuEntryRepository.findByCodeAndStatusNot("test", Status.DELETED)).thenReturn(Optional.of(menuEntry));
+        when(applicationEntityRepository.findByCodeAndStatusNotDeleted("test")).thenReturn(applicationEntity);
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(applicationEntity, "test", Status.DELETED)).thenReturn(Optional.of(menuEntry));
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(dto);
 
         // Act
@@ -88,7 +100,8 @@ public class GetMenuByIdQueryHandlerTest {
         assertEquals(dto, response.getBody());
 
         // Verify
-        verify(menuEntryRepository,times(1)).findByCodeAndStatusNot("test", Status.DELETED);
+        verify(applicationEntityRepository, times(1)).findByCodeAndStatusNotDeleted("test");
+        verify(menuEntryRepository,times(1)).findByApplicationIdAndCodeAndStatusNot(applicationEntity, "test", Status.DELETED);
         verify(menuEntryMapper).toDTO(menuEntry);
         verifyNoMoreInteractions(menuEntryRepository,menuEntryMapper);
     }
@@ -98,7 +111,8 @@ public class GetMenuByIdQueryHandlerTest {
     void testHandle_whenMenuNotFound_shouldThrowException() {
         // Arrange
         GetMenuByIdQuery query = getMenuByIdQuery("unknown");
-        when(menuEntryRepository.findByCodeAndStatusNot("unknown", Status.DELETED)).thenReturn(Optional.empty());
+        when(applicationEntityRepository.findByCodeAndStatusNotDeleted("test")).thenReturn(applicationEntity);
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(applicationEntity, "unknown", Status.DELETED)).thenReturn(Optional.empty());
 
         // Act & Assert
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () ->
@@ -112,7 +126,8 @@ public class GetMenuByIdQueryHandlerTest {
         assertTrue(problem.getProperties().getOrDefault("details", "").toString().contains("Menu not found with code: unknown"));
 
         // Verify
-        verify(menuEntryRepository, times(1)).findByCodeAndStatusNot("unknown", Status.DELETED);
+        verify(applicationEntityRepository, times(1)).findByCodeAndStatusNotDeleted("test");
+        verify(menuEntryRepository, times(1)).findByApplicationIdAndCodeAndStatusNot(applicationEntity, "unknown", Status.DELETED);
         verifyNoMoreInteractions(menuEntryRepository, menuEntryMapper);
     }
 }
