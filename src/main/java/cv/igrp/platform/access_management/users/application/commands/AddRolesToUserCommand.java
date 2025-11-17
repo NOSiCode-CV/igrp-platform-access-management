@@ -15,6 +15,8 @@ public class AddRolesToUserCommand implements Command {
 
   
   private List<String> addRolesToUserRequest;
+  @NotBlank(message = "The field <departmentCode> is required")
+  private String departmentCode;
   @NotNull(message = "The field <id> is required")
   private Integer id;
 

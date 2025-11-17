@@ -9,6 +9,7 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -34,13 +35,16 @@ public class RemoveRolesFromUserCommandHandlerTest {
     RoleEntityRepository roleRepository;
 
     @Mock
+    DepartmentEntityRepository departmentRepository;
+
+    @Mock
     IAdapter adapter;
 
     @InjectMocks
     private RemoveRolesFromUserCommandHandler removeRolesFromUserCommandHandler;
 
     private RemoveRolesFromUserCommand removeRolesFromUserCommand(List<String> removeRolesFromUserRequest, Integer id){
-        return new RemoveRolesFromUserCommand(removeRolesFromUserRequest, id);
+        return new RemoveRolesFromUserCommand(removeRolesFromUserRequest, "DEPT_1", id);
     }
 
     private RemoveRolesFromUserCommand command;
@@ -97,6 +101,8 @@ public class RemoveRolesFromUserCommandHandlerTest {
     void testHandle_whenRoleIdMatches_shouldRemoveAndReturnRemainingRoles() {
         // Arrange
         command = removeRolesFromUserCommand(List.of("admin"), USER_ID);
+
+        when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT_1")).thenReturn(department);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
         // Act
@@ -186,7 +192,8 @@ public class RemoveRolesFromUserCommandHandlerTest {
     @DisplayName("should return all roles when role removal list is null")
     void testHandle_whenRoleIdsListIsNull_shouldReturnAllRoles() {
         // Arrange
-        command = new RemoveRolesFromUserCommand(null, USER_ID);
+        command = new RemoveRolesFromUserCommand(null, "DEPT_1", USER_ID);
+
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
         // Act
@@ -225,7 +232,7 @@ public class RemoveRolesFromUserCommandHandlerTest {
     @DisplayName("should not remove any roles if no matching IDs found")
     void testHandle_whenRoleIdsDoNotMatch_shouldReturnUnchangedRoles() {
         // Arrange
-        command = new RemoveRolesFromUserCommand(new ArrayList<>(List.of("reporter","maintainer")), USER_ID);
+        command = new RemoveRolesFromUserCommand(new ArrayList<>(List.of("reporter","maintainer")), "DEPT_1", USER_ID);
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
         // Act

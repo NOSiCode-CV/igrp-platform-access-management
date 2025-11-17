@@ -24,7 +24,15 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "t_role")
+@Table(name = "t_role",
+  uniqueConstraints = {
+    @UniqueConstraint(
+      name = "role_department_uk",
+      columnNames = {
+        "code","department"
+      }
+    )
+  })
 public class RoleEntity extends AuditEntity {
 
     @Id

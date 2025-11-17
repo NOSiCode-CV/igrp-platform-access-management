@@ -39,7 +39,7 @@ public class RolesController {
           this.commandBus = commandBus;
   }
    @PostMapping(
-    value = "roles"
+   value = "roles"
   )
   @Operation(
     summary = "POST method to handle operations for createRole",
@@ -70,7 +70,7 @@ public class RolesController {
   }
 
    @GetMapping(
-    value = "roles"
+   value = "roles"
   )
   @Operation(
     summary = "GET method to handle operations for getRoles",
@@ -102,7 +102,7 @@ public class RolesController {
   }
 
    @GetMapping(
-    value = "roles/{id}"
+   value = "roles/{id}"
   )
   @Operation(
     summary = "GET method to handle operations for getRoleById",
@@ -122,10 +122,10 @@ public class RolesController {
   )
   
   public ResponseEntity<RoleDTO> getRoleById(
-    @PathVariable(value = "id") Integer id)
+    @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "id") Integer id)
   {
 
-      final var query = new GetRoleByIdQuery(id);
+      final var query = new GetRoleByIdQuery(departmentCode, id);
 
       ResponseEntity<RoleDTO> response = queryBus.handle(query);
 
@@ -133,7 +133,7 @@ public class RolesController {
   }
 
    @PutMapping(
-    value = "roles/{code}"
+   value = "roles/{code}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateRole",
@@ -153,10 +153,10 @@ public class RolesController {
   )
   
   public ResponseEntity<RoleDTO> updateRole(@Valid @RequestBody RoleDTO updateRoleRequest
-    , @PathVariable(value = "code") String code)
+    , @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new UpdateRoleCommand(updateRoleRequest, code);
+      final var command = new UpdateRoleCommand(updateRoleRequest, departmentCode, code);
 
        ResponseEntity<RoleDTO> response = commandBus.send(command);
 
@@ -164,7 +164,7 @@ public class RolesController {
   }
 
    @DeleteMapping(
-    value = "roles/{code}"
+   value = "roles/{code}"
   )
   @Operation(
     summary = "DELETE method to handle operations for deleteRole",
@@ -184,10 +184,10 @@ public class RolesController {
   )
   
   public ResponseEntity<Boolean> deleteRole(
-    @PathVariable(value = "code") String code)
+    @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new DeleteRoleCommand(code);
+      final var command = new DeleteRoleCommand(departmentCode, code);
 
        ResponseEntity<Boolean> response = commandBus.send(command);
 
@@ -195,7 +195,7 @@ public class RolesController {
   }
 
    @DeleteMapping(
-    value = "roles/{code}/permissions"
+   value = "roles/{code}/permissions"
   )
   @Operation(
     summary = "DELETE method to handle operations for RemovePermissions",
@@ -215,10 +215,10 @@ public class RolesController {
   )
   
   public ResponseEntity<RoleDTO> removePermissions(@RequestBody List<String> removePermissionsRequest
-    , @PathVariable(value = "code") String code)
+    , @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new RemovePermissionsCommand(removePermissionsRequest, code);
+      final var command = new RemovePermissionsCommand(removePermissionsRequest, departmentCode, code);
 
        ResponseEntity<RoleDTO> response = commandBus.send(command);
 
@@ -226,7 +226,7 @@ public class RolesController {
   }
 
    @GetMapping(
-    value = "roles/{code}/permissions"
+   value = "roles/{code}/permissions"
   )
   @Operation(
     summary = "GET method to handle operations for GetPermissionsByRoleId",
@@ -246,10 +246,10 @@ public class RolesController {
   )
   
   public ResponseEntity<List<PermissionDTO>> getPermissionsByRoleId(
-    @PathVariable(value = "code") String code)
+    @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "code") String code)
   {
 
-      final var query = new GetPermissionsByRoleIdQuery(code);
+      final var query = new GetPermissionsByRoleIdQuery(departmentCode, code);
 
       ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
 
@@ -257,7 +257,7 @@ public class RolesController {
   }
 
    @PostMapping(
-    value = "roles/{code}/permissions"
+   value = "roles/{code}/permissions"
   )
   @Operation(
     summary = "POST method to handle operations for addPermissions",
@@ -277,10 +277,10 @@ public class RolesController {
   )
   
   public ResponseEntity<RoleDTO> addPermissions(@RequestBody List<String> addPermissionsRequest
-    , @PathVariable(value = "code") String code)
+    , @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new AddPermissionsCommand(addPermissionsRequest, code);
+      final var command = new AddPermissionsCommand(addPermissionsRequest, departmentCode, code);
 
        ResponseEntity<RoleDTO> response = commandBus.send(command);
 
@@ -288,7 +288,7 @@ public class RolesController {
   }
 
    @GetMapping(
-    value = "roles/by-code/{code}"
+   value = "roles/by-code/{code}"
   )
   @Operation(
     summary = "GET method to handle operations for getRolesByName",
@@ -308,10 +308,10 @@ public class RolesController {
   )
   
   public ResponseEntity<RoleDTO> getRolesByName(
-    @PathVariable(value = "code") String code)
+    @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "code") String code)
   {
 
-      final var query = new GetRolesByNameQuery(code);
+      final var query = new GetRolesByNameQuery(departmentCode, code);
 
       ResponseEntity<RoleDTO> response = queryBus.handle(query);
 
@@ -319,7 +319,7 @@ public class RolesController {
   }
 
    @GetMapping(
-    value = "roles/{code}/permissions/available"
+   value = "roles/{code}/permissions/available"
   )
   @Operation(
     summary = "GET method to handle operations for getAvailablePermissionsForRoles",
@@ -339,10 +339,10 @@ public class RolesController {
   )
   
   public ResponseEntity<List<PermissionDTO>> getAvailablePermissionsForRoles(
-    @PathVariable(value = "code") String code)
+    @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "code") String code)
   {
 
-      final var query = new GetAvailablePermissionsForRolesQuery(code);
+      final var query = new GetAvailablePermissionsForRolesQuery(departmentCode, code);
 
       ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
 

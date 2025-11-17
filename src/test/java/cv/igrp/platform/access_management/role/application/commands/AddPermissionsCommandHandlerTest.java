@@ -1,12 +1,15 @@
 package cv.igrp.platform.access_management.role.application.commands;
 
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import org.junit.jupiter.api.Test;
@@ -32,6 +35,8 @@ public class AddPermissionsCommandHandlerTest {
     @Mock
     private RoleEntityRepository roleRepository;
     @Mock
+    private DepartmentEntityRepository departmentRepository;
+    @Mock
     private RoleMapper roleMapper;
 
     @Test
@@ -43,10 +48,18 @@ public class AddPermissionsCommandHandlerTest {
     void itShouldThrowException_WhenGivenRole_NotFound() {
         //... Given
         String roleCode = "admin";
+        String deptCode = "DEPT_IGRP";
         ArrayList<String> permissionList = new ArrayList<>();
-        AddPermissionsCommand command = new AddPermissionsCommand(permissionList, roleCode);
+        AddPermissionsCommand command = new AddPermissionsCommand(permissionList, deptCode, roleCode);
 
         //... When
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode(deptCode);
+        department.setStatus(DepartmentStatus.ACTIVE);
+        when(departmentRepository.findByCodeAndStatusNotDeleted(department.getCode()))
+                .thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED))
+                .thenReturn(Optional.empty());
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
 
@@ -59,9 +72,10 @@ public class AddPermissionsCommandHandlerTest {
         //... Given
         int roleId = 1;
         String roleCode = "admin";
+        String deptCode = "DEPT_IGRP";
         String permissionName = "test";
         ArrayList<String> permissionList = new ArrayList<>();
-        AddPermissionsCommand command = new AddPermissionsCommand(permissionList, roleCode);
+        AddPermissionsCommand command = new AddPermissionsCommand(permissionList, deptCode, roleCode);
         permissionList.add(permissionName);
         ArrayList<PermissionEntity> savedPermissions = new ArrayList<>();
         RoleEntity savedRole = new RoleEntity();
@@ -84,12 +98,13 @@ public class AddPermissionsCommandHandlerTest {
         // Given
         int roleId = 1;
         String roleCode = "admin";
+        String deptCode = "DEPT_IGRP";
         Integer activePermissionId = 1;
         Integer deletedPermissionId = 2;
         String activePermissionName = "test_active";
         String deletedPermissionName = "test_deleted";
         List<String> permissionIds = List.of(activePermissionName, deletedPermissionName);
-        AddPermissionsCommand command = new AddPermissionsCommand(permissionIds, roleCode);
+        AddPermissionsCommand command = new AddPermissionsCommand(permissionIds, deptCode, roleCode);
 
         PermissionEntity activePermission = new PermissionEntity();
         activePermission.setId(activePermissionId);
@@ -114,8 +129,13 @@ public class AddPermissionsCommandHandlerTest {
         roleDTO.setId(roleId);
         roleDTO.setPermissions(List.of(activePermissionName));
 
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT");
+        department.setStatus(DepartmentStatus.ACTIVE);
+
         when(permissionRepository.findAllByNameIn(permissionIds)).thenReturn(returnedPermissions);
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(role));
+        when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT")).thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.save(role)).thenReturn(role);
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
@@ -143,12 +163,13 @@ public class AddPermissionsCommandHandlerTest {
         // Given
         int roleId = 1;
         String roleCode = "admin";
+        String deptCode = "DEPT_IGRP";
         Integer activePermissionId = 1;
         Integer deletedPermissionId = 2;
         String activePermissionName = "test_active";
         String deletedPermissionName = "test_deleted";
         List<String> permissionList = List.of(activePermissionName, deletedPermissionName);
-        AddPermissionsCommand command = new AddPermissionsCommand(permissionList, roleCode);
+        AddPermissionsCommand command = new AddPermissionsCommand(permissionList, deptCode, roleCode);
 
         PermissionEntity activePermission = new PermissionEntity();
         activePermission.setId(activePermissionId);
@@ -177,10 +198,15 @@ public class AddPermissionsCommandHandlerTest {
         roleDTO.setId(roleId);
         roleDTO.setPermissions(List.of(activePermissionName));
 
+        DepartmentEntity department = new DepartmentEntity();
+
+        department.setCode(deptCode);
+        department.setStatus(DepartmentStatus.ACTIVE);
+
         PermissionDTO permissionDTO = new PermissionDTO();
         permissionDTO.setId(activePermissionId);
         when(permissionRepository.findAllByNameIn(permissionList)).thenReturn(savedPermissions);
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(savedRole));
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(savedRole));
         when(roleRepository.save(savedRole)).thenReturn(savedRole);
         when(roleMapper.mapToDto(savedRole)).thenReturn(roleDTO);
 
@@ -205,10 +231,11 @@ public class AddPermissionsCommandHandlerTest {
         // Given
         int roleId = 1;
         String roleCode = "admin";
+        String deptCode = "DEPT";
         Integer permissionId = 1;
         String permissionName = "perm1";
         List<String> permissionIds = List.of(permissionName);
-        AddPermissionsCommand command = new AddPermissionsCommand(permissionIds, roleCode);
+        AddPermissionsCommand command = new AddPermissionsCommand(permissionIds, deptCode, roleCode);
 
         PermissionEntity activePermission = new PermissionEntity();
         activePermission.setId(permissionId);
@@ -226,8 +253,14 @@ public class AddPermissionsCommandHandlerTest {
         roleDTO.setId(roleId);
         roleDTO.setPermissions(List.of(activePermission.getName()));
 
+        DepartmentEntity department = new DepartmentEntity();
+
+        department.setCode(deptCode);
+        department.setStatus(DepartmentStatus.ACTIVE);
+
         when(permissionRepository.findAllByNameIn(permissionIds)).thenReturn(List.of(activePermission));
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(savedRole));
+        when(departmentRepository.findByCodeAndStatusNotDeleted(deptCode)).thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(savedRole));
         when(roleRepository.save(savedRole)).thenReturn(savedRole);
         when(roleMapper.mapToDto(savedRole)).thenReturn(roleDTO);
 

@@ -66,7 +66,7 @@ class GetAvailablePermissionsForRolesQueryHandlerTest {
   void testHandle_ReturnsListOfAvailablePermissions() {
     // Given a query and expected data
     String roleCode = "ADMIN";
-    GetAvailablePermissionsForRolesQuery query = new GetAvailablePermissionsForRolesQuery(roleCode);
+    GetAvailablePermissionsForRolesQuery query = new GetAvailablePermissionsForRolesQuery(roleCode, "DEPT");
     List<PermissionEntity> mockEntities = List.of(permissionEntity1, permissionEntity2);
 
     // Mock repository and mapper behavior
@@ -89,7 +89,7 @@ class GetAvailablePermissionsForRolesQueryHandlerTest {
   void testHandle_NoPermissionsFound_ReturnsEmptyList() {
     // Given a query for a role with no available permissions
     String roleCode = "USER";
-    GetAvailablePermissionsForRolesQuery query = new GetAvailablePermissionsForRolesQuery(roleCode);
+    GetAvailablePermissionsForRolesQuery query = new GetAvailablePermissionsForRolesQuery(roleCode, "DEPT");
 
     // Mock repository to return an empty list
     when(permissionRepository.findAvailablePermissionsForRole(roleCode, IGRP_PERMISSION)).thenReturn(Collections.emptyList());

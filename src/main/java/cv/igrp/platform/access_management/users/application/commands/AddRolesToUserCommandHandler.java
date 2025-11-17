@@ -8,8 +8,10 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.exceptions.NoActionPerformedException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import org.springframework.http.HttpStatus;
@@ -47,6 +49,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
 
    private final IGRPUserEntityRepository userRepository;
    private final RoleEntityRepository roleRepository;
+   private final DepartmentEntityRepository departmentRepository;
    private final RoleMapper roleMapper;
    private final IAdapter adapter;
 
@@ -55,16 +58,19 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
     *
     * @param userRepository the repository used to retrieve user entities
     * @param roleRepository the repository used to retrieve and update roles
+    * @param departmentRepository the repository used to retrieve department entities
     * @param roleMapper the mapper used to convert role entities to DTOs
     * @param adapter the adapter to assign role to user in iam
     */
    public AddRolesToUserCommandHandler(
            IGRPUserEntityRepository userRepository,
            RoleEntityRepository roleRepository,
+           DepartmentEntityRepository departmentRepository,
            RoleMapper roleMapper,
            IAdapter adapter) {
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
+      this.departmentRepository = departmentRepository;
       this.roleMapper = roleMapper;
       this.adapter = adapter;
    }
@@ -81,9 +87,12 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
    public ResponseEntity<List<RoleDTO>> handle(AddRolesToUserCommand command) {
       Integer userId = command.getId();
       List<String> rolesToAdd = command.getAddRolesToUserRequest();
+      String departmentCode = command.getDepartmentCode();
 
       if (rolesToAdd.isEmpty())
          throw new NoActionPerformedException("No action performed because the role list is empty");
+
+      DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(departmentCode);
 
       List<RoleEntity> successfullyAssignedInKeycloak = new ArrayList<>();
 
@@ -110,7 +119,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
             }
 
             logger.info("Assigning role name={} to user ID={}", role, userId);
-            RoleEntity roleEntity = roleRepository.findByCodeAndStatusNot(role, Status.DELETED)
+            RoleEntity roleEntity = roleRepository.findByDepartmentAndCodeAndStatusNot(department, role, Status.DELETED)
                     .orElseThrow(() -> {
                        logger.warn("Role not found with code={}", role);
                        return IgrpResponseStatusException.of(
@@ -127,9 +136,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
             adapter.assignRoleToUser(roleEntity.getDepartment().getCode(), roleEntity.getCode(), user.getExternalId());
             successfullyAssignedInKeycloak.add(roleEntity);
          }
-         //@ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
-         //Não funciona : o lado "owner" da relação está em RoleEntity e não no IGRPUserEntity
-//         userRepository.save(user);
+
       } catch (Exception e) {
          logger.error("Error while adding roles into Keycloak for user ID={}. Starting compensation...", userId, e);
 

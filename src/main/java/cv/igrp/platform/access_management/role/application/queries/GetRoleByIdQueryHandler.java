@@ -3,7 +3,9 @@ package cv.igrp.platform.access_management.role.application.queries;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import lombok.extern.slf4j.Slf4j;
 import cv.igrp.framework.core.domain.QueryHandler;
@@ -37,16 +39,19 @@ import org.springframework.transaction.annotation.Transactional;
 public class GetRoleByIdQueryHandler implements QueryHandler<GetRoleByIdQuery, ResponseEntity<RoleDTO>>{
 
   private final RoleEntityRepository roleRepository;
+  private final DepartmentEntityRepository departmentRepository;
   private final RoleMapper roleMapper;
 
   /**
    * Constructs a new instance of {@code GetRoleByIdQueryHandler} with the required dependencies.
    *
    * @param roleRepository the repository used to access role entities
+   * @param departmentRepository the repository used to access department entities
    * @param roleMapper the mapper used to convert {@link RoleEntity} entities to {@link RoleDTO}
    */
-  public GetRoleByIdQueryHandler(RoleEntityRepository roleRepository, RoleMapper roleMapper) {
+  public GetRoleByIdQueryHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper) {
     this.roleRepository = roleRepository;
+    this.departmentRepository = departmentRepository;
     this.roleMapper = roleMapper;
   }
 
@@ -65,7 +70,12 @@ public class GetRoleByIdQueryHandler implements QueryHandler<GetRoleByIdQuery, R
   @Transactional(readOnly = true)
   public ResponseEntity<RoleDTO> handle(GetRoleByIdQuery query) {
     log.info("Get Role with id {}.", query.getId());
-    RoleEntity foundRole = roleRepository.findByIdAndStatusNot(query.getId(), Status.DELETED)
+
+    var departmentCode = query.getDepartmentCode();
+
+    DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(departmentCode);
+
+    RoleEntity foundRole = roleRepository.findByDepartmentAndIdAndStatusNot(department, query.getId(), Status.DELETED)
             .orElseThrow(() -> {
               log.warn("Role with id {} not found.", query.getId());
               return IgrpResponseStatusException.of(

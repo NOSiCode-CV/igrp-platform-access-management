@@ -1,11 +1,14 @@
 package cv.igrp.platform.access_management.role.application.queries;
 
 import cv.igrp.platform.access_management.permission.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,6 +34,8 @@ public class GetPermissionsByRoleIdQueryHandlerTest {
     @Mock
     private RoleEntityRepository roleRepository;
     @Mock
+    private DepartmentEntityRepository departmentRepository;
+    @Mock
     private PermissionMapper permissionMapper;
 
 
@@ -44,10 +49,15 @@ public class GetPermissionsByRoleIdQueryHandlerTest {
         //... Given
         String roleCode = "admin";
 
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT_IGRP");
+        department.setStatus(DepartmentStatus.ACTIVE);
+
+        when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT_IGRP")).thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED))
                 .thenReturn(Optional.empty());
 
-        GetPermissionsByRoleIdQuery query = new GetPermissionsByRoleIdQuery(roleCode);
+        GetPermissionsByRoleIdQuery query = new GetPermissionsByRoleIdQuery(roleCode, "DEPT_IGRP");
 
         // When
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
@@ -62,7 +72,7 @@ public class GetPermissionsByRoleIdQueryHandlerTest {
         // Given
         int roleId = 1;
         String roleCode = "admin";
-        GetPermissionsByRoleIdQuery query = new GetPermissionsByRoleIdQuery(roleCode);
+        GetPermissionsByRoleIdQuery query = new GetPermissionsByRoleIdQuery(roleCode, "DEPT_IGRP");
 
         PermissionEntity activePermission = new PermissionEntity();
         activePermission.setId(1);
@@ -81,7 +91,12 @@ public class GetPermissionsByRoleIdQueryHandlerTest {
         role.setStatus(Status.ACTIVE);
         role.setPermissions(permissions);
 
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(role));
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT_IGRP");
+        department.setStatus(DepartmentStatus.ACTIVE);
+
+        when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT_IGRP")).thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(role));
 
         PermissionDTO activePermissionDTO = new PermissionDTO();
         activePermissionDTO.setId(1);
@@ -104,7 +119,7 @@ public class GetPermissionsByRoleIdQueryHandlerTest {
         // Given
         int roleId = 1;
         String roleCode = "admin";
-        GetPermissionsByRoleIdQuery query = new GetPermissionsByRoleIdQuery(roleCode);
+        GetPermissionsByRoleIdQuery query = new GetPermissionsByRoleIdQuery(roleCode, "DEPT_IGRP");
 
         PermissionEntity deletedPermission1 = new PermissionEntity();
         deletedPermission1.setId(1);
@@ -121,7 +136,12 @@ public class GetPermissionsByRoleIdQueryHandlerTest {
         role.setStatus(Status.ACTIVE);
         role.setPermissions(new HashSet<>(List.of(deletedPermission1, deletedPermission2)));
 
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(role));
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT_IGRP");
+        department.setStatus(DepartmentStatus.ACTIVE);
+
+        when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT_IGRP")).thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(role));
 
         // When
         ResponseEntity<List<PermissionDTO>> result = underTest.handle(query);

@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.role.application.commands;
 
 import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -49,11 +50,18 @@ public class UpdateRoleCommandHandlerTest {
         String roleCode = "app";
         RoleDTO roleData = new RoleDTO();
         String roleDesc = "New RoleName";
+        String deptCode = "DEPT_IGRP";
         roleData.setCode(roleCode);
         roleData.setDescription(roleDesc);
-        UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleCode);
+        UpdateRoleCommand command = new UpdateRoleCommand(roleData, deptCode, roleCode);
 
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode(deptCode);
+        department.setStatus(DepartmentStatus.ACTIVE);
+
+        when(departmentRepository.findByCodeAndStatusNotDeleted(deptCode)).thenReturn(department);
+
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED))
                 .thenReturn(Optional.empty());
 
         //... When
@@ -69,6 +77,7 @@ public class UpdateRoleCommandHandlerTest {
     void itShouldThrowNotFoundException_WhenProvidedParentRoleDoesNotExist() {
         // Given
         String roleCode = "app";
+        String deptCode = "DEPT_IGRP";
         String existentDepartmentCode = "app";
         String nonExistentParentRoleCode = "parent-does-not-exist";
 
@@ -76,18 +85,24 @@ public class UpdateRoleCommandHandlerTest {
         roleData.setCode(roleCode);
         roleData.setParentCode(nonExistentParentRoleCode);
         roleData.setDepartmentCode(existentDepartmentCode);
-        UpdateRoleCommand command = new UpdateRoleCommand(roleData, roleCode);
+        UpdateRoleCommand command = new UpdateRoleCommand(roleData, deptCode, roleCode);
 
         RoleEntity existingRole = new RoleEntity();
         existingRole.setCode(roleCode);
         existingRole.setStatus(Status.ACTIVE);
 
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode(deptCode);
+        department.setStatus(DepartmentStatus.ACTIVE);
+
+        when(departmentRepository.findByCodeAndStatusNotDeleted(deptCode)).thenReturn(department);
+
         // Stub main role exists
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED))
                 .thenReturn(Optional.of(existingRole));
 
         // Stub parent role does NOT exist
-        when(roleRepository.findByCodeAndStatusNot(nonExistentParentRoleCode, Status.DELETED))
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, nonExistentParentRoleCode, Status.DELETED))
                 .thenReturn(Optional.empty());
 
         // When
@@ -131,7 +146,7 @@ public class UpdateRoleCommandHandlerTest {
         updatedData.setDepartmentCode(departmentCode);
         updatedData.setParentCode(null);
 
-        UpdateRoleCommand command = new UpdateRoleCommand(updatedData, rolePreviousCode);
+        UpdateRoleCommand command = new UpdateRoleCommand(updatedData, departmentCode, rolePreviousCode);
 
         RoleEntity updatedRole = new RoleEntity();
         updatedRole.setCode("New Name");
@@ -142,7 +157,8 @@ public class UpdateRoleCommandHandlerTest {
         RoleDTO responseDto = new RoleDTO();
         responseDto.setCode(roleNewCode);
 
-        when(roleRepository.findByCodeAndStatusNot(rolePreviousCode, Status.DELETED)).thenReturn(Optional.of(existingRole));
+        when(departmentRepository.findByCodeAndStatusNotDeleted(departmentCode)).thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, rolePreviousCode, Status.DELETED)).thenReturn(Optional.of(existingRole));
         when(roleRepository.save(existingRole)).thenReturn(updatedRole);
         when(roleMapper.mapToDto(updatedRole)).thenReturn(responseDto);
 
@@ -187,7 +203,7 @@ public class UpdateRoleCommandHandlerTest {
         updatedData.setDepartmentCode(departmentCode);
         updatedData.setParentCode(null);
 
-        UpdateRoleCommand command = new UpdateRoleCommand(updatedData, rolePreviousCode);
+        UpdateRoleCommand command = new UpdateRoleCommand(updatedData, departmentCode, rolePreviousCode);
 
         RoleEntity updatedRole = new RoleEntity();
         updatedRole.setCode("New Name");
@@ -198,7 +214,8 @@ public class UpdateRoleCommandHandlerTest {
         RoleDTO responseDto = new RoleDTO();
         responseDto.setCode(roleNewCode);
 
-        when(roleRepository.findByCodeAndStatusNot(rolePreviousCode, Status.DELETED)).thenReturn(Optional.of(existingRole));
+        when(departmentRepository.findByCodeAndStatusNotDeleted(departmentCode)).thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, rolePreviousCode, Status.DELETED)).thenReturn(Optional.of(existingRole));
         when(roleRepository.save(existingRole)).thenReturn(updatedRole);
         when(roleMapper.mapToDto(updatedRole)).thenReturn(responseDto);
 

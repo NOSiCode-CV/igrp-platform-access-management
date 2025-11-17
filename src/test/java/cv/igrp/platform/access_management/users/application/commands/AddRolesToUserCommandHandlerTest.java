@@ -12,6 +12,7 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.NoActionPerfo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,6 +39,9 @@ public class AddRolesToUserCommandHandlerTest {
     RoleEntityRepository roleRepository;
 
     @Mock
+    DepartmentEntityRepository departmentRepository;
+
+    @Mock
     RoleMapper roleMapper;
 
     @Mock
@@ -48,9 +52,11 @@ public class AddRolesToUserCommandHandlerTest {
 
     private IGRPUserEntity user;
     private RoleEntity role;
+    private DepartmentEntity department;
     private RoleDTO roleDTO;
     private final Integer ID = 1;
     private final String ROLE_CODE = "admin";
+    private final String DEPT_CODE = "dept";
 
     @BeforeEach
     void setUp() {
@@ -62,8 +68,8 @@ public class AddRolesToUserCommandHandlerTest {
         role.setCode(ROLE_CODE);
         role.setUsers(null);
 
-        DepartmentEntity department = new DepartmentEntity();
-        department.setCode("DEP-001");
+        department = new DepartmentEntity();
+        department.setCode(DEPT_CODE);
         role.setDepartment(department);
 
         roleDTO = new RoleDTO();
@@ -72,7 +78,7 @@ public class AddRolesToUserCommandHandlerTest {
     }
 
     private AddRolesToUserCommand buildCommand(List<String> roles) {
-        return new AddRolesToUserCommand(roles, ID);
+        return new AddRolesToUserCommand(roles, "DEPT_1", ID);
     }
 
     @Test
@@ -110,8 +116,9 @@ public class AddRolesToUserCommandHandlerTest {
     void testHandle_whenRoleNotFound_shouldThrowRuntimeWithCause() {
         AddRolesToUserCommand command = buildCommand(List.of(ROLE_CODE));
 
+        when(departmentRepository.findByCodeAndStatusNotDeleted(DEPT_CODE)).thenReturn(department);
         when(userRepository.findById(eq(ID))).thenReturn(Optional.of(user));
-        when(roleRepository.findByCodeAndStatusNot(eq(ROLE_CODE), eq(Status.DELETED)))
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(eq(department), eq(ROLE_CODE), eq(Status.DELETED)))
                 .thenReturn(Optional.empty());
 
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
@@ -126,7 +133,7 @@ public class AddRolesToUserCommandHandlerTest {
                 .contains("Role not found with code: %s".formatted(ROLE_CODE)));
 
         verify(userRepository).findById(eq(ID));
-        verify(roleRepository).findByCodeAndStatusNot(eq(ROLE_CODE), eq(Status.DELETED));
+        verify(roleRepository).findByDepartmentAndCodeAndStatusNot(eq(department), eq(ROLE_CODE), eq(Status.DELETED));
         verifyNoInteractions(roleMapper);
     }
 
@@ -137,10 +144,11 @@ public class AddRolesToUserCommandHandlerTest {
         AddRolesToUserCommand command = buildCommand(List.of(ROLE_CODE));
 
         // Arrange
+        when(departmentRepository.findByCodeAndStatusNotDeleted(DEPT_CODE)).thenReturn(department);
         when(userRepository.findById(ID)).thenReturn(Optional.of(user));
-        when(roleRepository.findByCodeAndStatusNot(eq(ROLE_CODE), eq(Status.DELETED)))
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(eq(department), eq(ROLE_CODE), eq(Status.DELETED)))
                 .thenReturn(Optional.of(role));
-        when(roleRepository.findByCodeAndStatusNot(ROLE_CODE, Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, ROLE_CODE, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.save(any(RoleEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
@@ -156,7 +164,7 @@ public class AddRolesToUserCommandHandlerTest {
 
         // Verify
         verify(userRepository).findById(ID);
-        verify(roleRepository).findByCodeAndStatusNot(ROLE_CODE, Status.DELETED);
+        verify(roleRepository).findByDepartmentAndCodeAndStatusNot(department, ROLE_CODE, Status.DELETED);
         verify(roleRepository).save(any(RoleEntity.class));
         verify(roleMapper).mapToDto(role);
         verifyNoMoreInteractions(userRepository, roleRepository, roleMapper);
@@ -171,7 +179,7 @@ public class AddRolesToUserCommandHandlerTest {
         // Arrange
         AddRolesToUserCommand command = buildCommand(List.of(ROLE_CODE));
 
-        when(roleRepository.findByCodeAndStatusNot(ROLE_CODE,Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, ROLE_CODE,Status.DELETED)).thenReturn(Optional.of(role));
         when(userRepository.findById(ID)).thenReturn(Optional.of(user));
         when(roleRepository.save(role)).thenReturn(role);
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
@@ -188,7 +196,7 @@ public class AddRolesToUserCommandHandlerTest {
 
         // Verify
         verify(userRepository, times(1)).findById(ID);
-        verify(roleRepository, times(1)).findByCodeAndStatusNot(ROLE_CODE, Status.DELETED);
+        verify(roleRepository, times(1)).findByDepartmentAndCodeAndStatusNot(department, ROLE_CODE, Status.DELETED);
         verify(roleMapper, times(1)).mapToDto(role);
         verify(roleRepository, times(1)).save(role);
         verifyNoMoreInteractions(userRepository,roleRepository,roleMapper);
@@ -202,7 +210,7 @@ public class AddRolesToUserCommandHandlerTest {
         anotherUser.setId(50);
         role.setUsers(new HashSet<>(List.of(anotherUser)));
 
-        when(roleRepository.findByCodeAndStatusNot(ROLE_CODE, Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, ROLE_CODE, Status.DELETED)).thenReturn(Optional.of(role));
         when(userRepository.findById(ID)).thenReturn(Optional.of(user));
         when(roleRepository.save(role)).thenReturn(role);
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
@@ -221,7 +229,7 @@ public class AddRolesToUserCommandHandlerTest {
 
         // Verify
         verify(userRepository).findById(ID);
-        verify(roleRepository).findByCodeAndStatusNot(ROLE_CODE, Status.DELETED);
+        verify(roleRepository).findByDepartmentAndCodeAndStatusNot(department, ROLE_CODE, Status.DELETED);
         verify(roleMapper).mapToDto(role);
         verify(roleRepository).save(role);
         verifyNoMoreInteractions(userRepository,roleRepository,roleMapper);
@@ -232,8 +240,9 @@ public class AddRolesToUserCommandHandlerTest {
     void handle_whenRoleUsersIsNull_shouldInitializeSet() {
         AddRolesToUserCommand command = buildCommand(List.of(ROLE_CODE));
 
+        when(departmentRepository.findByCodeAndStatusNotDeleted(DEPT_CODE)).thenReturn(department);
         when(userRepository.findById(ID)).thenReturn(Optional.of(user));
-        when(roleRepository.findByCodeAndStatusNot(ROLE_CODE, Status.DELETED)).thenReturn(Optional.of(role));
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, ROLE_CODE, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.save(any(RoleEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // Act
@@ -247,7 +256,7 @@ public class AddRolesToUserCommandHandlerTest {
 
         // Verify
         verify(userRepository).findById(ID);
-        verify(roleRepository).findByCodeAndStatusNot(ROLE_CODE, Status.DELETED);
+        verify(roleRepository).findByDepartmentAndCodeAndStatusNot(department, ROLE_CODE, Status.DELETED);
         verify(roleRepository).save(role);
         verifyNoMoreInteractions(userRepository,roleRepository);
     }

@@ -70,6 +70,14 @@
           }
         }
       },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "description": "Department Code",
+          "isRequired": true
+        }
+      ],
       "pathVariables": [
         {
           "name": "id",
@@ -108,6 +116,14 @@
           }
         }
       },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "description": "Department Code",
+          "isRequired": true
+        }
+      ],
       "pathVariables": [
         {
           "name": "id",
@@ -335,5 +351,5 @@
       }
     }
   ],
-  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser"
+  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser"
 }

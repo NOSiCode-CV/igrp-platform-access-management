@@ -17,6 +17,8 @@ public class AddPermissionsToMenuCommand implements Command {
   private List<String> addPermissionsToMenuRequest;
   @NotBlank(message = "The field <applicationCode> is required")
   private String applicationCode;
+  @NotBlank(message = "The field <departmentCode> is required")
+  private String departmentCode;
   @NotBlank(message = "The field <code> is required")
   private String code;
 

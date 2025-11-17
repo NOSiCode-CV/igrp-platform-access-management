@@ -101,7 +101,7 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
 
       if (command.getRoledto().getParentCode() != null) {
          String parentRoleCode = command.getRoledto().getParentCode();
-         parentRole = roleRepository.findByCodeAndStatusNot(parentRoleCode, Status.DELETED)
+         parentRole = roleRepository.findByDepartmentAndCodeAndStatusNot(department, parentRoleCode, Status.DELETED)
                  .orElseThrow(() -> {
                     log.warn("Parent Role with code: {} not found.", command.getRoledto().getParentCode());
                     return IgrpResponseStatusException.of(

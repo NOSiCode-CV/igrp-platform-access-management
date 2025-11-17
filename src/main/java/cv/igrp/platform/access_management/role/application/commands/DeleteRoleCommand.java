@@ -12,6 +12,8 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class DeleteRoleCommand implements Command {
 
+  @NotBlank(message = "The field <departmentCode> is required")
+  private String departmentCode;
   @NotBlank(message = "The field <code> is required")
   private String code;
 

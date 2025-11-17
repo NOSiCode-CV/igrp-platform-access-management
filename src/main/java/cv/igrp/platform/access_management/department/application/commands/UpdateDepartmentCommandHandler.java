@@ -125,7 +125,7 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
 
            role.setStatus(newStatus);
 
-           updateRoleChildrenStatus(role, newStatus);
+           updateRoleChildrenStatus(department, role, newStatus);
 
            roleRepository.save(role);
 
@@ -151,7 +151,7 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
 
    }
 
-    private void updateRoleChildrenStatus(RoleEntity role, Status status) {
+    private void updateRoleChildrenStatus(DepartmentEntity department, RoleEntity role, Status status) {
 
         for (var child : role.getChildren()) {
 
@@ -159,11 +159,11 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
 
             if(status != Status.ACTIVE) {
 
-                var childRole = roleRepository.findByCodeAndStatusNotDeleted(child.getCode());
+                var childRole = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, child.getCode());
 
                 childRole.setStatus(status);
 
-                updateRoleChildrenStatus(role, status);
+                updateRoleChildrenStatus(department, role, status);
 
                 roleRepository.save(childRole);
 

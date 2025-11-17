@@ -249,10 +249,11 @@ public class MenuController {
   )
   
   public ResponseEntity<MenuEntryDTO> addPermissionsToMenu(@RequestBody List<String> addPermissionsToMenuRequest
-    , @RequestParam(value = "applicationCode") String applicationCode, @PathVariable(value = "code") String code)
+    , @RequestParam(value = "applicationCode") String applicationCode,
+    @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new AddPermissionsToMenuCommand(addPermissionsToMenuRequest, applicationCode, code);
+      final var command = new AddPermissionsToMenuCommand(addPermissionsToMenuRequest, applicationCode, departmentCode, code);
 
        ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
 

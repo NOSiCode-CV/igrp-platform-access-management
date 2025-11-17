@@ -41,7 +41,7 @@ public class ApplicationController {
           this.commandBus = commandBus;
   }
    @PostMapping(
-    value = "applications"
+   value = "applications"
   )
   @Operation(
     summary = "POST method to handle operations for createApplication",
@@ -72,7 +72,7 @@ public class ApplicationController {
   }
 
    @GetMapping(
-    value = "applications"
+   value = "applications"
   )
   @Operation(
     summary = "GET method to handle operations for getApplications",
@@ -107,7 +107,7 @@ public class ApplicationController {
   }
 
    @GetMapping(
-    value = "applications/{id}"
+   value = "applications/{id}"
   )
   @Operation(
     summary = "GET method to handle operations for getApplicationById",
@@ -138,7 +138,7 @@ public class ApplicationController {
   }
 
    @PutMapping(
-    value = "applications/{code}"
+   value = "applications/{code}"
   )
   @Operation(
     summary = "PUT method to handle operations for updateApplication",
@@ -169,7 +169,7 @@ public class ApplicationController {
   }
 
    @DeleteMapping(
-    value = "applications/{code}"
+   value = "applications/{code}"
   )
   @Operation(
     summary = "DELETE method to handle operations for deleteApplication",
@@ -200,7 +200,7 @@ public class ApplicationController {
   }
 
    @PostMapping(
-    value = "applications/by-ids"
+   value = "applications/by-ids"
   )
   @Operation(
     summary = "POST method to handle operations for getApplicationsByIds",
@@ -231,7 +231,7 @@ public class ApplicationController {
   }
 
    @GetMapping(
-    value = "applications/by-user/{uid}"
+   value = "applications/by-user/{uid}"
   )
   @Operation(
     summary = "GET method to handle operations for getApplicationsByUser",
@@ -262,7 +262,7 @@ public class ApplicationController {
   }
 
    @GetMapping(
-    value = "/applications/denied-to-user/{uid}"
+   value = "/applications/denied-to-user/{uid}"
   )
   @Operation(
     summary = "GET method to handle operations for getApplicationDeniedToUser",
@@ -293,7 +293,7 @@ public class ApplicationController {
   }
 
    @PostMapping(
-    value = "/applications/{code}/custom-fields"
+   value = "/applications/{code}/custom-fields"
   )
   @Operation(
     summary = "POST method to handle operations for addApplicationCustomFields",
@@ -324,7 +324,7 @@ public class ApplicationController {
   }
 
    @DeleteMapping(
-    value = "/applications/{code}/custom-fields"
+   value = "/applications/{code}/custom-fields"
   )
   @Operation(
     summary = "DELETE method to handle operations for removeApplicationCustomFields",
@@ -355,7 +355,7 @@ public class ApplicationController {
   }
 
    @GetMapping(
-    value = "/applications/{code}/custom-fields"
+   value = "/applications/{code}/custom-fields"
   )
   @Operation(
     summary = "GET method to handle operations for getApplicationCustomFields",
@@ -386,7 +386,7 @@ public class ApplicationController {
   }
 
    @GetMapping(
-    value = "/applications/by-code/{code}"
+   value = "/applications/by-code/{code}"
   )
   @Operation(
     summary = "GET method to handle operations for getApplicationByCode",
@@ -417,7 +417,7 @@ public class ApplicationController {
   }
 
    @GetMapping(
-    value = "/applications/{code}/menus/available"
+   value = "/applications/{code}/menus/available"
   )
   @Operation(
     summary = "GET method to handle operations for getApplicationMenus",
@@ -448,7 +448,7 @@ public class ApplicationController {
   }
 
    @PostMapping(
-    value = "/applications/{code}/roles"
+   value = "/applications/{code}/roles"
   )
   @Operation(
     summary = "POST method to handle operations for addRolesToApp",
@@ -468,10 +468,10 @@ public class ApplicationController {
   )
   
   public ResponseEntity<String> addRolesToApp(@Valid @RequestBody CodeListRequestDTO addRolesToAppRequest
-    , @PathVariable(value = "code") String code)
+    , @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new AddRolesToAppCommand(addRolesToAppRequest, code);
+      final var command = new AddRolesToAppCommand(addRolesToAppRequest, departmentCode, code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
@@ -479,7 +479,7 @@ public class ApplicationController {
   }
 
    @DeleteMapping(
-    value = "applications/{code}/roles"
+   value = "applications/{code}/roles"
   )
   @Operation(
     summary = "DELETE method to handle operations for removeRoleFromApplication",
@@ -499,10 +499,10 @@ public class ApplicationController {
   )
   
   public ResponseEntity<String> removeRoleFromApplication(@Valid @RequestBody CodeListRequestDTO removeRoleFromApplicationRequest
-    , @PathVariable(value = "code") String code)
+    , @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "code") String code)
   {
 
-      final var command = new RemoveRoleFromApplicationCommand(removeRoleFromApplicationRequest, code);
+      final var command = new RemoveRoleFromApplicationCommand(removeRoleFromApplicationRequest, departmentCode, code);
 
        ResponseEntity<String> response = commandBus.send(command);
 
@@ -510,7 +510,7 @@ public class ApplicationController {
   }
 
    @PostMapping(
-    value = "applications/{code}/departments"
+   value = "applications/{code}/departments"
   )
   @Operation(
     summary = "POST method to handle operations for addDepartmentsToApplication",
@@ -541,7 +541,7 @@ public class ApplicationController {
   }
 
    @DeleteMapping(
-    value = "applications/{code}/departments"
+   value = "applications/{code}/departments"
   )
   @Operation(
     summary = "DELETE method to handle operations for removeDepartmentFromApplication",

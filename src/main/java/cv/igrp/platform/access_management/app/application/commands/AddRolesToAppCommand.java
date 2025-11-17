@@ -14,6 +14,8 @@ public class AddRolesToAppCommand implements Command {
 
   
   private CodeListRequestDTO codelistrequestdto;
+  @NotBlank(message = "The field <departmentCode> is required")
+  private String departmentCode;
   @NotBlank(message = "The field <code> is required")
   private String code;
 

@@ -112,7 +112,7 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
 
        for (RoleEntity role : roles) {
            if (role.getStatus().equals(Status.DELETED)) continue;
-           var roleEntity = roleRepository.findByCodeAndStatusNotDeleted(role.getCode());
+           var roleEntity = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, role.getCode());
            roleEntity.setStatus(Status.DELETED);
            deleteChildRoles(roleEntity);
            roleRepository.save(roleEntity);

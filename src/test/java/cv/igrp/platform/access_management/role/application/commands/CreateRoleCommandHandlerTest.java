@@ -90,7 +90,7 @@ public class CreateRoleCommandHandlerTest {
 
         //... When
         when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
-        when(roleRepository.findByCodeAndStatusNot(roleParentCode, Status.DELETED))
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleParentCode, Status.DELETED))
                 .thenReturn(Optional.empty());
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
@@ -261,7 +261,7 @@ public class CreateRoleCommandHandlerTest {
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals(expectedResponse, response.getBody());
 
-        verify(roleRepository, never()).findByCodeAndStatusNot(any(), any());
+        verify(roleRepository, never()).findByDepartmentAndCodeAndStatusNot(department, any(), any());
     }
 
     @Test
@@ -296,7 +296,7 @@ public class CreateRoleCommandHandlerTest {
 
         // When
         when(departmentRepository.findByCodeAndStatusNot(departmentCode, DepartmentStatus.DELETED)).thenReturn(Optional.of(department));
-        when(roleRepository.findByCodeAndStatusNot(parentRoleCode, Status.DELETED))
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, parentRoleCode, Status.DELETED))
                 .thenReturn(Optional.of(parentRole));
         when(roleMapper.mapToEntity(role, department, parentRole)).thenReturn(roleEntity);
         when(roleRepository.save(roleEntity)).thenReturn(savedRole);

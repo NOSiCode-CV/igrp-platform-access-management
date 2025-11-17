@@ -100,10 +100,10 @@ public class UserController {
   )
   
   public ResponseEntity<?> addRolesToUser(@RequestBody List<String> addRolesToUserRequest
-    , @PathVariable(value = "id") Integer id)
+    , @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "id") Integer id)
   {
 
-      final var command = new AddRolesToUserCommand(addRolesToUserRequest, id);
+      final var command = new AddRolesToUserCommand(addRolesToUserRequest, departmentCode, id);
 
        ResponseEntity<?> response = commandBus.send(command);
 
@@ -131,10 +131,10 @@ public class UserController {
   )
   
   public ResponseEntity<List<RoleDTO>> removeRolesFromUser(@RequestBody List<String> removeRolesFromUserRequest
-    , @PathVariable(value = "id") Integer id)
+    , @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "id") Integer id)
   {
 
-      final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, id);
+      final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, departmentCode, id);
 
        ResponseEntity<List<RoleDTO>> response = commandBus.send(command);
 

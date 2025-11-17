@@ -8,8 +8,10 @@ import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -30,6 +32,7 @@ import java.util.List;
  *     <li>Saves the updated role</li>
  * </ul>
  * The result is an updated {@link RoleDTO} without the permissions successfully removed from the role.
+ *
  * @see RemovePermissionsCommand
  * @see RoleEntity
  * @see PermissionEntity
@@ -38,89 +41,100 @@ import java.util.List;
  * @see PermissionDTO
  * @see Status
  * @see IgrpResponseStatusException
- *
  */
 @Slf4j
 @Component
 public class RemovePermissionsCommandHandler implements CommandHandler<RemovePermissionsCommand, ResponseEntity<RoleDTO>> {
 
-   private final RoleEntityRepository roleRepository;
-   private final RoleMapper roleMapper;
+    private final RoleEntityRepository roleRepository;
+    private final DepartmentEntityRepository departmentRepository;
+    private final RoleMapper roleMapper;
 
-   /**
-    * Constructs a new instance of {@code RemovePermissionsCommandHandler} with the necessary dependencies.
-    *
-    * @param roleRepository    the repository used to retrieve and persist role entities
-    * @param roleMapper        mapper used to convert {@link RoleEntity} entities into {@link RoleDTO}
-    */
-   public RemovePermissionsCommandHandler(RoleEntityRepository roleRepository, RoleMapper roleMapper) {
-      this.roleRepository = roleRepository;
-       this.roleMapper = roleMapper;
-   }
+    /**
+     * Constructs a new instance of {@code RemovePermissionsCommandHandler} with the necessary dependencies.
+     *
+     * @param roleRepository       the repository used to retrieve and persist role entities
+     * @param departmentRepository repository used to retrieve department entities
+     * @param roleMapper           mapper used to convert {@link RoleEntity} entities into {@link RoleDTO}
+     */
+    public RemovePermissionsCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper) {
+        this.roleRepository = roleRepository;
+        this.departmentRepository = departmentRepository;
+        this.roleMapper = roleMapper;
+    }
 
-   /**
-    * Handles the removal of permissions from a role.
-    * <p>
-    * For each permission ID provided in the {@link RemovePermissionsCommand}, the method checks whether
-    * the permission is currently associated with the role. If so, it is removed from the role and included
-    * in the response.
-    *
-    * @param command the command containing the role ID and a list of permission IDs to remove
-    * @return a {@link ResponseEntity} with the updated role and HTTP status {@code 200 OK}
-    * @throws IgrpResponseStatusException if the role does not exist or is marked as {@link Status#DELETED}
-    */
-   @IgrpCommandHandler
-   @Transactional
-   public ResponseEntity<RoleDTO> handle(RemovePermissionsCommand command) {
-      log.info("Remove Permissions with name: {} from Role with code: {}.", command.getRemovePermissionsRequest().stream().toList(), command.getCode());
-      RoleEntity foundRole = roleRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
-              .orElseThrow(() -> {
-                 log.warn("Role with code: {} not found.", command.getCode());
-                 return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Remove Permission By Role ID", "Role with code: " + command.getCode() + " not found."
-                 );
-              });
-      for (String permissionId : command.getRemovePermissionsRequest()) {
-         foundRole.getPermissions()
-                 .stream()
-                 .filter(permission -> permission.getName().equals(permissionId))
-                 .findFirst()
-                 .ifPresent(permission -> foundRole.getPermissions().remove(permission));
-      }
-      log.info("Permissions with IDs {} removed from Role with code: {} successfully.", command.getRemovePermissionsRequest(), command.getCode());
-      removePermissionsForChildren(foundRole, command.getRemovePermissionsRequest());
-      var response = roleMapper.mapToDto(roleRepository.save(foundRole));
-      return new ResponseEntity<>(response, HttpStatus.OK);
-   }
+    /**
+     * Handles the removal of permissions from a role.
+     * <p>
+     * For each permission ID provided in the {@link RemovePermissionsCommand}, the method checks whether
+     * the permission is currently associated with the role. If so, it is removed from the role and included
+     * in the response.
+     *
+     * @param command the command containing the role ID and a list of permission IDs to remove
+     * @return a {@link ResponseEntity} with the updated role and HTTP status {@code 200 OK}
+     * @throws IgrpResponseStatusException if the role does not exist or is marked as {@link Status#DELETED}
+     */
+    @IgrpCommandHandler
+    @Transactional
+    public ResponseEntity<RoleDTO> handle(RemovePermissionsCommand command) {
+        log.info("Remove Permissions with name: {} from Role with code: {}.", command.getRemovePermissionsRequest().stream().toList(), command.getCode());
 
-   private void removePermissionsForChildren(RoleEntity role, List<String> permissionNames) {
+        DepartmentEntity departmentEntity = departmentRepository.findByCodeAndStatusNotDeleted(command.getDepartmentCode());
 
-       if(!role.getChildren().isEmpty()) {
+        RoleEntity foundRole = roleRepository.findByDepartmentAndCodeAndStatusNot(departmentEntity, command.getCode(), Status.DELETED)
+                .orElseThrow(() -> {
+                    log.warn("Role with code: {} not found.", command.getCode());
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Remove Permission By Role ID", "Role with code: " + command.getCode() + " not found."
+                    );
+                });
+        for (String permissionId : command.getRemovePermissionsRequest()) {
+            foundRole.getPermissions()
+                    .stream()
+                    .filter(permission -> permission.getName().equals(permissionId))
+                    .findFirst()
+                    .ifPresent(permission -> foundRole.getPermissions().remove(permission));
+        }
+        log.info("Permissions with IDs {} removed from Role with code: {} successfully.", command.getRemovePermissionsRequest(), command.getCode());
+        removePermissionsForChildren(departmentEntity, foundRole, command.getRemovePermissionsRequest());
+        var response = roleMapper.mapToDto(roleRepository.save(foundRole));
+        return new ResponseEntity<>(response, HttpStatus.OK);
+    }
 
-           for (var child : role.getChildren()) {
+    private void removePermissionsForChildren(DepartmentEntity departmentEntity, RoleEntity role, List<String> permissionNames) {
 
-               var childRole = roleRepository.findByCodeAndStatusNotDeleted(child.getCode());
+        if (!role.getChildren().isEmpty()) {
 
-               for (var permissionName : permissionNames) {
+            for (var child : role.getChildren()) {
 
-                   childRole.getPermissions()
-                           .stream()
-                           .filter(permission -> permission.getName().equals(permissionName))
-                           .findFirst()
-                           .ifPresent(permission -> childRole.getPermissions().remove(permission));
+                var childRole = roleRepository.findByDepartmentAndCodeAndStatusNot(departmentEntity, child.getCode(), Status.DELETED)
+                        .orElseThrow(() -> {
+                            log.warn("Child role with code: {} not found.", child.getCode());
+                            return IgrpResponseStatusException.of(
+                                    HttpStatus.NOT_FOUND, "Remove Permission By Role ID", "Child role with code: " + child.getCode() + " not found."
+                            );
+                        });
 
-               }
+                for (var permissionName : permissionNames) {
 
-               roleRepository.save(childRole);
+                    childRole.getPermissions()
+                            .stream()
+                            .filter(permission -> permission.getName().equals(permissionName))
+                            .findFirst()
+                            .ifPresent(permission -> childRole.getPermissions().remove(permission));
 
-               removePermissionsForChildren(childRole, permissionNames);
+                }
 
-               log.info("Permissions with IDs {} removed from child role with code: {} successfully.", permissionNames, childRole.getCode());
+                roleRepository.save(childRole);
 
-           }
+                removePermissionsForChildren(departmentEntity, childRole, permissionNames);
 
-       }
+                log.info("Permissions with IDs {} removed from child role with code: {} successfully.", permissionNames, childRole.getCode());
 
-   }
+            }
+
+        }
+
+    }
 
 }

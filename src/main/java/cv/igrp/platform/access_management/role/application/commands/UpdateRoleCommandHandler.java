@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.role.application.commands;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
-import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -52,16 +51,19 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
 
     public static final String ERROR_TITLE = "Update Role";
     private final RoleEntityRepository roleRepository;
+    private final DepartmentEntityRepository departmentRepository;
     private final RoleMapper roleMapper;
 
     /**
      * Constructs an {@code UpdateRoleCommandHandler} with the required dependencies.
      *
      * @param roleRepository the repository used to fetch and persist roles
+     * @param departmentRepository the repository used to fetch and persist departments
      * @param roleMapper     the mapper used to convert {@link RoleEntity} to {@link RoleDTO}
      */
-    public UpdateRoleCommandHandler(RoleEntityRepository roleRepository, RoleMapper roleMapper) {
+    public UpdateRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper) {
         this.roleRepository = roleRepository;
+        this.departmentRepository = departmentRepository;
         this.roleMapper = roleMapper;
     }
 
@@ -83,8 +85,11 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
     @Transactional
     public ResponseEntity<RoleDTO> handle(UpdateRoleCommand command) {
         log.info("Update Role with code: {}.", command.getRoledto().getCode());
+
+        DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(command.getDepartmentCode());
+
         RoleDTO newData = command.getRoledto();
-        RoleEntity roleToUpdate = roleRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
+        RoleEntity roleToUpdate = roleRepository.findByDepartmentAndCodeAndStatusNot(department, command.getCode(), Status.DELETED)
                 .orElseThrow(() -> {
                     log.warn("Role with code: {} not found.", command.getRoledto().getCode());
                     return IgrpResponseStatusException.of(
@@ -95,7 +100,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
         if(command.getRoledto().getStatus() != null &&
                 !Objects.equals(command.getRoledto().getStatus(), roleToUpdate.getStatus())
         ) {
-            updateChildrenStatus(roleToUpdate, command.getRoledto().getStatus());
+            updateChildrenStatus(department, roleToUpdate, command.getRoledto().getStatus());
         }
 
         RoleEntity parentRole = roleToUpdate.getParent();
@@ -104,7 +109,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
             if (parentCode.isBlank()) {
                 parentRole = null;
             } else {
-                parentRole = roleRepository.findByCodeAndStatusNot(parentCode, Status.DELETED)
+                parentRole = roleRepository.findByDepartmentAndCodeAndStatusNot(department, parentCode, Status.DELETED)
                         .orElseThrow(() -> {
                             log.warn("Parent Role with code: {} not found.", newData.getParentCode());
                             return IgrpResponseStatusException.of(
@@ -123,7 +128,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
         return new ResponseEntity<>(roleMapper.mapToDto(updatedRole), HttpStatus.OK);
     }
 
-    private void updateChildrenStatus(RoleEntity role, Status status) {
+    private void updateChildrenStatus(DepartmentEntity department, RoleEntity role, Status status) {
 
         for (var child : role.getChildren()) {
 
@@ -131,11 +136,11 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
 
             if(status != Status.ACTIVE) {
 
-                var childRole = roleRepository.findByCodeAndStatusNotDeleted(child.getCode());
+                var childRole = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, child.getCode());
 
                 childRole.setStatus(status);
 
-                updateChildrenStatus(role, status);
+                updateChildrenStatus(department, role, status);
 
                 roleRepository.save(childRole);
 

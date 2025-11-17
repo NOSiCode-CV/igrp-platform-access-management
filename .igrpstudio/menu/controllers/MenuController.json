@@ -277,6 +277,12 @@
           "name": "applicationCode",
           "description": "Application Code",
           "isRequired": true
+        },
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "description": "Department Code",
+          "isRequired": true
         }
       ],
       "pathVariables": [
@@ -430,5 +436,5 @@
       ]
     }
   ],
-  "id": "tw5fo7aoed-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissionsToMenu-removePermissionsFromMenu-addPermissionsToMenu-removePermissionsFromMenu-getMenus-addPermissionsToMenu-removePermissionsFromMenu-addDepartmentsToMenu-removeDepartmentsFromMenu-removeDepartmentsFromMenu-getMenuById-updateMenu-deleteMenu-addPermissionsToMenu-removePermissionsFromMenu-addDepartmentsToMenu-removeDepartmentsFromMenu"
+  "id": "tw5fo7aoed-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissionsToMenu-removePermissionsFromMenu-addPermissionsToMenu-removePermissionsFromMenu-getMenus-addPermissionsToMenu-removePermissionsFromMenu-addDepartmentsToMenu-removeDepartmentsFromMenu-removeDepartmentsFromMenu-getMenuById-updateMenu-deleteMenu-addPermissionsToMenu-removePermissionsFromMenu-addDepartmentsToMenu-removeDepartmentsFromMenu-addPermissionsToMenu"
 }

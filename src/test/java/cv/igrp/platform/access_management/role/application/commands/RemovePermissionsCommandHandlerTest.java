@@ -1,12 +1,15 @@
 package cv.igrp.platform.access_management.role.application.commands;
 
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -29,6 +32,8 @@ public class RemovePermissionsCommandHandlerTest {
     @Mock
     private RoleEntityRepository roleRepository;
     @Mock
+    private DepartmentEntityRepository departmentRepository;
+    @Mock
     private RoleMapper roleMapper;
 
     @Test
@@ -41,9 +46,15 @@ public class RemovePermissionsCommandHandlerTest {
         //... Given
         String roleCode = "admin";
         ArrayList<String> permissionsToRemove = new ArrayList<>();
-        RemovePermissionsCommand command = new RemovePermissionsCommand(permissionsToRemove, roleCode);
+        RemovePermissionsCommand command = new RemovePermissionsCommand(permissionsToRemove, "DEPT", roleCode);
 
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT");
+        department.setStatus(DepartmentStatus.ACTIVE);
+
+        when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT")).thenReturn(department);
+
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED))
                 .thenReturn(Optional.empty());
 
         //... When
@@ -79,6 +90,10 @@ public class RemovePermissionsCommandHandlerTest {
         roleDTO.setId(roleId);
         roleDTO.setPermissions(List.of());
 
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT");
+        department.setStatus(DepartmentStatus.ACTIVE);
+
         HashSet<PermissionEntity> permissions = new HashSet<>(Set.of(permission1, permission2));
 
         savedRole.setPermissions(new HashSet<>());
@@ -87,9 +102,10 @@ public class RemovePermissionsCommandHandlerTest {
 
         List<String> permissionsToRemove = List.of(permissionName1, permissionName2);
         RemovePermissionsCommand removePermissionsCommand =
-                new RemovePermissionsCommand(permissionsToRemove, roleCode);
+                new RemovePermissionsCommand(permissionsToRemove, "DEPT", roleCode);
 
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
+        when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT")).thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED))
                 .thenReturn(Optional.of(savedRole));
         when(roleRepository.save(savedRole)).thenReturn(savedRole);
         when(roleMapper.mapToDto(savedRole)).thenReturn(roleDTO);
@@ -151,9 +167,14 @@ public class RemovePermissionsCommandHandlerTest {
 
         List<String> permissionsToRemove = List.of(permissionName1, permissionName2);
         RemovePermissionsCommand removePermissionsCommand =
-                new RemovePermissionsCommand(permissionsToRemove, roleCode);
+                new RemovePermissionsCommand(permissionsToRemove, "DEPT", roleCode);
 
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT");
+        department.setStatus(DepartmentStatus.ACTIVE);
+
+        when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT")).thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED))
                 .thenReturn(Optional.of(savedRole));
         when(roleRepository.save(savedRole)).thenReturn(savedRole);
         when(roleMapper.mapToDto(savedRole)).thenReturn(roleDTO);
@@ -184,7 +205,7 @@ public class RemovePermissionsCommandHandlerTest {
         String permissionToKeepName = "permissionToKeep";
 
         RemovePermissionsCommand command = new RemovePermissionsCommand(
-                List.of(permissionToRemoveName), roleCode);
+                List.of(permissionToRemoveName), "DEPT", roleCode);
 
         PermissionEntity permissionToRemove = new PermissionEntity();
         permissionToRemove.setId(permissionToRemoveId);
@@ -213,7 +234,12 @@ public class RemovePermissionsCommandHandlerTest {
 
         role.getPermissions().addAll(initialPermissions);
 
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(role));
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT");
+        department.setStatus(DepartmentStatus.ACTIVE);
+
+        when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT")).thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
         when(roleRepository.save(role)).thenReturn(role);
 
@@ -240,7 +266,7 @@ public class RemovePermissionsCommandHandlerTest {
         int roleId = 1;
         String roleCode = "admin";
         List<String> permissionIdsToRemove = List.of("read", "write");
-        RemovePermissionsCommand command = new RemovePermissionsCommand(permissionIdsToRemove, roleCode);
+        RemovePermissionsCommand command = new RemovePermissionsCommand(permissionIdsToRemove, "DEPT", roleCode);
 
         RoleEntity role = new RoleEntity();
         role.setId(roleId);
@@ -252,7 +278,12 @@ public class RemovePermissionsCommandHandlerTest {
         roleDTO.setId(roleId);
         roleDTO.setPermissions(List.of());
 
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(role));
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT");
+        department.setStatus(DepartmentStatus.ACTIVE);
+
+        when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT")).thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.save(role)).thenReturn(role);
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
@@ -278,7 +309,7 @@ public class RemovePermissionsCommandHandlerTest {
         String duplicatedPermissionName = "duplicatedPermission";
 
         RemovePermissionsCommand command = new RemovePermissionsCommand(
-                List.of(duplicatedPermissionName, duplicatedPermissionName), roleCode);
+                List.of(duplicatedPermissionName, duplicatedPermissionName), "DEPT", roleCode);
 
         PermissionEntity permission = new PermissionEntity();
         permission.setId(duplicatedPermissionId);
@@ -302,7 +333,12 @@ public class RemovePermissionsCommandHandlerTest {
         roleDTO.setId(roleId);
         roleDTO.setPermissions(List.of());
 
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(role));
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT");
+        department.setStatus(DepartmentStatus.ACTIVE);
+
+        when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT")).thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
         when(roleRepository.save(role)).thenReturn(role);
 
@@ -332,7 +368,7 @@ public class RemovePermissionsCommandHandlerTest {
         String permissionToKeepName = "permissionToKeep";
 
         RemovePermissionsCommand command = new RemovePermissionsCommand(
-                List.of(permissionToRemoveName), roleCode);
+                List.of(permissionToRemoveName), "DEPT", roleCode);
 
         PermissionEntity permissionToRemove = new PermissionEntity();
         permissionToRemove.setId(permissionToRemoveId);
@@ -360,7 +396,12 @@ public class RemovePermissionsCommandHandlerTest {
         roleDTO.setId(roleId);
         roleDTO.setPermissions(List.of(permissionToKeepName));
 
-        when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED)).thenReturn(Optional.of(role));
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT");
+        department.setStatus(DepartmentStatus.ACTIVE);
+
+        when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT")).thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
         when(roleRepository.save(role)).thenReturn(role);
 
