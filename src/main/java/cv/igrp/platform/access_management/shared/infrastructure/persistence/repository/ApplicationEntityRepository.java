@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface ApplicationEntityRepository extends
@@ -97,5 +98,13 @@ public interface ApplicationEntityRepository extends
     }
 
     List<ApplicationEntity> findByIdInAndStatusNot(Collection<Integer> ids, Status status);
+
+    @Query("""
+        select a.id
+        from ApplicationEntity a
+        join a.departments d
+        where d.id in :departmentIds
+    """)
+    Set<Integer> findByDepartmentIds(Set<Integer> departmentIds);
 
 }
