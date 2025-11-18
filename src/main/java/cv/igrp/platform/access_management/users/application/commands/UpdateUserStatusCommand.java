@@ -5,14 +5,16 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class CreateUserCommand implements Command {
+public class UpdateUserStatusCommand implements Command {
 
-  
-  private IGRPUserDTO igrpuserdto;
+  @NotBlank(message = "The field <value> is required")
+  private String value;
+  @NotNull(message = "The field <id> is required")
+  private Integer id;
 
 }

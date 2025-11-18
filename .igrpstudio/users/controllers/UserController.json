@@ -223,16 +223,16 @@
       ]
     },
     {
-      "actionName": "createUser",
-      "path": "users",
+      "actionName": "respondUserInvitation",
+      "path": "users/invite/response",
       "method": "POST",
       "requestBody": {
         "content": {
           "application/json": {
             "schema": {
-              "type": "IGRPUserDTO",
-              "name": "User",
-              "description": "User Data",
+              "type": "UserInvitationResponseDTO",
+              "name": "UserResponse",
+              "description": "User Invitation Response",
               "objectType": "dto",
               "module": "shared",
               "collectionType": "none"
@@ -349,7 +349,42 @@
           }
         }
       }
+    },
+    {
+      "actionName": "updateUserStatus",
+      "path": "users/{id}/status",
+      "method": "PUT",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "IGRPUserDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "value",
+          "isRequired": true
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true
+        }
+      ]
     }
   ],
-  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser"
+  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser"
 }

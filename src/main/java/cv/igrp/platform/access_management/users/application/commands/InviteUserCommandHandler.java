@@ -6,6 +6,7 @@ import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.model.Notification;
 import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
@@ -31,8 +32,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
     @Value("${igrp.mail.invite.template}")
     private String emailTemplate = """
-                        Dear {{user}}, your were successfully invited to iGRP. Your data are the following:
-                        Username: {{user}}
+                        Dear {{user}}, your were invited to the iGRP platform
                         
                         Best Regards.
                         iGRP
@@ -78,6 +78,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
             user.setUsername(command.getIgrpuserdto().getUsername());
             user.setEmail(command.getIgrpuserdto().getEmail());
             user.setExternalId(providerUser.get().getExternalId());
+            user.setStatus(Status.INACTIVE);
             user.setRoles(new ArrayList<>());
 
             var savedUser = userRepository.save(user);

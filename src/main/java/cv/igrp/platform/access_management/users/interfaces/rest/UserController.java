@@ -23,6 +23,7 @@ import cv.igrp.platform.access_management.users.application.commands.*;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.application.dto.UserInvitationResponseDTO;
 
 @IgrpController
 @RestController
@@ -208,11 +209,11 @@ public class UserController {
   }
 
    @PostMapping(
-   value = "users"
+   value = "users/invite/response"
   )
   @Operation(
-    summary = "POST method to handle operations for createUser",
-    description = "POST method to handle operations for createUser",
+    summary = "POST method to handle operations for respondUserInvitation",
+    description = "POST method to handle operations for respondUserInvitation",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -227,11 +228,11 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<IGRPUserDTO> createUser(@Valid @RequestBody IGRPUserDTO createUserRequest
+  public ResponseEntity<IGRPUserDTO> respondUserInvitation(@Valid @RequestBody UserInvitationResponseDTO respondUserInvitationRequest
     )
   {
 
-      final var command = new CreateUserCommand(createUserRequest);
+      final var command = new RespondUserInvitationCommand(respondUserInvitationRequest);
 
        ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
 
@@ -325,6 +326,37 @@ public class UserController {
   {
 
       final var command = new InviteUserCommand(inviteUserRequest);
+
+       ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @PutMapping(
+   value = "users/{id}/status"
+  )
+  @Operation(
+    summary = "PUT method to handle operations for updateUserStatus",
+    description = "PUT method to handle operations for updateUserStatus",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = IGRPUserDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<IGRPUserDTO> updateUserStatus(
+    @RequestParam(value = "value") String value, @PathVariable(value = "id") Integer id)
+  {
+
+      final var command = new UpdateUserStatusCommand(value, id);
 
        ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
 
