@@ -14,4 +14,5 @@ import java.util.Set;
 public class RequestScopeCache {
     private Set<Integer> visibleDepartments;
     private Set<Integer> visibleApplications;
+    private Set<Integer> visibleRoles;
 }

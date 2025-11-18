@@ -1,16 +1,17 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.history.RevisionRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface RoleEntityRepository extends
@@ -56,8 +57,21 @@ public interface RoleEntityRepository extends
     Optional<RoleEntity> findByDepartmentAndCodeAndStatusNot(DepartmentEntity department, String code, Status status);
 
     default RoleEntity findByDepartmentAndCodeAndStatusNotDeleted(DepartmentEntity department, String code) {
-        return findByDepartmentAndCodeAndStatusNot(department, code, Status.DELETED)
-                .orElseThrow(() -> IgrpResponseStatusException.notFound("Role not found with code: %s".formatted(code)));
+        return null;
     }
+
+    @Query("""
+        select r.id from RoleEntity r
+        where r.code = :code and r.status <> 'DELETED'
+    """)
+    Integer findIdByCode(String code);
+
+    @Query("""
+        select child.id
+        from RoleEntity child
+        join child.parent parent
+        where parent.id = :parentId and child.status <> 'DELETED'
+    """)
+    Set<Integer> findDirectChildren(Integer parentId);
 
 }

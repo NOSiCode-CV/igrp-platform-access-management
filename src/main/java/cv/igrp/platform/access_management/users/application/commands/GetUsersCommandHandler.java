@@ -4,9 +4,9 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.security.ScopeContext;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.JoinType;
+import cv.igrp.platform.access_management.users.specs.UserSpecificationBuilder;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -23,10 +23,12 @@ public class GetUsersCommandHandler implements CommandHandler<GetUsersCommand, R
 
    private final IGRPUserEntityRepository userRepository;
    private final IGRPUserMapper userMapper;
+   private final UserSpecificationBuilder specification;
 
-   public GetUsersCommandHandler(IGRPUserEntityRepository userRepository, IGRPUserMapper userMapper) {
+   public GetUsersCommandHandler(IGRPUserEntityRepository userRepository, IGRPUserMapper userMapper, UserSpecificationBuilder specification) {
       this.userRepository = userRepository;
       this.userMapper = userMapper;
+      this.specification = specification;
    }
 
    @IgrpCommandHandler
@@ -35,48 +37,13 @@ public class GetUsersCommandHandler implements CommandHandler<GetUsersCommand, R
               command.getApplicationCode(), command.getDepartmentCode(), command.getName(),
               command.getId(), command.getEmail());
 
-      Specification<IGRPUserEntity> spec = buildSpecification(command);
+      Specification<IGRPUserEntity> spec = specification.buildSpecification(command, new ScopeContext());
       List<IGRPUserDTO> users = userRepository.findAll(spec)
               .stream()
               .map(userMapper::toDto)
               .toList();
 
       return ResponseEntity.ok(users);
-   }
-
-   private Specification<IGRPUserEntity> buildSpecification(GetUsersCommand command) {
-      Specification<IGRPUserEntity> spec = Specification.anyOf();
-
-      if (command.getApplicationCode() != null) {
-         spec = spec.and((root, q, cb) -> {
-            Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
-            Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
-            Join<Object, Object> applicationJoin = departmentJoin.join("applications", JoinType.INNER);
-            return cb.equal(applicationJoin.get("code"), command.getApplicationCode());
-         });
-      }
-
-      if (command.getDepartmentCode() != null) {
-         spec = spec.and((root, q, cb) -> {
-            Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
-            Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
-            return cb.equal(departmentJoin.get("code"), command.getDepartmentCode());
-         });
-      }
-
-      if (command.getName() != null && !command.getName().isEmpty()) {
-         spec = spec.and((root, q, cb) -> cb.like(cb.lower(root.get("name")), "%" + command.getName().toLowerCase() + "%"));
-      }
-
-      if (command.getId() != null && command.getId() != 0) {
-         spec = spec.and((root, q, cb) -> cb.equal(root.get("id"), command.getId()));
-      }
-
-      if (command.getEmail() != null && !command.getEmail().isEmpty()) {
-         spec = spec.and((root, q, cb) -> cb.like(cb.lower(root.get("email")), "%" + command.getEmail().toLowerCase() + "%"));
-      }
-
-      return spec;
    }
 
 }

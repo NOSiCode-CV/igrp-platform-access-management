@@ -23,6 +23,7 @@ public class ScopeAspect {
         // Your repository or service logic will receive scoped IDs transparently
         Set<Integer> allowedDepartments = scopeService.getVisibleDepartmentIds();
         Set<Integer> allowedApplications = scopeService.getVisibleApplicationIds();
+        Set<Integer> allowedRoles = scopeService.getVisibleRoleIds();
 
         // Now you can inject these into your service parameters automatically
         Object[] args = pjp.getArgs();
@@ -30,6 +31,7 @@ public class ScopeAspect {
             if (arg instanceof ScopeContext ctx) {
                 ctx.setDepartmentIds(allowedDepartments);
                 ctx.setApplicationIds(allowedApplications);
+                ctx.setRoleIds(allowedRoles);
                 ctx.setSuperAdmin(scopeService.isSuperAdmin());
             }
         }

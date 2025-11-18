@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.shared.infrastructure.service;
 
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import cv.igrp.platform.access_management.shared.security.RequestScopeCache;
 import org.springframework.security.core.Authentication;
@@ -22,17 +23,20 @@ public class ScopeService {
     private final RequestScopeCache cache;
     private final DepartmentEntityRepository departmentRepository;
     private final ApplicationEntityRepository applicationRepository;
+    private final RoleEntityRepository roleRepository;
 
     public ScopeService(
             AuthenticationHelper authenticationHelper,
             RequestScopeCache cache,
             DepartmentEntityRepository departmentRepository,
-            ApplicationEntityRepository applicationRepository
+            ApplicationEntityRepository applicationRepository,
+            RoleEntityRepository roleRepository
     ) {
         this.authenticationHelper = authenticationHelper;
         this.cache = cache;
         this.departmentRepository = departmentRepository;
         this.applicationRepository = applicationRepository;
+        this.roleRepository = roleRepository;
     }
 
     /**
@@ -148,6 +152,55 @@ public class ScopeService {
 
         cache.setVisibleApplications(appIds);
         return appIds;
+    }
+
+    /**
+     * DEPARTMENT ACCESS SCOPE LOGIC
+     */
+    public Set<Integer> getVisibleRoleIds() {
+        if (cache.getVisibleRoles() != null)
+            return cache.getVisibleRoles();
+
+        if (this.isSuperAdmin()) {
+            Set<Integer> all = new HashSet<>();
+            roleRepository.findAll().forEach(d -> all.add(d.getId()));
+            cache.setVisibleRoles(all);
+            return all;
+        }
+
+        // regular user — pull from JWT claim "departments"
+        var actor = this.getActor();
+        Set<String> roleCodes = actor.roles().stream()
+                .filter(r -> r.contains("."))
+                .map(r -> r.substring(r.indexOf("."), r.length() - 1))
+                .collect(HashSet::new, HashSet::add, HashSet::addAll);
+
+        Set<Integer> ids = new HashSet<>();
+        roleCodes.forEach(code -> {
+            Integer id = roleRepository.findIdByCode(code);
+            if (id != null) {
+                ids.add(id);
+                ids.addAll(resolveRoleDescendants(id));
+            }
+        });
+        System.out.println("[[DEBUG]] Visible Role IDs: " + ids);
+
+        cache.setVisibleRoles(ids);
+        return ids;
+    }
+
+    /**
+     * Recursively resolves children roles
+     */
+    private Set<Integer> resolveRoleDescendants(Integer parentId) {
+        Set<Integer> result = new HashSet<>();
+        Set<Integer> children = roleRepository.findDirectChildren(parentId);
+
+        for (Integer c : children) {
+            result.add(c);
+            result.addAll(resolveRoleDescendants(c));
+        }
+        return result;
     }
 
     public record ActorPrincipal(

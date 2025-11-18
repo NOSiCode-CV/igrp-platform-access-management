@@ -11,4 +11,5 @@ public class ScopeContext {
     private boolean isSuperAdmin;
     private Set<Integer> departmentIds;
     private Set<Integer> applicationIds;
+    private Set<Integer> roleIds;
 }
