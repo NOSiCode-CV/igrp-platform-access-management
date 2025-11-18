@@ -22,7 +22,7 @@ public class IGRPUserDTO  {
   
   
   private Integer id ;
-  @NotBlank(message = "The field <name> is required")
+  
   
   private String name ;
   
