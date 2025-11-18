@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.shared.infrastructure.service;
 import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.auth.core.model.*;
+import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import jakarta.ws.rs.ClientErrorException;
 import org.slf4j.Logger;
@@ -599,9 +600,13 @@ public class SynchronizationService {
                 """;
         return jdbcTemplate.query(sql, (rs, _) -> {
             RoleInfo role = new RoleInfo();
-            role.setName(rs.getString("code"));
+
+            String roleCode = rs.getString("code");
+            String departmentCode =  rs.getString("departmentCode");
+
+            role.setName(RoleValidator.normalizeRoleCodeForAdapter(roleCode, departmentCode));
             role.setDescription(rs.getString("description"));
-            role.setDepartmentCode(rs.getString("departmentCode"));
+            role.setDepartmentCode(departmentCode);
             role.setStatus(rs.getString("status"));
             return role;
         }, ACTIVE_STATUS);
@@ -707,7 +712,7 @@ public class SynchronizationService {
 
             result.computeIfAbsent(externalId, _ -> new HashMap<>())
                     .computeIfAbsent(departmentCode, _ -> new HashSet<>())
-                    .add(roleName);
+                    .add(RoleValidator.normalizeRoleCodeForAdapter(roleName, departmentCode));
             return null;
         }, ACTIVE_STATUS, ACTIVE_STATUS, ACTIVE_STATUS); // Only ACTIVE users
 

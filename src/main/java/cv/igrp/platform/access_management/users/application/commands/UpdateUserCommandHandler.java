@@ -4,6 +4,7 @@ import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
@@ -255,7 +256,7 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
                 String roleName = rs.getString("role_name");
 
                 result.computeIfAbsent(departmentCode, _ -> new HashSet<>())
-                        .add(roleName);
+                        .add(RoleValidator.normalizeRoleCodeForAdapter(roleName, departmentCode));
                 return null;
             }, userId, ACTIVE_STATUS, ACTIVE_STATUS);
         } catch (Exception e) {

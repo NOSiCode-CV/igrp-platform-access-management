@@ -43,7 +43,7 @@ public class GetRolesByNameQueryHandlerTest {
   void itShouldThrowRecordNotFoundException_When_ProvidedRoleName_NotFound() {
     //... Given
     String roleCode = "test";
-    GetRolesByNameQuery query = new GetRolesByNameQuery(roleCode, "DEPT_IGRP");
+    GetRolesByNameQuery query = new GetRolesByNameQuery("DEPT_IGRP", roleCode);
 
     DepartmentEntity department = new DepartmentEntity();
     department.setCode("DEPT_IGRP");
@@ -64,7 +64,7 @@ public class GetRolesByNameQueryHandlerTest {
   void itShouldNotCallMapper_WhenRoleNotFound() {
     //... Given
     String roleCode = "admin";
-    GetRolesByNameQuery query = new GetRolesByNameQuery(roleCode, "DEPT_IGRP");
+    GetRolesByNameQuery query = new GetRolesByNameQuery("DEPT_IGRP", roleCode);
     RoleEntity savedRole = new RoleEntity();
     String roleDesc = "RoleName";
     savedRole.setCode(roleCode);
@@ -99,7 +99,7 @@ public class GetRolesByNameQueryHandlerTest {
   void itShouldReturnRoleDTO_WhenRoleExists() {
     //... Given
     String roleCode = "admin";
-    GetRolesByNameQuery query = new GetRolesByNameQuery(roleCode, "DEPT_IGRP");
+    GetRolesByNameQuery query = new GetRolesByNameQuery("DEPT_IGRP", roleCode);
     RoleEntity savedRole = new RoleEntity();
     String roleDesc = "RoleName";
     savedRole.setCode(roleCode);

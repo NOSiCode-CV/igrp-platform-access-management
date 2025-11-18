@@ -62,6 +62,31 @@ public class RoleValidator {
     }
 
     /**
+     * Normalizes a role code to the format: parentCode.code
+     * - If the given code already starts with parentCode + ".", it is returned as-is.
+     * - Otherwise, the parentCode is prepended to the code, separated by a dot.
+     *
+     * @param code the original role code
+     * @param parentCode the parent role code
+     * @return the normalized role code
+     */
+    public static String normalizeRoleCode(String code, String parentCode) {
+        if (code == null) {
+            throw new IllegalArgumentException("Code and departmentCode must not be null");
+        }
+
+        if(parentCode == null) {
+            return code;
+        }
+
+        String prefix = parentCode + ".";
+        if (code.startsWith(prefix)) {
+            return code;
+        }
+        return prefix + code;
+    }
+
+    /**
      * Normalizes a role code to the format: departmentCode.code
      * - If the given code already starts with departmentCode + ".", it is returned as-is.
      * - Otherwise, the departmentCode is prepended to the code, separated by a dot.
@@ -70,7 +95,7 @@ public class RoleValidator {
      * @param departmentCode the department code
      * @return the normalized role code
      */
-    public static String normalizeRoleCode(String code, String departmentCode) {
+    public static String normalizeRoleCodeForAdapter(String code, String departmentCode) {
         if (code == null || departmentCode == null) {
             throw new IllegalArgumentException("Code and departmentCode must not be null");
         }

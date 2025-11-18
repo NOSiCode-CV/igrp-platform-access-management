@@ -58,7 +58,7 @@ public class GetAppMenusQueryHandlerTest {
 
     user = new IGRPUserEntity();
     user.setExternalId("f8c3de3d-1fea-4d7c-a8b0-29f63c4c3454");
-    user.setRoles(List.of(role));
+    user.getRoles().add(role);
 
     app = new ApplicationEntity();
     app.setId(1);
@@ -68,7 +68,7 @@ public class GetAppMenusQueryHandlerTest {
     menu = new MenuEntryEntity();
     menu.setId(10);
     menu.setStatus(Status.ACTIVE);
-    menu.setRoles(Set.of(role));
+    menu.getRoles().add(role);
 
     menuDTO = new MenuEntryDTO();
     menuDTO.setId(10);

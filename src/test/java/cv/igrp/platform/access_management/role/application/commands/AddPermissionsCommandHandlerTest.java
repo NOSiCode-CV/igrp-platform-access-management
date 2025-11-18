@@ -130,11 +130,11 @@ public class AddPermissionsCommandHandlerTest {
         roleDTO.setPermissions(List.of(activePermissionName));
 
         DepartmentEntity department = new DepartmentEntity();
-        department.setCode("DEPT");
+        department.setCode(deptCode);
         department.setStatus(DepartmentStatus.ACTIVE);
 
         when(permissionRepository.findAllByNameIn(permissionIds)).thenReturn(returnedPermissions);
-        when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT")).thenReturn(department);
+        when(departmentRepository.findByCodeAndStatusNotDeleted(deptCode)).thenReturn(department);
         when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.save(role)).thenReturn(role);
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
@@ -199,13 +199,13 @@ public class AddPermissionsCommandHandlerTest {
         roleDTO.setPermissions(List.of(activePermissionName));
 
         DepartmentEntity department = new DepartmentEntity();
-
         department.setCode(deptCode);
         department.setStatus(DepartmentStatus.ACTIVE);
 
         PermissionDTO permissionDTO = new PermissionDTO();
         permissionDTO.setId(activePermissionId);
         when(permissionRepository.findAllByNameIn(permissionList)).thenReturn(savedPermissions);
+        when(departmentRepository.findByCodeAndStatusNotDeleted(deptCode)).thenReturn(department);
         when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(savedRole));
         when(roleRepository.save(savedRole)).thenReturn(savedRole);
         when(roleMapper.mapToDto(savedRole)).thenReturn(roleDTO);

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
+import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -199,11 +200,11 @@ public class ConfigurationService {
         }
 
         try {
-            boolean existsInProvider = adapter.roleExists(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE);
+            boolean existsInProvider = adapter.roleExists(IGRP_DEPARTMENT, RoleValidator.normalizeRoleCodeForAdapter(SUPER_ADMIN_ROLE, IGRP_DEPARTMENT));
 
             if (!roleExistsInDB && !existsInProvider) {
                 LOGGER.info("[Startup Config] Creating role in provider: {}", SUPER_ADMIN_ROLE);
-                adapter.createRole(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE);
+                adapter.createRole(IGRP_DEPARTMENT, RoleValidator.normalizeRoleCodeForAdapter(SUPER_ADMIN_ROLE, IGRP_DEPARTMENT));
 
                 // Assign permission to a role if permission exists
                 //if (permissionExistsInProvider) {
@@ -385,7 +386,7 @@ public class ConfigurationService {
     void assignRoleToSuperAdminUserInDB(Long roleId, Long userId) {
         try {
             // Assign role in provider
-            adapter.assignRoleToUser(IGRP_DEPARTMENT, SUPER_ADMIN_ROLE, SUPER_ADMIN_EXTERNAL_ID);
+            adapter.assignRoleToUser(IGRP_DEPARTMENT, RoleValidator.normalizeRoleCodeForAdapter(SUPER_ADMIN_ROLE, IGRP_DEPARTMENT), SUPER_ADMIN_EXTERNAL_ID);
 
             // Assign role in database
             String sql = """

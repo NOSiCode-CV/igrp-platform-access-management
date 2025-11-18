@@ -46,7 +46,7 @@ public class DeleteRoleCommandHandlerTest {
         //... Given
         String roleCode = "admin";
         String deptCode = "DEPT";
-        DeleteRoleCommand command = new DeleteRoleCommand(roleCode, deptCode);
+        DeleteRoleCommand command = new DeleteRoleCommand(deptCode, roleCode);
 
         DepartmentEntity departmentEntity = new DepartmentEntity();
 
@@ -87,7 +87,7 @@ public class DeleteRoleCommandHandlerTest {
         when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.save(role)).thenReturn(role);
 
-        DeleteRoleCommand command = new DeleteRoleCommand(roleCode, deptCode);
+        DeleteRoleCommand command = new DeleteRoleCommand(deptCode, roleCode);
 
         // When
         ResponseEntity<Boolean> result = underTest.handle(command);
@@ -129,6 +129,10 @@ public class DeleteRoleCommandHandlerTest {
         child3.setStatus(Status.INACTIVE);
         child3.setParent(parenteRole);
         child3.setDepartment(department);
+        // connect children to parent list as handler traverses role.getChildren()
+        parenteRole.getChildren().add(child1);
+        parenteRole.getChildren().add(child2);
+        parenteRole.getChildren().add(child3);
 
         when(departmentRepository.findByCodeAndStatusNotDeleted(deptCode)).thenReturn(department);
         when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(parenteRole));
@@ -137,7 +141,7 @@ public class DeleteRoleCommandHandlerTest {
         when(roleRepository.save(child2)).thenReturn(child2);
         when(roleRepository.save(child3)).thenReturn(child3);
 
-        DeleteRoleCommand command = new DeleteRoleCommand(roleCode, deptCode);
+        DeleteRoleCommand command = new DeleteRoleCommand(deptCode, roleCode);
 
         // When
         underTest.handle(command);
@@ -173,7 +177,7 @@ public class DeleteRoleCommandHandlerTest {
         when(departmentRepository.findByCodeAndStatusNotDeleted(deptCode)).thenReturn(department);
         when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(role));
 
-        DeleteRoleCommand command = new DeleteRoleCommand(roleCode, deptCode);
+        DeleteRoleCommand command = new DeleteRoleCommand(deptCode, roleCode);
 
         // When
         underTest.handle(command);
@@ -204,7 +208,7 @@ public class DeleteRoleCommandHandlerTest {
         when(departmentRepository.findByCodeAndStatusNotDeleted(deptCode)).thenReturn(department);
         when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(role));
 
-        DeleteRoleCommand command = new DeleteRoleCommand(roleCode, deptCode);
+        DeleteRoleCommand command = new DeleteRoleCommand(deptCode, roleCode);
 
         // When
         assertDoesNotThrow(() -> underTest.handle(command));
@@ -239,6 +243,8 @@ public class DeleteRoleCommandHandlerTest {
         when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, "admin", Status.DELETED)).thenReturn(Optional.of(parent));
         when(roleRepository.save(parent)).thenReturn(parent);
         when(roleRepository.save(child)).thenReturn(child);
+        // connect child as well
+        parent.getChildren().add(child);
 
         // When
         underTest.handle(new DeleteRoleCommand(deptCode, "admin"));

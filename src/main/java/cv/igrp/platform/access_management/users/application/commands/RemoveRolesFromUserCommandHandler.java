@@ -4,6 +4,7 @@ import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
@@ -100,7 +101,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
 
             for (RoleEntity role : rolesToRemove) {
                try {
-                  adapter.unassignRoleFromUser(role.getDepartment().getCode(), role.getCode(), user.getExternalId());
+                  adapter.unassignRoleFromUser(role.getDepartment().getCode(), RoleValidator.normalizeRoleCodeForAdapter(role.getCode(), role.getDepartment().getCode()), user.getExternalId());
                   logger.info("Role code={} from department with code {} unassigned to user sub={} in Keycloak",
                           role.getCode(),
                           role.getDepartment().getCode(),

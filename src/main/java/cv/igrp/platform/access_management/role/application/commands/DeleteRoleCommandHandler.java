@@ -4,6 +4,7 @@ import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -91,7 +92,7 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
         roleRepository.save(role);
 
         try {
-            adapter.deleteRole(role.getDepartment().getCode(), role.getCode());
+            adapter.deleteRole(role.getDepartment().getCode(), RoleValidator.normalizeRoleCodeForAdapter(role.getCode(), role.getDepartment().getCode()));
         } catch (IAMException e) {
             throw IgrpResponseStatusException.of(
                     HttpStatus.INTERNAL_SERVER_ERROR,

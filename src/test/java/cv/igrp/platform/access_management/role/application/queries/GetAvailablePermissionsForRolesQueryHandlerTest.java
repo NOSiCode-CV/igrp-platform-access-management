@@ -70,7 +70,7 @@ class GetAvailablePermissionsForRolesQueryHandlerTest {
     List<PermissionEntity> mockEntities = List.of(permissionEntity1, permissionEntity2);
 
     // Mock repository and mapper behavior
-    when(permissionRepository.findAvailablePermissionsForRole(roleCode, IGRP_PERMISSION)).thenReturn(mockEntities);
+    when(permissionRepository.findAvailablePermissionsForRole("DEPT", IGRP_PERMISSION)).thenReturn(mockEntities);
     when(permissionMapper.mapToDTO(permissionEntity1)).thenReturn(permissionDTO1);
     when(permissionMapper.mapToDTO(permissionEntity2)).thenReturn(permissionDTO2);
 
@@ -92,7 +92,7 @@ class GetAvailablePermissionsForRolesQueryHandlerTest {
     GetAvailablePermissionsForRolesQuery query = new GetAvailablePermissionsForRolesQuery(roleCode, "DEPT");
 
     // Mock repository to return an empty list
-    when(permissionRepository.findAvailablePermissionsForRole(roleCode, IGRP_PERMISSION)).thenReturn(Collections.emptyList());
+    when(permissionRepository.findAvailablePermissionsForRole("DEPT", IGRP_PERMISSION)).thenReturn(Collections.emptyList());
 
     // When the handler is called
     ResponseEntity<List<PermissionDTO>> response = handler.handle(query);

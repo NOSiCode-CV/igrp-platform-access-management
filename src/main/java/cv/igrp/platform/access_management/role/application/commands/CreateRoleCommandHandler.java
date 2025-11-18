@@ -88,7 +88,9 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
                  );
               });
 
-      command.getRoledto().setCode(RoleValidator.normalizeRoleCode(command.getRoledto().getCode(), department.getCode()));
+      String roleCode = RoleValidator.normalizeRoleCode(command.getRoledto().getCode(), command.getRoledto().getParentCode());
+
+      command.getRoledto().setCode(roleCode);
 
       log.info("Create Role with code: {}.", command.getRoledto().getCode());
 
@@ -114,7 +116,7 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
       RoleEntity savedRole = roleRepository.save(newRole);
 
       try {
-          adapter.createRole(department.getCode(), savedRole.getCode());
+          adapter.createRole(department.getCode(), RoleValidator.normalizeRoleCodeForAdapter(department.getCode(), savedRole.getCode()));
       } catch (IAMException e) {
           throw IgrpResponseStatusException.of(
                   HttpStatus.INTERNAL_SERVER_ERROR,

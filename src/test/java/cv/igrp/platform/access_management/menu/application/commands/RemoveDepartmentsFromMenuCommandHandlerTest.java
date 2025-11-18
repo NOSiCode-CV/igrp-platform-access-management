@@ -62,14 +62,12 @@ class RemoveDepartmentsFromMenuCommandHandlerTest {
         department1.setCode("DEPT_A");
         department1.setName("Department A");
         department1.setStatus(DepartmentStatus.ACTIVE);
-        department1.setMenuentries(new HashSet<>());
 
         department2 = new DepartmentEntity();
         department2.setId(200);
         department2.setCode("DEPT_B");
         department2.setName("Department B");
         department2.setStatus(DepartmentStatus.ACTIVE);
-        department2.setMenuentries(new HashSet<>());
 
         application = new ApplicationEntity();
         application.setCode("APP_A");
@@ -81,7 +79,7 @@ class RemoveDepartmentsFromMenuCommandHandlerTest {
         menuEntry.setCode("MENU_APP");
         menuEntry.setName("Application Menu");
         menuEntry.setStatus(Status.ACTIVE);
-        menuEntry.setDepartments(new HashSet<>(List.of(department1, department2)));
+        menuEntry.getDepartments().addAll(new HashSet<>(List.of(department1, department2)));
 
         menuEntryDTO = new MenuEntryDTO();
         menuEntryDTO.setId(1);
@@ -121,7 +119,8 @@ class RemoveDepartmentsFromMenuCommandHandlerTest {
     @Test
     void testHandle_DepartmentsAlreadyRemoved_RemovesOnlyRemaining() {
         // Given a menu with one department already removed from the command list
-        menuEntry.setDepartments(new HashSet<>(List.of(department1)));
+        menuEntry.getDepartments().clear();
+        menuEntry.getDepartments().add(department1);
         List<String> departmentCodesToRemove = List.of("DEPT_A", "DEPT_B");
         RemoveDepartmentsFromMenuCommand command = new RemoveDepartmentsFromMenuCommand(departmentCodesToRemove, "APP_A", "MENU_APP");
 

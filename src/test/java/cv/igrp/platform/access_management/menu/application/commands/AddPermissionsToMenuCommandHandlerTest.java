@@ -118,6 +118,7 @@ public class AddPermissionsToMenuCommandHandlerTest {
         department.setCode(deptCode);
         department.setStatus(DepartmentStatus.ACTIVE);
 
+        when(departmentEntityRepository.findByCodeAndStatusNotDeleted(deptCode)).thenReturn(department);
         when(roleRepository.findAllByDepartmentAndCodeIn(department, roleList))
                 .thenReturn(savedRoles);
 
@@ -256,7 +257,7 @@ public class AddPermissionsToMenuCommandHandlerTest {
         when(departmentEntityRepository.findByCodeAndStatusNotDeleted(deptCode)).thenReturn(department);
 
         when(applicationEntityRepository.findByCodeAndStatusNotDeleted(appCode)).thenReturn(app);
-        when(roleRepository.findAllByDepartmentAndCodeIn(department, roleNames)).thenReturn(savedRoles);
+        when(roleRepository.findAllByDepartmentAndCodeIn(department, roleList)).thenReturn(savedRoles);
         when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(app, menuEntryCode, Status.DELETED)).thenReturn(Optional.of(savedMenuEntry));
         when(menuEntryRepository.save(savedMenuEntry)).thenReturn(savedMenuEntry);
         when(menuEntryMapper.toDTO(savedMenuEntry)).thenReturn(menuEntryDTO);

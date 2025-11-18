@@ -261,7 +261,7 @@ public class CreateRoleCommandHandlerTest {
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertEquals(expectedResponse, response.getBody());
 
-        verify(roleRepository, never()).findByDepartmentAndCodeAndStatusNot(department, any(), any());
+        verify(roleRepository, never()).findByDepartmentAndCodeAndStatusNot(eq(department), any(), any());
     }
 
     @Test

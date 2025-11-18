@@ -4,6 +4,7 @@ import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -133,7 +134,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
             roleRepository.save(roleEntity);
 //            user.getRoles().add(roleEntity);
 
-            adapter.assignRoleToUser(roleEntity.getDepartment().getCode(), roleEntity.getCode(), user.getExternalId());
+            adapter.assignRoleToUser(roleEntity.getDepartment().getCode(), RoleValidator.normalizeRoleCodeForAdapter(roleEntity.getCode(), roleEntity.getDepartment().getCode()), user.getExternalId());
             successfullyAssignedInKeycloak.add(roleEntity);
          }
 
@@ -142,7 +143,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
 
          for (RoleEntity role : successfullyAssignedInKeycloak) {
             try {
-               adapter.unassignRoleFromUser(role.getDepartment().getCode(), role.getCode(), user.getExternalId());
+               adapter.unassignRoleFromUser(role.getDepartment().getCode(), RoleValidator.normalizeRoleCodeForAdapter(role.getCode(), role.getDepartment().getCode()), user.getExternalId());
             } catch (Exception rollbackEx) {
                logger.error("Compensation failed: could not revert role={} in Keycloak for user={}: {}",
                        role.getCode(),

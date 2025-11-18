@@ -84,8 +84,13 @@ class AddRolesToAppCommandHandlerTest {
         when(departmentRepository.findByCodeAndStatusNotDeleted(department1.getCode())).thenReturn(department1);
         when(departmentRepository.findByCodeAndStatusNotDeleted(department2.getCode())).thenReturn(department2);
         when(applicationRepository.findByCodeAndStatusNotDeleted(appCode)).thenReturn(application);
-        when(roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department1, roleName1)).thenReturn(role1);
-        when(roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department2, roleName2)).thenReturn(role2);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(any(DepartmentEntity.class), any(String.class))).thenAnswer(invocation -> {
+            DepartmentEntity dept = invocation.getArgument(0);
+            String code = invocation.getArgument(1);
+            if (dept.getCode().equals(department1.getCode()) && code.equals(roleName1)) return role1;
+            if (dept.getCode().equals(department2.getCode()) && code.equals(roleName2)) return role2;
+            return null;
+        });
 
         // when
         ResponseEntity<String> response = handler.handle(command);
@@ -123,9 +128,19 @@ class AddRolesToAppCommandHandlerTest {
         when(command.getCodelistrequestdto()).thenReturn(codesDto);
         when(codesDto.getCodes()).thenReturn(List.of(roleName));
 
-        when(departmentRepository.findByCodeAndStatusNotDeleted(unassignedDepartment.getCode())).thenReturn(unassignedDepartment);
+        when(departmentRepository.findByCodeAndStatusNotDeleted(anyString())).thenAnswer(invocation -> {
+            String code = invocation.getArgument(0);
+            if (code == null) return null;
+            if (code.equals(unassignedDepartment.getCode())) return unassignedDepartment;
+            return null;
+        });
         when(applicationRepository.findByCodeAndStatusNotDeleted(appCode)).thenReturn(application);
-        when(roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(unassignedDepartment, roleName)).thenReturn(role);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(any(DepartmentEntity.class), any(String.class))).thenAnswer(invocation -> {
+            DepartmentEntity dept = invocation.getArgument(0);
+            String code = invocation.getArgument(1);
+            if (dept.getCode().equals(unassignedDepartment.getCode()) && code.equals(roleName)) return role;
+            return null;
+        });
 
         // when / then
         var ex = assertThrows(
