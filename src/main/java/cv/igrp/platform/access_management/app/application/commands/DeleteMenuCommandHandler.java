@@ -1,4 +1,4 @@
-package cv.igrp.platform.access_management.menu.application.commands;
+package cv.igrp.platform.access_management.app.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
@@ -56,11 +56,11 @@ public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuComman
                          HttpStatus.NOT_FOUND, "Application not found", "Application not found with code: " + appCode);
               });
 
-      MenuEntryEntity menuEntry = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, command.getCode(), Status.DELETED)
+      MenuEntryEntity menuEntry = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, command.getMenuCode(), Status.DELETED)
               .orElseThrow(() -> {
-                 logger.warn("Menu entry with code {} not found", command.getCode());
+                 logger.warn("Menu entry with code {} not found", command.getMenuCode());
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Menu not found", "Menu not found with code: " + command.getCode());
+                         HttpStatus.NOT_FOUND, "Menu not found", "Menu not found with code: " + command.getMenuCode());
               });
 
       menuEntry.setStatus(Status.DELETED);

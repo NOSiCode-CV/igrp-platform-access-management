@@ -1,6 +1,6 @@
-package cv.igrp.platform.access_management.menu.application.commands;
+package cv.igrp.platform.access_management.app.application.commands;
 
-import cv.igrp.platform.access_management.menu.application.domain.service.MenuEntryValidator;
+import cv.igrp.platform.access_management.app.domain.service.MenuEntryValidator;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 
@@ -50,7 +50,7 @@ public class CreateMenuCommandHandlerTest {
     private CreateMenuCommandHandler createMenuCommandHandler;
 
     private CreateMenuCommand createMenuCommand(MenuEntryDTO menuEntryDTO) {
-        return new CreateMenuCommand(menuEntryDTO);
+        return new CreateMenuCommand(menuEntryDTO, "APP");
     }
 
     private CreateMenuCommand command;
@@ -63,7 +63,6 @@ public class CreateMenuCommandHandlerTest {
     @BeforeEach
     void setUp() {
         dto = new MenuEntryDTO();
-        dto.setApplicationCode("APP");
         dto.setParentCode("MENU1");
         dto.setType(MenuEntryType.MENU_PAGE);
         dto.setPageSlug("my-page");

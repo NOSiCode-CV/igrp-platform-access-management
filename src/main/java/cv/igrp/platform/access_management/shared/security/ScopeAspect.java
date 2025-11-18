@@ -32,6 +32,7 @@ public class ScopeAspect {
                 ctx.setDepartmentIds(allowedDepartments);
                 ctx.setApplicationIds(allowedApplications);
                 ctx.setRoleIds(allowedRoles);
+                ctx.setExternalUserId(scopeService.getActor().externalId());
                 ctx.setSuperAdmin(scopeService.isSuperAdmin());
             }
         }

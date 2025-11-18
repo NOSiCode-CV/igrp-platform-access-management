@@ -5,15 +5,16 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import java.util.ArrayList;
-import java.util.List;
+
 
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class GetApplicationsByIdsCommand implements Command {
+public class DeleteMenuCommand implements Command {
 
-  
-  private List<Integer> getApplicationsByIdsRequest;
+  @NotBlank(message = "The field <applicationCode> is required")
+  private String applicationCode;
+  @NotBlank(message = "The field <menuCode> is required")
+  private String menuCode;
 
 }

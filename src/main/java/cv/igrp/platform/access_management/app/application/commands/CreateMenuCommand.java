@@ -1,4 +1,4 @@
-package cv.igrp.platform.access_management.menu.application.commands;
+package cv.igrp.platform.access_management.app.application.commands;
 
 import cv.igrp.framework.core.domain.Command;
 import jakarta.validation.constraints.*;
@@ -14,5 +14,7 @@ public class CreateMenuCommand implements Command {
 
   
   private MenuEntryDTO menuentrydto;
+  @NotBlank(message = "The field <applicationCode> is required")
+  private String applicationCode;
 
 }

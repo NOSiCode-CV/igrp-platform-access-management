@@ -24,7 +24,6 @@ import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import java.util.List;
 import java.util.Map;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
-import cv.igrp.platform.access_management.shared.application.dto.CodeListRequestDTO;
 
 @IgrpController
 @RestController
@@ -199,37 +198,6 @@ public class ApplicationController {
        return response;
   }
 
-   @PostMapping(
-   value = "applications/by-ids"
-  )
-  @Operation(
-    summary = "POST method to handle operations for getApplicationsByIds",
-    description = "POST method to handle operations for getApplicationsByIds",
-    responses = {
-      @ApiResponse(
-          responseCode = "200",
-          description = "The List of Application",
-          content = @Content(
-              mediaType = "application/json",
-              schema = @Schema(
-                  implementation = ApplicationDTO.class,
-                  type = "object")
-          )
-      )
-    }
-  )
-  
-  public ResponseEntity<List<ApplicationDTO>> getApplicationsByIds(@RequestBody List<Integer> getApplicationsByIdsRequest
-    )
-  {
-
-      final var command = new GetApplicationsByIdsCommand(getApplicationsByIdsRequest);
-
-       ResponseEntity<List<ApplicationDTO>> response = commandBus.send(command);
-
-       return response;
-  }
-
    @GetMapping(
    value = "applications/by-user/{uid}"
   )
@@ -255,37 +223,6 @@ public class ApplicationController {
   {
 
       final var query = new GetApplicationsByUserQuery(uid);
-
-      ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
-
-      return response;
-  }
-
-   @GetMapping(
-   value = "/applications/denied-to-user/{uid}"
-  )
-  @Operation(
-    summary = "GET method to handle operations for getApplicationDeniedToUser",
-    description = "GET method to handle operations for getApplicationDeniedToUser",
-    responses = {
-      @ApiResponse(
-          responseCode = "200",
-          description = "List of Applications denied to User",
-          content = @Content(
-              mediaType = "application/json",
-              schema = @Schema(
-                  implementation = ApplicationDTO.class,
-                  type = "")
-          )
-      )
-    }
-  )
-  
-  public ResponseEntity<List<ApplicationDTO>> getApplicationDeniedToUser(
-    @PathVariable(value = "uid") String uid)
-  {
-
-      final var query = new GetApplicationDeniedToUserQuery(uid);
 
       ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
 
@@ -416,8 +353,101 @@ public class ApplicationController {
       return response;
   }
 
+   @PostMapping(
+   value = "/applications/{applicationCode}/menus"
+  )
+  @Operation(
+    summary = "POST method to handle operations for createMenu",
+    description = "POST method to handle operations for createMenu",
+    responses = {
+      @ApiResponse(
+          responseCode = "201",
+          description = "The Persisted Menu",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = MenuEntryDTO.class,
+                  type = "")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<MenuEntryDTO> createMenu(@Valid @RequestBody MenuEntryDTO createMenuRequest
+    , @PathVariable(value = "applicationCode") String applicationCode)
+  {
+
+      final var command = new CreateMenuCommand(createMenuRequest, applicationCode);
+
+       ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @PutMapping(
+   value = "/applications/{applicationCode}/menus/{menuCode}"
+  )
+  @Operation(
+    summary = "PUT method to handle operations for updateMenu",
+    description = "PUT method to handle operations for updateMenu",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "The Updated Menu",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = MenuEntryDTO.class,
+                  type = "")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<MenuEntryDTO> updateMenu(@Valid @RequestBody MenuEntryDTO updateMenuRequest
+    , @PathVariable(value = "applicationCode") String applicationCode,@PathVariable(value = "menuCode") String menuCode)
+  {
+
+      final var command = new UpdateMenuCommand(updateMenuRequest, applicationCode, menuCode);
+
+       ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @DeleteMapping(
+   value = "/applications/{applicationCode}/menus/{menuCode}"
+  )
+  @Operation(
+    summary = "DELETE method to handle operations for deleteMenu",
+    description = "DELETE method to handle operations for deleteMenu",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "No Content",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> deleteMenu(
+    @PathVariable(value = "applicationCode") String applicationCode,@PathVariable(value = "menuCode") String menuCode)
+  {
+
+      final var command = new DeleteMenuCommand(applicationCode, menuCode);
+
+       ResponseEntity<String> response = commandBus.send(command);
+
+       return response;
+  }
+
    @GetMapping(
-   value = "/applications/{code}/menus/available"
+   value = "/applications/{code}/menus"
   )
   @Operation(
     summary = "GET method to handle operations for getApplicationMenus",
@@ -445,130 +475,6 @@ public class ApplicationController {
       ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
 
       return response;
-  }
-
-   @PostMapping(
-   value = "/applications/{code}/roles"
-  )
-  @Operation(
-    summary = "POST method to handle operations for addRolesToApp",
-    description = "POST method to handle operations for addRolesToApp",
-    responses = {
-      @ApiResponse(
-          responseCode = "200",
-          description = "Add roles to an application",
-          content = @Content(
-              mediaType = "application/json",
-              schema = @Schema(
-                  implementation = String.class,
-                  type = "String")
-          )
-      )
-    }
-  )
-  
-  public ResponseEntity<String> addRolesToApp(@Valid @RequestBody CodeListRequestDTO addRolesToAppRequest
-    , @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "code") String code)
-  {
-
-      final var command = new AddRolesToAppCommand(addRolesToAppRequest, departmentCode, code);
-
-       ResponseEntity<String> response = commandBus.send(command);
-
-       return response;
-  }
-
-   @DeleteMapping(
-   value = "applications/{code}/roles"
-  )
-  @Operation(
-    summary = "DELETE method to handle operations for removeRoleFromApplication",
-    description = "DELETE method to handle operations for removeRoleFromApplication",
-    responses = {
-      @ApiResponse(
-          responseCode = "204",
-          description = "Remove a role from an application",
-          content = @Content(
-              mediaType = "application/json",
-              schema = @Schema(
-                  implementation = String.class,
-                  type = "String")
-          )
-      )
-    }
-  )
-  
-  public ResponseEntity<String> removeRoleFromApplication(@Valid @RequestBody CodeListRequestDTO removeRoleFromApplicationRequest
-    , @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "code") String code)
-  {
-
-      final var command = new RemoveRoleFromApplicationCommand(removeRoleFromApplicationRequest, departmentCode, code);
-
-       ResponseEntity<String> response = commandBus.send(command);
-
-       return response;
-  }
-
-   @PostMapping(
-   value = "applications/{code}/departments"
-  )
-  @Operation(
-    summary = "POST method to handle operations for addDepartmentsToApplication",
-    description = "POST method to handle operations for addDepartmentsToApplication",
-    responses = {
-      @ApiResponse(
-          responseCode = "200",
-          description = "Add departments to an application",
-          content = @Content(
-              mediaType = "application/json",
-              schema = @Schema(
-                  implementation = String.class,
-                  type = "String")
-          )
-      )
-    }
-  )
-  
-  public ResponseEntity<String> addDepartmentsToApplication(@Valid @RequestBody CodeListRequestDTO addDepartmentsToApplicationRequest
-    , @PathVariable(value = "code") String code)
-  {
-
-      final var command = new AddDepartmentsToApplicationCommand(addDepartmentsToApplicationRequest, code);
-
-       ResponseEntity<String> response = commandBus.send(command);
-
-       return response;
-  }
-
-   @DeleteMapping(
-   value = "applications/{code}/departments"
-  )
-  @Operation(
-    summary = "DELETE method to handle operations for removeDepartmentFromApplication",
-    description = "DELETE method to handle operations for removeDepartmentFromApplication",
-    responses = {
-      @ApiResponse(
-          responseCode = "204",
-          description = "Remove a department from an application",
-          content = @Content(
-              mediaType = "application/json",
-              schema = @Schema(
-                  implementation = String.class,
-                  type = "String")
-          )
-      )
-    }
-  )
-  
-  public ResponseEntity<String> removeDepartmentFromApplication(@Valid @RequestBody CodeListRequestDTO removeDepartmentFromApplicationRequest
-    , @PathVariable(value = "code") String code)
-  {
-
-      final var command = new RemoveDepartmentFromApplicationCommand(removeDepartmentFromApplicationRequest, code);
-
-       ResponseEntity<String> response = commandBus.send(command);
-
-       return response;
   }
 
 }

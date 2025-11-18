@@ -1,4 +1,4 @@
-package cv.igrp.platform.access_management.menu.application.commands;
+package cv.igrp.platform.access_management.app.application.commands;
 
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;

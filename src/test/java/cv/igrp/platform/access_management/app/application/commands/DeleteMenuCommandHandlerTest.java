@@ -1,4 +1,4 @@
-package cv.igrp.platform.access_management.menu.application.commands;
+package cv.igrp.platform.access_management.app.application.commands;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -109,7 +109,6 @@ public class DeleteMenuCommandHandlerTest {
     void testHandle_whenCommandCodeIsNull_shouldThrowCustomException() {
         // Arrange
         command = deleteMenuCommand(null);
-        //noinspection DataFlowIssue
         when(applicationRepository.findByCodeAndStatusNot("1", Status.DELETED)).thenReturn(Optional.of(application));
         when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, null, Status.DELETED)).thenReturn(Optional.empty());
 

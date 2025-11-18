@@ -1,8 +1,8 @@
-package cv.igrp.platform.access_management.menu.application.commands;
+package cv.igrp.platform.access_management.app.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.menu.application.domain.service.MenuEntryValidator;
+import cv.igrp.platform.access_management.app.domain.service.MenuEntryValidator;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -56,13 +56,13 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
       // Find the menu entry by ID, application, and status not deleted
       ApplicationEntity app = applicationRepository.findByCodeAndStatusNotDeleted(command.getApplicationCode());
       // Find the menu entry by application ID, code, and status not deleted
-      MenuEntryEntity menuEntry = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(app, command.getCode(), Status.DELETED)
+      MenuEntryEntity menuEntry = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(app, command.getMenuCode(), Status.DELETED)
               .orElseThrow(() -> {
-                 logger.warn("Menu not found with code: {}", command.getCode());
+                 logger.warn("Menu not found with code: {}", command.getMenuCode());
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
                          "Menu not found",
-                         "Menu not found with code: " + command.getCode());
+                         "Menu not found with code: " + command.getMenuCode());
               });
 
       MenuEntryDTO menuDto = command.getMenuentrydto();

@@ -1,8 +1,8 @@
-package cv.igrp.platform.access_management.menu.application.commands;
+package cv.igrp.platform.access_management.app.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.menu.application.domain.service.MenuEntryValidator;
+import cv.igrp.platform.access_management.app.domain.service.MenuEntryValidator;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -11,7 +11,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -45,8 +44,7 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
    private final MenuEntryEntityRepository menuEntryRepository;
    private final MenuEntryMapper menuEntryMapper;
    private final ApplicationEntityRepository applicationRepository;
-   private final PermissionEntityRepository permissionRepository;
-   private final MenuEntryValidator menuEntryValidator;
+    private final MenuEntryValidator menuEntryValidator;
 
    /**
     * Constructs a {@code CreateMenuCommandHandler} with all required dependencies.
@@ -57,13 +55,11 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
     */
    public CreateMenuCommandHandler(MenuEntryEntityRepository menuEntryRepository, MenuEntryMapper menuEntryMapper,
                                    ApplicationEntityRepository applicationRepository,
-                                   PermissionEntityRepository permissionRepository,
                                    MenuEntryValidator menuEntryValidator) {
       this.menuEntryRepository = menuEntryRepository;
       this.menuEntryMapper = menuEntryMapper;
       this.applicationRepository = applicationRepository;
-      this.permissionRepository = permissionRepository;
-      this.menuEntryValidator = menuEntryValidator;
+       this.menuEntryValidator = menuEntryValidator;
    }
 
    /**
@@ -98,26 +94,24 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
                  HttpStatus.BAD_REQUEST, "Menu", "Menu Entry DTO Missing");
       }
 
-       var validation = menuEntryValidator.validateMenuEntryCode(menuEntryDTO);
-       if(!validation.isValid()) {
-           throw IgrpResponseStatusException.of(
-                   HttpStatus.CONFLICT, "Create Menu Entry", validation.getFailureMessage()
-           );
-       }
+      var validation = menuEntryValidator.validateMenuEntryCode(menuEntryDTO);
+      if(!validation.isValid()) {
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.CONFLICT, "Create Menu Entry", validation.getFailureMessage()
+         );
+      }
 
       MenuEntryValidator.validateRequiredFields(menuEntryDTO);
 
       MenuEntryEntity menuEntry = menuEntryMapper.toEntity(menuEntryDTO);
 
-      if (menuEntryDTO.getApplicationCode() != null) {
-         menuEntry.setApplicationId(applicationRepository.findByCodeAndStatusNot(menuEntryDTO.getApplicationCode(), Status.DELETED)
-                 .orElseThrow(() -> {
-                    logger.warn("Application not found with code: {}", menuEntryDTO.getApplicationCode());
-                    return IgrpResponseStatusException.of(
-                            HttpStatus.NOT_FOUND, "Application not found",
-                            "Application not found with code: " + menuEntryDTO.getApplicationCode());
-                 }));
-      }
+      menuEntry.setApplicationId(applicationRepository.findByCodeAndStatusNot(command.getApplicationCode(), Status.DELETED)
+              .orElseThrow(() -> {
+                 logger.warn("Application not found with code: {}", menuEntryDTO.getApplicationCode());
+                 return IgrpResponseStatusException.of(
+                         HttpStatus.NOT_FOUND, "Application not found",
+                         "Application not found with code: " + menuEntryDTO.getApplicationCode());
+              }));
 
       if (menuEntryDTO.getParentCode() != null) {
          menuEntry.setParentId(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(menuEntry.getApplicationId(), menuEntryDTO.getParentCode(), Status.DELETED)

@@ -1,4 +1,4 @@
-package cv.igrp.platform.access_management.menu.application.domain.service;
+package cv.igrp.platform.access_management.app.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
