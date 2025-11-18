@@ -237,7 +237,7 @@
     },
     {
       "actionName": "getMenusAvailableForDepartment",
-      "path": "departments/{code}/menus/available",
+      "path": "departments/{departmentCode}/applications/{applicationCode}/menus/available",
       "method": "GET",
       "responses": {
         "200": {
@@ -257,7 +257,12 @@
       },
       "pathVariables": [
         {
-          "name": "code",
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "applicationCode",
           "type": "string",
           "isRequired": true
         }
@@ -642,7 +647,7 @@
     },
     {
       "actionName": "addMenusToDepartment",
-      "path": "departments/{code}/menus",
+      "path": "departments/{departmentCode}/applications/{applicationCode}/menus",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -669,17 +674,14 @@
           }
         }
       },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "applicationCode",
-          "description": "Application Code",
-          "isRequired": true
-        }
-      ],
       "pathVariables": [
         {
-          "name": "code",
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "applicationCode",
           "type": "string",
           "isRequired": true
         }
@@ -724,7 +726,7 @@
     },
     {
       "actionName": "removeMenusFromDepartment",
-      "path": "departments/{code}/menus",
+      "path": "departments/{departmentCode}/applications/{applicationCode}/menus",
       "method": "DELETE",
       "requestBody": {
         "content": {
@@ -751,17 +753,14 @@
           }
         }
       },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "applicationCode",
-          "description": "Application Code",
-          "isRequired": true
-        }
-      ],
       "pathVariables": [
         {
-          "name": "code",
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "applicationCode",
           "type": "string",
           "isRequired": true
         }
@@ -805,7 +804,7 @@
     },
     {
       "actionName": "getDepartmentMenus",
-      "path": "/departments/{code}/menus",
+      "path": "/departments/{departmentCode}/applications/{applicationCode}/menus",
       "method": "GET",
       "responses": {
         "200": {
@@ -829,17 +828,16 @@
           "name": "menuCode",
           "description": "Menu Entry Code",
           "isRequired": false
-        },
-        {
-          "type": "string",
-          "name": "applicationCode",
-          "description": "Application Code",
-          "isRequired": false
         }
       ],
       "pathVariables": [
         {
-          "name": "code",
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "applicationCode",
           "type": "string",
           "isRequired": true
         }
@@ -882,5 +880,5 @@
       ]
     }
   ],
-  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-addMenusToDepartment-removeMenusFromDepartment-createRole-getRoles"
+  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-addMenusToDepartment-removeMenusFromDepartment-createRole-getRoles-addMenusToDepartment-getDepartmentMenus-getMenusAvailableForDepartment"
 }

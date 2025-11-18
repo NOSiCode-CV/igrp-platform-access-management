@@ -42,13 +42,13 @@ public class RemoveMenusFromDepartmentCommandHandler implements CommandHandler<R
 
       List<String> menuIds = command.getRemoveMenusFromDepartmentRequest();
       String appCode = command.getApplicationCode();
-      var department = departmentEntityRepository.findByCodeAndStatusNot(command.getCode(), DepartmentStatus.DELETED)
+      var department = departmentEntityRepository.findByCodeAndStatusNot(command.getDepartmentCode(), DepartmentStatus.DELETED)
               .orElseThrow(() -> {
-                 LOGGER.warn("Department not found with code: {}", command.getCode());
+                 LOGGER.warn("Department not found with code: {}", command.getDepartmentCode());
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND,
                          "Department not found",
-                         "Department not found with code: " + command.getCode());
+                         "Department not found with code: " + command.getDepartmentCode());
               });
       var application = applicationEntityRepository.findByCodeAndStatusNot(appCode, Status.DELETED)
               .orElseThrow(() -> {
@@ -69,10 +69,10 @@ public class RemoveMenusFromDepartmentCommandHandler implements CommandHandler<R
          if (menuEntry.getDepartments().stream().map(DepartmentEntity::getCode).toList().contains(department.getCode())) {
             menuEntry.getDepartments().remove(department);
             //removeDepartmentFromParents(menuEntry, department);
-            LOGGER.info("Menu entry with code: {} removed from department with code: {}.", menuCode, command.getCode());
+            LOGGER.info("Menu entry with code: {} removed from department with code: {}.", menuCode, command.getDepartmentCode());
             menuEntryRepository.save(menuEntry);
          } else {
-            LOGGER.info("Menu entry with code: {} not associated with department with code: {}.", menuCode, command.getCode());
+            LOGGER.info("Menu entry with code: {} not associated with department with code: {}.", menuCode, command.getDepartmentCode());
          }
       });
 

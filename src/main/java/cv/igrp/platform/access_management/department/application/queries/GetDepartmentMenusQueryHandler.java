@@ -40,9 +40,9 @@ public class GetDepartmentMenusQueryHandler implements QueryHandler<GetDepartmen
     @Transactional(readOnly = true)
     public ResponseEntity<List<MenuEntryDTO>> handle(GetDepartmentMenusQuery query) {
 
-        LOGGER.info("Getting menus for department: {}", query.getCode());
+        LOGGER.info("Getting menus for department: {}", query.getDepartmentCode());
 
-        DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(query.getCode());
+        DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(query.getDepartmentCode());
 
         List<MenuEntryDTO> menus = menuRepository.findByDepartmentAndStatusNot(department, Status.DELETED)
                 .stream()

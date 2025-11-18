@@ -263,7 +263,7 @@ public class DepartmentController {
   }
 
    @GetMapping(
-   value = "departments/{code}/menus/available"
+   value = "departments/{departmentCode}/applications/{applicationCode}/menus/available"
   )
   @Operation(
     summary = "GET method to handle operations for getMenusAvailableForDepartment",
@@ -283,10 +283,10 @@ public class DepartmentController {
   )
   
   public ResponseEntity<List<MenuEntryDTO>> getMenusAvailableForDepartment(
-    @PathVariable(value = "code") String code)
+    @PathVariable(value = "departmentCode") String departmentCode,@PathVariable(value = "applicationCode") String applicationCode)
   {
 
-      final var query = new GetMenusAvailableForDepartmentQuery(code);
+      final var query = new GetMenusAvailableForDepartmentQuery(departmentCode, applicationCode);
 
       ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
 
@@ -604,7 +604,7 @@ public class DepartmentController {
   }
 
    @PostMapping(
-   value = "departments/{code}/menus"
+   value = "departments/{departmentCode}/applications/{applicationCode}/menus"
   )
   @Operation(
     summary = "POST method to handle operations for addMenusToDepartment",
@@ -624,10 +624,10 @@ public class DepartmentController {
   )
   
   public ResponseEntity<String> addMenusToDepartment(@RequestBody List<String> addMenusToDepartmentRequest
-    , @RequestParam(value = "applicationCode") String applicationCode, @PathVariable(value = "code") String code)
+    , @PathVariable(value = "departmentCode") String departmentCode,@PathVariable(value = "applicationCode") String applicationCode)
   {
 
-      final var command = new AddMenusToDepartmentCommand(addMenusToDepartmentRequest, applicationCode, code);
+      final var command = new AddMenusToDepartmentCommand(addMenusToDepartmentRequest, departmentCode, applicationCode);
 
        ResponseEntity<String> response = commandBus.send(command);
 
@@ -666,7 +666,7 @@ public class DepartmentController {
   }
 
    @DeleteMapping(
-   value = "departments/{code}/menus"
+   value = "departments/{departmentCode}/applications/{applicationCode}/menus"
   )
   @Operation(
     summary = "DELETE method to handle operations for removeMenusFromDepartment",
@@ -686,10 +686,10 @@ public class DepartmentController {
   )
   
   public ResponseEntity<String> removeMenusFromDepartment(@RequestBody List<String> removeMenusFromDepartmentRequest
-    , @RequestParam(value = "applicationCode") String applicationCode, @PathVariable(value = "code") String code)
+    , @PathVariable(value = "departmentCode") String departmentCode,@PathVariable(value = "applicationCode") String applicationCode)
   {
 
-      final var command = new RemoveMenusFromDepartmentCommand(removeMenusFromDepartmentRequest, applicationCode, code);
+      final var command = new RemoveMenusFromDepartmentCommand(removeMenusFromDepartmentRequest, departmentCode, applicationCode);
 
        ResponseEntity<String> response = commandBus.send(command);
 
@@ -728,7 +728,7 @@ public class DepartmentController {
   }
 
    @GetMapping(
-   value = "/departments/{code}/menus"
+   value = "/departments/{departmentCode}/applications/{applicationCode}/menus"
   )
   @Operation(
     summary = "GET method to handle operations for getDepartmentMenus",
@@ -748,11 +748,10 @@ public class DepartmentController {
   )
   
   public ResponseEntity<List<MenuEntryDTO>> getDepartmentMenus(
-    @RequestParam(value = "menuCode", required = false) String menuCode,
-    @RequestParam(value = "applicationCode", required = false) String applicationCode, @PathVariable(value = "code") String code)
+    @RequestParam(value = "menuCode", required = false) String menuCode, @PathVariable(value = "departmentCode") String departmentCode,@PathVariable(value = "applicationCode") String applicationCode)
   {
 
-      final var query = new GetDepartmentMenusQuery(menuCode, applicationCode, code);
+      final var query = new GetDepartmentMenusQuery(menuCode, departmentCode, applicationCode);
 
       ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
 
