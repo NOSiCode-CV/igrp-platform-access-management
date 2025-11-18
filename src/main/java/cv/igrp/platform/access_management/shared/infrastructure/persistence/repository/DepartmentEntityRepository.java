@@ -3,12 +3,14 @@ package cv.igrp.platform.access_management.shared.infrastructure.persistence.rep
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.history.RevisionRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -53,4 +55,14 @@ public interface DepartmentEntityRepository extends
     """)
     List<DepartmentEntity> findByIds(Set<Integer> ids);
 
+    @Query(
+            """
+            select d
+            from DepartmentEntity d
+            join d.roles r
+            join r.users u
+            where u = :user and d.status <> 'DELETED'
+        """
+    )
+    List<DepartmentEntity> findByUserIdAndStatusNotDeleted(IGRPUserEntity user);
 }

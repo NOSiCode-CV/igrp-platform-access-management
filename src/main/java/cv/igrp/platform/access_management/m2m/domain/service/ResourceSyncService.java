@@ -1,11 +1,10 @@
 package cv.igrp.platform.access_management.m2m.domain.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
+import cv.igrp.platform.access_management.department.mapper.ResourceMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceItemDTO;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
@@ -15,7 +14,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 

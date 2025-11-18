@@ -22,7 +22,7 @@ public class AuthenticationHelper {
      * @return the username or client ID depending on the authentication type
      * @throws IllegalStateException if no authentication is found
      */
-    public String getPreferredUsername() {
+    public String getSub() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null) {

@@ -292,6 +292,318 @@
       ]
     },
     {
+      "actionName": "createRole",
+      "path": "departments/{code}/roles",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "RoleDTO",
+              "name": "CreateRole",
+              "objectType": "dto",
+              "module": "shared",
+              "description": "Create Role"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "name": "CREATED",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getRoles",
+      "path": "departments/{code}/roles",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "roleCode",
+          "description": "Role Code",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "updateRole",
+      "path": "departments/{departmentCode}/roles/{roleCode}",
+      "method": "PUT",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "RoleDTO",
+              "name": "UpdateRoleRequest",
+              "objectType": "dto",
+              "module": "shared",
+              "description": "Update Role Request"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "roleCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "deleteRole",
+      "path": "departments/{departmentCode}/roles/{roleCode}",
+      "method": "DELETE",
+      "responses": {
+        "204": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "boolean",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "roleCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "RemovePermissions",
+      "path": "departments/{departmentCode}/roles/{roleCode}/permissions",
+      "method": "DELETE",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "RemovePermissions",
+              "description": "Remove Permissions Request",
+              "collectionType": "list",
+              "isRequired": true
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "roleCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "GetPermissionsByRoleId",
+      "path": "departments/{departmentCode}/roles/{roleCode}/permissions",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "PermissionDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "roleCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "addPermissions",
+      "path": "departments/{departmentCode}/roles/{roleCode}/permissions",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "RemovePermissions",
+              "description": "Remove Permissions Request",
+              "collectionType": "list",
+              "isRequired": true
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "roleCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getAvailablePermissionsForRoles",
+      "path": "departments/{departmentCode}/roles/{roleCode}/permissions/available",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "PermissionDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "roleCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
       "actionName": "addApplicationsToDepartment",
       "path": "departments/{code}/applications",
       "method": "POST",
@@ -454,7 +766,121 @@
           "isRequired": true
         }
       ]
+    },
+    {
+      "actionName": "getDepartmentResources",
+      "path": "/departments/{code}/resources",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ResourceDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "resourceName",
+          "description": "Resource Name",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getDepartmentMenus",
+      "path": "/departments/{code}/menus",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "menuCode",
+          "description": "Menu Entry Code",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getDepartmentApplications",
+      "path": "/departments/{code}/applications",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
     }
   ],
-  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-addMenusToDepartment-removeMenusFromDepartment"
+  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-addMenusToDepartment-removeMenusFromDepartment-createRole-getRoles"
 }

@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.shared.infrastructure.persistence.rep
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -61,4 +62,14 @@ public interface ResourceEntityRepository extends
             """)
     List<ResourceEntity> findAvailableResourcesForDepartment(@Param("code") String code, @Param("system_resource") String systemResource);
 
+    @Query(
+    """
+                SELECT r
+                FROM ResourceEntity r
+                JOIN r.applications a
+                JOIN a.departments d
+                WHERE d = :department AND r.status != :status
+    """
+    )
+    List<ResourceEntity> findByDepartmentAndStatusNot(DepartmentEntity department, Status status);
 }

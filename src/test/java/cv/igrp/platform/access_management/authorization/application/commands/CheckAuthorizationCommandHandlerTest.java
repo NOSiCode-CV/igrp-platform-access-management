@@ -50,7 +50,7 @@ class CheckAuthorizationCommandHandlerTest {
         expectedResponse.setAllowed(true);
         expectedResponse.setViaRoles(List.of("ADMIN"));
 
-        when(authenticationHelper.getPreferredUsername()).thenReturn(sub);
+        when(authenticationHelper.getSub()).thenReturn(sub);
         when(singleCheckAuthorizationHandler.checkAuthorization(sub, "read", "document"))
                 .thenReturn(expectedResponse);
 
@@ -60,14 +60,14 @@ class CheckAuthorizationCommandHandlerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expectedResponse, response.getBody());
 
-        verify(authenticationHelper).getPreferredUsername();
+        verify(authenticationHelper).getSub();
         verify(singleCheckAuthorizationHandler).checkAuthorization(sub, "read", "document");
     }
 
     @Test
     void testHandle_WhenHandlerReturnsNull_ShouldStillReturnOkResponse() {
         String sub = "a1b5fc1e-2fab-8e6a-e4d3-10a59b3c1029";
-        when(authenticationHelper.getPreferredUsername()).thenReturn(sub);
+        when(authenticationHelper.getSub()).thenReturn(sub);
         when(singleCheckAuthorizationHandler.checkAuthorization(sub, "read", "document"))
                 .thenReturn(null);
 

@@ -58,7 +58,7 @@ public class GetCurrentUserQueryHandler implements QueryHandler<GetCurrentUserQu
    */
   @IgrpQueryHandler
   public ResponseEntity<IGRPUserDTO> handle(GetCurrentUserQuery query) {
-    String externalId = authenticationHelper.getPreferredUsername();
+    String externalId = authenticationHelper.getSub();
 
     logger.info("Fetching current user with sub: {}", externalId);
 

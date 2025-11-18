@@ -479,7 +479,113 @@
           "isRequired": true
         }
       ]
+    },
+    {
+      "actionName": "addRolesToMenu",
+      "path": "/applications/{applicationCode}/menus/{menuCode}/roles",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "collectionType": "list",
+              "name": "AddPermissionsToMenuRequest",
+              "description": "Add Permissions Request"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "description": "Department Code",
+          "isRequired": true
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "applicationCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "menuCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "removeRolesFromMenu",
+      "path": "/applications/{applicationCode}/menus/{menuCode}/roles",
+      "method": "DELETE",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "collectionType": "list",
+              "name": "RemovePermissionsFromMenuRequest",
+              "description": "Remove Permissions from Menu"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "description": "Department Code",
+          "isRequired": true
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "applicationCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "menuCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
     }
   ],
-  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications-removeDepartementFromApplication-getApplicationMenus-removeApplicationCustomFields-addRolesToApp-removeRoleFromApplication-addDepartmentsToApplication-removeDepartmentFromApplication-addRolesToApp-removeRoleFromApplication-getApplicationsByIds-getApplicationDeniedToUser-getApplicationMenus-createMenu-updateMenu-deleteMenu"
+  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications-removeDepartementFromApplication-getApplicationMenus-removeApplicationCustomFields-addRolesToApp-removeRoleFromApplication-addDepartmentsToApplication-removeDepartmentFromApplication-addRolesToApp-removeRoleFromApplication-getApplicationsByIds-getApplicationDeniedToUser-getApplicationMenus-createMenu-updateMenu-deleteMenu-addRolesToMenu"
 }

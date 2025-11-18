@@ -24,6 +24,9 @@ import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.UserInvitationResponseDTO;
+import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
+import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 
 @IgrpController
 @RestController
@@ -271,7 +274,7 @@ public class UserController {
   }
 
    @GetMapping(
-   value = "users/current"
+   value = "users/me"
   )
   @Operation(
     summary = "GET method to handle operations for getCurrentUser",
@@ -361,6 +364,130 @@ public class UserController {
        ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
 
        return response;
+  }
+
+   @GetMapping(
+   value = "users/me/applications"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getCurrentUserApplications",
+    description = "GET method to handle operations for getCurrentUserApplications",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ApplicationDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<ApplicationDTO>> getCurrentUserApplications(
+    @RequestParam(value = "applicationCode", required = false) String applicationCode)
+  {
+
+      final var query = new GetCurrentUserApplicationsQuery(applicationCode);
+
+      ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
+
+      return response;
+  }
+
+   @GetMapping(
+   value = "users/me/applications/{applicationCode}/menus"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getCurrentUserApplicationMenus",
+    description = "GET method to handle operations for getCurrentUserApplicationMenus",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = MenuEntryDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<MenuEntryDTO>> getCurrentUserApplicationMenus(
+    @RequestParam(value = "menuCode", required = false) String menuCode, @PathVariable(value = "applicationCode") String applicationCode)
+  {
+
+      final var query = new GetCurrentUserApplicationMenusQuery(menuCode, applicationCode);
+
+      ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
+
+      return response;
+  }
+
+   @GetMapping(
+   value = "users/me/departments"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getCurrentUserDepartments",
+    description = "GET method to handle operations for getCurrentUserDepartments",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = DepartmentDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<DepartmentDTO>> getCurrentUserDepartments(
+    @RequestParam(value = "departmentCode", required = false) String departmentCode)
+  {
+
+      final var query = new GetCurrentUserDepartmentsQuery(departmentCode);
+
+      ResponseEntity<List<DepartmentDTO>> response = queryBus.handle(query);
+
+      return response;
+  }
+
+   @GetMapping(
+   value = "users/me/departments/{departmentCode}/roles"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getCurrentUserDepartmentRoles",
+    description = "GET method to handle operations for getCurrentUserDepartmentRoles",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<RoleDTO>> getCurrentUserDepartmentRoles(
+    @RequestParam(value = "roleCode", required = false) String roleCode, @PathVariable(value = "departmentCode") String departmentCode)
+  {
+
+      final var query = new GetCurrentUserDepartmentRolesQuery(roleCode, departmentCode);
+
+      ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
+
+      return response;
   }
 
 }

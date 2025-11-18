@@ -76,8 +76,8 @@ public class PermissionSyncService {
         }
 
         // Get all existing permissions for the current resource
-        ResourceEntity resource = resourceEntityRepository.findByNameAndStatusNot(authenticationHelper.getPreferredUsername(), Status.DELETED)
-                .orElseThrow(() -> IgrpResponseStatusException.notFound("Resource not found", "Resource with name: " + authenticationHelper.getPreferredUsername() + " not found."));
+        ResourceEntity resource = resourceEntityRepository.findByNameAndStatusNot(authenticationHelper.getSub(), Status.DELETED)
+                .orElseThrow(() -> IgrpResponseStatusException.notFound("Resource not found", "Resource with name: " + authenticationHelper.getSub() + " not found."));
 
         Set<ResourceEntity> resourceEntities = new HashSet<>();
         resourceEntities.add(resource);

@@ -69,7 +69,7 @@ public class ScopeService {
         }
 
         // Extract sub
-        String sub = authenticationHelper.getPreferredUsername();
+        String sub = authenticationHelper.getSub();
 
         // Extract roles
         Set<String> roles = auth.getAuthorities().stream()

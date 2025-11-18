@@ -2,7 +2,7 @@ package cv.igrp.platform.access_management.app.application.commands;
 
 import cv.igrp.platform.access_management.app.domain.service.MenuEntryValidator;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
-import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
+import cv.igrp.platform.access_management.app.mapper.MenuEntryMapper;
 
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;

@@ -3,6 +3,8 @@ package cv.igrp.platform.access_management.shared.infrastructure.persistence.rep
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -10,10 +12,7 @@ import org.springframework.data.repository.history.RevisionRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 @Repository
 public interface ApplicationEntityRepository extends
@@ -100,11 +99,30 @@ public interface ApplicationEntityRepository extends
     List<ApplicationEntity> findByIdInAndStatusNot(Collection<Integer> ids, Status status);
 
     @Query("""
-        select a.id
-        from ApplicationEntity a
-        join a.departments d
-        where d.id in :departmentIds
-    """)
+                select a.id
+                from ApplicationEntity a
+                join a.departments d
+                where d.id in :departmentIds
+            """)
     Set<Integer> findByDepartmentIds(Set<Integer> departmentIds);
 
+    @Query("""
+        select a
+        from ApplicationEntity a
+        join a.departments d
+        where d = :department
+        and a.status <> :status
+    """)
+    List<ApplicationEntity> findByDepartmentAndStatusNot(DepartmentEntity department, Status status);
+
+    @Query("""
+        select a
+        from ApplicationEntity a
+        join a.departments d
+        join d.roles r
+        join r.users u
+        where u = :user
+        and a.status <> 'DELETED'
+    """)
+    List<ApplicationEntity> findByUserIdAndStatusNotDeleted(IGRPUserEntity user);
 }

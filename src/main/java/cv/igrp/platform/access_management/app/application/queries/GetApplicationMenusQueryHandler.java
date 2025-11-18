@@ -3,7 +3,7 @@ package cv.igrp.platform.access_management.app.application.queries;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.app.specs.MenuSpecificationBuilder;
-import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
+import cv.igrp.platform.access_management.app.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import cv.igrp.platform.access_management.shared.security.ScopeContext;

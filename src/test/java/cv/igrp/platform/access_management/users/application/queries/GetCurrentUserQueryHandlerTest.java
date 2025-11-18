@@ -56,7 +56,7 @@ class GetCurrentUserQueryHandlerTest {
     @DisplayName("Should return user DTO when authenticated user is found")
     void testHandle_whenUserExists_shouldReturnUserDTO() {
         // Arrange
-        when(authenticationHelper.getPreferredUsername()).thenReturn(mockExternalId);
+        when(authenticationHelper.getSub()).thenReturn(mockExternalId);
         when(userRepository.findByExternalId(mockExternalId)).thenReturn(Optional.of(mockUser));
         when(userMapper.toDto(mockUser)).thenReturn(mockDto);
 
@@ -70,7 +70,7 @@ class GetCurrentUserQueryHandlerTest {
         assertEquals(mockDto.getEmail(), response.getBody().getEmail());
 
         // Verify
-        verify(authenticationHelper, times(1)).getPreferredUsername();
+        verify(authenticationHelper, times(1)).getSub();
         verify(userRepository, times(1)).findByExternalId(mockExternalId);
         verify(userMapper, times(1)).toDto(mockUser);
     }
@@ -79,7 +79,7 @@ class GetCurrentUserQueryHandlerTest {
     @DisplayName("Should return 404 when authenticated user is not found")
     void testHandle_whenUserNotFound_shouldReturnNotFound() {
         // Arrange
-        when(authenticationHelper.getPreferredUsername()).thenReturn(mockExternalId);
+        when(authenticationHelper.getSub()).thenReturn(mockExternalId);
         when(userRepository.findByExternalId(mockExternalId)).thenReturn(Optional.empty());
 
         // Act
@@ -90,7 +90,7 @@ class GetCurrentUserQueryHandlerTest {
         assertNull(response.getBody());
 
         // Verify
-        verify(authenticationHelper, times(1)).getPreferredUsername();
+        verify(authenticationHelper, times(1)).getSub();
         verify(userRepository, times(1)).findByExternalId(mockExternalId);
         verifyNoInteractions(userMapper);
     }

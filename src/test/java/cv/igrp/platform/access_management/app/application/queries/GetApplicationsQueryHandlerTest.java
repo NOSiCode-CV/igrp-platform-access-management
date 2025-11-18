@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.when;
 
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
+import cv.igrp.platform.access_management.app.specs.ApplicationSpecificationBuilder;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
@@ -37,9 +38,12 @@ public class GetApplicationsQueryHandlerTest {
     @Mock
     private final ApplicationMapper applicationMapper = Mockito.mock(ApplicationMapper.class);
 
+    @Mock
+    private final ApplicationSpecificationBuilder specificationBuilder = Mockito.mock(ApplicationSpecificationBuilder.class);
+
     @BeforeEach
     void setUp() {
-        getApplicationsQueryHandler = new GetApplicationsQueryHandler(applicationRepository, applicationMapper);
+        getApplicationsQueryHandler = new GetApplicationsQueryHandler(applicationRepository, applicationMapper, specificationBuilder);
     }
 
     private DepartmentEntity buildDepartmentEntity(){

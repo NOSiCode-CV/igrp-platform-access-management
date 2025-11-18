@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.department.application.queries;
 
-import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
+import cv.igrp.platform.access_management.app.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.slf4j.Logger;

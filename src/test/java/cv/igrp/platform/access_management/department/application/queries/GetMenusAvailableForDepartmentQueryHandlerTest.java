@@ -1,7 +1,6 @@
 package cv.igrp.platform.access_management.department.application.queries;
 
-import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
-import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import cv.igrp.platform.access_management.app.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
@@ -18,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;

@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.department.application.queries;
 
-import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
+import cv.igrp.platform.access_management.department.mapper.ResourceMapper;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;

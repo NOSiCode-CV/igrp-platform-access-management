@@ -4,7 +4,7 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.app.domain.service.MenuEntryValidator;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
-import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
+import cv.igrp.platform.access_management.app.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;

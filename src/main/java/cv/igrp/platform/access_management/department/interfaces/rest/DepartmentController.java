@@ -25,6 +25,8 @@ import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
+import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 
 @IgrpController
 @RestController
@@ -323,6 +325,254 @@ public class DepartmentController {
   }
 
    @PostMapping(
+   value = "departments/{code}/roles"
+  )
+  @Operation(
+    summary = "POST method to handle operations for createRole",
+    description = "POST method to handle operations for createRole",
+    responses = {
+      @ApiResponse(
+          responseCode = "201",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<RoleDTO> createRole(@Valid @RequestBody RoleDTO createRoleRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      final var command = new CreateRoleCommand(createRoleRequest, code);
+
+       ResponseEntity<RoleDTO> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @GetMapping(
+   value = "departments/{code}/roles"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getRoles",
+    description = "GET method to handle operations for getRoles",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<RoleDTO>> getRoles(
+    @RequestParam(value = "roleCode", required = false) String roleCode, @PathVariable(value = "code") String code)
+  {
+
+      final var query = new GetRolesQuery(roleCode, code);
+
+      ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
+
+      return response;
+  }
+
+   @PutMapping(
+   value = "departments/{departmentCode}/roles/{roleCode}"
+  )
+  @Operation(
+    summary = "PUT method to handle operations for updateRole",
+    description = "PUT method to handle operations for updateRole",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<RoleDTO> updateRole(@Valid @RequestBody RoleDTO updateRoleRequest
+    , @PathVariable(value = "departmentCode") String departmentCode,@PathVariable(value = "roleCode") String roleCode)
+  {
+
+      final var command = new UpdateRoleCommand(updateRoleRequest, departmentCode, roleCode);
+
+       ResponseEntity<RoleDTO> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @DeleteMapping(
+   value = "departments/{departmentCode}/roles/{roleCode}"
+  )
+  @Operation(
+    summary = "DELETE method to handle operations for deleteRole",
+    description = "DELETE method to handle operations for deleteRole",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = boolean.class,
+                  type = "boolean")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<Boolean> deleteRole(
+    @PathVariable(value = "departmentCode") String departmentCode,@PathVariable(value = "roleCode") String roleCode)
+  {
+
+      final var command = new DeleteRoleCommand(departmentCode, roleCode);
+
+       ResponseEntity<Boolean> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @DeleteMapping(
+   value = "departments/{departmentCode}/roles/{roleCode}/permissions"
+  )
+  @Operation(
+    summary = "DELETE method to handle operations for RemovePermissions",
+    description = "DELETE method to handle operations for RemovePermissions",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<RoleDTO> removePermissions(@RequestBody List<String> removePermissionsRequest
+    , @PathVariable(value = "departmentCode") String departmentCode,@PathVariable(value = "roleCode") String roleCode)
+  {
+
+      final var command = new RemovePermissionsCommand(removePermissionsRequest, departmentCode, roleCode);
+
+       ResponseEntity<RoleDTO> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @GetMapping(
+   value = "departments/{departmentCode}/roles/{roleCode}/permissions"
+  )
+  @Operation(
+    summary = "GET method to handle operations for GetPermissionsByRoleId",
+    description = "GET method to handle operations for GetPermissionsByRoleId",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = PermissionDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<PermissionDTO>> getPermissionsByRoleId(
+    @PathVariable(value = "departmentCode") String departmentCode,@PathVariable(value = "roleCode") String roleCode)
+  {
+
+      final var query = new GetPermissionsByRoleIdQuery(departmentCode, roleCode);
+
+      ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
+
+      return response;
+  }
+
+   @PostMapping(
+   value = "departments/{departmentCode}/roles/{roleCode}/permissions"
+  )
+  @Operation(
+    summary = "POST method to handle operations for addPermissions",
+    description = "POST method to handle operations for addPermissions",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<RoleDTO> addPermissions(@RequestBody List<String> addPermissionsRequest
+    , @PathVariable(value = "departmentCode") String departmentCode,@PathVariable(value = "roleCode") String roleCode)
+  {
+
+      final var command = new AddPermissionsCommand(addPermissionsRequest, departmentCode, roleCode);
+
+       ResponseEntity<RoleDTO> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @GetMapping(
+   value = "departments/{departmentCode}/roles/{roleCode}/permissions/available"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getAvailablePermissionsForRoles",
+    description = "GET method to handle operations for getAvailablePermissionsForRoles",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = PermissionDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<PermissionDTO>> getAvailablePermissionsForRoles(
+    @PathVariable(value = "departmentCode") String departmentCode,@PathVariable(value = "roleCode") String roleCode)
+  {
+
+      final var query = new GetAvailablePermissionsForRolesQuery(departmentCode, roleCode);
+
+      ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
+
+      return response;
+  }
+
+   @PostMapping(
    value = "departments/{code}/applications"
   )
   @Operation(
@@ -444,6 +694,100 @@ public class DepartmentController {
        ResponseEntity<String> response = commandBus.send(command);
 
        return response;
+  }
+
+   @GetMapping(
+   value = "/departments/{code}/resources"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getDepartmentResources",
+    description = "GET method to handle operations for getDepartmentResources",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ResourceDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<ResourceDTO>> getDepartmentResources(
+    @RequestParam(value = "resourceName", required = false) String resourceName, @PathVariable(value = "code") String code)
+  {
+
+      final var query = new GetDepartmentResourcesQuery(resourceName, code);
+
+      ResponseEntity<List<ResourceDTO>> response = queryBus.handle(query);
+
+      return response;
+  }
+
+   @GetMapping(
+   value = "/departments/{code}/menus"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getDepartmentMenus",
+    description = "GET method to handle operations for getDepartmentMenus",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = MenuEntryDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<MenuEntryDTO>> getDepartmentMenus(
+    @RequestParam(value = "menuCode", required = false) String menuCode,
+    @RequestParam(value = "applicationCode", required = false) String applicationCode, @PathVariable(value = "code") String code)
+  {
+
+      final var query = new GetDepartmentMenusQuery(menuCode, applicationCode, code);
+
+      ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
+
+      return response;
+  }
+
+   @GetMapping(
+   value = "/departments/{code}/applications"
+  )
+  @Operation(
+    summary = "GET method to handle operations for getDepartmentApplications",
+    description = "GET method to handle operations for getDepartmentApplications",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ApplicationDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<ApplicationDTO>> getDepartmentApplications(
+    @RequestParam(value = "applicationCode", required = false) String applicationCode, @PathVariable(value = "code") String code)
+  {
+
+      final var query = new GetDepartmentApplicationsQuery(applicationCode, code);
+
+      ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
+
+      return response;
   }
 
 }

@@ -1,7 +1,6 @@
 package cv.igrp.platform.access_management.department.application.queries;
 
-import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
-import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import cv.igrp.platform.access_management.department.mapper.ResourceMapper;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -18,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.IGRP_RESOURCE;
 import static org.junit.jupiter.api.Assertions.assertEquals;

@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.shared.infrastructure.persistence.rep
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -9,6 +10,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.history.RevisionRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -74,4 +76,12 @@ public interface RoleEntityRepository extends
     """)
     Set<Integer> findDirectChildren(Integer parentId);
 
+    @Query(
+    """
+        select r from RoleEntity r
+        JOIN r.users u
+        where r.department = :department and u = :user and r.status <> 'DELETED'
+    """
+    )
+    List<RoleEntity> findByDepartmentIdAndUserIdAndStatusNotDeleted(IGRPUserEntity user, DepartmentEntity department);
 }

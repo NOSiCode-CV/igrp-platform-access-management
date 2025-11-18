@@ -477,4 +477,66 @@ public class ApplicationController {
       return response;
   }
 
+   @PostMapping(
+   value = "/applications/{applicationCode}/menus/{menuCode}/roles"
+  )
+  @Operation(
+    summary = "POST method to handle operations for addRolesToMenu",
+    description = "POST method to handle operations for addRolesToMenu",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = MenuEntryDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<MenuEntryDTO> addRolesToMenu(@RequestBody List<String> addRolesToMenuRequest
+    , @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "applicationCode") String applicationCode,@PathVariable(value = "menuCode") String menuCode)
+  {
+
+      final var command = new AddRolesToMenuCommand(addRolesToMenuRequest, departmentCode, applicationCode, menuCode);
+
+       ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @DeleteMapping(
+   value = "/applications/{applicationCode}/menus/{menuCode}/roles"
+  )
+  @Operation(
+    summary = "DELETE method to handle operations for removeRolesFromMenu",
+    description = "DELETE method to handle operations for removeRolesFromMenu",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = MenuEntryDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<MenuEntryDTO> removeRolesFromMenu(@RequestBody List<String> removeRolesFromMenuRequest
+    , @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "applicationCode") String applicationCode,@PathVariable(value = "menuCode") String menuCode)
+  {
+
+      final var command = new RemoveRolesFromMenuCommand(removeRolesFromMenuRequest, departmentCode, applicationCode, menuCode);
+
+       ResponseEntity<MenuEntryDTO> response = commandBus.send(command);
+
+       return response;
+  }
+
 }

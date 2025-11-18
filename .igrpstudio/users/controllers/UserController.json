@@ -298,7 +298,7 @@
     },
     {
       "actionName": "getCurrentUser",
-      "path": "users/current",
+      "path": "users/me",
       "method": "GET",
       "responses": {
         "200": {
@@ -384,7 +384,137 @@
           "isRequired": true
         }
       ]
+    },
+    {
+      "actionName": "getCurrentUserApplications",
+      "path": "users/me/applications",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "actionName": "getCurrentUserApplicationMenus",
+      "path": "users/me/applications/{applicationCode}/menus",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "menuCode",
+          "description": "Menu Entry Code",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "applicationCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getCurrentUserDepartments",
+      "path": "users/me/departments",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "DepartmentDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "description": "Department Code",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "actionName": "getCurrentUserDepartmentRoles",
+      "path": "users/me/departments/{departmentCode}/roles",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "roleCode",
+          "description": "Role Code",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
     }
   ],
-  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser"
+  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser-getCurrentUser"
 }

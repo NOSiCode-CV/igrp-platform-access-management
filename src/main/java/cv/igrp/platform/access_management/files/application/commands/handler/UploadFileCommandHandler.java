@@ -32,7 +32,7 @@ public class UploadFileCommandHandler {
       }
 
       try {
-         String userName = authenticationHelper.getPreferredUsername();
+         String userName = authenticationHelper.getSub();
          String originalFilename = file.getOriginalFilename();
          String filePath = String.format(
                  "%s/%s/%s/%s_%s",

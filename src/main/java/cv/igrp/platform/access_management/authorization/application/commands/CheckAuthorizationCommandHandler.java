@@ -28,7 +28,7 @@ public class CheckAuthorizationCommandHandler implements CommandHandler<CheckAut
    public ResponseEntity<PermissionCheckResponseDTO> handle(CheckAuthorizationCommand command) {
        var action = command.getPermissioncheckrequest().getAction();
        var resource =command.getPermissioncheckrequest().getResource();
-       var username = authenticationHelper.getPreferredUsername();
+       var username = authenticationHelper.getSub();
 
        return ResponseEntity.status(HttpStatus.OK).body(
                this.singleCheckAuthorizationHandler.checkAuthorization(username, action, resource)

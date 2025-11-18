@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.role.specs;
 
-import cv.igrp.platform.access_management.role.application.queries.GetRolesQuery;
+import cv.igrp.platform.access_management.department.application.queries.GetRolesQuery;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.spring.Scoped;
@@ -25,15 +25,15 @@ public class RoleSpecificationBuilder {
 
         Specification<RoleEntity> specs = Specification.allOf();
 
-        if(query.getDepartmentCode() != null && !query.getDepartmentCode().isBlank()) {
+        if(query.getCode() != null && !query.getCode().isBlank()) {
             specs = specs.and((root, _, criteriaBuilder) ->
-                    criteriaBuilder.equal(root.get("department").get("code"), query.getDepartmentCode())
+                    criteriaBuilder.equal(root.get("department").get("code"), query.getCode())
             );
         }
 
-        if(query.getCode() != null && !query.getCode().isBlank()) {
+        if(query.getRoleCode() != null && !query.getRoleCode().isBlank()) {
             specs = specs.and((root, _, criteriaBuilder) ->
-                    criteriaBuilder.like(criteriaBuilder.lower(root.get("code")), "%" + query.getCode().toLowerCase() + "%")
+                    criteriaBuilder.like(criteriaBuilder.lower(root.get("code")), "%" + query.getRoleCode().toLowerCase() + "%")
             );
         }
 
