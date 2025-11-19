@@ -53,7 +53,7 @@ public class PermissionSyncService {
      * @param permissions the list of permissions to synchronize
      */
     @Transactional
-    public void synchronizePermissions(List<PermissionDTO> permissions) {
+    public void synchronizePermissions(List<PermissionDTO> permissions, boolean isSystem) {
         if (permissions == null || permissions.isEmpty()) {
             LOGGER.warn("[PermissionSync] Received empty permission list, skipping synchronization.");
             return;
@@ -76,7 +76,7 @@ public class PermissionSyncService {
         }
 
         // Get all existing permissions for the current resource
-        ResourceEntity resource = resourceEntityRepository.findByNameAndStatusNot(authenticationHelper.getSub(), Status.DELETED)
+        ResourceEntity resource = resourceEntityRepository.findByNameAndStatusNot(isSystem ? "igrp-access-management" : authenticationHelper.getSub() , Status.DELETED)
                 .orElseThrow(() -> IgrpResponseStatusException.notFound("Resource not found", "Resource with name: " + authenticationHelper.getSub() + " not found."));
 
         Set<ResourceEntity> resourceEntities = new HashSet<>();

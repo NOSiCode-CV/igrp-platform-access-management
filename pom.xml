@@ -28,7 +28,7 @@
         <dependency-check.version>12.1.6</dependency-check.version>
         <javadoc.plugin.version>3.12.0</javadoc.plugin.version>
         <igrp.framework.core.version>0.0.3-alpha</igrp.framework.core.version>
-        <igrp.framework.stereotype.version>0.0.1-alpha</igrp.framework.stereotype.version>
+        <igrp.framework.stereotype.version>0.1.0-beta-20251021.121417-2</igrp.framework.stereotype.version>
         <framework.auth.version>0.1.0-beta.1</framework.auth.version>
         <filemanager.version>0.0.3-alpha</filemanager.version>
         <igrp.framework.notification.core.version>0.0.1-alpha</igrp.framework.notification.core.version>
@@ -179,7 +179,7 @@
         <dependency>
             <groupId>cv.igrp.framework</groupId>
             <artifactId>stereotype</artifactId>
-            <version>${igrp.version}</version>
+            <version>${igrp.framework.stereotype.version}</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
@@ -298,6 +298,28 @@
                             <groupId>org.projectlombok</groupId>
                             <artifactId>lombok</artifactId>
                         </path>
+
+                        <!-- IGRP Framework Core (annotation processor) -->
+                        <path>
+                            <groupId>cv.igrp.framework</groupId>
+                            <artifactId>core</artifactId>
+                            <version>${igrp.version}</version>
+                        </path>
+
+                        <!-- IGRP Stereotype Processor -->
+                        <path>
+                            <groupId>cv.igrp.framework</groupId>
+                            <artifactId>stereotype</artifactId>
+                            <version>${igrp.framework.stereotype.version}</version>
+                        </path>
+
+                        <!-- IGRP Framework Auth Processor (this is the one you need for authorities mapping!) -->
+                        <path>
+                            <groupId>cv.igrp.framework.auth</groupId>
+                            <artifactId>core</artifactId>
+                            <version>${framework.auth.version}</version>
+                        </path>
+
                     </annotationProcessorPaths>
                     <compilerArgs>
                         <arg>-parameters</arg>

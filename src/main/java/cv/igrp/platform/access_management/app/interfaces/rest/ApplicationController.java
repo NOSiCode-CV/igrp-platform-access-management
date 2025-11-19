@@ -39,12 +39,13 @@ public class ApplicationController {
           this.queryBus = queryBus;
           this.commandBus = commandBus;
   }
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_CREATE)")
    @PostMapping(
    value = "applications"
   )
   @Operation(
-    summary = "POST method to handle operations for createApplication",
-    description = "POST method to handle operations for createApplication",
+    summary = "POST method to handle operations for Create application",
+    description = "POST method to handle operations for Create application",
     responses = {
       @ApiResponse(
           responseCode = "201",
@@ -74,8 +75,8 @@ public class ApplicationController {
    value = "applications"
   )
   @Operation(
-    summary = "GET method to handle operations for getApplications",
-    description = "GET method to handle operations for getApplications",
+    summary = "GET method to handle operations for Get applications",
+    description = "GET method to handle operations for Get applications",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -109,8 +110,8 @@ public class ApplicationController {
    value = "applications/{id}"
   )
   @Operation(
-    summary = "GET method to handle operations for getApplicationById",
-    description = "GET method to handle operations for getApplicationById",
+    summary = "GET method to handle operations for Get application by id",
+    description = "GET method to handle operations for Get application by id",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -140,8 +141,8 @@ public class ApplicationController {
    value = "applications/{code}"
   )
   @Operation(
-    summary = "PUT method to handle operations for updateApplication",
-    description = "PUT method to handle operations for updateApplication",
+    summary = "PUT method to handle operations for Update application",
+    description = "PUT method to handle operations for Update application",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -171,8 +172,8 @@ public class ApplicationController {
    value = "applications/{code}"
   )
   @Operation(
-    summary = "DELETE method to handle operations for deleteApplication",
-    description = "DELETE method to handle operations for deleteApplication",
+    summary = "DELETE method to handle operations for Delete application",
+    description = "DELETE method to handle operations for Delete application",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -202,8 +203,8 @@ public class ApplicationController {
    value = "applications/by-user/{uid}"
   )
   @Operation(
-    summary = "GET method to handle operations for getApplicationsByUser",
-    description = "GET method to handle operations for getApplicationsByUser",
+    summary = "GET method to handle operations for Get applications by user",
+    description = "GET method to handle operations for Get applications by user",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -233,8 +234,8 @@ public class ApplicationController {
    value = "/applications/{code}/custom-fields"
   )
   @Operation(
-    summary = "POST method to handle operations for addApplicationCustomFields",
-    description = "POST method to handle operations for addApplicationCustomFields",
+    summary = "POST method to handle operations for Add application custom fields",
+    description = "POST method to handle operations for Add application custom fields",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -264,8 +265,8 @@ public class ApplicationController {
    value = "/applications/{code}/custom-fields"
   )
   @Operation(
-    summary = "DELETE method to handle operations for removeApplicationCustomFields",
-    description = "DELETE method to handle operations for removeApplicationCustomFields",
+    summary = "DELETE method to handle operations for Remove application custom fields",
+    description = "DELETE method to handle operations for Remove application custom fields",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -295,8 +296,8 @@ public class ApplicationController {
    value = "/applications/{code}/custom-fields"
   )
   @Operation(
-    summary = "GET method to handle operations for getApplicationCustomFields",
-    description = "GET method to handle operations for getApplicationCustomFields",
+    summary = "GET method to handle operations for Get application custom fields",
+    description = "GET method to handle operations for Get application custom fields",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -326,8 +327,8 @@ public class ApplicationController {
    value = "/applications/by-code/{code}"
   )
   @Operation(
-    summary = "GET method to handle operations for getApplicationByCode",
-    description = "GET method to handle operations for getApplicationByCode",
+    summary = "GET method to handle operations for Get application by code",
+    description = "GET method to handle operations for Get application by code",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -357,8 +358,8 @@ public class ApplicationController {
    value = "/applications/{applicationCode}/menus"
   )
   @Operation(
-    summary = "POST method to handle operations for createMenu",
-    description = "POST method to handle operations for createMenu",
+    summary = "POST method to handle operations for Create menu",
+    description = "POST method to handle operations for Create menu",
     responses = {
       @ApiResponse(
           responseCode = "201",
@@ -388,8 +389,8 @@ public class ApplicationController {
    value = "/applications/{applicationCode}/menus/{menuCode}"
   )
   @Operation(
-    summary = "PUT method to handle operations for updateMenu",
-    description = "PUT method to handle operations for updateMenu",
+    summary = "PUT method to handle operations for Update menu",
+    description = "PUT method to handle operations for Update menu",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -419,8 +420,8 @@ public class ApplicationController {
    value = "/applications/{applicationCode}/menus/{menuCode}"
   )
   @Operation(
-    summary = "DELETE method to handle operations for deleteMenu",
-    description = "DELETE method to handle operations for deleteMenu",
+    summary = "DELETE method to handle operations for Delete menu",
+    description = "DELETE method to handle operations for Delete menu",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -450,8 +451,8 @@ public class ApplicationController {
    value = "/applications/{code}/menus"
   )
   @Operation(
-    summary = "GET method to handle operations for getApplicationMenus",
-    description = "GET method to handle operations for getApplicationMenus",
+    summary = "GET method to handle operations for Get application menus",
+    description = "GET method to handle operations for Get application menus",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -481,8 +482,8 @@ public class ApplicationController {
    value = "/applications/{applicationCode}/menus/{menuCode}/roles"
   )
   @Operation(
-    summary = "POST method to handle operations for addRolesToMenu",
-    description = "POST method to handle operations for addRolesToMenu",
+    summary = "POST method to handle operations for Add roles to menu",
+    description = "POST method to handle operations for Add roles to menu",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -512,8 +513,8 @@ public class ApplicationController {
    value = "/applications/{applicationCode}/menus/{menuCode}/roles"
   )
   @Operation(
-    summary = "DELETE method to handle operations for removeRolesFromMenu",
-    description = "DELETE method to handle operations for removeRolesFromMenu",
+    summary = "DELETE method to handle operations for Remove roles from menu",
+    description = "DELETE method to handle operations for Remove roles from menu",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -543,8 +544,8 @@ public class ApplicationController {
    value = "applications/{code}/resources"
   )
   @Operation(
-    summary = "POST method to handle operations for linkResourceToApplication",
-    description = "POST method to handle operations for linkResourceToApplication",
+    summary = "POST method to handle operations for Link resource to application",
+    description = "POST method to handle operations for Link resource to application",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -574,8 +575,8 @@ public class ApplicationController {
    value = "applications/{code}/resources"
   )
   @Operation(
-    summary = "DELETE method to handle operations for unlinkResourceFromApplication",
-    description = "DELETE method to handle operations for unlinkResourceFromApplication",
+    summary = "DELETE method to handle operations for Unlink resource from application",
+    description = "DELETE method to handle operations for Unlink resource from application",
     responses = {
       @ApiResponse(
           responseCode = "204",
