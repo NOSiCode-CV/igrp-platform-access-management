@@ -13,7 +13,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,7 +43,7 @@ public class RemoveRolesFromUserCommandHandlerTest {
     private RemoveRolesFromUserCommandHandler removeRolesFromUserCommandHandler;
 
     private RemoveRolesFromUserCommand removeRolesFromUserCommand(List<String> removeRolesFromUserRequest, Integer id){
-        return new RemoveRolesFromUserCommand(removeRolesFromUserRequest, "DEPT_1", id);
+        return new RemoveRolesFromUserCommand(removeRolesFromUserRequest, id, "DEPT_1");
     }
 
     private RemoveRolesFromUserCommand command;
@@ -192,7 +191,7 @@ public class RemoveRolesFromUserCommandHandlerTest {
     @DisplayName("should return all roles when role removal list is null")
     void testHandle_whenRoleIdsListIsNull_shouldReturnAllRoles() {
         // Arrange
-        command = new RemoveRolesFromUserCommand(null, "DEPT_1", USER_ID);
+        command = new RemoveRolesFromUserCommand(null, USER_ID, "DEPT_1");
 
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
@@ -232,7 +231,7 @@ public class RemoveRolesFromUserCommandHandlerTest {
     @DisplayName("should not remove any roles if no matching IDs found")
     void testHandle_whenRoleIdsDoNotMatch_shouldReturnUnchangedRoles() {
         // Arrange
-        command = new RemoveRolesFromUserCommand(new ArrayList<>(List.of("reporter","maintainer")), "DEPT_1", USER_ID);
+        command = new RemoveRolesFromUserCommand(new ArrayList<>(List.of("reporter","maintainer")), USER_ID, "DEPT_1");
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
         // Act

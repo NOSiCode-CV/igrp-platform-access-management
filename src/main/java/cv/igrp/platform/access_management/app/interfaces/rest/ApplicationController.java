@@ -539,4 +539,66 @@ public class ApplicationController {
        return response;
   }
 
+   @PostMapping(
+   value = "applications/{code}/resources"
+  )
+  @Operation(
+    summary = "POST method to handle operations for linkResourceToApplication",
+    description = "POST method to handle operations for linkResourceToApplication",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> linkResourceToApplication(@RequestBody List<String> linkResourceToApplicationRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      final var command = new LinkResourceToApplicationCommand(linkResourceToApplicationRequest, code);
+
+       ResponseEntity<String> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @DeleteMapping(
+   value = "applications/{code}/resources"
+  )
+  @Operation(
+    summary = "DELETE method to handle operations for unlinkResourceFromApplication",
+    description = "DELETE method to handle operations for unlinkResourceFromApplication",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> unlinkResourceFromApplication(@RequestBody List<String> unlinkResourceFromApplicationRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      final var command = new UnlinkResourceFromApplicationCommand(unlinkResourceFromApplicationRequest, code);
+
+       ResponseEntity<String> response = commandBus.send(command);
+
+       return response;
+  }
+
 }

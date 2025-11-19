@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.auth.core.adapter.IAdapter;
+import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.model.Notification;
@@ -18,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Map;
@@ -40,20 +42,24 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
    private final IGRPUserEntityRepository userRepository;
    private final IGRPUserMapper userMapper;
    private final IAdapter adapter;
+   private final CommandBus commandBus;
 
    public RespondUserInvitationCommandHandler(
            NotificationAdapter<NotificationResult> notificationAdapter,
            IGRPUserEntityRepository userRepository,
            IGRPUserMapper userMapper,
-           IAdapter adapter
+           IAdapter adapter,
+           CommandBus commandBus
    ) {
        this.notificationAdapter = notificationAdapter;
        this.userRepository = userRepository;
        this.userMapper = userMapper;
        this.adapter = adapter;
+       this.commandBus = commandBus;
    }
 
    @IgrpCommandHandler
+   @Transactional
    public ResponseEntity<IGRPUserDTO> handle(RespondUserInvitationCommand command) {
 
       var dto = command.getUserinvitationresponsedto();
@@ -89,6 +95,11 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
          var savedUser = userRepository.save(user);
 
          if(dto.isAccept()) {
+
+            final var enableUserCmd = new UpdateUserStatusCommand(Status.ACTIVE.getCode(), Integer.parseInt(savedUser.getId()));
+
+            commandBus.send(enableUserCmd);
+
             try {
 
                LOGGER.info("Notifying new user: id={}, email={}", savedUser.getId(), dto.getEmail());

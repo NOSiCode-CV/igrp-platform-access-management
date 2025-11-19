@@ -6,6 +6,7 @@ import cv.igrp.framework.notifications.core.exception.NotificationException;
 import cv.igrp.framework.notifications.core.model.Notification;
 import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.application.dto.InviteUserDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
@@ -43,15 +44,13 @@ class InviteUserCommandHandlerTest {
     @InjectMocks
     private InviteUserCommandHandler underTest;
 
-    private IGRPUserDTO igrpUserDTO;
+    private InviteUserDTO igrpUserDTO;
     private InviteUserCommand command;
     private IGRPUserEntity user;
 
     @BeforeEach
     void setUp() {
-        igrpUserDTO = new IGRPUserDTO();
-        igrpUserDTO.setName("John Doe");
-        igrpUserDTO.setUsername("john");
+        igrpUserDTO = new InviteUserDTO();
         igrpUserDTO.setEmail("john@nosi.cv");
 
         user = new IGRPUserEntity();

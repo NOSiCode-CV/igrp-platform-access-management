@@ -62,7 +62,7 @@ class RemoveMenusFromDepartmentCommandHandlerTest {
     @Test
     void shouldRemoveMenuFromDepartmentSuccessfully() {
         RemoveMenusFromDepartmentCommand command = new RemoveMenusFromDepartmentCommand();
-        command.setCode("DEP1");
+        command.setDepartmentCode("DEP1");
         command.setApplicationCode("AP1");
         command.setRemoveMenusFromDepartmentRequest(List.of("MENU1"));
 
@@ -82,7 +82,7 @@ class RemoveMenusFromDepartmentCommandHandlerTest {
     @Test
     void shouldThrowNotFoundIfDepartmentDoesNotExist() {
         RemoveMenusFromDepartmentCommand command = new RemoveMenusFromDepartmentCommand();
-        command.setCode("NON_EXISTENT");
+        command.setDepartmentCode("NON_EXISTENT");
         command.setApplicationCode("AP1");
         command.setRemoveMenusFromDepartmentRequest(List.of("MENU1"));
 
@@ -98,7 +98,7 @@ class RemoveMenusFromDepartmentCommandHandlerTest {
     void shouldThrowNotFoundIfApplicationDoesNotExist() {
         RemoveMenusFromDepartmentCommand command = new RemoveMenusFromDepartmentCommand();
 
-        command.setCode("DEP1");
+        command.setDepartmentCode("DEP1");
         command.setApplicationCode("AP1");
 
         command.setRemoveMenusFromDepartmentRequest(List.of("NON_EXISTENT"));
@@ -118,7 +118,7 @@ class RemoveMenusFromDepartmentCommandHandlerTest {
     @Test
     void shouldThrowNotFoundIfMenuDoesNotExist() {
         RemoveMenusFromDepartmentCommand command = new RemoveMenusFromDepartmentCommand();
-        command.setCode("DEP1");
+        command.setDepartmentCode("DEP1");
         command.setApplicationCode("AP1");
         command.setRemoveMenusFromDepartmentRequest(List.of("MENU_NOT_FOUND"));
 

@@ -32,7 +32,7 @@
     },
     {
       "actionName": "AddRolesToUser",
-      "path": "users/{id}/roles",
+      "path": "users/{id}/departments/{departmentCode}/roles",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -70,25 +70,22 @@
           }
         }
       },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "departmentCode",
-          "description": "Department Code",
-          "isRequired": true
-        }
-      ],
       "pathVariables": [
         {
           "name": "id",
           "type": "integer",
+          "isRequired": true
+        },
+        {
+          "name": "departmentCode",
+          "type": "string",
           "isRequired": true
         }
       ]
     },
     {
       "actionName": "RemoveRolesFromUser",
-      "path": "users/{id}/roles",
+      "path": "users/{id}/departments/{departmentCode}/roles",
       "method": "DELETE",
       "requestBody": {
         "content": {
@@ -116,18 +113,15 @@
           }
         }
       },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "departmentCode",
-          "description": "Department Code",
-          "isRequired": true
-        }
-      ],
       "pathVariables": [
         {
           "name": "id",
           "type": "integer",
+          "isRequired": true
+        },
+        {
+          "name": "departmentCode",
+          "type": "string",
           "isRequired": true
         }
       ]
@@ -161,19 +155,8 @@
     },
     {
       "actionName": "getUsers",
-      "path": "users/list",
-      "method": "POST",
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "integer",
-              "name": "Roles",
-              "collectionType": "list"
-            }
-          }
-        }
-      },
+      "path": "users",
+      "method": "GET",
       "responses": {
         "200": {
           "content": {
@@ -326,7 +309,7 @@
             "schema": {
               "collectionType": "none",
               "name": "data",
-              "type": "IGRPUserDTO",
+              "type": "InviteUserDTO",
               "objectType": "dto",
               "module": "shared"
             }
@@ -516,5 +499,5 @@
       ]
     }
   ],
-  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser-getCurrentUser"
+  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser-getCurrentUser-AddRolesToUser-RemoveRolesFromUser-getUsers-getUsers-getUsers-inviteUser"
 }

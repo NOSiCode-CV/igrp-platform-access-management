@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.auth.core.adapter.IAdapter;
+import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.model.Notification;
@@ -9,7 +10,9 @@ import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -40,25 +43,34 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
     private final NotificationAdapter<NotificationResult> notificationAdapter;
     private final IGRPUserEntityRepository userRepository;
+    private final RoleEntityRepository roleRepository;
+    private final DepartmentEntityRepository departmentRepository;
     private final IGRPUserMapper userMapper;
     private final IAdapter adapter;
+    private final CommandBus commandBus;
 
     public InviteUserCommandHandler(NotificationAdapter<NotificationResult> notificationAdapter,
                                     IGRPUserEntityRepository userRepository,
+                                    RoleEntityRepository roleRepository,
+                                    DepartmentEntityRepository departmentRepository,
                                     IGRPUserMapper userMapper,
-                                    IAdapter adapter
+                                    IAdapter adapter,
+                                    CommandBus commandBus
     ) {
         this.notificationAdapter = notificationAdapter;
         this.userRepository = userRepository;
+        this.roleRepository = roleRepository;
+        this.departmentRepository = departmentRepository;
         this.userMapper = userMapper;
         this.adapter = adapter;
+        this.commandBus = commandBus;
     }
 
     @IgrpCommandHandler
     @Transactional
     public ResponseEntity<IGRPUserDTO> handle(InviteUserCommand command) {
 
-        var dto = command.getIgrpuserdto();
+        var dto = command.getInviteuserdto();
 
         LOGGER.info("Creating new user: email={}", dto.getEmail());
 
@@ -74,14 +86,21 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
         if (providerUser.isPresent()) {
 
             IGRPUserEntity user = new IGRPUserEntity();
-            user.setName(command.getIgrpuserdto().getName());
-            user.setUsername(command.getIgrpuserdto().getUsername());
-            user.setEmail(command.getIgrpuserdto().getEmail());
+            user.setEmail(command.getInviteuserdto().getEmail());
             user.setExternalId(providerUser.get().getExternalId());
-            user.setStatus(Status.INACTIVE);
-            user.setRoles(new ArrayList<>());
+
+            var department = departmentRepository.findByCodeAndStatusNotDeleted(command.getInviteuserdto().getDepartmentCode());
+
+            for(var roleName : command.getInviteuserdto().getRoles()) {
+                var role = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, roleName);
+                user.getRoles().add(role);
+            }
 
             var savedUser = userRepository.save(user);
+
+            final var disableUserCmd = new UpdateUserStatusCommand(Status.INACTIVE.getCode(), Integer.parseInt(savedUser.getId()));
+
+            commandBus.send(disableUserCmd);
 
             try {
 

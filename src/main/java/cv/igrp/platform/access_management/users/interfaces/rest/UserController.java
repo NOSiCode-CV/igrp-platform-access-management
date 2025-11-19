@@ -24,6 +24,7 @@ import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.UserInvitationResponseDTO;
+import cv.igrp.platform.access_management.shared.application.dto.InviteUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
@@ -74,7 +75,7 @@ public class UserController {
   }
 
    @PostMapping(
-   value = "users/{id}/roles"
+   value = "users/{id}/departments/{departmentCode}/roles"
   )
   @Operation(
     summary = "POST method to handle operations for AddRolesToUser",
@@ -104,10 +105,10 @@ public class UserController {
   )
   
   public ResponseEntity<?> addRolesToUser(@RequestBody List<String> addRolesToUserRequest
-    , @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "id") Integer id,@PathVariable(value = "departmentCode") String departmentCode)
   {
 
-      final var command = new AddRolesToUserCommand(addRolesToUserRequest, departmentCode, id);
+      final var command = new AddRolesToUserCommand(addRolesToUserRequest, id, departmentCode);
 
        ResponseEntity<?> response = commandBus.send(command);
 
@@ -115,7 +116,7 @@ public class UserController {
   }
 
    @DeleteMapping(
-   value = "users/{id}/roles"
+   value = "users/{id}/departments/{departmentCode}/roles"
   )
   @Operation(
     summary = "DELETE method to handle operations for RemoveRolesFromUser",
@@ -135,10 +136,10 @@ public class UserController {
   )
   
   public ResponseEntity<List<RoleDTO>> removeRolesFromUser(@RequestBody List<String> removeRolesFromUserRequest
-    , @RequestParam(value = "departmentCode") String departmentCode, @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "id") Integer id,@PathVariable(value = "departmentCode") String departmentCode)
   {
 
-      final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, departmentCode, id);
+      final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, id, departmentCode);
 
        ResponseEntity<List<RoleDTO>> response = commandBus.send(command);
 
@@ -176,12 +177,12 @@ public class UserController {
       return response;
   }
 
-   @PostMapping(
-   value = "users/list"
+   @GetMapping(
+   value = "users"
   )
   @Operation(
-    summary = "POST method to handle operations for getUsers",
-    description = "POST method to handle operations for getUsers",
+    summary = "GET method to handle operations for getUsers",
+    description = "GET method to handle operations for getUsers",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -196,19 +197,19 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<List<IGRPUserDTO>> getUsers(@RequestBody List<Integer> getUsersRequest
-    , @RequestParam(value = "applicationCode", required = false) String applicationCode,
+  public ResponseEntity<List<IGRPUserDTO>> getUsers(
+    @RequestParam(value = "applicationCode", required = false) String applicationCode,
     @RequestParam(value = "departmentCode", required = false) String departmentCode,
     @RequestParam(value = "name", required = false) String name,
     @RequestParam(value = "id", required = false) Integer id,
     @RequestParam(value = "email", required = false) String email)
   {
 
-      final var command = new GetUsersCommand(getUsersRequest, applicationCode, departmentCode, name, id, email);
+      final var query = new GetUsersQuery(applicationCode, departmentCode, name, id, email);
 
-       ResponseEntity<List<IGRPUserDTO>> response = commandBus.send(command);
+      ResponseEntity<List<IGRPUserDTO>> response = queryBus.handle(query);
 
-       return response;
+      return response;
   }
 
    @PostMapping(
@@ -324,7 +325,7 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<IGRPUserDTO> inviteUser(@Valid @RequestBody IGRPUserDTO inviteUserRequest
+  public ResponseEntity<IGRPUserDTO> inviteUser(@Valid @RequestBody InviteUserDTO inviteUserRequest
     )
   {
 

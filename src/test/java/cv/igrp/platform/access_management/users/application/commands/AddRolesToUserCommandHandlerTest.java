@@ -78,7 +78,7 @@ public class AddRolesToUserCommandHandlerTest {
     }
 
     private AddRolesToUserCommand buildCommand(List<String> roles) {
-        return new AddRolesToUserCommand(roles, "DEPT_1", ID);
+        return new AddRolesToUserCommand(roles, ID, "DEPT_1");
     }
 
     @Test
