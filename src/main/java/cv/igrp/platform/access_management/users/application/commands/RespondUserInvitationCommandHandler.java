@@ -42,14 +42,14 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
    private final IGRPUserEntityRepository userRepository;
    private final IGRPUserMapper userMapper;
    private final IAdapter adapter;
-   private final CommandBus commandBus;
+   private final UpdateUserStatusCommandHandler commandBus;
 
    public RespondUserInvitationCommandHandler(
            NotificationAdapter<NotificationResult> notificationAdapter,
            IGRPUserEntityRepository userRepository,
            IGRPUserMapper userMapper,
            IAdapter adapter,
-           CommandBus commandBus
+           UpdateUserStatusCommandHandler commandBus
    ) {
        this.notificationAdapter = notificationAdapter;
        this.userRepository = userRepository;
@@ -98,7 +98,7 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
 
             final var enableUserCmd = new UpdateUserStatusCommand(Status.ACTIVE.getCode(), Integer.parseInt(savedUser.getId()));
 
-            commandBus.send(enableUserCmd);
+            commandBus.handle(enableUserCmd);
 
             try {
 

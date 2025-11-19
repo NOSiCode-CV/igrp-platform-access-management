@@ -1,7 +1,6 @@
 package cv.igrp.platform.access_management.app.specs;
 
 import cv.igrp.platform.access_management.app.application.queries.GetApplicationMenusQuery;
-import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.spring.Scoped;
@@ -31,7 +30,7 @@ public class MenuSpecificationBuilder {
 
         if (query.getCode() != null && !query.getCode().isEmpty()) {
             spec = spec.and((root, q, cb) -> {
-                Join<Object, Object> applicationJoin = root.join("application", JoinType.INNER);
+                Join<Object, Object> applicationJoin = root.join("applicationId", JoinType.INNER);
                 return cb.equal(cb.lower(applicationJoin.get("code")), query.getCode().toLowerCase());
             });
         }

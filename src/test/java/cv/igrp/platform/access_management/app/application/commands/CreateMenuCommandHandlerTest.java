@@ -87,7 +87,7 @@ public class CreateMenuCommandHandlerTest {
         when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, "MENU1", Status.DELETED)).thenReturn(Optional.of(parentMenu));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(dto);
-        when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
+        when(menuEntryValidator.validateMenuEntryCode(command)).thenReturn(resourceValidationResponse);
 
         // Act
         ResponseEntity<MenuEntryDTO> response = createMenuCommandHandler.handle(command);
@@ -116,7 +116,7 @@ public class CreateMenuCommandHandlerTest {
         when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));
         when(menuEntryRepository.save(menuEntry)).thenReturn(menuEntry);
         when(menuEntryMapper.toDTO(menuEntry)).thenReturn(dto);
-        when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
+        when(menuEntryValidator.validateMenuEntryCode(command)).thenReturn(resourceValidationResponse);
 
         // Act
         ResponseEntity<MenuEntryDTO> response = createMenuCommandHandler.handle(command);
@@ -141,7 +141,7 @@ public class CreateMenuCommandHandlerTest {
         // Arrange
         when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.empty());
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
-        when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
+        when(menuEntryValidator.validateMenuEntryCode(command)).thenReturn(resourceValidationResponse);
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> createMenuCommandHandler.handle(command));
@@ -157,7 +157,7 @@ public class CreateMenuCommandHandlerTest {
         // Arrange
         when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
-        when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
+        when(menuEntryValidator.validateMenuEntryCode(command)).thenReturn(resourceValidationResponse);
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> createMenuCommandHandler.handle(command));
@@ -173,7 +173,7 @@ public class CreateMenuCommandHandlerTest {
         when(applicationRepository.findByCodeAndStatusNot("APP", Status.DELETED)).thenReturn(Optional.of(application));
         when(menuEntryMapper.toEntity(dto)).thenReturn(menuEntry);
         when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, "MENU1", Status.DELETED)).thenReturn(Optional.empty());
-        when(menuEntryValidator.validateMenuEntryCode(dto)).thenReturn(resourceValidationResponse);
+        when(menuEntryValidator.validateMenuEntryCode(command)).thenReturn(resourceValidationResponse);
 
         // Act
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> createMenuCommandHandler.handle(command));

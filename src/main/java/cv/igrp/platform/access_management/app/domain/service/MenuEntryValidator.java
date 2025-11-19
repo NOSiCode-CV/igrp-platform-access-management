@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.app.domain.service;
 
+import cv.igrp.platform.access_management.app.application.commands.CreateMenuCommand;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -41,13 +42,15 @@ public class MenuEntryValidator {
     /**
      * Validates that the menu entry code does not already exist within the given menu entry.
      *
-     * @param menuEntryDTO the menu entry data to validate
+     * @param command the menu entry data to validate
      * @return a {@link ResourceValidationResponse} indicating the result of the validation
      */
-    public ResourceValidationResponse validateMenuEntryCode(MenuEntryDTO menuEntryDTO) {
+    public ResourceValidationResponse validateMenuEntryCode(CreateMenuCommand command) {
+        MenuEntryDTO menuEntryDTO = command.getMenuentrydto();
+
         ResourceValidationResponse result = new ResourceValidationResponse();
         result.setValid(true);
-        ApplicationEntity app = applicationEntityRepository.findByCodeAndStatusNotDeleted(menuEntryDTO.getApplicationCode());
+        ApplicationEntity app = applicationEntityRepository.findByCodeAndStatusNotDeleted(command.getApplicationCode());
 
         Optional<MenuEntryEntity> menuEntry = menuEntryEntityRepository.findByApplicationIdAndCodeAndStatusNot(app, menuEntryDTO.getCode(), Status.DELETED);
         if (menuEntry.isPresent()) {

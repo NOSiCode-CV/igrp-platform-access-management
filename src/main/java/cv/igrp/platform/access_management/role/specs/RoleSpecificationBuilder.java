@@ -25,11 +25,9 @@ public class RoleSpecificationBuilder {
 
         Specification<RoleEntity> specs = Specification.allOf();
 
-        if(query.getCode() != null && !query.getCode().isBlank()) {
-            specs = specs.and((root, _, criteriaBuilder) ->
-                    criteriaBuilder.equal(root.get("department").get("code"), query.getCode())
-            );
-        }
+        specs = specs.and((root, _, criteriaBuilder) ->
+                criteriaBuilder.equal(root.get("department").get("code"), query.getCode())
+        );
 
         if(query.getRoleCode() != null && !query.getRoleCode().isBlank()) {
             specs = specs.and((root, _, criteriaBuilder) ->

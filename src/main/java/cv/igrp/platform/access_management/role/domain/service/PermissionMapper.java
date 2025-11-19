@@ -30,8 +30,8 @@ public class PermissionMapper {
         permissionDTO.setName(permission.getName());
         permissionDTO.setDescription(permission.getDescription());
         permissionDTO.setStatus(permission.getStatus());
-        if(permission.getDepartment() != null) {
-            permissionDTO.setDepartmentCode(permission.getDepartment().getCode());
+        if(permission.getDepartments() != null) {
+            permissionDTO.setDepartments(permission.getDepartments().stream().map(DepartmentEntity::getCode).toList());
         }
         return permissionDTO;
     }
@@ -54,7 +54,6 @@ public class PermissionMapper {
         if (request.getDescription() != null) {
             newPermission.setDescription(request.getDescription().trim());
         }
-        newPermission.setDepartment(department);
         return newPermission;
     }
 }

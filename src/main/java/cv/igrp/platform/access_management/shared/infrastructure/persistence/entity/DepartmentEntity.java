@@ -68,14 +68,17 @@ public class DepartmentEntity extends AuditEntity {
 private Set<ApplicationEntity> applications = new HashSet<>();   @OneToMany(mappedBy = "parentId")
 private List<DepartmentEntity> childrenids = new ArrayList<>();
 
-   @OneToMany(mappedBy = "department")
-private List<PermissionEntity> permissions = new ArrayList<>();
+   @ManyToMany(mappedBy = "departments", fetch = FetchType.LAZY)
+private Set<PermissionEntity> permissions = new HashSet<>();
 
    @OneToMany(mappedBy = "department")
 private List<RoleEntity> roles = new ArrayList<>();
 
    @ManyToMany(mappedBy = "departments", fetch = FetchType.LAZY)
 private Set<MenuEntryEntity> menuentries = new HashSet<>();
+
+   @ManyToMany(mappedBy = "departments", fetch = FetchType.LAZY)
+private Set<ResourceEntity> resources = new HashSet<>();
 
 
 }

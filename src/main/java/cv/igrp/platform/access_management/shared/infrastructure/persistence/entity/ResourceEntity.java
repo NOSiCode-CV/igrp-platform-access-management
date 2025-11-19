@@ -67,7 +67,17 @@ public class ResourceEntity extends AuditEntity {
             joinColumns = @JoinColumn(name = "resource_id"),
             inverseJoinColumns = @JoinColumn(name = "permission")
     )
-private Set<PermissionEntity> permissions = new HashSet<>();   @OneToMany(mappedBy = "resourceId")
+private Set<PermissionEntity> permissions = new HashSet<>();
+
+
+  
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "t_resource_department",
+            joinColumns = @JoinColumn(name = "resource_id"),
+            inverseJoinColumns = @JoinColumn(name = "resource")
+    )
+private Set<DepartmentEntity> departments = new HashSet<>();   @OneToMany(mappedBy = "resourceId")
 private List<ResourceItemEntity> items = new ArrayList<>();
 
    @ManyToMany(mappedBy = "resources", fetch = FetchType.LAZY)

@@ -46,8 +46,8 @@ public class DepartmentController {
    value = "departments"
   )
   @Operation(
-    summary = "POST method to handle operations for postDepartment",
-    description = "POST method to handle operations for postDepartment",
+    summary = "POST method to handle operations for Post department",
+    description = "POST method to handle operations for Post department",
     responses = {
       @ApiResponse(
           responseCode = "201",
@@ -77,8 +77,8 @@ public class DepartmentController {
    value = "departments"
   )
   @Operation(
-    summary = "GET method to handle operations for getDepartments",
-    description = "GET method to handle operations for getDepartments",
+    summary = "GET method to handle operations for Get departments",
+    description = "GET method to handle operations for Get departments",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -111,8 +111,8 @@ public class DepartmentController {
    value = "departments/{id}"
   )
   @Operation(
-    summary = "GET method to handle operations for getDepartmentById",
-    description = "GET method to handle operations for getDepartmentById",
+    summary = "GET method to handle operations for Get department by id",
+    description = "GET method to handle operations for Get department by id",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -142,8 +142,8 @@ public class DepartmentController {
    value = "departments/{code}"
   )
   @Operation(
-    summary = "PUT method to handle operations for updateDepartment",
-    description = "PUT method to handle operations for updateDepartment",
+    summary = "PUT method to handle operations for Update department",
+    description = "PUT method to handle operations for Update department",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -173,8 +173,8 @@ public class DepartmentController {
    value = "departments/{code}"
   )
   @Operation(
-    summary = "DELETE method to handle operations for deleteDepartment",
-    description = "DELETE method to handle operations for deleteDepartment",
+    summary = "DELETE method to handle operations for Delete department",
+    description = "DELETE method to handle operations for Delete department",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -204,8 +204,8 @@ public class DepartmentController {
    value = "departments/by-code/{code}"
   )
   @Operation(
-    summary = "GET method to handle operations for getDepartmentByCode",
-    description = "GET method to handle operations for getDepartmentByCode",
+    summary = "GET method to handle operations for Get department by code",
+    description = "GET method to handle operations for Get department by code",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -235,8 +235,8 @@ public class DepartmentController {
    value = "departments/{code}/applications/available"
   )
   @Operation(
-    summary = "GET method to handle operations for getAvailableApplicationsForDepartment",
-    description = "GET method to handle operations for getAvailableApplicationsForDepartment",
+    summary = "GET method to handle operations for Get available applications for department",
+    description = "GET method to handle operations for Get available applications for department",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -266,8 +266,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/applications/{applicationCode}/menus/available"
   )
   @Operation(
-    summary = "GET method to handle operations for getMenusAvailableForDepartment",
-    description = "GET method to handle operations for getMenusAvailableForDepartment",
+    summary = "GET method to handle operations for Get menus available for department",
+    description = "GET method to handle operations for Get menus available for department",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -297,8 +297,8 @@ public class DepartmentController {
    value = "departments/{code}/resources/available"
   )
   @Operation(
-    summary = "GET method to handle operations for getAvailableResourcesForDepartment",
-    description = "GET method to handle operations for getAvailableResourcesForDepartment",
+    summary = "GET method to handle operations for Get available resources for department",
+    description = "GET method to handle operations for Get available resources for department",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -328,8 +328,8 @@ public class DepartmentController {
    value = "departments/{code}/roles"
   )
   @Operation(
-    summary = "POST method to handle operations for createRole",
-    description = "POST method to handle operations for createRole",
+    summary = "POST method to handle operations for Create role",
+    description = "POST method to handle operations for Create role",
     responses = {
       @ApiResponse(
           responseCode = "201",
@@ -359,8 +359,8 @@ public class DepartmentController {
    value = "departments/{code}/roles"
   )
   @Operation(
-    summary = "GET method to handle operations for getRoles",
-    description = "GET method to handle operations for getRoles",
+    summary = "GET method to handle operations for Get roles",
+    description = "GET method to handle operations for Get roles",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -390,8 +390,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/roles/{roleCode}"
   )
   @Operation(
-    summary = "PUT method to handle operations for updateRole",
-    description = "PUT method to handle operations for updateRole",
+    summary = "PUT method to handle operations for Update role",
+    description = "PUT method to handle operations for Update role",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -421,8 +421,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/roles/{roleCode}"
   )
   @Operation(
-    summary = "DELETE method to handle operations for deleteRole",
-    description = "DELETE method to handle operations for deleteRole",
+    summary = "DELETE method to handle operations for Delete role",
+    description = "DELETE method to handle operations for Delete role",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -452,8 +452,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/roles/{roleCode}/permissions"
   )
   @Operation(
-    summary = "DELETE method to handle operations for RemovePermissions",
-    description = "DELETE method to handle operations for RemovePermissions",
+    summary = "DELETE method to handle operations for Remove permissions",
+    description = "DELETE method to handle operations for Remove permissions",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -483,8 +483,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/roles/{roleCode}/permissions"
   )
   @Operation(
-    summary = "GET method to handle operations for GetPermissionsByRoleId",
-    description = "GET method to handle operations for GetPermissionsByRoleId",
+    summary = "GET method to handle operations for Get permissions by role id",
+    description = "GET method to handle operations for Get permissions by role id",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -514,8 +514,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/roles/{roleCode}/permissions"
   )
   @Operation(
-    summary = "POST method to handle operations for addPermissions",
-    description = "POST method to handle operations for addPermissions",
+    summary = "POST method to handle operations for Add permissions",
+    description = "POST method to handle operations for Add permissions",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -545,8 +545,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/roles/{roleCode}/permissions/available"
   )
   @Operation(
-    summary = "GET method to handle operations for getAvailablePermissionsForRoles",
-    description = "GET method to handle operations for getAvailablePermissionsForRoles",
+    summary = "GET method to handle operations for Get available permissions for roles",
+    description = "GET method to handle operations for Get available permissions for roles",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -576,8 +576,8 @@ public class DepartmentController {
    value = "departments/{code}/applications"
   )
   @Operation(
-    summary = "POST method to handle operations for addApplicationsToDepartment",
-    description = "POST method to handle operations for addApplicationsToDepartment",
+    summary = "POST method to handle operations for Add applications to department",
+    description = "POST method to handle operations for Add applications to department",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -607,8 +607,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/applications/{applicationCode}/menus"
   )
   @Operation(
-    summary = "POST method to handle operations for addMenusToDepartment",
-    description = "POST method to handle operations for addMenusToDepartment",
+    summary = "POST method to handle operations for Add menus to department",
+    description = "POST method to handle operations for Add menus to department",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -638,8 +638,8 @@ public class DepartmentController {
    value = "departments/{code}/applications"
   )
   @Operation(
-    summary = "DELETE method to handle operations for removeApplicationsFromDepartment",
-    description = "DELETE method to handle operations for removeApplicationsFromDepartment",
+    summary = "DELETE method to handle operations for Remove applications from department",
+    description = "DELETE method to handle operations for Remove applications from department",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -669,8 +669,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/applications/{applicationCode}/menus"
   )
   @Operation(
-    summary = "DELETE method to handle operations for removeMenusFromDepartment",
-    description = "DELETE method to handle operations for removeMenusFromDepartment",
+    summary = "DELETE method to handle operations for Remove menus from department",
+    description = "DELETE method to handle operations for Remove menus from department",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -700,8 +700,8 @@ public class DepartmentController {
    value = "/departments/{code}/resources"
   )
   @Operation(
-    summary = "GET method to handle operations for getDepartmentResources",
-    description = "GET method to handle operations for getDepartmentResources",
+    summary = "GET method to handle operations for Get department resources",
+    description = "GET method to handle operations for Get department resources",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -731,8 +731,8 @@ public class DepartmentController {
    value = "/departments/{departmentCode}/applications/{applicationCode}/menus"
   )
   @Operation(
-    summary = "GET method to handle operations for getDepartmentMenus",
-    description = "GET method to handle operations for getDepartmentMenus",
+    summary = "GET method to handle operations for Get department menus",
+    description = "GET method to handle operations for Get department menus",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -762,8 +762,8 @@ public class DepartmentController {
    value = "/departments/{code}/applications"
   )
   @Operation(
-    summary = "GET method to handle operations for getDepartmentApplications",
-    description = "GET method to handle operations for getDepartmentApplications",
+    summary = "GET method to handle operations for Get department applications",
+    description = "GET method to handle operations for Get department applications",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -785,6 +785,192 @@ public class DepartmentController {
       final var query = new GetDepartmentApplicationsQuery(applicationCode, code);
 
       ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
+
+      return response;
+  }
+
+   @PostMapping(
+   value = "departments/{departmentCode}/resources"
+  )
+  @Operation(
+    summary = "POST method to handle operations for Add resources to department",
+    description = "POST method to handle operations for Add resources to department",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> addResourcesToDepartment(@RequestBody List<String> addResourcesToDepartmentRequest
+    , @PathVariable(value = "departmentCode") String departmentCode)
+  {
+
+      final var command = new AddResourcesToDepartmentCommand(addResourcesToDepartmentRequest, departmentCode);
+
+       ResponseEntity<String> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @DeleteMapping(
+   value = "departments/{departmentCode}/resources"
+  )
+  @Operation(
+    summary = "DELETE method to handle operations for Remove resources from department",
+    description = "DELETE method to handle operations for Remove resources from department",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> removeResourcesFromDepartment(@RequestBody List<String> removeResourcesFromDepartmentRequest
+    , @PathVariable(value = "departmentCode") String departmentCode)
+  {
+
+      final var command = new RemoveResourcesFromDepartmentCommand(removeResourcesFromDepartmentRequest, departmentCode);
+
+       ResponseEntity<String> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @GetMapping(
+   value = "departments/{code}/permissions"
+  )
+  @Operation(
+    summary = "GET method to handle operations for Get department permissions",
+    description = "GET method to handle operations for Get department permissions",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = PermissionDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<PermissionDTO>> getDepartmentPermissions(
+    @RequestParam(value = "permissionName", required = false) String permissionName, @PathVariable(value = "code") String code)
+  {
+
+      final var query = new GetDepartmentPermissionsQuery(permissionName, code);
+
+      ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
+
+      return response;
+  }
+
+   @PostMapping(
+   value = "departments/{code}/permissions"
+  )
+  @Operation(
+    summary = "POST method to handle operations for Add permissions to department",
+    description = "POST method to handle operations for Add permissions to department",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> addPermissionsToDepartment(@RequestBody List<String> addPermissionsToDepartmentRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      final var command = new AddPermissionsToDepartmentCommand(addPermissionsToDepartmentRequest, code);
+
+       ResponseEntity<String> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @DeleteMapping(
+   value = "departments/{code}/permissions"
+  )
+  @Operation(
+    summary = "DELETE method to handle operations for Remove permissions from department",
+    description = "DELETE method to handle operations for Remove permissions from department",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> removePermissionsFromDepartment(@RequestBody List<String> removePermissionsFromDepartmentRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      final var command = new RemovePermissionsFromDepartmentCommand(removePermissionsFromDepartmentRequest, code);
+
+       ResponseEntity<String> response = commandBus.send(command);
+
+       return response;
+  }
+
+   @GetMapping(
+   value = "departments/{departmentCode}/permissions/available"
+  )
+  @Operation(
+    summary = "GET method to handle operations for Get available permissions for department",
+    description = "GET method to handle operations for Get available permissions for department",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = PermissionDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<PermissionDTO>> getAvailablePermissionsForDepartment(
+    @RequestParam(value = "resourceName", required = false) String resourceName, @PathVariable(value = "departmentCode") String departmentCode)
+  {
+
+      final var query = new GetAvailablePermissionsForDepartmentQuery(resourceName, departmentCode);
+
+      ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
 
       return response;
   }

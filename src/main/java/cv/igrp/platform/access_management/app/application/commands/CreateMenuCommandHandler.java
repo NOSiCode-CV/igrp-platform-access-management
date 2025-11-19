@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 
 /**
@@ -86,6 +87,7 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
     * @throws IgrpResponseStatusException if the DTO is missing or related entities are not found
     */
    @IgrpCommandHandler
+   @Transactional
    public ResponseEntity<MenuEntryDTO> handle(CreateMenuCommand command) {
       MenuEntryDTO menuEntryDTO = command.getMenuentrydto();
       if (menuEntryDTO == null) {
@@ -94,7 +96,7 @@ public class CreateMenuCommandHandler implements CommandHandler<CreateMenuComman
                  HttpStatus.BAD_REQUEST, "Menu", "Menu Entry DTO Missing");
       }
 
-      var validation = menuEntryValidator.validateMenuEntryCode(menuEntryDTO);
+      var validation = menuEntryValidator.validateMenuEntryCode(command);
       if(!validation.isValid()) {
          throw IgrpResponseStatusException.of(
                  HttpStatus.CONFLICT, "Create Menu Entry", validation.getFailureMessage()

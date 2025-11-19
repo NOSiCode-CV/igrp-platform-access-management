@@ -47,7 +47,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
     private final DepartmentEntityRepository departmentRepository;
     private final IGRPUserMapper userMapper;
     private final IAdapter adapter;
-    private final CommandBus commandBus;
+    private final UpdateUserStatusCommandHandler commandBus;
 
     public InviteUserCommandHandler(NotificationAdapter<NotificationResult> notificationAdapter,
                                     IGRPUserEntityRepository userRepository,
@@ -55,7 +55,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
                                     DepartmentEntityRepository departmentRepository,
                                     IGRPUserMapper userMapper,
                                     IAdapter adapter,
-                                    CommandBus commandBus
+                                    UpdateUserStatusCommandHandler commandBus
     ) {
         this.notificationAdapter = notificationAdapter;
         this.userRepository = userRepository;
@@ -100,7 +100,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
             final var disableUserCmd = new UpdateUserStatusCommand(Status.INACTIVE.getCode(), Integer.parseInt(savedUser.getId()));
 
-            commandBus.send(disableUserCmd);
+            commandBus.handle(disableUserCmd);
 
             try {
 

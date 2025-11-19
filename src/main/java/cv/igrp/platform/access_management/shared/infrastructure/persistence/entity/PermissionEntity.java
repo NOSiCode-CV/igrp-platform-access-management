@@ -9,8 +9,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.HashSet;
 
 @Audited
 @Getter
@@ -43,12 +43,14 @@ public class PermissionEntity extends AuditEntity {
   
 
 
-  @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department", referencedColumnName = "id")
-    private DepartmentEntity department;   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
-private Set<RoleEntity> roles = new HashSet<>();
-
-   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
+  
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "t_permission_department",
+            joinColumns = @JoinColumn(name = "permission_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission")
+    )
+private Set<DepartmentEntity> departments = new HashSet<>();   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
 private Set<ResourceEntity> resources = new HashSet<>();
 
 

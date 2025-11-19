@@ -113,10 +113,13 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
       }
 
       RoleEntity newRole = roleMapper.mapToEntity(request, department, parentRole);
+
+      if(newRole.getStatus() == null) newRole.setStatus(Status.ACTIVE);
+
       RoleEntity savedRole = roleRepository.save(newRole);
 
       try {
-         adapter.createRole(department.getCode(), RoleValidator.normalizeRoleCodeForAdapter(department.getCode(), savedRole.getCode()));
+         adapter.createRole(department.getCode(), RoleValidator.normalizeRoleCodeForAdapter(savedRole.getCode(), department.getCode()));
       } catch (IAMException e) {
          throw IgrpResponseStatusException.of(
                  HttpStatus.INTERNAL_SERVER_ERROR,

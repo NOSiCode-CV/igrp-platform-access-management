@@ -10,6 +10,8 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -35,6 +37,6 @@ public class PermissionDTO  {
   private Status status ;
   
   
-  private String departmentCode ;
+  private List<String> departments = new ArrayList<>();
 
 }

@@ -8,7 +8,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
+import org.springframework.transaction.annotation.Transactional;
 
 
 @Component
@@ -25,6 +25,7 @@ public class UnlinkResourceFromApplicationCommandHandler implements CommandHandl
    }
 
    @IgrpCommandHandler
+   @Transactional
    public ResponseEntity<String> handle(UnlinkResourceFromApplicationCommand command) {
 
       var application = applicationEntityRepository.findByCodeAndStatusNotDeleted(command.getCode());

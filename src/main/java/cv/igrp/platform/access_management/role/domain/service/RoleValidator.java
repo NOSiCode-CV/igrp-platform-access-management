@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Optional;
 
 
@@ -51,7 +52,7 @@ public class RoleValidator {
         if(department != null && department.getRoles() != null){
             Optional<RoleEntity> optionalRoleSameCode = department.getRoles()
                     .stream()
-                    .filter(role -> !role.getStatus().equals(Status.DELETED) && role.getCode().equalsIgnoreCase(roleDTO.getCode()))
+                    .filter(role -> !Objects.equals(role.getStatus(), Status.DELETED) && role.getCode().equalsIgnoreCase(roleDTO.getCode()))
                     .findFirst();
             if(optionalRoleSameCode.isPresent()){
                 logger.warn("Role with code {} exists in Department {}.", roleDTO.getCode(), department.getId());

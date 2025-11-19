@@ -30,35 +30,38 @@ public interface ResourceEntityRepository extends
 
     @Query("""
                 SELECT DISTINCT r
-                FROM ResourceEntity r
-                JOIN r.applications a
-                JOIN a.departments dParent
-                WHERE ((
-                    dParent.code = :code
-                    OR EXISTS (
-                        SELECT 1
-                        FROM DepartmentEntity child
-                        JOIN child.parentId p
-                        JOIN child.applications ca
-                        JOIN ca.resources cr
-                        WHERE p.code = :code AND cr.id = r.id
-                    )
-                    OR EXISTS (
-                        SELECT 1
-                        FROM DepartmentEntity child
-                        JOIN child.parentId p
-                        JOIN p.applications pa
-                        JOIN pa.resources pr
-                        WHERE child.code = :code AND pr.id = r.id
-                    )
-                )
-                AND NOT EXISTS (
-                    SELECT 1
-                    FROM DepartmentEntity d2
-                    JOIN d2.applications da2
-                    JOIN da2.resources dr
-                    WHERE d2.code = :code AND dr.id = r.id
-                )) AND r.status = 'ACTIVE' AND r.name != :system_resource
+                 FROM ResourceEntity r
+                 WHERE (( 1=1 AND
+                             NOT EXISTS (
+                                 SELECT 1
+                                 FROM DepartmentEntity d
+                                 WHERE d.code = :code AND d.parentId IS NOT NULL
+                             )
+                             AND r.id NOT IN (
+                                 SELECT dr.id
+                                 FROM DepartmentEntity d2
+                                 JOIN d2.resources dr
+                                 WHERE d2.code = :code
+                             )
+                         )
+                         OR
+                             EXISTS (
+                                 SELECT 1
+                                 FROM DepartmentEntity child
+                                 JOIN child.parentId p
+                                 JOIN p.resources pr
+                                 WHERE child.code = :code
+                                   AND pr.id = r.id
+                                   AND r.id NOT IN (
+                                       SELECT dr2.id
+                                       FROM DepartmentEntity d3
+                                       JOIN d3.resources dr2
+                                       WHERE d3.code = :code
+                                   )
+                             )
+                         )
+                     AND r.status = 'ACTIVE'
+                     AND r.name != :system_resource
             """)
     List<ResourceEntity> findAvailableResourcesForDepartment(@Param("code") String code, @Param("system_resource") String systemResource);
 
@@ -66,8 +69,7 @@ public interface ResourceEntityRepository extends
     """
                 SELECT r
                 FROM ResourceEntity r
-                JOIN r.applications a
-                JOIN a.departments d
+                JOIN r.departments d
                 WHERE d = :department AND r.status != :status
     """
     )
