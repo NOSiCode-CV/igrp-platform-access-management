@@ -28,7 +28,13 @@
           "type": "integer",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_USER_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "AddRolesToUser",
@@ -81,7 +87,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_USER_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "RemoveRolesFromUser",
@@ -124,7 +136,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_USER_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getUserRoles",
@@ -151,7 +169,13 @@
           "type": "integer",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_USER_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getUsers",
@@ -203,7 +227,13 @@
           "description": "Email",
           "isRequired": false
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_USER_LIST"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "respondUserInvitation",
@@ -277,7 +307,13 @@
           "type": "integer",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_USER_UPDATE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getCurrentUser",
@@ -331,6 +367,12 @@
             }
           }
         }
+      },
+      "permission": {
+        "items": [
+          "IGRP_USER_CREATE"
+        ],
+        "operator": "OR"
       }
     },
     {
@@ -366,7 +408,13 @@
           "type": "integer",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_USER_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getCurrentUserApplications",
@@ -499,5 +547,5 @@
       ]
     }
   ],
-  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser-getCurrentUser-AddRolesToUser-RemoveRolesFromUser-getUsers-getUsers-getUsers-inviteUser"
+  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser-getCurrentUser-AddRolesToUser-RemoveRolesFromUser-getUsers-getUsers-getUsers-inviteUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-inviteUser-updateUserStatus"
 }

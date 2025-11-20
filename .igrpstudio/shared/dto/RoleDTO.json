@@ -28,7 +28,7 @@
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false,
-      "maxLength": 25,
+      "maxLength": 255,
       "regex": "^[A-Za-z0-9_-]+$"
     },
     {

@@ -42,6 +42,7 @@ public class DepartmentController {
           this.queryBus = queryBus;
           this.commandBus = commandBus;
   }
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_CREATE)")
    @PostMapping(
    value = "departments"
   )
@@ -73,6 +74,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_LIST)")
    @GetMapping(
    value = "departments"
   )
@@ -107,6 +109,7 @@ public class DepartmentController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
    @GetMapping(
    value = "departments/{id}"
   )
@@ -138,6 +141,7 @@ public class DepartmentController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_UPDATE)")
    @PutMapping(
    value = "departments/{code}"
   )
@@ -169,6 +173,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_DELETE)")
    @DeleteMapping(
    value = "departments/{code}"
   )
@@ -200,6 +205,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
    @GetMapping(
    value = "departments/by-code/{code}"
   )
@@ -231,6 +237,7 @@ public class DepartmentController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @GetMapping(
    value = "departments/{code}/applications/available"
   )
@@ -262,6 +269,7 @@ public class DepartmentController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @GetMapping(
    value = "departments/{departmentCode}/applications/{applicationCode}/menus/available"
   )
@@ -293,6 +301,7 @@ public class DepartmentController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @GetMapping(
    value = "departments/{code}/resources/available"
   )
@@ -324,6 +333,7 @@ public class DepartmentController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @PostMapping(
    value = "departments/{code}/roles"
   )
@@ -355,6 +365,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
    @GetMapping(
    value = "departments/{code}/roles"
   )
@@ -386,6 +397,7 @@ public class DepartmentController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @PutMapping(
    value = "departments/{departmentCode}/roles/{roleCode}"
   )
@@ -417,6 +429,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @DeleteMapping(
    value = "departments/{departmentCode}/roles/{roleCode}"
   )
@@ -448,6 +461,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @DeleteMapping(
    value = "departments/{departmentCode}/roles/{roleCode}/permissions"
   )
@@ -479,6 +493,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
    @GetMapping(
    value = "departments/{departmentCode}/roles/{roleCode}/permissions"
   )
@@ -510,6 +525,7 @@ public class DepartmentController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @PostMapping(
    value = "departments/{departmentCode}/roles/{roleCode}/permissions"
   )
@@ -541,6 +557,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @GetMapping(
    value = "departments/{departmentCode}/roles/{roleCode}/permissions/available"
   )
@@ -572,6 +589,7 @@ public class DepartmentController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @PostMapping(
    value = "departments/{code}/applications"
   )
@@ -603,6 +621,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @PostMapping(
    value = "departments/{departmentCode}/applications/{applicationCode}/menus"
   )
@@ -634,6 +653,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @DeleteMapping(
    value = "departments/{code}/applications"
   )
@@ -665,6 +685,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @DeleteMapping(
    value = "departments/{departmentCode}/applications/{applicationCode}/menus"
   )
@@ -696,6 +717,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
    @GetMapping(
    value = "/departments/{code}/resources"
   )
@@ -727,6 +749,7 @@ public class DepartmentController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
    @GetMapping(
    value = "/departments/{departmentCode}/applications/{applicationCode}/menus"
   )
@@ -758,6 +781,7 @@ public class DepartmentController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
    @GetMapping(
    value = "/departments/{code}/applications"
   )
@@ -789,6 +813,7 @@ public class DepartmentController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @PostMapping(
    value = "departments/{departmentCode}/resources"
   )
@@ -820,6 +845,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @DeleteMapping(
    value = "departments/{departmentCode}/resources"
   )
@@ -851,6 +877,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
    @GetMapping(
    value = "departments/{code}/permissions"
   )
@@ -882,6 +909,7 @@ public class DepartmentController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @PostMapping(
    value = "departments/{code}/permissions"
   )
@@ -913,6 +941,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @DeleteMapping(
    value = "departments/{code}/permissions"
   )
@@ -944,6 +973,7 @@ public class DepartmentController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
    @GetMapping(
    value = "departments/{departmentCode}/permissions/available"
   )

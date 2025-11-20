@@ -56,7 +56,7 @@ public class UploadFileCommandHandlerTest {
         Set<ConstraintViolation<UploadPrivateFileCommand>> violations = validate(command);
 
         assertFalse(violations.isEmpty(), "Deveria falhar quando file é null");
-        assertEquals("The field <file> is required.", violations.iterator().next().getMessage());
+        assertEquals("The field <file> is required", violations.iterator().next().getMessage());
     }
 
     @Test
@@ -65,7 +65,7 @@ public class UploadFileCommandHandlerTest {
         Set<ConstraintViolation<UploadPublicFileCommand>> violations = validate(command);
 
         assertFalse(violations.isEmpty(), "Deveria falhar quando file é null");
-        assertEquals("The field <file> is required.", violations.iterator().next().getMessage());
+        assertEquals("The field <file> is required", violations.iterator().next().getMessage());
     }
 
     @Test

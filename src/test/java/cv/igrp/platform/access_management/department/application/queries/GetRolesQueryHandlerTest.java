@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.department.application.queries;
 
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.role.specs.RoleSpecificationBuilder;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
@@ -32,6 +33,9 @@ class GetRolesQueryHandlerTest {
   @Mock
   private RoleMapper roleMapper;
 
+  @Mock
+  private RoleSpecificationBuilder specification;
+
   @Test
   void itShouldStartContext() {
     assertNotNull(underTest);
@@ -41,7 +45,7 @@ class GetRolesQueryHandlerTest {
   void itShouldReturnEmptyList_WhenNoRolesAreFound() {
     // Given
     GetRolesQuery query = new GetRolesQuery();
-    when(roleRepository.findAll(any(Specification.class))).thenReturn(List.of());
+    when(roleRepository.findAll(nullable(Specification.class))).thenReturn(List.of());
 
     // When
     ResponseEntity<List<RoleDTO>> result = underTest.handle(query);
@@ -50,7 +54,7 @@ class GetRolesQueryHandlerTest {
     assertEquals(HttpStatus.OK, result.getStatusCode());
     assertNotNull(result.getBody());
     assertTrue(result.getBody().isEmpty());
-    verify(roleRepository).findAll(any(Specification.class));
+    verify(roleRepository).findAll(nullable(Specification.class));
     verifyNoInteractions(roleMapper);
   }
 
@@ -73,7 +77,7 @@ class GetRolesQueryHandlerTest {
     inactiveRoleDTO.setId(2);
     inactiveRoleDTO.setCode("Inactive Role");
 
-    when(roleRepository.findAll(any(Specification.class))).thenReturn(List.of(activeRole, inactiveRole));
+    when(roleRepository.findAll(nullable(Specification.class))).thenReturn(List.of(activeRole, inactiveRole));
     when(roleMapper.mapToDto(activeRole)).thenReturn(activeRoleDTO);
     when(roleMapper.mapToDto(inactiveRole)).thenReturn(inactiveRoleDTO);
 
@@ -86,7 +90,7 @@ class GetRolesQueryHandlerTest {
     assertTrue(response.getBody().contains(activeRoleDTO));
     assertTrue(response.getBody().contains(inactiveRoleDTO));
 
-    verify(roleRepository).findAll(any(Specification.class));
+    verify(roleRepository).findAll(nullable(Specification.class));
     verify(roleMapper).mapToDto(activeRole);
     verify(roleMapper).mapToDto(inactiveRole);
   }
@@ -105,7 +109,7 @@ class GetRolesQueryHandlerTest {
     roleDTO.setId(3);
     roleDTO.setCode("HR Role");
 
-    when(roleRepository.findAll(any(Specification.class))).thenReturn(List.of(role));
+    when(roleRepository.findAll(nullable(Specification.class))).thenReturn(List.of(role));
     when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
     // When
@@ -116,11 +120,8 @@ class GetRolesQueryHandlerTest {
     assertEquals(1, response.getBody().size());
     assertEquals(roleDTO, response.getBody().get(0));
 
-    // Capture specification
-    ArgumentCaptor<Specification<RoleEntity>> specCaptor = ArgumentCaptor.forClass(Specification.class);
-    verify(roleRepository).findAll(specCaptor.capture());
-    assertNotNull(specCaptor.getValue());
-
+    // Verify repository interaction allowing null specification
+    verify(roleRepository).findAll(nullable(Specification.class));
     verify(roleMapper).mapToDto(role);
   }
 
@@ -138,7 +139,7 @@ class GetRolesQueryHandlerTest {
     roleDTO.setId(4);
     roleDTO.setCode("Manager Role");
 
-    when(roleRepository.findAll(any(Specification.class))).thenReturn(List.of(role));
+    when(roleRepository.findAll(nullable(Specification.class))).thenReturn(List.of(role));
     when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
     // When
@@ -149,8 +150,8 @@ class GetRolesQueryHandlerTest {
     assertEquals(1, response.getBody().size());
     assertEquals(roleDTO, response.getBody().get(0));
 
-    // Verify repository interaction
-    verify(roleRepository).findAll(any(Specification.class));
+    // Verify repository interaction allowing null specification
+    verify(roleRepository).findAll(nullable(Specification.class));
     verify(roleMapper).mapToDto(role);
   }
 }

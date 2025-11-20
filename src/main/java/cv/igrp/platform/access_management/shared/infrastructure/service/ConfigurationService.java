@@ -83,7 +83,7 @@ public class ConfigurationService {
                     createDefaultPermissionInDB(departmentId);
 
             Long resourceId = resourceExists? getId("SELECT id FROM t_resource WHERE name='%s'".formatted(IGRP_RESOURCE)) :
-                    createDefaultResourceInDB(permissionId, appId);
+                    createDefaultResourceInDB(permissionId, appId, departmentId);
 
             Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE code='%s'".formatted(SUPER_ADMIN_ROLE)) :
                     (roleExistsInProvider ? createDefaultRoleInDB(departmentId, permissionId, appId) : null);
@@ -283,20 +283,28 @@ public class ConfigurationService {
     Long createDefaultPermissionInDB(Long deptId) {
         String sql = """
                     INSERT INTO t_permission
-                    (name, description, status, department,
+                    (name, description, status,
                      created_by, created_date, last_modified_by, last_modified_date)
-                    VALUES (?, ?, 'ACTIVE', ?, ?, now(), ?, now())
+                    VALUES (?, ?, 'ACTIVE', ?, now(), ?, now())
                     RETURNING id
                 """;
         var query = jdbcTemplate.queryForObject(sql,
                 Long.class,
-                IGRP_PERMISSION, "iGRP Manage Access Permission", deptId,
+                IGRP_PERMISSION, "iGRP Manage Access Permission",
                 SYSTEM_USER, SYSTEM_USER);
         LOGGER.info("[Startup Config] Default Permission created in DB");
+
+        // Step 1: Insert department-permission relation
+        String insertRelationSql = """
+            INSERT INTO t_permission_department (permission_id, department)
+            VALUES (?, ?)
+        """;
+        jdbcTemplate.update(insertRelationSql, query, deptId);
+
         return query;
     }
 
-    Long createDefaultResourceInDB(Long permId, Long appId) {
+    Long createDefaultResourceInDB(Long permId, Long appId, Long deptId) {
         String sqlRole = """
                     INSERT INTO t_resource
                     (name, description, type, status,
@@ -325,7 +333,16 @@ public class ConfigurationService {
             INSERT INTO t_application_resource (resource_id, application_id)
             VALUES (?, ?)
         """;
+
         jdbcTemplate.update(insertRelationSql, resourceId, appId);
+
+        // Step 3. Associate with department
+        String insertDeptRelationSql = """
+            INSERT INTO t_resource_department (resource_id, department)
+            VALUES (?, ?)
+        """;
+
+        jdbcTemplate.update(insertDeptRelationSql, resourceId, deptId);
 
         LOGGER.info("[Startup Config] Default Resource created in DB");
 

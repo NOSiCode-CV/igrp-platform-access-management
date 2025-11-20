@@ -100,7 +100,7 @@ public class GetApplicationsQueryHandlerTest {
         List<ApplicationEntity> mockResult = List.of(app1, app2);
 
         // Specification should match, so mock findAll with any(Specification)
-        Mockito.when(applicationRepository.findAll(Mockito.any(Specification.class))).thenReturn(mockResult);
+        Mockito.when(applicationRepository.findAll(Mockito.nullable(Specification.class))).thenReturn(mockResult);
         when(applicationMapper.toDto(app1)).thenReturn(app1Dto);
         when(applicationMapper.toDto(app2)).thenReturn(app2Dto);
 
@@ -163,7 +163,7 @@ public class GetApplicationsQueryHandlerTest {
 
         List<ApplicationEntity> matchingApps = List.of(app1, app2);
 
-        Mockito.when(applicationRepository.findAll(Mockito.any(Specification.class)))
+        Mockito.when(applicationRepository.findAll(Mockito.nullable(Specification.class)))
                 .thenReturn(matchingApps);
         when(applicationMapper.toDto(app1)).thenReturn(app1Dto);
         when(applicationMapper.toDto(app2)).thenReturn(app2Dto);
@@ -228,7 +228,7 @@ public class GetApplicationsQueryHandlerTest {
 
         List<ApplicationEntity> allApps = List.of(app1, app2);
 
-        Mockito.when(applicationRepository.findAll(Mockito.any(Specification.class)))
+        Mockito.when(applicationRepository.findAll(Mockito.nullable(Specification.class)))
                 .thenReturn(allApps);
         when(applicationMapper.toDto(app1)).thenReturn(app1Dto);
         when(applicationMapper.toDto(app2)).thenReturn(app2Dto);

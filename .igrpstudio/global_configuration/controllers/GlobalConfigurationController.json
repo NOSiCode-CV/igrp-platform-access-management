@@ -37,6 +37,12 @@
             }
           }
         }
+      },
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_CUSTOMIZE"
+        ],
+        "operator": "OR"
       }
     },
     {
@@ -68,5 +74,5 @@
       ]
     }
   ],
-  "id": "2vqxcrt9jj-CONTROLLER-setGlobalConfiguration-getGlobalConfiguration"
+  "id": "2vqxcrt9jj-CONTROLLER-setGlobalConfiguration-getGlobalConfiguration-setGlobalConfiguration"
 }

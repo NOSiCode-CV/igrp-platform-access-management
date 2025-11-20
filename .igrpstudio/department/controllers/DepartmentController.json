@@ -37,6 +37,12 @@
             }
           }
         }
+      },
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_CREATE"
+        ],
+        "operator": "OR"
       }
     },
     {
@@ -82,7 +88,13 @@
           "description": "Parent Code",
           "isRequired": false
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_LIST"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getDepartmentById",
@@ -111,7 +123,13 @@
           "description": "ID of the Department",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "updateDepartment",
@@ -152,7 +170,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_UPDATE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "deleteDepartment",
@@ -177,7 +201,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_DELETE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getDepartmentByCode",
@@ -205,7 +235,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getAvailableApplicationsForDepartment",
@@ -233,7 +269,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getMenusAvailableForDepartment",
@@ -266,7 +308,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getAvailableResourcesForDepartment",
@@ -294,7 +342,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "createRole",
@@ -335,7 +389,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getRoles",
@@ -371,7 +431,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "updateRole",
@@ -417,7 +483,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "deleteRole",
@@ -448,7 +520,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "RemovePermissions",
@@ -494,7 +572,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "GetPermissionsByRoleId",
@@ -527,7 +611,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "addPermissions",
@@ -573,7 +663,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getAvailablePermissionsForRoles",
@@ -606,7 +702,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "addApplicationsToDepartment",
@@ -643,7 +745,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "addMenusToDepartment",
@@ -685,7 +793,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "removeApplicationsFromDepartment",
@@ -722,7 +836,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "removeMenusFromDepartment",
@@ -764,7 +884,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getDepartmentResources",
@@ -800,7 +926,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getDepartmentMenus",
@@ -841,7 +973,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getDepartmentApplications",
@@ -877,7 +1015,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "addResourcesToDepartment",
@@ -914,12 +1058,29 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "removeResourcesFromDepartment",
       "path": "departments/{departmentCode}/resources",
       "method": "DELETE",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "collectionType": "list",
+              "name": "data"
+            }
+          }
+        }
+      },
       "responses": {
         "204": {
           "name": "OK",
@@ -941,16 +1102,11 @@
           "isRequired": true
         }
       ],
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "string",
-              "collectionType": "list",
-              "name": "data"
-            }
-          }
-        }
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
       }
     },
     {
@@ -986,7 +1142,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "addPermissionsToDepartment",
@@ -1023,7 +1185,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "removePermissionsFromDepartment",
@@ -1060,7 +1228,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getAvailablePermissionsForDepartment",
@@ -1095,8 +1269,14 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_MANAGE"
+        ],
+        "operator": "OR"
+      }
     }
   ],
-  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-addMenusToDepartment-removeMenusFromDepartment-createRole-getRoles-addMenusToDepartment-getDepartmentMenus-getMenusAvailableForDepartment-getDepartmentPermissions"
+  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-addMenusToDepartment-removeMenusFromDepartment-createRole-getRoles-addMenusToDepartment-getDepartmentMenus-getMenusAvailableForDepartment-getDepartmentPermissions-postDepartment-getDepartments-getDepartmentById-updateDepartment-deleteDepartment-getDepartmentByCode-getAvailableApplicationsForDepartment-getMenusAvailableForDepartment-getAvailableResourcesForDepartment-createRole-getRoles-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getAvailablePermissionsForRoles-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-getDepartmentResources-getDepartmentMenus-getDepartmentApplications-addResourcesToDepartment-removeResourcesFromDepartment-getDepartmentPermissions-addPermissionsToDepartment-removePermissionsFromDepartment-getAvailablePermissionsForDepartment"
 }

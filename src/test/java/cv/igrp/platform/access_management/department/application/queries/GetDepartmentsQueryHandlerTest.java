@@ -4,6 +4,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
+import cv.igrp.platform.access_management.department.specs.DepartmentSpecificationBuilder;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -30,6 +31,9 @@ public class GetDepartmentsQueryHandlerTest {
 
     @Mock
     DepartmentMapper departmentMapper;
+
+    @Mock
+    DepartmentSpecificationBuilder specification;
 
     @InjectMocks
     private GetDepartmentsQueryHandler getDepartmentsQueryHandler;

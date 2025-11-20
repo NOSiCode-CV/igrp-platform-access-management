@@ -37,9 +37,6 @@ public class ScopeAspect {
             }
         }
 
-        System.out.println("[[DEBUG]] Allowed Department IDs: " + allowedDepartments);
-        System.out.println("[[DEBUG]] Allowed Application IDs: " + allowedApplications);
-
         return pjp.proceed(args);
     }
 

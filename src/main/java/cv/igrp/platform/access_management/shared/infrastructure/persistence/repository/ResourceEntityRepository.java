@@ -61,7 +61,6 @@ public interface ResourceEntityRepository extends
                              )
                          )
                      AND r.status = 'ACTIVE'
-                     AND r.name != :system_resource
             """)
     List<ResourceEntity> findAvailableResourcesForDepartment(@Param("code") String code, @Param("system_resource") String systemResource);
 

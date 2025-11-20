@@ -14,6 +14,9 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+
+import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE;
 
 @Service
 public class PermissionCacheService {
@@ -39,7 +42,7 @@ public class PermissionCacheService {
             keyGenerator = "permissionCacheKeyGenerator")
     public PermissionCacheEntryDTO getOrLoadPermission(PermissionCheckRequest request) {
 
-        LOGGER.info("Cache MISS - Buscando no banco de dados: {}:{}:{}",
+        LOGGER.info("Cache MISS - Checking in database: {}:{}:{}",
                 request.getSubject(),
                 request.getResource(),
                 request.getAction());
@@ -65,11 +68,20 @@ public class PermissionCacheService {
 
     private Boolean checkPermission(String subject, String permissionName) {
 
-        // Verifica se o utilizador existe ou está inativo/deletado
+        // Verifies if the user exists or if it is deleted or disabled
         var userOpt = userRepository.findByExternalId(subject);
         if (userOpt.isEmpty() || userOpt.get().getStatus() == Status.DELETED || userOpt.get().getStatus() == Status.INACTIVE) {
+            LOGGER.info("User {} is not active or deleted", subject);
             return false;
         }
+
+        // If the user is superadmin it is allowed to do anything
+        if(userOpt.get().getRoles().stream().anyMatch(r -> Objects.equals(r.getCode(), SUPER_ADMIN_ROLE))) {
+            LOGGER.info("User {} is superadmin", subject);
+            return true;
+        }
+
+        LOGGER.info("Checking permission {} for user {}", permissionName, subject);
 
         String sql = """
                  SELECT 1 AS result

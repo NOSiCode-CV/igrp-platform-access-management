@@ -36,12 +36,13 @@ public class GlobalConfigurationController {
           this.queryBus = queryBus;
           this.commandBus = commandBus;
   }
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_CUSTOMIZE)")
    @PostMapping(
-    value = "global-configuration"
+   value = "global-configuration"
   )
   @Operation(
-    summary = "POST method to handle operations for setGlobalConfiguration",
-    description = "POST method to handle operations for setGlobalConfiguration",
+    summary = "POST method to handle operations for Set global configuration",
+    description = "POST method to handle operations for Set global configuration",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -68,11 +69,11 @@ public class GlobalConfigurationController {
   }
 
    @GetMapping(
-    value = "global-configuration"
+   value = "global-configuration"
   )
   @Operation(
-    summary = "GET method to handle operations for getGlobalConfiguration",
-    description = "GET method to handle operations for getGlobalConfiguration",
+    summary = "GET method to handle operations for Get global configuration",
+    description = "GET method to handle operations for Get global configuration",
     responses = {
       @ApiResponse(
           responseCode = "200",

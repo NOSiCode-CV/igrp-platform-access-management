@@ -39,7 +39,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getRoleById",
@@ -76,8 +82,14 @@
           "isRequired": true,
           "description": "role id"
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_DEPARTMENT_VIEW"
+        ],
+        "operator": "OR"
+      }
     }
   ],
-  "id": "2b75ptbxyv-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissions-RemovePermissions-getRoles-getRoles-getRolesByName-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getAvailablePermissionsForRoles-RemovePermissions-addPermissions-getRoleById-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getRolesByName-getAvailablePermissionsForRoles-getRolesByName"
+  "id": "2b75ptbxyv-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissions-RemovePermissions-getRoles-getRoles-getRolesByName-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getAvailablePermissionsForRoles-RemovePermissions-addPermissions-getRoleById-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getRolesByName-getAvailablePermissionsForRoles-getRolesByName-getRolesByName-getRoleById"
 }

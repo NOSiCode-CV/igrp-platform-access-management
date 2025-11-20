@@ -118,7 +118,9 @@ public class CreateRoleCommandHandlerTest {
         department.setName("Department Name");
 
         RoleEntity roleEntity = new RoleEntity();
+        roleEntity.setCode(roleCode);
         RoleEntity savedRole = new RoleEntity();
+        savedRole.setCode(roleCode);
         RoleDTO expectedResponse = new RoleDTO();
 
         // When
@@ -246,7 +248,9 @@ public class CreateRoleCommandHandlerTest {
         department.setName("Department Name");
 
         RoleEntity roleEntity = new RoleEntity();
+        roleEntity.setCode(roleCode);
         RoleEntity savedRole = new RoleEntity();
+        savedRole.setCode(roleCode);
         RoleDTO expectedResponse = new RoleDTO();
 
         // When
@@ -285,10 +289,12 @@ public class CreateRoleCommandHandlerTest {
         department.setName("Department Name");
 
         RoleEntity roleEntity = new RoleEntity();
+        roleEntity.setCode(roleCode);
         RoleEntity parentRole = new RoleEntity();
         parentRole.setCode(parentRoleCode);
         parentRole.setName("Parent Role Name");
         RoleEntity savedRole = new RoleEntity();
+        savedRole.setCode(roleCode);
         RoleDTO expectedResponse = new RoleDTO();
         expectedResponse.setParentCode(parentRoleCode);
         expectedResponse.setCode(roleCode);

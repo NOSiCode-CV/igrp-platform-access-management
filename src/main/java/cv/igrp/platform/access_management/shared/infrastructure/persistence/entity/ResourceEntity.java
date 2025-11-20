@@ -75,7 +75,7 @@ private Set<PermissionEntity> permissions = new HashSet<>();
     @JoinTable(
             name = "t_resource_department",
             joinColumns = @JoinColumn(name = "resource_id"),
-            inverseJoinColumns = @JoinColumn(name = "resource")
+            inverseJoinColumns = @JoinColumn(name = "department")
     )
 private Set<DepartmentEntity> departments = new HashSet<>();   @OneToMany(mappedBy = "resourceId")
 private List<ResourceItemEntity> items = new ArrayList<>();

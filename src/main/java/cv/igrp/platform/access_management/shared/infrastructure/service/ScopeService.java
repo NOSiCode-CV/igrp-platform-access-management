@@ -76,8 +76,6 @@ public class ScopeService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
 
-        System.out.println("[[DEBUG]] Current User Roles: " + roles);
-
         boolean isSuperAdmin = roles.contains(SUPER_ADMIN_ROLE);
 
         return new ActorPrincipal(
@@ -117,8 +115,6 @@ public class ScopeService {
                 ids.addAll(resolveDescendants(id));
             }
         });
-        System.out.println("[[DEBUG]] Visible Department IDs: " + ids);
-
         cache.setVisibleDepartments(ids);
         return ids;
     }
@@ -147,8 +143,6 @@ public class ScopeService {
         Set<Integer> deptIds = getVisibleDepartmentIds();
 
         Set<Integer> appIds = applicationRepository.findByDepartmentIds(deptIds);
-
-        System.out.println("[[DEBUG]] Visible Application IDs: " + appIds);
 
         cache.setVisibleApplications(appIds);
         return appIds;
@@ -183,7 +177,6 @@ public class ScopeService {
                 ids.addAll(resolveRoleDescendants(id));
             }
         });
-        System.out.println("[[DEBUG]] Visible Role IDs: " + ids);
 
         cache.setVisibleRoles(ids);
         return ids;

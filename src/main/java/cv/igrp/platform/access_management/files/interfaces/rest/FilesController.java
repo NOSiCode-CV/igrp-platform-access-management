@@ -4,7 +4,6 @@
 package cv.igrp.platform.access_management.files.interfaces.rest;
 
 import cv.igrp.framework.stereotype.IgrpController;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
@@ -15,14 +14,12 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import cv.igrp.framework.core.domain.CommandBus;
+import org.springframework.security.access.prepost.PreAuthorize;
+
 import cv.igrp.framework.core.domain.QueryBus;
-import cv.igrp.platform.access_management.files.application.commands.*;
 import cv.igrp.platform.access_management.files.application.queries.*;
-
-
+import cv.igrp.framework.core.domain.CommandBus;
+import cv.igrp.platform.access_management.files.application.commands.*;
 import cv.igrp.platform.access_management.files.application.dto.FileUrlDTO;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -32,26 +29,21 @@ import org.springframework.web.multipart.MultipartFile;
 @Tag(name = "Files", description = "File Management")
 public class FilesController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(FilesController.class);
-
   
-  private final CommandBus commandBus;
   private final QueryBus queryBus;
+  private final CommandBus commandBus;
 
-  
-  public FilesController(
-    CommandBus commandBus, QueryBus queryBus
-  ) {
-    this.commandBus = commandBus;
-    this.queryBus = queryBus;
+  public FilesController(QueryBus queryBus, CommandBus commandBus) {
+          this.queryBus = queryBus;
+          this.commandBus = commandBus;
   }
-
-  @GetMapping(
-    value = "files/url"
+   @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_USER_VIEW, T(Permission).IGRP_APPLICATION_VIEW)")
+   @GetMapping(
+   value = "files/url"
   )
   @Operation(
-    summary = "GET method to handle operations for getPrivateFileUrl",
-    description = "GET method to handle operations for getPrivateFileUrl",
+    summary = "GET method to handle operations for Get private file url",
+    description = "GET method to handle operations for Get private file url",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -70,26 +62,20 @@ public class FilesController {
     @RequestParam(value = "privateFilePath") String privateFilePath)
   {
 
-      LOGGER.debug("Operation started");
-
       final var query = new GetPrivateFileUrlQuery(privateFilePath);
 
       ResponseEntity<FileUrlDTO> response = queryBus.handle(query);
 
-      LOGGER.debug("Operation finished");
-
-      return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+      return response;
   }
 
-  @PostMapping(
-          value = "files/public",
-          consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+   @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_USER_UPDATE, T(Permission).IGRP_APPLICATION_UPDATE)")
+   @PostMapping(
+   value = "files/public"
   )
   @Operation(
-    summary = "POST method to handle operations for uploadPublicFile",
-    description = "POST method to handle operations for uploadPublicFile",
+    summary = "POST method to handle operations for Upload public file",
+    description = "POST method to handle operations for Upload public file",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -109,26 +95,20 @@ public class FilesController {
     @RequestParam(value = "folder") String folder)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new UploadPublicFileCommand(file, folder);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
-            value = "files/private",
-          consumes = MediaType.MULTIPART_FORM_DATA_VALUE
+   @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_USER_UPDATE, T(Permission).IGRP_APPLICATION_UPDATE)")
+   @PostMapping(
+   value = "files/private"
   )
   @Operation(
-    summary = "POST method to handle operations for uploadPrivateFile",
-    description = "POST method to handle operations for uploadPrivateFile",
+    summary = "POST method to handle operations for Upload private file",
+    description = "POST method to handle operations for Upload private file",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -148,17 +128,11 @@ public class FilesController {
     @RequestParam(value = "folder") String folder)
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new UploadPrivateFileCommand(file, folder);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
 }

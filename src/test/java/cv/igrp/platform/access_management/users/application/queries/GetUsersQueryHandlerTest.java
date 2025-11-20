@@ -8,7 +8,9 @@ import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.security.ScopeContext;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
+import cv.igrp.platform.access_management.users.specs.UserSpecificationBuilder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,11 +30,15 @@ public class GetUsersQueryHandlerTest {
   @Mock
   private IGRPUserMapper userMapper;
 
+  @Mock
+  private UserSpecificationBuilder specification;
+
   @InjectMocks
   private GetUsersQueryHandler handler;
 
   private IGRPUserEntity mockUser;
   private IGRPUserDTO mockUserDTO;
+  private Specification<IGRPUserEntity> specs;
 
   @BeforeEach
   void setUp() {
@@ -47,6 +53,8 @@ public class GetUsersQueryHandlerTest {
     mockUserDTO.setName("John Doe");
     mockUserDTO.setUsername("jdoe");
     mockUserDTO.setEmail("jdoe@example.com");
+
+    specs = mock(Specification.class);
   }
 
   @Test
@@ -60,7 +68,8 @@ public class GetUsersQueryHandlerTest {
             "jdoe@example.com"
     );
 
-    when(userRepository.findAll(any(Specification.class))).thenReturn(List.of(mockUser));
+    when(specification.buildSpecification(eq(query), any(ScopeContext.class))).thenReturn(specs);
+    when(userRepository.findAll(specs)).thenReturn(List.of(mockUser));
     when(userMapper.toDto(mockUser)).thenReturn(mockUserDTO);
 
     // When

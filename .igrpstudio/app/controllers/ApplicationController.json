@@ -91,7 +91,13 @@
           "description": "The Application Type",
           "isRequired": false
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_LIST"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getApplicationById",
@@ -118,12 +124,31 @@
           "description": "The ID of the Application",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "updateApplication",
       "path": "applications/{code}",
       "method": "PUT",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "ApplicationDTO",
+              "name": "Application",
+              "objectType": "dto",
+              "module": "shared",
+              "description": "The Application Data"
+            }
+          }
+        }
+      },
       "responses": {
         "200": {
           "description": "The Updated Application",
@@ -145,18 +170,11 @@
           "isRequired": true
         }
       ],
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "ApplicationDTO",
-              "name": "Application",
-              "objectType": "dto",
-              "module": "shared",
-              "description": "The Application Data"
-            }
-          }
-        }
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_UPDATE"
+        ],
+        "operator": "OR"
       }
     },
     {
@@ -183,7 +201,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_DELETE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getApplicationsByUser",
@@ -216,6 +240,18 @@
       "actionName": "addApplicationCustomFields",
       "path": "/applications/{code}/custom-fields",
       "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "undefined",
+              "collectionType": "map",
+              "isRequired": true
+            }
+          }
+        }
+      },
       "responses": {
         "204": {
           "description": "No Content",
@@ -237,17 +273,11 @@
           "isRequired": true
         }
       ],
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "string",
-              "name": "undefined",
-              "collectionType": "map",
-              "isRequired": true
-            }
-          }
-        }
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_UPDATE"
+        ],
+        "operator": "OR"
       }
     },
     {
@@ -286,7 +316,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_UPDATE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getApplicationCustomFields",
@@ -313,7 +349,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getApplicationByCode",
@@ -341,7 +383,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "createMenu",
@@ -380,7 +428,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "updateMenu",
@@ -424,7 +478,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "deleteMenu",
@@ -455,7 +515,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_DELETE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getApplicationMenus",
@@ -484,7 +550,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "addRolesToMenu",
@@ -537,7 +609,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "removeRolesFromMenu",
@@ -590,7 +668,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "linkResourceToApplication",
@@ -627,7 +711,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_MANAGE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "unlinkResourceFromApplication",
@@ -664,8 +754,14 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_APPLICATION_MANAGE"
+        ],
+        "operator": "OR"
+      }
     }
   ],
-  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications-removeDepartementFromApplication-getApplicationMenus-removeApplicationCustomFields-addRolesToApp-removeRoleFromApplication-addDepartmentsToApplication-removeDepartmentFromApplication-addRolesToApp-removeRoleFromApplication-getApplicationsByIds-getApplicationDeniedToUser-getApplicationMenus-createMenu-updateMenu-deleteMenu-addRolesToMenu-createApplication"
+  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications-removeDepartementFromApplication-getApplicationMenus-removeApplicationCustomFields-addRolesToApp-removeRoleFromApplication-addDepartmentsToApplication-removeDepartmentFromApplication-addRolesToApp-removeRoleFromApplication-getApplicationsByIds-getApplicationDeniedToUser-getApplicationMenus-createMenu-updateMenu-deleteMenu-addRolesToMenu-createApplication-getApplications-getApplicationById-updateApplication-deleteApplication-getApplicationsByUser-addApplicationCustomFields-removeApplicationCustomFields-getApplicationCustomFields-getApplicationByCode-createMenu-updateMenu-deleteMenu-getApplicationMenus-addRolesToMenu-removeRolesFromMenu-linkResourceToApplication-unlinkResourceFromApplication"
 }

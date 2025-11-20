@@ -43,12 +43,13 @@ public class UserController {
           this.queryBus = queryBus;
           this.commandBus = commandBus;
   }
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
    @GetMapping(
    value = "users/{id}"
   )
   @Operation(
-    summary = "GET method to handle operations for getUser",
-    description = "GET method to handle operations for getUser",
+    summary = "GET method to handle operations for Get user",
+    description = "GET method to handle operations for Get user",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -74,12 +75,13 @@ public class UserController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
    @PostMapping(
    value = "users/{id}/departments/{departmentCode}/roles"
   )
   @Operation(
-    summary = "POST method to handle operations for AddRolesToUser",
-    description = "POST method to handle operations for AddRolesToUser",
+    summary = "POST method to handle operations for Add roles to user",
+    description = "POST method to handle operations for Add roles to user",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -115,12 +117,13 @@ public class UserController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
    @DeleteMapping(
    value = "users/{id}/departments/{departmentCode}/roles"
   )
   @Operation(
-    summary = "DELETE method to handle operations for RemoveRolesFromUser",
-    description = "DELETE method to handle operations for RemoveRolesFromUser",
+    summary = "DELETE method to handle operations for Remove roles from user",
+    description = "DELETE method to handle operations for Remove roles from user",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -146,12 +149,13 @@ public class UserController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
    @GetMapping(
    value = "users/{id}/roles"
   )
   @Operation(
-    summary = "GET method to handle operations for getUserRoles",
-    description = "GET method to handle operations for getUserRoles",
+    summary = "GET method to handle operations for Get user roles",
+    description = "GET method to handle operations for Get user roles",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -177,12 +181,13 @@ public class UserController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_LIST)")
    @GetMapping(
    value = "users"
   )
   @Operation(
-    summary = "GET method to handle operations for getUsers",
-    description = "GET method to handle operations for getUsers",
+    summary = "GET method to handle operations for Get users",
+    description = "GET method to handle operations for Get users",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -216,8 +221,8 @@ public class UserController {
    value = "users/invite/response"
   )
   @Operation(
-    summary = "POST method to handle operations for respondUserInvitation",
-    description = "POST method to handle operations for respondUserInvitation",
+    summary = "POST method to handle operations for Respond user invitation",
+    description = "POST method to handle operations for Respond user invitation",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -243,12 +248,13 @@ public class UserController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_UPDATE)")
    @PutMapping(
    value = "users/{id}"
   )
   @Operation(
-    summary = "PUT method to handle operations for updateUser",
-    description = "PUT method to handle operations for updateUser",
+    summary = "PUT method to handle operations for Update user",
+    description = "PUT method to handle operations for Update user",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -278,8 +284,8 @@ public class UserController {
    value = "users/me"
   )
   @Operation(
-    summary = "GET method to handle operations for getCurrentUser",
-    description = "GET method to handle operations for getCurrentUser",
+    summary = "GET method to handle operations for Get current user",
+    description = "GET method to handle operations for Get current user",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -305,12 +311,13 @@ public class UserController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_CREATE)")
    @PostMapping(
    value = "users/invite"
   )
   @Operation(
-    summary = "POST method to handle operations for inviteUser",
-    description = "POST method to handle operations for inviteUser",
+    summary = "POST method to handle operations for Invite user",
+    description = "POST method to handle operations for Invite user",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -336,12 +343,13 @@ public class UserController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
    @PutMapping(
    value = "users/{id}/status"
   )
   @Operation(
-    summary = "PUT method to handle operations for updateUserStatus",
-    description = "PUT method to handle operations for updateUserStatus",
+    summary = "PUT method to handle operations for Update user status",
+    description = "PUT method to handle operations for Update user status",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -371,8 +379,8 @@ public class UserController {
    value = "users/me/applications"
   )
   @Operation(
-    summary = "GET method to handle operations for getCurrentUserApplications",
-    description = "GET method to handle operations for getCurrentUserApplications",
+    summary = "GET method to handle operations for Get current user applications",
+    description = "GET method to handle operations for Get current user applications",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -402,8 +410,8 @@ public class UserController {
    value = "users/me/applications/{applicationCode}/menus"
   )
   @Operation(
-    summary = "GET method to handle operations for getCurrentUserApplicationMenus",
-    description = "GET method to handle operations for getCurrentUserApplicationMenus",
+    summary = "GET method to handle operations for Get current user application menus",
+    description = "GET method to handle operations for Get current user application menus",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -433,8 +441,8 @@ public class UserController {
    value = "users/me/departments"
   )
   @Operation(
-    summary = "GET method to handle operations for getCurrentUserDepartments",
-    description = "GET method to handle operations for getCurrentUserDepartments",
+    summary = "GET method to handle operations for Get current user departments",
+    description = "GET method to handle operations for Get current user departments",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -464,8 +472,8 @@ public class UserController {
    value = "users/me/departments/{departmentCode}/roles"
   )
   @Operation(
-    summary = "GET method to handle operations for getCurrentUserDepartmentRoles",
-    description = "GET method to handle operations for getCurrentUserDepartmentRoles",
+    summary = "GET method to handle operations for Get current user department roles",
+    description = "GET method to handle operations for Get current user department roles",
     responses = {
       @ApiResponse(
           responseCode = "200",

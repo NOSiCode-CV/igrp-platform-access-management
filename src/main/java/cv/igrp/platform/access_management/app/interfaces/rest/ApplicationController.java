@@ -71,6 +71,7 @@ public class ApplicationController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_LIST)")
    @GetMapping(
    value = "applications"
   )
@@ -106,6 +107,7 @@ public class ApplicationController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_VIEW)")
    @GetMapping(
    value = "applications/{id}"
   )
@@ -137,6 +139,7 @@ public class ApplicationController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_UPDATE)")
    @PutMapping(
    value = "applications/{code}"
   )
@@ -168,6 +171,7 @@ public class ApplicationController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_DELETE)")
    @DeleteMapping(
    value = "applications/{code}"
   )
@@ -230,6 +234,7 @@ public class ApplicationController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_UPDATE)")
    @PostMapping(
    value = "/applications/{code}/custom-fields"
   )
@@ -261,6 +266,7 @@ public class ApplicationController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_UPDATE)")
    @DeleteMapping(
    value = "/applications/{code}/custom-fields"
   )
@@ -292,6 +298,7 @@ public class ApplicationController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_VIEW)")
    @GetMapping(
    value = "/applications/{code}/custom-fields"
   )
@@ -323,6 +330,7 @@ public class ApplicationController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_VIEW)")
    @GetMapping(
    value = "/applications/by-code/{code}"
   )
@@ -354,6 +362,7 @@ public class ApplicationController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_MANAGE)")
    @PostMapping(
    value = "/applications/{applicationCode}/menus"
   )
@@ -385,6 +394,7 @@ public class ApplicationController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_MANAGE)")
    @PutMapping(
    value = "/applications/{applicationCode}/menus/{menuCode}"
   )
@@ -416,6 +426,7 @@ public class ApplicationController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_DELETE)")
    @DeleteMapping(
    value = "/applications/{applicationCode}/menus/{menuCode}"
   )
@@ -447,6 +458,7 @@ public class ApplicationController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_VIEW)")
    @GetMapping(
    value = "/applications/{code}/menus"
   )
@@ -478,6 +490,7 @@ public class ApplicationController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_MANAGE)")
    @PostMapping(
    value = "/applications/{applicationCode}/menus/{menuCode}/roles"
   )
@@ -509,6 +522,7 @@ public class ApplicationController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_MANAGE)")
    @DeleteMapping(
    value = "/applications/{applicationCode}/menus/{menuCode}/roles"
   )
@@ -540,6 +554,7 @@ public class ApplicationController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_MANAGE)")
    @PostMapping(
    value = "applications/{code}/resources"
   )
@@ -571,6 +586,7 @@ public class ApplicationController {
        return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_MANAGE)")
    @DeleteMapping(
    value = "applications/{code}/resources"
   )

@@ -48,7 +48,7 @@ public class PermissionEntity extends AuditEntity {
     @JoinTable(
             name = "t_permission_department",
             joinColumns = @JoinColumn(name = "permission_id"),
-            inverseJoinColumns = @JoinColumn(name = "permission")
+            inverseJoinColumns = @JoinColumn(name = "department")
     )
 private Set<DepartmentEntity> departments = new HashSet<>();   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
 private Set<ResourceEntity> resources = new HashSet<>();

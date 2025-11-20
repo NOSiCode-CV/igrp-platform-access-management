@@ -31,7 +31,14 @@
           "name": "privateFilePath",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_USER_VIEW",
+          "IGRP_APPLICATION_VIEW"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "uploadPublicFile",
@@ -63,7 +70,14 @@
           "name": "folder",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_USER_UPDATE",
+          "IGRP_APPLICATION_UPDATE"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "uploadPrivateFile",
@@ -94,8 +108,15 @@
           "name": "folder",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "IGRP_USER_UPDATE",
+          "IGRP_APPLICATION_UPDATE"
+        ],
+        "operator": "OR"
+      }
     }
   ],
-  "id": "k2cjyv4ah4-CONTROLLER-CONTROLLER-CONTROLLER"
+  "id": "k2cjyv4ah4-CONTROLLER-CONTROLLER-CONTROLLER-getPrivateFileUrl-uploadPublicFile-uploadPrivateFile"
 }

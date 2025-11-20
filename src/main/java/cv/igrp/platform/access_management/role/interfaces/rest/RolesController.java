@@ -34,12 +34,13 @@ public class RolesController {
           this.queryBus = queryBus;
           
   }
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
    @GetMapping(
    value = "roles/by-code/{code}"
   )
   @Operation(
-    summary = "GET method to handle operations for getRolesByName",
-    description = "GET method to handle operations for getRolesByName",
+    summary = "GET method to handle operations for Get roles by name",
+    description = "GET method to handle operations for Get roles by name",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -65,12 +66,13 @@ public class RolesController {
       return response;
   }
 
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
    @GetMapping(
    value = "roles/{id}"
   )
   @Operation(
-    summary = "GET method to handle operations for getRoleById",
-    description = "GET method to handle operations for getRoleById",
+    summary = "GET method to handle operations for Get role by id",
+    description = "GET method to handle operations for Get role by id",
     responses = {
       @ApiResponse(
           responseCode = "200",

@@ -58,7 +58,7 @@ class AddMenusToDepartmentCommandHandlerTest {
         menu.setStatus(Status.ACTIVE);
         menu.setDepartments(new HashSet<>());
 
-        command = new AddMenusToDepartmentCommand(List.of("MENU1"), "APPLICATION", "DEPT");
+        command = new AddMenusToDepartmentCommand(List.of("MENU1"), "DEPT", "APPLICATION");
     }
 
     @Test

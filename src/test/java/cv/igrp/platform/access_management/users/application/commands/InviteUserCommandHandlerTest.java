@@ -9,6 +9,7 @@ import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.InviteUserDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +41,12 @@ class InviteUserCommandHandlerTest {
 
     @Mock
     private IAdapter adapter;
+
+    @Mock
+    private UpdateUserStatusCommandHandler commandBus;
+
+    @Mock
+    private DepartmentEntityRepository departmentRepository;
 
     @InjectMocks
     private InviteUserCommandHandler underTest;
