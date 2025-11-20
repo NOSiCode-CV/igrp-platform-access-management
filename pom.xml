@@ -23,7 +23,7 @@
         <java.version>23</java.version>
         <spring-cloud.version>2025.0.0</spring-cloud.version>
         <springdoc.version>2.8.9</springdoc.version>
-        <otel.version>1.52.0</otel.version>
+        <otel.version>2.21.0</otel.version>
         <jacoco.version>0.8.13</jacoco.version>
         <dependency-check.version>12.1.6</dependency-check.version>
         <javadoc.plugin.version>3.12.0</javadoc.plugin.version>
@@ -44,8 +44,8 @@
                 <scope>import</scope>
             </dependency>
             <dependency>
-                <groupId>io.opentelemetry</groupId>
-                <artifactId>opentelemetry-bom</artifactId>
+                <groupId>io.opentelemetry.instrumentation</groupId>
+                <artifactId>opentelemetry-instrumentation-bom</artifactId>
                 <version>${otel.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
@@ -133,44 +133,31 @@
             <artifactId>spring-data-envers</artifactId>
         </dependency>
         <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-registry-prometheus</artifactId>
-            <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>io.micrometer</groupId>
-            <artifactId>micrometer-tracing-bridge-otel</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-sdk</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>io.opentelemetry</groupId>
-            <artifactId>opentelemetry-exporter-otlp</artifactId>
-        </dependency>
-        <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-kubernetes-client</artifactId>
         </dependency>
-            <!-- https://mvnrepository.com/artifact/io.kubernetes/client-java -->
-            <dependency>
-                <groupId>io.kubernetes</groupId>
-                <artifactId>client-java</artifactId>
-                <version>19.0.3</version>
-            </dependency>
-                    <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcpkix-jdk18on -->
-                    <dependency>
-                        <groupId>org.bouncycastle</groupId>
-                        <artifactId>bcpkix-jdk18on</artifactId>
-                        <version>1.82</version>
-                    </dependency>
-            <!-- https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
-            <dependency>
-                <groupId>com.google.protobuf</groupId>
-                <artifactId>protobuf-java</artifactId>
-                <version>3.25.8</version>
-            </dependency>
+        <!-- https://mvnrepository.com/artifact/io.kubernetes/client-java -->
+        <dependency>
+            <groupId>io.kubernetes</groupId>
+            <artifactId>client-java</artifactId>
+            <version>19.0.3</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/org.bouncycastle/bcpkix-jdk18on -->
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <version>1.82</version>
+        </dependency>
+        <!-- https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
+        <dependency>
+            <groupId>com.google.protobuf</groupId>
+            <artifactId>protobuf-java</artifactId>
+            <version>3.25.8</version>
+        </dependency>
+        <dependency>
+            <groupId>io.opentelemetry.instrumentation</groupId>
+            <artifactId>opentelemetry-spring-boot-starter</artifactId>
+        </dependency>
         <dependency>
             <groupId>cv.igrp.framework</groupId>
             <artifactId>core</artifactId>
@@ -455,7 +442,9 @@
                                 <buildArg>-H:IncludeResources=application-.*\.properties</buildArg>
                                 <buildArg>--no-fallback</buildArg>
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
-                                <buildArg>-H:ResourceConfigurationFiles=!META-INF/native-image/software.amazon.awssdk/**</buildArg>
+                                <buildArg>
+                                    -H:ResourceConfigurationFiles=!META-INF/native-image/software.amazon.awssdk/**
+                                </buildArg>
                                 <buildArg>--enable-url-protocols=http,https</buildArg>
                                 <buildArg>-O1</buildArg>
                                 <buildArg>--gc=serial</buildArg>
@@ -466,7 +455,8 @@
                                 <buildArg>--initialize-at-build-time=org.slf4j</buildArg>
                                 <buildArg>--initialize-at-build-time=org.slf4j.helpers</buildArg>
                                 <buildArg>--initialize-at-build-time=ch.qos.logback</buildArg>
-                                <buildArg>--initialize-at-build-time=io.micrometer.core.instrument.binder.logging</buildArg>
+                                <buildArg>--initialize-at-build-time=io.micrometer.core.instrument.binder.logging
+                                </buildArg>
                                 <buildArg>--verbose</buildArg>
                             </buildArgs>
                         </configuration>
