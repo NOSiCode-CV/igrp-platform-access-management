@@ -47,8 +47,8 @@ public class DepartmentController {
    value = "departments"
   )
   @Operation(
-    summary = "POST method to handle operations for Post department",
-    description = "POST method to handle operations for Post department",
+    summary = "Post department",
+    description = "This Permission is required: igrp.department.create",
     responses = {
       @ApiResponse(
           responseCode = "201",
@@ -79,8 +79,8 @@ public class DepartmentController {
    value = "departments"
   )
   @Operation(
-    summary = "GET method to handle operations for Get departments",
-    description = "GET method to handle operations for Get departments",
+    summary = "Get departments",
+    description = "This Permission is required: igrp.department.list",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -114,8 +114,8 @@ public class DepartmentController {
    value = "departments/{id}"
   )
   @Operation(
-    summary = "GET method to handle operations for Get department by id",
-    description = "GET method to handle operations for Get department by id",
+    summary = "Get department by id",
+    description = "This Permission is required: igrp.department.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -146,8 +146,8 @@ public class DepartmentController {
    value = "departments/{code}"
   )
   @Operation(
-    summary = "PUT method to handle operations for Update department",
-    description = "PUT method to handle operations for Update department",
+    summary = "Update department",
+    description = "This Permission is required: igrp.department.update",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -178,8 +178,8 @@ public class DepartmentController {
    value = "departments/{code}"
   )
   @Operation(
-    summary = "DELETE method to handle operations for Delete department",
-    description = "DELETE method to handle operations for Delete department",
+    summary = "Delete department",
+    description = "This Permission is required: igrp.department.delete",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -210,8 +210,8 @@ public class DepartmentController {
    value = "departments/by-code/{code}"
   )
   @Operation(
-    summary = "GET method to handle operations for Get department by code",
-    description = "GET method to handle operations for Get department by code",
+    summary = "Get department by code",
+    description = "This Permission is required: igrp.department.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -242,8 +242,8 @@ public class DepartmentController {
    value = "departments/{code}/applications/available"
   )
   @Operation(
-    summary = "GET method to handle operations for Get available applications for department",
-    description = "GET method to handle operations for Get available applications for department",
+    summary = "Get available applications for department",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -274,8 +274,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/applications/{applicationCode}/menus/available"
   )
   @Operation(
-    summary = "GET method to handle operations for Get menus available for department",
-    description = "GET method to handle operations for Get menus available for department",
+    summary = "Get menus available for department",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -306,8 +306,8 @@ public class DepartmentController {
    value = "departments/{code}/resources/available"
   )
   @Operation(
-    summary = "GET method to handle operations for Get available resources for department",
-    description = "GET method to handle operations for Get available resources for department",
+    summary = "Get available resources for department",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -338,8 +338,8 @@ public class DepartmentController {
    value = "departments/{code}/roles"
   )
   @Operation(
-    summary = "POST method to handle operations for Create role",
-    description = "POST method to handle operations for Create role",
+    summary = "Create role",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "201",
@@ -370,8 +370,8 @@ public class DepartmentController {
    value = "departments/{code}/roles"
   )
   @Operation(
-    summary = "GET method to handle operations for Get roles",
-    description = "GET method to handle operations for Get roles",
+    summary = "Get roles",
+    description = "This Permission is required: igrp.department.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -402,8 +402,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/roles/{roleCode}"
   )
   @Operation(
-    summary = "PUT method to handle operations for Update role",
-    description = "PUT method to handle operations for Update role",
+    summary = "Update role",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -434,8 +434,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/roles/{roleCode}"
   )
   @Operation(
-    summary = "DELETE method to handle operations for Delete role",
-    description = "DELETE method to handle operations for Delete role",
+    summary = "Delete role",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -466,8 +466,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/roles/{roleCode}/permissions"
   )
   @Operation(
-    summary = "DELETE method to handle operations for Remove permissions",
-    description = "DELETE method to handle operations for Remove permissions",
+    summary = "Remove permissions",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -498,8 +498,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/roles/{roleCode}/permissions"
   )
   @Operation(
-    summary = "GET method to handle operations for Get permissions by role id",
-    description = "GET method to handle operations for Get permissions by role id",
+    summary = "Get permissions by role id",
+    description = "This Permission is required: igrp.department.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -530,8 +530,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/roles/{roleCode}/permissions"
   )
   @Operation(
-    summary = "POST method to handle operations for Add permissions",
-    description = "POST method to handle operations for Add permissions",
+    summary = "Add permissions",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -562,8 +562,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/roles/{roleCode}/permissions/available"
   )
   @Operation(
-    summary = "GET method to handle operations for Get available permissions for roles",
-    description = "GET method to handle operations for Get available permissions for roles",
+    summary = "Get available permissions for roles",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -594,8 +594,8 @@ public class DepartmentController {
    value = "departments/{code}/applications"
   )
   @Operation(
-    summary = "POST method to handle operations for Add applications to department",
-    description = "POST method to handle operations for Add applications to department",
+    summary = "Add applications to department",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -626,8 +626,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/applications/{applicationCode}/menus"
   )
   @Operation(
-    summary = "POST method to handle operations for Add menus to department",
-    description = "POST method to handle operations for Add menus to department",
+    summary = "Add menus to department",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -658,8 +658,8 @@ public class DepartmentController {
    value = "departments/{code}/applications"
   )
   @Operation(
-    summary = "DELETE method to handle operations for Remove applications from department",
-    description = "DELETE method to handle operations for Remove applications from department",
+    summary = "Remove applications from department",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -690,8 +690,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/applications/{applicationCode}/menus"
   )
   @Operation(
-    summary = "DELETE method to handle operations for Remove menus from department",
-    description = "DELETE method to handle operations for Remove menus from department",
+    summary = "Remove menus from department",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -722,8 +722,8 @@ public class DepartmentController {
    value = "/departments/{code}/resources"
   )
   @Operation(
-    summary = "GET method to handle operations for Get department resources",
-    description = "GET method to handle operations for Get department resources",
+    summary = "Get department resources",
+    description = "This Permission is required: igrp.department.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -754,8 +754,8 @@ public class DepartmentController {
    value = "/departments/{departmentCode}/applications/{applicationCode}/menus"
   )
   @Operation(
-    summary = "GET method to handle operations for Get department menus",
-    description = "GET method to handle operations for Get department menus",
+    summary = "Get department menus",
+    description = "This Permission is required: igrp.department.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -786,8 +786,8 @@ public class DepartmentController {
    value = "/departments/{code}/applications"
   )
   @Operation(
-    summary = "GET method to handle operations for Get department applications",
-    description = "GET method to handle operations for Get department applications",
+    summary = "Get department applications",
+    description = "This Permission is required: igrp.department.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -818,8 +818,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/resources"
   )
   @Operation(
-    summary = "POST method to handle operations for Add resources to department",
-    description = "POST method to handle operations for Add resources to department",
+    summary = "Add resources to department",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -850,8 +850,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/resources"
   )
   @Operation(
-    summary = "DELETE method to handle operations for Remove resources from department",
-    description = "DELETE method to handle operations for Remove resources from department",
+    summary = "Remove resources from department",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -882,8 +882,8 @@ public class DepartmentController {
    value = "departments/{code}/permissions"
   )
   @Operation(
-    summary = "GET method to handle operations for Get department permissions",
-    description = "GET method to handle operations for Get department permissions",
+    summary = "Get department permissions",
+    description = "This Permission is required: igrp.department.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -914,8 +914,8 @@ public class DepartmentController {
    value = "departments/{code}/permissions"
   )
   @Operation(
-    summary = "POST method to handle operations for Add permissions to department",
-    description = "POST method to handle operations for Add permissions to department",
+    summary = "Add permissions to department",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -946,8 +946,8 @@ public class DepartmentController {
    value = "departments/{code}/permissions"
   )
   @Operation(
-    summary = "DELETE method to handle operations for Remove permissions from department",
-    description = "DELETE method to handle operations for Remove permissions from department",
+    summary = "Remove permissions from department",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -978,8 +978,8 @@ public class DepartmentController {
    value = "departments/{departmentCode}/permissions/available"
   )
   @Operation(
-    summary = "GET method to handle operations for Get available permissions for department",
-    description = "GET method to handle operations for Get available permissions for department",
+    summary = "Get available permissions for department",
+    description = "This Permission is required: igrp.department.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",

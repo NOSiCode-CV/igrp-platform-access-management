@@ -42,7 +42,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_VIEW"
+          "igrp.department.view"
         ],
         "operator": "OR"
       }
@@ -85,11 +85,11 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_VIEW"
+          "igrp.department.view"
         ],
         "operator": "OR"
       }
     }
   ],
-  "id": "2b75ptbxyv-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissions-RemovePermissions-getRoles-getRoles-getRolesByName-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getAvailablePermissionsForRoles-RemovePermissions-addPermissions-getRoleById-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getRolesByName-getAvailablePermissionsForRoles-getRolesByName-getRolesByName-getRoleById"
+  "id": "2b75ptbxyv-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addPermissions-RemovePermissions-getRoles-getRoles-getRolesByName-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getAvailablePermissionsForRoles-RemovePermissions-addPermissions-getRoleById-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getRolesByName-getAvailablePermissionsForRoles-getRolesByName-getRolesByName-getRoleById-getRolesByName-getRolesByName"
 }

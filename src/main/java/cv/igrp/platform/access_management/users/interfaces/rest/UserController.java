@@ -48,8 +48,8 @@ public class UserController {
    value = "users/{id}"
   )
   @Operation(
-    summary = "GET method to handle operations for Get user",
-    description = "GET method to handle operations for Get user",
+    summary = "Get user",
+    description = "This Permission is required: igrp.user.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -80,8 +80,8 @@ public class UserController {
    value = "users/{id}/departments/{departmentCode}/roles"
   )
   @Operation(
-    summary = "POST method to handle operations for Add roles to user",
-    description = "POST method to handle operations for Add roles to user",
+    summary = "Add roles to user",
+    description = "This Permission is required: igrp.user.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -122,8 +122,8 @@ public class UserController {
    value = "users/{id}/departments/{departmentCode}/roles"
   )
   @Operation(
-    summary = "DELETE method to handle operations for Remove roles from user",
-    description = "DELETE method to handle operations for Remove roles from user",
+    summary = "Remove roles from user",
+    description = "This Permission is required: igrp.user.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -154,8 +154,8 @@ public class UserController {
    value = "users/{id}/roles"
   )
   @Operation(
-    summary = "GET method to handle operations for Get user roles",
-    description = "GET method to handle operations for Get user roles",
+    summary = "Get user roles",
+    description = "This Permission is required: igrp.user.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -186,8 +186,8 @@ public class UserController {
    value = "users"
   )
   @Operation(
-    summary = "GET method to handle operations for Get users",
-    description = "GET method to handle operations for Get users",
+    summary = "Get users",
+    description = "This Permission is required: igrp.user.list",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -221,8 +221,8 @@ public class UserController {
    value = "users/invite/response"
   )
   @Operation(
-    summary = "POST method to handle operations for Respond user invitation",
-    description = "POST method to handle operations for Respond user invitation",
+    summary = "Respond user invitation",
+    description = "Respond user invitation",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -253,8 +253,8 @@ public class UserController {
    value = "users/{id}"
   )
   @Operation(
-    summary = "PUT method to handle operations for Update user",
-    description = "PUT method to handle operations for Update user",
+    summary = "Update user",
+    description = "This Permission is required: igrp.user.update",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -284,8 +284,8 @@ public class UserController {
    value = "users/me"
   )
   @Operation(
-    summary = "GET method to handle operations for Get current user",
-    description = "GET method to handle operations for Get current user",
+    summary = "Get current user",
+    description = "Get current user",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -316,8 +316,8 @@ public class UserController {
    value = "users/invite"
   )
   @Operation(
-    summary = "POST method to handle operations for Invite user",
-    description = "POST method to handle operations for Invite user",
+    summary = "Invite user",
+    description = "This Permission is required: igrp.user.create",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -348,8 +348,8 @@ public class UserController {
    value = "users/{id}/status"
   )
   @Operation(
-    summary = "PUT method to handle operations for Update user status",
-    description = "PUT method to handle operations for Update user status",
+    summary = "Update user status",
+    description = "This Permission is required: igrp.user.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -379,8 +379,8 @@ public class UserController {
    value = "users/me/applications"
   )
   @Operation(
-    summary = "GET method to handle operations for Get current user applications",
-    description = "GET method to handle operations for Get current user applications",
+    summary = "Get current user applications",
+    description = "Get current user applications",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -410,8 +410,8 @@ public class UserController {
    value = "users/me/applications/{applicationCode}/menus"
   )
   @Operation(
-    summary = "GET method to handle operations for Get current user application menus",
-    description = "GET method to handle operations for Get current user application menus",
+    summary = "Get current user application menus",
+    description = "Get current user application menus",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -441,8 +441,8 @@ public class UserController {
    value = "users/me/departments"
   )
   @Operation(
-    summary = "GET method to handle operations for Get current user departments",
-    description = "GET method to handle operations for Get current user departments",
+    summary = "Get current user departments",
+    description = "Get current user departments",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -472,8 +472,8 @@ public class UserController {
    value = "users/me/departments/{departmentCode}/roles"
   )
   @Operation(
-    summary = "GET method to handle operations for Get current user department roles",
-    description = "GET method to handle operations for Get current user department roles",
+    summary = "Get current user department roles",
+    description = "Get current user department roles",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -493,6 +493,134 @@ public class UserController {
   {
 
       final var query = new GetCurrentUserDepartmentRolesQuery(roleCode, departmentCode);
+
+      ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
+
+      return response;
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
+   @GetMapping(
+   value = "users/{id}/applications"
+  )
+  @Operation(
+    summary = "Get user applications",
+    description = "This Permission is required: igrp.user.view",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ApplicationDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<ApplicationDTO>> getUserApplications(
+    @RequestParam(value = "applicationCode", required = false) String applicationCode, @PathVariable(value = "id") Integer id)
+  {
+
+      final var query = new GetUserApplicationsQuery(applicationCode, id);
+
+      ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
+
+      return response;
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
+   @GetMapping(
+   value = "users/{id}/applications/{applicationCode}/menus"
+  )
+  @Operation(
+    summary = "Get user application menus",
+    description = "This Permission is required: igrp.user.view",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = MenuEntryDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<MenuEntryDTO>> getUserApplicationMenus(
+    @RequestParam(value = "menuCode", required = false) String menuCode, @PathVariable(value = "id") Integer id,@PathVariable(value = "applicationCode") String applicationCode)
+  {
+
+      final var query = new GetUserApplicationMenusQuery(menuCode, id, applicationCode);
+
+      ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
+
+      return response;
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
+   @GetMapping(
+   value = "users/{id}/departments"
+  )
+  @Operation(
+    summary = "Get user departments",
+    description = "This Permission is required: igrp.user.view",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = DepartmentDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<DepartmentDTO>> getUserDepartments(
+    @RequestParam(value = "departmentCode", required = false) String departmentCode, @PathVariable(value = "id") Integer id)
+  {
+
+      final var query = new GetUserDepartmentsQuery(departmentCode, id);
+
+      ResponseEntity<List<DepartmentDTO>> response = queryBus.handle(query);
+
+      return response;
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
+   @GetMapping(
+   value = "users/{id}/departments/{departmentCode}/roles"
+  )
+  @Operation(
+    summary = "Get user department roles",
+    description = "This Permission is required: igrp.user.view",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<RoleDTO>> getUserDepartmentRoles(
+    @RequestParam(value = "roleCode", required = false) String roleCode, @PathVariable(value = "id") Integer id,@PathVariable(value = "departmentCode") String departmentCode)
+  {
+
+      final var query = new GetUserDepartmentRolesQuery(roleCode, id, departmentCode);
 
       ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
 

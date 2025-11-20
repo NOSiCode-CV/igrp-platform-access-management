@@ -41,8 +41,8 @@ public class GlobalConfigurationController {
    value = "global-configuration"
   )
   @Operation(
-    summary = "POST method to handle operations for Set global configuration",
-    description = "POST method to handle operations for Set global configuration",
+    summary = "Set global configuration",
+    description = "This Permission is required: igrp.application.customize",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -72,8 +72,8 @@ public class GlobalConfigurationController {
    value = "global-configuration"
   )
   @Operation(
-    summary = "GET method to handle operations for Get global configuration",
-    description = "GET method to handle operations for Get global configuration",
+    summary = "Get global configuration",
+    description = "Get global configuration",
     responses = {
       @ApiResponse(
           responseCode = "200",

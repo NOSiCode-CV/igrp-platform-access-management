@@ -42,8 +42,8 @@ public class FilesController {
    value = "files/url"
   )
   @Operation(
-    summary = "GET method to handle operations for Get private file url",
-    description = "GET method to handle operations for Get private file url",
+    summary = "Get private file url",
+    description = "Any of these Permissions is required: [igrp.user.view,igrp.application.view]",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -59,10 +59,10 @@ public class FilesController {
   )
   
   public ResponseEntity<FileUrlDTO> getPrivateFileUrl(
-    @RequestParam(value = "privateFilePath") String privateFilePath)
+    @RequestParam(value = "filePath") String filePath)
   {
 
-      final var query = new GetPrivateFileUrlQuery(privateFilePath);
+      final var query = new GetPrivateFileUrlQuery(filePath);
 
       ResponseEntity<FileUrlDTO> response = queryBus.handle(query);
 
@@ -74,8 +74,8 @@ public class FilesController {
    value = "files/public"
   )
   @Operation(
-    summary = "POST method to handle operations for Upload public file",
-    description = "POST method to handle operations for Upload public file",
+    summary = "Upload public file",
+    description = "Any of these Permissions is required: [igrp.user.update,igrp.application.update]",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -107,8 +107,8 @@ public class FilesController {
    value = "files/private"
   )
   @Operation(
-    summary = "POST method to handle operations for Upload private file",
-    description = "POST method to handle operations for Upload private file",
+    summary = "Upload private file",
+    description = "Any of these Permissions is required: [igrp.user.update,igrp.application.update]",
     responses = {
       @ApiResponse(
           responseCode = "200",

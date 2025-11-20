@@ -37,7 +37,7 @@
       },
       "permission": {
         "items": [
-          "IGRP_APPLICATION_CREATE"
+          "igrp.application.create"
         ],
         "operator": "OR"
       }
@@ -94,7 +94,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_LIST"
+          "igrp.application.list"
         ],
         "operator": "OR"
       }
@@ -127,7 +127,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_VIEW"
+          "igrp.application.view"
         ],
         "operator": "OR"
       }
@@ -172,7 +172,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_UPDATE"
+          "igrp.application.update"
         ],
         "operator": "OR"
       }
@@ -204,7 +204,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_DELETE"
+          "igrp.application.delete"
         ],
         "operator": "OR"
       }
@@ -275,7 +275,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_UPDATE"
+          "igrp.application.update"
         ],
         "operator": "OR"
       }
@@ -319,7 +319,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_UPDATE"
+          "igrp.application.update"
         ],
         "operator": "OR"
       }
@@ -352,7 +352,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_VIEW"
+          "igrp.application.view"
         ],
         "operator": "OR"
       }
@@ -386,7 +386,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_VIEW"
+          "igrp.application.view"
         ],
         "operator": "OR"
       }
@@ -431,7 +431,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_MANAGE"
+          "igrp.application.manage"
         ],
         "operator": "OR"
       }
@@ -481,7 +481,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_MANAGE"
+          "igrp.application.manage"
         ],
         "operator": "OR"
       }
@@ -518,7 +518,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_DELETE"
+          "igrp.application.delete"
         ],
         "operator": "OR"
       }
@@ -553,7 +553,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_VIEW"
+          "igrp.application.view"
         ],
         "operator": "OR"
       }
@@ -612,7 +612,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_MANAGE"
+          "igrp.application.manage"
         ],
         "operator": "OR"
       }
@@ -671,7 +671,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_MANAGE"
+          "igrp.application.manage"
         ],
         "operator": "OR"
       }
@@ -714,7 +714,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_MANAGE"
+          "igrp.application.manage"
         ],
         "operator": "OR"
       }
@@ -757,11 +757,11 @@
       ],
       "permission": {
         "items": [
-          "IGRP_APPLICATION_MANAGE"
+          "igrp.application.manage"
         ],
         "operator": "OR"
       }
     }
   ],
-  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications-removeDepartementFromApplication-getApplicationMenus-removeApplicationCustomFields-addRolesToApp-removeRoleFromApplication-addDepartmentsToApplication-removeDepartmentFromApplication-addRolesToApp-removeRoleFromApplication-getApplicationsByIds-getApplicationDeniedToUser-getApplicationMenus-createMenu-updateMenu-deleteMenu-addRolesToMenu-createApplication-getApplications-getApplicationById-updateApplication-deleteApplication-getApplicationsByUser-addApplicationCustomFields-removeApplicationCustomFields-getApplicationCustomFields-getApplicationByCode-createMenu-updateMenu-deleteMenu-getApplicationMenus-addRolesToMenu-removeRolesFromMenu-linkResourceToApplication-unlinkResourceFromApplication"
+  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications-removeDepartementFromApplication-getApplicationMenus-removeApplicationCustomFields-addRolesToApp-removeRoleFromApplication-addDepartmentsToApplication-removeDepartmentFromApplication-addRolesToApp-removeRoleFromApplication-getApplicationsByIds-getApplicationDeniedToUser-getApplicationMenus-createMenu-updateMenu-deleteMenu-addRolesToMenu-createApplication-getApplications-getApplicationById-updateApplication-deleteApplication-getApplicationsByUser-addApplicationCustomFields-removeApplicationCustomFields-getApplicationCustomFields-getApplicationByCode-createMenu-updateMenu-deleteMenu-getApplicationMenus-addRolesToMenu-removeRolesFromMenu-linkResourceToApplication-unlinkResourceFromApplication-createApplication"
 }

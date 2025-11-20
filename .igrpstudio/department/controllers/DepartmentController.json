@@ -40,7 +40,7 @@
       },
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_CREATE"
+          "igrp.department.create"
         ],
         "operator": "OR"
       }
@@ -91,7 +91,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_LIST"
+          "igrp.department.list"
         ],
         "operator": "OR"
       }
@@ -126,7 +126,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_VIEW"
+          "igrp.department.view"
         ],
         "operator": "OR"
       }
@@ -173,7 +173,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_UPDATE"
+          "igrp.department.update"
         ],
         "operator": "OR"
       }
@@ -204,7 +204,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_DELETE"
+          "igrp.department.delete"
         ],
         "operator": "OR"
       }
@@ -238,7 +238,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_VIEW"
+          "igrp.department.view"
         ],
         "operator": "OR"
       }
@@ -272,7 +272,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -311,7 +311,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -345,7 +345,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -392,7 +392,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -434,7 +434,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_VIEW"
+          "igrp.department.view"
         ],
         "operator": "OR"
       }
@@ -486,7 +486,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -523,7 +523,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -575,7 +575,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -614,7 +614,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_VIEW"
+          "igrp.department.view"
         ],
         "operator": "OR"
       }
@@ -666,7 +666,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -705,7 +705,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -748,7 +748,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -796,7 +796,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -839,7 +839,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -887,7 +887,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -929,7 +929,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_VIEW"
+          "igrp.department.view"
         ],
         "operator": "OR"
       }
@@ -976,7 +976,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_VIEW"
+          "igrp.department.view"
         ],
         "operator": "OR"
       }
@@ -1018,7 +1018,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_VIEW"
+          "igrp.department.view"
         ],
         "operator": "OR"
       }
@@ -1061,7 +1061,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -1104,7 +1104,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -1145,7 +1145,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_VIEW"
+          "igrp.department.view"
         ],
         "operator": "OR"
       }
@@ -1188,7 +1188,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -1231,7 +1231,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
@@ -1272,11 +1272,11 @@
       ],
       "permission": {
         "items": [
-          "IGRP_DEPARTMENT_MANAGE"
+          "igrp.department.manage"
         ],
         "operator": "OR"
       }
     }
   ],
-  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-addMenusToDepartment-removeMenusFromDepartment-createRole-getRoles-addMenusToDepartment-getDepartmentMenus-getMenusAvailableForDepartment-getDepartmentPermissions-postDepartment-getDepartments-getDepartmentById-updateDepartment-deleteDepartment-getDepartmentByCode-getAvailableApplicationsForDepartment-getMenusAvailableForDepartment-getAvailableResourcesForDepartment-createRole-getRoles-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getAvailablePermissionsForRoles-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-getDepartmentResources-getDepartmentMenus-getDepartmentApplications-addResourcesToDepartment-removeResourcesFromDepartment-getDepartmentPermissions-addPermissionsToDepartment-removePermissionsFromDepartment-getAvailablePermissionsForDepartment"
+  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-addMenusToDepartment-removeMenusFromDepartment-createRole-getRoles-addMenusToDepartment-getDepartmentMenus-getMenusAvailableForDepartment-getDepartmentPermissions-postDepartment-getDepartments-getDepartmentById-updateDepartment-deleteDepartment-getDepartmentByCode-getAvailableApplicationsForDepartment-getMenusAvailableForDepartment-getAvailableResourcesForDepartment-createRole-getRoles-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getAvailablePermissionsForRoles-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-getDepartmentResources-getDepartmentMenus-getDepartmentApplications-addResourcesToDepartment-removeResourcesFromDepartment-getDepartmentPermissions-addPermissionsToDepartment-removePermissionsFromDepartment-getAvailablePermissionsForDepartment-postDepartment"
 }

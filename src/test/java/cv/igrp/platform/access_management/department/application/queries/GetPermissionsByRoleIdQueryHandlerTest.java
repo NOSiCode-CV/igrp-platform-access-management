@@ -57,7 +57,7 @@ public class GetPermissionsByRoleIdQueryHandlerTest {
     when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED))
             .thenReturn(Optional.empty());
 
-    GetPermissionsByRoleIdQuery query = new GetPermissionsByRoleIdQuery(roleCode, "DEPT_IGRP");
+    GetPermissionsByRoleIdQuery query = new GetPermissionsByRoleIdQuery("DEPT_IGRP", roleCode);
 
     // When
     IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
@@ -72,7 +72,7 @@ public class GetPermissionsByRoleIdQueryHandlerTest {
     // Given
     int roleId = 1;
     String roleCode = "admin";
-    GetPermissionsByRoleIdQuery query = new GetPermissionsByRoleIdQuery(roleCode, "DEPT_IGRP");
+    GetPermissionsByRoleIdQuery query = new GetPermissionsByRoleIdQuery( "DEPT_IGRP", roleCode);
 
     PermissionEntity activePermission = new PermissionEntity();
     activePermission.setId(1);
@@ -119,7 +119,7 @@ public class GetPermissionsByRoleIdQueryHandlerTest {
     // Given
     int roleId = 1;
     String roleCode = "admin";
-    GetPermissionsByRoleIdQuery query = new GetPermissionsByRoleIdQuery(roleCode, "DEPT_IGRP");
+    GetPermissionsByRoleIdQuery query = new GetPermissionsByRoleIdQuery( "DEPT_IGRP", roleCode);
 
     PermissionEntity deletedPermission1 = new PermissionEntity();
     deletedPermission1.setId(1);

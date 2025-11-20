@@ -44,8 +44,8 @@ public class ApplicationController {
    value = "applications"
   )
   @Operation(
-    summary = "POST method to handle operations for Create application",
-    description = "POST method to handle operations for Create application",
+    summary = "Create application",
+    description = "This Permission is required: igrp.application.create",
     responses = {
       @ApiResponse(
           responseCode = "201",
@@ -76,8 +76,8 @@ public class ApplicationController {
    value = "applications"
   )
   @Operation(
-    summary = "GET method to handle operations for Get applications",
-    description = "GET method to handle operations for Get applications",
+    summary = "Get applications",
+    description = "This Permission is required: igrp.application.list",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -112,8 +112,8 @@ public class ApplicationController {
    value = "applications/{id}"
   )
   @Operation(
-    summary = "GET method to handle operations for Get application by id",
-    description = "GET method to handle operations for Get application by id",
+    summary = "Get application by id",
+    description = "This Permission is required: igrp.application.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -144,8 +144,8 @@ public class ApplicationController {
    value = "applications/{code}"
   )
   @Operation(
-    summary = "PUT method to handle operations for Update application",
-    description = "PUT method to handle operations for Update application",
+    summary = "Update application",
+    description = "This Permission is required: igrp.application.update",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -176,8 +176,8 @@ public class ApplicationController {
    value = "applications/{code}"
   )
   @Operation(
-    summary = "DELETE method to handle operations for Delete application",
-    description = "DELETE method to handle operations for Delete application",
+    summary = "Delete application",
+    description = "This Permission is required: igrp.application.delete",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -207,8 +207,8 @@ public class ApplicationController {
    value = "applications/by-user/{uid}"
   )
   @Operation(
-    summary = "GET method to handle operations for Get applications by user",
-    description = "GET method to handle operations for Get applications by user",
+    summary = "Get applications by user",
+    description = "Get applications by user",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -239,8 +239,8 @@ public class ApplicationController {
    value = "/applications/{code}/custom-fields"
   )
   @Operation(
-    summary = "POST method to handle operations for Add application custom fields",
-    description = "POST method to handle operations for Add application custom fields",
+    summary = "Add application custom fields",
+    description = "This Permission is required: igrp.application.update",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -271,8 +271,8 @@ public class ApplicationController {
    value = "/applications/{code}/custom-fields"
   )
   @Operation(
-    summary = "DELETE method to handle operations for Remove application custom fields",
-    description = "DELETE method to handle operations for Remove application custom fields",
+    summary = "Remove application custom fields",
+    description = "This Permission is required: igrp.application.update",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -303,8 +303,8 @@ public class ApplicationController {
    value = "/applications/{code}/custom-fields"
   )
   @Operation(
-    summary = "GET method to handle operations for Get application custom fields",
-    description = "GET method to handle operations for Get application custom fields",
+    summary = "Get application custom fields",
+    description = "This Permission is required: igrp.application.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -335,8 +335,8 @@ public class ApplicationController {
    value = "/applications/by-code/{code}"
   )
   @Operation(
-    summary = "GET method to handle operations for Get application by code",
-    description = "GET method to handle operations for Get application by code",
+    summary = "Get application by code",
+    description = "This Permission is required: igrp.application.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -367,8 +367,8 @@ public class ApplicationController {
    value = "/applications/{applicationCode}/menus"
   )
   @Operation(
-    summary = "POST method to handle operations for Create menu",
-    description = "POST method to handle operations for Create menu",
+    summary = "Create menu",
+    description = "This Permission is required: igrp.application.manage",
     responses = {
       @ApiResponse(
           responseCode = "201",
@@ -399,8 +399,8 @@ public class ApplicationController {
    value = "/applications/{applicationCode}/menus/{menuCode}"
   )
   @Operation(
-    summary = "PUT method to handle operations for Update menu",
-    description = "PUT method to handle operations for Update menu",
+    summary = "Update menu",
+    description = "This Permission is required: igrp.application.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -431,8 +431,8 @@ public class ApplicationController {
    value = "/applications/{applicationCode}/menus/{menuCode}"
   )
   @Operation(
-    summary = "DELETE method to handle operations for Delete menu",
-    description = "DELETE method to handle operations for Delete menu",
+    summary = "Delete menu",
+    description = "This Permission is required: igrp.application.delete",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -463,8 +463,8 @@ public class ApplicationController {
    value = "/applications/{code}/menus"
   )
   @Operation(
-    summary = "GET method to handle operations for Get application menus",
-    description = "GET method to handle operations for Get application menus",
+    summary = "Get application menus",
+    description = "This Permission is required: igrp.application.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -495,8 +495,8 @@ public class ApplicationController {
    value = "/applications/{applicationCode}/menus/{menuCode}/roles"
   )
   @Operation(
-    summary = "POST method to handle operations for Add roles to menu",
-    description = "POST method to handle operations for Add roles to menu",
+    summary = "Add roles to menu",
+    description = "This Permission is required: igrp.application.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -527,8 +527,8 @@ public class ApplicationController {
    value = "/applications/{applicationCode}/menus/{menuCode}/roles"
   )
   @Operation(
-    summary = "DELETE method to handle operations for Remove roles from menu",
-    description = "DELETE method to handle operations for Remove roles from menu",
+    summary = "Remove roles from menu",
+    description = "This Permission is required: igrp.application.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -559,8 +559,8 @@ public class ApplicationController {
    value = "applications/{code}/resources"
   )
   @Operation(
-    summary = "POST method to handle operations for Link resource to application",
-    description = "POST method to handle operations for Link resource to application",
+    summary = "Link resource to application",
+    description = "This Permission is required: igrp.application.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -591,8 +591,8 @@ public class ApplicationController {
    value = "applications/{code}/resources"
   )
   @Operation(
-    summary = "DELETE method to handle operations for Unlink resource from application",
-    description = "DELETE method to handle operations for Unlink resource from application",
+    summary = "Unlink resource from application",
+    description = "This Permission is required: igrp.application.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",

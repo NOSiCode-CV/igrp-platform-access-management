@@ -14,13 +14,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.security.access.prepost.PreAuthorize;
 import cv.igrp.framework.core.domain.CommandBus;
-import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.authorization.application.commands.*;
-
-
 import cv.igrp.platform.access_management.authorization.application.dto.PermissionCheckRequestDTO;
 import cv.igrp.platform.access_management.authorization.application.dto.PermissionCheckResponseDTO;
 import java.util.List;
@@ -31,26 +27,19 @@ import java.util.List;
 @Tag(name = "Authorization", description = "Checking authorization for action")
 public class AuthorizationController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationController.class);
-
   
   private final CommandBus commandBus;
-  private final QueryBus queryBus;
 
-  
-  public AuthorizationController(
-    CommandBus commandBus, QueryBus queryBus
-  ) {
-    this.commandBus = commandBus;
-    this.queryBus = queryBus;
+  public AuthorizationController(CommandBus commandBus) {
+          
+          this.commandBus = commandBus;
   }
-
-  @PostMapping(
-    value = "authorize/check"
+   @PostMapping(
+   value = "authorize/check"
   )
   @Operation(
-    summary = "POST method to handle operations for checkAuthorization",
-    description = "POST method to handle operations for checkAuthorization",
+    summary = "Check authorization",
+    description = "Check authorization",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -69,25 +58,19 @@ public class AuthorizationController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new CheckAuthorizationCommand(checkAuthorizationRequest);
 
        ResponseEntity<PermissionCheckResponseDTO> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
-    value = "authorize/batch-check"
+   @PostMapping(
+   value = "authorize/batch-check"
   )
   @Operation(
-    summary = "POST method to handle operations for batchCheckAuthorization",
-    description = "POST method to handle operations for batchCheckAuthorization",
+    summary = "Batch check authorization",
+    description = "Batch check authorization",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -106,17 +89,11 @@ public class AuthorizationController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new BatchCheckAuthorizationCommand(batchCheckAuthorizationRequest);
 
        ResponseEntity<List<PermissionCheckResponseDTO>> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
 }

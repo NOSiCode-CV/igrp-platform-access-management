@@ -31,7 +31,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_USER_VIEW"
+          "igrp.user.view"
         ],
         "operator": "OR"
       }
@@ -90,7 +90,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_USER_MANAGE"
+          "igrp.user.manage"
         ],
         "operator": "OR"
       }
@@ -139,7 +139,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_USER_MANAGE"
+          "igrp.user.manage"
         ],
         "operator": "OR"
       }
@@ -172,7 +172,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_USER_VIEW"
+          "igrp.user.view"
         ],
         "operator": "OR"
       }
@@ -230,7 +230,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_USER_LIST"
+          "igrp.user.list"
         ],
         "operator": "OR"
       }
@@ -310,7 +310,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_USER_UPDATE"
+          "igrp.user.update"
         ],
         "operator": "OR"
       }
@@ -370,7 +370,7 @@
       },
       "permission": {
         "items": [
-          "IGRP_USER_CREATE"
+          "igrp.user.create"
         ],
         "operator": "OR"
       }
@@ -411,7 +411,7 @@
       ],
       "permission": {
         "items": [
-          "IGRP_USER_MANAGE"
+          "igrp.user.manage"
         ],
         "operator": "OR"
       }
@@ -545,7 +545,185 @@
           "isRequired": true
         }
       ]
+    },
+    {
+      "actionName": "getUserApplications",
+      "path": "users/{id}/applications",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.user.view"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "getUserApplicationMenus",
+      "path": "users/{id}/applications/{applicationCode}/menus",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "menuCode",
+          "description": "Menu Entry Code",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true
+        },
+        {
+          "name": "applicationCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.user.view"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "getUserDepartments",
+      "path": "users/{id}/departments",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "DepartmentDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "description": "Department Code",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.user.view"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "getUserDepartmentRoles",
+      "path": "users/{id}/departments/{departmentCode}/roles",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "roleCode",
+          "description": "Role Code",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true
+        },
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.user.view"
+        ],
+        "operator": "OR"
+      }
     }
   ],
-  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser-getCurrentUser-AddRolesToUser-RemoveRolesFromUser-getUsers-getUsers-getUsers-inviteUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-inviteUser-updateUserStatus"
+  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser-getCurrentUser-AddRolesToUser-RemoveRolesFromUser-getUsers-getUsers-getUsers-inviteUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-inviteUser-updateUserStatus-getUser-getUserApplications-getUserApplicationMenus-getUserDepartments-getUserDepartmentRoles"
 }

@@ -14,13 +14,9 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import cv.igrp.framework.core.domain.CommandBus;
-import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.m2m.application.commands.*;
-
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
@@ -32,26 +28,19 @@ import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 @Tag(name = "M2M", description = "Machine-to-Machine")
 public class M2MController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(M2MController.class);
-
   
   private final CommandBus commandBus;
-  private final QueryBus queryBus;
 
-  
-  public M2MController(
-    CommandBus commandBus, QueryBus queryBus
-  ) {
-    this.commandBus = commandBus;
-    this.queryBus = queryBus;
+  public M2MController(CommandBus commandBus) {
+          
+          this.commandBus = commandBus;
   }
-
-  @PostMapping(
-    value = "m2m/sync/permissions"
+   @PostMapping(
+   value = "m2m/sync/permissions"
   )
   @Operation(
-    summary = "POST method to handle operations for syncPermissions",
-    description = "POST method to handle operations for syncPermissions",
+    summary = "Sync permissions",
+    description = "Sync permissions",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -70,25 +59,19 @@ public class M2MController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new SyncPermissionsCommand(syncPermissionsRequest);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
-    value = "m2m/sync/resources"
+   @PostMapping(
+   value = "m2m/sync/resources"
   )
   @Operation(
-    summary = "POST method to handle operations for syncResources",
-    description = "POST method to handle operations for syncResources",
+    summary = "Sync resources",
+    description = "Sync resources",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -107,25 +90,19 @@ public class M2MController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new SyncResourcesCommand(syncResourcesRequest);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
-  @PostMapping(
-    value = "m2m/sync/applications"
+   @PostMapping(
+   value = "m2m/sync/applications"
   )
   @Operation(
-    summary = "POST method to handle operations for syncApplications",
-    description = "POST method to handle operations for syncApplications",
+    summary = "Sync applications",
+    description = "Sync applications",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -144,17 +121,11 @@ public class M2MController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new SyncApplicationsCommand(syncApplicationsRequest);
 
        ResponseEntity<String> response = commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+       return response;
   }
 
 }

@@ -39,8 +39,8 @@ public class RolesController {
    value = "roles/by-code/{code}"
   )
   @Operation(
-    summary = "GET method to handle operations for Get roles by name",
-    description = "GET method to handle operations for Get roles by name",
+    summary = "Get roles by name",
+    description = "This Permission is required: igrp.department.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -71,8 +71,8 @@ public class RolesController {
    value = "roles/{id}"
   )
   @Operation(
-    summary = "GET method to handle operations for Get role by id",
-    description = "GET method to handle operations for Get role by id",
+    summary = "Get role by id",
+    description = "This Permission is required: igrp.department.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
