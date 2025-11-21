@@ -79,8 +79,7 @@ public interface MenuEntryEntityRepository extends
         SELECT m
         FROM MenuEntryEntity m
         JOIN m.applicationId a
-        JOIN a.departments d
-        JOIN d.roles r
+        JOIN m.roles r
         JOIN r.users u
         WHERE u = :user AND m.status <> 'DELETED' AND a = :application
     """)
