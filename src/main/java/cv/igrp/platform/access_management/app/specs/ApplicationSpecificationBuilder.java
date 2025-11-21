@@ -62,9 +62,9 @@ public class ApplicationSpecificationBuilder {
         );
 
         // Exclude system applications
-        spec = spec.and((root, _, cb) ->
-                cb.notEqual(root.get("type"), AppType.SYSTEM)
-        );
+        //spec = spec.and((root, _, cb) ->
+        //        cb.notEqual(root.get("type"), AppType.SYSTEM)
+        //);
 
         // Apply scope
         spec = applyScope(spec, context);

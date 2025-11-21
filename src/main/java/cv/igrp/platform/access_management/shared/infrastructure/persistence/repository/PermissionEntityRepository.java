@@ -95,7 +95,6 @@ public interface PermissionEntityRepository extends
                    )
                )
                AND p.status = 'ACTIVE'
-               AND p.name != :system_permission
             """)
     List<PermissionEntity> findAvailablePermissionsForRole(@Param("code") String code, @Param("system_permission") String systemPermission);
 
@@ -144,7 +143,6 @@ public interface PermissionEntityRepository extends
                         )
                     )
                 AND p.status = 'ACTIVE'
-                AND p.name != :system_permission
             """)
     List<PermissionEntity> findAvailablePermissionsForDepartment(
             @Param("code") String code,
