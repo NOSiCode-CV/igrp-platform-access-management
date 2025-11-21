@@ -14,6 +14,8 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.UUID;
+
 
 @Component
 public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuCommand, ResponseEntity<String>> {
@@ -63,6 +65,7 @@ public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuComman
                          HttpStatus.NOT_FOUND, "Menu not found", "Menu not found with code: " + command.getMenuCode());
               });
 
+      menuEntry.setCode(menuEntry.getCode() + "-" + UUID.randomUUID());
       menuEntry.setStatus(Status.DELETED);
 
       var deletedMenuEntry = menuEntryRepository.save(menuEntry);

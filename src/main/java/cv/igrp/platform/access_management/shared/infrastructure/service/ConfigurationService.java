@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
+import java.util.UUID;
 
 @Service
 public class ConfigurationService {
@@ -448,7 +449,15 @@ public class ConfigurationService {
             }
 
             // Delete old menus for the app
-            jdbcTemplate.update("UPDATE t_menu_entry SET status = 'DELETED' WHERE application_id = ?", appId);
+            UUID randomUuid = UUID.randomUUID();
+
+            jdbcTemplate.update(
+                    "UPDATE t_menu_entry " +
+                            "SET code = CONCAT(code, '-', ?), status = 'DELETED' " +
+                            "WHERE application_id = ?",
+                    randomUuid.toString(),
+                    appId
+            );
 
             // Insert new menus recursively
             insertMenuHierarchy(root, null, (short) 0, appId, roleId);
