@@ -1,41 +1,143 @@
 package cv.igrp.platform.access_management.users.application.queries;
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
+import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
+import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
-import cv.igrp.platform.access_management.users.application.queries.*;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class GetCurrentUserApplicationsQueryHandlerTest {
 
+  @Mock
+  private ApplicationEntityRepository applicationRepository;
+
+  @Mock
+  private IGRPUserEntityRepository userRepository;
+
+  @Mock
+  private ApplicationMapper applicationMapper;
+
+  @Mock
+  private AuthenticationHelper authenticationHelper;
+
   @InjectMocks
-  private GetCurrentUserApplicationsQueryHandler getCurrentUserApplicationsQueryHandler;
+  private GetCurrentUserApplicationsQueryHandler handler;
 
-  @BeforeEach
-  void setUp() {
-    // TODO: Initialize mock dependencies if needed
-  }
-
+  // -------------------------------------------------------------------------
+  // SUCCESS: USER FOUND + APPLICATIONS RETURNED
+  // -------------------------------------------------------------------------
   @Test
-  void testHandleGetCurrentUserApplicationsQuery() {
-    // TODO: Implement unit test for handle method
-    // Example:
-    // Given
-    // GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery(...);
-    //
-    // When
-    // ResponseEntity<List<ApplicationDTO>> response = getCurrentUserApplicationsQueryHandler.handle(query);
-    //
-    // Then
-    // assertNotNull(response);
-    // assertEquals(..., response.getBody());
+  void handle_shouldReturnApplications_whenUserExists() {
+
+    GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery("APP");
+
+    IGRPUserEntity mockUser = new IGRPUserEntity();
+    mockUser.setExternalId("sub123");
+
+    ApplicationEntity app1 = new ApplicationEntity();
+    app1.setCode("APP_MAIN");
+
+    ApplicationDTO dto1 = new ApplicationDTO();
+    dto1.setCode("APP_MAIN");
+
+    when(authenticationHelper.getSub()).thenReturn("sub123");
+    when(userRepository.findByExternalId("sub123")).thenReturn(Optional.of(mockUser));
+    when(applicationRepository.findByUserIdAndStatusNotDeleted(mockUser))
+            .thenReturn(List.of(app1));
+    when(applicationMapper.toDto(app1)).thenReturn(dto1);
+
+    ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);
+
+    assertNotNull(response);
+    assertEquals(1, response.getBody().size());
+    assertEquals("APP_MAIN", response.getBody().get(0).getCode());
   }
 
+  // -------------------------------------------------------------------------
+  // SUCCESS: FILTERING WORKS
+  // -------------------------------------------------------------------------
+  @Test
+  void handle_shouldFilterApplicationsByCode() {
+
+    GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery("IGRP");
+
+    IGRPUserEntity user = new IGRPUserEntity();
+    user.setExternalId("abc");
+
+    ApplicationEntity app1 = new ApplicationEntity();
+    app1.setCode("IGRP_PLATFORM");
+
+    ApplicationEntity app2 = new ApplicationEntity();
+    app2.setCode("OTHER_APP");
+
+    ApplicationDTO dto = new ApplicationDTO();
+    dto.setCode("IGRP_PLATFORM");
+
+    when(authenticationHelper.getSub()).thenReturn("abc");
+    when(userRepository.findByExternalId("abc")).thenReturn(Optional.of(user));
+    when(applicationRepository.findByUserIdAndStatusNotDeleted(user))
+            .thenReturn(List.of(app1, app2));
+
+    when(applicationMapper.toDto(app1)).thenReturn(dto);
+
+    ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);
+
+    assertEquals(1, response.getBody().size());
+    assertEquals("IGRP_PLATFORM", response.getBody().get(0).getCode());
+
+    verify(applicationMapper, times(1)).toDto(app1);
+    verify(applicationMapper, never()).toDto(app2);
+  }
+
+  // -------------------------------------------------------------------------
+  // SUCCESS: EMPTY LIST
+  // -------------------------------------------------------------------------
+  @Test
+  void handle_shouldReturnEmptyList_whenNoApplications() {
+
+    GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery(null);
+
+    IGRPUserEntity user = new IGRPUserEntity();
+    user.setExternalId("sub888");
+
+    when(authenticationHelper.getSub()).thenReturn("sub888");
+    when(userRepository.findByExternalId("sub888")).thenReturn(Optional.of(user));
+    when(applicationRepository.findByUserIdAndStatusNotDeleted(user))
+            .thenReturn(List.of());
+
+    ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);
+
+    assertTrue(response.getBody().isEmpty());
+  }
+
+  // -------------------------------------------------------------------------
+  // ERROR: USER NOT FOUND → UNAUTHORIZED
+  // -------------------------------------------------------------------------
+  @Test
+  void handle_shouldThrow_whenUserNotFound() {
+
+    GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery(null);
+
+    when(authenticationHelper.getSub()).thenReturn("missing");
+    when(userRepository.findByExternalId("missing")).thenReturn(Optional.empty());
+
+    assertThrows(IgrpResponseStatusException.class, () -> handler.handle(query));
+  }
 }

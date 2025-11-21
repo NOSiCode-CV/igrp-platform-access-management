@@ -1,41 +1,150 @@
 package cv.igrp.platform.access_management.users.application.queries;
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
+import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
+import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
-import cv.igrp.platform.access_management.users.application.queries.*;
+
+import java.util.List;
+import java.util.Optional;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class GetUserDepartmentsQueryHandlerTest {
 
+  @Mock
+  private DepartmentEntityRepository departmentRepository;
+
+  @Mock
+  private IGRPUserEntityRepository userRepository;
+
+  @Mock
+  private DepartmentMapper departmentMapper;
+
   @InjectMocks
-  private GetUserDepartmentsQueryHandler getUserDepartmentsQueryHandler;
+  private GetUserDepartmentsQueryHandler handler;
 
-  @BeforeEach
-  void setUp() {
-    // TODO: Initialize mock dependencies if needed
-  }
-
+  // -------------------------------------------------------------------------
+  // SUCCESS SCENARIO: USER FOUND + DEPARTMENTS RETURNED
+  // -------------------------------------------------------------------------
   @Test
-  void testHandleGetUserDepartmentsQuery() {
-    // TODO: Implement unit test for handle method
-    // Example:
-    // Given
-    // GetUserDepartmentsQuery query = new GetUserDepartmentsQuery(...);
-    //
-    // When
-    // ResponseEntity<List<DepartmentDTO>> response = getUserDepartmentsQueryHandler.handle(query);
-    //
-    // Then
-    // assertNotNull(response);
-    // assertEquals(..., response.getBody());
+  void handle_shouldReturnDepartments_whenUserExists() {
+
+    GetUserDepartmentsQuery query = new GetUserDepartmentsQuery("DEP", 1);
+
+    IGRPUserEntity mockUser = new IGRPUserEntity();
+    mockUser.setId(1);
+
+    DepartmentEntity dep1 = new DepartmentEntity();
+    dep1.setCode("DEP_A");
+
+    DepartmentDTO dto1 = new DepartmentDTO();
+    dto1.setCode("DEP_A");
+
+    when(userRepository.findById(1)).thenReturn(Optional.of(mockUser));
+    when(departmentRepository.findByUserIdAndStatusNotDeleted(mockUser))
+            .thenReturn(List.of(dep1));
+    when(departmentMapper.toDto(dep1)).thenReturn(dto1);
+
+    ResponseEntity<List<DepartmentDTO>> response = handler.handle(query);
+
+    assertNotNull(response);
+    assertNotNull(response.getBody());
+    assertEquals(1, response.getBody().size());
+    assertEquals("DEP_A", response.getBody().get(0).getCode());
+
+    verify(userRepository).findById(1);
+    verify(departmentRepository).findByUserIdAndStatusNotDeleted(mockUser);
+    verify(departmentMapper).toDto(dep1);
   }
 
+  // -------------------------------------------------------------------------
+  // SUCCESS SCENARIO: FILTERING WORKS
+  // -------------------------------------------------------------------------
+  @Test
+  void handle_shouldFilterDepartmentsByCode() {
+
+    GetUserDepartmentsQuery query = new GetUserDepartmentsQuery("FIN", 1);
+
+    IGRPUserEntity mockUser = new IGRPUserEntity();
+    mockUser.setId(1);
+
+    DepartmentEntity dep1 = new DepartmentEntity();
+    dep1.setCode("FIN_DEPT");
+
+    DepartmentEntity dep2 = new DepartmentEntity();
+    dep2.setCode("HR_DEPT");
+
+    DepartmentDTO dto1 = new DepartmentDTO();
+    dto1.setCode("FIN_DEPT");
+
+    when(userRepository.findById(1)).thenReturn(Optional.of(mockUser));
+    when(departmentRepository.findByUserIdAndStatusNotDeleted(mockUser))
+            .thenReturn(List.of(dep1, dep2)); // Only dep1 should pass the filter
+
+    when(departmentMapper.toDto(dep1)).thenReturn(dto1);
+
+    ResponseEntity<List<DepartmentDTO>> response = handler.handle(query);
+
+    assertNotNull(response);
+    assertNotNull(response.getBody());
+    assertEquals(1, response.getBody().size());
+    assertEquals("FIN_DEPT", response.getBody().get(0).getCode());
+
+    verify(departmentMapper, times(1)).toDto(dep1);
+    verify(departmentMapper, never()).toDto(dep2);
+  }
+
+  // -------------------------------------------------------------------------
+  // SUCCESS SCENARIO: NO DEPARTMENTS FOUND
+  // -------------------------------------------------------------------------
+  @Test
+  void handle_shouldReturnEmptyList_whenUserHasNoDepartments() {
+
+    GetUserDepartmentsQuery query = new GetUserDepartmentsQuery(null, 1);
+
+    IGRPUserEntity mockUser = new IGRPUserEntity();
+    mockUser.setId(1);
+
+    when(userRepository.findById(1)).thenReturn(Optional.of(mockUser));
+    when(departmentRepository.findByUserIdAndStatusNotDeleted(mockUser))
+            .thenReturn(List.of());
+
+    ResponseEntity<List<DepartmentDTO>> response = handler.handle(query);
+
+    assertNotNull(response);
+    assertNotNull(response.getBody());
+    assertTrue(response.getBody().isEmpty());
+  }
+
+  // -------------------------------------------------------------------------
+  // ERROR SCENARIO: USER NOT FOUND → UNAUTHORIZED
+  // -------------------------------------------------------------------------
+  @Test
+  void handle_shouldThrowUnauthorized_whenUserNotFound() {
+
+    GetUserDepartmentsQuery query = new GetUserDepartmentsQuery(null, 1);
+
+    when(userRepository.findById(1)).thenReturn(Optional.empty());
+
+    IgrpResponseStatusException ex = assertThrows(
+            IgrpResponseStatusException.class,
+            () -> handler.handle(query)
+    );
+
+    assertEquals("User not found", ex.getBody().getTitle());
+    assertNotNull(ex.getMessage());
+  }
 }

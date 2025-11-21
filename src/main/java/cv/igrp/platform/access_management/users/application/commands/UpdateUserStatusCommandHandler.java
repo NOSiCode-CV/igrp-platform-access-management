@@ -192,7 +192,7 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
    /**
     * Get user roles from database for backup purposes
     */
-   private Map<String, Set<String>> getUserRolesFromDatabase(Integer userId) {
+   Map<String, Set<String>> getUserRolesFromDatabase(Integer userId) {
       // This should match the logic in SynchronizationService but for a single user
       // You might want to extract this to a shared service to avoid duplication
 

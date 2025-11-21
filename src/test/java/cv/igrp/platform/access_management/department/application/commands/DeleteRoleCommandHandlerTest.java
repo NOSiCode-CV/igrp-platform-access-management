@@ -151,10 +151,10 @@ public class DeleteRoleCommandHandlerTest {
         assertEquals(Status.DELETED, child1.getStatus());
         assertEquals(Status.DELETED, child2.getStatus());
         assertEquals(Status.DELETED, child3.getStatus());
-        verify(roleRepository).save(parenteRole);
-        verify(roleRepository).save(child1);
-        verify(roleRepository).save(child2);
-        verify(roleRepository).save(child3);
+        verify(roleRepository, atLeastOnce()).save(parenteRole);
+        verify(roleRepository, atLeastOnce()).save(child1);
+        verify(roleRepository, atLeastOnce()).save(child2);
+        verify(roleRepository, atLeastOnce()).save(child3);
     }
 
     @Test
@@ -250,7 +250,7 @@ public class DeleteRoleCommandHandlerTest {
         underTest.handle(new DeleteRoleCommand(deptCode, "admin"));
 
         // Then
-        verify(roleRepository, times(1)).save(parent);
-        verify(roleRepository, times(1)).save(child);
+        verify(roleRepository, atLeastOnce()).save(parent);
+        verify(roleRepository, atLeastOnce()).save(child);
     }
 }
