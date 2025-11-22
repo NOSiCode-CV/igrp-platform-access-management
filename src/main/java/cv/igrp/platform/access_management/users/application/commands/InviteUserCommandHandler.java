@@ -25,6 +25,7 @@ import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -93,7 +94,11 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
             for(var roleName : command.getInviteuserdto().getRoles()) {
                 var role = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, roleName);
-                user.getRoles().add(role);
+                if(role.getUsers()==null) {
+                    role.setUsers(new HashSet<>());
+                }
+                role.getUsers().add(user);
+                roleRepository.save(role);
             }
 
             var savedUser = userRepository.save(user);
