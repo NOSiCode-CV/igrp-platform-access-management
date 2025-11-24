@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.users.application.queries;
 
 import cv.igrp.platform.access_management.app.mapper.MenuEntryMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
@@ -89,8 +90,10 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
 
         MenuEntryEntity menu1 = new MenuEntryEntity();
         menu1.setCode("MENU_A");
+        menu1.setStatus(Status.ACTIVE);
         MenuEntryEntity menu2 = new MenuEntryEntity();
         menu2.setCode("MENU_B");
+        menu2.setStatus(Status.ACTIVE);
 
         when(menuEntryRepository.findByApplicationIdAndUserIdAndStatusNotDeleted(user, app))
                 .thenReturn(List.of(menu1, menu2));
@@ -122,8 +125,10 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
 
         MenuEntryEntity menu1 = new MenuEntryEntity();
         menu1.setCode("MENU_A");
+        menu1.setStatus(Status.ACTIVE);
         MenuEntryEntity menu2 = new MenuEntryEntity();
         menu2.setCode("MENU_B");
+        menu2.setStatus(Status.ACTIVE);
 
         when(menuEntryRepository.findByApplicationIdAndUserIdAndStatusNotDeleted(user, app))
                 .thenReturn(List.of(menu1, menu2));

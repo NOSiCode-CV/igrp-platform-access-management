@@ -124,4 +124,11 @@ public interface ApplicationEntityRepository extends
         and a.status <> 'DELETED'
     """)
     List<ApplicationEntity> findByUserIdAndStatusNotDeleted(IGRPUserEntity user);
+
+    List<ApplicationEntity> findAllAndStatus(Status status);
+
+    default List<ApplicationEntity> findAllAndStatusActive() {
+        return findAllAndStatus(Status.ACTIVE);
+    }
+
 }

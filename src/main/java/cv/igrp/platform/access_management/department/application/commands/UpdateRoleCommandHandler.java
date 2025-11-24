@@ -10,13 +10,16 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Handles the update of a {@link RoleEntity} entity.
@@ -53,6 +56,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
    private final RoleEntityRepository roleRepository;
    private final DepartmentEntityRepository departmentRepository;
    private final RoleMapper roleMapper;
+   private final UserUtils userUtils;
 
    /**
     * Constructs an {@code UpdateRoleCommandHandler} with the required dependencies.
@@ -60,11 +64,13 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
     * @param roleRepository the repository used to fetch and persist roles
     * @param departmentRepository the repository used to fetch and persist departments
     * @param roleMapper     the mapper used to convert {@link RoleEntity} to {@link RoleDTO}
+    * @param userUtils      the utility class used to handle user-related operations
     */
-   public UpdateRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper) {
+   public UpdateRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper, UserUtils userUtils) {
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
       this.roleMapper = roleMapper;
+      this.userUtils = userUtils;
    }
 
    /**
@@ -121,7 +127,23 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
       roleToUpdate.setName(newData.getName());
       roleToUpdate.setDescription(newData.getDescription());
       roleToUpdate.setParent(parentRole);
+
+      String oldStatus = roleToUpdate.getStatus().getCode();
+      String newStatus = newData.getCode();
+
+      // Store current roles if status is changing from ACTIVE to INACTIVE
+      Map<String, Set<String>> userRolesBackup;
+
+      for(var user : roleToUpdate.getUsers()) {
+         Integer userId = Integer.valueOf(user.getId());
+         userRolesBackup = userUtils.getUserRolesFromDatabase(userId);
+         log.info("Fetching roles for user {}: {}", userId, userRolesBackup);
+
+         // Handle role assignments based on status change
+         userUtils.handleRoleAssignmentsOnStatusChange(user, oldStatus, newStatus, userRolesBackup);
+      }
       roleToUpdate.setStatus(newData.getStatus());
+
       roleToUpdate.setIcon(newData.getIcon());
       RoleEntity updatedRole = roleRepository.save(roleToUpdate);
       log.info("Role with code: {} updated successfully.", command.getRoledto().getCode());
@@ -137,6 +159,21 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
          if(status != Status.ACTIVE) {
 
             var childRole = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, child.getCode());
+
+            String oldStatus = child.getStatus().getCode();
+            String newStatus = status.getCode();
+
+            // Store current roles if status is changing from ACTIVE to INACTIVE
+            Map<String, Set<String>> userRolesBackup;
+
+            for(var user : child.getUsers()) {
+               Integer userId = Integer.valueOf(user.getId());
+               userRolesBackup = userUtils.getUserRolesFromDatabase(userId);
+               log.info("Fetching roles for user {}: {}", userId, userRolesBackup);
+
+               // Handle role assignments based on status change
+               userUtils.handleRoleAssignmentsOnStatusChange(user, oldStatus, newStatus, userRolesBackup);
+            }
 
             childRole.setStatus(status);
 

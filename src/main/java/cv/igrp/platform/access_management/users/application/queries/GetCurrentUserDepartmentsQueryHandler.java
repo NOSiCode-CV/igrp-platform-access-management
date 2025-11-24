@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,9 @@ public class GetCurrentUserDepartmentsQueryHandler implements QueryHandler<GetCu
     private final IGRPUserEntityRepository userRepository;
     private final DepartmentMapper departmentMapper;
     private final AuthenticationHelper authenticationHelper;
+
+    @Value("${igrp.superadmin.user-external-id}")
+    public String SUPER_ADMIN_EXTERNAL_ID = "";
 
     public GetCurrentUserDepartmentsQueryHandler(
             DepartmentEntityRepository departmentRepository,
@@ -52,7 +56,13 @@ public class GetCurrentUserDepartmentsQueryHandler implements QueryHandler<GetCu
 
         LOGGER.info("Getting departments for user: {}", user.getExternalId());
 
-        List<DepartmentDTO> departments = departmentRepository.findByUserIdAndStatusNotDeleted(user)
+        List<DepartmentDTO> departments = user.getExternalId().equals(SUPER_ADMIN_EXTERNAL_ID) ?
+                departmentRepository.findAllAndStatusActive()
+                        .stream()
+                        .filter(it -> query.getDepartmentCode() == null || it.getCode().contains(query.getDepartmentCode()))
+                        .map(departmentMapper::toDto)
+                        .toList()
+                : departmentRepository.findByUserIdAndStatusNotDeleted(user)
                 .stream()
                 .filter(it -> query.getDepartmentCode() == null || it.getCode().contains(query.getDepartmentCode()))
                 .map(departmentMapper::toDto)

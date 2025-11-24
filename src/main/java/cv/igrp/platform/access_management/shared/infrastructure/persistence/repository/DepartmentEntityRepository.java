@@ -65,4 +65,10 @@ public interface DepartmentEntityRepository extends
         """
     )
     List<DepartmentEntity> findByUserIdAndStatusNotDeleted(IGRPUserEntity user);
+
+    List<DepartmentEntity> findAllAndStatus(DepartmentStatus status);
+
+    default List<DepartmentEntity> findAllAndStatusActive() {
+        return findAllAndStatus(DepartmentStatus.ACTIVE);
+    }
 }

@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,9 @@ public class GetCurrentUserApplicationsQueryHandler implements QueryHandler<GetC
     private final IGRPUserEntityRepository userRepository;
     private final ApplicationMapper applicationMapper;
     private final AuthenticationHelper authenticationHelper;
+
+    @Value("${igrp.superadmin.user-external-id}")
+    public String SUPER_ADMIN_EXTERNAL_ID = "";
 
     public GetCurrentUserApplicationsQueryHandler(
             ApplicationEntityRepository applicationRepository,
@@ -52,7 +56,13 @@ public class GetCurrentUserApplicationsQueryHandler implements QueryHandler<GetC
 
         LOGGER.info("Getting applications for user: {}", user.getEmail());
 
-        List<ApplicationDTO> applications = applicationRepository.findByUserIdAndStatusNotDeleted(user)
+        List<ApplicationDTO> applications = user.getExternalId().equals(SUPER_ADMIN_EXTERNAL_ID) ?
+                applicationRepository.findAllAndStatusActive()
+                        .stream()
+                        .filter(it -> query.getApplicationCode() == null || it.getCode().contains(query.getApplicationCode()))
+                        .map(applicationMapper::toDto)
+                        .toList()
+                : applicationRepository.findByUserIdAndStatusNotDeleted(user)
                 .stream()
                 .filter(it -> query.getApplicationCode() == null || it.getCode().contains(query.getApplicationCode()))
                 .map(applicationMapper::toDto)

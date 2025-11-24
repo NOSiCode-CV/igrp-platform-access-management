@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -28,6 +29,9 @@ public class GetCurrentUserDepartmentRolesQueryHandler implements QueryHandler<G
     private final DepartmentEntityRepository departmentRepository;
     private final RoleMapper roleMapper;
     private final AuthenticationHelper authenticationHelper;
+
+    @Value("${igrp.superadmin.user-external-id}")
+    public String SUPER_ADMIN_EXTERNAL_ID = "";
 
     public GetCurrentUserDepartmentRolesQueryHandler(RoleEntityRepository roleRepository, IGRPUserEntityRepository userRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper, AuthenticationHelper authenticationHelper) {
         this.roleRepository = roleRepository;
@@ -52,7 +56,12 @@ public class GetCurrentUserDepartmentRolesQueryHandler implements QueryHandler<G
 
         var department = departmentRepository.findByCodeAndStatusNotDeleted(query.getDepartmentCode());
 
-        List<RoleDTO> roles = roleRepository.findByDepartmentIdAndUserIdAndStatusNotDeleted(user, department)
+        List<RoleDTO> roles = user.getExternalId().equals(SUPER_ADMIN_EXTERNAL_ID) ?
+                roleRepository.findAllByDepartmentAndStatusNotDeleted(department)
+                        .stream()
+                        .map(roleMapper::mapToDto)
+                        .toList()
+                : roleRepository.findByDepartmentIdAndUserIdAndStatusNotDeleted(user, department)
                 .stream()
                 .map(roleMapper::mapToDto)
                 .toList();

@@ -12,6 +12,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -21,7 +22,9 @@ import org.slf4j.LoggerFactory;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 /**
  * Command handler responsible for processing {@link UpdateDepartmentCommand} to update an existing department.
@@ -46,6 +49,7 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
    private final RoleEntityRepository roleRepository;
    private final DepartmentMapper departmentMapper;
    private final IAdapter adapter;
+   private final UserUtils userUtils;
 
    /**
     * Constructs the command handler with required dependencies.
@@ -54,15 +58,20 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
     * @param roleRepository       the repository used to retrieve and save role entities
     * @param departmentMapper     the mapper used to convert between DTOs and entities
     * @param adapter              the adapter interface used to interact with the external Identity and Access Management (IAM) system
+    * @param userUtils            the utility class used to validate user roles
     */
    public UpdateDepartmentCommandHandler(
            DepartmentEntityRepository departmentRepository,
            RoleEntityRepository roleRepository,
-           DepartmentMapper departmentMapper, IAdapter adapter) {
+           DepartmentMapper departmentMapper,
+           IAdapter adapter,
+           UserUtils userUtils
+   ) {
       this.departmentRepository = departmentRepository;
       this.roleRepository = roleRepository;
       this.departmentMapper = departmentMapper;
       this.adapter = adapter;
+      this.userUtils = userUtils;
    }
 
    /**
@@ -121,7 +130,20 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
 
            if(role.getStatus() == Status.DELETED) continue;
 
+           var oldStatus = role.getStatus().getCode();
            var newStatus = Status.valueOf(status.getCode());
+
+           // Store current roles if status is changing from ACTIVE to INACTIVE
+           Map<String, Set<String>> userRolesBackup;
+
+           for(var user : role.getUsers()) {
+               Integer userId = Integer.valueOf(user.getId());
+               userRolesBackup = userUtils.getUserRolesFromDatabase(userId);
+               logger.info("Fetching roles for user {}: {}", userId, userRolesBackup);
+
+               // Handle role assignments based on status change
+               userUtils.handleRoleAssignmentsOnStatusChange(user, oldStatus, newStatus.getCode(), userRolesBackup);
+           }
 
            role.setStatus(newStatus);
 
@@ -160,6 +182,21 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
             if(status != Status.ACTIVE) {
 
                 var childRole = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, child.getCode());
+
+                String oldStatus = child.getStatus().getCode();
+                String newStatus = status.getCode();
+
+                // Store current roles if status is changing from ACTIVE to INACTIVE
+                Map<String, Set<String>> userRolesBackup;
+
+                for(var user : child.getUsers()) {
+                    Integer userId = Integer.valueOf(user.getId());
+                    userRolesBackup = userUtils.getUserRolesFromDatabase(userId);
+                    logger.info("Fetching roles for user {}: {}", userId, userRolesBackup);
+
+                    // Handle role assignments based on status change
+                    userUtils.handleRoleAssignmentsOnStatusChange(user, oldStatus, newStatus, userRolesBackup);
+                }
 
                 childRole.setStatus(status);
 

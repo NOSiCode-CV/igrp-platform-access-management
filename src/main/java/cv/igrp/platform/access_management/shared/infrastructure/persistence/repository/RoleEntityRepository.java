@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
@@ -59,7 +60,8 @@ public interface RoleEntityRepository extends
     Optional<RoleEntity> findByDepartmentAndCodeAndStatusNot(DepartmentEntity department, String code, Status status);
 
     default RoleEntity findByDepartmentAndCodeAndStatusNotDeleted(DepartmentEntity department, String code) {
-        return null;
+        return findByDepartmentAndCodeAndStatusNot(department, code, Status.DELETED)
+                .orElseThrow(() -> IgrpResponseStatusException.notFound("Role with code: <" + code + "> was not found"));
     }
 
     @Query("""
@@ -84,4 +86,10 @@ public interface RoleEntityRepository extends
     """
     )
     List<RoleEntity> findByDepartmentIdAndUserIdAndStatusNotDeleted(IGRPUserEntity user, DepartmentEntity department);
+
+    List<RoleEntity> findAllByDepartmentAndStatusNot(DepartmentEntity  department, Status status);
+
+    default List<RoleEntity> findAllByDepartmentAndStatusNotDeleted(DepartmentEntity department) {
+        return findAllByDepartmentAndStatusNot(department, Status.DELETED);
+    }
 }

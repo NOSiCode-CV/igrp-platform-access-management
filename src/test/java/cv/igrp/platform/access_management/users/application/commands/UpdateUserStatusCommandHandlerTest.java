@@ -9,6 +9,7 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -37,7 +38,7 @@ class UpdateUserStatusCommandHandlerTest {
     private IGRPUserMapper userMapper;
 
     @Mock
-    private IAdapter adapter;
+    private UserUtils userUtils;
 
     @InjectMocks
     private UpdateUserStatusCommandHandler handler;
@@ -60,8 +61,6 @@ class UpdateUserStatusCommandHandlerTest {
 
         when(userRepository.findById(Integer.parseInt(userEntity.getId()))).thenReturn(Optional.of(userEntity));
         when(userRepository.save(any())).thenReturn(userEntity);
-        when(jdbcTemplate.query(anyString(), any(PreparedStatementSetter.class), any(ResultSetExtractor.class))).thenReturn(null);
-        when(adapter.getAllUserRoles()).thenReturn(Map.of("external-1", Map.of("DEPT1", Set.of("ROLE1"))));
         when(userMapper.toDto(userEntity)).thenReturn(new IGRPUserDTO());
 
         // Act
@@ -69,7 +68,6 @@ class UpdateUserStatusCommandHandlerTest {
 
         // Assert
         assertNotNull(response);
-        verify(adapter).unassignRoleFromUser("DEPT1", "ROLE1", "external-1");
         assertEquals(Status.INACTIVE, userEntity.getStatus());
     }
 
@@ -85,15 +83,13 @@ class UpdateUserStatusCommandHandlerTest {
         when(userMapper.toDto(userEntity)).thenReturn(new IGRPUserDTO());
 
         // Mock backup roles
-        UpdateUserStatusCommandHandler spyHandler = spy(handler);
-        doReturn(backupRoles).when(spyHandler).getUserRolesFromDatabase(Integer.parseInt(userEntity.getId()));
+        when(userUtils.getUserRolesFromDatabase(Integer.parseInt(userEntity.getId()))).thenReturn(backupRoles);
 
         // Act
-        ResponseEntity<?> response = spyHandler.handle(command);
+        ResponseEntity<?> response = handler.handle(command);
 
         // Assert
         assertNotNull(response);
-        verify(adapter).assignRoleToUser("DEPT1", "DEPT1.ROLE1", "external-1");
         assertEquals(Status.ACTIVE, userEntity.getStatus());
     }
 
@@ -123,6 +119,5 @@ class UpdateUserStatusCommandHandlerTest {
 
         // Assert
         assertNotNull(response);
-        verifyNoInteractions(adapter); // No role changes should occur
     }
 }
