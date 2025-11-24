@@ -125,10 +125,10 @@ public interface ApplicationEntityRepository extends
     """)
     List<ApplicationEntity> findByUserIdAndStatusNotDeleted(IGRPUserEntity user);
 
-    List<ApplicationEntity> findAllAndStatus(Status status);
+    List<ApplicationEntity> findByStatus(Status status);
 
     default List<ApplicationEntity> findAllAndStatusActive() {
-        return findAllAndStatus(Status.ACTIVE);
+        return findByStatus(Status.ACTIVE);
     }
 
 }

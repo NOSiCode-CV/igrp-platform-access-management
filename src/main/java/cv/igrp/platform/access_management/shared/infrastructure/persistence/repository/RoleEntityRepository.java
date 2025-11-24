@@ -11,7 +11,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.history.RevisionRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -87,9 +86,9 @@ public interface RoleEntityRepository extends
     )
     List<RoleEntity> findByDepartmentIdAndUserIdAndStatusNotDeleted(IGRPUserEntity user, DepartmentEntity department);
 
-    List<RoleEntity> findAllByDepartmentAndStatusNot(DepartmentEntity  department, Status status);
+    List<RoleEntity> findByDepartmentAndStatusNot(DepartmentEntity  department, Status status);
 
     default List<RoleEntity> findAllByDepartmentAndStatusNotDeleted(DepartmentEntity department) {
-        return findAllByDepartmentAndStatusNot(department, Status.DELETED);
+        return findByDepartmentAndStatusNot(department, Status.DELETED);
     }
 }

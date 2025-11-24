@@ -10,7 +10,6 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.history.RevisionRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -66,9 +65,9 @@ public interface DepartmentEntityRepository extends
     )
     List<DepartmentEntity> findByUserIdAndStatusNotDeleted(IGRPUserEntity user);
 
-    List<DepartmentEntity> findAllAndStatus(DepartmentStatus status);
+    List<DepartmentEntity> findByStatus(DepartmentStatus status);
 
     default List<DepartmentEntity> findAllAndStatusActive() {
-        return findAllAndStatus(DepartmentStatus.ACTIVE);
+        return findByStatus(DepartmentStatus.ACTIVE);
     }
 }
