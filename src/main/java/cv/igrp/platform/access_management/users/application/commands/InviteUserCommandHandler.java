@@ -90,6 +90,8 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
             user.setEmail(command.getInviteuserdto().getEmail());
             user.setExternalId(providerUser.get().getExternalId());
 
+            var savedUser = userRepository.save(user);
+
             var department = departmentRepository.findByCodeAndStatusNotDeleted(command.getInviteuserdto().getDepartmentCode());
 
             for(var roleName : command.getInviteuserdto().getRoles()) {
@@ -97,11 +99,9 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
                 if(role.getUsers()==null) {
                     role.setUsers(new HashSet<>());
                 }
-                role.getUsers().add(user);
+                role.getUsers().add(savedUser);
                 roleRepository.save(role);
             }
-
-            var savedUser = userRepository.save(user);
 
             final var disableUserCmd = new UpdateUserStatusCommand(Status.INACTIVE.getCode(), Integer.parseInt(savedUser.getId()));
 
@@ -115,7 +115,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
                 notification.setRecipients(List.of(savedUser.getEmail()));
                 notification.setSubject("iGRP User Invitation");
-                notification.setContent(emailTemplate.replace("{{user}}", user.getEmail()));
+                notification.setContent(emailTemplate.replace("{{user}}", savedUser.getEmail()));
                 notification.setMetadata(Map.of("userId", savedUser.getId(), "email", savedUser.getEmail()));
 
                 notificationAdapter.send(notification);
