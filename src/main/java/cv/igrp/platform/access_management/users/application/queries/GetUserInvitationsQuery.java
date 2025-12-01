@@ -11,11 +11,9 @@ import lombok.AllArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class GetCurrentUserApplicationsQuery implements Query {
+public class GetUserInvitationsQuery implements Query {
 
-  @NotBlank(message = "The field <applicationCode> is required")
-  private String applicationCode;
-  @NotBlank(message = "The field <applicationName> is required")
-  private String applicationName;
+  @NotBlank(message = "The field <email> is required")
+  private String email;
 
 }

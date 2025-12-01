@@ -1,0 +1,45 @@
+{
+  "type": "enum",
+  "module": "shared",
+  "name": "InvitationStatus",
+  "values": [
+    {
+      "name": "PENDING",
+      "attributes": [
+        "PENDING",
+        "Pending"
+      ]
+    },
+    {
+      "name": "ACCEPTED",
+      "attributes": [
+        "ACCEPTED",
+        "Accepted"
+      ]
+    },
+    {
+      "name": "REJECTED",
+      "attributes": [
+        "REJECTED",
+        "Rejected"
+      ]
+    },
+    {
+      "name": "CANCELED",
+      "attributes": [
+        "CANCELED",
+        "Canceled"
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "type": "string",
+      "name": "Code"
+    },
+    {
+      "type": "string",
+      "name": "Description"
+    }
+  ]
+}

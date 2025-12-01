@@ -11,13 +11,11 @@ import lombok.AllArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class GetUserApplicationsQuery implements Query {
+public class GetFavoriteApplicationsQuery implements Query {
 
   @NotBlank(message = "The field <applicationCode> is required")
   private String applicationCode;
   @NotBlank(message = "The field <applicationName> is required")
   private String applicationName;
-  @NotNull(message = "The field <id> is required")
-  private Integer id;
 
 }

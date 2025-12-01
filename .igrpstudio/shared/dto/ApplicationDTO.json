@@ -182,6 +182,18 @@
       "primaryKey": false
     },
     {
+      "name": "lastAccess",
+      "objectType": "java",
+      "type": "datetime",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
       "name": "departments",
       "objectType": "java",
       "type": "string",

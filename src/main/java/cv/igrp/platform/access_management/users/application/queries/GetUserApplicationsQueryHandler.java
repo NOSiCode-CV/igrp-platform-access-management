@@ -13,44 +13,46 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 
 @Component
-public class GetUserApplicationsQueryHandler implements QueryHandler<GetUserApplicationsQuery, ResponseEntity<List<ApplicationDTO>>>{
+public class GetUserApplicationsQueryHandler implements QueryHandler<GetUserApplicationsQuery, ResponseEntity<List<ApplicationDTO>>> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(GetUserApplicationsQueryHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GetUserApplicationsQueryHandler.class);
 
-  private final ApplicationEntityRepository applicationRepository;
-  private final IGRPUserEntityRepository userRepository;
-  private final ApplicationMapper applicationMapper;
+    private final ApplicationEntityRepository applicationRepository;
+    private final IGRPUserEntityRepository userRepository;
+    private final ApplicationMapper applicationMapper;
 
-  public GetUserApplicationsQueryHandler(ApplicationEntityRepository applicationRepository, IGRPUserEntityRepository userRepository, ApplicationMapper applicationMapper) {
-    this.applicationRepository = applicationRepository;
-    this.userRepository = userRepository;
-    this.applicationMapper = applicationMapper;
-  }
+    public GetUserApplicationsQueryHandler(ApplicationEntityRepository applicationRepository, IGRPUserEntityRepository userRepository, ApplicationMapper applicationMapper) {
+        this.applicationRepository = applicationRepository;
+        this.userRepository = userRepository;
+        this.applicationMapper = applicationMapper;
+    }
 
-   @IgrpQueryHandler
-  public ResponseEntity<List<ApplicationDTO>> handle(GetUserApplicationsQuery query) {
+    @IgrpQueryHandler
+    public ResponseEntity<List<ApplicationDTO>> handle(GetUserApplicationsQuery query) {
 
-     var user = userRepository.findById(query.getId()).orElseThrow(
-             () -> IgrpResponseStatusException.of(
-                     HttpStatus.UNAUTHORIZED,
-                     "User not found",
-                     "User with ID: " + query.getId() + " not found in database."
-             )
-     );
+        var user = userRepository.findById(query.getId()).orElseThrow(
+                () -> IgrpResponseStatusException.of(
+                        HttpStatus.UNAUTHORIZED,
+                        "User not found",
+                        "User with ID: " + query.getId() + " not found in database."
+                )
+        );
 
-     LOGGER.info("Getting applications for user: {}", user.getEmail());
+        LOGGER.info("Getting applications for user: {}", user.getEmail());
 
-     List<ApplicationDTO> applications = applicationRepository.findByUserIdAndStatusNotDeleted(user)
-             .stream()
-             .filter(it -> query.getApplicationCode() == null || it.getCode().contains(query.getApplicationCode()))
-             .map(applicationMapper::toDto)
-             .toList();
+        List<ApplicationDTO> applications = applicationRepository.findByUserIdAndStatusNotDeleted(user)
+                .stream()
+                .filter(it -> query.getApplicationCode() == null || it.getCode().contains(query.getApplicationCode()))
+                .filter(it -> query.getApplicationName() == null || it.getName().toLowerCase().contains(query.getApplicationName().toLowerCase()))
+                .map(applicationMapper::toDto)
+                .toList();
 
-     return ResponseEntity.ok(applications);
+        return ResponseEntity.ok(applications);
 
-  }
+    }
 
 }

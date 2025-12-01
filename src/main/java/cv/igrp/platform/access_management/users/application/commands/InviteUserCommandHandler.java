@@ -1,19 +1,22 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.auth.core.adapter.IAdapter;
-import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.model.Notification;
 import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
+import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.InvitationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
-import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
+import cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils;
+import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -21,59 +24,64 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Component
-public class InviteUserCommandHandler implements CommandHandler<InviteUserCommand, ResponseEntity<IGRPUserDTO>> {
+public class InviteUserCommandHandler implements CommandHandler<InviteUserCommand, ResponseEntity<InvitationDTO>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InviteUserCommandHandler.class);
 
     @Value("${igrp.mail.invite.template}")
     private String emailTemplate = """
-                        Dear {{user}}, your were invited to the iGRP platform
-                        
-                        Best Regards.
-                        iGRP
-                        """;
+            Dear {{user}}, your were invited to the iGRP platform
+            
+            Please click on the link below to accept the invitation:
+            {{url}}
+            
+            Best Regards.
+            iGRP
+            """;
+
+    @Value("${igrp.app-center.url:}")
+    private String appCenterUrl = "";
 
     private final NotificationAdapter<NotificationResult> notificationAdapter;
     private final IGRPUserEntityRepository userRepository;
     private final RoleEntityRepository roleRepository;
     private final DepartmentEntityRepository departmentRepository;
-    private final IGRPUserMapper userMapper;
+    private final InvitationEntityRepository invitationRepository;
+    private final InvitationMapper invitationMapper;
+    private final UserUtils userUtils;
     private final IAdapter adapter;
-    private final UpdateUserStatusCommandHandler commandBus;
 
     public InviteUserCommandHandler(NotificationAdapter<NotificationResult> notificationAdapter,
                                     IGRPUserEntityRepository userRepository,
                                     RoleEntityRepository roleRepository,
                                     DepartmentEntityRepository departmentRepository,
-                                    IGRPUserMapper userMapper,
-                                    IAdapter adapter,
-                                    UpdateUserStatusCommandHandler commandBus
+                                    InvitationEntityRepository invitationRepository,
+                                    InvitationMapper invitationMapper,
+                                    UserUtils userUtils,
+                                    IAdapter adapter
     ) {
         this.notificationAdapter = notificationAdapter;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.departmentRepository = departmentRepository;
-        this.userMapper = userMapper;
+        this.invitationRepository = invitationRepository;
+        this.invitationMapper = invitationMapper;
+        this.userUtils = userUtils;
         this.adapter = adapter;
-        this.commandBus = commandBus;
     }
 
     @IgrpCommandHandler
     @Transactional
-    public ResponseEntity<IGRPUserDTO> handle(InviteUserCommand command) {
+    public ResponseEntity<InvitationDTO> handle(InviteUserCommand command) {
 
         var dto = command.getInviteuserdto();
 
-        LOGGER.info("Creating new user: email={}", dto.getEmail());
+        LOGGER.info("Inviting new user: email={}", dto.getEmail());
 
         // Verify if user exists
         if (userRepository.existsByEmail(dto.getEmail()))
@@ -86,37 +94,37 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         if (providerUser.isPresent()) {
 
-            IGRPUserEntity user = new IGRPUserEntity();
-            user.setEmail(command.getInviteuserdto().getEmail());
-            user.setExternalId(providerUser.get().getExternalId());
+            InvitationEntity invitation = new InvitationEntity();
 
-            var savedUser = userRepository.save(user);
+            invitation.setEmail(dto.getEmail());
+            invitation.setStatus(InvitationStatus.PENDING);
+            invitation.setToken(UUID.randomUUID().toString());
+
+            Set<RoleEntity> roles = new HashSet<>();
 
             var department = departmentRepository.findByCodeAndStatusNotDeleted(command.getInviteuserdto().getDepartmentCode());
 
-            for(var roleName : command.getInviteuserdto().getRoles()) {
-                var role = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, roleName);
-                if(role.getUsers()==null) {
-                    role.setUsers(new HashSet<>());
-                }
-                role.getUsers().add(savedUser);
-                roleRepository.save(role);
+            for (var roleCode : command.getInviteuserdto().getRoles()) {
+                var role = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, roleCode);
+                roles.add(role);
             }
 
-            final var disableUserCmd = new UpdateUserStatusCommand(Status.INACTIVE.getCode(), Integer.parseInt(savedUser.getId()));
+            invitation.setRoles(roles);
 
-            commandBus.handle(disableUserCmd);
+            var savedInvitation = invitationRepository.save(invitation);
+
+            var url = userUtils.constructInvitationUrl(appCenterUrl, savedInvitation.getToken());
 
             try {
 
-                LOGGER.info("Inviting new user: id={}, email={}", savedUser.getId(), dto.getEmail());
+                LOGGER.info("Inviting new user: token={}, email={}", savedInvitation.getToken(), dto.getEmail());
 
                 var notification = new Notification();
 
-                notification.setRecipients(List.of(savedUser.getEmail()));
+                notification.setRecipients(List.of(dto.getEmail()));
                 notification.setSubject("iGRP User Invitation");
-                notification.setContent(emailTemplate.replace("{{user}}", savedUser.getEmail()));
-                notification.setMetadata(Map.of("userId", savedUser.getId(), "email", savedUser.getEmail()));
+                notification.setContent(emailTemplate.replace("{{user}}", dto.getEmail()).replace("{{url}}", url));
+                notification.setMetadata(Map.of("invitationToken", savedInvitation.getToken(), "email", dto.getEmail()));
 
                 notificationAdapter.send(notification);
 
@@ -124,9 +132,9 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
                 LOGGER.error("Invitation Email failed", e);
             }
 
-            LOGGER.info("User invited successfully with id={}", savedUser.getId());
+            LOGGER.info("User invited successfully with token={}", savedInvitation.getToken());
 
-            return ResponseEntity.ok(userMapper.toDto(savedUser));
+            return ResponseEntity.ok(invitationMapper.toDtoWithUrl(savedInvitation, url));
 
         } else {
             throw IgrpResponseStatusException.of(

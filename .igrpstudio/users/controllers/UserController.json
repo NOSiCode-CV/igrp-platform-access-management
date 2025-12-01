@@ -258,7 +258,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "IGRPUserDTO",
+                "type": "InvitationDTO",
                 "objectType": "dto",
                 "name": "data",
                 "collectionType": "none",
@@ -267,7 +267,14 @@
             }
           }
         }
-      }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "token",
+          "isRequired": true
+        }
+      ]
     },
     {
       "actionName": "updateUser",
@@ -358,7 +365,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "IGRPUserDTO",
+                "type": "InvitationDTO",
                 "objectType": "dto",
                 "name": "data",
                 "collectionType": "none",
@@ -371,6 +378,74 @@
       "permission": {
         "items": [
           "igrp.user.create"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "cancelUserInvitation",
+      "path": "users/invite/{id}",
+      "method": "DELETE",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "InvitationDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.user.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "resendUserInvitation",
+      "path": "users/invite/{id}",
+      "method": "PUT",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "InvitationDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.user.manage"
         ],
         "operator": "OR"
       }
@@ -441,6 +516,12 @@
           "type": "string",
           "name": "applicationCode",
           "description": "Application Code",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "applicationName",
+          "description": "Application Name",
           "isRequired": false
         }
       ]
@@ -571,6 +652,12 @@
           "type": "string",
           "name": "applicationCode",
           "description": "Application Code",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "applicationName",
+          "description": "Application Name",
           "isRequired": false
         }
       ],
@@ -723,7 +810,218 @@
         ],
         "operator": "OR"
       }
+    },
+    {
+      "actionName": "registerAccessHistory",
+      "path": "users/me/applications/recent/{applicationCode}",
+      "method": "POST",
+      "responses": {
+        "204": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "applicationCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getRecentApplications",
+      "path": "users/me/applications/recent",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "applicationName",
+          "isRequired": false
+        },
+        {
+          "type": "integer",
+          "name": "max",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "actionName": "getFavoriteApplications",
+      "path": "users/me/applications/favorites",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "applicationName",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "actionName": "addFavoriteApplication",
+      "path": "users/me/applications/favorites/{applicationCode}",
+      "method": "POST",
+      "responses": {
+        "204": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "applicationCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "removeFavoriteApplication",
+      "path": "users/me/applications/favorites/{applicationCode}",
+      "method": "DELETE",
+      "responses": {
+        "204": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "applicationCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
+      "actionName": "getUserInvitations",
+      "path": "users/invite",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "InvitationDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "email",
+          "isRequired": false
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.user.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "getUserInvitation",
+      "path": "users/invite/{id}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "InvitationDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true
+        }
+      ]
     }
   ],
-  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser-getCurrentUser-AddRolesToUser-RemoveRolesFromUser-getUsers-getUsers-getUsers-inviteUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-inviteUser-updateUserStatus-getUser-getUserApplications-getUserApplicationMenus-getUserDepartments-getUserDepartmentRoles"
+  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser-getCurrentUser-AddRolesToUser-RemoveRolesFromUser-getUsers-getUsers-getUsers-inviteUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-inviteUser-updateUserStatus-getUser-getUserApplications-getUserApplicationMenus-getUserDepartments-getUserDepartmentRoles-respondUserInvitation-cancelUserInvitation-addFavoriteApplication-resendUserInvitation-addFavoriteApplication-removeFavoriteApplication-getRecentApplications-getCurrentUserApplications-getUserApplications"
 }

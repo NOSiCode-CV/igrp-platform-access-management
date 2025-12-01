@@ -1,8 +1,7 @@
-package cv.igrp.platform.access_management.users.application.queries;
+package cv.igrp.platform.access_management.users.application.commands;
 
-import cv.igrp.framework.core.domain.Query;
+import cv.igrp.framework.core.domain.Command;
 import jakarta.validation.constraints.*;
-
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
@@ -11,11 +10,9 @@ import lombok.AllArgsConstructor;
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class GetCurrentUserApplicationsQuery implements Query {
+public class AddFavoriteApplicationCommand implements Command {
 
   @NotBlank(message = "The field <applicationCode> is required")
   private String applicationCode;
-  @NotBlank(message = "The field <applicationName> is required")
-  private String applicationName;
 
 }

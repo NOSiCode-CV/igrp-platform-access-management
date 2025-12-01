@@ -1,16 +1,19 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.auth.core.adapter.IAdapter;
-import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.model.Notification;
 import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
+import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
-import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,15 +21,14 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 @Component
-public class RespondUserInvitationCommandHandler implements CommandHandler<RespondUserInvitationCommand, ResponseEntity<IGRPUserDTO>> {
+public class RespondUserInvitationCommandHandler implements CommandHandler<RespondUserInvitationCommand, ResponseEntity<InvitationDTO>> {
 
    private static final Logger LOGGER = LoggerFactory.getLogger(RespondUserInvitationCommandHandler.class);
 
@@ -40,65 +42,73 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
 
    private final NotificationAdapter<NotificationResult> notificationAdapter;
    private final IGRPUserEntityRepository userRepository;
-   private final IGRPUserMapper userMapper;
+   private final RoleEntityRepository roleRepository;
+   private final InvitationEntityRepository invitationRepository;
    private final IAdapter adapter;
-   private final UpdateUserStatusCommandHandler commandBus;
+   private final InvitationMapper invitationMapper;
 
    public RespondUserInvitationCommandHandler(
            NotificationAdapter<NotificationResult> notificationAdapter,
            IGRPUserEntityRepository userRepository,
-           IGRPUserMapper userMapper,
+           RoleEntityRepository roleRepository,
+           InvitationEntityRepository invitationRepository,
            IAdapter adapter,
-           UpdateUserStatusCommandHandler commandBus
-   ) {
+           InvitationMapper invitationMapper) {
        this.notificationAdapter = notificationAdapter;
        this.userRepository = userRepository;
-       this.userMapper = userMapper;
+       this.roleRepository = roleRepository;
+       this.invitationRepository = invitationRepository;
        this.adapter = adapter;
-       this.commandBus = commandBus;
+       this.invitationMapper = invitationMapper;
    }
 
    @IgrpCommandHandler
    @Transactional
-   public ResponseEntity<IGRPUserDTO> handle(RespondUserInvitationCommand command) {
+   public ResponseEntity<InvitationDTO> handle(RespondUserInvitationCommand command) {
 
       var dto = command.getUserinvitationresponsedto();
 
-      LOGGER.info("Responding to user invitation: email={}", dto.getEmail());
+      LOGGER.info("Responding to user invitation: email={}, token={}", dto.getEmail(), command.getToken());
+
+      // Find invitation
+      var invitation = invitationRepository.findByTokenAndStatusPending(command.getToken());
 
       // Verify if user exists
-      if (!userRepository.existsByEmail(dto.getEmail()))
+      if (userRepository.existsByEmail(dto.getEmail()))
          throw IgrpResponseStatusException.of(
-                 HttpStatus.NOT_FOUND,
-                 "User with email %s was not invited already".formatted(dto.getEmail())
+                 HttpStatus.BAD_REQUEST,
+                 "User with email %s was invited already".formatted(dto.getEmail())
          );
 
       var providerUserOpt = adapter.resolveUser(dto.getEmail());
 
       if (providerUserOpt.isPresent()) {
 
-         var providerUser = providerUserOpt.get();
-
-         var user = userRepository.findByExternalId(providerUser.getExternalId())
-                 .orElseThrow(() -> IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND,
-                         "User with email %s was not invited already".formatted(dto.getEmail())
-                 ));
-
-         if(dto.isAccept()) {
-            user.setStatus(Status.ACTIVE);
-         } else {
-            user.setEmail(UUID.randomUUID() + "_" + dto.getEmail());
-            user.setStatus(Status.DELETED);
-         }
-
-         var savedUser = userRepository.save(user);
-
          if(dto.isAccept()) {
 
-            final var enableUserCmd = new UpdateUserStatusCommand(Status.ACTIVE.getCode(), Integer.parseInt(savedUser.getId()));
+            invitation.setStatus(InvitationStatus.ACCEPTED);
 
-            commandBus.handle(enableUserCmd);
+            var updatedInvitation = invitationRepository.save(invitation);
+
+            IGRPUserEntity user = new IGRPUserEntity();
+            user.setEmail(command.getUserinvitationresponsedto().getEmail());
+            user.setExternalId(providerUserOpt.get().getExternalId());
+
+            var savedUser = userRepository.save(user);
+
+            for(var role : invitation.getRoles()) {
+
+               var roleEntity = roleRepository.findById(role.getId()).orElseThrow(() -> IgrpResponseStatusException.of(
+                       HttpStatus.NOT_FOUND,
+                       "Role with ID <%s> was not found".formatted(role.getId())
+               ));
+
+               if(roleEntity.getUsers() == null) {
+                  roleEntity.setUsers(new HashSet<>());
+               }
+               roleEntity.getUsers().add(savedUser);
+               roleRepository.save(roleEntity);
+            }
 
             try {
 
@@ -118,9 +128,18 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
             } catch (Exception e) {
                LOGGER.error("Invitation Email failed", e);
             }
-         }
 
-         return ResponseEntity.ok(userMapper.toDto(savedUser));
+            return ResponseEntity.ok(invitationMapper.toDto(updatedInvitation));
+
+         } else {
+
+            invitation.setStatus(InvitationStatus.REJECTED);
+            invitation.setComments(dto.getObservation());
+            invitationRepository.save(invitation);
+
+            return ResponseEntity.noContent().build();
+
+         }
 
       } else {
 

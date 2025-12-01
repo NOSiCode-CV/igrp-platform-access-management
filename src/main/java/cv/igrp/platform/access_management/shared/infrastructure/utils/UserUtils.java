@@ -3,9 +3,11 @@ package cv.igrp.platform.access_management.shared.infrastructure.utils;
 import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -153,6 +155,19 @@ public class UserUtils {
         }
 
         return result;
+    }
+
+    public String constructInvitationUrl(String appCenterUrl, String token) {
+
+        if (appCenterUrl.isBlank())
+            throw IgrpResponseStatusException.of(
+                    HttpStatus.BAD_REQUEST,
+                    "App Center URL is not configured",
+                    "Please configure the IGRP_APP_CENTER_URL environment variable."
+            );
+
+        return "%s/accept/invite?token=%s".formatted(appCenterUrl, token);
+
     }
 
 }

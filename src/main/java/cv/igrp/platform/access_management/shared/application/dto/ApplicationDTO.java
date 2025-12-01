@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import java.net.URI;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -67,6 +68,9 @@ public class ApplicationDTO  {
   
   
   private String lastModifiedDate ;
+  
+  
+  private LocalDateTime lastAccess ;
   
   
   private List<String> departments = new ArrayList<>();

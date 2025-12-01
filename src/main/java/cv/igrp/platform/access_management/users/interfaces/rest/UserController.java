@@ -24,6 +24,7 @@ import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.UserInvitationResponseDTO;
+import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
 import cv.igrp.platform.access_management.shared.application.dto.InviteUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
@@ -70,9 +71,8 @@ public class UserController {
 
       final var query = new GetUserQuery(id);
 
-      ResponseEntity<IGRPUserDTO> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
@@ -112,9 +112,8 @@ public class UserController {
 
       final var command = new AddRolesToUserCommand(addRolesToUserRequest, id, departmentCode);
 
-       ResponseEntity<?> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
@@ -144,9 +143,8 @@ public class UserController {
 
       final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, id, departmentCode);
 
-       ResponseEntity<List<RoleDTO>> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
@@ -176,9 +174,8 @@ public class UserController {
 
       final var query = new GetUserRolesQuery(id);
 
-      ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_LIST)")
@@ -212,9 +209,8 @@ public class UserController {
 
       final var query = new GetUsersQuery(applicationCode, departmentCode, name, id, email);
 
-      ResponseEntity<List<IGRPUserDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PostMapping(
@@ -230,22 +226,21 @@ public class UserController {
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
-                  implementation = IGRPUserDTO.class,
+                  implementation = InvitationDTO.class,
                   type = "object")
           )
       )
     }
   )
   
-  public ResponseEntity<IGRPUserDTO> respondUserInvitation(@Valid @RequestBody UserInvitationResponseDTO respondUserInvitationRequest
-    )
+  public ResponseEntity<InvitationDTO> respondUserInvitation(@Valid @RequestBody UserInvitationResponseDTO respondUserInvitationRequest
+    , @RequestParam(value = "token") String token)
   {
 
-      final var command = new RespondUserInvitationCommand(respondUserInvitationRequest);
+      final var command = new RespondUserInvitationCommand(respondUserInvitationRequest, token);
 
-       ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_UPDATE)")
@@ -275,9 +270,8 @@ public class UserController {
 
       final var command = new UpdateUserCommand(updateUserRequest, id);
 
-       ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @GetMapping(
@@ -306,9 +300,8 @@ public class UserController {
 
       final var query = new GetCurrentUserQuery();
 
-      ResponseEntity<IGRPUserDTO> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_CREATE)")
@@ -325,22 +318,83 @@ public class UserController {
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
-                  implementation = IGRPUserDTO.class,
+                  implementation = InvitationDTO.class,
                   type = "object")
           )
       )
     }
   )
   
-  public ResponseEntity<IGRPUserDTO> inviteUser(@Valid @RequestBody InviteUserDTO inviteUserRequest
+  public ResponseEntity<InvitationDTO> inviteUser(@Valid @RequestBody InviteUserDTO inviteUserRequest
     )
   {
 
       final var command = new InviteUserCommand(inviteUserRequest);
 
-       ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
+   @DeleteMapping(
+   value = "users/invite/{id}"
+  )
+  @Operation(
+    summary = "Cancel user invitation",
+    description = "This Permission is required: igrp.user.manage",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = InvitationDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<InvitationDTO> cancelUserInvitation(
+    @PathVariable(value = "id") Integer id)
+  {
+
+      final var command = new CancelUserInvitationCommand(id);
+
+      return commandBus.send(command);
+
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
+   @PutMapping(
+   value = "users/invite/{id}"
+  )
+  @Operation(
+    summary = "Resend user invitation",
+    description = "This Permission is required: igrp.user.manage",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = InvitationDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<InvitationDTO> resendUserInvitation(
+    @PathVariable(value = "id") Integer id)
+  {
+
+      final var command = new ResendUserInvitationCommand(id);
+
+      return commandBus.send(command);
+
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
@@ -370,9 +424,8 @@ public class UserController {
 
       final var command = new UpdateUserStatusCommand(value, id);
 
-       ResponseEntity<IGRPUserDTO> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @GetMapping(
@@ -396,14 +449,14 @@ public class UserController {
   )
   
   public ResponseEntity<List<ApplicationDTO>> getCurrentUserApplications(
-    @RequestParam(value = "applicationCode", required = false) String applicationCode)
+    @RequestParam(value = "applicationCode", required = false) String applicationCode,
+    @RequestParam(value = "applicationName", required = false) String applicationName)
   {
 
-      final var query = new GetCurrentUserApplicationsQuery(applicationCode);
+      final var query = new GetCurrentUserApplicationsQuery(applicationCode, applicationName);
 
-      ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @GetMapping(
@@ -432,9 +485,8 @@ public class UserController {
 
       final var query = new GetCurrentUserApplicationMenusQuery(menuCode, applicationCode);
 
-      ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @GetMapping(
@@ -463,9 +515,8 @@ public class UserController {
 
       final var query = new GetCurrentUserDepartmentsQuery(departmentCode);
 
-      ResponseEntity<List<DepartmentDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @GetMapping(
@@ -494,9 +545,8 @@ public class UserController {
 
       final var query = new GetCurrentUserDepartmentRolesQuery(roleCode, departmentCode);
 
-      ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
@@ -521,14 +571,14 @@ public class UserController {
   )
   
   public ResponseEntity<List<ApplicationDTO>> getUserApplications(
-    @RequestParam(value = "applicationCode", required = false) String applicationCode, @PathVariable(value = "id") Integer id)
+    @RequestParam(value = "applicationCode", required = false) String applicationCode,
+    @RequestParam(value = "applicationName", required = false) String applicationName, @PathVariable(value = "id") Integer id)
   {
 
-      final var query = new GetUserApplicationsQuery(applicationCode, id);
+      final var query = new GetUserApplicationsQuery(applicationCode, applicationName, id);
 
-      ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
@@ -558,9 +608,8 @@ public class UserController {
 
       final var query = new GetUserApplicationMenusQuery(menuCode, id, applicationCode);
 
-      ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
@@ -590,9 +639,8 @@ public class UserController {
 
       final var query = new GetUserDepartmentsQuery(departmentCode, id);
 
-      ResponseEntity<List<DepartmentDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
@@ -622,9 +670,222 @@ public class UserController {
 
       final var query = new GetUserDepartmentRolesQuery(roleCode, id, departmentCode);
 
-      ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
+  }
+
+   @PostMapping(
+   value = "users/me/applications/recent/{applicationCode}"
+  )
+  @Operation(
+    summary = "Register access history",
+    description = "Register access history",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> registerAccessHistory(
+    @PathVariable(value = "applicationCode") String applicationCode)
+  {
+
+      final var command = new RegisterAccessHistoryCommand(applicationCode);
+
+      return commandBus.send(command);
+
+  }
+
+   @GetMapping(
+   value = "users/me/applications/recent"
+  )
+  @Operation(
+    summary = "Get recent applications",
+    description = "Get recent applications",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ApplicationDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<ApplicationDTO>> getRecentApplications(
+    @RequestParam(value = "applicationCode", required = false) String applicationCode,
+    @RequestParam(value = "applicationName", required = false) String applicationName,
+    @RequestParam(value = "max", required = false) Integer max)
+  {
+
+      final var query = new GetRecentApplicationsQuery(applicationCode, applicationName, max);
+
+      return queryBus.handle(query);
+
+  }
+
+   @GetMapping(
+   value = "users/me/applications/favorites"
+  )
+  @Operation(
+    summary = "Get favorite applications",
+    description = "Get favorite applications",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = ApplicationDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<ApplicationDTO>> getFavoriteApplications(
+    @RequestParam(value = "applicationCode", required = false) String applicationCode,
+    @RequestParam(value = "applicationName", required = false) String applicationName)
+  {
+
+      final var query = new GetFavoriteApplicationsQuery(applicationCode, applicationName);
+
+      return queryBus.handle(query);
+
+  }
+
+   @PostMapping(
+   value = "users/me/applications/favorites/{applicationCode}"
+  )
+  @Operation(
+    summary = "Add favorite application",
+    description = "Add favorite application",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> addFavoriteApplication(
+    @PathVariable(value = "applicationCode") String applicationCode)
+  {
+
+      final var command = new AddFavoriteApplicationCommand(applicationCode);
+
+      return commandBus.send(command);
+
+  }
+
+   @DeleteMapping(
+   value = "users/me/applications/favorites/{applicationCode}"
+  )
+  @Operation(
+    summary = "Remove favorite application",
+    description = "Remove favorite application",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> removeFavoriteApplication(
+    @PathVariable(value = "applicationCode") String applicationCode)
+  {
+
+      final var command = new RemoveFavoriteApplicationCommand(applicationCode);
+
+      return commandBus.send(command);
+
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
+   @GetMapping(
+   value = "users/invite"
+  )
+  @Operation(
+    summary = "Get user invitations",
+    description = "This Permission is required: igrp.user.manage",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = InvitationDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<InvitationDTO>> getUserInvitations(
+    @RequestParam(value = "email", required = false) String email)
+  {
+
+      final var query = new GetUserInvitationsQuery(email);
+
+      return queryBus.handle(query);
+
+  }
+
+   @GetMapping(
+   value = "users/invite/{id}"
+  )
+  @Operation(
+    summary = "Get user invitation",
+    description = "Get user invitation",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = InvitationDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<InvitationDTO> getUserInvitation(
+    @PathVariable(value = "id") Integer id)
+  {
+
+      final var query = new GetUserInvitationQuery(id);
+
+      return queryBus.handle(query);
+
   }
 
 }
