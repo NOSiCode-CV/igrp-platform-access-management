@@ -13,6 +13,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
@@ -50,9 +51,9 @@ public class GetFavoriteApplicationsQueryHandler implements QueryHandler<GetFavo
                 () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
         );
 
-        var favoriteApps = favoriteApplicationEntityRepository.findByUserId(Integer.valueOf(user.getId())).orElseThrow(
-                        () -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Favorite applications for user with ID " + user.getId() + " not found")
-        );
+        var favoriteApps = favoriteApplicationEntityRepository.findByUserId(Integer.valueOf(user.getId())).orElse(null);
+
+        if(favoriteApps == null) return ResponseEntity.ok(new ArrayList<>());
 
         var applicationDTOs = favoriteApps.getApplications()
                 .stream()
