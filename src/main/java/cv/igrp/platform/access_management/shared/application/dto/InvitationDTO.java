@@ -10,7 +10,10 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @NoArgsConstructor
@@ -44,5 +47,8 @@ public class InvitationDTO  {
   
   
   private String invitationUrl ;
+  
+  @Valid
+  private List<CodeDescriptionDTO> roles = new ArrayList<>();
 
 }

@@ -166,7 +166,7 @@ public class UserUtils {
                     "Please configure the IGRP_APP_CENTER_URL environment variable."
             );
 
-        return "%s/accept/invite?token=%s".formatted(appCenterUrl, token);
+        return "%s/invite/accept?token=%s".formatted(appCenterUrl, token);
 
     }
 

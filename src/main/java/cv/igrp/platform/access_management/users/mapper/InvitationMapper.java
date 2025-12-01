@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.users.mapper;
 
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.InvitationEntity;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,12 @@ public class InvitationMapper {
         dto.setExpiry(invitation.getExpiry());
         dto.setComments(invitation.getComments());
         dto.setInvitedBy(invitation.getCreatedBy());
+        dto.setRoles(invitation.getRoles().stream().map(it -> {
+            var output = new CodeDescriptionDTO();
+            output.setCode(it.getCode());
+            output.setDescription(it.getName());
+            return output;
+        }).toList());
         return dto;
     }
 

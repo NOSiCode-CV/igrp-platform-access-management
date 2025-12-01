@@ -24,6 +24,13 @@ public interface InvitationEntityRepository extends
 
     Optional<InvitationEntity> findByTokenAndStatus(String token, InvitationStatus status);
 
+    Optional<InvitationEntity> findByToken(String token);
+
+    default InvitationEntity findByTokenOrThrow(String token) {
+        return this.findByToken(token)
+                .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "InvitationEntity not found for token: " + token));
+    }
+
     default InvitationEntity findByTokenAndStatusPending(String token) {
         return this.findByTokenAndStatus(token, InvitationStatus.PENDING)
                 .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "InvitationEntity not found for token: " + token));

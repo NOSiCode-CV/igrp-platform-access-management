@@ -888,4 +888,34 @@ public class UserController {
 
   }
 
+   @GetMapping(
+   value = "users/invite/by-token/{token}"
+  )
+  @Operation(
+    summary = "Get user invitation by token",
+    description = "Get user invitation by token",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = InvitationDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<InvitationDTO> getUserInvitationByToken(
+    @PathVariable(value = "token") String token)
+  {
+
+      final var query = new GetUserInvitationByTokenQuery(token);
+
+      return queryBus.handle(query);
+
+  }
+
 }
