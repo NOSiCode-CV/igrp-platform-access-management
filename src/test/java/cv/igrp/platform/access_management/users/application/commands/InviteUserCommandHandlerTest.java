@@ -6,6 +6,7 @@ import cv.igrp.framework.notifications.core.exception.NotificationException;
 import cv.igrp.framework.notifications.core.model.Notification;
 import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
 import cv.igrp.platform.access_management.shared.application.dto.InviteUserDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
@@ -131,12 +132,11 @@ class InviteUserCommandHandlerTest {
 
         when(userMapper.toDto(savedEntity)).thenReturn(expectedDto);
 
-        ResponseEntity<IGRPUserDTO> response = underTest.handle(command);
+        ResponseEntity<InvitationDTO> response = underTest.handle(command);
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(expectedDto.getUsername(), response.getBody().getUsername());
         assertEquals(expectedDto.getEmail(), response.getBody().getEmail());
 
         verify(userRepository).existsByEmail("john@nosi.cv");

@@ -8,6 +8,7 @@ import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.exception.NotificationException;
 import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
 import cv.igrp.platform.access_management.shared.application.dto.UserInvitationResponseDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
@@ -46,6 +47,8 @@ class RespondUserInvitationCommandHandlerTest {
 
     private IGRPUserEntity userEntity;
 
+    String token = "valid-token";
+
     @BeforeEach
     void setUp() {
         userEntity = new IGRPUserEntity();
@@ -60,7 +63,7 @@ class RespondUserInvitationCommandHandlerTest {
         dto.setEmail("test@example.com");
         dto.setAccept(true);
 
-        RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto);
+        RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto, token);
 
         when(userRepository.existsByEmail(dto.getEmail())).thenReturn(true);
         when(adapter.resolveUser(dto.getEmail())).thenReturn(Optional.of(userEntity));
@@ -69,7 +72,7 @@ class RespondUserInvitationCommandHandlerTest {
         when(userMapper.toDto(userEntity)).thenReturn(new IGRPUserDTO());
 
         // Act
-        ResponseEntity<IGRPUserDTO> response = handler.handle(command);
+        ResponseEntity<InvitationDTO> response = handler.handle(command);
 
         // Assert
         assertNotNull(response);
@@ -86,7 +89,7 @@ class RespondUserInvitationCommandHandlerTest {
         dto.setEmail("test@example.com");
         dto.setAccept(false);
 
-        RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto);
+        RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto, token);
 
         when(userRepository.existsByEmail(dto.getEmail())).thenReturn(true);
         when(adapter.resolveUser(dto.getEmail())).thenReturn(Optional.of(userEntity));
@@ -95,7 +98,7 @@ class RespondUserInvitationCommandHandlerTest {
         when(userMapper.toDto(userEntity)).thenReturn(new IGRPUserDTO());
 
         // Act
-        ResponseEntity<IGRPUserDTO> response = handler.handle(command);
+        ResponseEntity<InvitationDTO> response = handler.handle(command);
 
         // Assert
         assertNotNull(response);
@@ -111,7 +114,7 @@ class RespondUserInvitationCommandHandlerTest {
         UserInvitationResponseDTO dto = new UserInvitationResponseDTO();
         dto.setEmail("unknown@example.com");
         dto.setAccept(true);
-        RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto);
+        RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto, token);
 
         when(userRepository.existsByEmail(dto.getEmail())).thenReturn(false);
 
@@ -127,7 +130,7 @@ class RespondUserInvitationCommandHandlerTest {
         UserInvitationResponseDTO dto = new UserInvitationResponseDTO();
         dto.setEmail("test@example.com");
         dto.setAccept(true);
-        RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto);
+        RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto, token);
 
         when(userRepository.existsByEmail(dto.getEmail())).thenReturn(true);
         when(adapter.resolveUser(dto.getEmail())).thenReturn(Optional.empty());

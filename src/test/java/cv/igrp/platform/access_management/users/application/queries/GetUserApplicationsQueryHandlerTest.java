@@ -42,7 +42,7 @@ public class GetUserApplicationsQueryHandlerTest {
     @Test
     void handle_shouldReturnApplications_whenUserExists() {
 
-        GetUserApplicationsQuery query = new GetUserApplicationsQuery("APP", 10);
+        GetUserApplicationsQuery query = new GetUserApplicationsQuery("APP", null, 10);
 
         IGRPUserEntity user = new IGRPUserEntity();
         user.setId(10);
@@ -70,7 +70,7 @@ public class GetUserApplicationsQueryHandlerTest {
     @Test
     void handle_shouldFilterApplicationsByCode() {
 
-        GetUserApplicationsQuery query = new GetUserApplicationsQuery("CRM", 99);
+        GetUserApplicationsQuery query = new GetUserApplicationsQuery("CRM", null, 99);
 
         IGRPUserEntity user = new IGRPUserEntity();
         user.setId(99);
@@ -104,7 +104,7 @@ public class GetUserApplicationsQueryHandlerTest {
     @Test
     void handle_shouldReturnEmptyList_whenNoApplications() {
 
-        GetUserApplicationsQuery query = new GetUserApplicationsQuery(null, 5);
+        GetUserApplicationsQuery query = new GetUserApplicationsQuery(null, null, 5);
 
         IGRPUserEntity user = new IGRPUserEntity();
         user.setId(5);
@@ -124,7 +124,7 @@ public class GetUserApplicationsQueryHandlerTest {
     @Test
     void handle_shouldThrow_whenUserNotFound() {
 
-        GetUserApplicationsQuery query = new GetUserApplicationsQuery(null, 777);
+        GetUserApplicationsQuery query = new GetUserApplicationsQuery(null, null, 777);
 
         when(userRepository.findById(777)).thenReturn(Optional.empty());
 

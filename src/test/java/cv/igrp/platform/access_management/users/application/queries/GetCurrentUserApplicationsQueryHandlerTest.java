@@ -46,7 +46,7 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
   @Test
   void handle_shouldReturnApplications_whenUserExists() {
 
-    GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery("APP");
+    GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery("APP", null);
 
     IGRPUserEntity mockUser = new IGRPUserEntity();
     mockUser.setExternalId("sub123");
@@ -76,7 +76,7 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
   @Test
   void handle_shouldFilterApplicationsByCode() {
 
-    GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery("IGRP");
+    GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery("IGRP", null);
 
     IGRPUserEntity user = new IGRPUserEntity();
     user.setExternalId("abc");
@@ -112,7 +112,7 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
   @Test
   void handle_shouldReturnEmptyList_whenNoApplications() {
 
-    GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery(null);
+    GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery(null, null);
 
     IGRPUserEntity user = new IGRPUserEntity();
     user.setExternalId("sub888");
@@ -133,7 +133,7 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
   @Test
   void handle_shouldThrow_whenUserNotFound() {
 
-    GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery(null);
+    GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery(null, null);
 
     when(authenticationHelper.getSub()).thenReturn("missing");
     when(userRepository.findByExternalId("missing")).thenReturn(Optional.empty());
