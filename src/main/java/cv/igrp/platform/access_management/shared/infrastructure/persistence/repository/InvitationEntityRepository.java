@@ -40,6 +40,6 @@ public interface InvitationEntityRepository extends
      *
      * @return a list of invitation entities ordered by last modified date in descending order
      */
-    List<InvitationEntity> findAllByOrderByLastModifiedDateDesc();
+    List<InvitationEntity> findAllByStatusNotOrderByLastModifiedDateDesc(InvitationStatus status);
 
 }

@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.users.application.queries;
 
+import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils;
 import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
@@ -38,7 +39,7 @@ public class GetUserInvitationsQueryHandler implements QueryHandler<GetUserInvit
 
         LOGGER.info("Retrieving user invitations with email filter: {}", query.getEmail());
 
-        var invitations = invitationRepository.findAllByOrderByLastModifiedDateDesc()
+        var invitations = invitationRepository.findAllByStatusNotOrderByLastModifiedDateDesc(InvitationStatus.ACCEPTED)
                 .stream()
                 .filter(it -> query.getEmail() == null || it.getEmail().equals(query.getEmail()))
                 .map(it -> {
