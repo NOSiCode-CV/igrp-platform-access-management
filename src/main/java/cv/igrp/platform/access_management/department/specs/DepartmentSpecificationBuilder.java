@@ -1,15 +1,13 @@
 package cv.igrp.platform.access_management.department.specs;
 
 import cv.igrp.platform.access_management.department.application.queries.GetDepartmentsQuery;
+import cv.igrp.platform.access_management.m2m.application.commands.GetDepartmentForBusinessCommand;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.spring.Scoped;
 import cv.igrp.platform.access_management.shared.security.ScopeContext;
-import jakarta.persistence.criteria.Expression;
-import jakarta.persistence.criteria.Join;
-import jakarta.persistence.criteria.Predicate;
-import jakarta.persistence.criteria.Root;
+import jakarta.persistence.criteria.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
@@ -60,11 +58,43 @@ public class DepartmentSpecificationBuilder {
         };
     }
 
+    public Specification<DepartmentEntity> buildSpecification(GetDepartmentForBusinessCommand query) {
+
+        return (root, _, cb) -> {
+
+            List<Predicate> predicates = new ArrayList<>();
+
+            if (query.getParentCode() != null) {
+                Join<DepartmentEntity, DepartmentEntity> parentJoin = root.join("parentId", JoinType.INNER);
+                predicates.add(cb.equal(parentJoin.get("code"), query.getParentCode()));
+            }
+
+            if (!query.isIncludeChildrenDepartments() && query.getParentCode() == null) {
+                predicates.add(cb.isNull(root.get("parentId")));
+            }
+
+            if (query.getGetDepartmentForBusinessRequest() != null && !query.getGetDepartmentForBusinessRequest().isEmpty()) {
+                predicates.add(cb.in(root.get("code")).value(query.getGetDepartmentForBusinessRequest()));
+            }
+
+            if (query.isActiveOnly()) {
+                predicates.add(cb.equal(root.get("status"), DepartmentStatus.ACTIVE));
+            }
+
+            predicates.add(cb.notEqual(root.get("status"), DepartmentStatus.DELETED));
+            predicates.add(cb.notEqual(root.get("code"), IGRP_DEPARTMENT));
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+
+        };
+
+    }
+
     private void applyScope(List<Predicate> predicates, Root<DepartmentEntity> root, ScopeContext context) {
         Expression<Integer> deptIdPath = root.get("id");
 
         // Add scope filter if available
-        if(!context.isSuperAdmin()) {
+        if (!context.isSuperAdmin()) {
             predicates.add(deptIdPath.in(context.getDepartmentIds()));
         }
 

@@ -100,7 +100,187 @@
           }
         }
       }
+    },
+    {
+      "actionName": "getUsersForBusiness",
+      "path": "m2m/users",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "collectionType": "list",
+              "name": "ids"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "IGRPUserDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "boolean",
+          "name": "activeOnly",
+          "description": "Active Only User Flag",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "description": "Department Code",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "roleCode",
+          "description": "Role Code",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "permissionName",
+          "description": "Permission Name",
+          "isRequired": false
+        },
+        {
+          "type": "boolean",
+          "name": "includeChildrenDepartments",
+          "description": "Include Children Departments Flag",
+          "isRequired": false
+        },
+        {
+          "type": "boolean",
+          "name": "includeChildrenRoles",
+          "description": "Include Children Roles Flag",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "actionName": "getDepartmentForBusiness",
+      "path": "m2m/departments",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "collectionType": "list",
+              "name": "codes"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "DepartmentDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "boolean",
+          "name": "activeOnly",
+          "description": "Active Only Department Flag",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "parentCode",
+          "description": "Parent Department Code",
+          "isRequired": false
+        },
+        {
+          "type": "boolean",
+          "name": "includeChildrenDepartments",
+          "description": "Include Children Departments Flag",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "actionName": "getRolesForBusiness",
+      "path": "m2m/roles",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "collectionType": "list",
+              "name": "codes"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "boolean",
+          "name": "activeOnly",
+          "description": "Active Only Role Flag",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "parentCode",
+          "description": "Parent Role Code",
+          "isRequired": false
+        },
+        {
+          "type": "boolean",
+          "name": "includeChildrenRoles",
+          "description": "Include Children Roles Flag",
+          "isRequired": false
+        }
+      ]
     }
   ],
-  "id": "jws7h4f2af-syncPermissions"
+  "id": "jws7h4f2af-syncPermissions-getUsersForBusiness-getUsersForBusiness-getDepartmentForBusiness-getRolesForBusiness"
 }

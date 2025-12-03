@@ -21,6 +21,9 @@ import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
+import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 
 @IgrpController
 @RestController
@@ -61,9 +64,8 @@ public class M2MController {
 
       final var command = new SyncPermissionsCommand(syncPermissionsRequest);
 
-       ResponseEntity<String> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PostMapping(
@@ -92,9 +94,8 @@ public class M2MController {
 
       final var command = new SyncResourcesCommand(syncResourcesRequest);
 
-       ResponseEntity<String> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PostMapping(
@@ -123,9 +124,108 @@ public class M2MController {
 
       final var command = new SyncApplicationsCommand(syncApplicationsRequest);
 
-       ResponseEntity<String> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
+  }
+
+   @PostMapping(
+   value = "m2m/users"
+  )
+  @Operation(
+    summary = "Get users for business",
+    description = "Get users for business",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = IGRPUserDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<IGRPUserDTO>> getUsersForBusiness(@RequestBody List<String> getUsersForBusinessRequest
+    , @RequestParam(value = "activeOnly", required = false) boolean activeOnly,
+    @RequestParam(value = "applicationCode", required = false) String applicationCode,
+    @RequestParam(value = "departmentCode", required = false) String departmentCode,
+    @RequestParam(value = "roleCode", required = false) String roleCode,
+    @RequestParam(value = "permissionName", required = false) String permissionName,
+    @RequestParam(value = "includeChildrenDepartments", required = false) boolean includeChildrenDepartments,
+    @RequestParam(value = "includeChildrenRoles", required = false) boolean includeChildrenRoles)
+  {
+
+      final var command = new GetUsersForBusinessCommand(getUsersForBusinessRequest, activeOnly, applicationCode, departmentCode, roleCode, permissionName, includeChildrenDepartments, includeChildrenRoles);
+
+      return commandBus.send(command);
+
+  }
+
+   @PostMapping(
+   value = "m2m/departments"
+  )
+  @Operation(
+    summary = "Get department for business",
+    description = "Get department for business",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = DepartmentDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<DepartmentDTO>> getDepartmentForBusiness(@RequestBody List<String> getDepartmentForBusinessRequest
+    , @RequestParam(value = "activeOnly", required = false) boolean activeOnly,
+    @RequestParam(value = "parentCode", required = false) String parentCode,
+    @RequestParam(value = "includeChildrenDepartments", required = false) boolean includeChildrenDepartments)
+  {
+
+      final var command = new GetDepartmentForBusinessCommand(getDepartmentForBusinessRequest, activeOnly, parentCode, includeChildrenDepartments);
+
+      return commandBus.send(command);
+
+  }
+
+   @PostMapping(
+   value = "m2m/roles"
+  )
+  @Operation(
+    summary = "Get roles for business",
+    description = "Get roles for business",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<RoleDTO>> getRolesForBusiness(@RequestBody List<String> getRolesForBusinessRequest
+    , @RequestParam(value = "activeOnly", required = false) boolean activeOnly,
+    @RequestParam(value = "parentCode", required = false) String parentCode,
+    @RequestParam(value = "includeChildrenRoles", required = false) boolean includeChildrenRoles)
+  {
+
+      final var command = new GetRolesForBusinessCommand(getRolesForBusinessRequest, activeOnly, parentCode, includeChildrenRoles);
+
+      return commandBus.send(command);
+
   }
 
 }

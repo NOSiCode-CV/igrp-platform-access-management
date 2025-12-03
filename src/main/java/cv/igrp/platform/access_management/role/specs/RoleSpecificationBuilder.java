@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.role.specs;
 
 import cv.igrp.platform.access_management.department.application.queries.GetRolesQuery;
+import cv.igrp.platform.access_management.m2m.application.commands.GetRolesForBusinessCommand;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.spring.Scoped;
@@ -45,6 +46,46 @@ public class RoleSpecificationBuilder {
 
         // Apply scope
         specs = applyScope(specs, context);
+
+        return specs;
+
+    }
+
+    public Specification<RoleEntity> buildSpecification(GetRolesForBusinessCommand query) {
+
+        Specification<RoleEntity> specs = Specification.allOf();
+
+        if (query.getParentCode() != null) {
+            specs = specs.and((root, _, cb) ->
+                    cb.equal(root.get("parent").get("code"), query.getParentCode())
+            );
+        }
+
+        if (!query.isIncludeChildrenRoles() && query.getParentCode() == null) {
+            specs = specs.and((root, _, cb) ->
+                    cb.isNull(root.get("parent"))
+            );
+        }
+
+        if (query.getGetRolesForBusinessRequest() != null && !query.getGetRolesForBusinessRequest().isEmpty()) {
+            specs = specs.and((root, _, cb) ->
+                    cb.in(root.get("code")).value(query.getGetRolesForBusinessRequest())
+            );
+        }
+
+        if (query.isActiveOnly()) {
+            specs = specs.and((root, _, cb) ->
+                    cb.equal(root.get("status"), Status.ACTIVE)
+            );
+        }
+
+        specs = specs.and((root, _, criteriaBuilder) ->
+                criteriaBuilder.notEqual(root.get("status"), Status.DELETED)
+        );
+
+        specs = specs.and((root, _, criteriaBuilder) ->
+                criteriaBuilder.notEqual(root.get("code"), SUPER_ADMIN_ROLE)
+        );
 
         return specs;
 
