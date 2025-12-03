@@ -22,6 +22,7 @@ import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.platform.access_management.users.application.commands.*;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.UserInvitationResponseDTO;
 import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
@@ -173,6 +174,37 @@ public class UserController {
   {
 
       final var query = new GetUserRolesQuery(id);
+
+      return queryBus.handle(query);
+
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
+   @GetMapping(
+   value = "users/{id}/permissions"
+  )
+  @Operation(
+    summary = "Get user permissions",
+    description = "This Permission is required: igrp.user.view",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = PermissionDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<PermissionDTO>> getUserPermissions(
+    @RequestParam(value = "roleCode", required = false) String roleCode, @PathVariable(value = "id") Integer id)
+  {
+
+      final var query = new GetUserPermissionsQuery(roleCode, id);
 
       return queryBus.handle(query);
 
@@ -544,6 +576,66 @@ public class UserController {
   {
 
       final var query = new GetCurrentUserDepartmentRolesQuery(roleCode, departmentCode);
+
+      return queryBus.handle(query);
+
+  }
+
+   @GetMapping(
+   value = "users/me/permissions"
+  )
+  @Operation(
+    summary = "Get current user permissions",
+    description = "Get current user permissions",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = PermissionDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<PermissionDTO>> getCurrentUserPermissions(
+    @RequestParam(value = "roleCode", required = false) String roleCode)
+  {
+
+      final var query = new GetCurrentUserPermissionsQuery(roleCode);
+
+      return queryBus.handle(query);
+
+  }
+
+   @GetMapping(
+   value = "users/me/roles"
+  )
+  @Operation(
+    summary = "Get current user roles",
+    description = "Get current user roles",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<RoleDTO>> getCurrentUserRoles(
+    @RequestParam(value = "departmentCode", required = false) String departmentCode)
+  {
+
+      final var query = new GetCurrentUserRolesQuery(departmentCode);
 
       return queryBus.handle(query);
 
