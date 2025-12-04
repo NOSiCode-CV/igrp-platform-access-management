@@ -21,6 +21,7 @@ import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
@@ -123,6 +124,36 @@ public class M2MController {
   {
 
       final var command = new SyncApplicationsCommand(syncApplicationsRequest);
+
+      return commandBus.send(command);
+
+  }
+
+   @PostMapping(
+   value = "m2m/sync/applications/{code}/menus"
+  )
+  @Operation(
+    summary = "Sync application menus",
+    description = "Sync application menus",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> syncApplicationMenus(@Valid @RequestBody List<MenuEntryDTO> syncApplicationMenusRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      final var command = new SyncApplicationMenusCommand(syncApplicationMenusRequest, code);
 
       return commandBus.send(command);
 

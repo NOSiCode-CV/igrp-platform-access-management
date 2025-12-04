@@ -102,6 +102,45 @@
       }
     },
     {
+      "actionName": "syncApplicationMenus",
+      "path": "m2m/sync/applications/{code}/menus",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "MenuEntryDTO",
+              "collectionType": "list",
+              "name": "data",
+              "objectType": "dto",
+              "module": "shared"
+            }
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ]
+    },
+    {
       "actionName": "getUsersForBusiness",
       "path": "m2m/users",
       "method": "POST",
@@ -282,5 +321,5 @@
       ]
     }
   ],
-  "id": "jws7h4f2af-syncPermissions-getUsersForBusiness-getUsersForBusiness-getDepartmentForBusiness-getRolesForBusiness"
+  "id": "jws7h4f2af-syncPermissions-getUsersForBusiness-getUsersForBusiness-getDepartmentForBusiness-getRolesForBusiness-syncApplicationMenus"
 }
