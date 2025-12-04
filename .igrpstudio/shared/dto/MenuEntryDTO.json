@@ -205,8 +205,8 @@
     },
     {
       "name": "roles",
-      "objectType": "java",
-      "type": "string",
+      "objectType": "dto",
+      "type": "RoleDepartmentDTO",
       "required": false,
       "before": false,
       "after": false,
@@ -214,7 +214,8 @@
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false,
-      "collectionType": "list"
+      "collectionType": "list",
+      "module": "shared"
     }
   ],
   "id": "my09bz5kcp"

@@ -115,6 +115,19 @@
       "primaryKey": false,
       "collectionType": "list",
       "module": "shared"
+    },
+    {
+      "name": "department",
+      "objectType": "dto",
+      "type": "CodeDescriptionDTO",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "module": "shared"
     }
   ],
   "id": "6rft8f7y4i"

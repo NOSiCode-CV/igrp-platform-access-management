@@ -33,6 +33,7 @@ public class InvitationMapper {
             output.setDescription(it.getName());
             return output;
         }).toList());
+        invitation.getRoles().stream().findFirst().ifPresent(it -> dto.setDepartment(new CodeDescriptionDTO(it.getDepartment().getCode(), it.getDepartment().getName())));
         return dto;
     }
 

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cv.igrp.platform.access_management.app.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
+import cv.igrp.platform.access_management.shared.application.dto.RoleDepartmentDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
@@ -88,6 +89,8 @@ public class MenuEntrySyncService {
             MenuEntryEntity entity = resultByCode.get(dto.getCode());
             if (entity == null) {
                 entity = menuMapper.toEntity(dto);
+                // Ensure we always persist as NEW entity and never try to merge a detached one coming with a client-provided id
+                entity.setId(null);
                 entity.setApplicationId(app);
             } else {
                 applyUpdatableFields(entity, dto);
@@ -99,7 +102,7 @@ public class MenuEntrySyncService {
             if (dto.getRoles() != null) {
                 Set<RoleEntity> newRoles = dto.getRoles().stream()
                         .filter(Objects::nonNull)
-                        .map(String::trim)
+                        .map(RoleDepartmentDTO::roleCode)
                         .filter(s -> !s.isEmpty())
                         .map(roleRepository::findIdByCode)
                         .filter(Objects::nonNull)
@@ -115,9 +118,13 @@ public class MenuEntrySyncService {
             resultByCode.put(dto.getCode(), entity);
         }
 
-        // Persist creations/updates to get IDs for parent linking
-        List<MenuEntryEntity> toSave = new ArrayList<>(resultByCode.values());
-        menuRepository.saveAll(toSave);
+        // Persist only newly created entities to get IDs for parent linking
+        List<MenuEntryEntity> newEntities = resultByCode.values().stream()
+                .filter(e -> e.getId() == null)
+                .toList();
+        if (!newEntities.isEmpty()) {
+            menuRepository.saveAll(newEntities);
+        }
 
         // Second pass: resolve parents by parentCode
         for (MenuEntryDTO dto : incoming) {
@@ -126,7 +133,7 @@ public class MenuEntrySyncService {
             MenuEntryEntity parent = resultByCode.get(dto.getParentCode());
             if (child != null && parent != null) {
                 child.setParentId(parent);
-                menuRepository.save(child);
+                // no explicit save required for managed entities within @Transactional
             }
         }
 
@@ -136,13 +143,12 @@ public class MenuEntrySyncService {
             if (code != null && !incomingCodes.contains(code)) {
                 if (existing.getStatus() != Status.DELETED) {
                     existing.setStatus(Status.DELETED);
-                    menuRepository.save(existing);
                 }
             }
         }
 
-        logger.info("[MenuSync] Synchronization for application '{}' completed. Incoming: {}, Existing updated: {}.",
-                applicationCode, incoming.size(), toSave.size());
+        logger.info("[MenuSync] Synchronization for application '{}' completed. Incoming: {}, Newly created: {}.",
+                applicationCode, incoming.size(), newEntities.size());
     }
 
     private void applyUpdatableFields(MenuEntryEntity entity, MenuEntryDTO dto) {
@@ -178,7 +184,7 @@ public class MenuEntrySyncService {
                 m.put("url", d.getUrl());
                 m.put("pageSlug", d.getPageSlug());
                 m.put("parentCode", d.getParentCode());
-                List<String> roles = d.getRoles() == null ? List.of() : d.getRoles().stream().sorted().toList();
+                List<String> roles = d.getRoles() == null ? List.of() : d.getRoles().stream().map(RoleDepartmentDTO::roleCode).sorted().toList();
                 m.put("roles", roles);
                 return m;
             }).toList();

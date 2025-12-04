@@ -6,8 +6,10 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceItemDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceItemEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceItemEntityRepository;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,13 +25,16 @@ public class ResourceSyncService {
     private static final Logger logger = LoggerFactory.getLogger(ResourceSyncService.class);
 
     private final ResourceEntityRepository resourceRepository;
+    private final ResourceItemEntityRepository resourceItemEntityRepository;
     private final PermissionEntityRepository permissionRepository;
     private final ResourceMapper resourceMapper;
 
     public ResourceSyncService(ResourceEntityRepository resourceRepository,
+                               ResourceItemEntityRepository resourceItemEntityRepository,
                                PermissionEntityRepository permissionRepository,
                                ResourceMapper resourceMapper) {
         this.resourceRepository = resourceRepository;
+        this.resourceItemEntityRepository = resourceItemEntityRepository;
         this.permissionRepository = permissionRepository;
         this.resourceMapper = resourceMapper;
     }
@@ -67,7 +72,11 @@ public class ResourceSyncService {
         // Update items
         if (dto.getItems() != null) {
             Set<String> incomingNames = dto.getItems().stream().map(ResourceItemDTO::getName).collect(Collectors.toSet());
-            existing.getItems().removeIf(item -> !incomingNames.contains(item.getName()));
+            for (ResourceItemEntity item : existing.getItems()) {
+                if (!incomingNames.contains(item.getName())) {
+                    resourceItemEntityRepository.deleteById(item.getId());
+                }
+            }
 
             for (ResourceItemDTO itemDto : dto.getItems()) {
                 existing.getItems().stream()

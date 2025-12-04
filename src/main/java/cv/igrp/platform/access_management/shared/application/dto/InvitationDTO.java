@@ -50,5 +50,8 @@ public class InvitationDTO  {
   
   @Valid
   private List<CodeDescriptionDTO> roles = new ArrayList<>();
+  
+  @Valid
+  private CodeDescriptionDTO department ;
 
 }
