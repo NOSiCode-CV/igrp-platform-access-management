@@ -38,7 +38,7 @@ public class GetPrivateFileUrlQueryHandler implements QueryHandler<GetPrivateFil
 
     @IgrpQueryHandler
     public ResponseEntity<FileUrlDTO> handle(GetPrivateFileUrlQuery query) {
-        var filePath = query.getPrivateFilePath();
+        var filePath = query.getFilePath();
 
         if (filePath == null || filePath.isBlank()) {
             throw IgrpResponseStatusException.of(

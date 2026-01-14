@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.Optional;
 
 
@@ -51,7 +52,7 @@ public class RoleValidator {
         if(department != null && department.getRoles() != null){
             Optional<RoleEntity> optionalRoleSameCode = department.getRoles()
                     .stream()
-                    .filter(role -> !role.getStatus().equals(Status.DELETED) && role.getCode().equalsIgnoreCase(roleDTO.getCode()))
+                    .filter(role -> !Objects.equals(role.getStatus(), Status.DELETED) && role.getCode().equalsIgnoreCase(roleDTO.getCode()))
                     .findFirst();
             if(optionalRoleSameCode.isPresent()){
                 logger.warn("Role with code {} exists in Department {}.", roleDTO.getCode(), department.getId());
@@ -59,6 +60,31 @@ public class RoleValidator {
                 response.addFailureMessage("Role with code: " + roleDTO.getCode() + " exists in Department: " + department.getId());
             }
         }
+    }
+
+    /**
+     * Normalizes a role code to the format: parentCode.code
+     * - If the given code already starts with parentCode + ".", it is returned as-is.
+     * - Otherwise, the parentCode is prepended to the code, separated by a dot.
+     *
+     * @param code the original role code
+     * @param parentCode the parent role code
+     * @return the normalized role code
+     */
+    public static String normalizeRoleCode(String code, String parentCode) {
+        if (code == null) {
+            throw new IllegalArgumentException("Code and departmentCode must not be null");
+        }
+
+        if(parentCode == null) {
+            return code;
+        }
+
+        String prefix = parentCode + ".";
+        if (code.startsWith(prefix)) {
+            return code;
+        }
+        return prefix + code;
     }
 
     /**
@@ -70,7 +96,7 @@ public class RoleValidator {
      * @param departmentCode the department code
      * @return the normalized role code
      */
-    public static String normalizeRoleCode(String code, String departmentCode) {
+    public static String normalizeRoleCodeForAdapter(String code, String departmentCode) {
         if (code == null || departmentCode == null) {
             throw new IllegalArgumentException("Code and departmentCode must not be null");
         }

@@ -62,7 +62,7 @@ class BatchCheckAuthorizationCommandHandlerTest {
 
     @Test
     void testHandle_ShouldReturnListOfResponses() {
-        when(authenticationHelper.getPreferredUsername()).thenReturn("john");
+        when(authenticationHelper.getSub()).thenReturn("john");
         when(singleCheckAuthorizationHandler.checkAuthorization("john", "read", "document")).thenReturn(response1);
         when(singleCheckAuthorizationHandler.checkAuthorization("john", "write", "report")).thenReturn(response2);
 
@@ -74,7 +74,7 @@ class BatchCheckAuthorizationCommandHandlerTest {
         assertEquals(response1, result.getBody().get(0));
         assertEquals(response2, result.getBody().get(1));
 
-        verify(authenticationHelper).getPreferredUsername();
+        verify(authenticationHelper).getSub();
         verify(singleCheckAuthorizationHandler, times(2)).checkAuthorization(anyString(), anyString(), anyString());
     }
 
@@ -83,7 +83,7 @@ class BatchCheckAuthorizationCommandHandlerTest {
         BatchCheckAuthorizationCommand emptyCommand = new BatchCheckAuthorizationCommand();
         emptyCommand.setPermissioncheckrequest(List.of());
 
-        when(authenticationHelper.getPreferredUsername()).thenReturn("john");
+        when(authenticationHelper.getSub()).thenReturn("john");
 
         ResponseEntity<List<PermissionCheckResponseDTO>> result = handler.handle(emptyCommand);
 
@@ -91,7 +91,7 @@ class BatchCheckAuthorizationCommandHandlerTest {
         assertNotNull(result.getBody());
         assertTrue(result.getBody().isEmpty());
 
-        verify(authenticationHelper).getPreferredUsername();
+        verify(authenticationHelper).getSub();
         verifyNoInteractions(singleCheckAuthorizationHandler);
     }
 }

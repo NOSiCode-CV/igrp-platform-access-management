@@ -1,0 +1,23 @@
+package cv.igrp.platform.access_management.department.application.queries;
+
+import cv.igrp.framework.core.domain.Query;
+import jakarta.validation.constraints.*;
+
+import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.AllArgsConstructor;
+
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+public class GetDepartmentMenusQuery implements Query {
+
+  @NotBlank(message = "The field <menuCode> is required")
+  private String menuCode;
+  @NotBlank(message = "The field <departmentCode> is required")
+  private String departmentCode;
+  @NotBlank(message = "The field <applicationCode> is required")
+  private String applicationCode;
+
+}

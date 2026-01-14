@@ -37,8 +37,7 @@
       "before": false,
       "after": false,
       "positive": false,
-      "minLength": 3,
-      "maxLength": 100,
+      "maxLength": 255,
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false
@@ -76,7 +75,6 @@
       "before": false,
       "after": false,
       "positive": false,
-      "minLength": 1,
       "maxLength": 255,
       "isEmail": false,
       "isUrl": false,
@@ -103,8 +101,7 @@
       "before": false,
       "after": false,
       "positive": false,
-      "minLength": 3,
-      "maxLength": 10,
+      "maxLength": 50,
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false
@@ -117,7 +114,6 @@
       "before": false,
       "after": false,
       "positive": false,
-      "minLength": 5,
       "maxLength": 255,
       "isEmail": false,
       "isUrl": false,
@@ -209,8 +205,8 @@
     },
     {
       "name": "roles",
-      "objectType": "java",
-      "type": "string",
+      "objectType": "dto",
+      "type": "RoleDepartmentDTO",
       "required": false,
       "before": false,
       "after": false,
@@ -218,7 +214,8 @@
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false,
-      "collectionType": "list"
+      "collectionType": "list",
+      "module": "shared"
     }
   ],
   "id": "my09bz5kcp"

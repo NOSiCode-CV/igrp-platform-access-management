@@ -41,8 +41,7 @@
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false,
-      "minLength": 5,
-      "maxLength": 50
+      "maxLength": 255
     },
     {
       "name": "description",
@@ -55,7 +54,6 @@
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false,
-      "minLength": 5,
       "maxLength": 255
     },
     {
@@ -133,8 +131,7 @@
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false,
-      "maxLength": 50,
-      "minLength": 3
+      "maxLength": 255
     },
     {
       "name": "createdBy",
@@ -176,6 +173,18 @@
       "name": "lastModifiedDate",
       "objectType": "java",
       "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "lastAccess",
+      "objectType": "java",
+      "type": "datetime",
       "required": false,
       "before": false,
       "after": false,

@@ -59,22 +59,22 @@ public class GetUserQueryHandler implements QueryHandler<GetUserQuery, ResponseE
    */
   @IgrpQueryHandler
   public ResponseEntity<IGRPUserDTO> handle(GetUserQuery query) {
-    String username = query.getUsername();
+    Integer id = query.getId();
 
-    if(username == null) {
-      logger.warn("GetUserQuery received with null username");
+    if(id == null) {
+      logger.warn("GetUserQuery received with null ID");
       return ResponseEntity.badRequest().build();
     }
 
-    logger.info("Fetching user with username={}", username);
+    logger.info("Fetching user with username={}", id);
 
-    IGRPUserEntity user = igrpUserRepository.findByUsername(query.getUsername())
+    IGRPUserEntity user = igrpUserRepository.findById(id)
             .orElseThrow(() -> {
-              logger.warn("User not found with username={}", username);
+              logger.warn("User not found with ID={}", id);
               return IgrpResponseStatusException.of(
                       HttpStatus.NOT_FOUND,
-                      "Invalid Username",
-                      "User not found with username: " + username);
+                      "Invalid ID",
+                      "User not found with ID: " + id);
             });
 
     IGRPUserDTO dto = igrpUserMapper.toDto(user);

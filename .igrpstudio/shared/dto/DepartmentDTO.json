@@ -81,7 +81,7 @@
       "primaryKey": false
     },
     {
-      "name": "parent_code",
+      "name": "parentCode",
       "objectType": "java",
       "type": "string",
       "required": false,

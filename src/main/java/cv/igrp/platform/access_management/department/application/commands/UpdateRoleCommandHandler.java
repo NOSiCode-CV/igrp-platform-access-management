@@ -1,0 +1,190 @@
+package cv.igrp.platform.access_management.department.application.commands;
+
+import cv.igrp.framework.core.domain.CommandHandler;
+import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+
+/**
+ * Handles the update of a {@link RoleEntity} entity.
+ *
+ * <p>
+ * This handler performs the update of a role based on the data provided in the {@link UpdateRoleCommand}.
+ * It ensures the role exists and optionally resolves and validates the new department and parent role (if provided).
+ * </p>
+ *
+ * <p>
+ * The role's name, description, department, parent, and status are updated accordingly.
+ * If any of the referenced entities (department or parent role) are not found, an {@link IgrpResponseStatusException} is thrown.
+ * </p>
+ *
+ * <p>
+ * The updated role is saved to the database and returned as a {@link RoleDTO} wrapped in a {@link ResponseEntity}.
+ * </p>
+ *
+ * @see UpdateRoleCommand
+ * @see RoleEntity
+ * @see RoleDTO
+ * @see RoleEntityRepository
+ * @see DepartmentEntity
+ * @see DepartmentEntityRepository
+ * @see RoleMapper
+ * @see IgrpResponseStatusException
+ * @see Status
+ */
+@Slf4j
+@Component
+public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleCommand, ResponseEntity<RoleDTO>> {
+
+   public static final String ERROR_TITLE = "Update Role";
+   private final RoleEntityRepository roleRepository;
+   private final DepartmentEntityRepository departmentRepository;
+   private final RoleMapper roleMapper;
+   private final UserUtils userUtils;
+
+   /**
+    * Constructs an {@code UpdateRoleCommandHandler} with the required dependencies.
+    *
+    * @param roleRepository the repository used to fetch and persist roles
+    * @param departmentRepository the repository used to fetch and persist departments
+    * @param roleMapper     the mapper used to convert {@link RoleEntity} to {@link RoleDTO}
+    * @param userUtils      the utility class used to handle user-related operations
+    */
+   public UpdateRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper, UserUtils userUtils) {
+      this.roleRepository = roleRepository;
+      this.departmentRepository = departmentRepository;
+      this.roleMapper = roleMapper;
+      this.userUtils = userUtils;
+   }
+
+   /**
+    * Handles the update operation for a role.
+    *
+    * <ul>
+    *     <li>Fetches the target role by ID and validates it is not deleted.</li>
+    *     <li>If provided, validates and loads the new department and parent role.</li>
+    *     <li>Updates the role's properties (name, description, department, parent, status).</li>
+    *     <li>Saves the updated role to the repository.</li>
+    * </ul>
+    *
+    * @param command the command containing the role ID and the updated role data
+    * @return a {@link ResponseEntity} containing the updated {@link RoleDTO}
+    * @throws IgrpResponseStatusException if the role, department, or parent role is not found
+    */
+   @IgrpCommandHandler
+   @Transactional
+   public ResponseEntity<RoleDTO> handle(UpdateRoleCommand command) {
+      log.info("Update Role with code: {}.", command.getRoledto().getCode());
+
+      DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(command.getDepartmentCode());
+
+      RoleDTO newData = command.getRoledto();
+      RoleEntity roleToUpdate = roleRepository.findByDepartmentAndCodeAndStatusNot(department, command.getRoleCode(), Status.DELETED)
+              .orElseThrow(() -> {
+                 log.warn("Role with code: {} not found.", command.getRoleCode());
+                 return IgrpResponseStatusException.of(
+                         HttpStatus.NOT_FOUND, ERROR_TITLE, "Role with code: " + command.getRoleCode() + " not found."
+                 );
+              });
+
+      if(command.getRoledto().getStatus() != null &&
+              !Objects.equals(command.getRoledto().getStatus(), roleToUpdate.getStatus())
+      ) {
+         updateChildrenStatus(department, roleToUpdate, command.getRoledto().getStatus());
+      }
+
+      RoleEntity parentRole = roleToUpdate.getParent();
+      String parentCode = newData.getParentCode();
+      if (parentCode != null) {
+         if (parentCode.isBlank()) {
+            parentRole = null;
+         } else {
+            parentRole = roleRepository.findByDepartmentAndCodeAndStatusNot(department, parentCode, Status.DELETED)
+                    .orElseThrow(() -> {
+                       log.warn("Parent Role with code: {} not found.", newData.getParentCode());
+                       return IgrpResponseStatusException.of(
+                               HttpStatus.NOT_FOUND, ERROR_TITLE, "Parent Role with code: %s not found.".formatted(newData.getParentCode())
+                       );
+                    });
+         }
+      }
+      roleToUpdate.setName(newData.getName());
+      roleToUpdate.setDescription(newData.getDescription());
+      roleToUpdate.setParent(parentRole);
+
+      String oldStatus = roleToUpdate.getStatus().getCode();
+      String newStatus = newData.getCode();
+
+      // Store current roles if status is changing from ACTIVE to INACTIVE
+      Map<String, Set<String>> userRolesBackup;
+
+      for(var user : roleToUpdate.getUsers()) {
+         Integer userId = Integer.valueOf(user.getId());
+         userRolesBackup = userUtils.getUserRolesFromDatabase(userId);
+         log.info("Fetching roles for user {}: {}", userId, userRolesBackup);
+
+         // Handle role assignments based on status change
+         userUtils.handleRoleAssignmentsOnStatusChange(user, oldStatus, newStatus, userRolesBackup);
+      }
+      roleToUpdate.setStatus(newData.getStatus());
+
+      roleToUpdate.setIcon(newData.getIcon());
+      RoleEntity updatedRole = roleRepository.save(roleToUpdate);
+      log.info("Role with code: {} updated successfully.", command.getRoledto().getCode());
+      return new ResponseEntity<>(roleMapper.mapToDto(updatedRole), HttpStatus.OK);
+   }
+
+   private void updateChildrenStatus(DepartmentEntity department, RoleEntity role, Status status) {
+
+      for (var child : role.getChildren()) {
+
+         if(child.getStatus().equals(Status.DELETED)) continue;
+
+         if(status != Status.ACTIVE) {
+
+            var childRole = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, child.getCode());
+
+            String oldStatus = child.getStatus().getCode();
+            String newStatus = status.getCode();
+
+            // Store current roles if status is changing from ACTIVE to INACTIVE
+            Map<String, Set<String>> userRolesBackup;
+
+            for(var user : child.getUsers()) {
+               Integer userId = Integer.valueOf(user.getId());
+               userRolesBackup = userUtils.getUserRolesFromDatabase(userId);
+               log.info("Fetching roles for user {}: {}", userId, userRolesBackup);
+
+               // Handle role assignments based on status change
+               userUtils.handleRoleAssignmentsOnStatusChange(user, oldStatus, newStatus, userRolesBackup);
+            }
+
+            childRole.setStatus(status);
+
+            updateChildrenStatus(department, role, status);
+
+            roleRepository.save(childRole);
+
+         }
+
+      }
+
+   }
+
+}

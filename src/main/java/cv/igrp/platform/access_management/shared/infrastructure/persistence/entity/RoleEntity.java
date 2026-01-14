@@ -1,5 +1,5 @@
 /* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
-/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME */
 
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.entity;
 
@@ -24,7 +24,15 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "t_role")
+@Table(name = "t_role",
+  uniqueConstraints = {
+    @UniqueConstraint(
+      name = "role_department_uk",
+      columnNames = {
+        "code","department"
+      }
+    )
+  })
 public class RoleEntity extends AuditEntity {
 
     @Id
