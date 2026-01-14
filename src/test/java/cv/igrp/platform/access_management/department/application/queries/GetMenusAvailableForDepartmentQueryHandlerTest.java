@@ -1,10 +1,12 @@
 package cv.igrp.platform.access_management.department.application.queries;
 
-import cv.igrp.platform.access_management.menu.mapper.MenuEntryMapper;
-import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import cv.igrp.platform.access_management.app.mapper.MenuEntryMapper;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +20,6 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -37,16 +38,25 @@ class GetMenusAvailableForDepartmentQueryHandlerTest {
   private DepartmentEntityRepository departmentEntityRepository;
 
   @Mock
+  private ApplicationEntityRepository applicationEntityRepository;
+
+  @Mock
   private MenuEntryMapper menuEntryMapper;
 
   private MenuEntryEntity menuEntity1;
   private MenuEntryEntity menuEntity2;
+  private ApplicationEntity app1;
   private MenuEntryDTO menuDTO1;
   private MenuEntryDTO menuDTO2;
 
   @BeforeEach
   void setUp() {
     // Initialize mock entities and DTOs
+    app1 = new ApplicationEntity();
+    app1.setId(1);
+    app1.setCode("APP_1");
+    app1.setStatus(Status.ACTIVE);
+
     menuEntity1 = new MenuEntryEntity();
     menuEntity1.setId(1);
     menuEntity1.setCode("MENU_A");
@@ -72,12 +82,14 @@ class GetMenusAvailableForDepartmentQueryHandlerTest {
   void testHandle_ReturnsListOfAvailableMenus() {
     // Given a query and expected data
     String departmentCode = "DEPT_1";
-    GetMenusAvailableForDepartmentQuery query = new GetMenusAvailableForDepartmentQuery(departmentCode);
+    String appCode = "APP_1";
+    GetMenusAvailableForDepartmentQuery query = new GetMenusAvailableForDepartmentQuery(departmentCode, appCode);
     List<MenuEntryEntity> mockEntities = List.of(menuEntity1, menuEntity2);
 
     // Mock repository and mapper behavior
     when(departmentEntityRepository.findByCodeAndStatusNotDeleted(departmentCode)).thenReturn(new DepartmentEntity());
-    when(menuEntryEntityRepository.findAvailableMenusForDepartment(departmentCode)).thenReturn(mockEntities);
+    when(applicationEntityRepository.findByCodeAndStatusNotDeleted(appCode)).thenReturn(app1);
+    when(menuEntryEntityRepository.findAvailableMenusForDepartment(departmentCode, app1)).thenReturn(mockEntities);
     when(menuEntryMapper.toDTO(menuEntity1)).thenReturn(menuDTO1);
     when(menuEntryMapper.toDTO(menuEntity2)).thenReturn(menuDTO2);
 
@@ -96,11 +108,13 @@ class GetMenusAvailableForDepartmentQueryHandlerTest {
   void testHandle_NoMenusFound_ReturnsEmptyList() {
     // Given a query for a department with no available menus
     String departmentCode = "DEPT_2";
-    GetMenusAvailableForDepartmentQuery query = new GetMenusAvailableForDepartmentQuery(departmentCode);
+    String appCode = "APP_1";
+    GetMenusAvailableForDepartmentQuery query = new GetMenusAvailableForDepartmentQuery(departmentCode, appCode);
 
     // Mock repository to return an empty list
     when(departmentEntityRepository.findByCodeAndStatusNotDeleted(departmentCode)).thenReturn(new DepartmentEntity());
-    when(menuEntryEntityRepository.findAvailableMenusForDepartment(departmentCode)).thenReturn(Collections.emptyList());
+    when(applicationEntityRepository.findByCodeAndStatusNotDeleted(appCode)).thenReturn(app1);
+    when(menuEntryEntityRepository.findAvailableMenusForDepartment(departmentCode, app1)).thenReturn(Collections.emptyList());
 
     // When the handler is called
     ResponseEntity<List<MenuEntryDTO>> response = handler.handle(query);

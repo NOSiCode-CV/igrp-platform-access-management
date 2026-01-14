@@ -40,6 +40,6 @@ public class DepartmentDTO  {
   private String icon ;
   
   
-  private String parent_code ;
+  private String parentCode ;
 
 }

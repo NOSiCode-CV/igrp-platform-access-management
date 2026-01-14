@@ -1,5 +1,5 @@
 /* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
-/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME */
 
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.entity;
 
@@ -34,12 +34,11 @@ public class ResourceEntity extends AuditEntity {
 
   
     @NotBlank(message = "name is mandatory")
-    @Column(name="name", nullable = false, length=100)
+    @Column(name="name", nullable = false)
     private String name;
 
   
-    @NotBlank(message = "description is mandatory")
-    @Column(name="description", nullable = false)
+    @Column(name="description")
     private String description;
 
   
@@ -68,7 +67,17 @@ public class ResourceEntity extends AuditEntity {
             joinColumns = @JoinColumn(name = "resource_id"),
             inverseJoinColumns = @JoinColumn(name = "permission")
     )
-private Set<PermissionEntity> permissions = new HashSet<>();   @OneToMany(mappedBy = "resourceId")
+private Set<PermissionEntity> permissions = new HashSet<>();
+
+
+  
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "t_resource_department",
+            joinColumns = @JoinColumn(name = "resource_id"),
+            inverseJoinColumns = @JoinColumn(name = "department")
+    )
+private Set<DepartmentEntity> departments = new HashSet<>();   @OneToMany(mappedBy = "resourceId")
 private List<ResourceItemEntity> items = new ArrayList<>();
 
    @ManyToMany(mappedBy = "resources", fetch = FetchType.LAZY)

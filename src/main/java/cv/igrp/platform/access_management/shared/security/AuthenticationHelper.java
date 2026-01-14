@@ -22,7 +22,7 @@ public class AuthenticationHelper {
      * @return the username or client ID depending on the authentication type
      * @throws IllegalStateException if no authentication is found
      */
-    public String getPreferredUsername() {
+    public String getSub() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
         if (authentication == null) {
@@ -31,7 +31,7 @@ public class AuthenticationHelper {
 
         // Case 1: JWT (OAuth2 user)
         if (authentication.getPrincipal() instanceof Jwt jwt) {
-            return jwt.getClaimAsString("preferred_username");
+            return jwt.getClaimAsString("sub");
         }
 
         // Case 2: M2M authentication (UsernamePasswordAuthenticationToken)

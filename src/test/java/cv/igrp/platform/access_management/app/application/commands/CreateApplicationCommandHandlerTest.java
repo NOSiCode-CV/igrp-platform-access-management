@@ -81,6 +81,7 @@ public class CreateApplicationCommandHandlerTest {
                 "2024-04-15T12:00:00",
                 null,
                 null,
+                null,
                 List.of("HR")
         );
         CreateApplicationCommand command = new CreateApplicationCommand(applicationDTO);

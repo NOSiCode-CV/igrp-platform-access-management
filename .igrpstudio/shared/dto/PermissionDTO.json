@@ -25,7 +25,7 @@
       "before": false,
       "after": false,
       "positive": false,
-      "maxLength": 60,
+      "maxLength": 255,
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false,
@@ -58,7 +58,7 @@
       "module": "shared"
     },
     {
-      "name": "departmentCode",
+      "name": "departments",
       "objectType": "java",
       "type": "string",
       "required": false,
@@ -67,7 +67,8 @@
       "positive": false,
       "isEmail": false,
       "isUrl": false,
-      "primaryKey": false
+      "primaryKey": false,
+      "collectionType": "list"
     }
   ],
   "id": "ecx37yuxhk"

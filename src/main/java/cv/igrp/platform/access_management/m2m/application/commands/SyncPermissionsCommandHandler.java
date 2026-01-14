@@ -43,7 +43,7 @@ public class SyncPermissionsCommandHandler implements CommandHandler<SyncPermiss
    @IgrpCommandHandler
    public ResponseEntity<String> handle(SyncPermissionsCommand command) {
       LOGGER.info("Synchronizing {} permissions...", command.getPermissiondto().size());
-      permissionSyncService.synchronizePermissions(command.getPermissiondto());
+      permissionSyncService.synchronizePermissions(command.getPermissiondto(), false);
       return ResponseEntity.noContent().build();
    }
 

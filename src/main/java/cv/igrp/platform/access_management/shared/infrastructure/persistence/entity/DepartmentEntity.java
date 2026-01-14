@@ -1,5 +1,5 @@
 /* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
-/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME */
 
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.entity;
 
@@ -8,7 +8,6 @@ import cv.igrp.framework.stereotype.IgrpEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
-import jakarta.validation.constraints.NotBlank;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import java.util.Set;
 import java.util.HashSet;
@@ -39,8 +38,7 @@ public class DepartmentEntity extends AuditEntity {
     private String name;
 
   
-    @NotBlank(message = "description is mandatory")
-    @Column(name="description", nullable = false)
+    @Column(name="description")
     private String description;
 
   
@@ -70,14 +68,17 @@ public class DepartmentEntity extends AuditEntity {
 private Set<ApplicationEntity> applications = new HashSet<>();   @OneToMany(mappedBy = "parentId")
 private List<DepartmentEntity> childrenids = new ArrayList<>();
 
-   @OneToMany(mappedBy = "department")
-private List<PermissionEntity> permissions = new ArrayList<>();
+   @ManyToMany(mappedBy = "departments", fetch = FetchType.LAZY)
+private Set<PermissionEntity> permissions = new HashSet<>();
 
    @OneToMany(mappedBy = "department")
 private List<RoleEntity> roles = new ArrayList<>();
 
    @ManyToMany(mappedBy = "departments", fetch = FetchType.LAZY)
 private Set<MenuEntryEntity> menuentries = new HashSet<>();
+
+   @ManyToMany(mappedBy = "departments", fetch = FetchType.LAZY)
+private Set<ResourceEntity> resources = new HashSet<>();
 
 
 }

@@ -56,7 +56,7 @@ public class UploadFileCommandHandlerTest {
         Set<ConstraintViolation<UploadPrivateFileCommand>> violations = validate(command);
 
         assertFalse(violations.isEmpty(), "Deveria falhar quando file é null");
-        assertEquals("The field <file> is required.", violations.iterator().next().getMessage());
+        assertEquals("The field <file> is required", violations.iterator().next().getMessage());
     }
 
     @Test
@@ -65,7 +65,7 @@ public class UploadFileCommandHandlerTest {
         Set<ConstraintViolation<UploadPublicFileCommand>> violations = validate(command);
 
         assertFalse(violations.isEmpty(), "Deveria falhar quando file é null");
-        assertEquals("The field <file> is required.", violations.iterator().next().getMessage());
+        assertEquals("The field <file> is required", violations.iterator().next().getMessage());
     }
 
     @Test
@@ -84,7 +84,7 @@ public class UploadFileCommandHandlerTest {
         MultipartFile file = mock(MultipartFile.class);
         when(file.isEmpty()).thenReturn(false);
         when(file.getBytes()).thenThrow(new IOException("Falha na leitura do arquivo"));
-        when(authenticationHelper.getPreferredUsername()).thenReturn(USER);
+        when(authenticationHelper.getSub()).thenReturn(USER);
 
         RuntimeException exception = assertThrows(
                 RuntimeException.class,
@@ -106,7 +106,7 @@ public class UploadFileCommandHandlerTest {
         String content = "Test content";
 
         mockFile(originalFilename, contentType, content);
-        when(authenticationHelper.getPreferredUsername()).thenReturn(USER);
+        when(authenticationHelper.getSub()).thenReturn(USER);
 
         try (MockedStatic<UUID> mockedUuid = mockStatic(UUID.class)) {
             mockedUuid.when(UUID::randomUUID).thenReturn(FIXED_UUID);
@@ -142,7 +142,7 @@ public class UploadFileCommandHandlerTest {
         String content = "Public file content";
         mockFile(originalFilename, contentType, content);
 
-        when(authenticationHelper.getPreferredUsername()).thenReturn(USER);
+        when(authenticationHelper.getSub()).thenReturn(USER);
 
 
         try (MockedStatic<UUID> mockedUuid = mockStatic(UUID.class)) {

@@ -13,7 +13,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetPrivateFileUrlQuery implements Query {
 
-  @NotBlank(message = "The field <privateFilePath> is required.")
-  private String privateFilePath;
+  @NotBlank(message = "The field <filePath> is required")
+  private String filePath;
 
 }

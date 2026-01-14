@@ -31,7 +31,7 @@ public class BatchCheckAuthorizationCommandHandler implements CommandHandler<Bat
 
       final List<PermissionCheckResponseDTO> permissionCheckResponses = new ArrayList<>();
 
-      var username = authenticationHelper.getPreferredUsername();
+      var username = authenticationHelper.getSub();
 
       for (var dto : command.getPermissioncheckrequest()) {
          var action = dto.getAction();

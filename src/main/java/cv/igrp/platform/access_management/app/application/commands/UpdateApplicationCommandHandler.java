@@ -80,10 +80,10 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
         application.setUrl(appDto.getUrl() != null ? appDto.getUrl().toString() : null);
         application.setSlug(appDto.getSlug());
 
-        for (var code : appDto.getDepartments()) {
+        for (var dept : appDto.getDepartments()) {
 
-            var department = departmentEntityRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
-                    .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + code));
+            var department = departmentEntityRepository.findByCodeAndStatusNot(dept, DepartmentStatus.DELETED)
+                    .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + dept));
 
             var parent = department.getParentId();
 
@@ -94,7 +94,7 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
                         throw IgrpResponseStatusException.badRequest(
                                 "Department access denied",
                                 "Department with code %s cannot be granted access to application %s because its parent department does not have access."
-                                        .formatted(code, application.getCode())
+                                        .formatted(dept, application.getCode())
                         );
                 }
             }

@@ -45,11 +45,11 @@ class SyncPermissionsCommandHandlerTest {
      */
     @Test
     void testHandle_NewPermission_ShouldReturnNoContent() {
-        doNothing().when(permissionSyncService).synchronizePermissions(command.getPermissiondto());
+        doNothing().when(permissionSyncService).synchronizePermissions(command.getPermissiondto(), false);
 
         ResponseEntity<String> response = syncPermissionsCommandHandler.handle(command);
 
-        verify(permissionSyncService, times(1)).synchronizePermissions(command.getPermissiondto());
+        verify(permissionSyncService, times(1)).synchronizePermissions(command.getPermissiondto(), false);
         assertNotNull(response);
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
     }
@@ -60,11 +60,11 @@ class SyncPermissionsCommandHandlerTest {
     @Test
     void testHandle_SamePermission_ShouldReturnNoContent() {
         // Simulate no change detected in sync process
-        doNothing().when(permissionSyncService).synchronizePermissions(command.getPermissiondto());
+        doNothing().when(permissionSyncService).synchronizePermissions(command.getPermissiondto(), false);
 
         ResponseEntity<String> response = syncPermissionsCommandHandler.handle(command);
 
-        verify(permissionSyncService, times(1)).synchronizePermissions(command.getPermissiondto());
+        verify(permissionSyncService, times(1)).synchronizePermissions(command.getPermissiondto(), false);
         assertNotNull(response);
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
     }
@@ -78,7 +78,7 @@ class SyncPermissionsCommandHandlerTest {
         SyncPermissionsCommand invalidCommand = new SyncPermissionsCommand(List.of(invalidDto));
 
         doThrow(IgrpResponseStatusException.badRequest("Permission code is required"))
-                .when(permissionSyncService).synchronizePermissions(invalidCommand.getPermissiondto());
+                .when(permissionSyncService).synchronizePermissions(invalidCommand.getPermissiondto(), false);
 
         IgrpResponseStatusException exception = assertThrows(
                 IgrpResponseStatusException.class,
@@ -95,7 +95,7 @@ class SyncPermissionsCommandHandlerTest {
     @Test
     void testHandle_InternalError_ShouldThrowInternalServerError() {
         doThrow(IgrpResponseStatusException.internalServerError("Database failure"))
-                .when(permissionSyncService).synchronizePermissions(command.getPermissiondto());
+                .when(permissionSyncService).synchronizePermissions(command.getPermissiondto(), false);
 
         IgrpResponseStatusException exception = assertThrows(
                 IgrpResponseStatusException.class,

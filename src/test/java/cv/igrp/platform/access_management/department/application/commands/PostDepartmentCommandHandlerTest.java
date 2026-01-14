@@ -57,7 +57,7 @@ public class PostDepartmentCommandHandlerTest {
         departmentDTO.setName("Test Department");
         departmentDTO.setCode("DEPT_TEST");
         departmentDTO.setDescription("Test Description");
-        departmentDTO.setParent_code(null);
+        departmentDTO.setParentCode(null);
 
         command = postDepartmentCommand(departmentDTO);
 
@@ -115,7 +115,7 @@ public class PostDepartmentCommandHandlerTest {
     void testHandle_whenParentIdIsProvided_shouldCreateDepartmentWithParentSuccessfully() {
 
         // Arrange
-        departmentDTO.setParent_code("DEPT_RH");
+        departmentDTO.setParentCode("DEPT_RH");
         command = postDepartmentCommand(departmentDTO);
 
         when(departmentMapper.toEntity(departmentDTO)).thenReturn(department);

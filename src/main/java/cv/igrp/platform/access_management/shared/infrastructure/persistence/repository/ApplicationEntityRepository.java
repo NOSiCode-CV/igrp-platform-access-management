@@ -3,6 +3,8 @@ package cv.igrp.platform.access_management.shared.infrastructure.persistence.rep
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
@@ -10,9 +12,7 @@ import org.springframework.data.repository.history.RevisionRepository;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Repository
 public interface ApplicationEntityRepository extends
@@ -26,12 +26,12 @@ public interface ApplicationEntityRepository extends
             JOIN a.departments d
             JOIN d.roles r
             JOIN r.users u
-            WHERE a.status <> :status
-                   AND (u.username = :username OR u.email = :email)
+            WHERE a.status = :status
+                   AND (u.id = :id OR u.email = :email)
                    AND r.department = d
             """)
-    List<ApplicationEntity> findApplicationsByUserOrEmailAndStatusNot(
-            @Param("username") String username,
+    List<ApplicationEntity> findApplicationsByUserOrEmailAndStatus(
+            @Param("id") Integer id,
             @Param("email") String email,
             @Param("status") Status status
     );
@@ -44,10 +44,10 @@ public interface ApplicationEntityRepository extends
                          JOIN app.departments d
                          JOIN d.roles r
                          JOIN r.users u
-                         WHERE app.id = a.id AND (u.username = :uid OR u.email = :uid)
+                         WHERE app.id = a.id AND (u.externalId = :externalId OR u.email = :uid)
                      )
             """)
-    List<ApplicationEntity> findDeniedApplications(@Param("uid") String uid);
+    List<ApplicationEntity> findDeniedApplications(@Param("externalId") String externalId);
 
     // Case 1: Department is top-level, all applications that are not assigned will appear
     // Case 2: Application is inherited from the parent department for attribution
@@ -84,7 +84,7 @@ public interface ApplicationEntityRepository extends
                                        WHERE d3.code = :code
                                    )
                              ))
-                             AND a.status != 'DELETED'
+                             AND a.status = 'ACTIVE'
             """)
     List<ApplicationEntity> findAvailableApplicationsForDepartment(@Param("code") String code);
 
@@ -96,5 +96,50 @@ public interface ApplicationEntityRepository extends
     }
 
     List<ApplicationEntity> findByIdInAndStatusNot(Collection<Integer> ids, Status status);
+
+    @Query("""
+                select a.id
+                from ApplicationEntity a
+                join a.departments d
+                where d.id in :departmentIds
+            """)
+    Set<Integer> findByDepartmentIds(Set<Integer> departmentIds);
+
+    @Query("""
+        select a
+        from ApplicationEntity a
+        join a.departments d
+        where d = :department
+        and a.status <> :status
+    """)
+    List<ApplicationEntity> findByDepartmentAndStatusNot(DepartmentEntity department, Status status);
+
+    @Query("""
+        select a
+        from ApplicationEntity a
+        join a.departments d
+        join d.roles r
+        join r.users u
+        where u = :user
+        and a.status <> 'DELETED'
+    """)
+    List<ApplicationEntity> findByUserIdAndStatusNotDeleted(IGRPUserEntity user);
+
+    @Query("""
+        select a
+        from ApplicationEntity a
+        join a.departments d
+        join d.roles r
+        join r.users u
+        where u = :user
+        and a.status = 'ACTIVE'
+    """)
+    List<ApplicationEntity> findByUserIdAndStatusActive(IGRPUserEntity user);
+
+    List<ApplicationEntity> findByStatus(Status status);
+
+    default List<ApplicationEntity> findAllAndStatusActive() {
+        return findByStatus(Status.ACTIVE);
+    }
 
 }

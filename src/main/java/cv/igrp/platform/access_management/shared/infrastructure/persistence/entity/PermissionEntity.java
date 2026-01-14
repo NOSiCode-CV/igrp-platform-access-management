@@ -1,5 +1,5 @@
 /* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
-/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME */
 
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.entity;
 
@@ -8,10 +8,9 @@ import cv.igrp.framework.stereotype.IgrpEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
-import jakarta.validation.constraints.NotBlank;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import java.util.HashSet;
 import java.util.Set;
+import java.util.HashSet;
 
 @Audited
 @Getter
@@ -33,8 +32,7 @@ public class PermissionEntity extends AuditEntity {
     private String name;
 
   
-    @NotBlank(message = "description is mandatory")
-    @Column(name="description", nullable = false)
+    @Column(name="description")
     private String description;
 
   
@@ -45,12 +43,14 @@ public class PermissionEntity extends AuditEntity {
   
 
 
-  @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "department", referencedColumnName = "id")
-    private DepartmentEntity department;   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
-private Set<RoleEntity> roles = new HashSet<>();
-
-   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
+  
+    @ManyToMany(fetch = FetchType.LAZY)
+    @JoinTable(
+            name = "t_permission_department",
+            joinColumns = @JoinColumn(name = "permission_id"),
+            inverseJoinColumns = @JoinColumn(name = "department")
+    )
+private Set<DepartmentEntity> departments = new HashSet<>();   @ManyToMany(mappedBy = "permissions", fetch = FetchType.LAZY)
 private Set<ResourceEntity> resources = new HashSet<>();
 
 

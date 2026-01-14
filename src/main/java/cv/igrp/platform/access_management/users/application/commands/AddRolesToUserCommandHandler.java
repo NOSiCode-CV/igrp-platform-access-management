@@ -4,12 +4,15 @@ import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.domain.exceptions.NoActionPerformedException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import org.springframework.http.HttpStatus;
@@ -47,6 +50,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
 
    private final IGRPUserEntityRepository userRepository;
    private final RoleEntityRepository roleRepository;
+   private final DepartmentEntityRepository departmentRepository;
    private final RoleMapper roleMapper;
    private final IAdapter adapter;
 
@@ -55,16 +59,19 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
     *
     * @param userRepository the repository used to retrieve user entities
     * @param roleRepository the repository used to retrieve and update roles
+    * @param departmentRepository the repository used to retrieve department entities
     * @param roleMapper the mapper used to convert role entities to DTOs
     * @param adapter the adapter to assign role to user in iam
     */
    public AddRolesToUserCommandHandler(
            IGRPUserEntityRepository userRepository,
            RoleEntityRepository roleRepository,
+           DepartmentEntityRepository departmentRepository,
            RoleMapper roleMapper,
            IAdapter adapter) {
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
+      this.departmentRepository = departmentRepository;
       this.roleMapper = roleMapper;
       this.adapter = adapter;
    }
@@ -79,20 +86,23 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<List<RoleDTO>> handle(AddRolesToUserCommand command) {
-      String username = command.getUsername();
+      Integer userId = command.getId();
       List<String> rolesToAdd = command.getAddRolesToUserRequest();
+      String departmentCode = command.getDepartmentCode();
 
       if (rolesToAdd.isEmpty())
          throw new NoActionPerformedException("No action performed because the role list is empty");
 
+      DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(departmentCode);
+
       List<RoleEntity> successfullyAssignedInKeycloak = new ArrayList<>();
 
-      IGRPUserEntity user = userRepository.findByUsername(username)
+      IGRPUserEntity user = userRepository.findById(userId)
               .orElseThrow(() -> {
-                 logger.warn("User not found with name={}", username);
+                 logger.warn("User not found with ID={}", userId);
                  return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND,"Invalid User name",
-                         "User not found with name: %s".formatted(username));
+                         HttpStatus.NOT_FOUND,"Invalid User ID",
+                         "User not found with ID: %s".formatted(userId));
               });
 
       List<RoleEntity> roles = user.getRoles();
@@ -109,13 +119,13 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
                continue;
             }
 
-            logger.info("Assigning role name={} to user name={}", role, username);
-            RoleEntity roleEntity = roleRepository.findByCodeAndStatusNot(role, Status.DELETED)
+            logger.info("Assigning role name={} to user ID={}", role, userId);
+            RoleEntity roleEntity = roleRepository.findByDepartmentAndCodeAndStatusNot(department, role, Status.DELETED)
                     .orElseThrow(() -> {
-                       logger.warn("Role not found with name={}", role);
+                       logger.warn("Role not found with code={}", role);
                        return IgrpResponseStatusException.of(
-                               HttpStatus.NOT_FOUND, "Invalid Role name",
-                               "Role not found with name: %s".formatted(role));
+                               HttpStatus.NOT_FOUND, "Invalid Role code",
+                               "Role not found with code: %s".formatted(role));
                     });
             if(roleEntity.getUsers()==null) {
                roleEntity.setUsers(new HashSet<>());
@@ -124,22 +134,20 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
             roleRepository.save(roleEntity);
 //            user.getRoles().add(roleEntity);
 
-            adapter.assignRoleToUser(roleEntity.getDepartment().getCode(), roleEntity.getName(), command.getUsername());
+            adapter.assignRoleToUser(roleEntity.getDepartment().getCode(), RoleValidator.normalizeRoleCodeForAdapter(roleEntity.getCode(), roleEntity.getDepartment().getCode()), user.getExternalId());
             successfullyAssignedInKeycloak.add(roleEntity);
          }
-         //@ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
-         //Não funciona : o lado "owner" da relação está em RoleEntity e não no IGRPUserEntity
-//         userRepository.save(user);
+
       } catch (Exception e) {
-         logger.error("Error while adding roles into Keycloak for username={}. Starting compensation...", username, e);
+         logger.error("Error while adding roles into Keycloak for user ID={}. Starting compensation...", userId, e);
 
          for (RoleEntity role : successfullyAssignedInKeycloak) {
             try {
-               adapter.unassignRoleFromUser(role.getDepartment().getCode(), role.getName(), command.getUsername());
+               adapter.unassignRoleFromUser(role.getDepartment().getCode(), RoleValidator.normalizeRoleCodeForAdapter(role.getCode(), role.getDepartment().getCode()), user.getExternalId());
             } catch (Exception rollbackEx) {
                logger.error("Compensation failed: could not revert role={} in Keycloak for user={}: {}",
-                       role.getName(),
-                       command.getUsername(),
+                       role.getCode(),
+                       command.getId(),
                        rollbackEx.getMessage());
             }
          }

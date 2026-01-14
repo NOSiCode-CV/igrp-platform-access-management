@@ -28,10 +28,17 @@
       "requestParams": [
         {
           "type": "string",
-          "name": "privateFilePath",
+          "name": "filePath",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.user.view",
+          "igrp.application.view"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "uploadPublicFile",
@@ -63,7 +70,14 @@
           "name": "folder",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.user.update",
+          "igrp.application.update"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "uploadPrivateFile",
@@ -94,8 +108,15 @@
           "name": "folder",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.user.update",
+          "igrp.application.update"
+        ],
+        "operator": "OR"
+      }
     }
   ],
-  "id": "k2cjyv4ah4-CONTROLLER-CONTROLLER-CONTROLLER"
+  "id": "k2cjyv4ah4-CONTROLLER-CONTROLLER-CONTROLLER-getPrivateFileUrl-uploadPublicFile-uploadPrivateFile-getPrivateFileUrl"
 }
