@@ -87,7 +87,7 @@ class GetUserApplicationMenusQueryHandlerTest {
         MenuEntryEntity menu2 = new MenuEntryEntity();
         menu2.setCode("MENU_B");
 
-        when(menuEntryRepository.findByApplicationIdAndUserIdAndStatusNotDeleted(user, app))
+        when(menuEntryRepository.findByApplicationIdAndUserIdAndStatusNotDeleted(Integer.valueOf(user.getId()), app.getId()))
                 .thenReturn(List.of(menu1, menu2));
 
         when(menuEntryMapper.toDTO(menu1)).thenReturn(menuEntryDTO1);
@@ -98,7 +98,7 @@ class GetUserApplicationMenusQueryHandlerTest {
         assertNotNull(response);
         assertNotNull(response.getBody());
         assertEquals(2, response.getBody().size());
-        verify(menuEntryRepository).findByApplicationIdAndUserIdAndStatusNotDeleted(user, app);
+        verify(menuEntryRepository).findByApplicationIdAndUserIdAndStatusNotDeleted(Integer.valueOf(user.getId()), app.getId());
     }
 
     // ------------------------------------------------------
@@ -120,7 +120,7 @@ class GetUserApplicationMenusQueryHandlerTest {
         MenuEntryEntity menu2 = new MenuEntryEntity();
         menu2.setCode("MENU_B");
 
-        when(menuEntryRepository.findByApplicationIdAndUserIdAndStatusNotDeleted(user, app))
+        when(menuEntryRepository.findByApplicationIdAndUserIdAndStatusNotDeleted(Integer.valueOf(user.getId()), app.getId()))
                 .thenReturn(List.of(menu1, menu2));
 
         when(menuEntryMapper.toDTO(menu1)).thenReturn(menuEntryDTO1);
@@ -161,7 +161,7 @@ class GetUserApplicationMenusQueryHandlerTest {
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);
 
-        when(menuEntryRepository.findByApplicationIdAndUserIdAndStatusNotDeleted(user, app))
+        when(menuEntryRepository.findByApplicationIdAndUserIdAndStatusNotDeleted(Integer.valueOf(user.getId()), app.getId()))
                 .thenReturn(List.of());
 
         GetUserApplicationMenusQuery query =
