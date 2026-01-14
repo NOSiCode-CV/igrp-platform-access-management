@@ -2,14 +2,18 @@ package cv.igrp.platform.access_management.shared.infrastructure.persistence.rep
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.history.RevisionRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 @Repository
 public interface RoleEntityRepository extends
@@ -18,12 +22,13 @@ public interface RoleEntityRepository extends
         RevisionRepository<RoleEntity, Integer, Integer> {
 
     /**
-     * Finds a role by its name.
+     * Finds a role by its code.
      *
-     * @param name the name of the role
-     * @return an {@link Optional} containing the {@link RoleEntity} if found, or empty if not found
+     * @param codes the code list of the roles
+     * @param department the department the roles belongs to
+     * @return an {@link List} containing the {@link RoleEntity} objects, or empty if not found
      */
-    List<RoleEntity> findAllByNameIn(List<String> name);
+    List<RoleEntity> findAllByDepartmentAndCodeIn(DepartmentEntity department, List<String> codes);
 
     /**
      * Retrieves all roles whose status is included in the given list.
@@ -44,17 +49,46 @@ public interface RoleEntityRepository extends
     /**
      * Finds a role by ID, excluding the one with the given status (commonly used to exclude deleted roles).
      *
+     * @param department the department the role belongs to
      * @param id     the ID of the role
      * @param status the status to exclude (e.g., {@link Status#DELETED})
      * @return an {@link Optional} containing the {@link RoleEntity}, if found and not having the excluded status
      */
-    Optional<RoleEntity> findByIdAndStatusNot(Integer id, Status status);
+    Optional<RoleEntity> findByDepartmentAndIdAndStatusNot(DepartmentEntity department, Integer id, Status status);
 
-    Optional<RoleEntity> findByCodeAndStatusNot(String code, Status status);
+    Optional<RoleEntity> findByDepartmentAndCodeAndStatusNot(DepartmentEntity department, String code, Status status);
 
-    default RoleEntity findByCodeAndStatusNotDeleted(String code) {
-        return findByCodeAndStatusNot(code, Status.DELETED)
-                .orElseThrow(() -> IgrpResponseStatusException.notFound("Role not found with code: %s".formatted(code)));
+    default RoleEntity findByDepartmentAndCodeAndStatusNotDeleted(DepartmentEntity department, String code) {
+        return findByDepartmentAndCodeAndStatusNot(department, code, Status.DELETED)
+                .orElseThrow(() -> IgrpResponseStatusException.notFound("Role with code: <" + code + "> was not found"));
     }
 
+    @Query("""
+        select r.id from RoleEntity r
+        where r.code = :code and r.status <> 'DELETED'
+    """)
+    Integer findIdByCode(String code);
+
+    @Query("""
+        select child.id
+        from RoleEntity child
+        join child.parent parent
+        where parent.id = :parentId and child.status <> 'DELETED'
+    """)
+    Set<Integer> findDirectChildren(Integer parentId);
+
+    @Query(
+    """
+        select r from RoleEntity r
+        JOIN r.users u
+        where r.department = :department and u = :user and r.status <> 'DELETED'
+    """
+    )
+    List<RoleEntity> findByDepartmentIdAndUserIdAndStatusNotDeleted(IGRPUserEntity user, DepartmentEntity department);
+
+    List<RoleEntity> findByDepartmentAndStatusNot(DepartmentEntity  department, Status status);
+
+    default List<RoleEntity> findAllByDepartmentAndStatusNotDeleted(DepartmentEntity department) {
+        return findByDepartmentAndStatusNot(department, Status.DELETED);
+    }
 }

@@ -34,6 +34,12 @@
             }
           }
         }
+      },
+      "permission": {
+        "items": [
+          "igrp.application.create"
+        ],
+        "operator": "OR"
       }
     },
     {
@@ -85,7 +91,13 @@
           "description": "The Application Type",
           "isRequired": false
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.application.list"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getApplicationById",
@@ -112,12 +124,31 @@
           "description": "The ID of the Application",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.application.view"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "updateApplication",
       "path": "applications/{code}",
       "method": "PUT",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "ApplicationDTO",
+              "name": "Application",
+              "objectType": "dto",
+              "module": "shared",
+              "description": "The Application Data"
+            }
+          }
+        }
+      },
       "responses": {
         "200": {
           "description": "The Updated Application",
@@ -139,18 +170,11 @@
           "isRequired": true
         }
       ],
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "ApplicationDTO",
-              "name": "Application",
-              "objectType": "dto",
-              "module": "shared",
-              "description": "The Application Data"
-            }
-          }
-        }
+      "permission": {
+        "items": [
+          "igrp.application.update"
+        ],
+        "operator": "OR"
       }
     },
     {
@@ -177,39 +201,12 @@
           "type": "string",
           "isRequired": true
         }
-      ]
-    },
-    {
-      "actionName": "getApplicationsByIds",
-      "path": "applications/by-ids",
-      "method": "POST",
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "integer",
-              "name": "ids",
-              "description": "List of Application IDs",
-              "collectionType": "list"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "description": "The List of Application",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "ApplicationDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
-            }
-          }
-        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.application.delete"
+        ],
+        "operator": "OR"
       }
     },
     {
@@ -240,36 +237,21 @@
       ]
     },
     {
-      "actionName": "getApplicationDeniedToUser",
-      "path": "/applications/denied-to-user/{uid}",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "description": "List of Applications denied to User",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "ApplicationDTO",
-                "name": "data",
-                "collectionType": "list"
-              }
+      "actionName": "addApplicationCustomFields",
+      "path": "/applications/{code}/custom-fields",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "undefined",
+              "collectionType": "map",
+              "isRequired": true
             }
           }
         }
       },
-      "pathVariables": [
-        {
-          "type": "string",
-          "name": "uid",
-          "description": "The User Identifier",
-          "isRequired": true
-        }
-      ]
-    },
-    {
-      "actionName": "addApplicationCustomFields",
-      "path": "/applications/{code}/custom-fields",
-      "method": "POST",
       "responses": {
         "204": {
           "description": "No Content",
@@ -291,17 +273,11 @@
           "isRequired": true
         }
       ],
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "string",
-              "name": "undefined",
-              "collectionType": "map",
-              "isRequired": true
-            }
-          }
-        }
+      "permission": {
+        "items": [
+          "igrp.application.update"
+        ],
+        "operator": "OR"
       }
     },
     {
@@ -340,7 +316,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.application.update"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getApplicationCustomFields",
@@ -367,7 +349,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.application.view"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getApplicationByCode",
@@ -395,11 +383,149 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.application.view"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "createMenu",
+      "path": "/applications/{applicationCode}/menus",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "MenuEntryDTO",
+              "name": "menuEntry",
+              "objectType": "dto",
+              "module": "shared",
+              "description": "The Menu Entry Data"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "description": "The Persisted Menu",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "applicationCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.application.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "updateMenu",
+      "path": "/applications/{applicationCode}/menus/{menuCode}",
+      "method": "PUT",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "MenuEntryDTO",
+              "name": "undefined",
+              "objectType": "dto",
+              "module": "shared",
+              "description": "The Menu Data"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "description": "The Updated Menu",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "applicationCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "menuCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.application.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "deleteMenu",
+      "path": "/applications/{applicationCode}/menus/{menuCode}",
+      "method": "DELETE",
+      "responses": {
+        "204": {
+          "description": "No Content",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "applicationCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "menuCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.application.delete"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getApplicationMenus",
-      "path": "/applications/{code}/menus/available",
+      "path": "/applications/{code}/menus",
       "method": "GET",
       "responses": {
         "200": {
@@ -424,21 +550,26 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.application.view"
+        ],
+        "operator": "OR"
+      }
     },
     {
-      "actionName": "addRolesToApp",
-      "path": "/applications/{code}/roles",
+      "actionName": "addRolesToMenu",
+      "path": "/applications/{applicationCode}/menus/{menuCode}/roles",
       "method": "POST",
       "requestBody": {
         "content": {
           "application/json": {
             "schema": {
-              "collectionType": "none",
-              "name": "data",
-              "type": "CodeListRequestDTO",
-              "objectType": "dto",
-              "module": "shared"
+              "type": "string",
+              "collectionType": "list",
+              "name": "AddPermissionsToMenuRequest",
+              "description": "Add Permissions Request"
             }
           }
         }
@@ -446,81 +577,58 @@
       "responses": {
         "200": {
           "name": "OK",
-          "description": "Add roles to an application",
           "content": {
             "application/json": {
               "schema": {
-                "type": "string",
+                "type": "MenuEntryDTO",
+                "objectType": "dto",
                 "name": "data",
-                "collectionType": "none"
+                "collectionType": "none",
+                "module": "shared"
               }
             }
           }
         }
       },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "description": "Department Code",
+          "isRequired": true
+        }
+      ],
       "pathVariables": [
         {
-          "name": "code",
+          "name": "applicationCode",
           "type": "string",
-          "isRequired": true,
-          "description": "App code"
+          "isRequired": true
+        },
+        {
+          "name": "menuCode",
+          "type": "string",
+          "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.application.manage"
+        ],
+        "operator": "OR"
+      }
     },
     {
-      "actionName": "removeRoleFromApplication",
-      "path": "applications/{code}/roles",
+      "actionName": "removeRolesFromMenu",
+      "path": "/applications/{applicationCode}/menus/{menuCode}/roles",
       "method": "DELETE",
       "requestBody": {
         "content": {
           "application/json": {
             "schema": {
-              "type": "CodeListRequestDTO",
-              "collectionType": "none",
-              "name": "data",
-              "objectType": "dto",
-              "module": "shared"
-            }
-          }
-        }
-      },
-      "responses": {
-        "204": {
-          "name": "OK",
-          "description": "Remove a role from an application",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "string",
-                "name": "data",
-                "collectionType": "none"
-              }
-            }
-          }
-        }
-      },
-      "pathVariables": [
-        {
-          "name": "code",
-          "type": "string",
-          "isRequired": true,
-          "description": "App code"
-        }
-      ]
-    },
-    {
-      "actionName": "addDepartmentsToApplication",
-      "path": "applications/{code}/departments",
-      "method": "POST",
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "CodeListRequestDTO",
-              "collectionType": "none",
-              "name": "data",
-              "objectType": "dto",
-              "module": "shared"
+              "type": "string",
+              "collectionType": "list",
+              "name": "RemovePermissionsFromMenuRequest",
+              "description": "Remove Permissions from Menu"
             }
           }
         }
@@ -528,40 +636,57 @@
       "responses": {
         "200": {
           "name": "OK",
-          "description": "Add departments to an application",
           "content": {
             "application/json": {
               "schema": {
-                "type": "string",
+                "type": "MenuEntryDTO",
+                "objectType": "dto",
                 "name": "data",
-                "collectionType": "none"
+                "collectionType": "none",
+                "module": "shared"
               }
             }
           }
         }
       },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "description": "Department Code",
+          "isRequired": true
+        }
+      ],
       "pathVariables": [
         {
-          "name": "code",
+          "name": "applicationCode",
           "type": "string",
-          "isRequired": true,
-          "description": "Application code"
+          "isRequired": true
+        },
+        {
+          "name": "menuCode",
+          "type": "string",
+          "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.application.manage"
+        ],
+        "operator": "OR"
+      }
     },
     {
-      "actionName": "removeDepartmentFromApplication",
-      "path": "applications/{code}/departments",
-      "method": "DELETE",
+      "actionName": "linkResourceToApplication",
+      "path": "applications/{code}/resources",
+      "method": "POST",
       "requestBody": {
         "content": {
           "application/json": {
             "schema": {
-              "collectionType": "none",
-              "name": "data",
-              "type": "CodeListRequestDTO",
-              "objectType": "dto",
-              "module": "shared"
+              "type": "string",
+              "collectionType": "list",
+              "name": "data"
             }
           }
         }
@@ -569,7 +694,6 @@
       "responses": {
         "204": {
           "name": "OK",
-          "description": "Remove a department from an application",
           "content": {
             "application/json": {
               "schema": {
@@ -585,11 +709,59 @@
         {
           "name": "code",
           "type": "string",
-          "isRequired": true,
-          "description": "Application code"
+          "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.application.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "unlinkResourceFromApplication",
+      "path": "applications/{code}/resources",
+      "method": "DELETE",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "collectionType": "list",
+              "name": "data"
+            }
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.application.manage"
+        ],
+        "operator": "OR"
+      }
     }
   ],
-  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications-removeDepartementFromApplication-getApplicationMenus-removeApplicationCustomFields"
+  "id": "350f4zsp66-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getApplications-removeDepartementFromApplication-getApplicationMenus-removeApplicationCustomFields-addRolesToApp-removeRoleFromApplication-addDepartmentsToApplication-removeDepartmentFromApplication-addRolesToApp-removeRoleFromApplication-getApplicationsByIds-getApplicationDeniedToUser-getApplicationMenus-createMenu-updateMenu-deleteMenu-addRolesToMenu-createApplication-getApplications-getApplicationById-updateApplication-deleteApplication-getApplicationsByUser-addApplicationCustomFields-removeApplicationCustomFields-getApplicationCustomFields-getApplicationByCode-createMenu-updateMenu-deleteMenu-getApplicationMenus-addRolesToMenu-removeRolesFromMenu-linkResourceToApplication-unlinkResourceFromApplication-createApplication"
 }

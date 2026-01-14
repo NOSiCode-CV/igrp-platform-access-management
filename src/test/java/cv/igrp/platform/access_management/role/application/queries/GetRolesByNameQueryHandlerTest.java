@@ -4,10 +4,13 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -27,6 +30,8 @@ public class GetRolesByNameQueryHandlerTest {
   @Mock
   private RoleEntityRepository roleRepository;
   @Mock
+  private DepartmentEntityRepository departmentRepository;
+  @Mock
   private RoleMapper roleMapper;
 
   @Test
@@ -38,9 +43,14 @@ public class GetRolesByNameQueryHandlerTest {
   void itShouldThrowRecordNotFoundException_When_ProvidedRoleName_NotFound() {
     //... Given
     String roleCode = "test";
-    GetRolesByNameQuery query = new GetRolesByNameQuery(roleCode);
+    GetRolesByNameQuery query = new GetRolesByNameQuery("DEPT_IGRP", roleCode);
 
-    when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
+    DepartmentEntity department = new DepartmentEntity();
+    department.setCode("DEPT_IGRP");
+    department.setStatus(DepartmentStatus.ACTIVE);
+
+    when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT_IGRP")).thenReturn(department);
+    when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED))
             .thenReturn(Optional.empty());
 
     //... When
@@ -54,7 +64,7 @@ public class GetRolesByNameQueryHandlerTest {
   void itShouldNotCallMapper_WhenRoleNotFound() {
     //... Given
     String roleCode = "admin";
-    GetRolesByNameQuery query = new GetRolesByNameQuery(roleCode);
+    GetRolesByNameQuery query = new GetRolesByNameQuery("DEPT_IGRP", roleCode);
     RoleEntity savedRole = new RoleEntity();
     String roleDesc = "RoleName";
     savedRole.setCode(roleCode);
@@ -65,7 +75,13 @@ public class GetRolesByNameQueryHandlerTest {
     expectedDto.setCode(roleCode);
     expectedDto.setDescription(roleDesc);
     expectedDto.setStatus(roleStatus);
-    when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
+
+    DepartmentEntity department = new DepartmentEntity();
+    department.setCode("DEPT_IGRP");
+    department.setStatus(DepartmentStatus.ACTIVE);
+
+    when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT_IGRP")).thenReturn(department);
+    when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED))
             .thenReturn(Optional.empty());
 
     //... When
@@ -74,7 +90,8 @@ public class GetRolesByNameQueryHandlerTest {
     //... Then
     assertEquals(HttpStatus.NOT_FOUND.value(), response.getBody().getStatus());
 
-    verify(roleRepository, times(1)).findByCodeAndStatusNot(roleCode, Status.DELETED);
+    verify(departmentRepository, times(1)).findByCodeAndStatusNotDeleted("DEPT_IGRP");
+    verify(roleRepository, times(1)).findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED);
     verify(roleMapper, times(0)).mapToDto(savedRole);
   }
 
@@ -82,7 +99,7 @@ public class GetRolesByNameQueryHandlerTest {
   void itShouldReturnRoleDTO_WhenRoleExists() {
     //... Given
     String roleCode = "admin";
-    GetRolesByNameQuery query = new GetRolesByNameQuery(roleCode);
+    GetRolesByNameQuery query = new GetRolesByNameQuery("DEPT_IGRP", roleCode);
     RoleEntity savedRole = new RoleEntity();
     String roleDesc = "RoleName";
     savedRole.setCode(roleCode);
@@ -93,7 +110,13 @@ public class GetRolesByNameQueryHandlerTest {
     expectedDto.setCode(roleCode);
     expectedDto.setDescription(roleDesc);
     expectedDto.setStatus(roleStatus);
-    when(roleRepository.findByCodeAndStatusNot(roleCode, Status.DELETED))
+
+    DepartmentEntity department = new DepartmentEntity();
+    department.setCode("DEPT_IGRP");
+    department.setStatus(DepartmentStatus.ACTIVE);
+
+    when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT_IGRP")).thenReturn(department);
+    when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED))
             .thenReturn(Optional.of(savedRole));
     when(roleMapper.mapToDto(savedRole))
             .thenReturn(expectedDto);
@@ -108,7 +131,8 @@ public class GetRolesByNameQueryHandlerTest {
     assertNotNull(response.getBody());
     assertEquals(expectedDto.getCode(), response.getBody().getCode());
 
-    verify(roleRepository, times(1)).findByCodeAndStatusNot(roleCode, Status.DELETED);
+    verify(departmentRepository, times(1)).findByCodeAndStatusNotDeleted("DEPT_IGRP");
+    verify(roleRepository, times(1)).findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED);
     verify(roleMapper, times(1)).mapToDto(savedRole);
   }
 

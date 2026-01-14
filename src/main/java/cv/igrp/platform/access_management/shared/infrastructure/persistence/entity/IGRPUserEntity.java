@@ -28,11 +28,10 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     @Column(name = "id", unique = true, nullable = false)
     private Integer id;
 
-    @NotBlank(message = "name is mandatory")
-    @Column(name="name", nullable = false)
+    @Column(name="name")
     private String name;
 
-    @Column(name="username", unique = true)
+    @Column(name="username")
     private String username;
 
     @Column(name="email", unique = true)

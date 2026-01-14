@@ -37,6 +37,12 @@
             }
           }
         }
+      },
+      "permission": {
+        "items": [
+          "igrp.department.create"
+        ],
+        "operator": "OR"
       }
     },
     {
@@ -82,7 +88,13 @@
           "description": "Parent Code",
           "isRequired": false
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.list"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getDepartmentById",
@@ -111,7 +123,13 @@
           "description": "ID of the Department",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.view"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "updateDepartment",
@@ -152,7 +170,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.update"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "deleteDepartment",
@@ -177,7 +201,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.delete"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getDepartmentByCode",
@@ -205,7 +235,13 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.view"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getAvailableApplicationsForDepartment",
@@ -233,11 +269,17 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getMenusAvailableForDepartment",
-      "path": "departments/{code}/menus/available",
+      "path": "departments/{departmentCode}/applications/{applicationCode}/menus/available",
       "method": "GET",
       "responses": {
         "200": {
@@ -257,11 +299,22 @@
       },
       "pathVariables": [
         {
-          "name": "code",
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "applicationCode",
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "getAvailableResourcesForDepartment",
@@ -289,7 +342,373 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "createRole",
+      "path": "departments/{code}/roles",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "RoleDTO",
+              "name": "CreateRole",
+              "objectType": "dto",
+              "module": "shared",
+              "description": "Create Role"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "name": "CREATED",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "getRoles",
+      "path": "departments/{code}/roles",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "roleCode",
+          "description": "Role Code",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.view"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "updateRole",
+      "path": "departments/{departmentCode}/roles/{roleCode}",
+      "method": "PUT",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "RoleDTO",
+              "name": "UpdateRoleRequest",
+              "objectType": "dto",
+              "module": "shared",
+              "description": "Update Role Request"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "roleCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "deleteRole",
+      "path": "departments/{departmentCode}/roles/{roleCode}",
+      "method": "DELETE",
+      "responses": {
+        "204": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "boolean",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "roleCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "RemovePermissions",
+      "path": "departments/{departmentCode}/roles/{roleCode}/permissions",
+      "method": "DELETE",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "RemovePermissions",
+              "description": "Remove Permissions Request",
+              "collectionType": "list",
+              "isRequired": true
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "roleCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "GetPermissionsByRoleId",
+      "path": "departments/{departmentCode}/roles/{roleCode}/permissions",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "PermissionDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "roleCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.view"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "addPermissions",
+      "path": "departments/{departmentCode}/roles/{roleCode}/permissions",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "name": "RemovePermissions",
+              "description": "Remove Permissions Request",
+              "collectionType": "list",
+              "isRequired": true
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "roleCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "getAvailablePermissionsForRoles",
+      "path": "departments/{departmentCode}/roles/{roleCode}/permissions/available",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "PermissionDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "roleCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "addApplicationsToDepartment",
@@ -326,11 +745,17 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "addMenusToDepartment",
-      "path": "departments/{code}/menus",
+      "path": "departments/{departmentCode}/applications/{applicationCode}/menus",
       "method": "POST",
       "requestBody": {
         "content": {
@@ -359,11 +784,22 @@
       },
       "pathVariables": [
         {
-          "name": "code",
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "applicationCode",
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "removeApplicationsFromDepartment",
@@ -400,11 +836,366 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "removeMenusFromDepartment",
-      "path": "departments/{code}/menus",
+      "path": "departments/{departmentCode}/applications/{applicationCode}/menus",
+      "method": "DELETE",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "collectionType": "list",
+              "name": "data"
+            }
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "applicationCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "getDepartmentResources",
+      "path": "/departments/{code}/resources",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ResourceDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "resourceName",
+          "description": "Resource Name",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.view"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "getDepartmentMenus",
+      "path": "/departments/{departmentCode}/applications/{applicationCode}/menus",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "MenuEntryDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "menuCode",
+          "description": "Menu Entry Code",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "applicationCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.view"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "getDepartmentApplications",
+      "path": "/departments/{code}/applications",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "ApplicationDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "applicationCode",
+          "description": "Application Code",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.view"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "addResourcesToDepartment",
+      "path": "departments/{departmentCode}/resources",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "collectionType": "list",
+              "name": "data"
+            }
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "removeResourcesFromDepartment",
+      "path": "departments/{departmentCode}/resources",
+      "method": "DELETE",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "string",
+              "collectionType": "list",
+              "name": "data"
+            }
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "getDepartmentPermissions",
+      "path": "departments/{code}/permissions",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "PermissionDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "permissionName",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.view"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "addPermissionsToDepartment",
+      "path": "departments/{code}/permissions",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "collectionType": "list",
+              "name": "data",
+              "type": "string"
+            }
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "string",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "code",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "removePermissionsFromDepartment",
+      "path": "departments/{code}/permissions",
       "method": "DELETE",
       "requestBody": {
         "content": {
@@ -437,8 +1228,55 @@
           "type": "string",
           "isRequired": true
         }
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "getAvailablePermissionsForDepartment",
+      "path": "departments/{departmentCode}/permissions/available",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "PermissionDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "resourceName",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.manage"
+        ],
+        "operator": "OR"
+      }
     }
   ],
-  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment"
+  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-addMenusToDepartment-removeMenusFromDepartment-createRole-getRoles-addMenusToDepartment-getDepartmentMenus-getMenusAvailableForDepartment-getDepartmentPermissions-postDepartment-getDepartments-getDepartmentById-updateDepartment-deleteDepartment-getDepartmentByCode-getAvailableApplicationsForDepartment-getMenusAvailableForDepartment-getAvailableResourcesForDepartment-createRole-getRoles-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getAvailablePermissionsForRoles-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-getDepartmentResources-getDepartmentMenus-getDepartmentApplications-addResourcesToDepartment-removeResourcesFromDepartment-getDepartmentPermissions-addPermissionsToDepartment-removePermissionsFromDepartment-getAvailablePermissionsForDepartment-postDepartment"
 }

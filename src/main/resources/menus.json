@@ -28,26 +28,18 @@
         "icon": "AppWindow"
       },
       {
-        "code": "ACCESS_MANAGEMENT_FOLDER",
+        "code": "USER_MANAGEMENT",
+        "name": "Gestão de Utilizadores",
+        "type": "SYSTEM_PAGE",
+        "pageSlug": "users",
+        "icon": "Users"
+      },
+      {
+        "code": "ACCESS_MANAGEMENT",
         "name": "Gestão de Acessos",
-        "type": "FOLDER",
-        "icon": "UserCog",
-        "children": [
-          {
-            "code": "USER_MANAGEMENT",
-            "name": "Gestão de Utilizadores",
-            "type": "SYSTEM_PAGE",
-            "pageSlug": "users",
-            "icon": null
-          },
-          {
-            "code": "DEPARTMENT_MANAGEMENT",
-            "name": "Gestão de Departamentos",
-            "type": "SYSTEM_PAGE",
-            "pageSlug": "departments",
-            "icon": null
-          }
-        ]
+        "type": "SYSTEM_PAGE",
+        "pageSlug": "departments",
+        "icon": "ShieldCheck"
       }
     ]
   }

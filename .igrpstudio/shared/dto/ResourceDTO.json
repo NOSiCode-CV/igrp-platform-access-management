@@ -25,8 +25,7 @@
       "before": false,
       "after": false,
       "positive": false,
-      "minLength": 5,
-      "maxLength": 100,
+      "maxLength": 255,
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false
@@ -104,7 +103,6 @@
       "before": false,
       "after": false,
       "positive": false,
-      "minLength": 3,
       "maxLength": 255,
       "isEmail": false,
       "isUrl": false,

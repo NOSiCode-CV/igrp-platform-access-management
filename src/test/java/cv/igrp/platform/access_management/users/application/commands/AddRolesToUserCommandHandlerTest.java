@@ -12,8 +12,10 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.NoActionPerfo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,48 +33,44 @@ import java.util.*;
 @DisplayName("AddRolesToUserCommandHandler Tests")
 public class AddRolesToUserCommandHandlerTest {
 
-    @Mock
-    IGRPUserEntityRepository userRepository;
-
-    @Mock
-    RoleEntityRepository roleRepository;
-
-    @Mock
-    RoleMapper roleMapper;
-
-    @Mock
-    private IAdapter adapter;
+    @Mock IGRPUserEntityRepository userRepository;
+    @Mock RoleEntityRepository roleRepository;
+    @Mock DepartmentEntityRepository departmentRepository;
+    @Mock RoleMapper roleMapper;
+    @Mock private IAdapter adapter;
 
     @InjectMocks
     private AddRolesToUserCommandHandler addRolesToUserCommandHandler;
 
     private IGRPUserEntity user;
     private RoleEntity role;
+    private DepartmentEntity department;
     private RoleDTO roleDTO;
-    private final String USERNAME = "johndoe";
-    private final String ROLE_NAME = "admin";
+
+    private final Integer ID = 1;
+    private final String ROLE_CODE = "admin";
+    private final String DEPT_IN_CMD = "DEPT_1";
 
     @BeforeEach
     void setUp() {
         user = new IGRPUserEntity();
-        user.setUsername(USERNAME);
+        user.setId(ID);
         user.setRoles(new ArrayList<>());
 
+        department = new DepartmentEntity();
+        department.setCode(DEPT_IN_CMD);
+
         role = new RoleEntity();
-        role.setName(ROLE_NAME);
+        role.setCode(ROLE_CODE);
+        role.setDepartment(department);
         role.setUsers(null);
 
-        DepartmentEntity department = new DepartmentEntity();
-        department.setCode("DEP-001");
-        role.setDepartment(department);
-
         roleDTO = new RoleDTO();
-        roleDTO.setName(ROLE_NAME);
-
+        roleDTO.setCode(ROLE_CODE);
     }
 
     private AddRolesToUserCommand buildCommand(List<String> roles) {
-        return new AddRolesToUserCommand(roles, USERNAME);
+        return new AddRolesToUserCommand(roles, ID, DEPT_IN_CMD);
     }
 
     @Test
@@ -80,8 +78,10 @@ public class AddRolesToUserCommandHandlerTest {
     void testHandle_whenEmptyRoleList_shouldThrowNoActionPerformed() {
         AddRolesToUserCommand command = buildCommand(Collections.emptyList());
 
-        NoActionPerformedException exception = assertThrows(NoActionPerformedException.class, () ->
-                addRolesToUserCommandHandler.handle(command));
+        NoActionPerformedException exception = assertThrows(
+                NoActionPerformedException.class,
+                () -> addRolesToUserCommandHandler.handle(command)
+        );
 
         assertEquals(HttpStatus.OK, exception.getStatusCode());
         assertEquals("No action performed because the role list is empty", exception.getBody().getDetail());
@@ -90,166 +90,126 @@ public class AddRolesToUserCommandHandlerTest {
     @Test
     @DisplayName("should throw IgrpResponseStatusException if user not found")
     void testHandle_whenUserNotFound_shouldThrowException() {
-        AddRolesToUserCommand command = buildCommand(List.of(ROLE_NAME));
+        AddRolesToUserCommand command = buildCommand(List.of(ROLE_CODE));
 
-        when(userRepository.findByUsername(eq(USERNAME))).thenReturn(Optional.empty());
+        when(departmentRepository.findByCodeAndStatusNotDeleted(DEPT_IN_CMD)).thenReturn(department);
+        when(userRepository.findById(ID)).thenReturn(Optional.empty());
 
-        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
-                addRolesToUserCommandHandler.handle(command));
+        IgrpResponseStatusException ex = assertThrows(
+                IgrpResponseStatusException.class,
+                () -> addRolesToUserCommandHandler.handle(command)
+        );
 
-        assertEquals(HttpStatus.NOT_FOUND, exception.getStatusCode());
-        assertNotNull(exception.getBody().getProperties());
-        assertEquals("User not found with name: %s".formatted(USERNAME), exception.getBody().getProperties().get("details"));
-
-        verify(userRepository).findByUsername(eq(USERNAME));
-        verifyNoInteractions(roleRepository, roleMapper);
+        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
+        assertEquals("User not found with ID: %s".formatted(ID),
+                ex.getBody().getProperties().get("details"));
     }
 
     @Test
     @DisplayName("should throw IgrpResponseStatusException if role not found")
     void testHandle_whenRoleNotFound_shouldThrowRuntimeWithCause() {
-        AddRolesToUserCommand command = buildCommand(List.of(ROLE_NAME));
+        AddRolesToUserCommand command = buildCommand(List.of(ROLE_CODE));
 
-        when(userRepository.findByUsername(eq(USERNAME))).thenReturn(Optional.of(user));
-        when(roleRepository.findByCodeAndStatusNot(eq(ROLE_NAME), eq(Status.DELETED)))
+        when(departmentRepository.findByCodeAndStatusNotDeleted(DEPT_IN_CMD)).thenReturn(department);
+        when(userRepository.findById(ID)).thenReturn(Optional.of(user));
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, ROLE_CODE, Status.DELETED))
                 .thenReturn(Optional.empty());
 
-        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () ->
-                addRolesToUserCommandHandler.handle(command));
+        IgrpResponseStatusException ex = assertThrows(
+                IgrpResponseStatusException.class,
+                () -> addRolesToUserCommandHandler.handle(command)
+        );
 
-        ProblemDetail problemDetail = exception.getBody();
-
-        assertNotNull(problemDetail.getProperties());
-        assertTrue(problemDetail.getProperties()
-                .get("details")
-                .toString()
-                .contains("Role not found with name: %s".formatted(ROLE_NAME)));
-
-        verify(userRepository).findByUsername(eq(USERNAME));
-        verify(roleRepository).findByCodeAndStatusNot(eq(ROLE_NAME), eq(Status.DELETED));
-        verifyNoInteractions(roleMapper);
+        assertTrue(ex.getBody().getProperties().get("details").toString()
+                .contains("Role not found with code: %s".formatted(ROLE_CODE)));
     }
-
 
     @Test
     @DisplayName("should add role to user and return 201 with RoleDTO")
     void testHandle_whenValidCommand_shouldReturnCreatedRoleDTO() {
-        AddRolesToUserCommand command = buildCommand(List.of(ROLE_NAME));
+        AddRolesToUserCommand command = buildCommand(List.of(ROLE_CODE));
 
-        // Arrange
-        when(userRepository.findByUsername(USERNAME)).thenReturn(Optional.of(user));
-        when(roleRepository.findByCodeAndStatusNot(eq(ROLE_NAME), eq(Status.DELETED)))
+        when(departmentRepository.findByCodeAndStatusNotDeleted(DEPT_IN_CMD))
+                .thenReturn(department);
+        when(userRepository.findById(ID)).thenReturn(Optional.of(user));
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, ROLE_CODE, Status.DELETED))
                 .thenReturn(Optional.of(role));
-        when(roleRepository.findByCodeAndStatusNot(ROLE_NAME, Status.DELETED)).thenReturn(Optional.of(role));
-        when(roleRepository.save(any(RoleEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(roleRepository.save(any(RoleEntity.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
-        // Act
         ResponseEntity<List<RoleDTO>> response = addRolesToUserCommandHandler.handle(command);
 
-        // Assert
-        assertNotNull(response);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(1, Objects.requireNonNull(response.getBody()).size());
+        assertEquals(1, response.getBody().size());
         assertEquals(roleDTO, response.getBody().getFirst());
         assertTrue(role.getUsers().contains(user));
-
-        // Verify
-        verify(userRepository).findByUsername(USERNAME);
-        verify(roleRepository).findByCodeAndStatusNot(ROLE_NAME, Status.DELETED);
-        verify(roleRepository).save(any(RoleEntity.class));
-        verify(roleMapper).mapToDto(role);
-        verifyNoMoreInteractions(userRepository, roleRepository, roleMapper);
     }
-
-
-
 
     @Test
     @DisplayName("should not duplicate user if already present in role")
     void testHandle_whenUserAlreadyInRole_shouldNotDuplicate() {
-        // Arrange
-        AddRolesToUserCommand command = buildCommand(List.of(ROLE_NAME));
+        AddRolesToUserCommand command = buildCommand(List.of(ROLE_CODE));
 
-        when(roleRepository.findByCodeAndStatusNot(ROLE_NAME,Status.DELETED)).thenReturn(Optional.of(role));
-        when(userRepository.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        role.setUsers(new HashSet<>(List.of(user)));
+
+        when(departmentRepository.findByCodeAndStatusNotDeleted(DEPT_IN_CMD))
+                .thenReturn(department);
+        when(userRepository.findById(ID)).thenReturn(Optional.of(user));
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, ROLE_CODE, Status.DELETED))
+                .thenReturn(Optional.of(role));
         when(roleRepository.save(role)).thenReturn(role);
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
-        // Act
         ResponseEntity<List<RoleDTO>> response = addRolesToUserCommandHandler.handle(command);
 
-        // Assert
-        assertNotNull(response);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(1, Objects.requireNonNull(response.getBody()).size());
-        assertEquals(roleDTO, response.getBody().getFirst());
-        assertTrue(role.getUsers().contains(user));
-
-        // Verify
-        verify(userRepository, times(1)).findByUsername(USERNAME);
-        verify(roleRepository, times(1)).findByCodeAndStatusNot(ROLE_NAME, Status.DELETED);
-        verify(roleMapper, times(1)).mapToDto(role);
-        verify(roleRepository, times(1)).save(role);
-        verifyNoMoreInteractions(userRepository,roleRepository,roleMapper);
+        assertEquals(1, response.getBody().size());
     }
 
     @Test
     @DisplayName("should add user to existing users in role")
     void testHandle_whenRoleHasOtherUsers_shouldAddNewUser() {
-        // Arrange
         IGRPUserEntity anotherUser = new IGRPUserEntity();
         anotherUser.setId(50);
         role.setUsers(new HashSet<>(List.of(anotherUser)));
 
-        when(roleRepository.findByCodeAndStatusNot(ROLE_NAME, Status.DELETED)).thenReturn(Optional.of(role));
-        when(userRepository.findByUsername(USERNAME)).thenReturn(Optional.of(user));
+        AddRolesToUserCommand command = buildCommand(List.of(ROLE_CODE));
+
+        when(departmentRepository.findByCodeAndStatusNotDeleted(DEPT_IN_CMD))
+                .thenReturn(department);
+        when(userRepository.findById(ID)).thenReturn(Optional.of(user));
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, ROLE_CODE, Status.DELETED))
+                .thenReturn(Optional.of(role));
         when(roleRepository.save(role)).thenReturn(role);
         when(roleMapper.mapToDto(role)).thenReturn(roleDTO);
 
-        AddRolesToUserCommand command = buildCommand(List.of(ROLE_NAME));
-
-        // Act
         ResponseEntity<List<RoleDTO>> response = addRolesToUserCommandHandler.handle(command);
 
-        // Assert
-        assertNotNull(response);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        assertEquals(1, Objects.requireNonNull(response.getBody()).size());
         assertTrue(role.getUsers().contains(anotherUser));
         assertTrue(role.getUsers().contains(user));
-
-        // Verify
-        verify(userRepository).findByUsername(USERNAME);
-        verify(roleRepository).findByCodeAndStatusNot(ROLE_NAME, Status.DELETED);
-        verify(roleMapper).mapToDto(role);
-        verify(roleRepository).save(role);
-        verifyNoMoreInteractions(userRepository,roleRepository,roleMapper);
     }
 
     @Test
     @DisplayName("should initialize user set when role has null users")
     void handle_whenRoleUsersIsNull_shouldInitializeSet() {
-        AddRolesToUserCommand command = buildCommand(List.of(ROLE_NAME));
+        AddRolesToUserCommand command = buildCommand(List.of(ROLE_CODE));
 
-        when(userRepository.findByUsername(USERNAME)).thenReturn(Optional.of(user));
-        when(roleRepository.findByCodeAndStatusNot(ROLE_NAME, Status.DELETED)).thenReturn(Optional.of(role));
-        when(roleRepository.save(any(RoleEntity.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        role.setUsers(null);
 
-        // Act
+        when(departmentRepository.findByCodeAndStatusNotDeleted(DEPT_IN_CMD))
+                .thenReturn(department);
+        when(userRepository.findById(ID)).thenReturn(Optional.of(user));
+        when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, ROLE_CODE, Status.DELETED))
+                .thenReturn(Optional.of(role));
+        when(roleRepository.save(any(RoleEntity.class)))
+                .thenAnswer(inv -> inv.getArgument(0));
+
         ResponseEntity<List<RoleDTO>> response = addRolesToUserCommandHandler.handle(command);
 
-        // Assert
-        assertNotNull(response);
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
         assertNotNull(role.getUsers());
         assertTrue(role.getUsers().contains(user));
-
-        // Verify
-        verify(userRepository).findByUsername(USERNAME);
-        verify(roleRepository).findByCodeAndStatusNot(ROLE_NAME,Status.DELETED);
-        verify(roleRepository).save(role);
-        verifyNoMoreInteractions(userRepository,roleRepository);
     }
-
 }

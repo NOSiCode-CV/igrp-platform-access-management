@@ -14,9 +14,9 @@ import org.springframework.web.multipart.MultipartFile;
 @AllArgsConstructor
 public class UploadPrivateFileCommand implements Command {
 
-  @NotNull(message = "The field <file> is required.")
+  @NotNull(message = "The field <file> is required")
   private MultipartFile file;
-  @NotBlank(message = "The field <folder> is required.")
+  @NotBlank(message = "The field <folder> is required")
   private String folder;
 
 }

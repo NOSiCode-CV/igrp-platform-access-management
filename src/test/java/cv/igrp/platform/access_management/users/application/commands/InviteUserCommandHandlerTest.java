@@ -6,8 +6,11 @@ import cv.igrp.framework.notifications.core.exception.NotificationException;
 import cv.igrp.framework.notifications.core.model.Notification;
 import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
+import cv.igrp.platform.access_management.shared.application.dto.InviteUserDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,35 +43,39 @@ class InviteUserCommandHandlerTest {
     @Mock
     private IAdapter adapter;
 
+    @Mock
+    private UpdateUserStatusCommandHandler commandBus;
+
+    @Mock
+    private DepartmentEntityRepository departmentRepository;
+
     @InjectMocks
     private InviteUserCommandHandler underTest;
 
-    private IGRPUserDTO igrpUserDTO;
+    private InviteUserDTO igrpUserDTO;
     private InviteUserCommand command;
     private IGRPUserEntity user;
 
     @BeforeEach
     void setUp() {
-        igrpUserDTO = new IGRPUserDTO();
-        igrpUserDTO.setName("John Doe");
-        igrpUserDTO.setUsername("john");
-        igrpUserDTO.setEmail("john@example.com");
+        igrpUserDTO = new InviteUserDTO();
+        igrpUserDTO.setEmail("john@nosi.cv");
 
         user = new IGRPUserEntity();
 
         user.setName("John Doe");
         user.setUsername("john");
-        user.setEmail("john@example.com");
+        user.setEmail("john@nosi.cv");
 
         command = new InviteUserCommand(igrpUserDTO);
     }
 
     /**
-     * Test: should throw CONFLICT when username already exists in the repository.
+     * Test: should throw CONFLICT when email already exists in the repository.
      */
     @Test
     void itShouldThrowConflict_WhenUsernameAlreadyExists() {
-        when(userRepository.existsByUsername("john")).thenReturn(true);
+        when(userRepository.existsByEmail("john@nosi.cv")).thenReturn(true);
 
         IgrpResponseStatusException ex = assertThrows(
                 IgrpResponseStatusException.class,
@@ -76,8 +83,8 @@ class InviteUserCommandHandlerTest {
         );
 
         assertEquals(HttpStatus.CONFLICT.value(), ex.getBody().getStatus());
-        assertTrue(ex.getMessage().contains("john"));
-        verify(userRepository).existsByUsername("john");
+        assertTrue(ex.getMessage().contains("john@nosi.cv"));
+        verify(userRepository).existsByEmail("john@nosi.cv");
         verifyNoInteractions(adapter);
         verifyNoInteractions(notificationAdapter);
     }
@@ -87,8 +94,8 @@ class InviteUserCommandHandlerTest {
      */
     @Test
     void itShouldThrowBadRequest_WhenUserDoesNotExistInIAMProvider() {
-        when(userRepository.existsByUsername("john")).thenReturn(false);
-        when(adapter.resolveUser("john")).thenReturn(Optional.empty());
+        when(userRepository.existsByEmail("john@nosi.cv")).thenReturn(false);
+        when(adapter.resolveUser("john@nosi.cv")).thenReturn(Optional.empty());
 
         IgrpResponseStatusException ex = assertThrows(
                 IgrpResponseStatusException.class,
@@ -97,7 +104,7 @@ class InviteUserCommandHandlerTest {
 
         assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getBody().getStatus());
         assertTrue(ex.getMessage().contains("does not exist"));
-        verify(adapter).resolveUser("john");
+        verify(adapter).resolveUser("john@nosi.cv");
         verify(userRepository, never()).save(any());
         verifyNoInteractions(notificationAdapter);
     }
@@ -107,35 +114,33 @@ class InviteUserCommandHandlerTest {
      */
     @Test
     void itShouldInviteUserSuccessfully_WhenUserExistsInIAMProvider() throws NotificationException {
-        when(userRepository.existsByUsername("john")).thenReturn(false);
-        when(adapter.resolveUser("john")).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmail("john@nosi.cv")).thenReturn(false);
+        when(adapter.resolveUser("john@nosi.cv")).thenReturn(Optional.of(user));
 
         IGRPUserEntity savedEntity = new IGRPUserEntity();
         savedEntity.setId(1);
         savedEntity.setName("John Doe");
-        savedEntity.setUsername("john");
-        savedEntity.setEmail("john@example.com");
+        savedEntity.setExternalId("f8c3de3d-1fea-4d7c-a8b0-29f63c4c3454");
+        savedEntity.setEmail("john@nosi.cv");
 
         when(userRepository.save(any(IGRPUserEntity.class))).thenReturn(savedEntity);
 
         IGRPUserDTO expectedDto = new IGRPUserDTO();
         expectedDto.setId(1);
         expectedDto.setName("John Doe");
-        expectedDto.setUsername("john");
-        expectedDto.setEmail("john@example.com");
+        expectedDto.setEmail("john@nosi.cv");
 
         when(userMapper.toDto(savedEntity)).thenReturn(expectedDto);
 
-        ResponseEntity<IGRPUserDTO> response = underTest.handle(command);
+        ResponseEntity<InvitationDTO> response = underTest.handle(command);
 
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
-        assertEquals(expectedDto.getUsername(), response.getBody().getUsername());
         assertEquals(expectedDto.getEmail(), response.getBody().getEmail());
 
-        verify(userRepository).existsByUsername("john");
-        verify(adapter).resolveUser("john");
+        verify(userRepository).existsByEmail("john@nosi.cv");
+        verify(adapter).resolveUser("john@nosi.cv");
         verify(userRepository).save(any(IGRPUserEntity.class));
         verify(notificationAdapter).send(any(Notification.class));
         verify(userMapper).toDto(savedEntity);

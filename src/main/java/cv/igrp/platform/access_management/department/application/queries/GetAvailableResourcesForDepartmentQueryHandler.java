@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.department.application.queries;
 
-import cv.igrp.platform.access_management.resource.mapper.ResourceMapper;
+import cv.igrp.platform.access_management.department.mapper.ResourceMapper;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
@@ -15,6 +15,8 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
+
+import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.IGRP_RESOURCE;
 
 @Component
 public class GetAvailableResourcesForDepartmentQueryHandler implements QueryHandler<GetAvailableResourcesForDepartmentQuery, ResponseEntity<List<ResourceDTO>>> {
@@ -38,7 +40,7 @@ public class GetAvailableResourcesForDepartmentQueryHandler implements QueryHand
         // Verify if the department exists
         departmentEntityRepository.findByCodeAndStatusNotDeleted(query.getCode());
 
-        List<ResourceDTO> availableResources = resourceEntityRepository.findAvailableResourcesForDepartment(query.getCode())
+        List<ResourceDTO> availableResources = resourceEntityRepository.findAvailableResourcesForDepartment(query.getCode(), IGRP_RESOURCE)
                 .stream()
                 .map(resourceMapper::toDto)
                 .toList();

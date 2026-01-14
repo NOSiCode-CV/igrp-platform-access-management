@@ -35,8 +35,8 @@ public class GetUserRolesQueryHandlerTest {
     @InjectMocks
     private GetUserRolesQueryHandler getUserRolesQueryHandler;
 
-    private GetUserRolesQuery getUserRolesQuery(String username){
-     return new GetUserRolesQuery(username);
+    private GetUserRolesQuery getUserRolesQuery(Integer id){
+     return new GetUserRolesQuery(id);
     }
 
     private GetUserRolesQuery query;
@@ -44,12 +44,12 @@ public class GetUserRolesQueryHandlerTest {
     private RoleEntity role1, role2;
     private RoleDTO roleDto1, roleDto2;
 
-    private final String USER_ID = "johndoe";
+    private final Integer USER_ID = 1;
 
     @BeforeEach
     void setUp() {
         user = new IGRPUserEntity();
-        user.setUsername(USER_ID);
+        user.setId(USER_ID);
         user.setRoles(new ArrayList<>());
 
         role1 = new RoleEntity();
@@ -74,7 +74,7 @@ public class GetUserRolesQueryHandlerTest {
         var roles = List.of(role1, role2);
         user.setRoles(new ArrayList<>());
         user.getRoles().addAll(roles);
-        when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(roleMapper.mapToDto(role1)).thenReturn(roleDto1);
         when(roleMapper.mapToDto(role2)).thenReturn(roleDto2);
 
@@ -92,7 +92,7 @@ public class GetUserRolesQueryHandlerTest {
         assertTrue(response.getBody().contains(roleDto2));
 
         // Verify
-        verify(userRepository, times(1)).findByUsername(USER_ID);
+        verify(userRepository, times(1)).findById(USER_ID);
         verify(roleMapper, times(1)).mapToDto(role1);
         verify(roleMapper, times(1)).mapToDto(role2);
         verifyNoMoreInteractions(userRepository, roleMapper);
@@ -104,7 +104,7 @@ public class GetUserRolesQueryHandlerTest {
     void testHandle_whenUserHasNoRoles_shouldReturnEmptyList() {
         //Arrange
         user.setRoles(Collections.unmodifiableList(new ArrayList<>()));
-        when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
         query = getUserRolesQuery(USER_ID);
 
@@ -118,7 +118,7 @@ public class GetUserRolesQueryHandlerTest {
         assertTrue(response.getBody().isEmpty());
 
         // Verify
-        verify(userRepository, times(1)).findByUsername(USER_ID);
+        verify(userRepository, times(1)).findById(USER_ID);
         verifyNoMoreInteractions(userRepository, roleMapper);
     }
 
@@ -126,7 +126,7 @@ public class GetUserRolesQueryHandlerTest {
     @DisplayName("should throw IgrpResponseStatusException when user is not found")
     void testHandle_whenUserNotFound_shouldThrowEntityNotFoundException() {
         // Arrange
-        when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.empty());
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         query = getUserRolesQuery(USER_ID);
 
@@ -135,10 +135,10 @@ public class GetUserRolesQueryHandlerTest {
                 getUserRolesQueryHandler.handle(query));
         // Assert
         assertNotNull(exception.getBody().getProperties());
-        assertEquals("User not found with username: " + USER_ID, exception.getBody().getProperties().get("details"));
+        assertEquals("User not found with ID: " + USER_ID, exception.getBody().getProperties().get("details"));
 
         // Verify
-        verify(userRepository, times(1)).findByUsername(USER_ID);
+        verify(userRepository, times(1)).findById(USER_ID);
         verifyNoInteractions(roleMapper);
         verifyNoMoreInteractions(userRepository);
     }
@@ -150,7 +150,7 @@ public class GetUserRolesQueryHandlerTest {
         var roles = List.of(role1, role2);
         user.setRoles(new ArrayList<>());
         user.getRoles().addAll(roles);
-        when(userRepository.findByUsername(USER_ID)).thenReturn(Optional.of(user));
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
         when(roleMapper.mapToDto(role1)).thenReturn(roleDto1);
         when(roleMapper.mapToDto(role2)).thenReturn(null);
 
@@ -167,7 +167,7 @@ public class GetUserRolesQueryHandlerTest {
         assertTrue(response.getBody().contains(roleDto1));
 
         // Verify
-        verify(userRepository, times(1)).findByUsername(USER_ID);
+        verify(userRepository, times(1)).findById(USER_ID);
         verify(roleMapper, times(1)).mapToDto(role1);
         verify(roleMapper, times(1)).mapToDto(role2);
         verifyNoMoreInteractions(userRepository, roleMapper);

@@ -51,7 +51,7 @@ class RemoveApplicationsFromDepartmentCommandHandlerTest {
         department = new DepartmentEntity();
         department.setCode("DEPT");
         department.setApplications(new HashSet<>(Set.of(app1, app2)));
-        department.setChildrenids(List.of(childDepartment));
+        department.setChildrenids(new ArrayList<>(List.of(childDepartment)));
     }
 
     @Test

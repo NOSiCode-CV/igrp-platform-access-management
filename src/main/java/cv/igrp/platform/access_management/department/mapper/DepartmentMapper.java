@@ -18,7 +18,7 @@ public class DepartmentMapper {
         dto.setDescription(entity.getDescription());
         dto.setStatus(entity.getStatus());
         if (entity.getParentId() != null) {
-            dto.setParent_code(entity.getParentId().getCode());
+            dto.setParentCode(entity.getParentId().getCode());
         }
         dto.setIcon(entity.getIcon());
         return dto;

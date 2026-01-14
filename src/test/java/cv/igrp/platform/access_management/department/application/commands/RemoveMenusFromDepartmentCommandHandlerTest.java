@@ -3,8 +3,10 @@ package cv.igrp.platform.access_management.department.application.commands;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +20,6 @@ import org.springframework.http.ResponseEntity;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -32,16 +33,23 @@ class RemoveMenusFromDepartmentCommandHandlerTest {
     @Mock
     private DepartmentEntityRepository departmentEntityRepository;
 
+    @Mock
+    private ApplicationEntityRepository applicationEntityRepository;
+
     @InjectMocks
     private RemoveMenusFromDepartmentCommandHandler handler;
 
     private DepartmentEntity department;
     private MenuEntryEntity menuEntry;
+    private ApplicationEntity application;
 
     @BeforeEach
     void setup() {
         department = new DepartmentEntity();
         department.setCode("DEP1");
+
+        application =  new ApplicationEntity();
+        application.setCode("AP1");
 
         menuEntry = new MenuEntryEntity();
         menuEntry.setCode("MENU1");
@@ -54,12 +62,15 @@ class RemoveMenusFromDepartmentCommandHandlerTest {
     @Test
     void shouldRemoveMenuFromDepartmentSuccessfully() {
         RemoveMenusFromDepartmentCommand command = new RemoveMenusFromDepartmentCommand();
-        command.setCode("DEP1");
+        command.setDepartmentCode("DEP1");
+        command.setApplicationCode("AP1");
         command.setRemoveMenusFromDepartmentRequest(List.of("MENU1"));
 
         when(departmentEntityRepository.findByCodeAndStatusNot("DEP1", DepartmentStatus.DELETED))
                 .thenReturn(Optional.of(department));
-        when(menuEntryRepository.findByCodeAndStatusNot("MENU1", Status.DELETED))
+        when(applicationEntityRepository.findByCodeAndStatusNot("AP1", Status.DELETED))
+                .thenReturn(Optional.of(application));
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, "MENU1", Status.DELETED))
                 .thenReturn(Optional.of(menuEntry));
 
         ResponseEntity<String> response = handler.handle(command);
@@ -71,7 +82,8 @@ class RemoveMenusFromDepartmentCommandHandlerTest {
     @Test
     void shouldThrowNotFoundIfDepartmentDoesNotExist() {
         RemoveMenusFromDepartmentCommand command = new RemoveMenusFromDepartmentCommand();
-        command.setCode("NON_EXISTENT");
+        command.setDepartmentCode("NON_EXISTENT");
+        command.setApplicationCode("AP1");
         command.setRemoveMenusFromDepartmentRequest(List.of("MENU1"));
 
         when(departmentEntityRepository.findByCodeAndStatusNot("NON_EXISTENT", DepartmentStatus.DELETED))
@@ -79,18 +91,42 @@ class RemoveMenusFromDepartmentCommandHandlerTest {
 
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
         assertEquals(404, ex.getStatusCode().value());
+        verifyNoInteractions(menuEntryRepository, applicationEntityRepository);
+    }
+
+    @Test
+    void shouldThrowNotFoundIfApplicationDoesNotExist() {
+        RemoveMenusFromDepartmentCommand command = new RemoveMenusFromDepartmentCommand();
+
+        command.setDepartmentCode("DEP1");
+        command.setApplicationCode("AP1");
+
+        command.setRemoveMenusFromDepartmentRequest(List.of("NON_EXISTENT"));
+
+        when(departmentEntityRepository.findByCodeAndStatusNot("DEP1", DepartmentStatus.DELETED))
+                .thenReturn(Optional.of(department));
+        when(applicationEntityRepository.findByCodeAndStatusNot("AP1", Status.DELETED))
+            .thenReturn(Optional.empty());
+
+        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
+
+        assertEquals(404, ex.getStatusCode().value());
+
         verifyNoInteractions(menuEntryRepository);
     }
 
     @Test
     void shouldThrowNotFoundIfMenuDoesNotExist() {
         RemoveMenusFromDepartmentCommand command = new RemoveMenusFromDepartmentCommand();
-        command.setCode("DEP1");
+        command.setDepartmentCode("DEP1");
+        command.setApplicationCode("AP1");
         command.setRemoveMenusFromDepartmentRequest(List.of("MENU_NOT_FOUND"));
 
         when(departmentEntityRepository.findByCodeAndStatusNot("DEP1", DepartmentStatus.DELETED))
                 .thenReturn(Optional.of(department));
-        when(menuEntryRepository.findByCodeAndStatusNot("MENU_NOT_FOUND", Status.DELETED))
+        when(applicationEntityRepository.findByCodeAndStatusNot("AP1", Status.DELETED))
+                .thenReturn(Optional.of(application));
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, "MENU_NOT_FOUND", Status.DELETED))
                 .thenReturn(Optional.empty());
 
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));

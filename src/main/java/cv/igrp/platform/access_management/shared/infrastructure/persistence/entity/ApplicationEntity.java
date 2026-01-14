@@ -1,5 +1,5 @@
 /* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
-/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME */
 
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.entity;
 
@@ -39,7 +39,7 @@ public class ApplicationEntity extends AuditEntity {
 
   
     @NotBlank(message = "name is mandatory")
-    @Column(name="name", nullable = false, length=50)
+    @Column(name="name", nullable = false)
     private String name;
 
   

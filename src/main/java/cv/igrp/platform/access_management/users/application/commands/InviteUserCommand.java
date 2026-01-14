@@ -5,7 +5,7 @@ import jakarta.validation.constraints.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
-import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.application.dto.InviteUserDTO;
 
 @Data
 @NoArgsConstructor
@@ -13,6 +13,6 @@ import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 public class InviteUserCommand implements Command {
 
   
-  private IGRPUserDTO igrpuserdto;
+  private InviteUserDTO inviteuserdto;
 
 }

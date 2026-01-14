@@ -14,17 +14,17 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.access.prepost.PreAuthorize;
 import cv.igrp.framework.core.domain.CommandBus;
-import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.m2m.application.commands.*;
-
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
+import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
+import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 
 @IgrpController
 @RestController
@@ -32,26 +32,19 @@ import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 @Tag(name = "M2M", description = "Machine-to-Machine")
 public class M2MController {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(M2MController.class);
-
   
   private final CommandBus commandBus;
-  private final QueryBus queryBus;
 
-  
-  public M2MController(
-    CommandBus commandBus, QueryBus queryBus
-  ) {
-    this.commandBus = commandBus;
-    this.queryBus = queryBus;
+  public M2MController(CommandBus commandBus) {
+          
+          this.commandBus = commandBus;
   }
-
-  @PostMapping(
-    value = "m2m/sync/permissions"
+   @PostMapping(
+   value = "m2m/sync/permissions"
   )
   @Operation(
-    summary = "POST method to handle operations for syncPermissions",
-    description = "POST method to handle operations for syncPermissions",
+    summary = "Sync permissions",
+    description = "Sync permissions",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -70,25 +63,18 @@ public class M2MController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new SyncPermissionsCommand(syncPermissionsRequest);
 
-       ResponseEntity<String> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
   }
 
-  @PostMapping(
-    value = "m2m/sync/resources"
+   @PostMapping(
+   value = "m2m/sync/resources"
   )
   @Operation(
-    summary = "POST method to handle operations for syncResources",
-    description = "POST method to handle operations for syncResources",
+    summary = "Sync resources",
+    description = "Sync resources",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -107,25 +93,18 @@ public class M2MController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new SyncResourcesCommand(syncResourcesRequest);
 
-       ResponseEntity<String> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
-
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
   }
 
-  @PostMapping(
-    value = "m2m/sync/applications"
+   @PostMapping(
+   value = "m2m/sync/applications"
   )
   @Operation(
-    summary = "POST method to handle operations for syncApplications",
-    description = "POST method to handle operations for syncApplications",
+    summary = "Sync applications",
+    description = "Sync applications",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -144,17 +123,140 @@ public class M2MController {
     )
   {
 
-      LOGGER.debug("Operation started");
-
       final var command = new SyncApplicationsCommand(syncApplicationsRequest);
 
-       ResponseEntity<String> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       LOGGER.debug("Operation finished");
+  }
 
-        return ResponseEntity.status(response.getStatusCode())
-              .headers(response.getHeaders())
-              .body(response.getBody());
+   @PostMapping(
+   value = "m2m/sync/applications/{code}/menus"
+  )
+  @Operation(
+    summary = "Sync application menus",
+    description = "Sync application menus",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = String.class,
+                  type = "String")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<String> syncApplicationMenus(@Valid @RequestBody List<MenuEntryDTO> syncApplicationMenusRequest
+    , @PathVariable(value = "code") String code)
+  {
+
+      final var command = new SyncApplicationMenusCommand(syncApplicationMenusRequest, code);
+
+      return commandBus.send(command);
+
+  }
+
+   @PostMapping(
+   value = "m2m/users"
+  )
+  @Operation(
+    summary = "Get users for business",
+    description = "Get users for business",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = IGRPUserDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<IGRPUserDTO>> getUsersForBusiness(@RequestBody List<String> getUsersForBusinessRequest
+    , @RequestParam(value = "activeOnly", required = false) boolean activeOnly,
+    @RequestParam(value = "applicationCode", required = false) String applicationCode,
+    @RequestParam(value = "departmentCode", required = false) String departmentCode,
+    @RequestParam(value = "roleCode", required = false) String roleCode,
+    @RequestParam(value = "permissionName", required = false) String permissionName,
+    @RequestParam(value = "includeChildrenDepartments", required = false) boolean includeChildrenDepartments,
+    @RequestParam(value = "includeChildrenRoles", required = false) boolean includeChildrenRoles)
+  {
+
+      final var command = new GetUsersForBusinessCommand(getUsersForBusinessRequest, activeOnly, applicationCode, departmentCode, roleCode, permissionName, includeChildrenDepartments, includeChildrenRoles);
+
+      return commandBus.send(command);
+
+  }
+
+   @PostMapping(
+   value = "m2m/departments"
+  )
+  @Operation(
+    summary = "Get department for business",
+    description = "Get department for business",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = DepartmentDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<DepartmentDTO>> getDepartmentForBusiness(@RequestBody List<String> getDepartmentForBusinessRequest
+    , @RequestParam(value = "activeOnly", required = false) boolean activeOnly,
+    @RequestParam(value = "parentCode", required = false) String parentCode,
+    @RequestParam(value = "includeChildrenDepartments", required = false) boolean includeChildrenDepartments)
+  {
+
+      final var command = new GetDepartmentForBusinessCommand(getDepartmentForBusinessRequest, activeOnly, parentCode, includeChildrenDepartments);
+
+      return commandBus.send(command);
+
+  }
+
+   @PostMapping(
+   value = "m2m/roles"
+  )
+  @Operation(
+    summary = "Get roles for business",
+    description = "Get roles for business",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<List<RoleDTO>> getRolesForBusiness(@RequestBody List<String> getRolesForBusinessRequest
+    , @RequestParam(value = "activeOnly", required = false) boolean activeOnly,
+    @RequestParam(value = "parentCode", required = false) String parentCode,
+    @RequestParam(value = "includeChildrenRoles", required = false) boolean includeChildrenRoles)
+  {
+
+      final var command = new GetRolesForBusinessCommand(getRolesForBusinessRequest, activeOnly, parentCode, includeChildrenRoles);
+
+      return commandBus.send(command);
+
   }
 
 }

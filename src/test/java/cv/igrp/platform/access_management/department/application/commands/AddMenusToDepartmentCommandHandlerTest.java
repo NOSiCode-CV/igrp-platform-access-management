@@ -3,8 +3,10 @@ package cv.igrp.platform.access_management.department.application.commands;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,10 +31,14 @@ class AddMenusToDepartmentCommandHandlerTest {
     @Mock
     private DepartmentEntityRepository departmentRepository;
 
+    @Mock
+    private ApplicationEntityRepository applicationRepository;
+
     @InjectMocks
     private AddMenusToDepartmentCommandHandler handler;
 
     private DepartmentEntity department;
+    private ApplicationEntity application;
     private MenuEntryEntity menu;
     private AddMenusToDepartmentCommand command;
 
@@ -43,12 +49,16 @@ class AddMenusToDepartmentCommandHandlerTest {
         department.setStatus(DepartmentStatus.ACTIVE);
         department.setMenuentries(new HashSet<>());
 
+        application = new ApplicationEntity();
+        application.setCode("APPLICATION");
+        application.setStatus(Status.ACTIVE);
+
         menu = new MenuEntryEntity();
         menu.setCode("MENU1");
         menu.setStatus(Status.ACTIVE);
         menu.setDepartments(new HashSet<>());
 
-        command = new AddMenusToDepartmentCommand(List.of("MENU1"), "DEPT");
+        command = new AddMenusToDepartmentCommand(List.of("MENU1"), "DEPT", "APPLICATION");
     }
 
     @Test
@@ -56,7 +66,8 @@ class AddMenusToDepartmentCommandHandlerTest {
         // Arrange
         when(departmentRepository.findByCodeAndStatusNot(eq("DEPT"), eq(DepartmentStatus.DELETED)))
                 .thenReturn(Optional.of(department));
-        when(menuEntryRepository.findByCodeAndStatusNot(eq("MENU1"), eq(Status.DELETED)))
+        when(applicationRepository.findByCodeAndStatusNot(eq("APPLICATION"), eq(Status.DELETED))).thenReturn(Optional.of(application));
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(eq(application), eq("MENU1"), eq(Status.DELETED)))
                 .thenReturn(Optional.of(menu));
 
         // Act
@@ -85,11 +96,31 @@ class AddMenusToDepartmentCommandHandlerTest {
     }
 
     @Test
+    void testHandle_ShouldThrowNotFound_WhenApplicationDoesNotExist() {
+
+        when(departmentRepository.findByCodeAndStatusNot(eq("DEPT"), eq(DepartmentStatus.DELETED)))
+                .thenReturn(Optional.of(department));
+
+        when(applicationRepository.findByCodeAndStatusNot(eq("APPLICATION"), eq(Status.DELETED)))
+        .thenReturn(Optional.empty());
+
+        // Act & Assert
+        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
+                () -> handler.handle(command));
+
+        assertEquals("Application not found", ex.getBody().getTitle());
+        assertEquals(404, ex.getStatusCode().value());
+        verifyNoInteractions(menuEntryRepository);
+    }
+
+    @Test
     void testHandle_ShouldThrowNotFound_WhenMenuEntryDoesNotExist() {
         // Arrange
         when(departmentRepository.findByCodeAndStatusNot(eq("DEPT"), eq(DepartmentStatus.DELETED)))
                 .thenReturn(Optional.of(department));
-        when(menuEntryRepository.findByCodeAndStatusNot(eq("MENU1"), eq(Status.DELETED)))
+        when(applicationRepository.findByCodeAndStatusNot(eq("APPLICATION"), eq(Status.DELETED)))
+                .thenReturn(Optional.of(application));
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(eq(application), eq("MENU1"), eq(Status.DELETED)))
                 .thenReturn(Optional.empty());
 
         // Act & Assert
@@ -111,7 +142,9 @@ class AddMenusToDepartmentCommandHandlerTest {
 
         when(departmentRepository.findByCodeAndStatusNot(eq("DEPT"), eq(DepartmentStatus.DELETED)))
                 .thenReturn(Optional.of(department));
-        when(menuEntryRepository.findByCodeAndStatusNot(eq("MENU1"), eq(Status.DELETED)))
+        when(applicationRepository.findByCodeAndStatusNot(eq("APPLICATION"), eq(Status.DELETED)))
+                .thenReturn(Optional.of(application));
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(eq(application), eq("MENU1"), eq(Status.DELETED)))
                 .thenReturn(Optional.of(menu));
         when(departmentRepository.findById(eq(parent.getId()))).thenReturn(Optional.of(parent));
 
@@ -138,7 +171,9 @@ class AddMenusToDepartmentCommandHandlerTest {
 
         when(departmentRepository.findByCodeAndStatusNot(eq("DEPT"), eq(DepartmentStatus.DELETED)))
                 .thenReturn(Optional.of(department));
-        when(menuEntryRepository.findByCodeAndStatusNot(eq("MENU1"), eq(Status.DELETED)))
+        when(applicationRepository.findByCodeAndStatusNot(eq("APPLICATION"), eq(Status.DELETED)))
+                .thenReturn(Optional.of(application));
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(eq(application), eq("MENU1"), eq(Status.DELETED)))
                 .thenReturn(Optional.of(menu));
         when(departmentRepository.findById(eq(parent.getId()))).thenReturn(Optional.of(parent));
 
@@ -159,7 +194,9 @@ class AddMenusToDepartmentCommandHandlerTest {
 
         when(departmentRepository.findByCodeAndStatusNot(eq("DEPT"), eq(DepartmentStatus.DELETED)))
                 .thenReturn(Optional.of(department));
-        when(menuEntryRepository.findByCodeAndStatusNot(eq("MENU1"), eq(Status.DELETED)))
+        when(applicationRepository.findByCodeAndStatusNot(eq("APPLICATION"), eq(Status.DELETED)))
+                .thenReturn(Optional.of(application));
+        when(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(eq(application), eq("MENU1"), eq(Status.DELETED)))
                 .thenReturn(Optional.of(menu));
 
         // Act

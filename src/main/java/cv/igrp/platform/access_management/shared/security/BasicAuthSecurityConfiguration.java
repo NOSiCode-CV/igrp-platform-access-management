@@ -28,6 +28,7 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 
+import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE;
 import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
@@ -107,16 +108,37 @@ public class BasicAuthSecurityConfiguration {
     @Order(2)
     public SecurityFilterChain basicAuthFilterChain(HttpSecurity http) throws Exception {
 
-        http.csrf(AbstractHttpConfigurer::disable);
+        http.csrf(AbstractHttpConfigurer::disable)
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .addFilterBefore(new OncePerRequestFilter() {
+                    @Override
+                    protected void doFilterInternal(HttpServletRequest request,
+                                                    HttpServletResponse response,
+                                                    FilterChain filterChain) throws ServletException, IOException {
 
-        http.authorizeHttpRequests(auth -> auth
+                        var authentication = SecurityContextHolder.getContext().getAuthentication();
+                        if (authentication != null && authentication.getAuthorities() != null) {
+                            boolean isSuperAdmin = authentication.getAuthorities()
+                                    .stream()
+                                    .anyMatch(a -> a.getAuthority().equals(SUPER_ADMIN_ROLE));
+
+                            if (isSuperAdmin) {
+                                // Skip authorization checks — fully allow request
+                                filterChain.doFilter(request, response);
+                                return;
+                            }
+                        }
+
+                        filterChain.doFilter(request, response);
+                    }
+                }, UsernamePasswordAuthenticationFilter.class)
+                .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
                                 "/swagger-resources/**", "/webjars/**", "/actuator/**", "/api/m2m/**").permitAll()
                         .anyRequest().authenticated()
                 )
-                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .httpBasic(withDefaults())
-                .cors(cors -> cors.configurationSource(request -> {
+                .cors(cors -> cors.configurationSource(_ -> {
                     CorsConfiguration configuration = new CorsConfiguration();
                     configuration.addAllowedOriginPattern("*");
                     configuration.addAllowedMethod("*");

@@ -21,7 +21,7 @@
       "name": "name",
       "objectType": "java",
       "type": "string",
-      "required": true,
+      "required": false,
       "before": false,
       "after": false,
       "positive": false,
@@ -33,15 +33,14 @@
       "name": "username",
       "objectType": "java",
       "type": "string",
-      "required": true,
+      "required": false,
       "before": false,
       "after": false,
       "positive": false,
       "isEmail": false,
       "isUrl": false,
       "primaryKey": false,
-      "collectionType": "none",
-      "regex": "^[A-Za-z0-9_-]+$"
+      "collectionType": "none"
     },
     {
       "name": "email",
