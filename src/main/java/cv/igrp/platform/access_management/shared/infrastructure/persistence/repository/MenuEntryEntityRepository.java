@@ -75,14 +75,30 @@ public interface MenuEntryEntityRepository extends
      * @param user the user entity
      * @return a list of menu entry entities
      */
-    @Query("""
-        SELECT m
-        FROM MenuEntryEntity m
-        JOIN m.applicationId a
-        JOIN m.roles r
-        JOIN r.users u
-        WHERE u = :user AND m.status <> 'DELETED' AND a = :application
-    """)
-    List<MenuEntryEntity> findByApplicationIdAndUserIdAndStatusNotDeleted(IGRPUserEntity user, ApplicationEntity application);
+    @Query(value = """
+    WITH RECURSIVE menu_tree AS (
+        SELECT m.*
+        FROM t_menu_entry m
+        JOIN t_menu_entry_roles rm ON rm.menu_entry_entity_id = m.id
+        JOIN t_role r ON r.id = rm.roles_id
+        JOIN t_role_users ur ON ur.roles_id = r.id
+        JOIN t_user u ON u.id = ur.users_id
+        WHERE u.id = :userId
+          AND m.application_id = :applicationId
+          AND m.status <> 'DELETED'
+
+        UNION
+    
+        SELECT parent.*
+        FROM t_menu_entry parent
+        JOIN menu_tree child ON child.parent_id = parent.id
+        WHERE parent.status <> 'DELETED'
+    )
+    SELECT DISTINCT *
+    FROM menu_tree
+    ORDER BY position
+    """, nativeQuery = true)
+    List<MenuEntryEntity> findByApplicationIdAndUserIdAndStatusNotDeleted(@Param("userId") Integer userId,
+                                                                          @Param("applicationId") Integer applicationId);
 
 }

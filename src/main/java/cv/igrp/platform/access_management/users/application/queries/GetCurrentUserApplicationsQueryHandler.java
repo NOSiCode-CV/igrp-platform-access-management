@@ -63,7 +63,7 @@ public class GetCurrentUserApplicationsQueryHandler implements QueryHandler<GetC
                         .filter(it -> query.getApplicationName() == null || it.getName().toLowerCase().contains(query.getApplicationName().toLowerCase()))
                         .map(applicationMapper::toDto)
                         .toList()
-                : applicationRepository.findByUserIdAndStatusNotDeleted(user)
+                : applicationRepository.findByUserIdAndStatusActive(user)
                 .stream()
                 .filter(it -> query.getApplicationCode() == null || it.getCode().contains(query.getApplicationCode()))
                 .filter(it -> query.getApplicationName() == null || it.getName().toLowerCase().contains(query.getApplicationName().toLowerCase()))

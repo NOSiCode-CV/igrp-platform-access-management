@@ -72,7 +72,7 @@ public class GetCurrentUserApplicationMenusQueryHandler implements QueryHandler<
                         .filter(it -> query.getMenuCode() == null || it.getCode().contains(query.getMenuCode()))
                         .map(menuEntryMapper::toDTO)
                         .toList()
-                : menuEntryRepository.findByApplicationIdAndUserIdAndStatusNotDeleted(user, application)
+                : menuEntryRepository.findByApplicationIdAndUserIdAndStatusNotDeleted(Integer.valueOf(user.getId()), application.getId())
                 .stream()
                 .filter(it -> Objects.equals(it.getStatus(), Status.ACTIVE))
                 .filter(it -> query.getMenuCode() == null || it.getCode().contains(query.getMenuCode()))

@@ -125,6 +125,17 @@ public interface ApplicationEntityRepository extends
     """)
     List<ApplicationEntity> findByUserIdAndStatusNotDeleted(IGRPUserEntity user);
 
+    @Query("""
+        select a
+        from ApplicationEntity a
+        join a.departments d
+        join d.roles r
+        join r.users u
+        where u = :user
+        and a.status = 'ACTIVE'
+    """)
+    List<ApplicationEntity> findByUserIdAndStatusActive(IGRPUserEntity user);
+
     List<ApplicationEntity> findByStatus(Status status);
 
     default List<ApplicationEntity> findAllAndStatusActive() {
