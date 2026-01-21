@@ -72,7 +72,7 @@ public class GetDepartmentResourcesQueryHandlerTest {
     GetDepartmentResourcesQuery query = new GetDepartmentResourcesQuery(null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(resourceRepository.findByDepartmentAndStatusNot(department, Status.DELETED))
+    when(resourceRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), null))
             .thenReturn(List.of(resourceRead, resourceWrite));
     when(resourceMapper.toDto(resourceRead)).thenReturn(dtoRead);
     when(resourceMapper.toDto(resourceWrite)).thenReturn(dtoWrite);
@@ -90,7 +90,7 @@ public class GetDepartmentResourcesQueryHandlerTest {
     GetDepartmentResourcesQuery query = new GetDepartmentResourcesQuery("resource.read", "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(resourceRepository.findByDepartmentAndStatusNot(department, Status.DELETED))
+    when(resourceRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), null))
             .thenReturn(List.of(resourceRead, resourceWrite));
     when(resourceMapper.toDto(resourceRead)).thenReturn(dtoRead);
 
@@ -106,7 +106,7 @@ public class GetDepartmentResourcesQueryHandlerTest {
     GetDepartmentResourcesQuery query = new GetDepartmentResourcesQuery(null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(resourceRepository.findByDepartmentAndStatusNot(department, Status.DELETED))
+    when(resourceRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), null))
             .thenReturn(List.of());
 
     ResponseEntity<List<ResourceDTO>> response = handler.handle(query);

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.history.RevisionRepository;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -29,6 +30,19 @@ public interface RoleEntityRepository extends
      * @return an {@link List} containing the {@link RoleEntity} objects, or empty if not found
      */
     List<RoleEntity> findAllByDepartmentAndCodeIn(DepartmentEntity department, List<String> codes);
+
+    @Query("""
+       SELECT r
+       FROM RoleEntity r
+       WHERE r.department = :department
+         AND r.code IN :codes
+         AND r.status <> :deletedStatus
+       """)
+    List<RoleEntity> findAllByDepartmentAndCodeInNotDeleted(
+            @Param("department") DepartmentEntity department,
+            @Param("codes") List<String> codes,
+            @Param("deletedStatus") Status deletedStatus
+    );
 
     /**
      * Retrieves all roles whose status is included in the given list.

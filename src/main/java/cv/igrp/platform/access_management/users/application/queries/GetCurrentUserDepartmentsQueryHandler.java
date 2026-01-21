@@ -57,14 +57,12 @@ public class GetCurrentUserDepartmentsQueryHandler implements QueryHandler<GetCu
         LOGGER.info("Getting departments for user: {}", user.getExternalId());
 
         List<DepartmentDTO> departments = user.getExternalId().equals(SUPER_ADMIN_EXTERNAL_ID) ?
-                departmentRepository.findAllAndStatusActive()
+                departmentRepository.findAllActiveFiltered(query.getDepartmentCode())
                         .stream()
-                        .filter(it -> query.getDepartmentCode() == null || it.getCode().contains(query.getDepartmentCode()))
                         .map(departmentMapper::toDto)
                         .toList()
-                : departmentRepository.findByUserIdAndStatusNotDeleted(user)
+                : departmentRepository.findByUserAndNotDeletedFiltered(Integer.valueOf(user.getId()), query.getDepartmentCode())
                 .stream()
-                .filter(it -> query.getDepartmentCode() == null || it.getCode().contains(query.getDepartmentCode()))
                 .map(departmentMapper::toDto)
                 .toList();
 

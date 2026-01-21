@@ -35,9 +35,8 @@ public class GetDepartmentPermissionsQueryHandler implements QueryHandler<GetDep
 
         DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(query.getCode());
 
-        List<PermissionDTO> permissions = permissionRepository.findByDepartmentAndStatusNot(department, Status.DELETED)
+        List<PermissionDTO> permissions = permissionRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), query.getPermissionName())
                 .stream()
-                .filter(it -> query.getPermissionName() == null || it.getName().contains(query.getPermissionName()))
                 .map(permissionMapper::mapToDTO)
                 .toList();
 

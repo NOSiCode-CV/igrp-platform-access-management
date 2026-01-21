@@ -43,9 +43,8 @@ public class GetDepartmentApplicationsQueryHandler implements QueryHandler<GetDe
 
         DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(query.getCode());
 
-        List<ApplicationDTO> applications = applicationRepository.findByDepartmentAndStatusNot(department, Status.DELETED)
+        List<ApplicationDTO> applications = applicationRepository.findByDepartmentAndStatusNotFiltered(department, Status.DELETED, query.getApplicationCode())
                         .stream()
-                        .filter(it -> query.getApplicationCode() == null || it.getCode().contains(query.getApplicationCode()))
                         .map(applicationMapper::toDto)
                         .collect(Collectors.toList());
 

@@ -3,6 +3,8 @@ package cv.igrp.platform.access_management.shared.infrastructure.persistence.rep
 import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.InvitationEntity;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -41,5 +43,18 @@ public interface InvitationEntityRepository extends
      * @return a list of invitation entities ordered by last modified date in descending order
      */
     List<InvitationEntity> findAllByStatusNotOrderByLastModifiedDateDesc(InvitationStatus status);
+
+    @Query(value = """
+    SELECT i.*
+    FROM t_invitation_entity i
+    WHERE i.status <> :excludedStatus
+      AND (:email IS NULL OR i.email ILIKE CONCAT('%', :email, '%'))
+    ORDER BY i.last_modified_date DESC
+""", nativeQuery = true)
+    List<InvitationEntity> findAllByStatusNotOrderByLastModifiedDateDescFiltered(
+            @Param("excludedStatus") String excludedStatus,
+            @Param("email") String email
+    );
+
 
 }

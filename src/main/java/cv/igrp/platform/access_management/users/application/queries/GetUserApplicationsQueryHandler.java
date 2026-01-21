@@ -44,10 +44,8 @@ public class GetUserApplicationsQueryHandler implements QueryHandler<GetUserAppl
 
         LOGGER.info("Getting applications for user: {}", user.getEmail());
 
-        List<ApplicationDTO> applications = applicationRepository.findByUserIdAndStatusNotDeleted(user)
+        List<ApplicationDTO> applications = applicationRepository.findByUserAndActiveFiltered(Integer.valueOf(user.getId()), query.getApplicationCode(), query.getApplicationName())
                 .stream()
-                .filter(it -> query.getApplicationCode() == null || it.getCode().contains(query.getApplicationCode()))
-                .filter(it -> query.getApplicationName() == null || it.getName().toLowerCase().contains(query.getApplicationName().toLowerCase()))
                 .map(applicationMapper::toDto)
                 .toList();
 

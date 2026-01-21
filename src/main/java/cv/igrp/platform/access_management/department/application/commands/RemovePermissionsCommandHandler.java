@@ -89,11 +89,7 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
                  );
               });
       for (String permissionId : command.getRemovePermissionsRequest()) {
-         foundRole.getPermissions()
-                 .stream()
-                 .filter(permission -> permission.getName().equals(permissionId))
-                 .findFirst()
-                 .ifPresent(permission -> foundRole.getPermissions().remove(permission));
+         foundRole.getPermissions().removeIf(permission -> permission.getName().equals(permissionId));
       }
       log.info("Permissions with IDs {} removed from Role with code: {} successfully.", command.getRemovePermissionsRequest(), command.getRoleCode());
       removePermissionsForChildren(departmentEntity, foundRole, command.getRemovePermissionsRequest());
@@ -116,13 +112,7 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
                     });
 
             for (var permissionName : permissionNames) {
-
-               childRole.getPermissions()
-                       .stream()
-                       .filter(permission -> permission.getName().equals(permissionName))
-                       .findFirst()
-                       .ifPresent(permission -> childRole.getPermissions().remove(permission));
-
+               childRole.getPermissions().removeIf(permission -> permission.getName().equals(permissionName));
             }
 
             roleRepository.save(childRole);

@@ -118,6 +118,19 @@ public interface ApplicationEntityRepository extends
         select a
         from ApplicationEntity a
         join a.departments d
+        where d = :department
+        and a.status <> :status
+        and (
+            :applicationCode IS NULL
+            OR a.code = :applicationCode
+        )
+    """)
+    List<ApplicationEntity> findByDepartmentAndStatusNotFiltered(DepartmentEntity department, Status status, String applicationCode);
+
+    @Query("""
+        select a
+        from ApplicationEntity a
+        join a.departments d
         join d.roles r
         join r.users u
         where u = :user
@@ -141,5 +154,37 @@ public interface ApplicationEntityRepository extends
     default List<ApplicationEntity> findAllAndStatusActive() {
         return findByStatus(Status.ACTIVE);
     }
+
+    @Query(value = """
+    SELECT *
+    FROM t_application a
+    WHERE a.status = 'ACTIVE'
+      AND (:code IS NULL OR a.code ILIKE '%' || :code || '%')
+      AND (:name IS NULL OR a.name ILIKE '%' || :name || '%')
+""", nativeQuery = true)
+    List<ApplicationEntity> findAllActiveFiltered(
+            @Param("code") String applicationCode,
+            @Param("name") String applicationName
+    );
+
+
+    @Query(value = """
+    SELECT DISTINCT a.*
+    FROM t_application a
+    JOIN t_department_application d ON d.application_id = a.id
+    JOIN t_role r ON r.department = d.department_id
+    JOIN t_role_users ru ON ru.roles_id = r.id
+    JOIN t_user u ON u.id = ru.users_id
+    WHERE u.id = :userId
+      AND a.status = 'ACTIVE'
+      AND (:code IS NULL OR a.code ILIKE CONCAT('%', :code, '%'))
+      AND (:name IS NULL OR a.name ILIKE CONCAT('%', :name, '%'))
+""", nativeQuery = true)
+    List<ApplicationEntity> findByUserAndActiveFiltered(
+            @Param("userId") Integer userId,
+            @Param("code") String applicationCode,
+            @Param("name") String applicationName
+    );
+
 
 }

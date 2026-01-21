@@ -50,6 +50,12 @@ public interface PermissionEntityRepository extends
 
     List<PermissionEntity> findAllByNameIn(List<String> name);
 
+    List<PermissionEntity> findAllByNameInAndStatusNot(List<String> name, Status status);
+
+    default List<PermissionEntity> findAllByNameInAndStatusNotDeleted(List<String> name) {
+        return findAllByNameInAndStatusNot(name, Status.DELETED);
+    }
+
     @Query("""
                 SELECT DISTINCT p
                FROM PermissionEntity p
@@ -101,6 +107,7 @@ public interface PermissionEntityRepository extends
     @Query("""
                 SELECT DISTINCT p
                 FROM PermissionEntity p
+                JOIN p.resources r
                 WHERE ((
                         1=1 AND
                         NOT EXISTS (
@@ -143,10 +150,15 @@ public interface PermissionEntityRepository extends
                         )
                     )
                 AND p.status = 'ACTIVE'
+                AND (
+                            :resourceName IS NULL
+                            OR r.name = :resourceName
+                        )
             """)
     List<PermissionEntity> findAvailablePermissionsForDepartment(
             @Param("code") String code,
-            @Param("system_permission") String systemPermission
+            @Param("system_permission") String systemPermission,
+            @Param("resourceName") String resourceName
     );
 
     @Query(
@@ -159,6 +171,16 @@ public interface PermissionEntityRepository extends
         """
     )
     List<PermissionEntity> findByDepartmentAndStatusNot(DepartmentEntity department, Status status);
+
+    @Query(value = """
+    SELECT p.*
+    FROM t_permission p
+    JOIN t_permission_department dp ON dp.permission_id = p.id
+    WHERE dp.department = :department
+      AND p.status <> :status
+      AND (:name IS NULL OR p.name ILIKE CONCAT('%', :name, '%'))
+""", nativeQuery = true)
+    List<PermissionEntity> findByDepartmentAndStatusNotFiltered(Integer department, String status, String name);
 
     List<PermissionEntity> findAllByResourcesAndStatusNot(Set<ResourceEntity> resources, Status status);
 

@@ -98,10 +98,7 @@ public class AddRolesToMenuCommandHandler implements CommandHandler<AddRolesToMe
 
       var department = departmentRepository.findByCodeAndStatusNotDeleted(departmentCode);
 
-      List<RoleEntity> roleList = roleRepository.findAllByDepartmentAndCodeIn(department, roleIdList)
-              .stream()
-              .filter(role -> !role.getStatus().equals(Status.DELETED))
-              .toList();
+      List<RoleEntity> roleList = roleRepository.findAllByDepartmentAndCodeInNotDeleted(department, roleIdList, Status.DELETED);
 
       if (roleList.isEmpty()) {
          log.warn("No role available from given set: {} ", command.getAddRolesToMenuRequest().stream().toList());

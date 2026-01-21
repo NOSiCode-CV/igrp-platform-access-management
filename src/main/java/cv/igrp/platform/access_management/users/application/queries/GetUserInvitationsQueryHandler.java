@@ -39,9 +39,8 @@ public class GetUserInvitationsQueryHandler implements QueryHandler<GetUserInvit
 
         LOGGER.info("Retrieving user invitations with email filter: {}", query.getEmail());
 
-        var invitations = invitationRepository.findAllByStatusNotOrderByLastModifiedDateDesc(InvitationStatus.ACCEPTED)
+        var invitations = invitationRepository.findAllByStatusNotOrderByLastModifiedDateDescFiltered(InvitationStatus.ACCEPTED.getCode(), query.getEmail())
                 .stream()
-                .filter(it -> query.getEmail() == null || it.getEmail().equals(query.getEmail()))
                 .map(it -> {
                     var url = utils.constructInvitationUrl(appCenterUrl, it.getToken());
                     return invitationMapper.toDtoWithUrl(it, url);
