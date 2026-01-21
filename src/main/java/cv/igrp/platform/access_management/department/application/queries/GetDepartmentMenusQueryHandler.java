@@ -44,9 +44,8 @@ public class GetDepartmentMenusQueryHandler implements QueryHandler<GetDepartmen
 
         DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(query.getDepartmentCode());
 
-        List<MenuEntryDTO> menus = menuRepository.findByDepartmentAndStatusNot(department, Status.DELETED)
+        List<MenuEntryDTO> menus = menuRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), query.getMenuCode())
                 .stream()
-                .filter(it -> query.getMenuCode() == null || it.getCode().contains(query.getMenuCode()))
                 .map(menuEntryMapper::toDTO)
                 .toList();
 

@@ -94,11 +94,7 @@ public class RemoveRolesFromMenuCommandHandler implements CommandHandler<RemoveR
               });
 
       for (String roleId : command.getRemoveRolesFromMenuRequest()) {
-         foundMenu.getRoles()
-                 .stream()
-                 .filter(role -> role.getCode().equals(roleId))
-                 .findFirst()
-                 .ifPresent(role -> foundMenu.getRoles().remove(role));
+         foundMenu.getRoles().removeIf(role -> role.getCode().equals(roleId));
       }
       log.info("Roles with code {} removed from menu with code: {} successfully.", command.getRemoveRolesFromMenuRequest().stream().toList(), command.getMenuCode());
       var response = menuEntryMapper.toDTO(menuEntryRepository.save(foundMenu));

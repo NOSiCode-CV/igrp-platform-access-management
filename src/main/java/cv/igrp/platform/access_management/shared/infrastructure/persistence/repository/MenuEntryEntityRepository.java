@@ -4,7 +4,6 @@ import cv.igrp.platform.access_management.shared.application.constants.MenuEntry
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +11,6 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,6 +23,19 @@ public interface MenuEntryEntityRepository extends
         RevisionRepository<MenuEntryEntity, Integer, Integer> {
 
     List<MenuEntryEntity> findByApplicationIdAndStatusIn(ApplicationEntity appId, List<Status> status);
+
+    @Query(value = """
+    SELECT m.*
+    FROM t_menu_entry m
+    WHERE m.application_id = :application
+      AND m.status IN(:statuses)
+      AND (:menuName IS NULL OR m.name ILIKE CONCAT('%', :menuName, '%'))
+""", nativeQuery = true)
+    List<MenuEntryEntity> findByApplicationAndStatusAndMenuName(
+            @Param("application") Integer application,
+            @Param("statuses") List<String> statuses,
+            @Param("menuName") String menuName
+    );
 
     List<MenuEntryEntity> findByApplicationIdAndTypeInAndStatusIn(ApplicationEntity appId, List<MenuEntryType> types, List<Status> status);
 
@@ -69,10 +80,20 @@ public interface MenuEntryEntityRepository extends
     """)
     List<MenuEntryEntity> findByDepartmentAndStatusNot(DepartmentEntity department, Status status);
 
+    @Query(value = """
+    SELECT m.*
+    FROM t_menu_entry m
+    JOIN t_department_menuentry dm ON dm.menuentry_id = m.id
+    WHERE dm.department_id = :department
+      AND m.status <> :status
+      AND (:code IS NULL OR m.code ILIKE CONCAT('%', :code, '%'))
+""", nativeQuery = true)
+    List<MenuEntryEntity> findByDepartmentAndStatusNotFiltered(Integer department, String status, @Param("code") String menuCode);
+
     /**
      * Finds all menu entries that are not deleted for a given user.
      *
-     * @param user the user entity
+     * @param userId the user ID's
      * @return a list of menu entry entities
      */
     @Query(value = """
@@ -100,5 +121,44 @@ public interface MenuEntryEntityRepository extends
     """, nativeQuery = true)
     List<MenuEntryEntity> findByApplicationIdAndUserIdAndStatusNotDeleted(@Param("userId") Integer userId,
                                                                           @Param("applicationId") Integer applicationId);
+
+    /**
+     * Finds all menu entries that are not deleted for a given user.
+     *
+     * @param userId the user ID's
+     * @return a list of menu entry entities
+     */
+    @Query(value = """
+    WITH RECURSIVE menu_tree AS (
+        SELECT m.*
+        FROM t_menu_entry m
+        JOIN t_menu_entry_roles rm ON rm.menu_entry_entity_id = m.id
+        JOIN t_role r ON r.id = rm.roles_id
+        JOIN t_role_users ur ON ur.roles_id = r.id
+        JOIN t_user u ON u.id = ur.users_id
+        WHERE u.id = :userId
+          AND m.application_id = :applicationId
+          AND m.status = 'ACTIVE'
+          AND (
+            :menuCode IS NULL
+            OR m.name ILIKE CONCAT('%', :menuCode, '%')
+          )
+
+        UNION
+    
+        SELECT parent.*
+        FROM t_menu_entry parent
+        JOIN menu_tree child ON child.parent_id = parent.id
+        WHERE parent.status = 'ACTIVE'
+    )
+    SELECT DISTINCT *
+    FROM menu_tree
+    ORDER BY position
+    """, nativeQuery = true)
+    List<MenuEntryEntity> findActiveByApplicationIdAndUserIdFiltered(@Param("userId") Integer userId,
+                                                                     @Param("applicationId") Integer applicationId,
+                                                                     @Param("menuCode") String menuCode
+    );
+
 
 }

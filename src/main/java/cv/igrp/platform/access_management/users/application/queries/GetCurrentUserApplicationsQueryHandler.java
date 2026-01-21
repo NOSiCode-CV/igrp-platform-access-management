@@ -56,19 +56,25 @@ public class GetCurrentUserApplicationsQueryHandler implements QueryHandler<GetC
 
         LOGGER.info("Getting applications for user: {}", user.getEmail());
 
-        List<ApplicationDTO> applications = user.getExternalId().equals(SUPER_ADMIN_EXTERNAL_ID) ?
-                applicationRepository.findAllAndStatusActive()
+        List<ApplicationDTO> applications =
+                user.getExternalId().equals(SUPER_ADMIN_EXTERNAL_ID)
+                        ? applicationRepository
+                        .findAllActiveFiltered(
+                                query.getApplicationCode(),
+                                query.getApplicationName()
+                        )
                         .stream()
-                        .filter(it -> query.getApplicationCode() == null || it.getCode().contains(query.getApplicationCode()))
-                        .filter(it -> query.getApplicationName() == null || it.getName().toLowerCase().contains(query.getApplicationName().toLowerCase()))
                         .map(applicationMapper::toDto)
                         .toList()
-                : applicationRepository.findByUserIdAndStatusActive(user)
-                .stream()
-                .filter(it -> query.getApplicationCode() == null || it.getCode().contains(query.getApplicationCode()))
-                .filter(it -> query.getApplicationName() == null || it.getName().toLowerCase().contains(query.getApplicationName().toLowerCase()))
-                .map(applicationMapper::toDto)
-                .toList();
+                        : applicationRepository
+                        .findByUserAndActiveFiltered(
+                                Integer.valueOf(user.getId()),
+                                query.getApplicationCode(),
+                                query.getApplicationName()
+                        )
+                        .stream()
+                        .map(applicationMapper::toDto)
+                        .toList();
 
         return ResponseEntity.ok(applications);
 
