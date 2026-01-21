@@ -44,9 +44,8 @@ public class GetDepartmentResourcesQueryHandler implements QueryHandler<GetDepar
 
         DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(query.getCode());
 
-        List<ResourceDTO> resources = resourceRepository.findByDepartmentAndStatusNot(department, Status.DELETED)
+        List<ResourceDTO> resources = resourceRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), query.getResourceName())
                 .stream()
-                .filter(it -> query.getResourceName() == null || it.getName().contains(query.getResourceName()))
                 .map(resourceMapper::toDto)
                 .toList();
 

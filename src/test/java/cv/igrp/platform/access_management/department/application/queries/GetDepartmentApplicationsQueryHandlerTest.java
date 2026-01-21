@@ -68,7 +68,7 @@ public class GetDepartmentApplicationsQueryHandlerTest {
     GetDepartmentApplicationsQuery query = new GetDepartmentApplicationsQuery(null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(applicationRepository.findByDepartmentAndStatusNot(department, Status.DELETED))
+    when(applicationRepository.findByDepartmentAndStatusNotFiltered(department, Status.DELETED, null))
             .thenReturn(List.of(app1, app2));
     when(applicationMapper.toDto(app1)).thenReturn(dto1);
     when(applicationMapper.toDto(app2)).thenReturn(dto2);
@@ -86,7 +86,7 @@ public class GetDepartmentApplicationsQueryHandlerTest {
     GetDepartmentApplicationsQuery query = new GetDepartmentApplicationsQuery("APP1",  "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(applicationRepository.findByDepartmentAndStatusNot(department, Status.DELETED))
+    when(applicationRepository.findByDepartmentAndStatusNotFiltered(department, Status.DELETED, null))
             .thenReturn(List.of(app1, app2));
     when(applicationMapper.toDto(app1)).thenReturn(dto1);
 
@@ -102,7 +102,7 @@ public class GetDepartmentApplicationsQueryHandlerTest {
     GetDepartmentApplicationsQuery query = new GetDepartmentApplicationsQuery(null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(applicationRepository.findByDepartmentAndStatusNot(department, Status.DELETED))
+    when(applicationRepository.findByDepartmentAndStatusNotFiltered(department, Status.DELETED, null))
             .thenReturn(List.of());
 
     ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);

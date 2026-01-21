@@ -47,9 +47,8 @@ public class GetUserDepartmentsQueryHandler implements QueryHandler<GetUserDepar
 
      LOGGER.info("Getting departments for user: {}", user.getExternalId());
 
-     List<DepartmentDTO> departments = departmentRepository.findByUserIdAndStatusNotDeleted(user)
+     List<DepartmentDTO> departments = departmentRepository.findByUserAndNotDeletedFiltered(Integer.valueOf(user.getId()), query.getDepartmentCode())
              .stream()
-             .filter(it -> query.getDepartmentCode() == null || it.getCode().contains(query.getDepartmentCode()))
              .map(departmentMapper::toDto)
              .toList();
 

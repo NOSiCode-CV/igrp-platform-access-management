@@ -90,7 +90,7 @@ public class GetAvailablePermissionsForDepartmentQueryHandlerTest {
     GetAvailablePermissionsForDepartmentQuery query = new GetAvailablePermissionsForDepartmentQuery(null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(dept1);
-    when(permissionRepository.findAvailablePermissionsForDepartment("DEP1", IGRP_PERMISSION)).thenReturn(List.of(perm1, perm2));
+    when(permissionRepository.findAvailablePermissionsForDepartment("DEP1", IGRP_PERMISSION, null)).thenReturn(List.of(perm1, perm2));
     when(permissionMapper.mapToDTO(perm1)).thenReturn(dto1);
     when(permissionMapper.mapToDTO(perm2)).thenReturn(dto2);
 
@@ -107,7 +107,7 @@ public class GetAvailablePermissionsForDepartmentQueryHandlerTest {
     GetAvailablePermissionsForDepartmentQuery query = new GetAvailablePermissionsForDepartmentQuery("Resource1", "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(dept1);
-    when(permissionRepository.findAvailablePermissionsForDepartment("DEP1", IGRP_PERMISSION)).thenReturn(List.of(perm1, perm2));
+    when(permissionRepository.findAvailablePermissionsForDepartment("DEP1", IGRP_PERMISSION, null)).thenReturn(List.of(perm1, perm2));
     when(permissionMapper.mapToDTO(perm1)).thenReturn(dto1);
 
     ResponseEntity<List<PermissionDTO>> response = handler.handle(query);
@@ -122,7 +122,7 @@ public class GetAvailablePermissionsForDepartmentQueryHandlerTest {
     GetAvailablePermissionsForDepartmentQuery query = new GetAvailablePermissionsForDepartmentQuery(null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(dept1);
-    when(permissionRepository.findAvailablePermissionsForDepartment("DEP1", IGRP_PERMISSION)).thenReturn(List.of());
+    when(permissionRepository.findAvailablePermissionsForDepartment("DEP1", IGRP_PERMISSION, null)).thenReturn(List.of());
 
     ResponseEntity<List<PermissionDTO>> response = handler.handle(query);
 

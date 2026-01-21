@@ -106,10 +106,7 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
          foundRole = null;
       }
 
-      List<PermissionEntity> permissionList = permissionRepository.findAllByNameIn(permissionIdList)
-              .stream()
-              .filter(permission -> !permission.getStatus().equals(Status.DELETED))
-              .toList();
+      List<PermissionEntity> permissionList = permissionRepository.findAllByNameInAndStatusNotDeleted(permissionIdList);
 
       if (foundRole != null && foundRole.getParent() != null) {
          permissionList = permissionList.stream()

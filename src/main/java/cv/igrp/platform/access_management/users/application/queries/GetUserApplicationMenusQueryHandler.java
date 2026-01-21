@@ -14,48 +14,48 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 
 @Component
-public class GetUserApplicationMenusQueryHandler implements QueryHandler<GetUserApplicationMenusQuery, ResponseEntity<List<MenuEntryDTO>>>{
+public class GetUserApplicationMenusQueryHandler implements QueryHandler<GetUserApplicationMenusQuery, ResponseEntity<List<MenuEntryDTO>>> {
 
-  private static final Logger LOGGER = LoggerFactory.getLogger(GetUserApplicationMenusQueryHandler.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(GetUserApplicationMenusQueryHandler.class);
 
-  private final MenuEntryEntityRepository menuEntryRepository;
-  private final IGRPUserEntityRepository userRepository;
-  private final ApplicationEntityRepository applicationRepository;
-  private final MenuEntryMapper menuEntryMapper;
+    private final MenuEntryEntityRepository menuEntryRepository;
+    private final IGRPUserEntityRepository userRepository;
+    private final ApplicationEntityRepository applicationRepository;
+    private final MenuEntryMapper menuEntryMapper;
 
-  public GetUserApplicationMenusQueryHandler(MenuEntryEntityRepository menuEntryRepository, IGRPUserEntityRepository userRepository, ApplicationEntityRepository applicationRepository, MenuEntryMapper menuEntryMapper) {
-    this.menuEntryRepository = menuEntryRepository;
-    this.userRepository = userRepository;
-    this.applicationRepository = applicationRepository;
-    this.menuEntryMapper = menuEntryMapper;
-  }
+    public GetUserApplicationMenusQueryHandler(MenuEntryEntityRepository menuEntryRepository, IGRPUserEntityRepository userRepository, ApplicationEntityRepository applicationRepository, MenuEntryMapper menuEntryMapper) {
+        this.menuEntryRepository = menuEntryRepository;
+        this.userRepository = userRepository;
+        this.applicationRepository = applicationRepository;
+        this.menuEntryMapper = menuEntryMapper;
+    }
 
-   @IgrpQueryHandler
-  public ResponseEntity<List<MenuEntryDTO>> handle(GetUserApplicationMenusQuery query) {
+    @IgrpQueryHandler
+    public ResponseEntity<List<MenuEntryDTO>> handle(GetUserApplicationMenusQuery query) {
 
-     var user = userRepository.findById(query.getId()).orElseThrow(
-             () -> IgrpResponseStatusException.of(
-                     HttpStatus.UNAUTHORIZED,
-                     "User not found",
-                     "User with ID: " + query.getId() + " not found in database."
-             )
-     );
+        var user = userRepository.findById(query.getId()).orElseThrow(
+                () -> IgrpResponseStatusException.of(
+                        HttpStatus.UNAUTHORIZED,
+                        "User not found",
+                        "User with ID: " + query.getId() + " not found in database."
+                )
+        );
 
-     LOGGER.info("Getting menus for user: {}", user.getExternalId());
+        LOGGER.info("Getting menus for user: {}", user.getExternalId());
 
-     var application = applicationRepository.findByCodeAndStatusNotDeleted(query.getApplicationCode());
+        var application = applicationRepository.findByCodeAndStatusNotDeleted(query.getApplicationCode());
 
-     List<MenuEntryDTO> menuEntries = menuEntryRepository.findByApplicationIdAndUserIdAndStatusNotDeleted(Integer.valueOf(user.getId()), application.getId())
-             .stream()
-             .filter(it -> query.getMenuCode() == null || it.getCode().contains(query.getMenuCode()))
-             .map(menuEntryMapper::toDTO)
-             .toList();
+        List<MenuEntryDTO> menuEntries = menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(Integer.valueOf(user.getId()), application.getId(), query.getMenuCode())
+                .stream()
+                .map(menuEntryMapper::toDTO)
+                .toList();
 
-     return ResponseEntity.ok(menuEntries);
+        return ResponseEntity.ok(menuEntries);
 
-  }
+    }
 
 }

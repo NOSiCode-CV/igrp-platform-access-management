@@ -73,4 +73,16 @@ public interface ResourceEntityRepository extends
     """
     )
     List<ResourceEntity> findByDepartmentAndStatusNot(DepartmentEntity department, Status status);
+
+
+    @Query(value = """
+    SELECT r.*
+    FROM t_resource r
+    JOIN t_resource_department dr ON dr.resource_id = r.id
+    WHERE dr.department = :department
+      AND r.status <> :status
+      AND (:name IS NULL OR r.name ILIKE CONCAT('%', :name, '%'))
+""", nativeQuery = true)
+    List<ResourceEntity> findByDepartmentAndStatusNotFiltered(Integer department, String status, @Param("name") String resourceName);
+
 }

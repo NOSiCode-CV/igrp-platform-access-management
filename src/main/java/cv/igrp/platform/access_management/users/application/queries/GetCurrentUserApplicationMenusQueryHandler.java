@@ -17,7 +17,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Objects;
 
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import org.springframework.transaction.annotation.Transactional;
@@ -67,15 +66,12 @@ public class GetCurrentUserApplicationMenusQueryHandler implements QueryHandler<
         var application = applicationRepository.findByCodeAndStatusNotDeleted(query.getApplicationCode());
 
         List<MenuEntryDTO> menuEntries = user.getExternalId().equals(SUPER_ADMIN_EXTERNAL_ID) ?
-                menuEntryRepository.findByApplicationIdAndStatusIn(application, List.of(Status.ACTIVE))
+                menuEntryRepository.findByApplicationAndStatusAndMenuName(application.getId(), List.of(Status.ACTIVE.getCode()), query.getMenuCode())
                         .stream()
-                        .filter(it -> query.getMenuCode() == null || it.getCode().contains(query.getMenuCode()))
                         .map(menuEntryMapper::toDTO)
                         .toList()
-                : menuEntryRepository.findByApplicationIdAndUserIdAndStatusNotDeleted(Integer.valueOf(user.getId()), application.getId())
+                : menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(Integer.valueOf(user.getId()), application.getId(), query.getMenuCode())
                 .stream()
-                .filter(it -> Objects.equals(it.getStatus(), Status.ACTIVE))
-                .filter(it -> query.getMenuCode() == null || it.getCode().contains(query.getMenuCode()))
                 .map(menuEntryMapper::toDTO)
                 .toList();
 

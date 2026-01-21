@@ -54,7 +54,7 @@ public class GetUserDepartmentsQueryHandlerTest {
     dto1.setCode("DEP_A");
 
     when(userRepository.findById(1)).thenReturn(Optional.of(mockUser));
-    when(departmentRepository.findByUserIdAndStatusNotDeleted(mockUser))
+    when(departmentRepository.findByUserAndNotDeletedFiltered(Integer.valueOf(mockUser.getId()), null))
             .thenReturn(List.of(dep1));
     when(departmentMapper.toDto(dep1)).thenReturn(dto1);
 
@@ -66,7 +66,7 @@ public class GetUserDepartmentsQueryHandlerTest {
     assertEquals("DEP_A", response.getBody().get(0).getCode());
 
     verify(userRepository).findById(1);
-    verify(departmentRepository).findByUserIdAndStatusNotDeleted(mockUser);
+    verify(departmentRepository).findByUserAndNotDeletedFiltered(Integer.valueOf(mockUser.getId()), null);
     verify(departmentMapper).toDto(dep1);
   }
 
@@ -91,7 +91,7 @@ public class GetUserDepartmentsQueryHandlerTest {
     dto1.setCode("FIN_DEPT");
 
     when(userRepository.findById(1)).thenReturn(Optional.of(mockUser));
-    when(departmentRepository.findByUserIdAndStatusNotDeleted(mockUser))
+    when(departmentRepository.findByUserAndNotDeletedFiltered(Integer.valueOf(mockUser.getId()), null))
             .thenReturn(List.of(dep1, dep2)); // Only dep1 should pass the filter
 
     when(departmentMapper.toDto(dep1)).thenReturn(dto1);
@@ -119,7 +119,7 @@ public class GetUserDepartmentsQueryHandlerTest {
     mockUser.setId(1);
 
     when(userRepository.findById(1)).thenReturn(Optional.of(mockUser));
-    when(departmentRepository.findByUserIdAndStatusNotDeleted(mockUser))
+    when(departmentRepository.findByUserAndNotDeletedFiltered(Integer.valueOf(mockUser.getId()), null))
             .thenReturn(List.of());
 
     ResponseEntity<List<DepartmentDTO>> response = handler.handle(query);
