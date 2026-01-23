@@ -43,9 +43,8 @@ public class GetAvailablePermissionsForDepartmentQueryHandler implements QueryHa
      // Verify if the department exists
      departmentEntityRepository.findByCodeAndStatusNotDeleted(query.getDepartmentCode());
 
-     List<PermissionDTO> availablePermissions = permissionEntityRepository.findAvailablePermissionsForDepartment(query.getDepartmentCode(), IGRP_PERMISSION)
+     List<PermissionDTO> availablePermissions = permissionEntityRepository.findAvailablePermissionsForDepartment(query.getDepartmentCode(), IGRP_PERMISSION, query.getResourceName())
              .stream()
-             .filter(it -> query.getResourceName() == null || it.getResources().stream().map(ResourceEntity::getName).toList().contains(query.getResourceName()))
              .map(permissionMapper::mapToDTO)
              .toList();
 

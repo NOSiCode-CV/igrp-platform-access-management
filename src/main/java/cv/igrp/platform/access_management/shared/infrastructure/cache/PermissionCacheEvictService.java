@@ -28,7 +28,7 @@ public class PermissionCacheEvictService {
     }
 
     public void evictAll() {
-        evictMatchingKeys(key -> true);
+        evictMatchingKeys(_ -> true);
     }
 
     public void evictBySubject(String subject) {
@@ -75,6 +75,7 @@ public class PermissionCacheEvictService {
         if (!keysToDelete.isEmpty()) {
             try {
                 redisTemplate.delete(keysToDelete);
+                LOGGER.info("The following cache keys were deleted: {}", keysToDelete);
             } catch (Exception ex) {
                 LOGGER.error("Redis unavailable while deleting keys", ex);
             }

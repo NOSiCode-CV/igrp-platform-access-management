@@ -72,7 +72,7 @@ public class GetDepartmentPermissionsQueryHandlerTest {
     GetDepartmentPermissionsQuery query = new GetDepartmentPermissionsQuery(null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(permissionRepository.findByDepartmentAndStatusNot(department, Status.DELETED))
+    when(permissionRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), null))
             .thenReturn(List.of(permRead, permWrite));
     when(permissionMapper.mapToDTO(permRead)).thenReturn(dtoRead);
     when(permissionMapper.mapToDTO(permWrite)).thenReturn(dtoWrite);
@@ -90,7 +90,7 @@ public class GetDepartmentPermissionsQueryHandlerTest {
     GetDepartmentPermissionsQuery query = new GetDepartmentPermissionsQuery("perm.read", "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(permissionRepository.findByDepartmentAndStatusNot(department, Status.DELETED))
+    when(permissionRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), null))
             .thenReturn(List.of(permRead, permWrite));
     when(permissionMapper.mapToDTO(permRead)).thenReturn(dtoRead);
 
@@ -106,7 +106,7 @@ public class GetDepartmentPermissionsQueryHandlerTest {
     GetDepartmentPermissionsQuery query = new GetDepartmentPermissionsQuery(null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(permissionRepository.findByDepartmentAndStatusNot(department, Status.DELETED))
+    when(permissionRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), null))
             .thenReturn(List.of());
 
     ResponseEntity<List<PermissionDTO>> response = handler.handle(query);

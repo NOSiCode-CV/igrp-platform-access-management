@@ -68,7 +68,7 @@ public class GetDepartmentMenusQueryHandlerTest {
     GetDepartmentMenusQuery query = new GetDepartmentMenusQuery(null, "DEP1", null);
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(menuRepository.findByDepartmentAndStatusNot(department, Status.DELETED))
+    when(menuRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), null))
             .thenReturn(List.of(menu1, menu2));
     when(menuEntryMapper.toDTO(menu1)).thenReturn(dto1);
     when(menuEntryMapper.toDTO(menu2)).thenReturn(dto2);
@@ -86,7 +86,7 @@ public class GetDepartmentMenusQueryHandlerTest {
     GetDepartmentMenusQuery query = new GetDepartmentMenusQuery("MENU1", "DEP1", null);
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(menuRepository.findByDepartmentAndStatusNot(department, Status.DELETED))
+    when(menuRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), null))
             .thenReturn(List.of(menu1, menu2));
     when(menuEntryMapper.toDTO(menu1)).thenReturn(dto1);
 
@@ -102,7 +102,7 @@ public class GetDepartmentMenusQueryHandlerTest {
     GetDepartmentMenusQuery query = new GetDepartmentMenusQuery(null, "DEP1", null);
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(menuRepository.findByDepartmentAndStatusNot(department, Status.DELETED))
+    when(menuRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), null))
             .thenReturn(List.of());
 
     ResponseEntity<List<MenuEntryDTO>> response = handler.handle(query);

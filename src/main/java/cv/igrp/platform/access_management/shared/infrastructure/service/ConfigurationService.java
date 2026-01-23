@@ -6,6 +6,7 @@ import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -17,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
+import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -56,6 +58,16 @@ public class ConfigurationService {
         if(SUPER_ADMIN_EXTERNAL_ID.isBlank()) {
             LOGGER.warn("[Startup Config] System admin external ID is not set. Skipping system initialization.");
             throw new RuntimeException("No superadmin user external ID provided. Please set IGRP_SUPERADMIN_USER_EXTERNAL_ID in your environment variables.");
+        }
+
+        LOGGER.info("[Startup Config] Validating superadmin user...");
+
+        var superadmin = adapter.resolveUser(SUPER_ADMIN_EMAIL).orElseThrow(
+                () -> IgrpResponseStatusException.notFound("Superadmin User with email <" + SUPER_ADMIN_EMAIL + "> does not exist in the identity provider. Check if the email is correct or check connection with IAM provider.")
+        );
+
+        if(!Objects.equals(superadmin.getId(), SUPER_ADMIN_EXTERNAL_ID)) {
+            throw IgrpResponseStatusException.notFound("Superadmin User with ID <" + SUPER_ADMIN_EXTERNAL_ID + "> does not exist in the identity provider. Check if the ID is correct or check connection with IAM provider.");
         }
 
         try {
