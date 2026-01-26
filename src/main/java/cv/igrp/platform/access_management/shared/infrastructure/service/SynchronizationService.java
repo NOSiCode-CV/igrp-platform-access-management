@@ -438,6 +438,13 @@ public class SynchronizationService {
 
         for (Map.Entry<String, Map<String, Set<String>>> userEntry : dbUserRoles.entrySet()) {
             String externalId = userEntry.getKey();
+
+            try {
+                checkActiveRoleAssignment(externalId);
+            } catch (Exception e) {
+                LOGGER.warn("Could not assign active role to user: {}", externalId, e);
+            }
+
             Map<String, Set<String>> dbUserRolesByDept = userEntry.getValue();
             Map<String, Set<String>> providerUserRolesByDept = providerUserRoles.getOrDefault(externalId, Map.of());
 
@@ -743,6 +750,47 @@ public class SynchronizationService {
         jdbcTemplate.update(sql, INACTIVE_STATUS, externalId);
     }
 
+    private void setUserActiveRole(String externalId, Integer roleId) {
+        String sql = "UPDATE t_user SET active_role_id = ? WHERE external_id = ?";
+        jdbcTemplate.update(sql, roleId, externalId);
+    }
+
+    private boolean isUserActiveRoleSet(String externalId) {
+        String sql = """
+                    SELECT u.active_role_id
+                    FROM t_user u
+                    WHERE u.status = ? AND u.external_id = ?
+                    """;
+
+        return jdbcTemplate.queryForObject(sql, String.class, ACTIVE_STATUS, externalId) != null; // Only ACTIVE users
+
+    }
+
+    private List<Integer> getUserRoleIds(String externalId) {
+
+        String sql = """
+        SELECT r.id
+        FROM t_role_users ru
+        JOIN t_user u ON ru.users_id = u.id
+        JOIN t_role r ON ru.roles_id = r.id
+        JOIN t_department d ON r.department = d.id
+        WHERE u.status = ?
+          AND r.status = ?
+          AND d.status = ?
+          AND u.external_id = ?
+        ORDER BY r.id;
+        """;
+
+        return jdbcTemplate.queryForList(
+                sql,
+                Integer.class,
+                ACTIVE_STATUS,
+                ACTIVE_STATUS,
+                ACTIVE_STATUS,
+                externalId
+        );
+    }
+
     /**
      * Check if user is active in database
      */
@@ -755,6 +803,19 @@ public class SynchronizationService {
             LOGGER.warn("[Sync] Failed to check status for user {}: {}", externalId, e.getMessage());
             return false; // If we can't verify status, assume inactive for safety
         }
+    }
+
+    private void checkActiveRoleAssignment(String externalId) {
+
+        if(isUserActiveRoleSet(externalId))
+            return;
+
+        Integer roleId = getUserRoleIds(externalId).getFirst();
+
+        setUserActiveRole(externalId, roleId);
+
+        LOGGER.info("[Sync] Assigned active role to user: {}", externalId);
+
     }
 
     // =====================================================

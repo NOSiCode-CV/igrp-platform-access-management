@@ -1,5 +1,5 @@
 /* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
-/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME */
 
 package cv.igrp.platform.access_management.users.interfaces.rest;
 
@@ -30,11 +30,15 @@ import cv.igrp.platform.access_management.shared.application.dto.InviteUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
+import cv.igrp.platform.access_management.shared.application.dto.RoleDepartmentDTO;
 
 @IgrpController
 @RestController
 @RequestMapping(path = "api")
-@Tag(name = "User", description = "User")
+@Tag(
+    name = "Users",
+    description = "User"
+)
 public class UserController {
 
   
@@ -55,7 +59,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -86,7 +90,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -96,7 +100,7 @@ public class UserController {
       ), 
       @ApiResponse(
           responseCode = "201",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -127,7 +131,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -158,7 +162,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -189,7 +193,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -220,7 +224,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -254,7 +258,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -285,7 +289,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -315,7 +319,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -346,7 +350,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -377,7 +381,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -408,7 +412,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -439,7 +443,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -469,7 +473,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -500,7 +504,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -530,7 +534,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -560,7 +564,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -590,7 +594,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -620,7 +624,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -651,7 +655,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -683,7 +687,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -714,7 +718,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -745,7 +749,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -775,7 +779,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -805,7 +809,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -837,7 +841,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -868,7 +872,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -898,7 +902,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -929,7 +933,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -959,7 +963,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -989,7 +993,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -1007,6 +1011,128 @@ public class UserController {
       final var query = new GetUserInvitationByTokenQuery(token);
 
       return queryBus.handle(query);
+
+  }
+
+   @GetMapping(
+   value = "users/me/roles/active"
+  )
+  @Operation(
+    summary = "Get active current user role",
+    description = "Get active current user role",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleDepartmentDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<RoleDepartmentDTO> getActiveCurrentUserRole(
+    )
+  {
+
+      final var query = new GetActiveCurrentUserRoleQuery();
+
+      return queryBus.handle(query);
+
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
+   @GetMapping(
+   value = "users/{id}/roles/active"
+  )
+  @Operation(
+    summary = "Get active user role",
+    description = "This Permission is required: igrp.user.manage",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleDepartmentDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<RoleDepartmentDTO> getActiveUserRole(
+    @PathVariable(value = "id") Integer id)
+  {
+
+      final var query = new GetActiveUserRoleQuery(id);
+
+      return queryBus.handle(query);
+
+  }
+
+   @PostMapping(
+   value = "users/me/roles/active"
+  )
+  @Operation(
+    summary = "Set active current user role",
+    description = "Set active current user role",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleDepartmentDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<RoleDepartmentDTO> setActiveCurrentUserRole(@Valid @RequestBody RoleDepartmentDTO setActiveCurrentUserRoleRequest
+    )
+  {
+
+      final var command = new SetActiveCurrentUserRoleCommand(setActiveCurrentUserRoleRequest);
+
+      return commandBus.send(command);
+
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
+   @PostMapping(
+   value = "users/{id}/roles/active"
+  )
+  @Operation(
+    summary = "Set active user role",
+    description = "This Permission is required: igrp.user.manage",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleDepartmentDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<RoleDepartmentDTO> setActiveUserRole(@Valid @RequestBody RoleDepartmentDTO setActiveUserRoleRequest
+    , @PathVariable(value = "id") Integer id)
+  {
+
+      final var command = new SetActiveUserRoleCommand(setActiveUserRoleRequest, id);
+
+      return commandBus.send(command);
 
   }
 

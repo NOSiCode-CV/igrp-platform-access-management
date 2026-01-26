@@ -61,7 +61,7 @@ public class GetCurrentUserDepartmentsQueryHandler implements QueryHandler<GetCu
                         .stream()
                         .map(departmentMapper::toDto)
                         .toList()
-                : departmentRepository.findByUserAndNotDeletedFiltered(Integer.valueOf(user.getId()), query.getDepartmentCode())
+                : departmentRepository.findByCurrentUserAndNotDeletedFiltered(Integer.valueOf(user.getId()), query.getDepartmentCode())
                 .stream()
                 .map(departmentMapper::toDto)
                 .toList();
