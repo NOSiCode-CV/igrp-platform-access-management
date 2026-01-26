@@ -61,7 +61,7 @@ public class GetCurrentUserDepartmentRolesQueryHandler implements QueryHandler<G
                         .stream()
                         .map(roleMapper::mapToDto)
                         .toList()
-                : roleRepository.findByDepartmentIdAndUserIdAndStatusNotDeleted(user, department)
+                : roleRepository.findByDepartmentIdAndCurrentUserIdAndStatusNotDeleted(user, department)
                 .stream()
                 .map(roleMapper::mapToDto)
                 .toList();

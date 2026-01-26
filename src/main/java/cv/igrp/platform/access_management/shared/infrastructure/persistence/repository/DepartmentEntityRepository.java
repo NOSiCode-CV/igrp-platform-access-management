@@ -35,34 +35,34 @@ public interface DepartmentEntityRepository extends
     void deleteByCode(String code);
 
     @Query("""
-        select d.id from DepartmentEntity d
-        where d.code = :code and d.status <> 'DELETED'
-    """)
+                select d.id from DepartmentEntity d
+                where d.code = :code and d.status <> 'DELETED'
+            """)
     Integer findIdByCode(String code);
 
     @Query("""
-        select child.id
-        from DepartmentEntity child
-        join child.parentId parent
-        where parent.id = :parentId and child.status <> 'DELETED'
-    """)
+                select child.id
+                from DepartmentEntity child
+                join child.parentId parent
+                where parent.id = :parentId and child.status <> 'DELETED'
+            """)
     Set<Integer> findDirectChildren(Integer parentId);
 
     @Query("""
-        select d
-        from DepartmentEntity d
-        where d.id in :ids
-    """)
+                select d
+                from DepartmentEntity d
+                where d.id in :ids
+            """)
     List<DepartmentEntity> findByIds(Set<Integer> ids);
 
     @Query(
             """
-            select d
-            from DepartmentEntity d
-            join d.roles r
-            join r.users u
-            where u = :user and d.status <> 'DELETED'
-        """
+                        select d
+                        from DepartmentEntity d
+                        join d.roles r
+                        join r.users u
+                        where u = :user and d.status <> 'DELETED'
+                    """
     )
     List<DepartmentEntity> findByUserIdAndStatusNotDeleted(IGRPUserEntity user);
 
@@ -73,26 +73,39 @@ public interface DepartmentEntityRepository extends
     }
 
     @Query(value = """
-    SELECT d.*
-    FROM t_department d
-    WHERE d.status = 'ACTIVE'
-      AND (:code IS NULL OR d.code ILIKE CONCAT('%', :code, '%'))
-""", nativeQuery = true)
+                SELECT d.*
+                FROM t_department d
+                WHERE d.status = 'ACTIVE'
+                  AND (:code IS NULL OR d.code ILIKE CONCAT('%', :code, '%'))
+            """, nativeQuery = true)
     List<DepartmentEntity> findAllActiveFiltered(
             @Param("code") String departmentCode
     );
 
     @Query(value = """
-    SELECT DISTINCT d.*
-    FROM t_department d
-    JOIN t_role r ON r.department = d.id
-    JOIN t_role_users ru ON ru.roles_id = r.id
-    JOIN t_user u ON u.id = ru.users_id
-    WHERE u.id = :userId
-      AND d.status <> 'DELETED'
-      AND (:code IS NULL OR d.name ILIKE CONCAT('%', :code, '%'))
-""", nativeQuery = true)
+                SELECT DISTINCT d.*
+                FROM t_department d
+                JOIN t_role r ON r.department = d.id
+                JOIN t_role_users ru ON ru.roles_id = r.id
+                JOIN t_user u ON u.id = ru.users_id
+                WHERE u.id = :userId
+                  AND d.status <> 'DELETED'
+                  AND (:code IS NULL OR d.name ILIKE CONCAT('%', :code, '%'))
+            """, nativeQuery = true)
     List<DepartmentEntity> findByUserAndNotDeletedFiltered(Integer userId, @Param("code") String departmentCode);
+
+    @Query(value = """
+                SELECT DISTINCT d.*
+                FROM t_department d
+                JOIN t_role r ON r.department = d.id
+                JOIN t_role_users ru ON ru.roles_id = r.id
+                JOIN t_user u ON u.id = ru.users_id
+                WHERE u.id = :userId
+                  AND r.id = u.active_role_id
+                  AND d.status <> 'DELETED'
+                  AND (:code IS NULL OR d.name ILIKE CONCAT('%', :code, '%'))
+            """, nativeQuery = true)
+    List<DepartmentEntity> findByCurrentUserAndNotDeletedFiltered(Integer userId, @Param("code") String departmentCode);
 
 
 }

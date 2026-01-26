@@ -54,6 +54,9 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     @Column(name="status", nullable = false)
     private Status status = Status.ACTIVE;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    private RoleEntity activeRole;
+
     @ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
     private List<RoleEntity> roles = new ArrayList<>();
 

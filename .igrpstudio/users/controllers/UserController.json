@@ -1148,7 +1148,143 @@
           "isRequired": true
         }
       ]
+    },
+    {
+      "actionName": "getActiveCurrentUserRole",
+      "path": "users/me/roles/active",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDepartmentDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "getActiveUserRole",
+      "path": "users/{id}/roles/active",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDepartmentDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.user.manage"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "setActiveCurrentUserRole",
+      "path": "users/me/roles/active",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "collectionType": "none",
+              "name": "data",
+              "type": "RoleDepartmentDTO",
+              "objectType": "dto",
+              "module": "shared"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDepartmentDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "setActiveUserRole",
+      "path": "users/{id}/roles/active",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "RoleDepartmentDTO",
+              "collectionType": "none",
+              "name": "data",
+              "objectType": "dto",
+              "module": "shared"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleDepartmentDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {
+          "name": "id",
+          "type": "integer",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.user.manage"
+        ],
+        "operator": "OR"
+      }
     }
   ],
-  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser-getCurrentUser-AddRolesToUser-RemoveRolesFromUser-getUsers-getUsers-getUsers-inviteUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-inviteUser-updateUserStatus-getUser-getUserApplications-getUserApplicationMenus-getUserDepartments-getUserDepartmentRoles-respondUserInvitation-cancelUserInvitation-addFavoriteApplication-resendUserInvitation-addFavoriteApplication-removeFavoriteApplication-getRecentApplications-getCurrentUserApplications-getUserApplications-getUserInvitationByToken-getCurrentUserPermissions-getUserPermissions"
+  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser-getCurrentUser-AddRolesToUser-RemoveRolesFromUser-getUsers-getUsers-getUsers-inviteUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-inviteUser-updateUserStatus-getUser-getUserApplications-getUserApplicationMenus-getUserDepartments-getUserDepartmentRoles-respondUserInvitation-cancelUserInvitation-addFavoriteApplication-resendUserInvitation-addFavoriteApplication-removeFavoriteApplication-getRecentApplications-getCurrentUserApplications-getUserApplications-getUserInvitationByToken-getCurrentUserPermissions-getUserPermissions-setActiveUserRole"
 }

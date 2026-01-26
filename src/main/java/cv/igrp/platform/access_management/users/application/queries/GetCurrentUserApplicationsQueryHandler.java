@@ -67,7 +67,7 @@ public class GetCurrentUserApplicationsQueryHandler implements QueryHandler<GetC
                         .map(applicationMapper::toDto)
                         .toList()
                         : applicationRepository
-                        .findByUserAndActiveFiltered(
+                        .findByCurrentUserAndActiveFiltered(
                                 Integer.valueOf(user.getId()),
                                 query.getApplicationCode(),
                                 query.getApplicationName()
