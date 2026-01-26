@@ -100,6 +100,15 @@ public interface RoleEntityRepository extends
     )
     List<RoleEntity> findByDepartmentIdAndUserIdAndStatusNotDeleted(IGRPUserEntity user, DepartmentEntity department);
 
+    @Query(
+    """
+        select r from RoleEntity r
+        JOIN r.users u
+        where r.department = :department and u = :user and r.status <> 'DELETED' and r = u.activeRole
+    """
+    )
+    List<RoleEntity> findByDepartmentIdAndCurrentUserIdAndStatusNotDeleted(IGRPUserEntity user, DepartmentEntity department);
+
     List<RoleEntity> findByDepartmentAndStatusNot(DepartmentEntity  department, Status status);
 
     default List<RoleEntity> findAllByDepartmentAndStatusNotDeleted(DepartmentEntity department) {

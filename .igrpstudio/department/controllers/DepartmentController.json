@@ -1276,7 +1276,99 @@
         ],
         "operator": "OR"
       }
+    },
+    {
+      "actionName": "getRoleChildren",
+      "path": "departments/{departmentCode}/roles/{roleCode}/children",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleChildHierarchyDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "integer",
+          "name": "level",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "roleCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.view"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "getRoleParents",
+      "path": "departments/{departmentCode}/roles/{roleCode}/parents",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "RoleParentHierarchyDTO",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "shared"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "integer",
+          "name": "level",
+          "isRequired": false
+        }
+      ],
+      "pathVariables": [
+        {
+          "name": "departmentCode",
+          "type": "string",
+          "isRequired": true
+        },
+        {
+          "name": "roleCode",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.department.view"
+        ],
+        "operator": "OR"
+      }
     }
   ],
-  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-addMenusToDepartment-removeMenusFromDepartment-createRole-getRoles-addMenusToDepartment-getDepartmentMenus-getMenusAvailableForDepartment-getDepartmentPermissions-postDepartment-getDepartments-getDepartmentById-updateDepartment-deleteDepartment-getDepartmentByCode-getAvailableApplicationsForDepartment-getMenusAvailableForDepartment-getAvailableResourcesForDepartment-createRole-getRoles-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getAvailablePermissionsForRoles-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-getDepartmentResources-getDepartmentMenus-getDepartmentApplications-addResourcesToDepartment-removeResourcesFromDepartment-getDepartmentPermissions-addPermissionsToDepartment-removePermissionsFromDepartment-getAvailablePermissionsForDepartment-postDepartment"
+  "id": "u2pwso5tbi-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-addMenusToDepartment-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-addMenusToDepartment-removeMenusFromDepartment-createRole-getRoles-addMenusToDepartment-getDepartmentMenus-getMenusAvailableForDepartment-getDepartmentPermissions-postDepartment-getDepartments-getDepartmentById-updateDepartment-deleteDepartment-getDepartmentByCode-getAvailableApplicationsForDepartment-getMenusAvailableForDepartment-getAvailableResourcesForDepartment-createRole-getRoles-updateRole-deleteRole-RemovePermissions-GetPermissionsByRoleId-addPermissions-getAvailablePermissionsForRoles-addApplicationsToDepartment-addMenusToDepartment-removeApplicationsFromDepartment-removeMenusFromDepartment-getDepartmentResources-getDepartmentMenus-getDepartmentApplications-addResourcesToDepartment-removeResourcesFromDepartment-getDepartmentPermissions-addPermissionsToDepartment-removePermissionsFromDepartment-getAvailablePermissionsForDepartment-postDepartment-getRoleChildren-getRoleParents"
 }

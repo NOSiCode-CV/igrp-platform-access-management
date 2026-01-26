@@ -1,5 +1,5 @@
 /* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
-/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME */
 
 package cv.igrp.platform.access_management.department.interfaces.rest;
 
@@ -27,11 +27,16 @@ import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
+import cv.igrp.platform.access_management.shared.application.dto.RoleChildHierarchyDTO;
+import cv.igrp.platform.access_management.shared.application.dto.RoleParentHierarchyDTO;
 
 @IgrpController
 @RestController
 @RequestMapping(path = "api")
-@Tag(name = "Department", description = "Department Management")
+@Tag(
+    name = "Department",
+    description = "Department Management"
+)
 public class DepartmentController {
 
   
@@ -52,7 +57,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "201",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -69,9 +74,8 @@ public class DepartmentController {
 
       final var command = new PostDepartmentCommand(postDepartmentRequest);
 
-       ResponseEntity<DepartmentDTO> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_LIST)")
@@ -104,9 +108,8 @@ public class DepartmentController {
 
       final var query = new GetDepartmentsQuery(name, status, code, parentCode);
 
-      ResponseEntity<List<DepartmentDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
@@ -136,9 +139,8 @@ public class DepartmentController {
 
       final var query = new GetDepartmentByIdQuery(id);
 
-      ResponseEntity<DepartmentDTO> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_UPDATE)")
@@ -168,9 +170,8 @@ public class DepartmentController {
 
       final var command = new UpdateDepartmentCommand(updateDepartmentRequest, code);
 
-       ResponseEntity<DepartmentDTO> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_DELETE)")
@@ -183,7 +184,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "",
               schema = @Schema(
@@ -200,9 +201,8 @@ public class DepartmentController {
 
       final var command = new DeleteDepartmentCommand(code);
 
-       ResponseEntity<?> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
@@ -215,7 +215,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -232,9 +232,8 @@ public class DepartmentController {
 
       final var query = new GetDepartmentByCodeQuery(code);
 
-      ResponseEntity<DepartmentDTO> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -247,7 +246,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -264,9 +263,8 @@ public class DepartmentController {
 
       final var query = new GetAvailableApplicationsForDepartmentQuery(code);
 
-      ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -279,7 +277,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -296,9 +294,8 @@ public class DepartmentController {
 
       final var query = new GetMenusAvailableForDepartmentQuery(departmentCode, applicationCode);
 
-      ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -311,7 +308,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -328,9 +325,8 @@ public class DepartmentController {
 
       final var query = new GetAvailableResourcesForDepartmentQuery(code);
 
-      ResponseEntity<List<ResourceDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -343,7 +339,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "201",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -360,9 +356,8 @@ public class DepartmentController {
 
       final var command = new CreateRoleCommand(createRoleRequest, code);
 
-       ResponseEntity<RoleDTO> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
@@ -375,7 +370,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -392,9 +387,8 @@ public class DepartmentController {
 
       final var query = new GetRolesQuery(roleCode, code);
 
-      ResponseEntity<List<RoleDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -407,7 +401,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -424,9 +418,8 @@ public class DepartmentController {
 
       final var command = new UpdateRoleCommand(updateRoleRequest, departmentCode, roleCode);
 
-       ResponseEntity<RoleDTO> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -439,7 +432,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -456,9 +449,8 @@ public class DepartmentController {
 
       final var command = new DeleteRoleCommand(departmentCode, roleCode);
 
-       ResponseEntity<Boolean> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -471,7 +463,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -488,9 +480,8 @@ public class DepartmentController {
 
       final var command = new RemovePermissionsCommand(removePermissionsRequest, departmentCode, roleCode);
 
-       ResponseEntity<RoleDTO> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
@@ -503,7 +494,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -520,9 +511,8 @@ public class DepartmentController {
 
       final var query = new GetPermissionsByRoleIdQuery(departmentCode, roleCode);
 
-      ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -535,7 +525,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -552,9 +542,8 @@ public class DepartmentController {
 
       final var command = new AddPermissionsCommand(addPermissionsRequest, departmentCode, roleCode);
 
-       ResponseEntity<RoleDTO> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -567,7 +556,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -584,9 +573,8 @@ public class DepartmentController {
 
       final var query = new GetAvailablePermissionsForRolesQuery(departmentCode, roleCode);
 
-      ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -599,7 +587,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -616,9 +604,8 @@ public class DepartmentController {
 
       final var command = new AddApplicationsToDepartmentCommand(addApplicationsToDepartmentRequest, code);
 
-       ResponseEntity<String> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -631,7 +618,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -648,9 +635,8 @@ public class DepartmentController {
 
       final var command = new AddMenusToDepartmentCommand(addMenusToDepartmentRequest, departmentCode, applicationCode);
 
-       ResponseEntity<String> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -663,7 +649,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -680,9 +666,8 @@ public class DepartmentController {
 
       final var command = new RemoveApplicationsFromDepartmentCommand(removeApplicationsFromDepartmentRequest, code);
 
-       ResponseEntity<String> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -695,7 +680,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -712,9 +697,8 @@ public class DepartmentController {
 
       final var command = new RemoveMenusFromDepartmentCommand(removeMenusFromDepartmentRequest, departmentCode, applicationCode);
 
-       ResponseEntity<String> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
@@ -727,7 +711,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -744,9 +728,8 @@ public class DepartmentController {
 
       final var query = new GetDepartmentResourcesQuery(resourceName, code);
 
-      ResponseEntity<List<ResourceDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
@@ -759,7 +742,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -776,9 +759,8 @@ public class DepartmentController {
 
       final var query = new GetDepartmentMenusQuery(menuCode, departmentCode, applicationCode);
 
-      ResponseEntity<List<MenuEntryDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
@@ -791,7 +773,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -808,9 +790,8 @@ public class DepartmentController {
 
       final var query = new GetDepartmentApplicationsQuery(applicationCode, code);
 
-      ResponseEntity<List<ApplicationDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -823,7 +804,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -840,9 +821,8 @@ public class DepartmentController {
 
       final var command = new AddResourcesToDepartmentCommand(addResourcesToDepartmentRequest, departmentCode);
 
-       ResponseEntity<String> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -855,7 +835,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -872,9 +852,8 @@ public class DepartmentController {
 
       final var command = new RemoveResourcesFromDepartmentCommand(removeResourcesFromDepartmentRequest, departmentCode);
 
-       ResponseEntity<String> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
@@ -887,7 +866,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -904,9 +883,8 @@ public class DepartmentController {
 
       final var query = new GetDepartmentPermissionsQuery(permissionName, code);
 
-      ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -919,7 +897,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -936,9 +914,8 @@ public class DepartmentController {
 
       final var command = new AddPermissionsToDepartmentCommand(addPermissionsToDepartmentRequest, code);
 
-       ResponseEntity<String> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -951,7 +928,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -968,9 +945,8 @@ public class DepartmentController {
 
       final var command = new RemovePermissionsFromDepartmentCommand(removePermissionsFromDepartmentRequest, code);
 
-       ResponseEntity<String> response = commandBus.send(command);
+      return commandBus.send(command);
 
-       return response;
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
@@ -983,7 +959,7 @@ public class DepartmentController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -1000,9 +976,70 @@ public class DepartmentController {
 
       final var query = new GetAvailablePermissionsForDepartmentQuery(resourceName, departmentCode);
 
-      ResponseEntity<List<PermissionDTO>> response = queryBus.handle(query);
+      return queryBus.handle(query);
 
-      return response;
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
+   @GetMapping(
+   value = "departments/{departmentCode}/roles/{roleCode}/children"
+  )
+  @Operation(
+    summary = "Get role children",
+    description = "This Permission is required: igrp.department.view",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleChildHierarchyDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<RoleChildHierarchyDTO> getRoleChildren(
+    @RequestParam(value = "level", required = false) Integer level, @PathVariable(value = "departmentCode") String departmentCode,@PathVariable(value = "roleCode") String roleCode)
+  {
+
+      final var query = new GetRoleChildrenQuery(level, departmentCode, roleCode);
+
+      return queryBus.handle(query);
+
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
+   @GetMapping(
+   value = "departments/{departmentCode}/roles/{roleCode}/parents"
+  )
+  @Operation(
+    summary = "Get role parents",
+    description = "This Permission is required: igrp.department.view",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = RoleParentHierarchyDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<RoleParentHierarchyDTO> getRoleParents(
+    @RequestParam(value = "level", required = false) Integer level, @PathVariable(value = "departmentCode") String departmentCode,@PathVariable(value = "roleCode") String roleCode)
+  {
+
+      final var query = new GetRoleParentsQuery(level, departmentCode, roleCode);
+
+      return queryBus.handle(query);
+
   }
 
 }

@@ -161,4 +161,43 @@ public interface MenuEntryEntityRepository extends
     );
 
 
+    /**
+     * Finds all menu entries that are not deleted for the current user.
+     *
+     * @param userId the current user ID's
+     * @return a list of menu entry entities
+     */
+    @Query(value = """
+    WITH RECURSIVE menu_tree AS (
+        SELECT m.*
+        FROM t_menu_entry m
+        JOIN t_menu_entry_roles rm ON rm.menu_entry_entity_id = m.id
+        JOIN t_role r ON r.id = rm.roles_id
+        JOIN t_role_users ur ON ur.roles_id = r.id
+        JOIN t_user u ON u.id = ur.users_id
+        WHERE u.id = :userId
+          AND r.id = u.active_role_id
+          AND m.application_id = :applicationId
+          AND m.status = 'ACTIVE'
+          AND (
+            :menuCode IS NULL
+            OR m.name ILIKE CONCAT('%', :menuCode, '%')
+          )
+
+        UNION
+    
+        SELECT parent.*
+        FROM t_menu_entry parent
+        JOIN menu_tree child ON child.parent_id = parent.id
+        WHERE parent.status = 'ACTIVE'
+    )
+    SELECT DISTINCT *
+    FROM menu_tree
+    ORDER BY position
+    """, nativeQuery = true)
+    List<MenuEntryEntity> findActiveByApplicationIdAndCurrentUserIdFiltered(@Param("userId") Integer userId,
+                                                                     @Param("applicationId") Integer applicationId,
+                                                                     @Param("menuCode") String menuCode
+    );
+
 }

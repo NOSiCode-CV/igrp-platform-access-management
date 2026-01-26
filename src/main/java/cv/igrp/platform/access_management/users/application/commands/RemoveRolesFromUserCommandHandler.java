@@ -18,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
@@ -93,6 +94,18 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
             }
             // Also remove roles from user's collection
             user.getRoles().removeAll(rolesToRemove);
+
+            Optional.ofNullable(user.getActiveRole()).ifPresent(
+                    (it) -> {
+                       if(rolesToRemove.contains(it)) {
+                          if(!user.getRoles().isEmpty()) {
+                             user.setActiveRole(user.getRoles().getFirst());
+                          } else {
+                             user.setActiveRole(null);
+                          }
+                       }
+                    }
+            );
 
             // Persist changes to the user only when roles were actually removed
             userRepository.save(user);
