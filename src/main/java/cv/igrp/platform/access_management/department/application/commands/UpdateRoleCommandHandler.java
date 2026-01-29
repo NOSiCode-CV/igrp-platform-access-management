@@ -177,7 +177,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
 
             childRole.setStatus(status);
 
-            updateChildrenStatus(department, role, status);
+            updateChildrenStatus(department, childRole, status);
 
             roleRepository.save(childRole);
 
