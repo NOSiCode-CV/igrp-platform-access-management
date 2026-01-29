@@ -13,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.UUID;
 
@@ -47,6 +48,7 @@ public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuComman
     * @throws IgrpResponseStatusException if the menu entry is not found
     */
    @IgrpCommandHandler
+   @Transactional
    public ResponseEntity<String> handle(DeleteMenuCommand command) {
 
       var appCode = command.getApplicationCode();
@@ -65,6 +67,8 @@ public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuComman
                          HttpStatus.NOT_FOUND, "Menu not found", "Menu not found with code: " + command.getMenuCode());
               });
 
+      deleteChildMenus(menuEntry);
+
       menuEntry.setCode(menuEntry.getCode() + "-" + UUID.randomUUID());
       menuEntry.setStatus(Status.DELETED);
 
@@ -77,6 +81,29 @@ public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuComman
               deletedMenuEntry.getType());
 
       return ResponseEntity.noContent().build();
+   }
+
+   private void deleteChildMenus(MenuEntryEntity menuEntry) {
+
+       if(menuEntry == null) return;
+
+       var children = menuEntryRepository.findByParentId(menuEntry);
+
+       if(children.isEmpty()) return;
+
+       for (var child :  children) {
+
+           if(child.getStatus() == Status.DELETED) continue;
+
+           deleteChildMenus(child);
+
+           child.setCode(menuEntry.getCode() + "-" + UUID.randomUUID());
+           child.setStatus(Status.DELETED);
+
+           menuEntryRepository.save(child);
+
+       }
+
    }
 
 }
