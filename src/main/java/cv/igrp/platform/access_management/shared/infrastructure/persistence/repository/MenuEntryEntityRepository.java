@@ -24,6 +24,8 @@ public interface MenuEntryEntityRepository extends
 
     List<MenuEntryEntity> findByApplicationIdAndStatusIn(ApplicationEntity appId, List<Status> status);
 
+    List<MenuEntryEntity> findByParentId(MenuEntryEntity parent);
+
     @Query(value = """
     SELECT m.*
     FROM t_menu_entry m
