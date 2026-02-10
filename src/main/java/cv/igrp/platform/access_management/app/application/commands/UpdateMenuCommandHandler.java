@@ -17,6 +17,8 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Objects;
+
 @Component
 public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuCommand, ResponseEntity<MenuEntryDTO>> {
 
@@ -65,6 +67,11 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
                          "Menu not found with code: " + command.getMenuCode());
               });
 
+      if(command.getMenuentrydto().getStatus() != null &&
+              !Objects.equals(command.getMenuentrydto().getStatus(), menuEntry.getStatus())) {
+          updateChildrenStatus(app, menuEntry, command.getMenuentrydto().getStatus());
+      }
+
       MenuEntryDTO menuDto = command.getMenuentrydto();
 
       MenuEntryValidator.validateRequiredFields(menuDto);
@@ -109,6 +116,32 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
               savedMenuEntry.getType());
 
       return ResponseEntity.ok(menuEntryMapper.toDTO(savedMenuEntry));
+   }
+
+   private void updateChildrenStatus(ApplicationEntity app, MenuEntryEntity menuEntry, Status status) {
+
+       var children = menuEntryRepository.findByParentId(menuEntry);
+
+       for (var child : children) {
+
+           if(child.getStatus().equals(Status.DELETED)) continue;
+
+           if(status != Status.ACTIVE) {
+
+               var childMenu = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(app, child.getCode(), Status.DELETED).orElseThrow(
+                       () -> IgrpResponseStatusException.notFound("Menu Entry <" + child.getCode() + "> for app <" + app.getCode() + "> was not found!")
+               );
+
+               childMenu.setStatus(status);
+
+               updateChildrenStatus(app, childMenu, status);
+
+               menuEntryRepository.save(childMenu);
+
+           }
+
+       }
+
    }
 
 }

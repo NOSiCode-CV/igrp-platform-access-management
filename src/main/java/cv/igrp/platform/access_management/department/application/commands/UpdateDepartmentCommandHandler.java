@@ -163,7 +163,7 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
 
                childDepartment.setStatus(status);
 
-               updateRelatedEntitiesStatus(department, status);
+               updateRelatedEntitiesStatus(childDepartment, status);
 
                departmentRepository.save(childDepartment);
 
@@ -200,7 +200,7 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
 
                 childRole.setStatus(status);
 
-                updateRoleChildrenStatus(department, role, status);
+                updateRoleChildrenStatus(department, childRole, status);
 
                 roleRepository.save(childRole);
 

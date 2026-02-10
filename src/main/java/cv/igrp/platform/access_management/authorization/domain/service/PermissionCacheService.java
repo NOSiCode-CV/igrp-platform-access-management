@@ -94,6 +94,7 @@ public class PermissionCacheService {
                           AND p.name = ?
                           AND p.status = 'ACTIVE'
                           AND r.status = 'ACTIVE'
+                          AND r.id = u.active_role_id
                         LIMIT 1;
                 """;
 
