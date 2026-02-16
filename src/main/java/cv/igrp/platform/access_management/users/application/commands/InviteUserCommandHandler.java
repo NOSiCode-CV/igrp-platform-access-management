@@ -94,6 +94,20 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         if (providerUser.isPresent()) {
 
+            var previousInvitationOpt = invitationRepository.findByEmailAndStatus(dto.getEmail(), InvitationStatus.PENDING);
+
+            if (previousInvitationOpt.isPresent()) {
+
+                var previousInvitation = previousInvitationOpt.get();
+
+                previousInvitation.setStatus(InvitationStatus.CANCELED);
+
+                invitationRepository.save(previousInvitation);
+
+                LOGGER.info("Previous invitation {} was cancelled for user with email {}.", previousInvitation.getId(), dto.getEmail());
+
+            }
+
             InvitationEntity invitation = new InvitationEntity();
 
             invitation.setEmail(dto.getEmail());

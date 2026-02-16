@@ -56,5 +56,6 @@ public interface InvitationEntityRepository extends
             @Param("email") String email
     );
 
+    Optional<InvitationEntity> findByEmailAndStatus(String email, InvitationStatus status);
 
 }

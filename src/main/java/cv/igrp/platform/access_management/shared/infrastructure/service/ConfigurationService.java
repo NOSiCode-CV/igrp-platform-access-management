@@ -37,7 +37,7 @@ public class ConfigurationService {
     public static final String SUPER_ADMIN_ROLE = IGRP_DEPARTMENT + ".superadmin";
     public static final String IGRP_PERMISSION = IGRP_DEPARTMENT + ".manage_access";
     public static final String IGRP_RESOURCE = "igrp-access-management";
-    private static final String IGRP_APP = "APP_IGRP_CENTER";
+    public static final String IGRP_APP = "APP_IGRP_CENTER";
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
@@ -89,7 +89,7 @@ public class ConfigurationService {
             Long departmentId = departmentExists ? getId("SELECT id FROM t_department WHERE code='%s'".formatted(IGRP_DEPARTMENT)) :
                     (departmentExistsInProvider ? createDefaultDepartmentInDB() : null);
 
-            Long appId = appExists ? getId("SELECT id FROM t_application WHERE type='SYSTEM' LIMIT 1") :
+            Long appId = appExists ? getId("SELECT id FROM t_application WHERE code='%s'".formatted(IGRP_APP)) :
                     createDefaultAppInDB(departmentId);
 
             Long permissionId = permissionExists ? getId("SELECT id FROM t_permission WHERE name='%s'".formatted(IGRP_PERMISSION)) :
