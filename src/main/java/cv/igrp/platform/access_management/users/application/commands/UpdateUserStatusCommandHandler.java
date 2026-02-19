@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
@@ -29,16 +30,19 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
    private final IGRPUserEntityRepository userRepository;
    private final IGRPUserMapper userMapper;
    private final UserUtils utils;
+   private final SecurityAuditService auditService;
 
    
    public UpdateUserStatusCommandHandler(
            IGRPUserEntityRepository userRepository,
            IGRPUserMapper userMapper,
-           UserUtils utils
+           UserUtils utils,
+           SecurityAuditService auditService
    ) {
        this.userRepository = userRepository;
        this.userMapper = userMapper;
        this.utils = utils;
+       this.auditService = auditService;
    }
 
    /**
@@ -81,6 +85,8 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
       user.setStatus(status);
 
       var updatedUser = userRepository.save(user);
+
+      auditService.logUserChange(updatedUser.getId(), newStatus);
 
       LOGGER.info("User status updated successfully: id={}, email={}", updatedUser.getId(), updatedUser.getEmail());
 
