@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.IGRP_APP;
+
 @Service
 public class ApplicationSyncService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ApplicationSyncService.class);
@@ -35,6 +37,11 @@ public class ApplicationSyncService {
 
         if (applicationDTO == null || applicationDTO.getCode() == null || applicationDTO.getCode().isBlank()) {
             throw IgrpResponseStatusException.badRequest("Application code is required");
+        }
+
+        if (applicationDTO.getCode().equals(IGRP_APP)) {
+            LOGGER.info("Skipping default app system synchronization: {}", applicationDTO.getCode());
+            return;
         }
 
         LOGGER.info("[ApplicationSync] Starting synchronization for application '{}'", applicationDTO.getCode());
