@@ -81,6 +81,13 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         var dto = command.getInviteuserdto();
 
+        if(dto.getEmail() == null) throw IgrpResponseStatusException.of(
+                HttpStatus.BAD_REQUEST,
+                "Email is required"
+        );
+
+        dto.setEmail(dto.getEmail().toLowerCase());
+
         LOGGER.info("Inviting new user: email={}", dto.getEmail());
 
         // Verify if user exists
