@@ -1,0 +1,26 @@
+{
+  "type": "dto",
+  "module": "shared",
+  "name": "IGRPBusinessUserDTO",
+  "template": "classic",
+  "enableCustonValidation": false,
+  "attributes": [
+    {
+      "name": "externalId",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    }
+  ],
+  "id": "plmvfsaeug_copy",
+  "extends": {
+    "name": "IGRPUserDTO",
+    "module": "shared"
+  }
+}

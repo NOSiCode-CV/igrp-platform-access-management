@@ -161,7 +161,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "IGRPUserDTO",
+                "type": "IGRPBusinessUserDTO",
                 "objectType": "dto",
                 "name": "data",
                 "collectionType": "list",
@@ -321,5 +321,5 @@
       ]
     }
   ],
-  "id": "jws7h4f2af-syncPermissions-getUsersForBusiness-getUsersForBusiness-getDepartmentForBusiness-getRolesForBusiness-syncApplicationMenus"
+  "id": "jws7h4f2af-syncPermissions-getUsersForBusiness-getUsersForBusiness-getDepartmentForBusiness-getRolesForBusiness-syncApplicationMenus-getUsersForBusiness"
 }

@@ -99,7 +99,8 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
             user.setExternalId(providerUserOpt.get().getExternalId());
 
             if(invitation.getRoles() != null &&  !invitation.getRoles().isEmpty()) {
-               user.setActiveRole(roleRepository.findById(invitation.getRoles().iterator().next().getId()).orElse(null));
+               Integer roleId = invitation.getRoles().iterator().next().getId();
+               user.setActiveRole(roleRepository.findById(roleId).orElse(null));
             }
 
             var savedUser = userRepository.save(user);

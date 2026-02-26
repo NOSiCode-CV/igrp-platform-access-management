@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.users.mapper;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.IGRPBusinessUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import org.springframework.stereotype.Component;
@@ -35,6 +36,28 @@ public class IGRPUserMapper {
         dto.setPicture(user.getPicture());
         dto.setSignature(user.getSignature());
         return dto;
+    }
+
+    /**
+     * Converts an {@link IGRPUserEntity} entity to an {@link IGRPBusinessUserDTO}.
+     *
+     * @param user the user entity to convert; may be {@code null}
+     * @return a DTO representing the user for business purposes, or {@code null} if the input is {@code null}
+     */
+    public IGRPBusinessUserDTO toBusinessDTO(IGRPUserEntity user) {
+
+        if (user == null) return null;
+        IGRPBusinessUserDTO dto = new IGRPBusinessUserDTO();
+        dto.setId(Integer.parseInt(user.getId()));
+        dto.setName(user.getName());
+        dto.setUsername(user.getUsername());
+        dto.setEmail(user.getEmail());
+        dto.setStatus(user.getStatus());
+        dto.setPicture(user.getPicture());
+        dto.setSignature(user.getSignature());
+        dto.setExternalId(user.getExternalId());
+        return dto;
+
     }
 
     /**
