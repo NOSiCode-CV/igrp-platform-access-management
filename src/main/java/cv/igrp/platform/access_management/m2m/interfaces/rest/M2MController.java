@@ -1,5 +1,5 @@
 /* THIS FILE WAS GENERATED AUTOMATICALLY BY iGRP STUDIO. */
-/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME. */
+/* DO NOT MODIFY IT BECAUSE IT COULD BE REWRITTEN AT ANY TIME */
 
 package cv.igrp.platform.access_management.m2m.interfaces.rest;
 
@@ -22,14 +22,17 @@ import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
-import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.application.dto.IGRPBusinessUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 
 @IgrpController
 @RestController
 @RequestMapping(path = "api")
-@Tag(name = "M2M", description = "Machine-to-Machine")
+@Tag(
+    name = "M2m",
+    description = "Machine-to-Machine"
+)
 public class M2MController {
 
   
@@ -48,7 +51,7 @@ public class M2MController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -78,7 +81,7 @@ public class M2MController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -108,7 +111,7 @@ public class M2MController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -138,7 +141,7 @@ public class M2MController {
     responses = {
       @ApiResponse(
           responseCode = "204",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -168,18 +171,18 @@ public class M2MController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
-                  implementation = IGRPUserDTO.class,
+                  implementation = IGRPBusinessUserDTO.class,
                   type = "object")
           )
       )
     }
   )
   
-  public ResponseEntity<List<IGRPUserDTO>> getUsersForBusiness(@RequestBody List<String> getUsersForBusinessRequest
+  public ResponseEntity<List<IGRPBusinessUserDTO>> getUsersForBusiness(@RequestBody List<String> getUsersForBusinessRequest
     , @RequestParam(value = "activeOnly", required = false) boolean activeOnly,
     @RequestParam(value = "applicationCode", required = false) String applicationCode,
     @RequestParam(value = "departmentCode", required = false) String departmentCode,
@@ -204,7 +207,7 @@ public class M2MController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -236,7 +239,7 @@ public class M2MController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          description = "",
+          
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(

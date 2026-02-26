@@ -21,6 +21,7 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
@@ -46,6 +47,7 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
    private final InvitationEntityRepository invitationRepository;
    private final IAdapter adapter;
    private final InvitationMapper invitationMapper;
+   private final SecurityAuditService auditService;
 
    public RespondUserInvitationCommandHandler(
            NotificationAdapter<NotificationResult> notificationAdapter,
@@ -53,13 +55,15 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
            RoleEntityRepository roleRepository,
            InvitationEntityRepository invitationRepository,
            IAdapter adapter,
-           InvitationMapper invitationMapper) {
+           InvitationMapper invitationMapper,
+           SecurityAuditService auditService) {
        this.notificationAdapter = notificationAdapter;
        this.userRepository = userRepository;
        this.roleRepository = roleRepository;
        this.invitationRepository = invitationRepository;
        this.adapter = adapter;
        this.invitationMapper = invitationMapper;
+       this.auditService = auditService;
    }
 
    @IgrpCommandHandler
@@ -95,10 +99,12 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
             user.setExternalId(providerUserOpt.get().getExternalId());
 
             if(invitation.getRoles() != null &&  !invitation.getRoles().isEmpty()) {
-               user.setActiveRole(roleRepository.findById(invitation.getRoles().iterator().next().getId()).orElse(null));
+               Integer roleId = invitation.getRoles().iterator().next().getId();
+               user.setActiveRole(roleRepository.findById(roleId).orElse(null));
             }
 
             var savedUser = userRepository.save(user);
+            auditService.logUserChange(savedUser.getId(), "CREATE");
 
             for(var role : invitation.getRoles()) {
 

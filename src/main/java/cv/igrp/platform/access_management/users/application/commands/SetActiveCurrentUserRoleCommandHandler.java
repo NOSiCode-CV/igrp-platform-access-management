@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDepartmentDTO;
 
 import java.util.Optional;
@@ -31,6 +32,7 @@ public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<Se
     private final RoleEntityRepository roleRepository;
     private final DepartmentEntityRepository departmentRepository;
     private final AuthenticationHelper authenticationHelper;
+    private final SecurityAuditService auditService;
 
     /**
      * Constructs the handler with necessary dependencies.
@@ -39,17 +41,20 @@ public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<Se
      * @param roleRepository       the repository to retrieve role data
      * @param departmentRepository the repository to retrieve department data
      * @param authenticationHelper the helper to access the authenticated user context
+     * @param auditService         the service for logging security audit events
      */
     public SetActiveCurrentUserRoleCommandHandler(
             IGRPUserEntityRepository igrpUserRepository,
             RoleEntityRepository roleRepository,
             DepartmentEntityRepository departmentRepository,
-            AuthenticationHelper authenticationHelper
+            AuthenticationHelper authenticationHelper,
+            SecurityAuditService auditService
     ) {
         this.igrpUserRepository = igrpUserRepository;
         this.roleRepository = roleRepository;
         this.departmentRepository = departmentRepository;
         this.authenticationHelper = authenticationHelper;
+        this.auditService = auditService;
     }
 
     @IgrpCommandHandler
@@ -66,6 +71,7 @@ public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<Se
         }
 
         IGRPUserEntity user = optionalUser.get();
+        Integer oldRoleId = Optional.ofNullable(user.getActiveRole()).map(RoleEntity::getId).orElse(null);
 
         DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(command.getRoledepartmentdto().departmentCode());
 
@@ -84,6 +90,9 @@ public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<Se
         user.setActiveRole(role);
 
         var savedUser = igrpUserRepository.save(user);
+
+        // Audit the profile switch
+        auditService.logProfileSwitch(oldRoleId, savedUser.getActiveRole().getId());
 
         RoleDepartmentDTO dto = new RoleDepartmentDTO(savedUser.getActiveRole().getCode(), savedUser.getActiveRole().getDepartment().getCode());
         logger.info("User ID : {} has active role: {} (Department: {})", externalId, savedUser.getActiveRole().getCode(), savedUser.getActiveRole().getDepartment().getCode());
