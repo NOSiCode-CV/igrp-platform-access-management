@@ -1,7 +1,5 @@
 package cv.igrp.platform.access_management.department.application.commands;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
-import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
@@ -36,19 +34,16 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
 
    private final DepartmentEntityRepository departmentRepository;
    private final RoleEntityRepository roleRepository;
-   private final IAdapter adapter;
 
    /**
     * Constructs a new instance of {@code DeleteDepartmentCommandHandler} with the given repository.
     *
     * @param departmentRepository the repository used to access and delete departments
     * @param roleRepository the repository used to access and delete roles
-    * @param adapter               the adapter interface used to interact with the external Identity and Access Management (IAM) system
     */
-   public DeleteDepartmentCommandHandler(DepartmentEntityRepository departmentRepository, RoleEntityRepository roleRepository, IAdapter adapter) {
+   public DeleteDepartmentCommandHandler(DepartmentEntityRepository departmentRepository, RoleEntityRepository roleRepository) {
       this.departmentRepository = departmentRepository;
       this.roleRepository = roleRepository;
-      this.adapter = adapter;
    }
 
    /**
@@ -93,15 +88,6 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
 
       departmentRepository.save(department);
 
-      try {
-         adapter.deleteDepartment(code);
-      } catch (IAMException e) {
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.INTERNAL_SERVER_ERROR,
-                 "Department Deletion Failed",
-                 e.getMessage()
-         );
-      }
       logger.info("Successfully deleted department with code={}", code);
       return ResponseEntity.noContent().build();
    }

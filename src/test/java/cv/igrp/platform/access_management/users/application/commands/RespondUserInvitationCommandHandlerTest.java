@@ -3,17 +3,21 @@ package cv.igrp.platform.access_management.users.application.commands;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.exception.NotificationException;
 import cv.igrp.framework.notifications.core.model.NotificationResult;
-import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
 import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
 import cv.igrp.platform.access_management.shared.application.dto.UserInvitationResponseDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.InvitationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
-import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
+import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -21,8 +25,15 @@ import org.mockito.*;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 
 @ExtendWith(MockitoExtension.class)
 class RespondUserInvitationCommandHandlerTest {
@@ -34,26 +45,37 @@ class RespondUserInvitationCommandHandlerTest {
     private IGRPUserEntityRepository userRepository;
 
     @Mock
-    private IGRPUserMapper userMapper;
+    private RoleEntityRepository roleRepository;
 
     @Mock
-    private IAdapter adapter;
+    private InvitationEntityRepository invitationRepository;
 
     @Mock
-    private UpdateUserStatusCommandHandler commandBus;
+    private InvitationMapper invitationMapper;
+
+    @Mock
+    private SecurityAuditService auditService;
+
+    @Mock
+    private SecurityContext securityContext;
+
+    @Mock
+    private Authentication authentication;
+
+    @Mock
+    private Jwt jwt;
 
     @InjectMocks
     private RespondUserInvitationCommandHandler handler;
 
-    private IGRPUserEntity userEntity;
-
-    String token = "valid-token";
+    private String token = "valid-token";
 
     @BeforeEach
     void setUp() {
-        userEntity = new IGRPUserEntity();
-        userEntity.setId(1);
-        userEntity.setEmail("test@example.com");
+        // Mock SecurityContext
+        SecurityContextHolder.setContext(securityContext);
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getPrincipal()).thenReturn(jwt);
     }
 
     @Test
@@ -65,11 +87,21 @@ class RespondUserInvitationCommandHandlerTest {
 
         RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto, token);
 
-        when(userRepository.existsByEmail(dto.getEmail())).thenReturn(true);
-        when(adapter.resolveUser(dto.getEmail())).thenReturn(Optional.of(userEntity));
-        when(userRepository.findByExternalId(userEntity.getExternalId())).thenReturn(Optional.of(userEntity));
-        when(userRepository.save(any())).thenReturn(userEntity);
-        when(userMapper.toDto(userEntity)).thenReturn(new IGRPUserDTO());
+        InvitationEntity invitation = new InvitationEntity();
+        invitation.setEmail("test@example.com");
+        invitation.setStatus(InvitationStatus.PENDING);
+        RoleEntity role = new RoleEntity();
+        role.setId(1);
+        invitation.setRoles(Set.of(role));
+
+        when(invitationRepository.findByTokenAndStatusPending(token)).thenReturn(invitation);
+        when(userRepository.existsByEmail(dto.getEmail())).thenReturn(false);
+        when(jwt.getClaimAsString("email")).thenReturn("test@example.com");
+        when(jwt.getSubject()).thenReturn("jwt-subject-123");
+        when(invitationRepository.save(any())).thenReturn(invitation);
+        when(userRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(roleRepository.findById(1)).thenReturn(Optional.of(role));
+        when(invitationMapper.toDto(any())).thenReturn(new InvitationDTO());
 
         // Act
         ResponseEntity<InvitationDTO> response = handler.handle(command);
@@ -77,9 +109,10 @@ class RespondUserInvitationCommandHandlerTest {
         // Assert
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        verify(userRepository).save(userEntity);
+        verify(invitationRepository).save(invitation);
+        verify(userRepository).save(any(IGRPUserEntity.class));
         verify(notificationAdapter).send(any());
-        verify(commandBus).handle(any());
+        verify(auditService).logUserChange(any(), eq("CREATE"));
     }
 
     @Test
@@ -88,57 +121,50 @@ class RespondUserInvitationCommandHandlerTest {
         UserInvitationResponseDTO dto = new UserInvitationResponseDTO();
         dto.setEmail("test@example.com");
         dto.setAccept(false);
+        dto.setObservation("Rejected");
 
         RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto, token);
 
-        when(userRepository.existsByEmail(dto.getEmail())).thenReturn(true);
-        when(adapter.resolveUser(dto.getEmail())).thenReturn(Optional.of(userEntity));
-        when(userRepository.findByExternalId(userEntity.getExternalId())).thenReturn(Optional.of(userEntity));
-        when(userRepository.save(any())).thenReturn(userEntity);
-        when(userMapper.toDto(userEntity)).thenReturn(new IGRPUserDTO());
+        InvitationEntity invitation = new InvitationEntity();
+        invitation.setEmail("test@example.com");
+        invitation.setStatus(InvitationStatus.PENDING);
+
+        when(invitationRepository.findByTokenAndStatusPending(token)).thenReturn(invitation);
+        when(userRepository.existsByEmail(dto.getEmail())).thenReturn(false);
+        when(jwt.getClaimAsString("email")).thenReturn("test@example.com");
 
         // Act
         ResponseEntity<InvitationDTO> response = handler.handle(command);
 
         // Assert
         assertNotNull(response);
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotEquals("test@example.com", userEntity.getEmail()); // email changed due to rejection
-        verify(userRepository).save(userEntity);
-        verifyNoInteractions(notificationAdapter); // no email should be sent
-        verifyNoInteractions(commandBus); // no status update command
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertEquals(InvitationStatus.REJECTED, invitation.getStatus());
+        assertEquals("Rejected", invitation.getComments());
+        verify(invitationRepository).save(invitation);
+        verifyNoInteractions(userRepository);
+        verifyNoInteractions(notificationAdapter);
     }
 
     @Test
-    void handle_userDoesNotExist_throwsException() {
-        UserInvitationResponseDTO dto = new UserInvitationResponseDTO();
-        dto.setEmail("unknown@example.com");
-        dto.setAccept(true);
-        RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto, token);
-
-        when(userRepository.existsByEmail(dto.getEmail())).thenReturn(false);
-
-        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
-                () -> handler.handle(command));
-
-        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-        assertTrue(ex.getMessage().contains("was not invited already"));
-    }
-
-    @Test
-    void handle_userNotInProvider_throwsException() {
+    void handle_emailMismatch_throwsException() {
+        // Arrange
         UserInvitationResponseDTO dto = new UserInvitationResponseDTO();
         dto.setEmail("test@example.com");
         dto.setAccept(true);
+
         RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto, token);
 
-        when(userRepository.existsByEmail(dto.getEmail())).thenReturn(true);
-        when(adapter.resolveUser(dto.getEmail())).thenReturn(Optional.empty());
+        when(invitationRepository.findByTokenAndStatusPending(token)).thenReturn(new InvitationEntity());
+        when(userRepository.existsByEmail(dto.getEmail())).thenReturn(false);
+        when(jwt.getClaimAsString("email")).thenReturn("mismatch@example.com");
 
+        // Act & Assert
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> handler.handle(command));
 
-        assertEquals(HttpStatus.NOT_FOUND, ex.getStatusCode());
-        assertTrue(ex.getMessage().contains("was not found in the Identity Provider"));
+        assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getBody().getStatus());
+        assertTrue(ex.getMessage().contains("JWT email does not match"));
     }
 }
+
