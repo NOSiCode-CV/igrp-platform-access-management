@@ -43,9 +43,9 @@ Whenever you are prompted to solve bugs related to Login:
 - **Login Initiation**: The OIDC login flow starts when an unauthenticated user attempts to access a protected resource, redirecting them to the login endpoint (e.g., `/oauth2/authorization/{registrationId}`).
 - **Customization**: When configuring the `SecurityFilterChain`, ensure that `oauth2Login()` or `oauth2ResourceServer()` is correctly configured to map authorities (using a custom `OidcUserService` or `JwtAuthenticationConverter`) to translate WSO2 roles into Spring Security `GrantedAuthority` objects.
 
-### 6. Session Consultation Endpoint
-- The application must provide a dedicated endpoint (e.g., `/api/auth/session` or `/api/auth/me`) that returns the current authenticated user's details and active session state.
-- **Endpoint Implementation**: This endpoint extracts the context from Spring Security (`SecurityContextHolder.getContext().getAuthentication()`). It should safely expose the `principal` information (such as `OidcUser` or `Jwt`), including relevant claims like `sub`, `email`, `preferred_username`, and the mapped `authorities` (permissions).
+### 6. User Identification and Invitations Without Email
+- **Username / UID Focus**: The system must not rely on the user's `email` for identification, uniqueness, or invitation flows. Always use the unique identifier (`sub`, `uid`, or `username`) provided by WSO2.
+- **Decoupling Email**: Ensure that any functionalities that traditionally use email (like user creation, password reset prompts, or invitations to applications/departments) are refactored to work exclusively with the unique system username or ID. The email field should be strictly optional and never mandatory for core IAM workflows.
 
 ## Additional References
 Any refactoring or new implementation of IAM (Identity and Access Management) must cross-reference the documentation in `IAM_SYNCHRONIZATION.md` and `PERMISSION_MANAGEMENT_SPECS.md` (present in this same folder).
