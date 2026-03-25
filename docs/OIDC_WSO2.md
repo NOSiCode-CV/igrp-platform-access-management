@@ -1,5 +1,6 @@
 ---
-description: Instructions and Skills for OIDC integration with WSO2
+name: no-email-authentication
+description: Skills and guidelines for OIDC integration with WSO2 in iGRP 3.0, focusing on OpenID Connect flows, JWT token mapping, and core IAM functionalities decoupled from email usage.
 ---
 # OIDC Integration with WSO2
 

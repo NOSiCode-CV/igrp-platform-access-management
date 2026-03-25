@@ -1,3 +1,8 @@
+---
+name: claims-mapping
+description: Guidelines for standardizing the extraction, validation, and mapping of OIDC claims into a unified internal User Profile, supporting various authentication methods (CNI, CMD) with a focus on security and privacy.
+---
+
 # Skill — Claims Parsing and Mapping (CNI, CMD, etc.)
 
 > **Purpose**: Standardize **how to extract, validate, and map** OIDC claims (ID Token and/or `/userinfo`) into a consistent internal **User Profile**, covering different authentication methods (**CNI**, **CMD**, custom credentials), ensuring **security**, **privacy**, and **interoperability** across services.
