@@ -20,9 +20,11 @@ import java.util.List;
 @IgrpDTO
 public class InviteUserDTO  {
 
+  @NotBlank(message = "Identifier type is required (EMAIL, PHONE, NIC)")
+  private String identifierType;
   
-  
-  private String email ;
+  @NotBlank(message = "Identifier value is required")
+  private String identifierValue;
   
   
   private String departmentCode ;

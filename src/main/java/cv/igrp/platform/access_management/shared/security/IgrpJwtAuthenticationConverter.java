@@ -26,8 +26,17 @@ public class IgrpJwtAuthenticationConverter implements Converter<Jwt, AbstractAu
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
         AbstractAuthenticationToken defaultToken = defaultConverter.convert(jwt);
-        Collection<GrantedAuthority> authorities = defaultToken.getAuthorities();
+        Collection<GrantedAuthority> authorities = new java.util.ArrayList<>(defaultToken.getAuthorities());
         Map<String, Object> c = jwt.getClaims();
+
+        // Map WSO2 roles from token to authorities
+        java.util.List<String> roles = optArray(c, "roles");
+        if (roles.isEmpty()) {
+            roles = optArray(c, "groups");
+        }
+        for (String role : roles) {
+            authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role));
+        }
 
         // Defensive Extraction using Helpers
         String sub = req(c, "sub");

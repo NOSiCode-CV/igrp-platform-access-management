@@ -50,3 +50,11 @@ Whenever you are prompted to solve bugs related to Login:
 
 ## Additional References
 Any refactoring or new implementation of IAM (Identity and Access Management) must cross-reference the documentation in `IAM_SYNCHRONIZATION.md` and `PERMISSION_MANAGEMENT_SPECS.md` (present in this same folder).
+
+---
+
+## ✅ Implementation Status (Current Codebase)
+The following skills have already been applied to the `igrp-platform-access-management` module:
+- **Security Parameterization**: WSO2 endpoints (`authorization-uri`, `token-uri`, `userinfo-uri`, `jwks-uri`, `logout-uri`) are parameterized in `application.properties` with environment fallback values.
+- **JWT Mapping**: `IgrpJwtAuthenticationConverter` successfully intercepts `roles` and `groups` claims from the ID Token and maps them into Spring Security `GrantedAuthority` lists.
+- **No-Email Authentication**: The core IAM functionality has been thoroughly decoupled from email dependency. The `IGRPUserEntity`, `InvitationEntity`, and DTOs have been refactored to require `username` as the primary identifier. The DB constraint for unique email was safely removed.

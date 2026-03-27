@@ -7,7 +7,6 @@ import cv.igrp.framework.notifications.core.model.Notification;
 import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
 import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.InvitationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
@@ -26,7 +25,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -67,7 +65,8 @@ class InviteUserCommandHandlerTest {
     @BeforeEach
     void setUp() {
         inviteUserDTO = new InviteUserDTO();
-        inviteUserDTO.setEmail("john@nosi.cv");
+        inviteUserDTO.setIdentifierType("EMAIL");
+        inviteUserDTO.setIdentifierValue("john@nosi.cv");
         inviteUserDTO.setDepartmentCode("DEPT_TEST");
         inviteUserDTO.setRoles(List.of("ROLE_TEST"));
 
@@ -75,30 +74,11 @@ class InviteUserCommandHandlerTest {
     }
 
     /**
-     * Test: should throw CONFLICT when email already exists in the repository.
-     */
-    @Test
-    void itShouldThrowConflict_WhenUserAlreadyExists() {
-        when(userRepository.existsByEmail("john@nosi.cv")).thenReturn(true);
-
-        IgrpResponseStatusException ex = assertThrows(
-                IgrpResponseStatusException.class,
-                () -> underTest.handle(command)
-        );
-
-        assertEquals(HttpStatus.CONFLICT.value(), ex.getBody().getStatus());
-        assertTrue(ex.getMessage().contains("john@nosi.cv"));
-        verify(userRepository).existsByEmail("john@nosi.cv");
-        verifyNoInteractions(notificationAdapter);
-    }
-
-    /**
      * Test: should invite the user successfully when all conditions are valid.
      */
     @Test
     void itShouldInviteUserSuccessfully() throws NotificationException {
-        when(userRepository.existsByEmail("john@nosi.cv")).thenReturn(false);
-        when(invitationRepository.findByEmailAndStatus("john@nosi.cv", InvitationStatus.PENDING)).thenReturn(Optional.empty());
+        when(invitationRepository.findByIdentifierTypeAndIdentifierValueAndStatus("EMAIL", "john@nosi.cv", InvitationStatus.PENDING)).thenReturn(Optional.empty());
 
         DepartmentEntity department = new DepartmentEntity();
         department.setCode("DEPT_TEST");
@@ -109,14 +89,16 @@ class InviteUserCommandHandlerTest {
         when(roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, "ROLE_TEST")).thenReturn(role);
 
         InvitationEntity savedInvitation = new InvitationEntity();
-        savedInvitation.setEmail("john@nosi.cv");
+        savedInvitation.setIdentifierType("EMAIL");
+        savedInvitation.setIdentifierValue("john@nosi.cv");
         savedInvitation.setToken("test-token");
         when(invitationRepository.save(any(InvitationEntity.class))).thenReturn(savedInvitation);
 
         when(userUtils.constructInvitationUrl(any(), eq("test-token"))).thenReturn("http://test.url");
 
         InvitationDTO expectedDto = new InvitationDTO();
-        expectedDto.setEmail("john@nosi.cv");
+        expectedDto.setIdentifierType("EMAIL");
+        expectedDto.setIdentifierValue("john@nosi.cv");
         when(invitationMapper.toDtoWithUrl(eq(savedInvitation), eq("http://test.url"))).thenReturn(expectedDto);
 
         ResponseEntity<InvitationDTO> response = underTest.handle(command);
@@ -125,7 +107,6 @@ class InviteUserCommandHandlerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expectedDto, response.getBody());
 
-        verify(userRepository).existsByEmail("john@nosi.cv");
         verify(invitationRepository).save(any(InvitationEntity.class));
         verify(notificationAdapter).send(any(Notification.class));
     }

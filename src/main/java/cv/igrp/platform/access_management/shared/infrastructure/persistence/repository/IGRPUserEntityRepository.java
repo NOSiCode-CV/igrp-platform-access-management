@@ -23,6 +23,11 @@ public interface IGRPUserEntityRepository extends
 
 
     @Query("""
+        select case when count(u) > 0 then true else false end from IGRPUserEntity u where u.username = :username and u.status != 'DELETED'
+    """)
+    boolean existsByUsername(String username);
+
+    @Query("""
         select case when count(u) > 0 then true else false end from IGRPUserEntity u where u.email = :email and u.status != 'DELETED'
     """)
     boolean existsByEmail(String email);

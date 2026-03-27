@@ -38,6 +38,9 @@ class UpdateUserStatusCommandHandlerTest {
     @Mock
     private UserUtils userUtils;
 
+    @Mock
+    private cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService auditService;
+
     @InjectMocks
     private UpdateUserStatusCommandHandler handler;
 

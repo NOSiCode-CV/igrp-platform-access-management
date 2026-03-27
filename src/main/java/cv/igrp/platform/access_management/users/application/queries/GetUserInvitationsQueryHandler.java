@@ -37,9 +37,9 @@ public class GetUserInvitationsQueryHandler implements QueryHandler<GetUserInvit
     @IgrpQueryHandler
     public ResponseEntity<List<InvitationDTO>> handle(GetUserInvitationsQuery query) {
 
-        LOGGER.info("Retrieving user invitations with email filter: {}", query.getEmail());
+        LOGGER.info("Retrieving user invitations with filter: {}", query.getIdentifierValue());
 
-        var invitations = invitationRepository.findAllByStatusNotOrderByLastModifiedDateDescFiltered(InvitationStatus.ACCEPTED.getCode(), query.getEmail())
+        var invitations = invitationRepository.findAllByStatusNotOrderByLastModifiedDateDescFiltered(InvitationStatus.ACCEPTED.getCode(), query.getIdentifierValue())
                 .stream()
                 .map(it -> {
                     var url = utils.constructInvitationUrl(appCenterUrl, it.getToken());

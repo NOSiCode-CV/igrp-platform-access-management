@@ -292,3 +292,10 @@ public class CustomOidcUserService extends OidcUserService {
 ---
 
 > **Tip**: If the identity provider (e.g., AUTENTIKA/WSO2) issues custom claims (e.g.: `NIC`, `auth_method`), maintain a versioned **mapping dictionary** to prevent breaking downstream consumers when new fields are introduced.
+
+---
+
+## ✅ Implementation Status (Current Codebase)
+- **Roles Extraction**: `IgrpJwtAuthenticationConverter` now effectively parses the `roles` and `groups` arrays from incoming tokens and maps them to authorities.
+- **Sub-claim mapping**: The `IgrpJwtAuthenticationConverter` relies heavily on validating the `sub` claim for user uniqueness.
+- ⚠️ **Pending Implementation**: The advanced parsing and integration for **CMD/CNI**, specifically fetching `NIC`, E.164 `phone_number` and resolving `auth_method` logic within the `UserProfile` has not yet been thoroughly implemented in the `IgrpJwtAuthenticationConverter` class.
