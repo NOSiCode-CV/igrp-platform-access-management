@@ -21,6 +21,9 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.core.convert.converter.Converter;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
@@ -43,12 +46,12 @@ public class OAuth2SecurityConfiguration {
 
     private static final Logger log = LoggerFactory.getLogger(OAuth2SecurityConfiguration.class);
 
-    private final JwtAuthenticationConverter jwtAuthenticationConverter;
+    private final Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter;
 
     @Value("${igrp.access.m2m.sync-token:}")
     private String machineAuthToken;
 
-    public OAuth2SecurityConfiguration(JwtAuthenticationConverter jwtAuthenticationConverter) {
+    public OAuth2SecurityConfiguration(Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter) {
         this.jwtAuthenticationConverter = jwtAuthenticationConverter;
     }
 

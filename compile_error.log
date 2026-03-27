@@ -1,0 +1,15 @@
+mar. 25, 2026 3:23:55 DA TARDE cv.igrp.framework.auth.core.processor.PermissionSourceGenerator process
+INFO: Generated PermissionsRegistry successfully.
+[ERROR] COMPILATION ERROR : 
+[ERROR] /C:/Users/gilberto.stavares/iGRP_3_0/OIDC/igrp-platform-access-management/src/main/java/cv/igrp/platform/access_management/shared/security/IgrpJwtAuthenticationConverter.java:[24,40] convert(org.springframework.security.oauth2.jwt.Jwt) in cv.igrp.platform.access_management.shared.security.IgrpJwtAuthenticationConverter cannot override convert(org.springframework.security.oauth2.jwt.Jwt) in org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
+  overridden method is final
+[ERROR] Failed to execute goal org.apache.maven.plugins:maven-compiler-plugin:3.14.0:compile (default-compile) on project access-management: Compilation failure
+[ERROR] /C:/Users/gilberto.stavares/iGRP_3_0/OIDC/igrp-platform-access-management/src/main/java/cv/igrp/platform/access_management/shared/security/IgrpJwtAuthenticationConverter.java:[24,40] convert(org.springframework.security.oauth2.jwt.Jwt) in cv.igrp.platform.access_management.shared.security.IgrpJwtAuthenticationConverter cannot override convert(org.springframework.security.oauth2.jwt.Jwt) in org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter
+[ERROR]   overridden method is final
+[ERROR] -> [Help 1]
+[ERROR] 
+[ERROR] To see the full stack trace of the errors, re-run Maven with the -e switch.
+[ERROR] Re-run Maven using the -X switch to enable full debug logging.
+[ERROR] 
+[ERROR] For more information about the errors and possible solutions, please read the following articles:
+[ERROR] [Help 1] http://cwiki.apache.org/confluence/display/MAVEN/MojoFailureException
