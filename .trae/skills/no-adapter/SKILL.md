@@ -66,6 +66,18 @@ Do not suppress errors with empty catch blocks or null checks. Fix the root caus
 
 ---
 
+## Troubleshooting and Known Issues
+
+| Error | Reason | Solution |
+| :--- | :--- | :--- |
+| `Error checking permission: IGRP_DEPARTMENT_CREATE` | JWT `sub` did not match `external_id` in `t_user` table. | Update `t_user.external_id` in DB to match the authenticated JWT's `sub`. |
+| Permission denied (even for Super Admin) | User had no `active_role_id` set in the `t_user` table. | Update `t_user.active_role_id` with the ID of the `DEPT_IGRP.superadmin` role. |
+| `LazyInitializationException` in Permission check | Accessing `user.getRoles()` in an async thread (Pool-worker) without a session. | Use direct SQL via `JdbcTemplate` for the Super Admin check to avoid Hibernate session issues. |
+| `BadSqlGrammarException` (PostgreSQL type mismatch) | Comparing `users_id` (integer) with a parameter sent as String. | Add an explicit cast in the SQL query: `WHERE ru.users_id = CAST(? AS integer)`. |
+| Outdated Admin check in `ScopeService` | `isSuperAdmin()` was checking JWT authorities instead of the DB. | Refactor `isSuperAdmin()` to use `JdbcTemplate` to check for the superadmin role in the DB. |
+
+---
+
 ## Link Points — What Must Be Removed
 
 Work through these in order. Complete one section fully before moving to the next.

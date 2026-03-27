@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
 
@@ -9,7 +9,7 @@
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
         <version>3.5.6</version>
-        <relativePath/>
+        <relativePath />
     </parent>
 
     <groupId>cv.igrp.platform</groupId>
@@ -50,6 +50,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <!--  -->
+            <dependency>
+                <groupId>me.paulschwarz</groupId>
+                <artifactId>spring-dotenv</artifactId>
+                <version>5.1.0</version>
+            </dependency>
+            <!--  -->
         </dependencies>
     </dependencyManagement>
 
@@ -89,6 +96,10 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>me.paulschwarz</groupId>
+            <artifactId>spring-dotenv</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.cloud</groupId>
@@ -289,7 +300,8 @@
                             <version>${igrp.framework.stereotype.version}</version>
                         </path>
 
-                        <!-- IGRP Framework Auth Processor (this is the one you need for authorities mapping!) -->
+                        <!-- IGRP Framework Auth Processor (this is the one you need for authorities
+                        mapping!) -->
                         <path>
                             <groupId>cv.igrp.framework.auth</groupId>
                             <artifactId>core</artifactId>
@@ -444,7 +456,8 @@
                                 <buildArg>--initialize-at-build-time=org.slf4j</buildArg>
                                 <buildArg>--initialize-at-build-time=org.slf4j.helpers</buildArg>
                                 <buildArg>--initialize-at-build-time=ch.qos.logback</buildArg>
-                                <buildArg>--initialize-at-build-time=io.micrometer.core.instrument.binder.logging
+                                <buildArg>
+                                    --initialize-at-build-time=io.micrometer.core.instrument.binder.logging
                                 </buildArg>
                                 <buildArg>--verbose</buildArg>
                             </buildArgs>

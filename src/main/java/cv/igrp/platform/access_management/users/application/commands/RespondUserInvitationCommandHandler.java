@@ -98,6 +98,8 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
                  HttpStatus.BAD_REQUEST,
                  "JWT email does not match invitation email"
          );
+         
+         
       }
 
       // Use JWT subject as external_id
