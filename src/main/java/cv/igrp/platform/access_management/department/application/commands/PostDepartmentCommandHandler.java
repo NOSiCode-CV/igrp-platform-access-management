@@ -1,7 +1,5 @@
 package cv.igrp.platform.access_management.department.application.commands;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
-import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
@@ -48,21 +46,18 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
 
    private final DepartmentEntityRepository departmentRepository;
    private final DepartmentMapper departmentMapper;
-   private final IAdapter adapter;
 
    /**
     * Constructs the command handler with required dependencies.
     *
     * @param departmentRepository the repository used to persist departments
     * @param departmentMapper the mapper used to convert between DTOs and domain entities
-    * @param adapter               the adapter interface used to interact with the external Identity and Access Management (IAM) system
     */
    public PostDepartmentCommandHandler(
            DepartmentEntityRepository departmentRepository,
-           DepartmentMapper departmentMapper, IAdapter adapter) {
+           DepartmentMapper departmentMapper) {
       this.departmentRepository = departmentRepository;
       this.departmentMapper = departmentMapper;
-      this.adapter = adapter;
    }
 
    /**
@@ -107,15 +102,6 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
       }
 
       DepartmentEntity saved = departmentRepository.save(department);
-      try {
-        adapter.createDepartment(department.getCode(), department.getParentId() != null ? department.getParentId().getCode() : null);
-      } catch (IAMException e) {
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.INTERNAL_SERVER_ERROR,
-                 "Department Creation Failed",
-                 e.getMessage()
-         );
-      }
 
       logger.info("Department created successfully: code={}", saved.getCode());
 

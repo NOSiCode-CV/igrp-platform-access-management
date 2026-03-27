@@ -3,8 +3,6 @@ package cv.igrp.platform.access_management.users.application.commands;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
-import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
@@ -55,7 +53,7 @@ class UpdateUserStatusCommandHandlerTest {
     }
 
     @Test
-    void handle_deactivateUser_removesRolesAndUpdatesStatus() throws IAMException {
+    void handle_deactivateUser_removesRolesAndUpdatesStatus() {
         // Arrange
         UpdateUserStatusCommand command = new UpdateUserStatusCommand(Status.INACTIVE.getCode(), Integer.parseInt(userEntity.getId()));
 
@@ -72,7 +70,7 @@ class UpdateUserStatusCommandHandlerTest {
     }
 
     @Test
-    void handle_activateUser_restoresRolesAndUpdatesStatus() throws IAMException {
+    void handle_activateUser_restoresRolesAndUpdatesStatus() {
         // Arrange
         userEntity.setStatus(Status.INACTIVE);
         Map<String, Set<String>> backupRoles = Map.of("DEPT1", Set.of("DEPT1.ROLE1"));
@@ -106,7 +104,7 @@ class UpdateUserStatusCommandHandlerTest {
     }
 
     @Test
-    void handle_statusUnchanged_noRoleChange() throws IAMException {
+    void handle_statusUnchanged_noRoleChange() {
         // Arrange
         UpdateUserStatusCommand command = new UpdateUserStatusCommand(Status.ACTIVE.getCode(), Integer.parseInt(userEntity.getId()));
 

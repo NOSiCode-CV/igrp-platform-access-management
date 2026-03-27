@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.users.application.commands;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
@@ -37,7 +36,6 @@ public class AddRolesToUserCommandHandlerTest {
     @Mock RoleEntityRepository roleRepository;
     @Mock DepartmentEntityRepository departmentRepository;
     @Mock RoleMapper roleMapper;
-    @Mock private IAdapter adapter;
 
     @InjectMocks
     private AddRolesToUserCommandHandler addRolesToUserCommandHandler;

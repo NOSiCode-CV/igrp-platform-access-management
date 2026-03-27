@@ -71,6 +71,10 @@ public class OAuth2SecurityConfiguration {
             String client = request.getHeader("X-Machine-Service-ID");
             String header = request.getHeader("X-Machine-Auth-Token");
 
+            System.out.println("X-Machine-Service-ID: " + client);
+            System.out.println("X-Machine-Auth-Token: " + header);
+            System.out.println("igrp.access.m2m.sync-token: " + machineAuthToken);
+
             if (header == null || !header.equals(machineAuthToken)) {
                 log.warn("[M2M] Unauthorized access: missing or invalid authentication");
                 response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);

@@ -1,7 +1,5 @@
 package cv.igrp.platform.access_management.department.application.commands;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
-import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
@@ -46,7 +44,6 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
    private final DepartmentEntityRepository departmentRepository;
    private final RoleEntityRepository roleRepository;
    private final RoleMapper roleMapper;
-   private final IAdapter adapter;
 
    /**
     * Constructs the role creation handler with required dependencies.
@@ -54,13 +51,11 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
     * @param departmentRepository repository to access department data
     * @param roleRepository repository to manage roles
     * @param roleMapper mapper to convert between entity and DTO
-    * @param adapter the adapter interface used to interact with the external Identity and Access Management (IAM) system
     */
-   public CreateRoleCommandHandler(DepartmentEntityRepository departmentRepository, RoleEntityRepository roleRepository, RoleMapper roleMapper, IAdapter adapter) {
+   public CreateRoleCommandHandler(DepartmentEntityRepository departmentRepository, RoleEntityRepository roleRepository, RoleMapper roleMapper) {
       this.departmentRepository = departmentRepository;
       this.roleRepository = roleRepository;
       this.roleMapper = roleMapper;
-      this.adapter = adapter;
    }
 
    /**
@@ -117,16 +112,6 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
       if(newRole.getStatus() == null) newRole.setStatus(Status.ACTIVE);
 
       RoleEntity savedRole = roleRepository.save(newRole);
-
-      try {
-         adapter.createRole(department.getCode(), RoleValidator.normalizeRoleCodeForAdapter(savedRole.getCode(), department.getCode()));
-      } catch (IAMException e) {
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.INTERNAL_SERVER_ERROR,
-                 "Role Creation Failed",
-                 e.getMessage()
-         );
-      }
 
       RoleDTO roleDTO = roleMapper.mapToDto(savedRole);
       log.info("Role with code: {} created successfully.", command.getRoledto().getCode());
