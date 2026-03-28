@@ -1,7 +1,5 @@
 package cv.igrp.platform.access_management.department.application.commands;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
-import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
@@ -41,19 +39,16 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
 
    private final RoleEntityRepository roleRepository;
    private final DepartmentEntityRepository departmentRepository;
-   private final IAdapter adapter;
 
    /**
     * Constructs a new instance of {@code DeleteRoleCommandHandler} with the required dependencies.
     *
     * @param roleRepository       repository for accessing and updating role entities
     * @param departmentRepository repository for accessing and updating department entities
-    * @param adapter              the adapter interface used to interact with the external Identity and Access Management (IAM) system
     */
-   public DeleteRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, IAdapter adapter) {
+   public DeleteRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository) {
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
-      this.adapter = adapter;
    }
 
    /**
@@ -90,16 +85,6 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
       role.setStatus(Status.DELETED);
 
       roleRepository.save(role);
-
-      try {
-         adapter.deleteRole(role.getDepartment().getCode(), RoleValidator.normalizeRoleCodeForAdapter(role.getCode(), role.getDepartment().getCode()));
-      } catch (IAMException e) {
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.INTERNAL_SERVER_ERROR,
-                 "Role Deletion Failed",
-                 e.getMessage()
-         );
-      }
 
       log.info("Role with code: {} deleted successfully.", command.getRoleCode());
       return new ResponseEntity<>(true, HttpStatus.NO_CONTENT);

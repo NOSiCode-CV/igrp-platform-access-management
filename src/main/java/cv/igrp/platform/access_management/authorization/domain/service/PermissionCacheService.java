@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +51,7 @@ public class PermissionCacheService {
         return checkInternal(request);
     }
 
+    @Transactional(readOnly = true)
     public PermissionCacheEntryDTO checkInternal(PermissionCheckRequest request) {
         setFromCacheAsFalse();
 
@@ -76,7 +78,16 @@ public class PermissionCacheService {
         }
 
         // If the user is superadmin it is allowed to do anything
-        if(userOpt.get().getRoles().stream().anyMatch(r -> Objects.equals(r.getCode(), SUPER_ADMIN_ROLE))) {
+        // Using direct SQL check to avoid LazyInitializationException in async threads
+        String superAdminSql = """
+                SELECT 1 FROM t_role_users ru
+                JOIN t_role r ON r.id = ru.roles_id
+                WHERE ru.users_id = CAST(? AS integer) AND r.code = ?
+                LIMIT 1
+                """;
+        List<Integer> superAdminResults = jdbcTemplate.query(superAdminSql, (_, _) -> 1, userOpt.get().getId(), SUPER_ADMIN_ROLE);
+
+        if (!superAdminResults.isEmpty()) {
             LOGGER.info("User {} is superadmin", subject);
             return true;
         }
