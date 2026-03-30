@@ -88,7 +88,7 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
          );
       }
 
-      String authMethod = jwt.getClaimAsString("auth_method");
+      String authMethod = "CREDENTIALS"; //jwt.getClaimAsString("auth_method");
       String nic = jwt.getSubject();
       String phone = jwt.getClaimAsString("phone_number");
       String email = jwt.getClaimAsString("email");

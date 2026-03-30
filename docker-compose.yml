@@ -3,7 +3,7 @@ name: 'igrpplatformaccessmanagement-api-service'
 networks:
   default:
     name: igrpplatformaccessmanagement
-    external: false
+    external: true
 
 services:
   otel-collector:
