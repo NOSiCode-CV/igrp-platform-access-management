@@ -160,7 +160,7 @@ Run setup and context-establishing scenarios before any scenario that depends on
 Run searches from the project root:
 
 ```bash
-rg -n "igrp\\.[a-z0-9_]+\\.[a-z0-9_]+" src/main/java docs
+rg -n "igrp\\.[a-z0-9_]+\\.[a-z0-9_]+" src/main/java docs (works with only one \)
 rg -n "@PreAuthorize\\(" src/main/java
 rg -n "Permission\\." src/main/java
 ```
@@ -318,6 +318,7 @@ WHERE table_name = 't_user'
 - Confirms the user model supports the required enterprise identity attributes.
 
 ---
+(failed no nic or phone number on db not on json as well, how is migration executed?)
 
 ## Startup Validation Scenarios
 

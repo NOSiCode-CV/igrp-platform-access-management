@@ -7,22 +7,22 @@ public final class DepartmentPermissions {
     private DepartmentPermissions() {
     }
 
-    @IgrpPermission(name = "igrp.department.create", description = "Permission to create department")
-    public static final String IGRP_DEPARTMENT_CREATE = "igrp.department.create";
+    @IgrpPermission(name = "igrp.departments.create", description = "Permission to create department")
+    public static final String IGRP_DEPARTMENTS_CREATE = "igrp.departments.create";
 
-    @IgrpPermission(name = "igrp.department.update", description = "Permission to update department")
-    public static final String IGRP_DEPARTMENT_UPDATE = "igrp.department.update";
+    @IgrpPermission(name = "igrp.departments.update", description = "Permission to update department")
+    public static final String IGRP_DEPARTMENTS_UPDATE = "igrp.departments.update";
 
-    @IgrpPermission(name = "igrp.department.delete", description = "Permission to delete department")
-    public static final String IGRP_DEPARTMENT_DELETE = "igrp.department.delete";
+    @IgrpPermission(name = "igrp.departments.delete", description = "Permission to delete department")
+    public static final String IGRP_DEPARTMENTS_DELETE = "igrp.departments.delete";
 
-    @IgrpPermission(name = "igrp.department.view", description = "Permission to view department")
-    public static final String IGRP_DEPARTMENT_VIEW = "igrp.department.view";
+    @IgrpPermission(name = "igrp.departments.view", description = "Permission to view department")
+    public static final String IGRP_DEPARTMENTS_VIEW = "igrp.departments.view";
 
-    @IgrpPermission(name = "igrp.department.list", description = "Permission to list departments")
-    public static final String IGRP_DEPARTMENT_LIST = "igrp.department.list";
+    @IgrpPermission(name = "igrp.departments.list", description = "Permission to list departments")
+    public static final String IGRP_DEPARTMENTS_LIST = "igrp.departments.list";
 
-    @IgrpPermission(name = "igrp.department.manage", description = "Permission to manage department")
-    public static final String IGRP_DEPARTMENT_MANAGE = "igrp.department.manage";
+    @IgrpPermission(name = "igrp.departments.manage", description = "Permission to manage department")
+    public static final String IGRP_DEPARTMENTS_MANAGE = "igrp.departments.manage";
 
 }

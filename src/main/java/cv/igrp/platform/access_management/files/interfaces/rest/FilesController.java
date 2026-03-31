@@ -37,13 +37,13 @@ public class FilesController {
           this.queryBus = queryBus;
           this.commandBus = commandBus;
   }
-   @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_USER_VIEW, T(Permission).IGRP_APPLICATION_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_USERS_VIEW, T(Permission).IGRP_APPLICATIONS_VIEW)")
    @GetMapping(
    value = "files/url"
   )
   @Operation(
     summary = "Get private file url",
-    description = "Any of these Permissions is required: [igrp.user.view,igrp.application.view]",
+    description = "Any of these Permissions is required: [igrp.users.view,igrp.applications.view]",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -69,13 +69,13 @@ public class FilesController {
       return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_USER_UPDATE, T(Permission).IGRP_APPLICATION_UPDATE)")
+   @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_USERS_UPDATE, T(Permission).IGRP_APPLICATIONS_UPDATE)")
    @PostMapping(
    value = "files/public"
   )
   @Operation(
     summary = "Upload public file",
-    description = "Any of these Permissions is required: [igrp.user.update,igrp.application.update]",
+    description = "Any of these Permissions is required: [igrp.users.update,igrp.applications.update]",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -102,13 +102,13 @@ public class FilesController {
        return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_USER_UPDATE, T(Permission).IGRP_APPLICATION_UPDATE)")
+   @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_USERS_UPDATE, T(Permission).IGRP_APPLICATIONS_UPDATE)")
    @PostMapping(
    value = "files/private"
   )
   @Operation(
     summary = "Upload private file",
-    description = "Any of these Permissions is required: [igrp.user.update,igrp.application.update]",
+    description = "Any of these Permissions is required: [igrp.users.update,igrp.applications.update]",
     responses = {
       @ApiResponse(
           responseCode = "200",
