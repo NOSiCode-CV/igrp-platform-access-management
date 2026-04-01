@@ -31,10 +31,19 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     @Column(name="name")
     private String name;
 
-    @Column(name="username")
+    // 'username' acts as the canonical NIC (sub) for multi-identifier linkage
+    @Column(name="username", unique = true, nullable = false)
     private String username;
 
-    @Column(name="email", unique = true)
+    public String getNic() {
+        return this.username;
+    }
+
+    public void setNic(String nic) {
+        this.username = nic;
+    }
+
+    @Column(name="email")
     private String email;
 
     @Column(name = "external_id", unique = true)

@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.department.application.commands;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -36,8 +35,6 @@ public class UpdateRoleCommandHandlerTest {
     private DepartmentEntityRepository departmentRepository;
     @Mock
     private RoleMapper roleMapper;
-    @Mock
-    private IAdapter adapter;
 
     @Test
     void itShouldStartContext() {

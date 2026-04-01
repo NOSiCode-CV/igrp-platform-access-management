@@ -1,7 +1,5 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
-import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
@@ -32,21 +30,18 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
    private final IGRPUserEntityRepository userRepository;
    private final RoleEntityRepository roleRepository;
    private final DepartmentEntityRepository departmentRepository;
-   private final IAdapter adapter;
 
    /**
     * Constructs the handler with the required repository dependency.
     *
     * @param userRepository the repository used to retrieve and save {@link IGRPUserEntity} entities
     * @param roleRepository the repository used to retrieve and save {@link RoleEntity} entities
-    * @param adapter the adapter to assign a role to user in iam
     */
    public RemoveRolesFromUserCommandHandler(
-           IGRPUserEntityRepository userRepository, RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, IAdapter adapter) {
+           IGRPUserEntityRepository userRepository, RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository) {
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
-      this.adapter = adapter;
    }
 
    /**
@@ -111,27 +106,6 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
             userRepository.save(user);
 
             logger.info("Roles removed successfully from user ID={}", userId);
-
-            for (RoleEntity role : rolesToRemove) {
-               try {
-                  adapter.unassignRoleFromUser(role.getDepartment().getCode(), RoleValidator.normalizeRoleCodeForAdapter(role.getCode(), role.getDepartment().getCode()), user.getExternalId());
-                  logger.info("Role code={} from department with code {} unassigned to user sub={} in Keycloak",
-                          role.getCode(),
-                          role.getDepartment().getCode(),
-                          user.getExternalId());
-               } catch(IAMException e){
-                  logger.error("Failed to unassign role code={} from {} department to user sub={} in Keycloak: {}",
-                          role.getCode(),
-                          role.getDepartment().getCode(),
-                          user.getExternalId(),
-                          e.getMessage(), e);
-                  throw IgrpResponseStatusException.of(
-                          HttpStatus.INTERNAL_SERVER_ERROR,
-                          "Remove Roles from User Failed",
-                          e.getMessage()
-                  );
-               }
-            }
          }
           else {
             logger.info("No matching roles found to remove for user ID={}", userId);

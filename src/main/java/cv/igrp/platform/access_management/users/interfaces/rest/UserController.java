@@ -945,10 +945,10 @@ public class UserController {
   )
   
   public ResponseEntity<List<InvitationDTO>> getUserInvitations(
-    @RequestParam(value = "email", required = false) String email)
+    @RequestParam(value = "identifierValue", required = false) String identifierValue)
   {
 
-      final var query = new GetUserInvitationsQuery(email);
+      final var query = new GetUserInvitationsQuery(identifierValue);
 
       return queryBus.handle(query);
 

@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.model.Notification;
@@ -54,7 +53,6 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
     private final InvitationEntityRepository invitationRepository;
     private final InvitationMapper invitationMapper;
     private final UserUtils userUtils;
-    private final IAdapter adapter;
 
     public InviteUserCommandHandler(NotificationAdapter<NotificationResult> notificationAdapter,
                                     IGRPUserEntityRepository userRepository,
@@ -62,8 +60,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
                                     DepartmentEntityRepository departmentRepository,
                                     InvitationEntityRepository invitationRepository,
                                     InvitationMapper invitationMapper,
-                                    UserUtils userUtils,
-                                    IAdapter adapter
+                                    UserUtils userUtils
     ) {
         this.notificationAdapter = notificationAdapter;
         this.userRepository = userRepository;
@@ -72,7 +69,6 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
         this.invitationRepository = invitationRepository;
         this.invitationMapper = invitationMapper;
         this.userUtils = userUtils;
-        this.adapter = adapter;
     }
 
     @IgrpCommandHandler
@@ -81,89 +77,74 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         var dto = command.getInviteuserdto();
 
-        if(dto.getEmail() == null) throw IgrpResponseStatusException.of(
-                HttpStatus.BAD_REQUEST,
-                "Email is required"
-        );
+        if(dto.getIdentifierType() == null || dto.getIdentifierType().isBlank() || dto.getIdentifierValue() == null || dto.getIdentifierValue().isBlank()) {
+            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Identifier type and value are required");
+        }
 
-        dto.setEmail(dto.getEmail().toLowerCase());
+        String normalizedValue = dto.getIdentifierValue().trim();
+        if ("EMAIL".equalsIgnoreCase(dto.getIdentifierType())) {
+            normalizedValue = normalizedValue.toLowerCase();
+        }
+        dto.setIdentifierValue(normalizedValue);
 
-        LOGGER.info("Inviting new user: email={}", dto.getEmail());
+        LOGGER.info("Inviting new user: type={}, value={}", dto.getIdentifierType(), dto.getIdentifierValue());
 
-        // Verify if user exists
-        if (userRepository.existsByEmail(dto.getEmail()))
-            throw IgrpResponseStatusException.of(
-                    HttpStatus.CONFLICT,
-                    "User with email %s was invited already".formatted(dto.getEmail())
-            );
+        // Cancel any previous pending invitations
+        var previousInvitationOpt = invitationRepository.findByIdentifierTypeAndIdentifierValueAndStatus(
+            dto.getIdentifierType(), dto.getIdentifierValue(), InvitationStatus.PENDING);
 
-        var providerUser = adapter.resolveUser(dto.getEmail());
+        if (previousInvitationOpt.isPresent()) {
+            var previousInvitation = previousInvitationOpt.get();
+            previousInvitation.setStatus(InvitationStatus.CANCELED);
+            invitationRepository.save(previousInvitation);
+            LOGGER.info("Previous invitation {} was cancelled for user {}.", previousInvitation.getId(), dto.getIdentifierValue());
+        }
 
-        if (providerUser.isPresent()) {
+        // Create new invitation
+        InvitationEntity invitation = new InvitationEntity();
+        invitation.setIdentifierType(dto.getIdentifierType());
+        invitation.setIdentifierValue(dto.getIdentifierValue());
+        
+        Set<String> allowed = new HashSet<>();
+        if ("EMAIL".equalsIgnoreCase(dto.getIdentifierType())) allowed.add("CREDENTIALS");
+        else if ("PHONE".equalsIgnoreCase(dto.getIdentifierType())) allowed.add("CMD");
+        else if ("NIC".equalsIgnoreCase(dto.getIdentifierType())) allowed.add("CNI");
+        invitation.setAllowedAuthMethods(allowed);
 
-            var previousInvitationOpt = invitationRepository.findByEmailAndStatus(dto.getEmail(), InvitationStatus.PENDING);
+        invitation.setStatus(InvitationStatus.PENDING);
+        invitation.setToken(UUID.randomUUID().toString());
 
-            if (previousInvitationOpt.isPresent()) {
+        Set<RoleEntity> roles = new HashSet<>();
+        var department = departmentRepository.findByCodeAndStatusNotDeleted(command.getInviteuserdto().getDepartmentCode());
 
-                var previousInvitation = previousInvitationOpt.get();
+        for (var roleCode : command.getInviteuserdto().getRoles()) {
+            var role = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, roleCode);
+            roles.add(role);
+        }
 
-                previousInvitation.setStatus(InvitationStatus.CANCELED);
+        invitation.setRoles(roles);
+        var savedInvitation = invitationRepository.save(invitation);
 
-                invitationRepository.save(previousInvitation);
+        var url = userUtils.constructInvitationUrl(appCenterUrl, savedInvitation.getToken());
 
-                LOGGER.info("Previous invitation {} was cancelled for user with email {}.", previousInvitation.getId(), dto.getEmail());
-
-            }
-
-            InvitationEntity invitation = new InvitationEntity();
-
-            invitation.setEmail(dto.getEmail());
-            invitation.setStatus(InvitationStatus.PENDING);
-            invitation.setToken(UUID.randomUUID().toString());
-
-            Set<RoleEntity> roles = new HashSet<>();
-
-            var department = departmentRepository.findByCodeAndStatusNotDeleted(command.getInviteuserdto().getDepartmentCode());
-
-            for (var roleCode : command.getInviteuserdto().getRoles()) {
-                var role = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, roleCode);
-                roles.add(role);
-            }
-
-            invitation.setRoles(roles);
-
-            var savedInvitation = invitationRepository.save(invitation);
-
-            var url = userUtils.constructInvitationUrl(appCenterUrl, savedInvitation.getToken());
-
-            try {
-
-                LOGGER.info("Inviting new user: token={}, email={}", savedInvitation.getToken(), dto.getEmail());
+        try {
+            if ("EMAIL".equalsIgnoreCase(dto.getIdentifierType())) {
+                LOGGER.info("Inviting new user via email: token={}, email={}", savedInvitation.getToken(), dto.getIdentifierValue());
 
                 var notification = new Notification();
-
-                notification.setRecipients(List.of(dto.getEmail()));
+                notification.setRecipients(List.of(dto.getIdentifierValue()));
                 notification.setSubject("iGRP User Invitation");
-                notification.setContent(emailTemplate.replace("{{user}}", dto.getEmail()).replace("{{url}}", url));
-                notification.setMetadata(Map.of("invitationToken", savedInvitation.getToken(), "email", dto.getEmail()));
+                notification.setContent(emailTemplate.replace("{{user}}", dto.getIdentifierValue()).replace("{{url}}", url));
+                notification.setMetadata(Map.of("invitationToken", savedInvitation.getToken(), "email", dto.getIdentifierValue()));
 
                 notificationAdapter.send(notification);
-
-            } catch (Exception e) {
-                LOGGER.error("Invitation Email failed", e);
             }
-
-            LOGGER.info("User invited successfully with token={}", savedInvitation.getToken());
-
-            return ResponseEntity.ok(invitationMapper.toDtoWithUrl(savedInvitation, url));
-
-        } else {
-            throw IgrpResponseStatusException.of(
-                    HttpStatus.BAD_REQUEST,
-                    "User Invitation Failed",
-                    "The specified user does not exist in the Identity Provider."
-            );
+        } catch (Exception e) {
+            LOGGER.error("Invitation Email failed", e);
         }
+
+        LOGGER.info("User invited successfully with token={}", savedInvitation.getToken());
+        return ResponseEntity.ok(invitationMapper.toDtoWithUrl(savedInvitation, url));
 
     }
 

@@ -55,16 +55,18 @@ public class CancelUserInvitationCommandHandler implements CommandHandler<Cancel
 
       try {
 
-         LOGGER.info("Notifying new user: token={}, email={}", updatedInvitation.getToken(), updatedInvitation.getEmail());
+         LOGGER.info("Notifying new user: token={}, type={}, value={}", updatedInvitation.getToken(), updatedInvitation.getIdentifierType(), updatedInvitation.getIdentifierValue());
 
-         var notification = new Notification();
+         if ("EMAIL".equalsIgnoreCase(updatedInvitation.getIdentifierType())) {
+             var notification = new Notification();
 
-         notification.setRecipients(List.of(updatedInvitation.getEmail()));
-         notification.setSubject("iGRP User Invitation");
-         notification.setContent(emailTemplate.replace("{{user}}", updatedInvitation.getEmail()));
-         notification.setMetadata(Map.of("invitationToken", updatedInvitation.getToken(), "email", updatedInvitation.getEmail()));
+             notification.setRecipients(List.of(updatedInvitation.getIdentifierValue()));
+             notification.setSubject("iGRP User Invitation");
+             notification.setContent(emailTemplate.replace("{{user}}", updatedInvitation.getIdentifierValue()));
+             notification.setMetadata(Map.of("invitationToken", updatedInvitation.getToken(), "email", updatedInvitation.getIdentifierValue()));
 
-         notificationAdapter.send(notification);
+             notificationAdapter.send(notification);
+         }
 
       } catch (Exception e) {
          LOGGER.error("Notification Email failed", e);
