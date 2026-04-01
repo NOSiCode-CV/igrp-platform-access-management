@@ -20,6 +20,7 @@ public enum AuditEventType {
 
     // User Management Events
     USER_CREATED,
+    USER_UPDATED,
     USER_INACTIVATED,
     USER_ACTIVATED,
     PASSWORD_CHANGED,

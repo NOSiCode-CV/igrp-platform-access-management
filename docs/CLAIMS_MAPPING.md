@@ -296,6 +296,7 @@ public class CustomOidcUserService extends OidcUserService {
 ---
 
 ## ✅ Implementation Status (Current Codebase)
+- **OIDC Native Context**: The integration relies heavily on native Spring Security structures. We map the ID Token directly into an `IgrpOidcUser` available natively at `SecurityContextHolder`.
 - **Roles Extraction**: `IgrpJwtAuthenticationConverter` now effectively parses the `roles` and `groups` arrays from incoming tokens and maps them to authorities.
 - **Sub-claim mapping**: The `IgrpJwtAuthenticationConverter` relies heavily on validating the `sub` claim for user uniqueness.
-- ⚠️ **Pending Implementation**: The advanced parsing and integration for **CMD/CNI**, specifically fetching `NIC`, E.164 `phone_number` and resolving `auth_method` logic within the `UserProfile` has not yet been thoroughly implemented in the `IgrpJwtAuthenticationConverter` class.
+- **CMD/CNI & Extended Parsing**: `IgrpJwtAuthenticationConverter` and `UserProfile` reliably handle extraction of `NIC`, E.164 `phone_number` and resolving `auth_method` (including fallbacks to `CREDENTIALS`), actively fulfilling the NO_ADAPTER schema rules. (COMPLETED).

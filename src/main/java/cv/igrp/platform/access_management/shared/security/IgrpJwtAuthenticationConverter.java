@@ -61,7 +61,15 @@ public class IgrpJwtAuthenticationConverter implements Converter<Jwt, AbstractAu
             sub, iss, nullSafe(name), nullSafe(email), nullSafe(phone), nullSafe(nic), method, amr
         );
 
-        return new CustomJwtAuthenticationToken(jwt, authorities, profile);
+        // Context mapping: convert the generic Resource Server Jwt into a recognized OidcIdToken
+        org.springframework.security.oauth2.core.oidc.OidcIdToken idToken = 
+            new org.springframework.security.oauth2.core.oidc.OidcIdToken(
+                jwt.getTokenValue(), jwt.getIssuedAt(), jwt.getExpiresAt(), jwt.getClaims());
+
+        // Create the native Spring Security OidcUser representation containing the profile
+        IgrpOidcUser oidcUser = new IgrpOidcUser(authorities, idToken, profile);
+
+        return new OidcContextAuthenticationToken(oidcUser, jwt, authorities);
     }
 
     // --- Helpers based on CLAIMS_MAPPING.md Skills ---
@@ -124,7 +132,7 @@ public class IgrpJwtAuthenticationConverter implements Converter<Jwt, AbstractAu
         if (cni && cmd) return "MIXED";
         if (cni) return "CNI";
         if (cmd) return "CMD";
-        return "PASSWORD";
+        return "CREDENTIALS";
     }
     
     private static String nullSafe(String s) { 

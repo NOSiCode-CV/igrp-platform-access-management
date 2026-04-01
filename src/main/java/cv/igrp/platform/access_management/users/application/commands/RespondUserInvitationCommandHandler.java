@@ -79,19 +79,23 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
       // Find invitation
       var invitation = invitationRepository.findByTokenAndStatusPending(command.getToken());
 
-      // Get authenticated user's JWT claims
+      // Get authenticated user's OIDC Context
       var authentication = SecurityContextHolder.getContext().getAuthentication();
-      if (!(authentication.getPrincipal() instanceof Jwt jwt)) {
+      cv.igrp.platform.access_management.shared.security.UserProfile profile;
+
+      if (authentication.getPrincipal() instanceof cv.igrp.platform.access_management.shared.security.IgrpOidcUser oidcUser) {
+          profile = oidcUser.getUserProfile();
+      } else {
          throw IgrpResponseStatusException.of(
                  HttpStatus.UNAUTHORIZED,
-                 "Authentication required to accept invitation"
+                 "Native OIDC User Context required to accept invitation"
          );
       }
 
-      String authMethod = "CREDENTIALS"; //jwt.getClaimAsString("auth_method");
-      String nic = jwt.getSubject();
-      String phone = jwt.getClaimAsString("phone_number");
-      String email = jwt.getClaimAsString("email");
+      String authMethod = profile.authMethod() != null ? profile.authMethod() : "CREDENTIALS";
+      String nic = profile.externalId();
+      String phone = profile.phone();
+      String email = profile.email();
 
       String primaryIdentifierValue = null;
       if ("CMD".equalsIgnoreCase(authMethod)) {
