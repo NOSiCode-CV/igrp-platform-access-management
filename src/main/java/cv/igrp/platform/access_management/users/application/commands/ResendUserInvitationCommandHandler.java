@@ -69,7 +69,7 @@ public class ResendUserInvitationCommandHandler implements CommandHandler<Resend
 
         var url = userUtils.constructInvitationUrl(appCenterUrl, newToken);
 
-        LOGGER.info("Inviting new user: token={}, email={}", newToken, invitation.getEmail());
+        LOGGER.info("Inviting new user: token={}, type={}, value={}", newToken, invitation.getIdentifierType(), invitation.getIdentifierValue());
 
         invitation.setToken(newToken);
 
@@ -81,14 +81,16 @@ public class ResendUserInvitationCommandHandler implements CommandHandler<Resend
 
         try {
 
-            var notification = new Notification();
-
-            notification.setRecipients(List.of(invitation.getEmail()));
-            notification.setSubject("iGRP User Invitation");
-            notification.setContent(emailTemplate.replace("{{user}}", invitation.getEmail()).replace("{{url}}", url));
-            notification.setMetadata(Map.of("invitationToken", newToken, "email", invitation.getEmail()));
-
-            notificationAdapter.send(notification);
+            if ("EMAIL".equalsIgnoreCase(invitation.getIdentifierType())) {
+                var notification = new Notification();
+    
+                notification.setRecipients(List.of(invitation.getIdentifierValue()));
+                notification.setSubject("iGRP User Invitation");
+                notification.setContent(emailTemplate.replace("{{user}}", invitation.getIdentifierValue()).replace("{{url}}", url));
+                notification.setMetadata(Map.of("invitationToken", newToken, "email", invitation.getIdentifierValue()));
+    
+                notificationAdapter.send(notification);
+            }
 
         } catch (Exception e) {
             LOGGER.error("Error while sending user invitation", e);

@@ -5,6 +5,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import cv.igrp.platform.access_management.shared.security.RequestScopeCache;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -24,19 +25,22 @@ public class ScopeService {
     private final DepartmentEntityRepository departmentRepository;
     private final ApplicationEntityRepository applicationRepository;
     private final RoleEntityRepository roleRepository;
+    private final JdbcTemplate jdbcTemplate;
 
     public ScopeService(
             AuthenticationHelper authenticationHelper,
             RequestScopeCache cache,
             DepartmentEntityRepository departmentRepository,
             ApplicationEntityRepository applicationRepository,
-            RoleEntityRepository roleRepository
+            RoleEntityRepository roleRepository,
+            JdbcTemplate jdbcTemplate
     ) {
         this.authenticationHelper = authenticationHelper;
         this.cache = cache;
         this.departmentRepository = departmentRepository;
         this.applicationRepository = applicationRepository;
         this.roleRepository = roleRepository;
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     /**
@@ -49,9 +53,21 @@ public class ScopeService {
         if (authentication == null)
             return false;
 
-        return authentication.getAuthorities().stream()
-                .map(GrantedAuthority::getAuthority)
-                .anyMatch(SUPER_ADMIN_ROLE::equals);
+        // Extract sub (external_id)
+        String sub = authenticationHelper.getSub();
+
+        // Check in DB if the user has the superadmin role
+        String sql = """
+                SELECT 1 FROM t_role_users ru
+                JOIN t_role r ON r.id = ru.roles_id
+                JOIN t_user u ON u.id = ru.users_id
+                WHERE u.external_id = ? AND r.code = ?
+                LIMIT 1
+                """;
+
+        var results = jdbcTemplate.query(sql, (rs, rowNum) -> 1, sub, SUPER_ADMIN_ROLE);
+
+        return !results.isEmpty();
 
     }
 
@@ -71,12 +87,12 @@ public class ScopeService {
         // Extract sub
         String sub = authenticationHelper.getSub();
 
-        // Extract roles
+        // Extract roles (from JWT authorities for now, but the flag will come from DB)
         Set<String> roles = auth.getAuthorities().stream()
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toSet());
 
-        boolean isSuperAdmin = roles.contains(SUPER_ADMIN_ROLE);
+        boolean isSuperAdmin = this.isSuperAdmin();
 
         return new ActorPrincipal(
                 sub,

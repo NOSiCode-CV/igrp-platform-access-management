@@ -1,7 +1,5 @@
 package cv.igrp.platform.access_management.department.application.commands;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
-import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
@@ -48,7 +46,6 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
    private final DepartmentEntityRepository departmentRepository;
    private final RoleEntityRepository roleRepository;
    private final DepartmentMapper departmentMapper;
-   private final IAdapter adapter;
    private final UserUtils userUtils;
 
    /**
@@ -57,20 +54,17 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
     * @param departmentRepository the repository used to retrieve and save department entities
     * @param roleRepository       the repository used to retrieve and save role entities
     * @param departmentMapper     the mapper used to convert between DTOs and entities
-    * @param adapter              the adapter interface used to interact with the external Identity and Access Management (IAM) system
     * @param userUtils            the utility class used to validate user roles
     */
    public UpdateDepartmentCommandHandler(
            DepartmentEntityRepository departmentRepository,
            RoleEntityRepository roleRepository,
            DepartmentMapper departmentMapper,
-           IAdapter adapter,
            UserUtils userUtils
    ) {
       this.departmentRepository = departmentRepository;
       this.roleRepository = roleRepository;
       this.departmentMapper = departmentMapper;
-      this.adapter = adapter;
       this.userUtils = userUtils;
    }
 
@@ -104,18 +98,6 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
       departmentMapper.updateEntityFromDto(command.getDepartmentdto(), department);
 
       DepartmentEntity updated = departmentRepository.save(department);
-
-      if (!departmentCode.equals(department.getCode())) {
-          try {
-              adapter.updateDepartment(departmentCode, department.getCode());
-          } catch (IAMException e) {
-              throw IgrpResponseStatusException.of(
-                      HttpStatus.INTERNAL_SERVER_ERROR,
-                      "Department Update Failed",
-                      e.getMessage()
-              );
-          }
-      }
 
       logger.info("Successfully updated department with code={}", updated.getCode());
 

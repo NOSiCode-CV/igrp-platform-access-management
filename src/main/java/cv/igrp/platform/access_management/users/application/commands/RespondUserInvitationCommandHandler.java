@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.model.Notification;
@@ -17,12 +16,15 @@ import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import org.springframework.transaction.annotation.Transactional;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserIdentifierEntityRepository;
 
 import java.util.HashSet;
 import java.util.List;
@@ -45,25 +47,25 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
    private final IGRPUserEntityRepository userRepository;
    private final RoleEntityRepository roleRepository;
    private final InvitationEntityRepository invitationRepository;
-   private final IAdapter adapter;
    private final InvitationMapper invitationMapper;
    private final SecurityAuditService auditService;
+   private final UserIdentifierEntityRepository userIdentifierEntityRepository;
 
    public RespondUserInvitationCommandHandler(
            NotificationAdapter<NotificationResult> notificationAdapter,
            IGRPUserEntityRepository userRepository,
            RoleEntityRepository roleRepository,
            InvitationEntityRepository invitationRepository,
-           IAdapter adapter,
            InvitationMapper invitationMapper,
-           SecurityAuditService auditService) {
+           SecurityAuditService auditService,
+           UserIdentifierEntityRepository userIdentifierEntityRepository) {
        this.notificationAdapter = notificationAdapter;
        this.userRepository = userRepository;
        this.roleRepository = roleRepository;
        this.invitationRepository = invitationRepository;
-       this.adapter = adapter;
        this.invitationMapper = invitationMapper;
        this.auditService = auditService;
+       this.userIdentifierEntityRepository = userIdentifierEntityRepository;
    }
 
    @IgrpCommandHandler
@@ -72,96 +74,129 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
 
       var dto = command.getUserinvitationresponsedto();
 
-      LOGGER.info("Responding to user invitation: email={}, token={}", dto.getEmail(), command.getToken());
+      LOGGER.info("Responding to user invitation: token={}", command.getToken());
 
       // Find invitation
       var invitation = invitationRepository.findByTokenAndStatusPending(command.getToken());
 
-      // Verify if user exists
-      if (userRepository.existsByEmail(dto.getEmail()))
+      // Get authenticated user's JWT claims
+      var authentication = SecurityContextHolder.getContext().getAuthentication();
+      if (!(authentication.getPrincipal() instanceof Jwt jwt)) {
          throw IgrpResponseStatusException.of(
-                 HttpStatus.BAD_REQUEST,
-                 "User with email %s was invited already".formatted(dto.getEmail())
+                 HttpStatus.UNAUTHORIZED,
+                 "Authentication required to accept invitation"
          );
-
-      var providerUserOpt = adapter.resolveUser(dto.getEmail());
-
-      if (providerUserOpt.isPresent()) {
-
-         if(dto.isAccept()) {
-
-            invitation.setStatus(InvitationStatus.ACCEPTED);
-
-            var updatedInvitation = invitationRepository.save(invitation);
-
-            IGRPUserEntity user = new IGRPUserEntity();
-            user.setEmail(command.getUserinvitationresponsedto().getEmail());
-            user.setExternalId(providerUserOpt.get().getExternalId());
-
-            if(invitation.getRoles() != null &&  !invitation.getRoles().isEmpty()) {
-               Integer roleId = invitation.getRoles().iterator().next().getId();
-               user.setActiveRole(roleRepository.findById(roleId).orElse(null));
-            }
-
-            var savedUser = userRepository.save(user);
-            auditService.logUserChange(savedUser.getId(), "CREATE");
-
-            for(var role : invitation.getRoles()) {
-
-               var roleEntity = roleRepository.findById(role.getId()).orElseThrow(() -> IgrpResponseStatusException.of(
-                       HttpStatus.NOT_FOUND,
-                       "Role with ID <%s> was not found".formatted(role.getId())
-               ));
-
-               if(roleEntity.getUsers() == null) {
-                  roleEntity.setUsers(new HashSet<>());
-               }
-               roleEntity.getUsers().add(savedUser);
-               roleRepository.save(roleEntity);
-            }
-
-            try {
-
-               LOGGER.info("Notifying new user: id={}, email={}", savedUser.getId(), dto.getEmail());
-
-               var notification = new Notification();
-
-               notification.setRecipients(List.of(savedUser.getEmail()));
-               notification.setSubject("iGRP Invitation Response");
-               notification.setContent(emailTemplate.replace("{{user}}", user.getEmail()));
-               notification.setMetadata(Map.of("userId", savedUser.getId(), "email", savedUser.getEmail()));
-
-               notificationAdapter.send(notification);
-
-               LOGGER.info("User with id={} was notified.", savedUser.getId());
-
-            } catch (Exception e) {
-               LOGGER.error("Invitation Email failed", e);
-            }
-
-            return ResponseEntity.ok(invitationMapper.toDto(updatedInvitation));
-
-         } else {
-
-            invitation.setStatus(InvitationStatus.REJECTED);
-            invitation.setComments(dto.getObservation());
-            invitationRepository.save(invitation);
-
-            return ResponseEntity.noContent().build();
-
-         }
-
-      } else {
-
-         LOGGER.error("Error while responding to user invitation: email={}", dto.getEmail());
-
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.NOT_FOUND,
-                 "User with email <%s> was not found in the Identity Provider".formatted(dto.getEmail())
-         );
-
       }
 
+      String authMethod = jwt.getClaimAsString("auth_method");
+      String nic = jwt.getSubject();
+      String phone = jwt.getClaimAsString("phone_number");
+      String email = jwt.getClaimAsString("email");
+
+      String primaryIdentifierValue = null;
+      if ("CMD".equalsIgnoreCase(authMethod)) {
+         primaryIdentifierValue = phone;
+      } else if ("CNI".equalsIgnoreCase(authMethod)) {
+         primaryIdentifierValue = nic;
+      } else if ("CREDENTIALS".equalsIgnoreCase(authMethod)) {
+         primaryIdentifierValue = email != null ? email.toLowerCase() : null;
+      }
+
+      if (primaryIdentifierValue == null || !primaryIdentifierValue.equals(invitation.getIdentifierValue())) {
+         throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Authenticated identifier does not match the invitation");
+      }
+      
+      if (invitation.getAllowedAuthMethods() == null || !invitation.getAllowedAuthMethods().contains(authMethod)) {
+         throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Authentication method is not allowed for this invitation");
+      }
+
+      if(dto.isAccept()) {
+
+         invitation.setStatus(InvitationStatus.ACCEPTED);
+         var updatedInvitation = invitationRepository.save(invitation);
+
+         boolean isNewUser = false;
+         IGRPUserEntity user = userRepository.findByExternalId(nic).orElse(null);
+         if (user == null) {
+             user = new IGRPUserEntity();
+             isNewUser = true;
+             user.setNic(nic);
+             user.setExternalId(nic);
+         }
+         
+         if (email != null) user.setEmail(email.toLowerCase());
+
+         if(invitation.getRoles() != null &&  !invitation.getRoles().isEmpty()) {
+            Integer roleId = invitation.getRoles().iterator().next().getId();
+            user.setActiveRole(roleRepository.findById(roleId).orElse(null));
+         }
+
+         var savedUser = userRepository.save(user);
+         auditService.logUserChange(savedUser.getId(), isNewUser ? "CREATE" : "UPDATE");
+
+         for(var role : invitation.getRoles()) {
+            var roleEntity = roleRepository.findById(role.getId()).orElseThrow(() -> IgrpResponseStatusException.of(
+                    HttpStatus.NOT_FOUND,
+                    "Role with ID <%s> was not found".formatted(role.getId())
+            ));
+
+            if(roleEntity.getUsers() == null) {
+               roleEntity.setUsers(new HashSet<>());
+            }
+            roleEntity.getUsers().add(savedUser);
+            roleRepository.save(roleEntity);
+         }
+
+         // Upsert secondary identifiers
+         if (email != null) {
+            var emailIdOpt = userIdentifierEntityRepository.findByTypeAndValueNormalized("EMAIL", email.toLowerCase());
+            if (emailIdOpt.isEmpty()) {
+                cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserIdentifierEntity emailEntity = new cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserIdentifierEntity();
+                emailEntity.setUser(savedUser);
+                emailEntity.setType("EMAIL");
+                emailEntity.setValueNormalized(email.toLowerCase());
+                emailEntity.setVerified(true);
+                userIdentifierEntityRepository.save(emailEntity);
+            }
+         }
+
+         if (phone != null) {
+            var phoneIdOpt = userIdentifierEntityRepository.findByTypeAndValueNormalized("PHONE", phone);
+            if (phoneIdOpt.isEmpty()) {
+                cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserIdentifierEntity phoneEntity = new cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserIdentifierEntity();
+                phoneEntity.setUser(savedUser);
+                phoneEntity.setType("PHONE");
+                phoneEntity.setValueNormalized(phone);
+                phoneEntity.setVerified(true);
+                userIdentifierEntityRepository.save(phoneEntity);
+            }
+         }
+
+         try {
+            if (savedUser.getEmail() != null && !savedUser.getEmail().isBlank()) {
+                LOGGER.info("Notifying user: id={}, email={}", savedUser.getId(), savedUser.getEmail());
+
+                var notification = new Notification();
+                notification.setRecipients(List.of(savedUser.getEmail()));
+                notification.setSubject("iGRP Invitation Response");
+                notification.setContent(emailTemplate.replace("{{user}}", savedUser.getEmail()));
+                notification.setMetadata(Map.of("userId", savedUser.getId(), "email", savedUser.getEmail()));
+
+                notificationAdapter.send(notification);
+                LOGGER.info("User with id={} was notified.", savedUser.getId());
+            }
+         } catch (Exception e) {
+            LOGGER.error("Invitation Email failed", e);
+         }
+
+         return ResponseEntity.ok(invitationMapper.toDto(updatedInvitation));
+
+      } else {
+         invitation.setStatus(InvitationStatus.REJECTED);
+         invitation.setComments(dto.getObservation());
+         invitationRepository.save(invitation);
+         return ResponseEntity.noContent().build();
+      }
    }
 
 }

@@ -19,9 +19,7 @@ import lombok.AllArgsConstructor;
 @IgrpDTO
 public class UserInvitationResponseDTO  {
 
-  @NotBlank(message = "The field <email> is required")
-  
-  private String email ;
+
   @NotNull(message = "The field <accept> is required")
   
   private boolean accept ;

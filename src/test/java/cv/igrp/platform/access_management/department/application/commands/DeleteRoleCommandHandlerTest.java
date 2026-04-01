@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.department.application.commands;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -32,9 +31,6 @@ public class DeleteRoleCommandHandlerTest {
 
     @Mock
     private DepartmentEntityRepository departmentRepository;
-
-    @Mock
-    private IAdapter adapter;
 
     @Test
     void itShouldStartContext() {
