@@ -37,7 +37,6 @@ import java.util.UUID;
 )
 public class AdminSessionController {
 
-    private static final String SUPER_ADMIN_ROLE = "DEPT_IGRP.superadmin";
 
     private final SessionManagementService sessionManagementService;
     private final SessionInvalidationService sessionInvalidationService;
@@ -49,23 +48,7 @@ public class AdminSessionController {
         this.sessionInvalidationService = sessionInvalidationService;
     }
 
-    @GetMapping("/test")
-    @Operation(
-        summary = "Test admin access",
-        description = "Simple test to verify admin controller is accessible"
-    )
-    @PreAuthorize("hasRole('" + SUPER_ADMIN_ROLE + "')")
-    public ResponseEntity<String> testAdminAccess() {
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        log.info(" TEST - Current user: {}", auth.getName());
-        log.info(" TEST - User authorities: {}", auth.getAuthorities());
-        log.info(" TEST - Looking for role: {}", "ROLE_" + SUPER_ADMIN_ROLE);
-        log.info(" TEST - Has required role: {}", auth.getAuthorities().stream()
-            .anyMatch(a -> a.getAuthority().equals("ROLE_" + SUPER_ADMIN_ROLE)));
-        
-        return ResponseEntity.ok("Admin access test - SUCCESS");
-    }
-
+    
     @GetMapping
     @Operation(
         summary = "List sessions",
@@ -76,9 +59,8 @@ public class AdminSessionController {
         description = "Sessions retrieved successfully",
         content = @Content(schema = @Schema(implementation = Page.class))
     )
-    //@PreAuthorize("hasAuthority('SESSION_MANAGEMENT')")
-    //@PreAuthorize("hasRole('" + SUPER_ADMIN_ROLE + "')")
-    @PreAuthorize("hasAuthority('DEPT_IGRP.superadmin')")
+    
+    @PreAuthorize("hasAuthority('igrp.session.admin')")
     public ResponseEntity<Page<SessionResponseDTO>> listSessions(
             @Parameter(description = "Session status filter") 
             @RequestParam(required = false) SessionStatus status,
@@ -87,15 +69,6 @@ public class AdminSessionController {
             @Parameter(description = "Page size") 
             @RequestParam(defaultValue = "20") int size) {
         
-        // Debug: Log current user authorities
-        var auth = SecurityContextHolder.getContext().getAuthentication();
-        log.info(" Current user: {}", auth.getName());
-        log.info(" User authorities: {}", auth.getAuthorities());
-        log.info(" Looking for role: {}", "ROLE_" + SUPER_ADMIN_ROLE);
-        log.info(" Has required role: {}", auth.getAuthorities().stream()
-            .anyMatch(a -> a.getAuthority().equals("ROLE_" + SUPER_ADMIN_ROLE)));
-        
-        log.debug("Admin listing sessions with status: {}, page: {}, size: {}", status, page, size);
         
         Pageable pageable = PageRequest.of(page, size);
         Page<SessionResponseDTO> sessions = sessionManagementService.listSessions(status, pageable);
@@ -117,8 +90,7 @@ public class AdminSessionController {
         responseCode = "204",
         description = "No active session found for user"
     )
-    //@PreAuthorize("hasRole('" + SUPER_ADMIN_ROLE + "')")
-    @PreAuthorize("hasAuthority('DEPT_IGRP.superadmin')")
+    @PreAuthorize("hasAuthority('igrp.session.admin')")
     public ResponseEntity<SessionResponseDTO> getUserSession(
             @Parameter(description = "User external ID") 
             @PathVariable String userExternalId) {
@@ -144,8 +116,7 @@ public class AdminSessionController {
         responseCode = "404",
         description = "Session not found"
     )
-    //@PreAuthorize("hasRole('" + SUPER_ADMIN_ROLE + "')")
-    @PreAuthorize("hasAuthority('DEPT_IGRP.superadmin')")
+    @PreAuthorize("hasAuthority('igrp.session.admin')")
     public ResponseEntity<Void> killSession(
             @Parameter(description = "Session ID") 
             @PathVariable UUID sessionId,
@@ -174,23 +145,25 @@ public class AdminSessionController {
         responseCode = "204",
         description = "No sessions found for role"
     )
-    @PreAuthorize("hasAuthority('DEPT_IGRP.superadmin')")
+    @PreAuthorize("hasAuthority('igrp.session.admin')")
     public ResponseEntity<Page<SessionResponseDTO>> listSessionsByRole(
             @Parameter(description = "Role code") 
             @PathVariable String roleCode,
             @Parameter(description = "Department code (optional)") 
             @RequestParam(required = false) String departmentCode,
+            @Parameter(description = "Session status filter") 
+            @RequestParam(required = false) SessionStatus status,
             @Parameter(description = "Page number (0-based)") 
             @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Page size") 
             @RequestParam(defaultValue = "20") int size) {
         
-        log.info("Admin listing sessions for role: {} in department: {}", roleCode, departmentCode);
+        log.info("Admin listing sessions for role: {} in department: {} with status: {}", 
+                roleCode, departmentCode, status);
         
-        // TODO: Implement role-based session filtering in SessionManagementService
-        // For now, return all sessions (you'll need to add this logic)
         Pageable pageable = PageRequest.of(page, size);
-        Page<SessionResponseDTO> sessions = sessionManagementService.listSessions(null, pageable);
+        Page<SessionResponseDTO> sessions = sessionManagementService.listSessionsByRole(
+                roleCode, departmentCode, status, pageable);
         
         return ResponseEntity.ok(sessions);
     }
@@ -204,7 +177,11 @@ public class AdminSessionController {
         responseCode = "204",
         description = "Sessions killed successfully"
     )
-    @PreAuthorize("hasAuthority('DEPT_IGRP.superadmin')")
+    @ApiResponse(
+        responseCode = "404",
+        description = "No sessions found for role"
+    )
+    @PreAuthorize("hasAuthority('igrp.session.admin')")
     public ResponseEntity<Void> killSessionsByRole(
             @Parameter(description = "Role code") 
             @PathVariable String roleCode,
@@ -215,12 +192,12 @@ public class AdminSessionController {
         log.info("Admin killing sessions for role: {} in department: {} with reason: {}", 
                 roleCode, departmentCode, request.getReason());
         
-        if (departmentCode == null || departmentCode.trim().isEmpty()) {
-            return ResponseEntity.badRequest().build();
-        }
+        int killedCount = sessionManagementService.killSessionsByRole(
+                roleCode, departmentCode, request.getReason(), request.getKilledBy());
         
-        sessionInvalidationService.invalidateSessionsByRole(
-                departmentCode, roleCode, request.getReason());
+        if (killedCount == 0) {
+            return ResponseEntity.notFound().build();
+        }
         
         return ResponseEntity.noContent().build();
     }
@@ -234,8 +211,7 @@ public class AdminSessionController {
         responseCode = "204",
         description = "Sessions killed successfully"
     )
-    //@PreAuthorize("hasRole('" + SUPER_ADMIN_ROLE + "')")
-    @PreAuthorize("hasAuthority('DEPT_IGRP.superadmin')")
+    @PreAuthorize("hasAuthority('igrp.session.admin')")
     public ResponseEntity<Void> killSessionsByDepartment(
             @Parameter(description = "Department code") 
             @PathVariable String departmentCode,
@@ -259,8 +235,7 @@ public class AdminSessionController {
         responseCode = "200",
         description = "Statistics retrieved successfully"
     )
-    //@PreAuthorize("hasRole('" + SUPER_ADMIN_ROLE + "')")
-    @PreAuthorize("hasAuthority('DEPT_IGRP.superadmin')")
+    @PreAuthorize("hasAuthority('igrp.session.admin')")
     public ResponseEntity<Object> getSessionStatistics() {
         log.debug("Admin getting session statistics");
         

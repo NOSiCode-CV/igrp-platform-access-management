@@ -346,6 +346,60 @@ public class SessionManagementService {
     }
 
     /**
+     * List sessions filtered by role and optionally by department
+     */
+    @Transactional(readOnly = true)
+    public Page<SessionResponseDTO> listSessionsByRole(String roleCode, String departmentCode, 
+                                                       SessionStatus status, Pageable pageable) {
+        log.debug("Listing sessions for role: {} in department: {} with status: {}", 
+                 roleCode, departmentCode, status);
+
+        Page<SessionEntity> sessions = sessionRepository.findByRoleAndDepartment(roleCode, departmentCode, status, pageable);
+        
+        return sessions.map(session -> buildSessionResponse(session, session.getUserExternalId()));
+    }
+
+    /**
+     * List sessions filtered by department only
+     */
+    @Transactional(readOnly = true)
+    public Page<SessionResponseDTO> listSessionsByDepartment(String departmentCode, 
+                                                           SessionStatus status, Pageable pageable) {
+        log.debug("Listing sessions for department: {} with status: {}", departmentCode, status);
+
+        Page<SessionEntity> sessions = sessionRepository.findByDepartment(departmentCode, status, pageable);
+        
+        return sessions.map(session -> buildSessionResponse(session, session.getUserExternalId()));
+    }
+
+    /**
+     * Kill all sessions for users with a specific role (and optionally department)
+     */
+    @Transactional
+    public int killSessionsByRole(String roleCode, String departmentCode, String reason, String killedBy) {
+        log.info("Killing sessions for role: {} in department: {} by: {}", roleCode, departmentCode, killedBy);
+
+        // Find all users with the specified role/department
+        Set<String> userExternalIds = userRepository.findUserExternalIdsByRoleAndDepartment(roleCode, departmentCode);
+        
+        if (userExternalIds.isEmpty()) {
+            log.info("No users found with role: {} in department: {}", roleCode, departmentCode);
+            return 0;
+        }
+
+        // Kill all active sessions for these users
+        int killedCount = sessionRepository.invalidateUserSessions(
+                userExternalIds, SessionStatus.ACTIVE, SessionStatus.REVOKED, 
+                Instant.now(), Instant.now(), reason, killedBy);
+
+        // Evict from cache
+        sessionCacheEvictService.evictBySubjects(userExternalIds);
+
+        log.info("Killed {} sessions for role: {} in department: {}", killedCount, roleCode, departmentCode);
+        return killedCount;
+    }
+
+    /**
      * Hash user agent for privacy
      */
     private String hashUserAgent(String userAgent) {

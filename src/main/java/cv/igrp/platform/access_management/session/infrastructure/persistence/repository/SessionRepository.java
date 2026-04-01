@@ -179,4 +179,31 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      * Count sessions by status
      */
     long countByStatus(SessionStatus status);
+
+    /**
+     * Find sessions by role and optionally by department
+     */
+    @Query("SELECT s FROM SessionEntity s " +
+           "JOIN IGRPUserEntity u ON s.userExternalId = u.externalId " +
+           "JOIN u.roles r " +
+           "WHERE r.code = :roleCode " +
+           "AND (:departmentCode IS NULL OR r.department.code = :departmentCode) " +
+           "AND (:status IS NULL OR s.status = :status)")
+    Page<SessionEntity> findByRoleAndDepartment(@Param("roleCode") String roleCode,
+                                                 @Param("departmentCode") String departmentCode,
+                                                 @Param("status") SessionStatus status,
+                                                 Pageable pageable);
+
+    /**
+     * Find sessions by department only
+     */
+    @Query("SELECT s FROM SessionEntity s " +
+           "JOIN IGRPUserEntity u ON s.userExternalId = u.externalId " +
+           "JOIN u.roles r " +
+           "JOIN r.department d " +
+           "WHERE d.code = :departmentCode " +
+           "AND (:status IS NULL OR s.status = :status)")
+    Page<SessionEntity> findByDepartment(@Param("departmentCode") String departmentCode,
+                                         @Param("status") SessionStatus status,
+                                         Pageable pageable);
 }
