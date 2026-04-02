@@ -24,6 +24,7 @@ Whenever you act on code related to OIDC and WSO2, you must observe the followin
 ### 2. Validation and Mapping of JWT Tokens
 - Token validation must be delegated to the security module using the *JWKS* URL provided by WSO2 (`/oauth2/jwks`).
 - The system needs to extract the essential *claims* from the JWT (such as `sub` and user `roles`/`groups`). Ensure that the authority converter (e.g., in Spring Security, `JwtAuthenticationConverter`) correctly maps the WSO2 permissions to the internal iGRP profiles.
+- **Strict Extraction Policy (ID Token)**: Backend Resource Servers typically intercept the OAuth2 token. Crucial claims like `NIC`, `phone_number` and `amr` must be provided within that token. The server will **not** invoke the `/oauth2/userinfo` endpoint dynamically. Therefore, either the frontend must transmit the **ID Token** directly to the API, or WSO2 must explicitly inject these claims into the Access Token.
 
 ### 3. Essential WSO2 Reference Endpoints
 It is critical to know the standard URL structure of WSO2 for OIDC:

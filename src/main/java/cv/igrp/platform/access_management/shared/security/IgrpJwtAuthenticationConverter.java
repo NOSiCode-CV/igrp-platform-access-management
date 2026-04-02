@@ -46,11 +46,11 @@ public class IgrpJwtAuthenticationConverter implements Converter<Jwt, AbstractAu
         String phone = normalizePhone(opt(c, "phone_number"));
         String nic = normalizeNic(coalesce(opt(c, "NIC"), opt(c, "nic"), opt(c, "national_id")));
         
-        var amr = optArray(c, "amr");
-        String method = detectAuthMethod(opt(c, "auth_method"), amr);
+        String acr = opt(c, "acr");
+        String method = detectAuthMethod(acr);
 
         // Validation of critical business rules
-        if ("CNI".equals(method) && nic == null) {
+        if ("cni".equals(method) && nic == null) {
             throw new OAuth2AuthenticationException(
                 new OAuth2Error("missing_nic"), "Login via CNI requires the Civil Identification Number (NIC)."
             );
@@ -58,7 +58,7 @@ public class IgrpJwtAuthenticationConverter implements Converter<Jwt, AbstractAu
 
         // Build canonical profile with type safety
         UserProfile profile = new UserProfile(
-            sub, iss, nullSafe(name), nullSafe(email), nullSafe(phone), nullSafe(nic), method, amr
+            sub, iss, nullSafe(name), nullSafe(email), nullSafe(phone), nullSafe(nic), method, java.util.List.of()
         );
 
         // Context mapping: convert the generic Resource Server Jwt into a recognized OidcIdToken
@@ -124,15 +124,12 @@ public class IgrpJwtAuthenticationConverter implements Converter<Jwt, AbstractAu
         return nic.replaceAll("[\\s-]", "").toUpperCase();
     }
     
-    private static String detectAuthMethod(String method, java.util.List<String> amr) {
-        if (method != null && !method.isBlank()) return method.toUpperCase();
-        var amrLower = amr.stream().map(String::toLowerCase).toList();
-        boolean cni = amrLower.stream().anyMatch(x -> x.contains("sc") || x.contains("smartcard") || x.contains("hwk"));
-        boolean cmd = amrLower.stream().anyMatch(x -> x.contains("otp") || x.contains("sms"));
-        if (cni && cmd) return "MIXED";
-        if (cni) return "CNI";
-        if (cmd) return "CMD";
-        return "CREDENTIALS";
+    private static String detectAuthMethod(String acr) {
+        if (acr == null || acr.isBlank()) return "pwd";
+        var lower = acr.toLowerCase();
+        if (lower.contains("cni")) return "cni";
+        if (lower.contains("cmdcv")) return "cmdcv";
+        return "pwd";
     }
     
     private static String nullSafe(String s) { 

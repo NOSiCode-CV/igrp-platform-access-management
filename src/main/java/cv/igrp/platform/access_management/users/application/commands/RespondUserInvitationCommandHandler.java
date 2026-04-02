@@ -92,17 +92,17 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
          );
       }
 
-      String authMethod = profile.authMethod() != null ? profile.authMethod() : "CREDENTIALS";
+      String authMethod = profile.authMethod() != null ? profile.authMethod() : "pwd";
       String nic = profile.externalId();
       String phone = profile.phone();
       String email = profile.email();
 
       String primaryIdentifierValue = null;
-      if ("CMD".equalsIgnoreCase(authMethod)) {
+      if ("cmdcv".equalsIgnoreCase(authMethod)) {
          primaryIdentifierValue = phone;
-      } else if ("CNI".equalsIgnoreCase(authMethod)) {
+      } else if ("cni".equalsIgnoreCase(authMethod)) {
          primaryIdentifierValue = nic;
-      } else if ("CREDENTIALS".equalsIgnoreCase(authMethod)) {
+      } else if ("pwd".equalsIgnoreCase(authMethod)) {
          primaryIdentifierValue = email != null ? email.toLowerCase() : null;
       }
 
@@ -128,7 +128,13 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
              user.setExternalId(nic);
          }
          
-         if (email != null) user.setEmail(email.toLowerCase());
+         if (email != null) {
+             user.setEmail(email.toLowerCase());
+         }
+         
+         if (profile.fullName() != null && !profile.fullName().isBlank()) {
+             user.setName(profile.fullName());
+         }
 
          if(invitation.getRoles() != null &&  !invitation.getRoles().isEmpty()) {
             Integer roleId = invitation.getRoles().iterator().next().getId();

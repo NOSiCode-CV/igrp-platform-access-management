@@ -90,7 +90,12 @@ UserProfile:
 ## 5) Implementation (Spring Security / OIDC)
 
 > [!WARNING]
-> **Warning about Scopes:** In order for specific identity claims like `NIC` or authentication methods info (`amr`) to be delivered by WSO2 in the token, the application must correctly request those `scopes` (e.g.: `openid profile cni cmd`) during the configuration step (e.g.: `application.yml` via `spring.security.oauth2.client.registration.wso2.scope`).
+> **Warning about Scopes and Token Types:** In order for specific identity claims like `NIC`, `phone_number`, or authentication methods info (`amr`) to be delivered by WSO2, the application must correctly request their `scopes` (e.g.: `openid profile cni cmd`).
+> 
+> **Strict Extraction Policy:** The `IgrpJwtAuthenticationConverter` operates exclusively on the Token passed to the Resource Server (API) via the `Authorization: Bearer` header. The system is designed to **extract all user information strictly from the provided Token** (preferentially the enriched **ID Token**), and **will NOT invoke the `/oauth2/userinfo` endpoint**.
+> 
+> **Architecture Requirement:**
+> - If crucial identities (`NIC`, `phone_number`) or context (`amr`) are missing from a standard Access Token, the client/UI layer **must** provide the `ID Token` directly to the API, OR the WSO2 Identity Provider must be configured to mirror all necessary OIDC claims directly into the Access Token.
 
 In Spring Security, avoid extracting and mapping claims inside the presentation layer (Controllers). The ideal approach is to extend the **`OidcUserService`** (for OIDC Login flows) and immediately populate a typed object (Record/POJO), integrating it seamlessly into the `SecurityContext`.
 
