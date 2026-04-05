@@ -63,7 +63,7 @@ public class GetCurrentUserQueryHandler implements QueryHandler<GetCurrentUserQu
     logger.info("Fetching current user with sub: {}", externalId);
 
 
-    Optional<IGRPUserEntity> optionalUser = igrpUserRepository.findByExternalId(externalId);
+    Optional<IGRPUserEntity> optionalUser = igrpUserRepository.findByExternalIdWithRolesAndPermissions(externalId);
     if (optionalUser.isEmpty()) {
       logger.warn("No user found with sub: {}", externalId);
       return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

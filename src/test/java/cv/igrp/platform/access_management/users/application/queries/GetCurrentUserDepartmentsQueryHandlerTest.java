@@ -58,7 +58,7 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         dto1.setCode("DEP_A");
 
         when(authenticationHelper.getSub()).thenReturn("sub123");
-        when(userRepository.findByExternalId("sub123")).thenReturn(Optional.of(mockUser));
+        when(userRepository.findByExternalIdWithRolesAndPermissions("sub123")).thenReturn(Optional.of(mockUser));
         when(departmentRepository.findByUserAndNotDeletedFiltered(Integer.valueOf(mockUser.getId()), null))
                 .thenReturn(List.of(dep1));
         when(departmentMapper.toDto(dep1)).thenReturn(dto1);
@@ -70,7 +70,7 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         assertEquals(1, response.getBody().size());
         assertEquals("DEP_A", response.getBody().get(0).getCode());
 
-        verify(userRepository).findByExternalId("sub123");
+        verify(userRepository).findByExternalIdWithRolesAndPermissions("sub123");
         verify(departmentRepository).findByUserAndNotDeletedFiltered(Integer.valueOf(mockUser.getId()), null);
         verify(departmentMapper).toDto(dep1);
     }
@@ -96,7 +96,7 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         dto1.setCode("FIN_DEPT");
 
         when(authenticationHelper.getSub()).thenReturn("sub999");
-        when(userRepository.findByExternalId("sub999")).thenReturn(Optional.of(mockUser));
+        when(userRepository.findByExternalIdWithRolesAndPermissions("sub999")).thenReturn(Optional.of(mockUser));
         when(departmentRepository.findByUserAndNotDeletedFiltered(Integer.valueOf(mockUser.getId()), null))
                 .thenReturn(List.of(dep1, dep2)); // Only dep1 should pass the filter
 
@@ -125,7 +125,7 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         mockUser.setExternalId("sub111");
 
         when(authenticationHelper.getSub()).thenReturn("sub111");
-        when(userRepository.findByExternalId("sub111")).thenReturn(Optional.of(mockUser));
+        when(userRepository.findByExternalIdWithRolesAndPermissions("sub111")).thenReturn(Optional.of(mockUser));
         when(departmentRepository.findByUserAndNotDeletedFiltered(Integer.valueOf(mockUser.getId()), null))
                 .thenReturn(List.of());
 
@@ -145,7 +145,7 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         GetCurrentUserDepartmentsQuery query = new GetCurrentUserDepartmentsQuery(null);
 
         when(authenticationHelper.getSub()).thenReturn("missing1122");
-        when(userRepository.findByExternalId("missing1122")).thenReturn(Optional.empty());
+        when(userRepository.findByExternalIdWithRolesAndPermissions("missing1122")).thenReturn(Optional.empty());
 
         IgrpResponseStatusException ex = assertThrows(
                 IgrpResponseStatusException.class,

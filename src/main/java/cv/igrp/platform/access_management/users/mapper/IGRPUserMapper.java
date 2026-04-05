@@ -35,6 +35,8 @@ public class IGRPUserMapper {
         dto.setStatus(user.getStatus());
         dto.setPicture(user.getPicture());
         dto.setSignature(user.getSignature());
+        dto.setNic(user.getNic());
+        dto.setPhoneNumber(user.getPhoneNumber());
         return dto;
     }
 
@@ -56,6 +58,8 @@ public class IGRPUserMapper {
         dto.setPicture(user.getPicture());
         dto.setSignature(user.getSignature());
         dto.setExternalId(user.getExternalId());
+        dto.setNic(user.getNic());
+        dto.setPhoneNumber(user.getPhoneNumber());
         return dto;
 
     }
@@ -77,6 +81,8 @@ public class IGRPUserMapper {
         user.setStatus(Objects.nonNull(dto.getStatus()) ? dto.getStatus() : Status.ACTIVE);
         user.setPicture(dto.getPicture());
         user.setSignature(dto.getSignature());
+        user.setNic(dto.getNic());
+        user.setPhoneNumber(dto.getPhoneNumber());
         return user;
     }
 }

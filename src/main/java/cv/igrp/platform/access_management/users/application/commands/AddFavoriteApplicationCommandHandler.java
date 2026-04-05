@@ -42,7 +42,7 @@ public class AddFavoriteApplicationCommandHandler implements CommandHandler<AddF
 
         LOGGER.info("Adding application <{}> as favorite to user: {}",  command.getApplicationCode(), currentUserSub);
 
-        var user = userEntityRepository.findByExternalId(currentUserSub).orElseThrow(
+        var user = userEntityRepository.findByExternalIdWithRolesAndPermissions(currentUserSub).orElseThrow(
                 () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
         );
 

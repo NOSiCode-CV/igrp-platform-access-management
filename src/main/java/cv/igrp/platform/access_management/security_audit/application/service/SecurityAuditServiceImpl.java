@@ -23,6 +23,7 @@ import java.util.Map;
 public class SecurityAuditServiceImpl implements SecurityAuditService {
 
     private static final Logger logger = LoggerFactory.getLogger(SecurityAuditServiceImpl.class);
+    private static final String DEFAULT_DECISION_REASON = "No explicit decision reason provided";
 
     private final SecurityAuditLogRepository auditLogRepository;
     private final SecurityAuditContextProvider contextProvider;
@@ -53,6 +54,9 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
             logEntity.setSessionId((String) fullContext.get("sessionId"));
             logEntity.setIpAddress((String) fullContext.get("ipAddress"));
             logEntity.setUserAgent((String) fullContext.get("userAgent"));
+            logEntity.setCorrelationId(asString(fullContext.get("correlationId")));
+            logEntity.setRequestPath(asString(fullContext.get("requestPath")));
+            logEntity.setDecisionReason(resolveDecisionReason(category, fullContext));
 
             try {
                 logEntity.setContextData(objectMapper.writeValueAsString(fullContext));
@@ -92,7 +96,16 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
 
     @Override
     public void logAccessDenied(String permission) {
-        logEvent(AuditEventType.ACCESS_DENIED, AuditCategory.AUTHORIZATION, Map.of("permission", permission));
+        logAccessDenied(permission, DEFAULT_DECISION_REASON);
+    }
+
+    @Override
+    public void logAccessDenied(String permission, String reason) {
+        String resolvedReason = (reason == null || reason.isBlank()) ? DEFAULT_DECISION_REASON : reason;
+        logEvent(AuditEventType.ACCESS_DENIED, AuditCategory.AUTHORIZATION, Map.of(
+                "permission", permission,
+                "decisionReason", resolvedReason
+        ));
     }
 
     @Override
@@ -105,5 +118,27 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
             default -> throw new IllegalArgumentException("Invalid user operation for auditing: " + operation);
         };
         logEvent(eventType, AuditCategory.USER_MANAGEMENT, Map.of("targetUserId", targetUserId));
+    }
+
+    private String resolveDecisionReason(AuditCategory category, Map<String, Object> context) {
+        if (category != AuditCategory.AUTHORIZATION) {
+            return null;
+        }
+
+        Object decisionReason = context.get("decisionReason");
+        if (decisionReason != null && !decisionReason.toString().isBlank()) {
+            return decisionReason.toString();
+        }
+
+        Object reason = context.get("reason");
+        if (reason != null && !reason.toString().isBlank()) {
+            return reason.toString();
+        }
+
+        return DEFAULT_DECISION_REASON;
+    }
+
+    private String asString(Object value) {
+        return value != null ? value.toString() : null;
     }
 }
