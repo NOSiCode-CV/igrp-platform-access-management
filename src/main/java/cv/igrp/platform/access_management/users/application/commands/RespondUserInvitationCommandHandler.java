@@ -79,26 +79,30 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
       // Find invitation
       var invitation = invitationRepository.findByTokenAndStatusPending(command.getToken());
 
-      // Get authenticated user's JWT claims
+      // Get authenticated user's OIDC Context
       var authentication = SecurityContextHolder.getContext().getAuthentication();
-      if (!(authentication.getPrincipal() instanceof Jwt jwt)) {
+      cv.igrp.platform.access_management.shared.security.UserProfile profile;
+
+      if (authentication.getPrincipal() instanceof cv.igrp.platform.access_management.shared.security.IgrpOidcUser oidcUser) {
+          profile = oidcUser.getUserProfile();
+      } else {
          throw IgrpResponseStatusException.of(
                  HttpStatus.UNAUTHORIZED,
-                 "Authentication required to accept invitation"
+                 "Native OIDC User Context required to accept invitation"
          );
       }
 
-      String authMethod = jwt.getClaimAsString("auth_method");
-      String nic = jwt.getSubject();
-      String phone = jwt.getClaimAsString("phone_number");
-      String email = jwt.getClaimAsString("email");
+      String authMethod = profile.authMethod() != null ? profile.authMethod() : "pwd";
+      String nic = profile.externalId();
+      String phone = profile.phone();
+      String email = profile.email();
 
       String primaryIdentifierValue = null;
-      if ("CMD".equalsIgnoreCase(authMethod)) {
+      if ("cmdcv".equalsIgnoreCase(authMethod)) {
          primaryIdentifierValue = phone;
-      } else if ("CNI".equalsIgnoreCase(authMethod)) {
+      } else if ("cni".equalsIgnoreCase(authMethod)) {
          primaryIdentifierValue = nic;
-      } else if ("CREDENTIALS".equalsIgnoreCase(authMethod)) {
+      } else if ("pwd".equalsIgnoreCase(authMethod)) {
          primaryIdentifierValue = email != null ? email.toLowerCase() : null;
       }
 
@@ -124,7 +128,13 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
              user.setExternalId(nic);
          }
          
-         if (email != null) user.setEmail(email.toLowerCase());
+         if (email != null) {
+             user.setEmail(email.toLowerCase());
+         }
+         
+         if (profile.fullName() != null && !profile.fullName().isBlank()) {
+             user.setName(profile.fullName());
+         }
 
          if(invitation.getRoles() != null &&  !invitation.getRoles().isEmpty()) {
             Integer roleId = invitation.getRoles().iterator().next().getId();

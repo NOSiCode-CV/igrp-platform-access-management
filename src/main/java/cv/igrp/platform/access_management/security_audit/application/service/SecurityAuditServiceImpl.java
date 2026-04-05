@@ -112,6 +112,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     public void logUserChange(String targetUserId, String operation) {
         AuditEventType eventType = switch (operation.toUpperCase()) {
             case "CREATE" -> AuditEventType.USER_CREATED;
+            case "UPDATE" -> AuditEventType.USER_UPDATED;
             case "INACTIVE" -> AuditEventType.USER_INACTIVATED;
             case "ACTIVE" -> AuditEventType.USER_ACTIVATED;
             default -> throw new IllegalArgumentException("Invalid user operation for auditing: " + operation);

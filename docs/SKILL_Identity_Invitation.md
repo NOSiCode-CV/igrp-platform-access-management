@@ -4,31 +4,31 @@ description: Guidelines for multi-identifier authentication anchored on NIC. Enf
 ---
 # SKILL — Identity & Invitation (STRICT + NIC Anchor + Invite-only)
 
-**Projeto/Repo:** `igrp_platform_access_management`  
-**Objetivo:** Remover obrigatoriedade de email e suportar identificação/login por **Email**, **Telefone** ou **NIC**, mantendo tudo ligado ao mesmo utilizador (NIC).  
-**Política:** `STRICT` + `Invite-only (Opção A)` + `No-Adapter`.
+**Project/Repo:** `igrp_platform_access_management`  
+**Goal:** Remove the email requirement and support identification/login via **Email**, **Phone**, or **NIC**, keeping everything linked to the same user (NIC).  
+**Policy:** `STRICT` + `Invite-only (Option A)` + `No-Adapter`.
 
 ---
 
-## Skill 0 — Baseline (imutável)
+## Skill 0 — Baseline (immutable)
 
-- **NIC é o anchor**: `sub` do AUTENTIKA é sempre o **NIC** e é a chave canónica do utilizador.  
-- **Email/Telefone são opcionais**: podem existir, mas não são obrigatórios.
-- **Invite-only**: se o utilizador autenticado não existir no DB, bloquear acesso e exigir aceitação de convite.
-- **STRICT**: aceitar convite **apenas** com o identificador primário do método usado na aceitação.
-- **No-Adapter**: sem chamadas admin ao IAM; apenas JWT verify + claims extraction.
+- **NIC is the anchor**: `sub` from AUTENTIKA is always the **NIC** and acts as the user's canonical key.  
+- **Email/Phone are optional**: they may exist, but are not mandatory.
+- **Invite-only**: if the authenticated user does not exist in the DB, block access and require invitation acceptance.
+- **STRICT**: accept invitations **only** with the primary identifier of the authentication method used during acceptance.
+- **No-Adapter**: no admin calls to the IAM; only JWT verification + claims extraction.
 
 ---
 
-## Skill 1 — Modelo de dados (NIC-anchored)
+## Skill 1 — Data Model (NIC-anchored)
 
 ### `users`
 - `id` (UUID)
-- `nic` (string) **UNIQUE NOT NULL**  ← vem de `sub`
-- `display_name` (opcional)
+- `nic` (string) **UNIQUE NOT NULL**  ← comes from `sub`
+- `display_name` (optional)
 - timestamps
 
-### `user_identifiers` (secundários)
+### `user_identifiers` (secondary)
 - `id`
 - `user_id` (FK)
 - `type` ENUM(`EMAIL`, `PHONE`)
@@ -36,49 +36,49 @@ description: Guidelines for multi-identifier authentication anchored on NIC. Enf
 - `verified` boolean
 - UNIQUE(`type`, `value_normalized`)
 
-**Normalização**
+**Normalization**
 - EMAIL: lower+trim
-- PHONE: E.164 (quando possível) / trim
+- PHONE: E.164 (when possible) / trim
 
 ---
 
-## Skill 2 — Mapping AUTH_METHOD → Identificador primário
+## Skill 2 — Mapping AUTH_METHOD → Primary Identifier
 
-Implementar função **central**:
+Implement **core** function:
 
-- `CMD` → `PHONE` usando claim `phone_number`
-- `CNI` → `NIC` usando `sub`
-- `CREDENTIALS` (credenciais próprias) → `EMAIL` usando claim `email`
+- `CMD` → `PHONE` using the `phone_number` claim
+- `CNI` → `NIC` using `sub`
+- `CREDENTIALS` (custom credentials) → `EMAIL` using the `email` claim
 
-**Erros (STRICT)**
-- `CMD` sem `phone_number` → `PRIMARY_IDENTIFIER_MISSING`
-- credenciais próprias sem `email` → `PRIMARY_IDENTIFIER_MISSING`
+**Errors (STRICT)**
+- `CMD` without `phone_number` → `PRIMARY_IDENTIFIER_MISSING`
+- Custom credentials without `email` → `PRIMARY_IDENTIFIER_MISSING`
 
 ---
 
-## Skill 3 — Gatekeeper (Invite-only, Opção A)
+## Skill 3 — Gatekeeper (Invite-only, Option A)
 
-Em todos os endpoints de negócio:
+On all business endpoints:
 
-1) Validar JWT (issuer/signature/exp)
-2) Extrair `nic = sub`
-3) Verificar se existe `users.nic == nic`
+1) Validate JWT (issuer/signature/exp)
+2) Extract `nic = sub`
+3) Check if `users.nic == nic` exists
 
-Se **não existir** e endpoint **não** for aceitação de convite:
+If it **does not exist** and the endpoint is **not** invitation acceptance:
 
 ```json
 {
   "error": "INVITE_REQUIRED",
-  "message": "Utilizador não registado. É necessário aceitar um convite para ativar o acesso."
+  "message": "Unregistered user. You must accept an invitation to enable access."
 }
 ```
 
 ---
 
-## Skill 4 — Convites (Identifier-first + STRICT-by-design)
+## Skill 4 — Invitations (Identifier-first + STRICT-by-design)
 
-### 4.1. Criação de convite
-DTO sugerido:
+### 4.1. Invitation Creation
+Suggested DTO:
 
 ```json
 {
@@ -89,45 +89,45 @@ DTO sugerido:
 }
 ```
 
-**Derivar automaticamente `allowedAuthMethods`**:
-- convite `EMAIL` → `[CREDENTIALS]`
-- convite `PHONE` → `[CMD]`
-- convite `NIC` → `[CNI]`
+**Automatically derive `allowedAuthMethods`**:
+- `EMAIL` invitation → `[CREDENTIALS]`
+- `PHONE` invitation → `[CMD]`
+- `NIC` invitation → `[CNI]`
 
 ---
 
-## Skill 5 — Aceitar convite (STRICT + NIC anchor)
+## Skill 5 — Accept Invitation (STRICT + NIC anchor)
 
-### Entrada
+### Input
 - `invitationId`
-- JWT claims
+- OIDC Security Context (`IgrpOidcUser` mapped from JWT)
 
-### Passos
-1) Validar JWT
+### Steps
+1) Extract `IgrpOidcUser` (UserProfile) from `SecurityContext`
 2) `nic = sub`
 3) `method = auth_method`
 4) `primary = getPrimaryIdentifier(method, claims)`
-5) Carregar convite (PENDING)
-6) Validar STRICT:
+5) Load invitation (PENDING)
+6) Validate STRICT:
    - `method in inv.allowedAuthMethods`
    - `inv.identifierType == primary.type`
    - `normalize(inv.identifierValue) == normalize(primary.value)`
-7) Resolver utilizador:
+7) Resolve user:
    - `user = findByNic(nic)`
-   - se `null` → `createUser(nic, displayName=claims.name)`
-8) Persistir identificadores secundários (best-effort):
-   - se `email` existe → upsert EMAIL (verified)
-   - se `phone_number` existe → upsert PHONE (verified)
-9) Atribuir roles no DB (DB-only)
-10) Marcar convite como `ACCEPTED`
+   - if `null` → `createUser(nic, displayName=claims.name)`
+8) Persist secondary identifiers (best-effort):
+   - if `email` exists → upsert EMAIL (verified)
+   - if `phone_number` exists → upsert PHONE (verified)
+9) Assign roles in the DB (DB-only)
+10) Mark invitation as `ACCEPTED`
 
 ---
 
-## Skill 6 — Colisão e segurança
+## Skill 6 — Collision and Security
 
-- UNIQUE global para `EMAIL` e `PHONE`:
-  - se email/phone já pertencer a outro `user_id` → erro `IDENTIFIER_COLLISION`
-- Registar auditoria:
+- Global UNIQUE for `EMAIL` and `PHONE`:
+  - if email/phone already belongs to another `user_id` → trigger `IDENTIFIER_COLLISION` error
+- Register audits:
   - `INVITE_REQUIRED_BLOCK`
   - `INVITE_ACCEPTED`
   - `INVITE_ACCEPT_FAILED_STRICT_MISMATCH`
@@ -135,18 +135,18 @@ DTO sugerido:
 
 ---
 
-## Skill 7 — No-Adapter compliance (o que NÃO fazer)
+## Skill 7 — No-Adapter Compliance (what NOT to do)
 
-- Não chamar `resolveUser`/admin APIs do IAM.
-- Não sincronizar roles/departments/permissions com provider.
-- Não criar utilizadores fora do fluxo de convite.
+- Do not call `resolveUser` / IAM admin APIs.
+- Do not synchronize roles/departments/permissions with the provider.
+- Do not create users outside the invitation flow.
 
 ---
 
-## Critérios de aceitação (Done)
+## Acceptance Criteria (Done)
 
-- Email não é obrigatório em nenhum fluxo.
-- Acesso de utilizador não existente no DB é bloqueado (invite-only).
-- Aceitação de convite obedece a STRICT e é determinística.
-- `sub` (NIC) liga sempre o mesmo utilizador.
-- Nenhuma dependência de operações admin no IAM.
+- Email is not mandatory in any flow.
+- Access for users not existing in the DB is blocked (invite-only).
+- Invitation acceptance obeys STRICT rules and is deterministic.
+- `sub` (NIC) consistently links the same user.
+- No dependency on IAM admin operations.
