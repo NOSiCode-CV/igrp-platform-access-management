@@ -4,6 +4,7 @@ import cv.igrp.platform.access_management.shared.application.dto.CodeDescription
 import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.InvitationEntity;
 import org.springframework.stereotype.Component;
+import java.util.ArrayList;
 
 /**
  * Mapper for {@link InvitationEntity}
@@ -21,7 +22,11 @@ public class InvitationMapper {
         if(invitation == null) return null;
         InvitationDTO dto = new InvitationDTO();
         dto.setId(invitation.getId());
-        dto.setEmail(invitation.getEmail());
+        dto.setIdentifierType(invitation.getIdentifierType());
+        dto.setIdentifierValue(invitation.getIdentifierValue());
+        if(invitation.getAllowedAuthMethods() != null) {
+            dto.setAllowedAuthMethods(new ArrayList<>(invitation.getAllowedAuthMethods()));
+        }
         dto.setStatus(invitation.getStatus());
         dto.setInvitationDate(invitation.getCreatedDate());
         dto.setExpiry(invitation.getExpiry());

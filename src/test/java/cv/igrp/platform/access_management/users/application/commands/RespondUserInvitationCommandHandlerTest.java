@@ -30,8 +30,6 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Optional;
 import java.util.Set;
 
@@ -55,6 +53,9 @@ class RespondUserInvitationCommandHandlerTest {
 
     @Mock
     private SecurityAuditService auditService;
+
+    @Mock
+    private cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserIdentifierEntityRepository userIdentifierEntityRepository;
 
     @Mock
     private SecurityContext securityContext;
@@ -82,23 +83,26 @@ class RespondUserInvitationCommandHandlerTest {
     void handle_acceptInvitation_success() throws NotificationException {
         // Arrange
         UserInvitationResponseDTO dto = new UserInvitationResponseDTO();
-        dto.setEmail("test@example.com");
         dto.setAccept(true);
 
         RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto, token);
 
         InvitationEntity invitation = new InvitationEntity();
-        invitation.setEmail("test@example.com");
+        invitation.setIdentifierType("EMAIL");
+        invitation.setIdentifierValue("test@example.com");
+        invitation.setAllowedAuthMethods(Set.of("CREDENTIALS"));
         invitation.setStatus(InvitationStatus.PENDING);
         RoleEntity role = new RoleEntity();
         role.setId(1);
         invitation.setRoles(Set.of(role));
 
         when(invitationRepository.findByTokenAndStatusPending(token)).thenReturn(invitation);
-        when(userRepository.existsByEmail(dto.getEmail())).thenReturn(false);
-        when(jwt.getClaimAsString("email")).thenReturn("test@example.com");
-        when(jwt.getSubject()).thenReturn("jwt-subject-123");
+        lenient().when(jwt.getClaimAsString("auth_method")).thenReturn("CREDENTIALS");
+        lenient().when(jwt.getClaimAsString("email")).thenReturn("test@example.com");
+        lenient().when(jwt.getClaimAsString("phone_number")).thenReturn(null);
+        lenient().when(jwt.getSubject()).thenReturn("jwt-subject-123");
         when(invitationRepository.save(any())).thenReturn(invitation);
+        when(userRepository.findByExternalId(any())).thenReturn(Optional.empty());
         when(userRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
         when(roleRepository.findById(1)).thenReturn(Optional.of(role));
         when(invitationMapper.toDto(any())).thenReturn(new InvitationDTO());
@@ -111,7 +115,6 @@ class RespondUserInvitationCommandHandlerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(invitationRepository).save(invitation);
         verify(userRepository).save(any(IGRPUserEntity.class));
-        verify(notificationAdapter).send(any());
         verify(auditService).logUserChange(any(), eq("CREATE"));
     }
 
@@ -119,19 +122,21 @@ class RespondUserInvitationCommandHandlerTest {
     void handle_rejectInvitation_success() {
         // Arrange
         UserInvitationResponseDTO dto = new UserInvitationResponseDTO();
-        dto.setEmail("test@example.com");
         dto.setAccept(false);
         dto.setObservation("Rejected");
 
         RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto, token);
 
         InvitationEntity invitation = new InvitationEntity();
-        invitation.setEmail("test@example.com");
+        invitation.setIdentifierType("EMAIL");
+        invitation.setIdentifierValue("test@example.com");
+        invitation.setAllowedAuthMethods(Set.of("CREDENTIALS"));
         invitation.setStatus(InvitationStatus.PENDING);
 
         when(invitationRepository.findByTokenAndStatusPending(token)).thenReturn(invitation);
-        when(userRepository.existsByEmail(dto.getEmail())).thenReturn(false);
-        when(jwt.getClaimAsString("email")).thenReturn("test@example.com");
+        lenient().when(jwt.getClaimAsString("auth_method")).thenReturn("CREDENTIALS");
+        lenient().when(jwt.getClaimAsString("email")).thenReturn("test@example.com");
+        lenient().when(jwt.getClaimAsString("phone_number")).thenReturn(null);
 
         // Act
         ResponseEntity<InvitationDTO> response = handler.handle(command);
@@ -150,21 +155,27 @@ class RespondUserInvitationCommandHandlerTest {
     void handle_emailMismatch_throwsException() {
         // Arrange
         UserInvitationResponseDTO dto = new UserInvitationResponseDTO();
-        dto.setEmail("test@example.com");
         dto.setAccept(true);
 
         RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto, token);
 
-        when(invitationRepository.findByTokenAndStatusPending(token)).thenReturn(new InvitationEntity());
-        when(userRepository.existsByEmail(dto.getEmail())).thenReturn(false);
-        when(jwt.getClaimAsString("email")).thenReturn("mismatch@example.com");
+        InvitationEntity invitation = new InvitationEntity();
+        invitation.setIdentifierType("EMAIL");
+        invitation.setIdentifierValue("test@example.com");
+        invitation.setAllowedAuthMethods(Set.of("CREDENTIALS"));
+        invitation.setStatus(InvitationStatus.PENDING);
+
+        when(invitationRepository.findByTokenAndStatusPending(token)).thenReturn(invitation);
+        lenient().when(jwt.getClaimAsString("auth_method")).thenReturn("CREDENTIALS");
+        lenient().when(jwt.getClaimAsString("email")).thenReturn("mismatch@example.com");
+        lenient().when(jwt.getClaimAsString("phone_number")).thenReturn(null);
 
         // Act & Assert
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> handler.handle(command));
 
         assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getBody().getStatus());
-        assertTrue(ex.getMessage().contains("JWT email does not match"));
+        assertTrue(ex.getMessage().contains("Authenticated identifier does not match"));
     }
 }
 

@@ -48,14 +48,14 @@ public interface InvitationEntityRepository extends
     SELECT i.*
     FROM t_invitation_entity i
     WHERE i.status <> :excludedStatus
-      AND (:email IS NULL OR i.email ILIKE CONCAT('%', :email, '%'))
+      AND (:identifierValue IS NULL OR i.identifier_value ILIKE CONCAT('%', :identifierValue, '%'))
     ORDER BY i.last_modified_date DESC
 """, nativeQuery = true)
     List<InvitationEntity> findAllByStatusNotOrderByLastModifiedDateDescFiltered(
             @Param("excludedStatus") String excludedStatus,
-            @Param("email") String email
+            @Param("identifierValue") String identifierValue
     );
 
-    Optional<InvitationEntity> findByEmailAndStatus(String email, InvitationStatus status);
+    Optional<InvitationEntity> findByIdentifierTypeAndIdentifierValueAndStatus(String identifierType, String identifierValue, InvitationStatus status);
 
 }

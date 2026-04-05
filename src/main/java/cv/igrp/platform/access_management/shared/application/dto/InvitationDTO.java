@@ -27,8 +27,13 @@ public class InvitationDTO  {
   
   private Integer id ;
   
+  private String identifierType ;
   
-  private String email ;
+  
+  private String identifierValue ;
+  
+  
+  private List<String> allowedAuthMethods = new ArrayList<>();
   
   
   private InvitationStatus status ;
