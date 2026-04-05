@@ -27,6 +27,9 @@ public class SecurityAuditLogEntity {
     private String sessionId;
     private String ipAddress;
     private String userAgent;
+    private String correlationId;
+    private String requestPath;
+    private String decisionReason;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -90,6 +93,30 @@ public class SecurityAuditLogEntity {
 
     public void setUserAgent(String userAgent) {
         this.userAgent = userAgent;
+    }
+
+    public String getCorrelationId() {
+        return correlationId;
+    }
+
+    public void setCorrelationId(String correlationId) {
+        this.correlationId = correlationId;
+    }
+
+    public String getRequestPath() {
+        return requestPath;
+    }
+
+    public void setRequestPath(String requestPath) {
+        this.requestPath = requestPath;
+    }
+
+    public String getDecisionReason() {
+        return decisionReason;
+    }
+
+    public void setDecisionReason(String decisionReason) {
+        this.decisionReason = decisionReason;
     }
 
     public AuditEventType getEventType() {

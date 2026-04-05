@@ -92,6 +92,32 @@
       "isUrl": false,
       "primaryKey": false,
       "collectionType": "none"
+    },
+    {
+      "name": "nic",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "collectionType": "none"
+    },
+    {
+      "name": "phoneNumber",
+      "objectType": "java",
+      "type": "string",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false,
+      "collectionType": "none"
     }
   ],
   "id": "plmvfsaeug"

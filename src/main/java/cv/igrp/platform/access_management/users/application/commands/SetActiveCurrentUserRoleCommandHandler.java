@@ -64,7 +64,7 @@ public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<Se
 
         logger.info("Setting current user active role with sub: {}", externalId);
 
-        Optional<IGRPUserEntity> optionalUser = igrpUserRepository.findByExternalId(externalId);
+        Optional<IGRPUserEntity> optionalUser = igrpUserRepository.findByExternalIdWithRolesAndPermissions(externalId);
         if (optionalUser.isEmpty()) {
             logger.warn("No user found with sub: {}", externalId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();

@@ -27,6 +27,8 @@ class IGRPUserMapperTest {
         user.setName("Jane Doe");
         user.setUsername("janedoe");
         user.setEmail("jane@example.com");
+        user.setNic("1234567890123");
+        user.setPhoneNumber("+1234567890");
 
         // Act
         IGRPUserDTO dto = mapper.toDto(user);
@@ -37,6 +39,8 @@ class IGRPUserMapperTest {
         assertEquals("Jane Doe", dto.getName());
         assertEquals("janedoe", dto.getUsername());
         assertEquals("jane@example.com", dto.getEmail());
+        assertEquals("1234567890123", dto.getNic());
+        assertEquals("+1234567890", dto.getPhoneNumber());
     }
 
     @Test
@@ -48,6 +52,8 @@ class IGRPUserMapperTest {
         dto.setName("John Smith");
         dto.setUsername("jsmith");
         dto.setEmail("john@example.com");
+        dto.setNic("9876543210987");
+        dto.setPhoneNumber("+9876543210");
 
         // Act
         IGRPUserEntity user = mapper.toEntity(dto);
@@ -58,6 +64,8 @@ class IGRPUserMapperTest {
         assertEquals("John Smith", user.getName());
         assertEquals("jsmith", user.getUsername());
         assertEquals("john@example.com", user.getEmail());
+        assertEquals("9876543210987", user.getNic());
+        assertEquals("+9876543210", user.getPhoneNumber());
     }
 
     @Test
