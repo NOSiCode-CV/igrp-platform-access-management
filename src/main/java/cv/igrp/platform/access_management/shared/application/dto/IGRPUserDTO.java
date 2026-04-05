@@ -42,4 +42,10 @@ public class IGRPUserDTO  {
   
   private String signature ;
 
+  @Size(max = 13, message = "The field <nic> must be at most 13 characters")
+  private String nic;
+
+  @Pattern(regexp = "^\\+[1-9]\\d{1,14}$", message = "The field <phoneNumber> must follow E.164 format (e.g., +1234567890)")
+  private String phoneNumber;
+
 }

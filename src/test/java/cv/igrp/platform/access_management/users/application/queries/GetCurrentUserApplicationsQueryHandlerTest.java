@@ -58,7 +58,7 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     dto1.setCode("APP_MAIN");
 
     when(authenticationHelper.getSub()).thenReturn("sub123");
-    when(userRepository.findByExternalId("sub123")).thenReturn(Optional.of(mockUser));
+    when(userRepository.findByExternalIdWithRolesAndPermissions("sub123")).thenReturn(Optional.of(mockUser));
     when(applicationRepository.findByUserIdAndStatusNotDeleted(mockUser))
             .thenReturn(List.of(app1));
     when(applicationMapper.toDto(app1)).thenReturn(dto1);
@@ -91,7 +91,7 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     dto.setCode("IGRP_PLATFORM");
 
     when(authenticationHelper.getSub()).thenReturn("abc");
-    when(userRepository.findByExternalId("abc")).thenReturn(Optional.of(user));
+    when(userRepository.findByExternalIdWithRolesAndPermissions("abc")).thenReturn(Optional.of(user));
     when(applicationRepository.findByUserIdAndStatusNotDeleted(user))
             .thenReturn(List.of(app1, app2));
 
@@ -118,7 +118,7 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     user.setExternalId("sub888");
 
     when(authenticationHelper.getSub()).thenReturn("sub888");
-    when(userRepository.findByExternalId("sub888")).thenReturn(Optional.of(user));
+    when(userRepository.findByExternalIdWithRolesAndPermissions("sub888")).thenReturn(Optional.of(user));
     when(applicationRepository.findByUserIdAndStatusNotDeleted(user))
             .thenReturn(List.of());
 
@@ -136,7 +136,7 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery(null, null);
 
     when(authenticationHelper.getSub()).thenReturn("missing");
-    when(userRepository.findByExternalId("missing")).thenReturn(Optional.empty());
+    when(userRepository.findByExternalIdWithRolesAndPermissions("missing")).thenReturn(Optional.empty());
 
     assertThrows(IgrpResponseStatusException.class, () -> handler.handle(query));
   }

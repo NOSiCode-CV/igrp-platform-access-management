@@ -11,6 +11,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +51,7 @@ public class PermissionCacheService {
         return checkInternal(request);
     }
 
+    @Transactional(readOnly = true)
     public PermissionCacheEntryDTO checkInternal(PermissionCheckRequest request) {
         setFromCacheAsFalse();
 
@@ -69,14 +71,23 @@ public class PermissionCacheService {
     private Boolean checkPermission(String subject, String permissionName) {
 
         // Verifies if the user exists or if it is deleted or disabled
-        var userOpt = userRepository.findByExternalId(subject);
+        var userOpt = userRepository.findByExternalIdWithRolesAndPermissions(subject);
         if (userOpt.isEmpty() || userOpt.get().getStatus() == Status.DELETED || userOpt.get().getStatus() == Status.INACTIVE) {
             LOGGER.info("User {} is not active or deleted", subject);
             return false;
         }
 
         // If the user is superadmin it is allowed to do anything
-        if(userOpt.get().getRoles().stream().anyMatch(r -> Objects.equals(r.getCode(), SUPER_ADMIN_ROLE))) {
+        // Using direct SQL check to avoid LazyInitializationException in async threads
+        String superAdminSql = """
+                SELECT 1 FROM t_role_users ru
+                JOIN t_role r ON r.id = ru.roles_id
+                WHERE ru.users_id = CAST(? AS integer) AND r.code = ?
+                LIMIT 1
+                """;
+        List<Integer> superAdminResults = jdbcTemplate.query(superAdminSql, (_, _) -> 1, userOpt.get().getId(), SUPER_ADMIN_ROLE);
+
+        if (!superAdminResults.isEmpty()) {
             LOGGER.info("User {} is superadmin", subject);
             return true;
         }

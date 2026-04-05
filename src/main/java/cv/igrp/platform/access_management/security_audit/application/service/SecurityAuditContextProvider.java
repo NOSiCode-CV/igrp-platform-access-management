@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 import jakarta.servlet.http.HttpServletRequest;
+import java.util.UUID;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -39,6 +40,7 @@ public class SecurityAuditContextProvider {
             context.put("ipAddress", request.getRemoteAddr());
             context.put("userAgent", request.getHeader("User-Agent"));
             context.put("requestPath", request.getRequestURI());
+            context.put("correlationId", getCorrelationId(request));
         });
 
         return context;
@@ -69,6 +71,20 @@ public class SecurityAuditContextProvider {
         // Case 3: Fallback (any other type)
         return authentication.getName();
 
+    }
+
+    private String getCorrelationId(HttpServletRequest request) {
+        String requestCorrelationId = request.getHeader("X-Correlation-ID");
+        if (requestCorrelationId != null && !requestCorrelationId.isBlank()) {
+            return requestCorrelationId;
+        }
+
+        Object correlationIdAttribute = request.getAttribute("correlationId");
+        if (correlationIdAttribute instanceof String correlationId && !correlationId.isBlank()) {
+            return correlationId;
+        }
+
+        return UUID.randomUUID().toString();
     }
 
 }

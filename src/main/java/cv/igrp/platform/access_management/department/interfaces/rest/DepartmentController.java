@@ -47,13 +47,13 @@ public class DepartmentController {
           this.queryBus = queryBus;
           this.commandBus = commandBus;
   }
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_CREATE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_CREATE)")
    @PostMapping(
    value = "departments"
   )
   @Operation(
     summary = "Post department",
-    description = "This Permission is required: igrp.department.create",
+    description = "This Permission is required: igrp.departments.create",
     responses = {
       @ApiResponse(
           responseCode = "201",
@@ -78,13 +78,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_LIST)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_LIST)")
    @GetMapping(
    value = "departments"
   )
   @Operation(
     summary = "Get departments",
-    description = "This Permission is required: igrp.department.list",
+    description = "This Permission is required: igrp.departments.list",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -112,13 +112,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_VIEW)")
    @GetMapping(
    value = "departments/{id}"
   )
   @Operation(
     summary = "Get department by id",
-    description = "This Permission is required: igrp.department.view",
+    description = "This Permission is required: igrp.departments.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -143,13 +143,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_UPDATE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_UPDATE)")
    @PutMapping(
    value = "departments/{code}"
   )
   @Operation(
     summary = "Update department",
-    description = "This Permission is required: igrp.department.update",
+    description = "This Permission is required: igrp.departments.update",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -174,13 +174,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_DELETE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_DELETE)")
    @DeleteMapping(
    value = "departments/{code}"
   )
   @Operation(
     summary = "Delete department",
-    description = "This Permission is required: igrp.department.delete",
+    description = "This Permission is required: igrp.departments.delete",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -205,13 +205,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_VIEW)")
    @GetMapping(
    value = "departments/by-code/{code}"
   )
   @Operation(
     summary = "Get department by code",
-    description = "This Permission is required: igrp.department.view",
+    description = "This Permission is required: igrp.departments.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -236,13 +236,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @GetMapping(
    value = "departments/{code}/applications/available"
   )
   @Operation(
     summary = "Get available applications for department",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -267,13 +267,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @GetMapping(
    value = "departments/{departmentCode}/applications/{applicationCode}/menus/available"
   )
   @Operation(
     summary = "Get menus available for department",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -298,13 +298,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @GetMapping(
    value = "departments/{code}/resources/available"
   )
   @Operation(
     summary = "Get available resources for department",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -329,13 +329,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @PostMapping(
    value = "departments/{code}/roles"
   )
   @Operation(
     summary = "Create role",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "201",
@@ -360,13 +360,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_VIEW)")
    @GetMapping(
    value = "departments/{code}/roles"
   )
   @Operation(
     summary = "Get roles",
-    description = "This Permission is required: igrp.department.view",
+    description = "This Permission is required: igrp.departments.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -391,13 +391,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @PutMapping(
    value = "departments/{departmentCode}/roles/{roleCode}"
   )
   @Operation(
     summary = "Update role",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -422,13 +422,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @DeleteMapping(
    value = "departments/{departmentCode}/roles/{roleCode}"
   )
   @Operation(
     summary = "Delete role",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -453,13 +453,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @DeleteMapping(
    value = "departments/{departmentCode}/roles/{roleCode}/permissions"
   )
   @Operation(
     summary = "Remove permissions",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -484,13 +484,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_VIEW)")
    @GetMapping(
    value = "departments/{departmentCode}/roles/{roleCode}/permissions"
   )
   @Operation(
     summary = "Get permissions by role id",
-    description = "This Permission is required: igrp.department.view",
+    description = "This Permission is required: igrp.departments.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -515,13 +515,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @PostMapping(
    value = "departments/{departmentCode}/roles/{roleCode}/permissions"
   )
   @Operation(
     summary = "Add permissions",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -546,13 +546,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @GetMapping(
    value = "departments/{departmentCode}/roles/{roleCode}/permissions/available"
   )
   @Operation(
     summary = "Get available permissions for roles",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -577,13 +577,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @PostMapping(
    value = "departments/{code}/applications"
   )
   @Operation(
     summary = "Add applications to department",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -608,13 +608,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @PostMapping(
    value = "departments/{departmentCode}/applications/{applicationCode}/menus"
   )
   @Operation(
     summary = "Add menus to department",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -639,13 +639,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @DeleteMapping(
    value = "departments/{code}/applications"
   )
   @Operation(
     summary = "Remove applications from department",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -670,13 +670,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @DeleteMapping(
    value = "departments/{departmentCode}/applications/{applicationCode}/menus"
   )
   @Operation(
     summary = "Remove menus from department",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -701,13 +701,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_VIEW)")
    @GetMapping(
    value = "/departments/{code}/resources"
   )
   @Operation(
     summary = "Get department resources",
-    description = "This Permission is required: igrp.department.view",
+    description = "This Permission is required: igrp.departments.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -732,13 +732,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_VIEW)")
    @GetMapping(
    value = "/departments/{departmentCode}/applications/{applicationCode}/menus"
   )
   @Operation(
     summary = "Get department menus",
-    description = "This Permission is required: igrp.department.view",
+    description = "This Permission is required: igrp.departments.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -763,13 +763,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_VIEW)")
    @GetMapping(
    value = "/departments/{code}/applications"
   )
   @Operation(
     summary = "Get department applications",
-    description = "This Permission is required: igrp.department.view",
+    description = "This Permission is required: igrp.departments.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -794,13 +794,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @PostMapping(
    value = "departments/{departmentCode}/resources"
   )
   @Operation(
     summary = "Add resources to department",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -825,13 +825,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @DeleteMapping(
    value = "departments/{departmentCode}/resources"
   )
   @Operation(
     summary = "Remove resources from department",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -856,13 +856,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_VIEW)")
    @GetMapping(
    value = "departments/{code}/permissions"
   )
   @Operation(
     summary = "Get department permissions",
-    description = "This Permission is required: igrp.department.view",
+    description = "This Permission is required: igrp.departments.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -887,13 +887,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @PostMapping(
    value = "departments/{code}/permissions"
   )
   @Operation(
     summary = "Add permissions to department",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -918,13 +918,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @DeleteMapping(
    value = "departments/{code}/permissions"
   )
   @Operation(
     summary = "Remove permissions from department",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -949,13 +949,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
    @GetMapping(
    value = "departments/{departmentCode}/permissions/available"
   )
   @Operation(
     summary = "Get available permissions for department",
-    description = "This Permission is required: igrp.department.manage",
+    description = "This Permission is required: igrp.departments.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -980,13 +980,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_VIEW)")
    @GetMapping(
    value = "departments/{departmentCode}/roles/{roleCode}/children"
   )
   @Operation(
     summary = "Get role children",
-    description = "This Permission is required: igrp.department.view",
+    description = "This Permission is required: igrp.departments.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -1011,13 +1011,13 @@ public class DepartmentController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_VIEW)")
    @GetMapping(
    value = "departments/{departmentCode}/roles/{roleCode}/parents"
   )
   @Operation(
     summary = "Get role parents",
-    description = "This Permission is required: igrp.department.view",
+    description = "This Permission is required: igrp.departments.view",
     responses = {
       @ApiResponse(
           responseCode = "200",

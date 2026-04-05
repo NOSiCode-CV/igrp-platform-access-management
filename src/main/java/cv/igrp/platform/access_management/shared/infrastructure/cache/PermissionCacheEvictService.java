@@ -6,9 +6,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.KeyScanOptions;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -21,26 +26,99 @@ public class PermissionCacheEvictService {
     private static final int SCAN_BATCH_SIZE = 1000;
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final JdbcTemplate jdbcTemplate;
 
     @Autowired
-    public PermissionCacheEvictService(RedisTemplate<String, Object> redisTemplate) {
+    public PermissionCacheEvictService(RedisTemplate<String, Object> redisTemplate, JdbcTemplate jdbcTemplate) {
         this.redisTemplate = redisTemplate;
-    }
-
-    public void evictAll() {
-        evictMatchingKeys(_ -> true);
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void evictBySubject(String subject) {
+        if (subject == null || subject.isBlank()) {
+            return;
+        }
         evictMatchingKeys(key -> key.startsWith("%s%s:".formatted(CACHE_PREFIX, subject)));
     }
 
+    public void evictByUserId(Integer userId) {
+        if (userId == null) {
+            return;
+        }
+
+        List<String> subjects = jdbcTemplate.query(
+                "SELECT external_id FROM t_user WHERE id = ? AND status <> 'DELETED'",
+                (rs, _) -> rs.getString("external_id"),
+                userId
+        );
+        evictBySubjects(subjects);
+    }
+
+    public void evictByRole(String roleCode) {
+        if (roleCode == null || roleCode.isBlank()) {
+            return;
+        }
+
+        List<String> subjects = jdbcTemplate.query(
+                """
+                SELECT DISTINCT u.external_id
+                FROM t_user u
+                JOIN t_role_users ru ON ru.users_id = u.id
+                JOIN t_role r ON r.id = ru.roles_id
+                WHERE r.code = ?
+                  AND u.status <> 'DELETED'
+                """,
+                (rs, _) -> rs.getString("external_id"),
+                roleCode
+        );
+        evictBySubjects(subjects);
+    }
+
+    public void evictByDepartment(String departmentCode) {
+        if (departmentCode == null || departmentCode.isBlank()) {
+            return;
+        }
+
+        List<String> subjects = jdbcTemplate.query(
+                """
+                SELECT DISTINCT u.external_id
+                FROM t_user u
+                JOIN t_role_users ru ON ru.users_id = u.id
+                JOIN t_role r ON r.id = ru.roles_id
+                JOIN t_department d ON d.id = r.department
+                WHERE d.code = ?
+                  AND u.status <> 'DELETED'
+                """,
+                (rs, _) -> rs.getString("external_id"),
+                departmentCode
+        );
+        evictBySubjects(subjects);
+    }
+
     public void evictByResource(String resource) {
+        if (resource == null || resource.isBlank()) {
+            return;
+        }
         evictMatchingKeys(key -> key.matches("%s.*:%s:.*".formatted(CACHE_PREFIX, resource)));
     }
 
     public void evictByAction(String action) {
+        if (action == null || action.isBlank()) {
+            return;
+        }
         evictMatchingKeys(key -> key.endsWith(":%s".formatted(action)));
+    }
+
+    public void evictBySubjects(Collection<String> subjects) {
+        if (subjects == null || subjects.isEmpty()) {
+            return;
+        }
+
+        subjects.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(subject -> !subject.isBlank())
+                .forEach(this::evictBySubject);
     }
 
     public void evictByTriple(String subject, String resource, String action) {
@@ -62,7 +140,7 @@ public class PermissionCacheEvictService {
                 .scan(KeyScanOptions.scanOptions().match("%s*".formatted(CACHE_PREFIX)).count(SCAN_BATCH_SIZE).build())) {
 
             while (cursor.hasNext()) {
-                String key = new String(cursor.next());
+                String key = new String(cursor.next(), StandardCharsets.UTF_8);
                 if (predicate.test(key)) {
                     keysToDelete.add(key);
                 }
