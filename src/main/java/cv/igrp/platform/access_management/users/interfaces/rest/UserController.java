@@ -49,13 +49,13 @@ public class UserController {
           this.queryBus = queryBus;
           this.commandBus = commandBus;
   }
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}"
   )
   @Operation(
     summary = "Get user",
-    description = "This Permission is required: igrp.user.view",
+    description = "This Permission is required: igrp.users.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -80,13 +80,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @PostMapping(
    value = "users/{id}/departments/{departmentCode}/roles"
   )
   @Operation(
     summary = "Add roles to user",
-    description = "This Permission is required: igrp.user.manage",
+    description = "This Permission is required: igrp.users.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -121,13 +121,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @DeleteMapping(
    value = "users/{id}/departments/{departmentCode}/roles"
   )
   @Operation(
     summary = "Remove roles from user",
-    description = "This Permission is required: igrp.user.manage",
+    description = "This Permission is required: igrp.users.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -152,13 +152,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}/roles"
   )
   @Operation(
     summary = "Get user roles",
-    description = "This Permission is required: igrp.user.view",
+    description = "This Permission is required: igrp.users.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -183,13 +183,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}/permissions"
   )
   @Operation(
     summary = "Get user permissions",
-    description = "This Permission is required: igrp.user.view",
+    description = "This Permission is required: igrp.users.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -214,13 +214,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_LIST)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_LIST)")
    @GetMapping(
    value = "users"
   )
   @Operation(
     summary = "Get users",
-    description = "This Permission is required: igrp.user.list",
+    description = "This Permission is required: igrp.users.list",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -279,13 +279,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_UPDATE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_UPDATE)")
    @PutMapping(
    value = "users/{id}"
   )
   @Operation(
     summary = "Update user",
-    description = "This Permission is required: igrp.user.update",
+    description = "This Permission is required: igrp.users.update",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -340,13 +340,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_CREATE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_CREATE)")
    @PostMapping(
    value = "users/invite"
   )
   @Operation(
     summary = "Invite user",
-    description = "This Permission is required: igrp.user.create",
+    description = "This Permission is required: igrp.users.create",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -371,13 +371,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @DeleteMapping(
    value = "users/invite/{id}"
   )
   @Operation(
     summary = "Cancel user invitation",
-    description = "This Permission is required: igrp.user.manage",
+    description = "This Permission is required: igrp.users.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -402,13 +402,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @PutMapping(
    value = "users/invite/{id}"
   )
   @Operation(
     summary = "Resend user invitation",
-    description = "This Permission is required: igrp.user.manage",
+    description = "This Permission is required: igrp.users.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -433,13 +433,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @PutMapping(
    value = "users/{id}/status"
   )
   @Operation(
     summary = "Update user status",
-    description = "This Permission is required: igrp.user.manage",
+    description = "This Permission is required: igrp.users.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -645,13 +645,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}/applications"
   )
   @Operation(
     summary = "Get user applications",
-    description = "This Permission is required: igrp.user.view",
+    description = "This Permission is required: igrp.users.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -677,13 +677,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}/applications/{applicationCode}/menus"
   )
   @Operation(
     summary = "Get user application menus",
-    description = "This Permission is required: igrp.user.view",
+    description = "This Permission is required: igrp.users.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -708,13 +708,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}/departments"
   )
   @Operation(
     summary = "Get user departments",
-    description = "This Permission is required: igrp.user.view",
+    description = "This Permission is required: igrp.users.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -739,13 +739,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}/departments/{departmentCode}/roles"
   )
   @Operation(
     summary = "Get user department roles",
-    description = "This Permission is required: igrp.user.view",
+    description = "This Permission is required: igrp.users.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -923,13 +923,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @GetMapping(
    value = "users/invite"
   )
   @Operation(
     summary = "Get user invitations",
-    description = "This Permission is required: igrp.user.manage",
+    description = "This Permission is required: igrp.users.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -1044,13 +1044,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @GetMapping(
    value = "users/{id}/roles/active"
   )
   @Operation(
     summary = "Get active user role",
-    description = "This Permission is required: igrp.user.manage",
+    description = "This Permission is required: igrp.users.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -1105,13 +1105,13 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @PostMapping(
    value = "users/{id}/roles/active"
   )
   @Operation(
     summary = "Set active user role",
-    description = "This Permission is required: igrp.user.manage",
+    description = "This Permission is required: igrp.users.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",

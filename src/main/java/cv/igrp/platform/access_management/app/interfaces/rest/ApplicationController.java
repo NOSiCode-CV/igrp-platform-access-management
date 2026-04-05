@@ -39,13 +39,13 @@ public class ApplicationController {
           this.queryBus = queryBus;
           this.commandBus = commandBus;
   }
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_CREATE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_CREATE)")
    @PostMapping(
    value = "applications"
   )
   @Operation(
     summary = "Create application",
-    description = "This Permission is required: igrp.application.create",
+    description = "This Permission is required: igrp.applications.create",
     responses = {
       @ApiResponse(
           responseCode = "201",
@@ -71,13 +71,13 @@ public class ApplicationController {
        return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_LIST)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_LIST)")
    @GetMapping(
    value = "applications"
   )
   @Operation(
     summary = "Get applications",
-    description = "This Permission is required: igrp.application.list",
+    description = "This Permission is required: igrp.applications.list",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -107,13 +107,13 @@ public class ApplicationController {
       return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_VIEW)")
    @GetMapping(
    value = "applications/{id}"
   )
   @Operation(
     summary = "Get application by id",
-    description = "This Permission is required: igrp.application.view",
+    description = "This Permission is required: igrp.applications.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -139,13 +139,13 @@ public class ApplicationController {
       return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_UPDATE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_UPDATE)")
    @PutMapping(
    value = "applications/{code}"
   )
   @Operation(
     summary = "Update application",
-    description = "This Permission is required: igrp.application.update",
+    description = "This Permission is required: igrp.applications.update",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -171,13 +171,13 @@ public class ApplicationController {
        return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_DELETE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_DELETE)")
    @DeleteMapping(
    value = "applications/{code}"
   )
   @Operation(
     summary = "Delete application",
-    description = "This Permission is required: igrp.application.delete",
+    description = "This Permission is required: igrp.applications.delete",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -234,13 +234,13 @@ public class ApplicationController {
       return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_UPDATE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_UPDATE)")
    @PostMapping(
    value = "/applications/{code}/custom-fields"
   )
   @Operation(
     summary = "Add application custom fields",
-    description = "This Permission is required: igrp.application.update",
+    description = "This Permission is required: igrp.applications.update",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -266,13 +266,13 @@ public class ApplicationController {
        return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_UPDATE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_UPDATE)")
    @DeleteMapping(
    value = "/applications/{code}/custom-fields"
   )
   @Operation(
     summary = "Remove application custom fields",
-    description = "This Permission is required: igrp.application.update",
+    description = "This Permission is required: igrp.applications.update",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -298,13 +298,13 @@ public class ApplicationController {
        return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_VIEW)")
    @GetMapping(
    value = "/applications/{code}/custom-fields"
   )
   @Operation(
     summary = "Get application custom fields",
-    description = "This Permission is required: igrp.application.view",
+    description = "This Permission is required: igrp.applications.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -330,13 +330,13 @@ public class ApplicationController {
       return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_VIEW)")
    @GetMapping(
    value = "/applications/by-code/{code}"
   )
   @Operation(
     summary = "Get application by code",
-    description = "This Permission is required: igrp.application.view",
+    description = "This Permission is required: igrp.applications.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -362,13 +362,13 @@ public class ApplicationController {
       return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_MANAGE)")
    @PostMapping(
    value = "/applications/{applicationCode}/menus"
   )
   @Operation(
     summary = "Create menu",
-    description = "This Permission is required: igrp.application.manage",
+    description = "This Permission is required: igrp.applications.manage",
     responses = {
       @ApiResponse(
           responseCode = "201",
@@ -394,13 +394,13 @@ public class ApplicationController {
        return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_MANAGE)")
    @PutMapping(
    value = "/applications/{applicationCode}/menus/{menuCode}"
   )
   @Operation(
     summary = "Update menu",
-    description = "This Permission is required: igrp.application.manage",
+    description = "This Permission is required: igrp.applications.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -426,13 +426,13 @@ public class ApplicationController {
        return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_DELETE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_DELETE)")
    @DeleteMapping(
    value = "/applications/{applicationCode}/menus/{menuCode}"
   )
   @Operation(
     summary = "Delete menu",
-    description = "This Permission is required: igrp.application.delete",
+    description = "This Permission is required: igrp.applications.delete",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -458,13 +458,13 @@ public class ApplicationController {
        return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_VIEW)")
    @GetMapping(
    value = "/applications/{code}/menus"
   )
   @Operation(
     summary = "Get application menus",
-    description = "This Permission is required: igrp.application.view",
+    description = "This Permission is required: igrp.applications.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -490,13 +490,13 @@ public class ApplicationController {
       return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_MANAGE)")
    @PostMapping(
    value = "/applications/{applicationCode}/menus/{menuCode}/roles"
   )
   @Operation(
     summary = "Add roles to menu",
-    description = "This Permission is required: igrp.application.manage",
+    description = "This Permission is required: igrp.applications.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -522,13 +522,13 @@ public class ApplicationController {
        return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_MANAGE)")
    @DeleteMapping(
    value = "/applications/{applicationCode}/menus/{menuCode}/roles"
   )
   @Operation(
     summary = "Remove roles from menu",
-    description = "This Permission is required: igrp.application.manage",
+    description = "This Permission is required: igrp.applications.manage",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -554,13 +554,13 @@ public class ApplicationController {
        return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_MANAGE)")
    @PostMapping(
    value = "applications/{code}/resources"
   )
   @Operation(
     summary = "Link resource to application",
-    description = "This Permission is required: igrp.application.manage",
+    description = "This Permission is required: igrp.applications.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",
@@ -586,13 +586,13 @@ public class ApplicationController {
        return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_MANAGE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_MANAGE)")
    @DeleteMapping(
    value = "applications/{code}/resources"
   )
   @Operation(
     summary = "Unlink resource from application",
-    description = "This Permission is required: igrp.application.manage",
+    description = "This Permission is required: igrp.applications.manage",
     responses = {
       @ApiResponse(
           responseCode = "204",

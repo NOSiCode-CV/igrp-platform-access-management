@@ -47,7 +47,7 @@ public class GetFavoriteApplicationsQueryHandler implements QueryHandler<GetFavo
 
         LOGGER.info("Getting favorite applications for user: {}", currentUserSub);
 
-        var user = userEntityRepository.findByExternalId(currentUserSub).orElseThrow(
+        var user = userEntityRepository.findByExternalIdWithRolesAndPermissions(currentUserSub).orElseThrow(
                 () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
         );
 

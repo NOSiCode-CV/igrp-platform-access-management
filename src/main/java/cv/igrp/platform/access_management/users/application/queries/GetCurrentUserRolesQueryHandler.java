@@ -75,7 +75,7 @@ public class GetCurrentUserRolesQueryHandler implements QueryHandler<GetCurrentU
 
         LOGGER.info("Fetching roles for user external ID={}", id);
 
-        IGRPUserEntity user = userRepository.findByExternalId(id)
+        IGRPUserEntity user = userRepository.findByExternalIdWithRolesAndPermissions(id)
                 .orElseThrow(() -> {
                     LOGGER.warn("User not found with external ID ={}", id);
                     return IgrpResponseStatusException.of(

@@ -11,16 +11,22 @@ import org.springframework.data.repository.history.RevisionRepository;
 
 @Repository
 public interface IGRPUserEntityRepository extends
-    JpaRepository<IGRPUserEntity, Integer>,
-    JpaSpecificationExecutor<IGRPUserEntity>,
-    RevisionRepository<IGRPUserEntity, Integer, Integer>
-{
+        JpaRepository<IGRPUserEntity, Integer>,
+        JpaSpecificationExecutor<IGRPUserEntity>,
+        RevisionRepository<IGRPUserEntity, Integer, Integer> {
 
     @Query("""
-        select u from IGRPUserEntity u where u.externalId = :externalId and u.status != 'DELETED'
-    """)
-    Optional<IGRPUserEntity> findByExternalId(String externalId);
+                select u from IGRPUserEntity u
+                left join fetch u.roles r
+                left join fetch r.permissions p
+                where u.externalId = :externalId and u.status != 'DELETED'
+            """)
+    Optional<IGRPUserEntity> findByExternalIdWithRolesAndPermissions(String externalId);
 
+    @Query("""
+                select u from IGRPUserEntity u where u.username = :username and u.status != 'DELETED'
+            """)
+    Optional<IGRPUserEntity> findByUsername(String username);
 
     @Query("""
         select case when count(u) > 0 then true else false end from IGRPUserEntity u where u.username = :username and u.status != 'DELETED'
