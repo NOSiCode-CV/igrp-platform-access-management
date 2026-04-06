@@ -78,7 +78,7 @@ build-jvm-arm64:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
   #  - docker build --platform linux/arm64 -t $IMAGE_NAME_FULL:arm64 --push --output=type=image,name="$IMAGE_NAME_FULL:arm64",push=true .
-    - docker build -f Dockerfile --platform linux/arm64 -t "$IMAGE_NAME_FULL-jvm:arm64" -t "$IMAGE_NAME_FULL-jvm:arm64-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push,name="$IMAGE_NAME_FULL-jvm:arm64" .
+    - docker build -f Dockerfile --platform linux/arm64 -t "$IMAGE_NAME_FULL-jvm:arm64" -t "$IMAGE_NAME_FULL-jvm:arm64-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-jvm:arm64",push=true .
   tags:
     - arm64
   only:
@@ -91,7 +91,7 @@ build-jvm-amd64:
     - docker buildx create --use --name amd64builder
     - docker buildx inspect --bootstrap
   #  - docker build --platform linux/amd64 -t $IMAGE_NAME_FULL:amd64 --push --output=type=image,name="$IMAGE_NAME_FULL:amd64",push=true .
-    - docker buildx build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_FULL-jvm:amd64" -t "$IMAGE_NAME_FULL-jvm:amd64-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push,name="$IMAGE_NAME_FULL-jvm:amd64" .
+    - docker build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_FULL-jvm:amd64" -t "$IMAGE_NAME_FULL-jvm:amd64-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push --output=type=image,name="$IMAGE_NAME_FULL-jvm:amd64",push=true .
   only:
     - deploy/base-jvm
 
@@ -112,7 +112,6 @@ create-jvm-manifest:
 # =============================================
 #  Pre-release (NOSi Registry - JVM amd64 only)
 # =============================================
-
 build-jvm-amd64-pre-release:
   image: docker:28.2.2
   services:
@@ -125,16 +124,32 @@ build-jvm-amd64-pre-release:
   script:
     - docker buildx create --use --name preleasebuilder || true
     - docker buildx inspect --bootstrap
-    - docker buildx build -f Dockerfile \
-      --platform linux/amd64 \
-      -t "$IMAGE_NAME_FULL-jvm:pre-release" \
-      -t "$IMAGE_NAME_FULL-jvm:amd64-pre-release-$PIPELINE_TAG" \
-      --no-cache --pull \
-      --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA \
-      --push \
-      --output=type=image,name="$IMAGE_NAME_FULL-jvm:pre-release",push=true .
+    - docker buildx build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_FULL-jvm:pre-release" -t "$IMAGE_NAME_FULL-jvm:amd64-pre-release-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT="$CI_COMMIT_SHA" --push .
   only:
-    - deploy/pre-release    
+    - deploy/pre-release
+
+#build-jvm-amd64-pre-release:
+#  image: docker:28.2.2
+#  services:
+#    - name: docker:28.2.2-dind
+#      command: [ "--tls=false", "--mtu=1240" ]
+#  stage: build
+#  before_script:
+#    - apk add --no-cache curl bash
+#    - docker login -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD" "$REGISTRY_URL"
+#  script:
+#    - docker buildx create --use --name preleasebuilder || true
+#    - docker buildx inspect --bootstrap
+#    - docker buildx build -f Dockerfile \
+#      --platform linux/amd64 \
+#      -t "$IMAGE_NAME_FULL-jvm:pre-release" \
+#      -t "$IMAGE_NAME_FULL-jvm:amd64-pre-release-$PIPELINE_TAG" \
+#      --no-cache --pull \
+#      --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA \
+#      --push \
+#      --output=type=image,name="$IMAGE_NAME_FULL-jvm:pre-release" .
+#  only:
+#    - deploy/pre-release    
 
 # =============================================
 #  Azure Registry
