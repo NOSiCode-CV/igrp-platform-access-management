@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import cv.igrp.platform.access_management.shared.application.constants.IdentifierType;
 
 @Component
 public class ResendUserInvitationCommandHandler implements CommandHandler<ResendUserInvitationCommand, ResponseEntity<InvitationDTO>> {
@@ -81,7 +82,7 @@ public class ResendUserInvitationCommandHandler implements CommandHandler<Resend
 
         try {
 
-            if ("EMAIL".equalsIgnoreCase(invitation.getIdentifierType())) {
+            if (IdentifierType.EMAIL.equals(invitation.getIdentifierType())) {
                 var notification = new Notification();
     
                 notification.setRecipients(List.of(invitation.getIdentifierValue()));

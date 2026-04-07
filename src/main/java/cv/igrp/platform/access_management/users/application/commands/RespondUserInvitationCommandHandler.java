@@ -93,7 +93,8 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
       }
 
       String authMethod = profile.authMethod() != null ? profile.authMethod() : "pwd";
-      String nic = profile.externalId();
+      String externalId = profile.externalId();
+      String nic = profile.nic();
       String phone = profile.phone();
       String email = profile.email();
 
@@ -120,12 +121,12 @@ public class RespondUserInvitationCommandHandler implements CommandHandler<Respo
          var updatedInvitation = invitationRepository.save(invitation);
 
          boolean isNewUser = false;
-         IGRPUserEntity user = userRepository.findByExternalId(nic).orElse(null);
+         IGRPUserEntity user = userRepository.findByExternalId(externalId).orElse(null);
          if (user == null) {
              user = new IGRPUserEntity();
              isNewUser = true;
              user.setNic(nic);
-             user.setExternalId(nic);
+             user.setExternalId(externalId);
          }
          
          if (email != null) {

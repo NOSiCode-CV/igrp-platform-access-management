@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
-
+import cv.igrp.platform.access_management.shared.application.constants.IdentifierType;
 @Component
 public class InviteUserCommandHandler implements CommandHandler<InviteUserCommand, ResponseEntity<InvitationDTO>> {
 
@@ -77,12 +77,12 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         var dto = command.getInviteuserdto();
 
-        if(dto.getIdentifierType() == null || dto.getIdentifierType().isBlank() || dto.getIdentifierValue() == null || dto.getIdentifierValue().isBlank()) {
+        if(dto.getIdentifierType() == null || dto.getIdentifierType() == IdentifierType.UNKNOWN || dto.getIdentifierValue() == null || dto.getIdentifierValue().isBlank()) {
             throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Identifier type and value are required");
         }
 
         String normalizedValue = dto.getIdentifierValue().trim();
-        if ("EMAIL".equalsIgnoreCase(dto.getIdentifierType())) {
+        if (IdentifierType.EMAIL.equals(dto.getIdentifierType())) {
             normalizedValue = normalizedValue.toLowerCase();
         }
         dto.setIdentifierValue(normalizedValue);
@@ -106,9 +106,9 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
         invitation.setIdentifierValue(dto.getIdentifierValue());
         
         Set<String> allowed = new HashSet<>();
-        if ("EMAIL".equalsIgnoreCase(dto.getIdentifierType())) allowed.add("CREDENTIALS");
-        else if ("PHONE".equalsIgnoreCase(dto.getIdentifierType())) allowed.add("CMD");
-        else if ("NIC".equalsIgnoreCase(dto.getIdentifierType())) allowed.add("CNI");
+        if (IdentifierType.EMAIL.equals(dto.getIdentifierType())) allowed.add("CREDENTIALS");
+        else if (IdentifierType.CMDCV.equals(dto.getIdentifierType())) allowed.add("CMD");
+        else if (IdentifierType.CNI.equals(dto.getIdentifierType())) allowed.add("CNI");
         invitation.setAllowedAuthMethods(allowed);
 
         invitation.setStatus(InvitationStatus.PENDING);
@@ -128,7 +128,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
         var url = userUtils.constructInvitationUrl(appCenterUrl, savedInvitation.getToken());
 
         try {
-            if ("EMAIL".equalsIgnoreCase(dto.getIdentifierType())) {
+            if (IdentifierType.EMAIL.equals(dto.getIdentifierType())) {
                 LOGGER.info("Inviting new user via email: token={}, email={}", savedInvitation.getToken(), dto.getIdentifierValue());
 
                 var notification = new Notification();
