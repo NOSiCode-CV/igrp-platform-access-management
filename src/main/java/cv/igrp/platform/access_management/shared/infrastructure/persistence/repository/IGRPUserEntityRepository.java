@@ -67,4 +67,21 @@ public interface IGRPUserEntityRepository extends
            "AND u.status != 'DELETED'")
     Set<String> findUserExternalIdsByDepartment(@Param("departmentCode") String departmentCode);
 
+    @Query("""
+        SELECT u FROM IGRPUserEntity u WHERE
+        (
+            (:externalId IS NOT NULL AND u.externalId = :externalId) OR
+            (:email IS NOT NULL AND u.email = :email) OR
+            (:nic IS NOT NULL AND u.nic = :nic) OR
+            (:phoneNumber IS NOT NULL AND u.phoneNumber = :phoneNumber)
+        )
+        AND u.status != 'DELETED'
+    """)
+    Optional<IGRPUserEntity> findByAnyIdentifier(
+            @Param("email") String email,
+            @Param("externalId") String externalId,
+            @Param("nic") String nic,
+            @Param("phoneNumber") String phoneNumber
+    );
+
 }

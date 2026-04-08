@@ -32,3 +32,14 @@ build/
 
 ### VS Code ###
 .vscode/
+
+compile_errors.log
+compile_errors_utf8.log
+run_output.txt
+app.log
+app.log2
+app.log3
+app.log4
+app.log5
+app.log6
+app.log7
