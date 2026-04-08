@@ -31,6 +31,7 @@ import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDepartmentDTO;
+import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 
 @IgrpController
 @RestController
@@ -44,10 +45,12 @@ public class UserController {
   
   private final QueryBus queryBus;
   private final CommandBus commandBus;
+  private final AuthenticationHelper authenticationHelper;
 
-  public UserController(QueryBus queryBus, CommandBus commandBus) {
+  public UserController(QueryBus queryBus, CommandBus commandBus, AuthenticationHelper authenticationHelper) {
           this.queryBus = queryBus;
           this.commandBus = commandBus;
+          this.authenticationHelper = authenticationHelper;
   }
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_VIEW)")
    @GetMapping(
@@ -338,6 +341,51 @@ public class UserController {
 
       return queryBus.handle(query);
 
+  }
+
+   @PutMapping(
+   value = "users/me"
+  )
+  @Operation(
+    summary = "Update current user",
+    description = "Update current user data (only own data)",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = IGRPUserDTO.class,
+                  type = "object")
+          )
+      ),
+      @ApiResponse(
+          responseCode = "404",
+          description = "User not found"
+      )
+    }
+  )
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<IGRPUserDTO> updateCurrentUser(@Valid @RequestBody IGRPUserDTO updateUserRequest)
+  {
+      // Get current user's external ID from JWT token
+      String userExternalId = authenticationHelper.getSub();
+      
+      // Get current user to find their internal ID
+      var getCurrentUserQuery = new GetCurrentUserQuery();
+      ResponseEntity<IGRPUserDTO> currentUserResponse = queryBus.handle(getCurrentUserQuery);
+      
+      if (!currentUserResponse.getStatusCode().is2xxSuccessful() || currentUserResponse.getBody() == null) {
+          return ResponseEntity.notFound().build();
+      }
+      
+      Integer currentUserId = currentUserResponse.getBody().getId();
+      
+      // Create update command with current user's ID
+      final var command = new UpdateUserCommand(updateUserRequest, currentUserId);
+      
+      return commandBus.send(command);
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_CREATE)")

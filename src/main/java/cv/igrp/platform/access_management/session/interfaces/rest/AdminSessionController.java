@@ -4,8 +4,16 @@ import cv.igrp.framework.stereotype.IgrpController;
 import cv.igrp.platform.access_management.session.application.dto.SessionKillRequestDTO;
 import cv.igrp.platform.access_management.session.application.dto.SessionResponseDTO;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
-import cv.igrp.platform.access_management.session.domain.service.SessionManagementService;
 import cv.igrp.platform.access_management.session.domain.service.SessionInvalidationService;
+import cv.igrp.framework.core.domain.QueryBus;
+import cv.igrp.framework.core.domain.CommandBus;
+import cv.igrp.platform.access_management.session.application.queries.ListSessionsQuery;
+import cv.igrp.platform.access_management.session.application.queries.GetUserSessionQuery;
+import cv.igrp.platform.access_management.session.application.queries.GetSessionsByRoleQuery;
+import cv.igrp.platform.access_management.session.application.queries.GetSessionsByDepartmentQuery;
+import cv.igrp.platform.access_management.session.application.commands.KillSessionCommand;
+import cv.igrp.platform.access_management.session.application.commands.KillSessionsByRoleCommand;
+import cv.igrp.platform.access_management.session.application.commands.KillSessionsByDepartmentCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -38,13 +46,16 @@ import java.util.UUID;
 public class AdminSessionController {
 
 
-    private final SessionManagementService sessionManagementService;
+    private final QueryBus queryBus;
+    private final CommandBus commandBus;
     private final SessionInvalidationService sessionInvalidationService;
 
     public AdminSessionController(
-            SessionManagementService sessionManagementService,
+            QueryBus queryBus,
+            CommandBus commandBus,
             SessionInvalidationService sessionInvalidationService) {
-        this.sessionManagementService = sessionManagementService;
+        this.queryBus = queryBus;
+        this.commandBus = commandBus;
         this.sessionInvalidationService = sessionInvalidationService;
     }
 
@@ -71,7 +82,8 @@ public class AdminSessionController {
         
         
         Pageable pageable = PageRequest.of(page, size);
-        Page<SessionResponseDTO> sessions = sessionManagementService.listSessions(status, pageable);
+        var query = new ListSessionsQuery(status, pageable);
+        Page<SessionResponseDTO> sessions = queryBus.handle(query);
         
         return ResponseEntity.ok(sessions);
     }
@@ -97,7 +109,8 @@ public class AdminSessionController {
         
         log.debug("Admin getting session for user: {}", userExternalId);
         
-        Optional<SessionResponseDTO> session = sessionManagementService.getCurrentSession(userExternalId);
+        var query = new GetUserSessionQuery(userExternalId);
+        Optional<SessionResponseDTO> session = queryBus.handle(query);
         
         return session.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.noContent().build());
@@ -124,8 +137,8 @@ public class AdminSessionController {
         
         log.info("Admin killing session: {} with reason: {}", sessionId, request.getReason());
         
-        boolean killed = sessionManagementService.killSession(
-                sessionId, request.getReason(), request.getKilledBy());
+        var command = new KillSessionCommand(sessionId, request.getReason(), request.getKilledBy());
+        boolean killed = commandBus.send(command);
         
         return killed ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
@@ -162,8 +175,8 @@ public class AdminSessionController {
                 roleCode, departmentCode, status);
         
         Pageable pageable = PageRequest.of(page, size);
-        Page<SessionResponseDTO> sessions = sessionManagementService.listSessionsByRole(
-                roleCode, departmentCode, status, pageable);
+        var query = new GetSessionsByRoleQuery(roleCode, departmentCode, status, pageable);
+        Page<SessionResponseDTO> sessions = queryBus.handle(query);
         
         return ResponseEntity.ok(sessions);
     }
@@ -192,8 +205,8 @@ public class AdminSessionController {
         log.info("Admin killing sessions for role: {} in department: {} with reason: {}", 
                 roleCode, departmentCode, request.getReason());
         
-        int killedCount = sessionManagementService.killSessionsByRole(
-                roleCode, departmentCode, request.getReason(), request.getKilledBy());
+        var command = new KillSessionsByRoleCommand(roleCode, departmentCode, request.getReason(), request.getKilledBy());
+        int killedCount = commandBus.send(command);
         
         if (killedCount == 0) {
             return ResponseEntity.notFound().build();
@@ -240,15 +253,16 @@ public class AdminSessionController {
         log.debug("Admin getting session statistics");
         
         // This could be expanded to provide more detailed statistics
+        var activeQuery = new ListSessionsQuery(SessionStatus.ACTIVE, PageRequest.of(0, 1));
+        var expiredQuery = new ListSessionsQuery(SessionStatus.EXPIRED, PageRequest.of(0, 1));
+        var closedQuery = new ListSessionsQuery(SessionStatus.CLOSED, PageRequest.of(0, 1));
+        var revokedQuery = new ListSessionsQuery(SessionStatus.REVOKED, PageRequest.of(0, 1));
+        
         var stats = new Object() {
-            public final long activeSessions = sessionManagementService.listSessions(
-                    SessionStatus.ACTIVE, PageRequest.of(0, 1)).getTotalElements();
-            public final long expiredSessions = sessionManagementService.listSessions(
-                    SessionStatus.EXPIRED, PageRequest.of(0, 1)).getTotalElements();
-            public final long closedSessions = sessionManagementService.listSessions(
-                    SessionStatus.CLOSED, PageRequest.of(0, 1)).getTotalElements();
-            public final long revokedSessions = sessionManagementService.listSessions(
-                    SessionStatus.REVOKED, PageRequest.of(0, 1)).getTotalElements();
+            public final long activeSessions = ((org.springframework.data.domain.Page<SessionResponseDTO>) queryBus.handle(activeQuery)).getTotalElements();
+            public final long expiredSessions = ((org.springframework.data.domain.Page<SessionResponseDTO>) queryBus.handle(expiredQuery)).getTotalElements();
+            public final long closedSessions = ((org.springframework.data.domain.Page<SessionResponseDTO>) queryBus.handle(closedQuery)).getTotalElements();
+            public final long revokedSessions = ((org.springframework.data.domain.Page<SessionResponseDTO>) queryBus.handle(revokedQuery)).getTotalElements();
         };
         
         return ResponseEntity.ok(stats);

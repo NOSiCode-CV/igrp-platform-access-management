@@ -1,0 +1,49 @@
+{
+  "type": "controller",
+  "module": "session",
+  "name": "SessionController",
+  "description": "User session management endpoints for self-service session operations",
+  "basePath": "/api/session",
+  "endpoints": [
+    {
+      "path": "/",
+      "method": "GET",
+      "summary": "Get current session",
+      "description": "Retrieves the current active session for the authenticated user",
+      "responses": ["200", "204"],
+      "authentication": "required"
+    },
+    {
+      "path": "/init",
+      "method": "POST",
+      "summary": "Initialize session",
+      "description": "Creates a new session for the authenticated user, closing any existing active session",
+      "responses": ["201", "403", "404"],
+      "authentication": "required"
+    },
+    {
+      "path": "/refresh",
+      "method": "POST",
+      "summary": "Refresh session",
+      "description": "Extends the expiration time of the current active session",
+      "responses": ["200", "404"],
+      "authentication": "required"
+    },
+    {
+      "path": "/close",
+      "method": "POST",
+      "summary": "Close session",
+      "description": "Closes the current active session for the authenticated user",
+      "responses": ["204", "404"],
+      "authentication": "required"
+    },
+    {
+      "path": "/rotate",
+      "method": "POST",
+      "summary": "Rotate session",
+      "description": "Closes the current session and creates a new one (Session fixation protection)",
+      "responses": ["200", "404"],
+      "authentication": "required"
+    }
+  ]
+}
