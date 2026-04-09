@@ -4,8 +4,16 @@ import cv.igrp.framework.stereotype.IgrpController;
 import cv.igrp.platform.access_management.session.application.dto.SessionKillRequestDTO;
 import cv.igrp.platform.access_management.session.application.dto.SessionResponseDTO;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
-import cv.igrp.platform.access_management.session.domain.service.SessionManagementService;
 import cv.igrp.platform.access_management.session.domain.service.SessionInvalidationService;
+import cv.igrp.framework.core.domain.QueryBus;
+import cv.igrp.framework.core.domain.CommandBus;
+import cv.igrp.platform.access_management.session.application.queries.ListSessionsQuery;
+import cv.igrp.platform.access_management.session.application.queries.GetUserSessionQuery;
+import cv.igrp.platform.access_management.session.application.queries.GetSessionsByRoleQuery;
+import cv.igrp.platform.access_management.session.application.queries.GetSessionsByDepartmentQuery;
+import cv.igrp.platform.access_management.session.application.commands.KillSessionCommand;
+import cv.igrp.platform.access_management.session.application.commands.KillSessionsByRoleCommand;
+import cv.igrp.platform.access_management.session.application.commands.KillSessionsByDepartmentCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -20,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import cv.igrp.framework.auth.generated.PermissionsRegistry;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -38,13 +47,16 @@ import java.util.UUID;
 public class AdminSessionController {
 
 
-    private final SessionManagementService sessionManagementService;
+    private final QueryBus queryBus;
+    private final CommandBus commandBus;
     private final SessionInvalidationService sessionInvalidationService;
 
     public AdminSessionController(
-            SessionManagementService sessionManagementService,
+            QueryBus queryBus,
+            CommandBus commandBus,
             SessionInvalidationService sessionInvalidationService) {
-        this.sessionManagementService = sessionManagementService;
+        this.queryBus = queryBus;
+        this.commandBus = commandBus;
         this.sessionInvalidationService = sessionInvalidationService;
     }
 
@@ -60,7 +72,7 @@ public class AdminSessionController {
         content = @Content(schema = @Schema(implementation = Page.class))
     )
     
-    @PreAuthorize("hasAuthority('igrp.session.admin')")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Page<SessionResponseDTO>> listSessions(
             @Parameter(description = "Session status filter") 
             @RequestParam(required = false) SessionStatus status,
@@ -71,7 +83,8 @@ public class AdminSessionController {
         
         
         Pageable pageable = PageRequest.of(page, size);
-        Page<SessionResponseDTO> sessions = sessionManagementService.listSessions(status, pageable);
+        var query = new ListSessionsQuery(status, pageable);
+        Page<SessionResponseDTO> sessions = queryBus.handle(query);
         
         return ResponseEntity.ok(sessions);
     }
@@ -90,14 +103,15 @@ public class AdminSessionController {
         responseCode = "204",
         description = "No active session found for user"
     )
-    @PreAuthorize("hasAuthority('igrp.session.admin')")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<SessionResponseDTO> getUserSession(
             @Parameter(description = "User external ID") 
             @PathVariable String userExternalId) {
         
         log.debug("Admin getting session for user: {}", userExternalId);
         
-        Optional<SessionResponseDTO> session = sessionManagementService.getCurrentSession(userExternalId);
+        var query = new GetUserSessionQuery(userExternalId);
+        Optional<SessionResponseDTO> session = queryBus.handle(query);
         
         return session.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.noContent().build());
@@ -116,7 +130,7 @@ public class AdminSessionController {
         responseCode = "404",
         description = "Session not found"
     )
-    @PreAuthorize("hasAuthority('igrp.session.admin')")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Void> killSession(
             @Parameter(description = "Session ID") 
             @PathVariable UUID sessionId,
@@ -124,8 +138,8 @@ public class AdminSessionController {
         
         log.info("Admin killing session: {} with reason: {}", sessionId, request.getReason());
         
-        boolean killed = sessionManagementService.killSession(
-                sessionId, request.getReason(), request.getKilledBy());
+        var command = new KillSessionCommand(sessionId, request.getReason(), request.getKilledBy());
+        boolean killed = commandBus.send(command);
         
         return killed ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
@@ -145,7 +159,7 @@ public class AdminSessionController {
         responseCode = "204",
         description = "No sessions found for role"
     )
-    @PreAuthorize("hasAuthority('igrp.session.admin')")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Page<SessionResponseDTO>> listSessionsByRole(
             @Parameter(description = "Role code") 
             @PathVariable String roleCode,
@@ -162,8 +176,8 @@ public class AdminSessionController {
                 roleCode, departmentCode, status);
         
         Pageable pageable = PageRequest.of(page, size);
-        Page<SessionResponseDTO> sessions = sessionManagementService.listSessionsByRole(
-                roleCode, departmentCode, status, pageable);
+        var query = new GetSessionsByRoleQuery(roleCode, departmentCode, status, pageable);
+        Page<SessionResponseDTO> sessions = queryBus.handle(query);
         
         return ResponseEntity.ok(sessions);
     }
@@ -181,7 +195,7 @@ public class AdminSessionController {
         responseCode = "404",
         description = "No sessions found for role"
     )
-    @PreAuthorize("hasAuthority('igrp.session.admin')")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Void> killSessionsByRole(
             @Parameter(description = "Role code") 
             @PathVariable String roleCode,
@@ -192,8 +206,8 @@ public class AdminSessionController {
         log.info("Admin killing sessions for role: {} in department: {} with reason: {}", 
                 roleCode, departmentCode, request.getReason());
         
-        int killedCount = sessionManagementService.killSessionsByRole(
-                roleCode, departmentCode, request.getReason(), request.getKilledBy());
+        var command = new KillSessionsByRoleCommand(roleCode, departmentCode, request.getReason(), request.getKilledBy());
+        int killedCount = commandBus.send(command);
         
         if (killedCount == 0) {
             return ResponseEntity.notFound().build();
@@ -211,7 +225,7 @@ public class AdminSessionController {
         responseCode = "204",
         description = "Sessions killed successfully"
     )
-    @PreAuthorize("hasAuthority('igrp.session.admin')")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Void> killSessionsByDepartment(
             @Parameter(description = "Department code") 
             @PathVariable String departmentCode,
@@ -235,20 +249,21 @@ public class AdminSessionController {
         responseCode = "200",
         description = "Statistics retrieved successfully"
     )
-    @PreAuthorize("hasAuthority('igrp.session.admin')")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Object> getSessionStatistics() {
         log.debug("Admin getting session statistics");
         
         // This could be expanded to provide more detailed statistics
+        var activeQuery = new ListSessionsQuery(SessionStatus.ACTIVE, PageRequest.of(0, 1));
+        var expiredQuery = new ListSessionsQuery(SessionStatus.EXPIRED, PageRequest.of(0, 1));
+        var closedQuery = new ListSessionsQuery(SessionStatus.CLOSED, PageRequest.of(0, 1));
+        var revokedQuery = new ListSessionsQuery(SessionStatus.REVOKED, PageRequest.of(0, 1));
+        
         var stats = new Object() {
-            public final long activeSessions = sessionManagementService.listSessions(
-                    SessionStatus.ACTIVE, PageRequest.of(0, 1)).getTotalElements();
-            public final long expiredSessions = sessionManagementService.listSessions(
-                    SessionStatus.EXPIRED, PageRequest.of(0, 1)).getTotalElements();
-            public final long closedSessions = sessionManagementService.listSessions(
-                    SessionStatus.CLOSED, PageRequest.of(0, 1)).getTotalElements();
-            public final long revokedSessions = sessionManagementService.listSessions(
-                    SessionStatus.REVOKED, PageRequest.of(0, 1)).getTotalElements();
+            public final long activeSessions = ((org.springframework.data.domain.Page<SessionResponseDTO>) queryBus.handle(activeQuery)).getTotalElements();
+            public final long expiredSessions = ((org.springframework.data.domain.Page<SessionResponseDTO>) queryBus.handle(expiredQuery)).getTotalElements();
+            public final long closedSessions = ((org.springframework.data.domain.Page<SessionResponseDTO>) queryBus.handle(closedQuery)).getTotalElements();
+            public final long revokedSessions = ((org.springframework.data.domain.Page<SessionResponseDTO>) queryBus.handle(revokedQuery)).getTotalElements();
         };
         
         return ResponseEntity.ok(stats);

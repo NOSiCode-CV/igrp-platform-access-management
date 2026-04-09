@@ -35,3 +35,8 @@ build/
 
 app.log*
 compile_error*
+run_output.txt
+
+compile_errors*
+
+implementation_plan.md

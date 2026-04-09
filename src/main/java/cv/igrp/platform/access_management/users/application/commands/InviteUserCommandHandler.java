@@ -35,10 +35,10 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
     @Value("${igrp.mail.invite.template}")
     private String emailTemplate = """
             Dear {{user}}, your were invited to the iGRP platform
-            
+
             Please click on the link below to accept the invitation:
             {{url}}
-            
+
             Best Regards.
             iGRP
             """;
@@ -55,13 +55,12 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
     private final UserUtils userUtils;
 
     public InviteUserCommandHandler(NotificationAdapter<NotificationResult> notificationAdapter,
-                                    IGRPUserEntityRepository userRepository,
-                                    RoleEntityRepository roleRepository,
-                                    DepartmentEntityRepository departmentRepository,
-                                    InvitationEntityRepository invitationRepository,
-                                    InvitationMapper invitationMapper,
-                                    UserUtils userUtils
-    ) {
+            IGRPUserEntityRepository userRepository,
+            RoleEntityRepository roleRepository,
+            DepartmentEntityRepository departmentRepository,
+            InvitationEntityRepository invitationRepository,
+            InvitationMapper invitationMapper,
+            UserUtils userUtils) {
         this.notificationAdapter = notificationAdapter;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
@@ -91,20 +90,21 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         // Cancel any previous pending invitations
         var previousInvitationOpt = invitationRepository.findByIdentifierTypeAndIdentifierValueAndStatus(
-            dto.getIdentifierType(), dto.getIdentifierValue(), InvitationStatus.PENDING);
+                dto.getIdentifierType(), dto.getIdentifierValue(), InvitationStatus.PENDING);
 
         if (previousInvitationOpt.isPresent()) {
             var previousInvitation = previousInvitationOpt.get();
             previousInvitation.setStatus(InvitationStatus.CANCELED);
             invitationRepository.save(previousInvitation);
-            LOGGER.info("Previous invitation {} was cancelled for user {}.", previousInvitation.getId(), dto.getIdentifierValue());
+            LOGGER.info("Previous invitation {} was cancelled for user {}.", previousInvitation.getId(),
+                    dto.getIdentifierValue());
         }
 
         // Create new invitation
         InvitationEntity invitation = new InvitationEntity();
         invitation.setIdentifierType(dto.getIdentifierType());
         invitation.setIdentifierValue(dto.getIdentifierValue());
-        
+
         Set<String> allowed = new HashSet<>();
         if (IdentifierType.EMAIL.equals(dto.getIdentifierType())) allowed.add("CREDENTIALS");
         else if (IdentifierType.CMDCV.equals(dto.getIdentifierType())) allowed.add("CMD");
@@ -115,7 +115,8 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
         invitation.setToken(UUID.randomUUID().toString());
 
         Set<RoleEntity> roles = new HashSet<>();
-        var department = departmentRepository.findByCodeAndStatusNotDeleted(command.getInviteuserdto().getDepartmentCode());
+        var department = departmentRepository
+                .findByCodeAndStatusNotDeleted(command.getInviteuserdto().getDepartmentCode());
 
         for (var roleCode : command.getInviteuserdto().getRoles()) {
             var role = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, roleCode);
@@ -123,7 +124,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
         }
 
         invitation.setRoles(roles);
-        var savedInvitation = invitationRepository.save(invitation);
+        var savedInvitation = invitationRepository.saveAndFlush(invitation);
 
         var url = userUtils.constructInvitationUrl(appCenterUrl, savedInvitation.getToken());
 
@@ -134,15 +135,18 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
                 var notification = new Notification();
                 notification.setRecipients(List.of(dto.getIdentifierValue()));
                 notification.setSubject("iGRP User Invitation");
-                notification.setContent(emailTemplate.replace("{{user}}", dto.getIdentifierValue()).replace("{{url}}", url));
-                notification.setMetadata(Map.of("invitationToken", savedInvitation.getToken(), "email", dto.getIdentifierValue()));
+                notification.setContent(
+                        emailTemplate.replace("{{user}}", dto.getIdentifierValue()).replace("{{url}}", url));
+                notification.setMetadata(
+                        Map.of("invitationToken", savedInvitation.getToken(), "email", dto.getIdentifierValue()));
 
                 notificationAdapter.send(notification);
+            } catch (Exception e) {
+                LOGGER.error("Invitation Email failed", e);
             }
-        } catch (Exception e) {
-            LOGGER.error("Invitation Email failed", e);
         }
 
+        var url = userUtils.constructInvitationUrl(appCenterUrl, savedInvitation.getToken());
         LOGGER.info("User invited successfully with token={}", savedInvitation.getToken());
         return ResponseEntity.ok(invitationMapper.toDtoWithUrl(savedInvitation, url));
 
