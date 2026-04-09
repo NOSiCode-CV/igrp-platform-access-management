@@ -58,7 +58,7 @@ public class UserIdentityResolutionService {
 
         // Not found — create. Authorised because the user accepted an invitation.
         IGRPUserEntity newUser = new IGRPUserEntity();
-        newUser.setUsername(normExtId != null ? normExtId : normEmail);
+        newUser.setUsername(bestUsername(normExtId, normEmail));
         newUser.setExternalId(normExtId);
         newUser.setEmail(normEmail);
         newUser.setNic(normNic);
@@ -173,6 +173,21 @@ public class UserIdentityResolutionService {
             return userRepository.save(user);
         }
         return user;
+    }
+
+    /**
+     * Choose the best username for a new user.
+     * Keycloak sub is a UUID — use email instead.
+     * Autentika sub is email or NIC — use it directly.
+     */
+    private static String bestUsername(String normExtId, String normEmail) {
+        if (normExtId != null && normExtId.matches(
+                "[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}")) {
+            // Keycloak UUID sub — prefer email as human-readable username
+            return normEmail != null ? normEmail : normExtId;
+        }
+        // Autentika: sub is already email or NIC
+        return normExtId != null ? normExtId : normEmail;
     }
 
     private static String normalize(String value) {
