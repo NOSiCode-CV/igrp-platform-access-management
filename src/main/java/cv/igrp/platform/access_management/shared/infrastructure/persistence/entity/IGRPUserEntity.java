@@ -35,14 +35,6 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     @Column(name="username", unique = true, nullable = false)
     private String username;
 
-    public String getNic() {
-        return this.username;
-    }
-
-    public void setNic(String nic) {
-        this.username = nic;
-    }
-
     @Column(name="email")
     private String email;
 
