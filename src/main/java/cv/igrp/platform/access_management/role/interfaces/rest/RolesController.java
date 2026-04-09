@@ -34,13 +34,13 @@ public class RolesController {
           this.queryBus = queryBus;
           
   }
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_VIEW)")
    @GetMapping(
    value = "roles/by-code/{code}"
   )
   @Operation(
     summary = "Get roles by name",
-    description = "This Permission is required: igrp.department.view",
+    description = "This Permission is required: igrp.departments.view",
     responses = {
       @ApiResponse(
           responseCode = "200",
@@ -66,13 +66,13 @@ public class RolesController {
       return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENT_VIEW)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_VIEW)")
    @GetMapping(
    value = "roles/{id}"
   )
   @Operation(
     summary = "Get role by id",
-    description = "This Permission is required: igrp.department.view",
+    description = "This Permission is required: igrp.departments.view",
     responses = {
       @ApiResponse(
           responseCode = "200",

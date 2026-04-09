@@ -47,7 +47,7 @@ public class GetCurrentUserPermissionsQueryHandler implements QueryHandler<GetCu
         String externalId = authenticationHelper.getSub();
         LOGGER.info("Fetching permissions for user external ID={}", externalId);
 
-        IGRPUserEntity user = userRepository.findByExternalId(externalId)
+        IGRPUserEntity user = userRepository.findByExternalIdWithRolesAndPermissions(externalId)
                 .orElseThrow(() -> {
                     LOGGER.warn("User not found with external ID ={}", externalId);
                     return IgrpResponseStatusException.of(
@@ -58,17 +58,22 @@ public class GetCurrentUserPermissionsQueryHandler implements QueryHandler<GetCu
 
         List<RoleEntity> roles = Optional.ofNullable(user.getRoles()).orElse(Collections.emptyList());
 
+        LOGGER.info("User {} has {} roles loaded", externalId, roles.size());
+        roles.forEach(role -> LOGGER.info("Role: {} (status: {})", role.getCode(), role.getStatus()));
+
         String roleCode = query.getRoleCode();
         if (roleCode != null && !roleCode.isBlank()) {
             roles = roles.stream()
                     .filter(r -> Objects.equals(r.getCode(), roleCode))
                     .toList();
+            LOGGER.info("Filtered to {} roles with code: {}", roles.size(), roleCode);
         }
 
         Set<PermissionEntity> permissions = roles.stream()
                 .filter(Objects::nonNull)
                 .map(RoleEntity::getPermissions)
                 .filter(Objects::nonNull)
+                .peek(perms -> LOGGER.info("Role has {} permissions", perms.size()))
                 .flatMap(Collection::stream)
                 .filter(p -> Objects.equals(p.getStatus(), Status.ACTIVE))
                 .collect(Collectors.toCollection(LinkedHashSet::new));

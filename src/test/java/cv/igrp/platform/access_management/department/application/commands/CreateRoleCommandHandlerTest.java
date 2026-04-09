@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.department.application.commands;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
@@ -41,9 +40,6 @@ public class CreateRoleCommandHandlerTest {
     private RoleEntityRepository roleRepository;
     @Mock
     private RoleMapper roleMapper;
-    @Mock
-    @SuppressWarnings("unused")
-    private IAdapter iAdapter;
 
     @Test
     void itShouldStartContext() {

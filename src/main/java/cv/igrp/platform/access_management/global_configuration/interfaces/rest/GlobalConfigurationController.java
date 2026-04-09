@@ -36,13 +36,13 @@ public class GlobalConfigurationController {
           this.queryBus = queryBus;
           this.commandBus = commandBus;
   }
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATION_CUSTOMIZE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_CUSTOMIZE)")
    @PostMapping(
    value = "global-configuration"
   )
   @Operation(
     summary = "Set global configuration",
-    description = "This Permission is required: igrp.application.customize",
+    description = "This Permission is required: igrp.applications.customize",
     responses = {
       @ApiResponse(
           responseCode = "200",

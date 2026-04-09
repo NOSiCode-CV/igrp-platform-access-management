@@ -2,8 +2,6 @@ package cv.igrp.platform.access_management.shared.infrastructure.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import cv.igrp.framework.auth.core.adapter.IAdapter;
-import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -41,12 +39,10 @@ public class ConfigurationService {
 
     private final JdbcTemplate jdbcTemplate;
     private final ObjectMapper objectMapper;
-    private final IAdapter adapter;
 
-    public ConfigurationService(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper, IAdapter adapter) {
+    public ConfigurationService(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
-        this.adapter = adapter;
     }
 
     @Transactional
@@ -60,18 +56,8 @@ public class ConfigurationService {
             throw new RuntimeException("No superadmin user external ID provided. Please set IGRP_SUPERADMIN_USER_EXTERNAL_ID in your environment variables.");
         }
 
-        LOGGER.info("[Startup Config] Validating superadmin user...");
-
-        var superadmin = adapter.resolveUser(SUPER_ADMIN_EMAIL).orElseThrow(
-                () -> IgrpResponseStatusException.notFound("Superadmin User with email <" + SUPER_ADMIN_EMAIL + "> does not exist in the identity provider. Check if the email is correct or check connection with IAM provider.")
-        );
-
-        if(!Objects.equals(superadmin.getId(), SUPER_ADMIN_EXTERNAL_ID)) {
-            throw IgrpResponseStatusException.notFound("Superadmin User with ID <" + SUPER_ADMIN_EXTERNAL_ID + "> does not exist in the identity provider. Check if the ID is correct or check connection with IAM provider.");
-        }
-
         try {
-            // 1. Bulk existence checks in database
+            // 1. Check existence in database
             boolean superAdminExists = exists("SELECT 1 FROM t_user WHERE external_id='%s' LIMIT 1".formatted(SUPER_ADMIN_EXTERNAL_ID));
             boolean departmentExists = exists("SELECT 1 FROM t_department WHERE code='%s' LIMIT 1".formatted(IGRP_DEPARTMENT));
             boolean appExists = exists("SELECT 1 FROM t_application WHERE type='SYSTEM' LIMIT 1");
@@ -79,15 +65,9 @@ public class ConfigurationService {
             boolean resourceExists = exists("SELECT 1 FROM t_resource WHERE name='%s' LIMIT 1".formatted(IGRP_RESOURCE));
             boolean roleExists = exists("SELECT 1 FROM t_role WHERE code='%s' LIMIT 1".formatted(SUPER_ADMIN_ROLE));
 
-            // 2. Check provider existence before attempting sync
-            boolean departmentExistsInProvider = checkAndCreateDepartment(departmentExists);
-            //boolean appExistsInProvider = checkAndCreateApplication(appExists, departmentExistsInProvider);
-            //boolean permissionExistsInProvider = checkAndCreatePermission(permissionExists, appExists);
-            boolean roleExistsInProvider = checkAndCreateRole(roleExists, departmentExistsInProvider, true);
-
-            // 3. Create missing entities in optimized order (only if provider sync was successful)
+            // 2. Create missing entities in optimized order
             Long departmentId = departmentExists ? getId("SELECT id FROM t_department WHERE code='%s'".formatted(IGRP_DEPARTMENT)) :
-                    (departmentExistsInProvider ? createDefaultDepartmentInDB() : null);
+                    createDefaultDepartmentInDB();
 
             Long appId = appExists ? getId("SELECT id FROM t_application WHERE code='%s'".formatted(IGRP_APP)) :
                     createDefaultAppInDB(departmentId);
@@ -99,17 +79,17 @@ public class ConfigurationService {
                     createDefaultResourceInDB(permissionId, appId, departmentId);
 
             Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE code='%s'".formatted(SUPER_ADMIN_ROLE)) :
-                    (roleExistsInProvider ? createDefaultRoleInDB(departmentId, permissionId, appId) : null);
+                    createDefaultRoleInDB(departmentId, permissionId, appId);
 
             Long userId = superAdminExists ? getId("SELECT id FROM t_user WHERE external_id='%s'".formatted(SUPER_ADMIN_EXTERNAL_ID)) :
                     createSuperAdminUserInDB();
 
-            // 4. Assign role to superadmin user (only if all previous steps succeeded)
-            if (roleExistsInProvider && userId != null && roleId != null) {
+            // 3. Assign role to superadmin user in DB
+            if (userId != null && roleId != null) {
                 assignRoleToSuperAdminUserInDB(roleId, userId);
             }
 
-            // 5. Create default menus (independent of provider sync)
+            // 4. Create default menus
             if (appId != null) {
                 createDefaultMenus(appId, roleId);
             }
@@ -123,122 +103,7 @@ public class ConfigurationService {
     }
 
     // =====================================================
-    // Provider Existence Checks and Creation Methods
-    // =====================================================
-
-    /**
-     * Checks if department exists in provider, creates if it doesn't exist in DB
-     */
-    private boolean checkAndCreateDepartment(boolean departmentExistsInDB) {
-        try {
-            boolean existsInProvider = adapter.departmentExists(IGRP_DEPARTMENT);
-
-            if (!departmentExistsInDB && !existsInProvider) {
-                LOGGER.info("[Startup Config] Creating department in provider: {}", IGRP_DEPARTMENT);
-                adapter.createDepartment(IGRP_DEPARTMENT, null);
-                return true;
-            } else if (existsInProvider) {
-                LOGGER.info("[Startup Config] Department exists in provider: {}", IGRP_DEPARTMENT);
-                return true;
-            } else {
-                LOGGER.warn("[Startup Config] Department exists in DB but not in provider: {}", IGRP_DEPARTMENT);
-                return false;
-            }
-        } catch (IAMException e) {
-            LOGGER.error("[Startup Config] Failed to check/create department in provider: {}", e.getMessage(), e);
-            return false;
-        }
-    }
-
-    /**
-     * Checks if application exists in provider, creates if it doesn't exist in DB
-     */
-    private boolean checkAndCreateApplication(boolean appExistsInDB, boolean departmentExistsInProvider) {
-        if (!departmentExistsInProvider) {
-            LOGGER.warn("[Startup Config] Cannot create application, department does not exist in provider");
-            return false;
-        }
-
-        try {
-            boolean existsInProvider = adapter.applicationExists(IGRP_DEPARTMENT, IGRP_APP);
-
-            if (!appExistsInDB && !existsInProvider) {
-                LOGGER.info("[Startup Config] Creating application in provider: {}", IGRP_APP);
-                adapter.createApplication(IGRP_DEPARTMENT, IGRP_APP);
-                return true;
-            } else if (existsInProvider) {
-                LOGGER.info("[Startup Config] Application exists in provider: {}", IGRP_APP);
-                return true;
-            } else {
-                LOGGER.warn("[Startup Config] Application exists in DB but not in provider: {}", IGRP_APP);
-                return false;
-            }
-        } catch (IAMException e) {
-            LOGGER.error("[Startup Config] Failed to check/create application in provider: {}", e.getMessage(), e);
-            return false;
-        }
-    }
-
-    /**
-     * Checks if permission exists in the provider, creates if it doesn't exist in DB
-     */
-    private boolean checkAndCreatePermission(boolean permissionExistsInDB, boolean appExistsInDB) {
-        try {
-            boolean existsInProvider = adapter.permissionExists(IGRP_PERMISSION);
-
-            if (!permissionExistsInDB && !existsInProvider) {
-                LOGGER.info("[Startup Config] Creating permission in provider: {}", IGRP_PERMISSION);
-                adapter.createPermission(IGRP_PERMISSION, "iGRP Manage Access Permission");
-                return true;
-            } else if (existsInProvider) {
-                LOGGER.info("[Startup Config] Permission exists in provider: {}", IGRP_PERMISSION);
-                return true;
-            } else {
-                LOGGER.warn("[Startup Config] Permission exists in DB but not in provider: {}", IGRP_PERMISSION);
-                return false;
-            }
-        } catch (IAMException e) {
-            LOGGER.error("[Startup Config] Failed to check/create permission in provider: {}", e.getMessage(), e);
-            return false;
-        }
-    }
-
-    /**
-     * Checks if a role exists in provider, creates if it doesn't exist in DB
-     */
-    private boolean checkAndCreateRole(boolean roleExistsInDB, boolean departmentExistsInProvider, boolean permissionExistsInProvider) {
-        if (!departmentExistsInProvider) {
-            LOGGER.warn("[Startup Config] Cannot create role, department does not exist in provider");
-            return false;
-        }
-
-        try {
-            boolean existsInProvider = adapter.roleExists(IGRP_DEPARTMENT, RoleValidator.normalizeRoleCodeForAdapter(SUPER_ADMIN_ROLE, IGRP_DEPARTMENT));
-
-            if (!roleExistsInDB && !existsInProvider) {
-                LOGGER.info("[Startup Config] Creating role in provider: {}", SUPER_ADMIN_ROLE);
-                adapter.createRole(IGRP_DEPARTMENT, RoleValidator.normalizeRoleCodeForAdapter(SUPER_ADMIN_ROLE, IGRP_DEPARTMENT));
-
-                // Assign permission to a role if permission exists
-                //if (permissionExistsInProvider) {
-                //    adapter.assignPermissionsToRole(Set.of(IGRP_PERMISSION), SUPER_ADMIN_ROLE);
-                //}
-                return true;
-            } else if (existsInProvider) {
-                LOGGER.info("[Startup Config] Role exists in provider: {}", SUPER_ADMIN_ROLE);
-                return true;
-            } else {
-                LOGGER.warn("[Startup Config] Role exists in DB but not in provider: {}", SUPER_ADMIN_ROLE);
-                return false;
-            }
-        } catch (IAMException e) {
-            LOGGER.error("[Startup Config] Failed to check/create role in provider: {}", e.getMessage(), e);
-            return false;
-        }
-    }
-
-    // =====================================================
-    // Database Entity Creation Methods (After Provider Sync)
+    // Database Entity Creation Methods
     // =====================================================
 
     Long createDefaultDepartmentInDB() {
@@ -414,25 +279,18 @@ public class ConfigurationService {
     }
 
     void assignRoleToSuperAdminUserInDB(Long roleId, Long userId) {
-        try {
-            // Assign role in provider
-            adapter.assignRoleToUser(IGRP_DEPARTMENT, RoleValidator.normalizeRoleCodeForAdapter(SUPER_ADMIN_ROLE, IGRP_DEPARTMENT), SUPER_ADMIN_EXTERNAL_ID);
+        // Assign role in database
+        String sql = """
+                    INSERT INTO t_role_users
+                    (users_id, roles_id)
+                    SELECT ?, ?
+                    WHERE NOT EXISTS (
+                        SELECT 1 FROM t_role_users WHERE users_id = ? AND roles_id = ?
+                    )
+                """;
+        jdbcTemplate.update(sql, userId, roleId, userId, roleId);
 
-            // Assign role in database
-            String sql = """
-                        INSERT INTO t_role_users
-                        (users_id, roles_id)
-                        SELECT ?, ?
-                        WHERE NOT EXISTS (
-                            SELECT 1 FROM t_role_users WHERE users_id = ? AND roles_id = ?
-                        )
-                    """;
-            jdbcTemplate.update(sql, userId, roleId, userId, roleId);
-
-            LOGGER.info("[Startup Config] Superadmin user linked to role in provider and DB");
-        } catch (IAMException e) {
-            LOGGER.error("[Startup Config] Failed to assign role to user in provider: {}", e.getMessage(), e);
-        }
+        LOGGER.info("[Startup Config] Superadmin user linked to role in DB");
     }
 
     // =====================================================

@@ -47,6 +47,14 @@ public interface SecurityAuditService {
     void logAccessDenied(String permission);
 
     /**
+     * Logs an access denied event with an explicit decision reason.
+     *
+     * @param permission The permission that was denied.
+     * @param reason     The reason why access was denied.
+     */
+    void logAccessDenied(String permission, String reason);
+
+    /**
      * Logs a change to a user account.
      *
      * @param targetUserId The ID of the user account that was changed.

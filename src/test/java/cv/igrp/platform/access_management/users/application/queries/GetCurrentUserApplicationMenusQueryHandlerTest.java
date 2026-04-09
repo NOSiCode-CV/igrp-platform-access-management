@@ -83,7 +83,7 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
                 new GetCurrentUserApplicationMenusQuery(null, "APP1");
 
         when(authenticationHelper.getSub()).thenReturn("ext-user-1");
-        when(userRepository.findByExternalId("ext-user-1"))
+        when(userRepository.findByExternalIdWithRolesAndPermissions("ext-user-1"))
                 .thenReturn(Optional.of(user));
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);
@@ -118,7 +118,7 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
                 new GetCurrentUserApplicationMenusQuery("A", "APP1");
 
         when(authenticationHelper.getSub()).thenReturn("ext-user-1");
-        when(userRepository.findByExternalId("ext-user-1"))
+        when(userRepository.findByExternalIdWithRolesAndPermissions("ext-user-1"))
                 .thenReturn(Optional.of(user));
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);
@@ -149,7 +149,7 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
     void handle_userNotFound_throwsUnauthorized() {
 
         when(authenticationHelper.getSub()).thenReturn("unknown-user");
-        when(userRepository.findByExternalId("unknown-user"))
+        when(userRepository.findByExternalIdWithRolesAndPermissions("unknown-user"))
                 .thenReturn(Optional.empty());
 
         GetCurrentUserApplicationMenusQuery query =
@@ -168,7 +168,7 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
     void handle_success_returnsEmptyList() {
 
         when(authenticationHelper.getSub()).thenReturn("ext-user-1");
-        when(userRepository.findByExternalId("ext-user-1"))
+        when(userRepository.findByExternalIdWithRolesAndPermissions("ext-user-1"))
                 .thenReturn(Optional.of(user));
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);

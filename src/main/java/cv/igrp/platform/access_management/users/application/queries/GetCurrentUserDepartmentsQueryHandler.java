@@ -46,7 +46,7 @@ public class GetCurrentUserDepartmentsQueryHandler implements QueryHandler<GetCu
     @IgrpQueryHandler
     public ResponseEntity<List<DepartmentDTO>> handle(GetCurrentUserDepartmentsQuery query) {
 
-        var user = userRepository.findByExternalId(authenticationHelper.getSub()).orElseThrow(
+        var user = userRepository.findByExternalIdWithRolesAndPermissions(authenticationHelper.getSub()).orElseThrow(
                 () -> IgrpResponseStatusException.of(
                         HttpStatus.UNAUTHORIZED,
                         "User not found",

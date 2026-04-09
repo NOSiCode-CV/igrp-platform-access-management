@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
@@ -52,7 +51,6 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
    private final RoleEntityRepository roleRepository;
    private final DepartmentEntityRepository departmentRepository;
    private final RoleMapper roleMapper;
-   private final IAdapter adapter;
 
    /**
     * Constructs the handler with required dependencies.
@@ -61,19 +59,16 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
     * @param roleRepository the repository used to retrieve and update roles
     * @param departmentRepository the repository used to retrieve department entities
     * @param roleMapper the mapper used to convert role entities to DTOs
-    * @param adapter the adapter to assign role to user in iam
     */
    public AddRolesToUserCommandHandler(
            IGRPUserEntityRepository userRepository,
            RoleEntityRepository roleRepository,
            DepartmentEntityRepository departmentRepository,
-           RoleMapper roleMapper,
-           IAdapter adapter) {
+           RoleMapper roleMapper) {
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
       this.roleMapper = roleMapper;
-      this.adapter = adapter;
    }
 
    /**
@@ -95,7 +90,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
 
       DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(departmentCode);
 
-      List<RoleEntity> successfullyAssignedInKeycloak = new ArrayList<>();
+      List<RoleEntity> successfullyAssignedRoles = new ArrayList<>();
 
       IGRPUserEntity user = userRepository.findById(userId)
               .orElseThrow(() -> {
@@ -107,59 +102,35 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
 
       List<RoleEntity> roles = user.getRoles();
 
-      try {
-         Set<String> existingRoleCodes = roles.stream()
-                 .filter(role -> !Objects.equals(role.getStatus(),Status.DELETED))
-                 .map(RoleEntity::getName)
-                 .collect(Collectors.toSet());
+      Set<String> existingRoleCodes = roles.stream()
+              .filter(role -> !Objects.equals(role.getStatus(),Status.DELETED))
+              .map(RoleEntity::getName)
+              .collect(Collectors.toSet());
 
-         for (String role : command.getAddRolesToUserRequest()) {
+      for (String role : command.getAddRolesToUserRequest()) {
 
-            if (existingRoleCodes.contains(role)) {
-               continue;
-            }
-
-            logger.info("Assigning role name={} to user ID={}", role, userId);
-            RoleEntity roleEntity = roleRepository.findByDepartmentAndCodeAndStatusNot(department, role, Status.DELETED)
-                    .orElseThrow(() -> {
-                       logger.warn("Role not found with code={}", role);
-                       return IgrpResponseStatusException.of(
-                               HttpStatus.NOT_FOUND, "Invalid Role code",
-                               "Role not found with code: %s".formatted(role));
-                    });
-            if(roleEntity.getUsers()==null) {
-               roleEntity.setUsers(new HashSet<>());
-            }
-            roleEntity.getUsers().add(user);
-            roleRepository.save(roleEntity);
-//            user.getRoles().add(roleEntity);
-
-            adapter.assignRoleToUser(roleEntity.getDepartment().getCode(), RoleValidator.normalizeRoleCodeForAdapter(roleEntity.getCode(), roleEntity.getDepartment().getCode()), user.getExternalId());
-            successfullyAssignedInKeycloak.add(roleEntity);
+         if (existingRoleCodes.contains(role)) {
+            continue;
          }
 
-      } catch (Exception e) {
-         logger.error("Error while adding roles into Keycloak for user ID={}. Starting compensation...", userId, e);
-
-         for (RoleEntity role : successfullyAssignedInKeycloak) {
-            try {
-               adapter.unassignRoleFromUser(role.getDepartment().getCode(), RoleValidator.normalizeRoleCodeForAdapter(role.getCode(), role.getDepartment().getCode()), user.getExternalId());
-            } catch (Exception rollbackEx) {
-               logger.error("Compensation failed: could not revert role={} in Keycloak for user={}: {}",
-                       role.getCode(),
-                       command.getId(),
-                       rollbackEx.getMessage());
-            }
+         logger.info("Assigning role name={} to user ID={}", role, userId);
+         RoleEntity roleEntity = roleRepository.findByDepartmentAndCodeAndStatusNot(department, role, Status.DELETED)
+                 .orElseThrow(() -> {
+                    logger.warn("Role not found with code={}", role);
+                    return IgrpResponseStatusException.of(
+                            HttpStatus.NOT_FOUND, "Invalid Role code",
+                            "Role not found with code: %s".formatted(role));
+                 });
+         if(roleEntity.getUsers()==null) {
+            roleEntity.setUsers(new HashSet<>());
          }
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.INTERNAL_SERVER_ERROR,
-                 "Add Roles to User Failed",
-                 e.getMessage()
-         );
+         roleEntity.getUsers().add(user);
+         roleRepository.save(roleEntity);
+         successfullyAssignedRoles.add(roleEntity);
       }
 
-      // Showing only the new ones.
-      List<RoleDTO> rolesDTO = successfullyAssignedInKeycloak.stream().map(roleMapper::mapToDto).toList();
+      // Return the assigned roles
+      List<RoleDTO> rolesDTO = successfullyAssignedRoles.stream().map(roleMapper::mapToDto).toList();
 
       return ResponseEntity.status(HttpStatus.CREATED).body(rolesDTO);
 

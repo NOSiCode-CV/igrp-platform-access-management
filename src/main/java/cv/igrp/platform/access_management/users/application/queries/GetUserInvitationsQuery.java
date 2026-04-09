@@ -13,7 +13,6 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetUserInvitationsQuery implements Query {
 
-  @NotBlank(message = "The field <email> is required")
-  private String email;
+  private String identifierValue;
 
 }

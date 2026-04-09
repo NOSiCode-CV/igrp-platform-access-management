@@ -1,7 +1,6 @@
 package cv.igrp.platform.access_management;
 
 import cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService;
-import cv.igrp.platform.access_management.shared.infrastructure.service.SynchronizationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.CommandLineRunner;
@@ -26,13 +25,11 @@ public class IgrpPlatformAccessManagementApplication {
 
     @Bean
     public CommandLineRunner startupRunner(ConfigurationService configService,
-                                           SynchronizationService syncService,
                                            RedisConnectionFactory connectionFactory
     ) {
         return _ -> {
             try {
                 configService.initializeSystemConfiguration();
-                syncService.startupReconciliation();
                 connectionFactory.getConnection().ping();
                 logger.info("✅ Redis connection successful!");
             } catch (Exception e) {
