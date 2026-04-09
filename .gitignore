@@ -33,7 +33,9 @@ build/
 ### VS Code ###
 .vscode/
 
-compile_errors.log
-compile_errors_utf8.log
 run_output.txt
+
 app.log*
+compile_errors*
+
+implementation_plan.md
