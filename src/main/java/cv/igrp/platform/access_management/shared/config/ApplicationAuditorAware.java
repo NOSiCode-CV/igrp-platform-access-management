@@ -21,7 +21,9 @@ public class ApplicationAuditorAware implements AuditorAware<String> {
             return Optional.of("system");
         }
 
-        return authentication.getPrincipal() instanceof Jwt jwt ? Optional.of(jwt.getClaimAsString("preferred_username")) : Optional.ofNullable(authentication.getName());
+        return authentication.getPrincipal() instanceof Jwt jwt 
+                ? Optional.ofNullable(jwt.getClaimAsString("preferred_username")).or(() -> Optional.ofNullable(jwt.getSubject())) 
+                : Optional.ofNullable(authentication.getName());
     }
 
 }

@@ -82,7 +82,7 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
                 new GetCurrentUserDepartmentRolesQuery(null, "DEPT1");
 
         when(authenticationHelper.getSub()).thenReturn("user-ext-1");
-        when(userRepository.findByExternalId("user-ext-1"))
+        when(userRepository.findByExternalIdWithRolesAndPermissions("user-ext-1"))
                 .thenReturn(Optional.of(user));
         when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
                 .thenReturn(department);
@@ -118,7 +118,7 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
                 new GetCurrentUserDepartmentRolesQuery(null, "DEPT1");
 
         when(authenticationHelper.getSub()).thenReturn("user-ext-1");
-        when(userRepository.findByExternalId("user-ext-1"))
+        when(userRepository.findByExternalIdWithRolesAndPermissions("user-ext-1"))
                 .thenReturn(Optional.of(user));
         when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
                 .thenReturn(department);
@@ -139,7 +139,7 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
     void handle_userNotFound_throwsUnauthorized() {
 
         when(authenticationHelper.getSub()).thenReturn("unknown-ext");
-        when(userRepository.findByExternalId("unknown-ext"))
+        when(userRepository.findByExternalIdWithRolesAndPermissions("unknown-ext"))
                 .thenReturn(Optional.empty());
 
         GetCurrentUserDepartmentRolesQuery query =
@@ -161,7 +161,7 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
                 new GetCurrentUserDepartmentRolesQuery(null, "DEPT1");
 
         when(authenticationHelper.getSub()).thenReturn("user-ext-1");
-        when(userRepository.findByExternalId("user-ext-1"))
+        when(userRepository.findByExternalIdWithRolesAndPermissions("user-ext-1"))
                 .thenReturn(Optional.of(user));
         when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
                 .thenReturn(department);

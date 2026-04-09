@@ -4,6 +4,9 @@ import cv.igrp.platform.access_management.security_audit.domain.entities.Securit
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 /**
  * Spring Data JPA repository for {@link SecurityAuditLogEntity}.
  * This interface provides the necessary methods for database operations on audit logs,
@@ -11,4 +14,5 @@ import org.springframework.stereotype.Repository;
  */
 @Repository
 public interface SecurityAuditLogRepository extends JpaRepository<SecurityAuditLogEntity, Long> {
+    Page<SecurityAuditLogEntity> findByUserId(String userId, Pageable pageable);
 }

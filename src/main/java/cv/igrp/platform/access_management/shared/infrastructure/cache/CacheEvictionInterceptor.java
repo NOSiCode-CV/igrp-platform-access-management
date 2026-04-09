@@ -8,10 +8,15 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 @Component
 public class CacheEvictionInterceptor implements HandlerInterceptor {
 
     private final Logger LOGGER = LoggerFactory.getLogger(CacheEvictionInterceptor.class);
+    private static final Pattern USER_PATH_PATTERN = Pattern.compile("^/api/users/(\\d+)(?:/.*)?$");
+    private static final Pattern DEPARTMENT_PATH_PATTERN = Pattern.compile("^/api/departments/([^/]+)(?:/.*)?$");
     private final PermissionCacheEvictService evictService;
 
     public CacheEvictionInterceptor(PermissionCacheEvictService evictService) {
@@ -35,7 +40,7 @@ public class CacheEvictionInterceptor implements HandlerInterceptor {
         int status = response.getStatus();
 
         if (status >= 200 && status < 400 && matchesEvictionPath(request.getRequestURI())) {
-            evictService.evictAll();
+            evictTargeted(request);
         }
 
     }
@@ -51,5 +56,45 @@ public class CacheEvictionInterceptor implements HandlerInterceptor {
         return uri.matches("^/api/departments/[^/]+(/.*)?$")
                 || uri.matches("^/api/m2m/sync(/.*)?$")
                 || uri.matches("^/api/users/\\d+(/.*)?$");
+    }
+
+    private void evictTargeted(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+
+        Matcher userMatcher = USER_PATH_PATTERN.matcher(uri);
+        if (userMatcher.matches()) {
+            Integer userId = Integer.valueOf(userMatcher.group(1));
+            evictService.evictByUserId(userId);
+            return;
+        }
+
+        Matcher departmentMatcher = DEPARTMENT_PATH_PATTERN.matcher(uri);
+        if (departmentMatcher.matches()) {
+            String departmentCode = departmentMatcher.group(1);
+            evictService.evictByDepartment(departmentCode);
+            return;
+        }
+
+        if (uri.matches("^/api/m2m/sync(/.*)?$")) {
+            String roleCode = request.getParameter("roleCode");
+            if (roleCode != null && !roleCode.isBlank()) {
+                evictService.evictByRole(roleCode);
+                return;
+            }
+
+            String departmentCode = request.getParameter("departmentCode");
+            if (departmentCode != null && !departmentCode.isBlank()) {
+                evictService.evictByDepartment(departmentCode);
+                return;
+            }
+
+            String subject = request.getParameter("subject");
+            if (subject != null && !subject.isBlank()) {
+                evictService.evictBySubject(subject);
+                return;
+            }
+
+            LOGGER.info("Skipping cache eviction for {}: no targeted parameters found", uri);
+        }
     }
 }

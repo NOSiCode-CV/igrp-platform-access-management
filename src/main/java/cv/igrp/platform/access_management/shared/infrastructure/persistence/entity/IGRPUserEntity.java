@@ -55,6 +55,12 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     @Column(name = "signature")
     private String signature;
 
+    @Column(name = "nic", length = 13)
+    private String nic;
+
+    @Column(name = "phone_number")
+    private String phoneNumber;
+
     @Column(name = "email_verified")
     private Boolean emailVerified = Boolean.FALSE;
 
