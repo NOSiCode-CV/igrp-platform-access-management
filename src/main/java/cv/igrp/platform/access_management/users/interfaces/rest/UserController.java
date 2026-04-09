@@ -304,7 +304,7 @@ public class UserController {
   )
   
   public ResponseEntity<IGRPUserDTO> updateUser(@Valid @RequestBody IGRPUserDTO updateUserRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "id") String id)
   {
 
       final var command = new UpdateUserCommand(updateUserRequest, id);

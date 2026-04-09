@@ -35,10 +35,10 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
     @Value("${igrp.mail.invite.template}")
     private String emailTemplate = """
             Dear {{user}}, your were invited to the iGRP platform
-            
+
             Please click on the link below to accept the invitation:
             {{url}}
-            
+
             Best Regards.
             iGRP
             """;
@@ -55,13 +55,12 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
     private final UserUtils userUtils;
 
     public InviteUserCommandHandler(NotificationAdapter<NotificationResult> notificationAdapter,
-                                    IGRPUserEntityRepository userRepository,
-                                    RoleEntityRepository roleRepository,
-                                    DepartmentEntityRepository departmentRepository,
-                                    InvitationEntityRepository invitationRepository,
-                                    InvitationMapper invitationMapper,
-                                    UserUtils userUtils
-    ) {
+            IGRPUserEntityRepository userRepository,
+            RoleEntityRepository roleRepository,
+            DepartmentEntityRepository departmentRepository,
+            InvitationEntityRepository invitationRepository,
+            InvitationMapper invitationMapper,
+            UserUtils userUtils) {
         this.notificationAdapter = notificationAdapter;
         this.userRepository = userRepository;
         this.roleRepository = roleRepository;
@@ -77,7 +76,8 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         var dto = command.getInviteuserdto();
 
-        if(dto.getIdentifierType() == null || dto.getIdentifierType().isBlank() || dto.getIdentifierValue() == null || dto.getIdentifierValue().isBlank()) {
+        if (dto.getIdentifierType() == null || dto.getIdentifierType().isBlank() || dto.getIdentifierValue() == null
+                || dto.getIdentifierValue().isBlank()) {
             throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Identifier type and value are required");
         }
 
@@ -91,31 +91,36 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         // Cancel any previous pending invitations
         var previousInvitationOpt = invitationRepository.findByIdentifierTypeAndIdentifierValueAndStatus(
-            dto.getIdentifierType(), dto.getIdentifierValue(), InvitationStatus.PENDING);
+                dto.getIdentifierType(), dto.getIdentifierValue(), InvitationStatus.PENDING);
 
         if (previousInvitationOpt.isPresent()) {
             var previousInvitation = previousInvitationOpt.get();
             previousInvitation.setStatus(InvitationStatus.CANCELED);
             invitationRepository.save(previousInvitation);
-            LOGGER.info("Previous invitation {} was cancelled for user {}.", previousInvitation.getId(), dto.getIdentifierValue());
+            LOGGER.info("Previous invitation {} was cancelled for user {}.", previousInvitation.getId(),
+                    dto.getIdentifierValue());
         }
 
         // Create new invitation
         InvitationEntity invitation = new InvitationEntity();
         invitation.setIdentifierType(dto.getIdentifierType());
         invitation.setIdentifierValue(dto.getIdentifierValue());
-        
+
         Set<String> allowed = new HashSet<>();
-        if ("EMAIL".equalsIgnoreCase(dto.getIdentifierType())) allowed.add("CREDENTIALS");
-        else if ("PHONE".equalsIgnoreCase(dto.getIdentifierType())) allowed.add("CMD");
-        else if ("NIC".equalsIgnoreCase(dto.getIdentifierType())) allowed.add("CNI");
+        if ("EMAIL".equalsIgnoreCase(dto.getIdentifierType()))
+            allowed.add("pwd");
+        else if ("PHONE".equalsIgnoreCase(dto.getIdentifierType()))
+            allowed.add("cmdcv");
+        else if ("NIC".equalsIgnoreCase(dto.getIdentifierType()))
+            allowed.add("cni");
         invitation.setAllowedAuthMethods(allowed);
 
         invitation.setStatus(InvitationStatus.PENDING);
         invitation.setToken(UUID.randomUUID().toString());
 
         Set<RoleEntity> roles = new HashSet<>();
-        var department = departmentRepository.findByCodeAndStatusNotDeleted(command.getInviteuserdto().getDepartmentCode());
+        var department = departmentRepository
+                .findByCodeAndStatusNotDeleted(command.getInviteuserdto().getDepartmentCode());
 
         for (var roleCode : command.getInviteuserdto().getRoles()) {
             var role = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, roleCode);
@@ -123,26 +128,29 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
         }
 
         invitation.setRoles(roles);
-        var savedInvitation = invitationRepository.save(invitation);
+        var savedInvitation = invitationRepository.saveAndFlush(invitation);
 
-        var url = userUtils.constructInvitationUrl(appCenterUrl, savedInvitation.getToken());
-
-        try {
-            if ("EMAIL".equalsIgnoreCase(dto.getIdentifierType())) {
-                LOGGER.info("Inviting new user via email: token={}, email={}", savedInvitation.getToken(), dto.getIdentifierValue());
+        if ("EMAIL".equalsIgnoreCase(dto.getIdentifierType())) {
+            try {
+                var url = userUtils.constructInvitationUrl(appCenterUrl, savedInvitation.getToken());
+                LOGGER.info("Inviting new user via email: token={}, email={}", savedInvitation.getToken(),
+                        dto.getIdentifierValue());
 
                 var notification = new Notification();
                 notification.setRecipients(List.of(dto.getIdentifierValue()));
                 notification.setSubject("iGRP User Invitation");
-                notification.setContent(emailTemplate.replace("{{user}}", dto.getIdentifierValue()).replace("{{url}}", url));
-                notification.setMetadata(Map.of("invitationToken", savedInvitation.getToken(), "email", dto.getIdentifierValue()));
+                notification.setContent(
+                        emailTemplate.replace("{{user}}", dto.getIdentifierValue()).replace("{{url}}", url));
+                notification.setMetadata(
+                        Map.of("invitationToken", savedInvitation.getToken(), "email", dto.getIdentifierValue()));
 
                 notificationAdapter.send(notification);
+            } catch (Exception e) {
+                LOGGER.error("Invitation Email failed", e);
             }
-        } catch (Exception e) {
-            LOGGER.error("Invitation Email failed", e);
         }
 
+        var url = userUtils.constructInvitationUrl(appCenterUrl, savedInvitation.getToken());
         LOGGER.info("User invited successfully with token={}", savedInvitation.getToken());
         return ResponseEntity.ok(invitationMapper.toDtoWithUrl(savedInvitation, url));
 

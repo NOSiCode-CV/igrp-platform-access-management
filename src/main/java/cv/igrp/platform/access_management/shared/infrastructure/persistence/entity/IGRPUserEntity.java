@@ -36,11 +36,11 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     private String username;
 
     public String getNic() {
-        return this.username;
+        return this.nic;
     }
 
     public void setNic(String nic) {
-        this.username = nic;
+        this.nic = nic;
     }
 
     @Column(name="email")
