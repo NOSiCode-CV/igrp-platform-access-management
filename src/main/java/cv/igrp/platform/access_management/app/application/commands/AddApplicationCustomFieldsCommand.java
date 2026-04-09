@@ -13,7 +13,6 @@ import java.util.Map;
 @AllArgsConstructor
 public class AddApplicationCustomFieldsCommand implements Command {
 
-  
   private Map<String, ?> addApplicationCustomFieldsRequest;
   @NotBlank(message = "The field <code> is required")
   private String code;

@@ -70,17 +70,17 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
     @IgrpCommandHandler
     @Transactional
     public ResponseEntity<IGRPUserDTO> handle(UpdateUserCommand command) {
-        Integer userId = command.getId();
+        String username = command.getId();
 
-        logger.info("Updating user with ID={}", userId);
+        logger.info("Updating user with username={}", username);
 
-        IGRPUserEntity user = userRepository.findById(userId)
+        IGRPUserEntity user = userRepository.findByUsername(username)
                 .orElseThrow(() -> {
-                    logger.warn("User with ID={} not found", userId);
+                    logger.warn("User with username={} not found", username);
                     return IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND,
                             "Invalid User",
-                            "User not found with ID: " + userId);
+                            "User not found with username: " + username);
                 });
 
         IGRPUserDTO dto = command.getIgrpuserdto();
@@ -100,6 +100,14 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
 
         if (dto.getSignature() != null) {
             user.setSignature(dto.getSignature());
+        }
+
+        if (dto.getNic() != null && !dto.getNic().isBlank()) {
+            user.setNic(dto.getNic().toUpperCase());
+        }
+
+        if (dto.getPhoneNumber() != null && !dto.getPhoneNumber().isBlank()) {
+            user.setPhoneNumber(dto.getPhoneNumber());
         }
 
         var updatedUser = userRepository.save(user);

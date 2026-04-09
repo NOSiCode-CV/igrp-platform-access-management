@@ -33,6 +33,7 @@ build/
 ### VS Code ###
 .vscode/
 
+run_output.txt
 
 app.log*
 compile_errors*

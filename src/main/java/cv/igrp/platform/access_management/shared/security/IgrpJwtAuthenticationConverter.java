@@ -21,6 +21,9 @@ import java.util.Map;
 @Primary
 public class IgrpJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
+    private static final org.slf4j.Logger log = 
+        org.slf4j.LoggerFactory.getLogger(IgrpJwtAuthenticationConverter.class);
+
     private final JwtAuthenticationConverter defaultConverter = new JwtAuthenticationConverter();
 
     @Override
@@ -42,7 +45,7 @@ public class IgrpJwtAuthenticationConverter implements Converter<Jwt, AbstractAu
         String sub = req(c, "sub");
         String iss = opt(c, "iss");
         String name = coalesce(opt(c, "name"), join(opt(c, "given_name"), opt(c, "family_name")));
-        String email = normalizeEmail(coalesce(opt(c, "email"), opt(c, "preferred_username")));
+        String email = normalizeEmail(coalesce(opt(c, "email"), opt(c, "emaill"), opt(c, "preferred_username")));
         String phone = normalizePhone(opt(c, "phone_number"));
         String nic = normalizeNic(coalesce(opt(c, "NIC"), opt(c, "nic"), opt(c, "national_id")));
         
@@ -51,9 +54,9 @@ public class IgrpJwtAuthenticationConverter implements Converter<Jwt, AbstractAu
 
         // Validation of critical business rules
         if ("cni".equals(method) && nic == null) {
-            throw new OAuth2AuthenticationException(
-                new OAuth2Error("missing_nic"), "Login via CNI requires the Civil Identification Number (NIC)."
-            );
+            // Autentika CNI: sub contains the NIC directly — no separate NIC claim
+            nic = normalizeNic(sub);
+            log.debug("[JWT] CNI login: using sub as NIC fallback: {}", nic);
         }
 
         // Build canonical profile with type safety
