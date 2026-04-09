@@ -1,0 +1,142 @@
+{
+  "type": "controller",
+  "name": "SessionController",
+  "module": "session",
+  "description": "User session management endpoints for self-service session operations",
+  "basePath": "/api/session",
+  "actions": [
+    {
+      "actionName": "getCurrentSession",
+      "method": "GET",
+      "path": "/",
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "objectType": "dto",
+                "module": "session"
+              }
+            }
+          }
+        },
+        "204": {
+          "content": {}
+        }
+      }
+    },
+    {
+      "actionName": "initializeSession",
+      "method": "POST",
+      "path": "/init",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "objectType": "dto",
+              "module": "session"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "objectType": "dto",
+                "module": "session"
+              }
+            }
+          }
+        },
+        "403": {
+          "content": {}
+        },
+        "404": {
+          "content": {}
+        }
+      }
+    },
+    {
+      "actionName": "refreshSession",
+      "method": "POST",
+      "path": "/refresh",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "objectType": "dto",
+              "module": "session"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "objectType": "dto",
+                "module": "session"
+              }
+            }
+          }
+        },
+        "404": {
+          "content": {}
+        }
+      }
+    },
+    {
+      "actionName": "closeSession",
+      "method": "POST",
+      "path": "/close",
+      "responses": {
+        "204": {
+          "content": {}
+        },
+        "404": {
+          "content": {}
+        }
+      }
+    },
+    {
+      "actionName": "rotateSession",
+      "method": "POST",
+      "path": "/rotate",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "objectType": "dto",
+              "module": "session"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "objectType": "dto",
+                "module": "session"
+              }
+            }
+          }
+        },
+        "404": {
+          "content": {}
+        }
+      }
+    }
+  ]
+}
