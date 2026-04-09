@@ -1,8 +1,10 @@
 package cv.igrp.platform.access_management.session.application.dto;
 
 import cv.igrp.framework.stereotype.IgrpDTO;
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.application.dto.RoleDepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import lombok.AllArgsConstructor;
@@ -30,9 +32,9 @@ public class SessionResponseDTO {
     private String clientIp;
     private String deviceId;
     private IGRPUserDTO userProfile;
-    private RoleDTO currentActiveRole;
-    private List<RoleDTO> roles;
-    private List<DepartmentDTO> departments;
+    private RoleDepartmentDTO currentActiveRole;
+    private List<RoleDepartmentDTO> roles;
+    private List<CodeDescriptionDTO> departments;
 
     /**
      * Checks if the session is currently active

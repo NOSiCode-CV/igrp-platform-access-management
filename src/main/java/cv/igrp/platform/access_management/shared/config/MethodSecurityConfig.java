@@ -22,6 +22,7 @@ public class MethodSecurityConfig {
             // Register the package of generated enums
             registerImport("cv.igrp.framework.auth.generated");
             registerImport("cv.igrp.framework.auth.generated.PermissionsRegistry");
+            registerImport("cv.igrp.platform.access_management.shared.infrastructure.authorization.permission");
         }
     }
 

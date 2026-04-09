@@ -6,8 +6,10 @@ import cv.igrp.platform.access_management.session.application.dto.SessionRefresh
 import cv.igrp.platform.access_management.session.application.dto.SessionResponseDTO;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.application.dto.RoleDepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
@@ -284,9 +286,9 @@ public class SessionManagementService {
                 .orElse(null);
 
         IGRPUserDTO userProfile = null;
-        RoleDTO currentActiveRole = null;
-        List<RoleDTO> roles = Collections.emptyList();
-        Set<DepartmentDTO> departments = Collections.emptySet();
+        RoleDepartmentDTO currentActiveRole = null;
+        List<RoleDepartmentDTO> roles = Collections.emptyList();
+        List<CodeDescriptionDTO> departments = Collections.emptyList();
 
         if (user != null) {
             // Map user profile
@@ -301,7 +303,11 @@ public class SessionManagementService {
 
             // Map current active role
             if (user.getActiveRole() != null) {
-                currentActiveRole = roleMapper.mapToDto(user.getActiveRole());
+                RoleDTO fullRoleDto = roleMapper.mapToDto(user.getActiveRole());
+                currentActiveRole = new RoleDepartmentDTO(
+                    fullRoleDto.getCode(),
+                    fullRoleDto.getDepartmentCode()
+                );
             }
 
             // Map all roles
@@ -310,19 +316,16 @@ public class SessionManagementService {
                     .filter(role -> Status.ACTIVE.equals(role.getStatus()))
                     .map(roleMapper::mapToDto)
                     .filter(Objects::nonNull)
+                    .map(roleDto -> new RoleDepartmentDTO(roleDto.getCode(), roleDto.getDepartmentCode()))
                     .collect(Collectors.toList());
 
             // Extract departments from roles
             departments = roles.stream()
-                    .map(RoleDTO::getDepartmentCode)
+                    .map(RoleDepartmentDTO::departmentCode)
                     .filter(Objects::nonNull)
                     .distinct()
-                    .map(deptCode -> {
-                        DepartmentDTO dept = new DepartmentDTO();
-                        dept.setCode(deptCode);
-                        return dept;
-                    })
-                    .collect(Collectors.toSet());
+                    .map(deptCode -> new CodeDescriptionDTO(deptCode, deptCode)) // Using code as description for now
+                    .collect(Collectors.toList());
         }
 
         // Build session response

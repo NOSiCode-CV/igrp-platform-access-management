@@ -4,8 +4,14 @@ import cv.igrp.framework.stereotype.IgrpController;
 import cv.igrp.platform.access_management.session.application.dto.SessionInitRequestDTO;
 import cv.igrp.platform.access_management.session.application.dto.SessionRefreshRequestDTO;
 import cv.igrp.platform.access_management.session.application.dto.SessionResponseDTO;
-import cv.igrp.platform.access_management.session.domain.service.SessionManagementService;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
+import cv.igrp.framework.core.domain.QueryBus;
+import cv.igrp.framework.core.domain.CommandBus;
+import cv.igrp.platform.access_management.session.application.queries.GetCurrentSessionQuery;
+import cv.igrp.platform.access_management.session.application.commands.InitializeSessionCommand;
+import cv.igrp.platform.access_management.session.application.commands.RefreshSessionCommand;
+import cv.igrp.platform.access_management.session.application.commands.CloseSessionCommand;
+import cv.igrp.platform.access_management.session.application.commands.RotateSessionCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -31,13 +37,16 @@ import java.util.Optional;
 )
 public class SessionController {
 
-    private final SessionManagementService sessionManagementService;
+    private final QueryBus queryBus;
+    private final CommandBus commandBus;
     private final AuthenticationHelper authenticationHelper;
 
     public SessionController(
-            SessionManagementService sessionManagementService,
+            QueryBus queryBus,
+            CommandBus commandBus,
             AuthenticationHelper authenticationHelper) {
-        this.sessionManagementService = sessionManagementService;
+        this.queryBus = queryBus;
+        this.commandBus = commandBus;
         this.authenticationHelper = authenticationHelper;
     }
 
@@ -60,7 +69,8 @@ public class SessionController {
         String userExternalId = authenticationHelper.getSub();
         log.debug("Getting current session for user: {}", userExternalId);
 
-        Optional<SessionResponseDTO> session = sessionManagementService.getCurrentSession(userExternalId);
+        var query = new GetCurrentSessionQuery(userExternalId);
+        Optional<SessionResponseDTO> session = queryBus.handle(query);
 
         return session.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.noContent().build());
@@ -89,16 +99,16 @@ public class SessionController {
             @Valid @RequestBody SessionInitRequestDTO request,
             HttpServletRequest httpRequest) {
         
-        String userExternalId = authenticationHelper.getSub();
-        log.info("Initializing session for user: {}", userExternalId);
-
-        String clientIp = getClientIp(httpRequest);
+        String clientIp = httpRequest.getRemoteAddr();
         String userAgent = httpRequest.getHeader("User-Agent");
         String deviceId = request.getDeviceId();
-
-        SessionResponseDTO session = sessionManagementService.initializeSession(
-                userExternalId, clientIp, userAgent, deviceId);
-
+        String userExternalId = authenticationHelper.getSub();
+        
+        log.info("Initializing session for user: {}", userExternalId);
+        
+        var command = new InitializeSessionCommand(userExternalId, clientIp, userAgent, deviceId);
+        SessionResponseDTO session = commandBus.send(command);
+        
         return ResponseEntity.status(HttpStatus.CREATED).body(session);
     }
 
@@ -124,8 +134,9 @@ public class SessionController {
         log.debug("Refreshing session for user: {}", userExternalId);
 
         Integer extensionSeconds = request != null ? request.getExtensionSeconds() : null;
-        Optional<SessionResponseDTO> session = sessionManagementService.refreshSession(
-                userExternalId, extensionSeconds);
+        
+        var command = new RefreshSessionCommand(userExternalId, extensionSeconds);
+        Optional<SessionResponseDTO> session = commandBus.send(command);
 
         return session.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
@@ -149,7 +160,8 @@ public class SessionController {
         String userExternalId = authenticationHelper.getSub();
         log.info("Closing session for user: {}", userExternalId);
 
-        boolean closed = sessionManagementService.closeSession(userExternalId, "USER_CLOSED");
+        var command = new CloseSessionCommand(userExternalId, "USER_CLOSED");
+        boolean closed = commandBus.send(command);
 
         return closed ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
@@ -177,8 +189,8 @@ public class SessionController {
         String userAgent = httpRequest.getHeader("User-Agent");
         String deviceId = request.getDeviceId();
 
-        Optional<SessionResponseDTO> session = sessionManagementService.rotateSession(
-                userExternalId, clientIp, userAgent, deviceId);
+        var command = new RotateSessionCommand(userExternalId, clientIp, userAgent, deviceId);
+        Optional<SessionResponseDTO> session = commandBus.send(command);
 
         return session.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());

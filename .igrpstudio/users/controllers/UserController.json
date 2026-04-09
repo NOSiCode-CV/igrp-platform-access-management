@@ -1239,6 +1239,42 @@
       }
     },
     {
+      "actionName": "updateCurrentUser",
+      "path": "users/me",
+      "method": "PUT",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "IGRPUserDTO",
+              "name": "data",
+              "collectionType": "none",
+              "objectType": "dto",
+              "module": "shared"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "IGRPUserDTO",
+                "name": "data",
+                "collectionType": "none",
+                "objectType": "dto",
+                "module": "shared"
+              }
+            }
+          }
+        },
+        "404": {
+          "content": {}
+        }
+      }
+    },
+    {
       "actionName": "setActiveUserRole",
       "path": "users/{id}/roles/active",
       "method": "POST",

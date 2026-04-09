@@ -1,0 +1,238 @@
+{
+  "type": "controller",
+  "name": "AdminSessionController",
+  "module": "admin_session",
+  "description": "Administrative session management endpoints for session monitoring and control",
+  "basePath": "/api/admin/sessions",
+  "globalPermission": {
+    "items": ["igrp.session.admin"],
+    "operator": "AND"
+  },
+  "actions": [
+    {
+      "actionName": "listSessions",
+      "method": "GET",
+      "path": "/",
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "status",
+          "isRequired": false
+        },
+        {
+          "type": "integer",
+          "name": "page",
+          "isRequired": false
+        },
+        {
+          "type": "integer",
+          "name": "size",
+          "isRequired": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "collectionType": "pageable",
+                "objectType": "dto",
+                "module": "session"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "getUserSession",
+      "method": "GET",
+      "path": "/users/{userExternalId}",
+      "pathVariables": [
+        {
+          "type": "string",
+          "name": "userExternalId",
+          "isRequired": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "objectType": "dto",
+                "module": "session"
+              }
+            }
+          }
+        },
+        "204": {
+          "content": {}
+        }
+      }
+    },
+    {
+      "actionName": "killSession",
+      "method": "POST",
+      "path": "/{sessionId}/kill",
+      "pathVariables": [
+        {
+          "type": "string",
+          "name": "sessionId",
+          "isRequired": true
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "objectType": "dto",
+              "module": "session"
+            }
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "content": {}
+        },
+        "404": {
+          "content": {}
+        }
+      }
+    },
+    {
+      "actionName": "listSessionsByRole",
+      "method": "GET",
+      "path": "/roles/{roleCode}",
+      "pathVariables": [
+        {
+          "type": "string",
+          "name": "roleCode",
+          "isRequired": true
+        }
+      ],
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "status",
+          "isRequired": false
+        },
+        {
+          "type": "integer",
+          "name": "page",
+          "isRequired": false
+        },
+        {
+          "type": "integer",
+          "name": "size",
+          "isRequired": false
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "collectionType": "pageable",
+                "objectType": "dto",
+                "module": "session"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "killSessionsByRole",
+      "method": "POST",
+      "path": "/roles/{roleCode}/kill",
+      "pathVariables": [
+        {
+          "type": "string",
+          "name": "roleCode",
+          "isRequired": true
+        }
+      ],
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "isRequired": false
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "objectType": "dto",
+              "module": "session"
+            }
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "content": {}
+        },
+        "404": {
+          "content": {}
+        }
+      }
+    },
+    {
+      "actionName": "killSessionsByDepartment",
+      "method": "POST",
+      "path": "/departments/{departmentCode}/kill",
+      "pathVariables": [
+        {
+          "type": "string",
+          "name": "departmentCode",
+          "isRequired": true
+        }
+      ],
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "object",
+              "objectType": "dto",
+              "module": "session"
+            }
+          }
+        }
+      },
+      "responses": {
+        "204": {
+          "content": {}
+        }
+      }
+    },
+    {
+      "actionName": "getSessionStatistics",
+      "method": "GET",
+      "path": "/statistics",
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

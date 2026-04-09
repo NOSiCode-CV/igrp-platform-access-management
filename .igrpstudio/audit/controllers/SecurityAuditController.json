@@ -1,0 +1,72 @@
+{
+  "type": "controller",
+  "name": "SecurityAudit",
+  "module": "audit",
+  "description": "Security Audit Log Controller",
+  "basePath": "api",
+  "actions": [
+    {
+      "actionName": "list",
+      "path": "auth/audit",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "SecurityAuditLog",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "audit"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "getById",
+      "path": "auth/audit/{id}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "SecurityAuditLog",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "audit"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "getByUserId",
+      "path": "auth/audit/user/{userId}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "SecurityAuditLog",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "audit"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
