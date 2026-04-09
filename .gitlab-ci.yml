@@ -110,6 +110,33 @@ create-jvm-manifest:
     - deploy/base-jvm
 
 # =============================================
+#  Pre-release (NOSi Registry - JVM amd64 only)
+# =============================================
+
+build-jvm-amd64-pre-release:
+  image: docker:28.2.2
+  services:
+    - name: docker:28.2.2-dind
+      command: [ "--tls=false", "--mtu=1240" ]
+  stage: build
+  before_script:
+    - apk add --no-cache curl bash
+    - docker login -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD" "$REGISTRY_URL"
+  script:
+    - docker buildx create --use --name preleasebuilder || true
+    - docker buildx inspect --bootstrap
+    - docker build -f Dockerfile \
+      --platform linux/amd64 \
+      -t "$IMAGE_NAME_FULL-jvm:pre-release" \
+      -t "$IMAGE_NAME_FULL-jvm:amd64-pre-release-$PIPELINE_TAG" \
+      --no-cache --pull \
+      --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA \
+      --push \
+      --output=type=image,name="$IMAGE_NAME_FULL-jvm:pre-release",push=true .
+  only:
+    - deploy/pre-release    
+
+# =============================================
 #  Azure Registry
 # =============================================
 

@@ -57,7 +57,7 @@ class GetCurrentUserQueryHandlerTest {
     void testHandle_whenUserExists_shouldReturnUserDTO() {
         // Arrange
         when(authenticationHelper.getSub()).thenReturn(mockExternalId);
-        when(userRepository.findByExternalId(mockExternalId)).thenReturn(Optional.of(mockUser));
+        when(userRepository.findByExternalIdWithRolesAndPermissions(mockExternalId)).thenReturn(Optional.of(mockUser));
         when(userMapper.toDto(mockUser)).thenReturn(mockDto);
 
         // Act
@@ -71,7 +71,7 @@ class GetCurrentUserQueryHandlerTest {
 
         // Verify
         verify(authenticationHelper, times(1)).getSub();
-        verify(userRepository, times(1)).findByExternalId(mockExternalId);
+        verify(userRepository, times(1)).findByExternalIdWithRolesAndPermissions(mockExternalId);
         verify(userMapper, times(1)).toDto(mockUser);
     }
 
@@ -80,7 +80,7 @@ class GetCurrentUserQueryHandlerTest {
     void testHandle_whenUserNotFound_shouldReturnNotFound() {
         // Arrange
         when(authenticationHelper.getSub()).thenReturn(mockExternalId);
-        when(userRepository.findByExternalId(mockExternalId)).thenReturn(Optional.empty());
+        when(userRepository.findByExternalIdWithRolesAndPermissions(mockExternalId)).thenReturn(Optional.empty());
 
         // Act
         ResponseEntity<IGRPUserDTO> response = handler.handle(new GetCurrentUserQuery());
@@ -91,7 +91,7 @@ class GetCurrentUserQueryHandlerTest {
 
         // Verify
         verify(authenticationHelper, times(1)).getSub();
-        verify(userRepository, times(1)).findByExternalId(mockExternalId);
+        verify(userRepository, times(1)).findByExternalIdWithRolesAndPermissions(mockExternalId);
         verifyNoInteractions(userMapper);
     }
 }

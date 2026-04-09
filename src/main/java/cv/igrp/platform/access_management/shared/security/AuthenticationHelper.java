@@ -29,17 +29,22 @@ public class AuthenticationHelper {
             throw new IllegalStateException("No authentication found in security context");
         }
 
-        // Case 1: JWT (OAuth2 user)
+        // Case 1: Native OIDC User (New flow)
+        if (authentication.getPrincipal() instanceof IgrpOidcUser oidcUser) {
+            return oidcUser.getUserProfile().externalId();
+        }
+
+        // Case 2: JWT (Fallback for raw OAuth2 user)
         if (authentication.getPrincipal() instanceof Jwt jwt) {
             return jwt.getClaimAsString("sub");
         }
 
-        // Case 2: M2M authentication (UsernamePasswordAuthenticationToken)
+        // Case 3: M2M authentication (UsernamePasswordAuthenticationToken)
         if (authentication.getPrincipal() instanceof User user) {
             return user.getUsername();
         }
 
-        // Case 3: Fallback (any other type)
+        // Case 4: Fallback (any other type)
         return authentication.getName();
     }
 
@@ -51,6 +56,9 @@ public class AuthenticationHelper {
      */
     public String getToken() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication instanceof OidcContextAuthenticationToken oidcToken) {
+            return oidcToken.getJwt().getTokenValue();
+        }
         if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
             return jwt.getTokenValue();
         }
@@ -65,6 +73,9 @@ public class AuthenticationHelper {
      */
     public Jwt getJwtToken() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication instanceof OidcContextAuthenticationToken oidcToken) {
+            return oidcToken.getJwt();
+        }
         if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
             return jwt;
         }

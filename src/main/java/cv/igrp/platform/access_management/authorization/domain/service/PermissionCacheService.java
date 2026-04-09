@@ -71,7 +71,7 @@ public class PermissionCacheService {
     private Boolean checkPermission(String subject, String permissionName) {
 
         // Verifies if the user exists or if it is deleted or disabled
-        var userOpt = userRepository.findByExternalId(subject);
+        var userOpt = userRepository.findByExternalIdWithRolesAndPermissions(subject);
         if (userOpt.isEmpty() || userOpt.get().getStatus() == Status.DELETED || userOpt.get().getStatus() == Status.INACTIVE) {
             LOGGER.info("User {} is not active or deleted", subject);
             return false;
