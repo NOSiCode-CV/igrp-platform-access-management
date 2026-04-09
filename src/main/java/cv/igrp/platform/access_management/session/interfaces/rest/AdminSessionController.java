@@ -28,6 +28,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import cv.igrp.framework.auth.generated.PermissionsRegistry;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -71,7 +72,7 @@ public class AdminSessionController {
         content = @Content(schema = @Schema(implementation = Page.class))
     )
     
-    @PreAuthorize("hasAuthority('igrp.session.admin')")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Page<SessionResponseDTO>> listSessions(
             @Parameter(description = "Session status filter") 
             @RequestParam(required = false) SessionStatus status,
@@ -102,7 +103,7 @@ public class AdminSessionController {
         responseCode = "204",
         description = "No active session found for user"
     )
-    @PreAuthorize("hasAuthority('igrp.session.admin')")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<SessionResponseDTO> getUserSession(
             @Parameter(description = "User external ID") 
             @PathVariable String userExternalId) {
@@ -129,7 +130,7 @@ public class AdminSessionController {
         responseCode = "404",
         description = "Session not found"
     )
-    @PreAuthorize("hasAuthority('igrp.session.admin')")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Void> killSession(
             @Parameter(description = "Session ID") 
             @PathVariable UUID sessionId,
@@ -158,7 +159,7 @@ public class AdminSessionController {
         responseCode = "204",
         description = "No sessions found for role"
     )
-    @PreAuthorize("hasAuthority('igrp.session.admin')")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Page<SessionResponseDTO>> listSessionsByRole(
             @Parameter(description = "Role code") 
             @PathVariable String roleCode,
@@ -194,7 +195,7 @@ public class AdminSessionController {
         responseCode = "404",
         description = "No sessions found for role"
     )
-    @PreAuthorize("hasAuthority('igrp.session.admin')")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Void> killSessionsByRole(
             @Parameter(description = "Role code") 
             @PathVariable String roleCode,
@@ -224,7 +225,7 @@ public class AdminSessionController {
         responseCode = "204",
         description = "Sessions killed successfully"
     )
-    @PreAuthorize("hasAuthority('igrp.session.admin')")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Void> killSessionsByDepartment(
             @Parameter(description = "Department code") 
             @PathVariable String departmentCode,
@@ -248,7 +249,7 @@ public class AdminSessionController {
         responseCode = "200",
         description = "Statistics retrieved successfully"
     )
-    @PreAuthorize("hasAuthority('igrp.session.admin')")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Object> getSessionStatistics() {
         log.debug("Admin getting session statistics");
         
