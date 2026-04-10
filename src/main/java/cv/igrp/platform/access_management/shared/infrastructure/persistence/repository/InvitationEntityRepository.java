@@ -12,6 +12,7 @@ import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Optional;
+import cv.igrp.platform.access_management.shared.application.constants.IdentifierType;
 
 
 @Repository
@@ -56,6 +57,6 @@ public interface InvitationEntityRepository extends
             @Param("identifierValue") String identifierValue
     );
 
-    Optional<InvitationEntity> findByIdentifierTypeAndIdentifierValueAndStatus(String identifierType, String identifierValue, InvitationStatus status);
+    Optional<InvitationEntity> findByIdentifierTypeAndIdentifierValueAndStatus(IdentifierType identifierType, String identifierValue, InvitationStatus status);
 
 }

@@ -24,9 +24,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import java.util.List;
 import java.util.Optional;
+import cv.igrp.platform.access_management.shared.application.constants.IdentifierType;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -65,7 +65,7 @@ class InviteUserCommandHandlerTest {
     @BeforeEach
     void setUp() {
         inviteUserDTO = new InviteUserDTO();
-        inviteUserDTO.setIdentifierType("EMAIL");
+        inviteUserDTO.setIdentifierType(IdentifierType.EMAIL);
         inviteUserDTO.setIdentifierValue("john@nosi.cv");
         inviteUserDTO.setDepartmentCode("DEPT_TEST");
         inviteUserDTO.setRoles(List.of("ROLE_TEST"));
@@ -78,7 +78,7 @@ class InviteUserCommandHandlerTest {
      */
     @Test
     void itShouldInviteUserSuccessfully() throws NotificationException {
-        when(invitationRepository.findByIdentifierTypeAndIdentifierValueAndStatus("EMAIL", "john@nosi.cv", InvitationStatus.PENDING)).thenReturn(Optional.empty());
+        when(invitationRepository.findByIdentifierTypeAndIdentifierValueAndStatus(IdentifierType.EMAIL, "john@nosi.cv", InvitationStatus.PENDING)).thenReturn(Optional.empty());
 
         DepartmentEntity department = new DepartmentEntity();
         department.setCode("DEPT_TEST");
@@ -89,7 +89,7 @@ class InviteUserCommandHandlerTest {
         when(roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, "ROLE_TEST")).thenReturn(role);
 
         InvitationEntity savedInvitation = new InvitationEntity();
-        savedInvitation.setIdentifierType("EMAIL");
+        savedInvitation.setIdentifierType(IdentifierType.EMAIL);
         savedInvitation.setIdentifierValue("john@nosi.cv");
         savedInvitation.setToken("test-token");
         when(invitationRepository.save(any(InvitationEntity.class))).thenReturn(savedInvitation);
@@ -97,7 +97,7 @@ class InviteUserCommandHandlerTest {
         when(userUtils.constructInvitationUrl(any(), eq("test-token"))).thenReturn("http://test.url");
 
         InvitationDTO expectedDto = new InvitationDTO();
-        expectedDto.setIdentifierType("EMAIL");
+        expectedDto.setIdentifierType(IdentifierType.EMAIL);
         expectedDto.setIdentifierValue("john@nosi.cv");
         when(invitationMapper.toDtoWithUrl(eq(savedInvitation), eq("http://test.url"))).thenReturn(expectedDto);
 
