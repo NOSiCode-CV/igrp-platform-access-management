@@ -72,7 +72,7 @@ public class GetDepartmentResourcesQueryHandlerTest {
     GetDepartmentResourcesQuery query = new GetDepartmentResourcesQuery(null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(resourceRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), null))
+    when(resourceRepository.findByDepartmentAndStatusNotFiltered(eq(department.getId()), eq(Status.DELETED.getCode()), any()))
             .thenReturn(List.of(resourceRead, resourceWrite));
     when(resourceMapper.toDto(resourceRead)).thenReturn(dtoRead);
     when(resourceMapper.toDto(resourceWrite)).thenReturn(dtoWrite);
@@ -90,8 +90,8 @@ public class GetDepartmentResourcesQueryHandlerTest {
     GetDepartmentResourcesQuery query = new GetDepartmentResourcesQuery("resource.read", "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(resourceRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), null))
-            .thenReturn(List.of(resourceRead, resourceWrite));
+    when(resourceRepository.findByDepartmentAndStatusNotFiltered(eq(department.getId()), eq(Status.DELETED.getCode()), any()))
+            .thenReturn(List.of(resourceRead));
     when(resourceMapper.toDto(resourceRead)).thenReturn(dtoRead);
 
     ResponseEntity<List<ResourceDTO>> response = handler.handle(query);
@@ -106,7 +106,7 @@ public class GetDepartmentResourcesQueryHandlerTest {
     GetDepartmentResourcesQuery query = new GetDepartmentResourcesQuery(null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(resourceRepository.findByDepartmentAndStatusNotFiltered(department.getId(), Status.DELETED.getCode(), null))
+    when(resourceRepository.findByDepartmentAndStatusNotFiltered(eq(department.getId()), eq(Status.DELETED.getCode()), any()))
             .thenReturn(List.of());
 
     ResponseEntity<List<ResourceDTO>> response = handler.handle(query);

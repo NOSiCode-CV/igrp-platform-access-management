@@ -99,7 +99,7 @@ class AddRolesToMenuCommandHandlerTest {
         when(departmentRepository.findByCodeAndStatusNotDeleted("HR"))
                 .thenReturn(department);
 
-        when(roleRepository.findAllByDepartmentAndCodeIn(department, List.of("ADMIN", "MANAGER")))
+        when(roleRepository.findAllByDepartmentAndCodeInNotDeleted(eq(department), any(), eq(Status.DELETED)))
                 .thenReturn(List.of(roleA, roleB));
 
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP"))
@@ -136,7 +136,7 @@ class AddRolesToMenuCommandHandlerTest {
         when(departmentRepository.findByCodeAndStatusNotDeleted("HR"))
                 .thenReturn(department);
 
-        when(roleRepository.findAllByDepartmentAndCodeIn(department, List.of("ADMIN", "MANAGER")))
+        when(roleRepository.findAllByDepartmentAndCodeInNotDeleted(eq(department), any(), eq(Status.DELETED)))
                 .thenReturn(List.of(roleA, roleB));
 
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP"))
@@ -169,7 +169,7 @@ class AddRolesToMenuCommandHandlerTest {
         when(departmentRepository.findByCodeAndStatusNotDeleted("HR"))
                 .thenReturn(department);
 
-        when(roleRepository.findAllByDepartmentAndCodeIn(department, List.of("ADMIN")))
+        when(roleRepository.findAllByDepartmentAndCodeInNotDeleted(eq(department), any(), eq(Status.DELETED)))
                 .thenReturn(List.of(roleA));
 
         when(applicationRepository.findByCodeAndStatusNotDeleted(null))
@@ -203,7 +203,7 @@ class AddRolesToMenuCommandHandlerTest {
         when(departmentRepository.findByCodeAndStatusNotDeleted("HR"))
                 .thenReturn(department);
 
-        when(roleRepository.findAllByDepartmentAndCodeIn(department, List.of("ADMIN")))
+        when(roleRepository.findAllByDepartmentAndCodeInNotDeleted(eq(department), any(), eq(Status.DELETED)))
                 .thenReturn(List.of()); // no roles found
 
         assertThrows(
@@ -226,7 +226,7 @@ class AddRolesToMenuCommandHandlerTest {
         when(departmentRepository.findByCodeAndStatusNotDeleted("HR"))
                 .thenReturn(department);
 
-        when(roleRepository.findAllByDepartmentAndCodeIn(department, List.of("ADMIN")))
+        when(roleRepository.findAllByDepartmentAndCodeInNotDeleted(eq(department), any(), eq(Status.DELETED)))
                 .thenReturn(List.of(roleA));
 
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP"))

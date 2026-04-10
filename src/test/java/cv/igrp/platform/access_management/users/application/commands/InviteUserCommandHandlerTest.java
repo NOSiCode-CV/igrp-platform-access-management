@@ -41,6 +41,9 @@ class InviteUserCommandHandlerTest {
     private NotificationAdapter<NotificationResult> notificationAdapter;
 
     @MockBean
+    private cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository userRepository;
+
+    @MockBean
     private RoleEntityRepository roleRepository;
 
     @MockBean

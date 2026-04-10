@@ -1,0 +1,6 @@
+﻿CONTAINER ID   IMAGE                COMMAND                  CREATED        STATUS                          PORTS                                         NAMES
+2f6af8ac83c4   redis:latest         "docker-entrypoint.sÔÇª"   8 days ago     Up 7 days                       0.0.0.0:6379->6379/tcp, [::]:6379->6379/tcp   redis-authorization
+d6fca502a19f   postgres:14-alpine   "docker-entrypoint.sÔÇª"   11 days ago    Up 13 minutes                   0.0.0.0:6999->5432/tcp, [::]:6999->5432/tcp   postgres-am
+21de3983b7ed   postgres:14-alpine   "docker-entrypoint.sÔÇª"   11 days ago    Up 18 hours                     0.0.0.0:5433->5432/tcp, [::]:5433->5432/tcp   postgres
+e84e815a6e7a   postgres:16-alpine   "docker-entrypoint.sÔÇª"   4 months ago   Up 7 days                       0.0.0.0:5435->5435/tcp, [::]:5435->5435/tcp   ebook-db
+1de23e3b5e0b   postgres:15.2        "docker-entrypoint.sÔÇª"   5 months ago   Restarting (1) 55 seconds ago                                                 icgp-wallet-api-database-1

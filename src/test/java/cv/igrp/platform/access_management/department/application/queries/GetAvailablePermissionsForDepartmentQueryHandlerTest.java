@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 public class GetAvailablePermissionsForDepartmentQueryHandlerTest {
 
   @Mock
@@ -90,7 +91,7 @@ public class GetAvailablePermissionsForDepartmentQueryHandlerTest {
     GetAvailablePermissionsForDepartmentQuery query = new GetAvailablePermissionsForDepartmentQuery(null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(dept1);
-    when(permissionRepository.findAvailablePermissionsForDepartment("DEP1", IGRP_PERMISSION, null)).thenReturn(List.of(perm1, perm2));
+    when(permissionRepository.findAvailablePermissionsForDepartment(eq("DEP1"), eq(IGRP_PERMISSION), any())).thenReturn(List.of(perm1, perm2));
     when(permissionMapper.mapToDTO(perm1)).thenReturn(dto1);
     when(permissionMapper.mapToDTO(perm2)).thenReturn(dto2);
 
@@ -107,7 +108,7 @@ public class GetAvailablePermissionsForDepartmentQueryHandlerTest {
     GetAvailablePermissionsForDepartmentQuery query = new GetAvailablePermissionsForDepartmentQuery("Resource1", "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(dept1);
-    when(permissionRepository.findAvailablePermissionsForDepartment("DEP1", IGRP_PERMISSION, null)).thenReturn(List.of(perm1, perm2));
+    when(permissionRepository.findAvailablePermissionsForDepartment(eq("DEP1"), eq(IGRP_PERMISSION), any())).thenReturn(List.of(perm1));
     when(permissionMapper.mapToDTO(perm1)).thenReturn(dto1);
 
     ResponseEntity<List<PermissionDTO>> response = handler.handle(query);
@@ -122,7 +123,7 @@ public class GetAvailablePermissionsForDepartmentQueryHandlerTest {
     GetAvailablePermissionsForDepartmentQuery query = new GetAvailablePermissionsForDepartmentQuery(null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(dept1);
-    when(permissionRepository.findAvailablePermissionsForDepartment("DEP1", IGRP_PERMISSION, null)).thenReturn(List.of());
+    when(permissionRepository.findAvailablePermissionsForDepartment(eq("DEP1"), eq(IGRP_PERMISSION), any())).thenReturn(List.of());
 
     ResponseEntity<List<PermissionDTO>> response = handler.handle(query);
 

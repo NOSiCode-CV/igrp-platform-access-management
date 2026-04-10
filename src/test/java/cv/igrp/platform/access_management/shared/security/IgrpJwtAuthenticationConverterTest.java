@@ -4,6 +4,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.oauth2.jwt.Jwt;
 
 import java.time.Instant;
@@ -85,7 +86,7 @@ class IgrpJwtAuthenticationConverterTest {
     }
 
     @Test
-    void testConvertCniThrowsExceptionIfNicMissing() {
+    void testConvertCniUsesSubAsNicFallbackIfNicMissing() {
         Map<String, Object> claims = Map.of(
                 "sub", "user-cni",
                 "acr", "cni",
@@ -93,13 +94,11 @@ class IgrpJwtAuthenticationConverterTest {
         );
 
         Jwt jwt = createMockJwt(claims);
-
-        OAuth2AuthenticationException exception = assertThrows(OAuth2AuthenticationException.class, () -> {
-            converter.convert(jwt);
-        });
-
-        assertEquals("missing_nic", exception.getError().getErrorCode());
-        assertTrue(exception.getMessage().contains("Login via CNI requires the Civil Identification Number"));
+        AbstractAuthenticationToken authObj = converter.convert(jwt);
+        
+        OidcContextAuthenticationToken token = (OidcContextAuthenticationToken) authObj;
+        UserProfile profile = token.getPrincipal().getUserProfile();
+        assertEquals("USERCNI", profile.nic());
     }
 
     @Test

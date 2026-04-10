@@ -60,6 +60,9 @@ class RespondUserInvitationCommandHandlerTest {
     @MockBean
     private UserIdentifierEntityRepository userIdentifierEntityRepository;
 
+    @MockBean
+    private cv.igrp.platform.access_management.users.application.service.UserIdentityResolutionService userIdentityResolutionService;
+
     @Mock
     private SecurityContext securityContext;
     @Mock
@@ -157,10 +160,11 @@ class RespondUserInvitationCommandHandlerTest {
         UserProfile profile = new UserProfile("sub", null, "Jane", "jane@example.com", null, null, "pwd", List.of());
         mockSecurityContext(profile);
         when(responseDto.isAccept()).thenReturn(true);
-        when(userRepository.findByExternalId("sub")).thenReturn(Optional.empty()); // Uses externalId (sub)
-        
         IGRPUserEntity savedUserMock = new IGRPUserEntity();
         savedUserMock.setId(10);
+        savedUserMock.setEmail("jane@example.com");
+        savedUserMock.setName("Jane");
+        when(userIdentityResolutionService.resolveOrCreate(any(), any(), any(), any(), any())).thenReturn(savedUserMock);
         when(userRepository.save(any(IGRPUserEntity.class))).thenReturn(savedUserMock);
         
         RoleEntity roleEntityMock = new RoleEntity();
@@ -204,7 +208,8 @@ class RespondUserInvitationCommandHandlerTest {
         existingUser.setId(10);
         existingUser.setNic("123456");
         existingUser.setExternalId("sub");
-        when(userRepository.findByExternalId("sub")).thenReturn(Optional.of(existingUser));
+        when(userRepository.findByAnyIdentifier(any(), any(), any(), any())).thenReturn(Optional.of(existingUser));
+        when(userIdentityResolutionService.resolveOrCreate(any(), any(), any(), any(), any())).thenReturn(existingUser);
         when(userRepository.save(any(IGRPUserEntity.class))).thenReturn(existingUser);
         
         RoleEntity roleEntityMock = new RoleEntity();
@@ -244,10 +249,9 @@ class RespondUserInvitationCommandHandlerTest {
         UserProfile profile = new UserProfile("sub", null, "Jane", null, "+2389999999", null, "cmdcv", List.of());
         mockSecurityContext(profile);
         when(responseDto.isAccept()).thenReturn(true);
-        when(userRepository.findByExternalId("sub")).thenReturn(Optional.empty());
-        
         IGRPUserEntity savedUserMock = new IGRPUserEntity();
         savedUserMock.setId(10);
+        when(userIdentityResolutionService.resolveOrCreate(any(), any(), any(), any(), any())).thenReturn(savedUserMock);
         when(userRepository.save(any(IGRPUserEntity.class))).thenReturn(savedUserMock);
         
         RoleEntity roleEntityMock = new RoleEntity();
