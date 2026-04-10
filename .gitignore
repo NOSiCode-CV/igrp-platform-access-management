@@ -33,9 +33,10 @@ build/
 ### VS Code ###
 .vscode/
 
+app.log*
+compile_error*
 run_output.txt
 
-app.log*
 compile_errors*
 
 implementation_plan.md
