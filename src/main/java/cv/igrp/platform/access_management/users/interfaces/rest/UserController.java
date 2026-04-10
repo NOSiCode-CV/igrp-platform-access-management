@@ -383,7 +383,7 @@ public class UserController {
       Integer currentUserId = currentUserResponse.getBody().getId();
       
       // Create update command with current user's ID
-      final var command = new UpdateUserCommand(updateUserRequest, currentUserId);
+      final var command = new UpdateUserCommand(updateUserRequest, currentUserId != null ? currentUserId.toString() : null);
       
       return commandBus.send(command);
   }
