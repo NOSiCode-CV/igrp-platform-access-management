@@ -21,9 +21,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -39,22 +41,23 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = RespondUserInvitationCommandHandler.class)
 class RespondUserInvitationCommandHandlerTest {
 
-    @Mock
+    @MockBean
     private NotificationAdapter<cv.igrp.framework.notifications.core.model.NotificationResult> notificationAdapter;
-    @Mock
+    @MockBean
     private IGRPUserEntityRepository userRepository;
-    @Mock
+    @MockBean
     private RoleEntityRepository roleRepository;
-    @Mock
+    @MockBean
     private InvitationEntityRepository invitationRepository;
-    @Mock
+    @MockBean
     private InvitationMapper invitationMapper;
-    @Mock
+    @MockBean
     private SecurityAuditService auditService;
-    @Mock
+    @MockBean
     private UserIdentifierEntityRepository userIdentifierEntityRepository;
 
     @Mock
@@ -62,7 +65,7 @@ class RespondUserInvitationCommandHandlerTest {
     @Mock
     private Authentication authentication;
 
-    @InjectMocks
+    @Autowired
     private RespondUserInvitationCommandHandler commandHandler;
 
     private RespondUserInvitationCommand command;
@@ -217,5 +220,50 @@ class RespondUserInvitationCommandHandlerTest {
         verify(auditService).logUserChange(any(), eq("UPDATE"));
         // No email or phone means userIdentifierEntityRepository won't save any
         verify(userIdentifierEntityRepository, never()).save(any());
+    }
+
+    @Test
+    void testHandle_MismatchedIdentifierValue_Cni() {
+        invitationEntity.setIdentifierValue("987654");
+        invitationEntity.setAllowedAuthMethods(Set.of("cni"));
+        when(invitationRepository.findByTokenAndStatusPending(any())).thenReturn(invitationEntity);
+        UserProfile profile = new UserProfile("sub", null, "John", null, null, "123456", "cni", List.of());
+        mockSecurityContext(profile);
+
+        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> commandHandler.handle(command));
+        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getBody().getStatus());
+        assertTrue(exception.getMessage().contains("does not match the invitation"));
+    }
+
+    @Test
+    void testHandle_AcceptNewUser_Cmdcv() {
+        invitationEntity.setIdentifierValue("+2389999999");
+        invitationEntity.setAllowedAuthMethods(Set.of("cmdcv"));
+        
+        when(invitationRepository.findByTokenAndStatusPending(any())).thenReturn(invitationEntity);
+        UserProfile profile = new UserProfile("sub", null, "Jane", null, "+2389999999", null, "cmdcv", List.of());
+        mockSecurityContext(profile);
+        when(responseDto.isAccept()).thenReturn(true);
+        when(userRepository.findByExternalId("sub")).thenReturn(Optional.empty());
+        
+        IGRPUserEntity savedUserMock = new IGRPUserEntity();
+        savedUserMock.setId(10);
+        when(userRepository.save(any(IGRPUserEntity.class))).thenReturn(savedUserMock);
+        
+        RoleEntity roleEntityMock = new RoleEntity();
+        roleEntityMock.setId(2);
+        when(roleRepository.findById(2)).thenReturn(Optional.of(roleEntityMock));
+        
+        when(invitationMapper.toDto(any())).thenReturn(new InvitationDTO());
+
+        ResponseEntity<InvitationDTO> response = commandHandler.handle(command);
+
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        
+        ArgumentCaptor<UserIdentifierEntity> identifierCaptor = ArgumentCaptor.forClass(UserIdentifierEntity.class);
+        verify(userIdentifierEntityRepository).save(identifierCaptor.capture());
+        UserIdentifierEntity identifier = identifierCaptor.getValue();
+        assertEquals("PHONE", identifier.getType());
+        assertEquals("+2389999999", identifier.getValueNormalized());
     }
 }

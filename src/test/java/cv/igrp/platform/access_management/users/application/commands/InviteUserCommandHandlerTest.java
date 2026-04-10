@@ -11,7 +11,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.InvitationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils;
@@ -19,9 +18,11 @@ import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import java.util.List;
@@ -32,31 +33,29 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = InviteUserCommandHandler.class)
 class InviteUserCommandHandlerTest {
 
-    @Mock
+    @MockBean
     private NotificationAdapter<NotificationResult> notificationAdapter;
 
-    @Mock
-    private IGRPUserEntityRepository userRepository;
-
-    @Mock
+    @MockBean
     private RoleEntityRepository roleRepository;
 
-    @Mock
+    @MockBean
     private DepartmentEntityRepository departmentRepository;
 
-    @Mock
+    @MockBean
     private InvitationEntityRepository invitationRepository;
 
-    @Mock
+    @MockBean
     private InvitationMapper invitationMapper;
 
-    @Mock
+    @MockBean
     private UserUtils userUtils;
 
-    @InjectMocks
+    @Autowired
     private InviteUserCommandHandler underTest;
 
     private InviteUserDTO inviteUserDTO;

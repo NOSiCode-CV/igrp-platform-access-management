@@ -11,16 +11,19 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
+import org.junit.jupiter.api.extension.ExtendWith;
+
 import static org.junit.jupiter.api.Assertions.*;
 
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = IgrpJwtAuthenticationConverter.class)
 class IgrpJwtAuthenticationConverterTest {
 
+    @Autowired
     private IgrpJwtAuthenticationConverter converter;
-
-    @BeforeEach
-    void setUp() {
-        converter = new IgrpJwtAuthenticationConverter();
-    }
 
     private Jwt createMockJwt(Map<String, Object> claims) {
         return Jwt.withTokenValue("mock-token")

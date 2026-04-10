@@ -1,4 +1,4 @@
-﻿package cv.igrp.platform.access_management.users.application.commands;
+package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
@@ -11,7 +11,6 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.InvitationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils;
@@ -47,7 +46,6 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
     private String appCenterUrl = "";
 
     private final NotificationAdapter<NotificationResult> notificationAdapter;
-    private final IGRPUserEntityRepository userRepository;
     private final RoleEntityRepository roleRepository;
     private final DepartmentEntityRepository departmentRepository;
     private final InvitationEntityRepository invitationRepository;
@@ -55,14 +53,13 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
     private final UserUtils userUtils;
 
     public InviteUserCommandHandler(NotificationAdapter<NotificationResult> notificationAdapter,
-            IGRPUserEntityRepository userRepository,
-            RoleEntityRepository roleRepository,
-            DepartmentEntityRepository departmentRepository,
-            InvitationEntityRepository invitationRepository,
-            InvitationMapper invitationMapper,
-            UserUtils userUtils) {
+                                    RoleEntityRepository roleRepository,
+                                    DepartmentEntityRepository departmentRepository,
+                                    InvitationEntityRepository invitationRepository,
+                                    InvitationMapper invitationMapper,
+                                    UserUtils userUtils
+    ) {
         this.notificationAdapter = notificationAdapter;
-        this.userRepository = userRepository;
         this.roleRepository = roleRepository;
         this.departmentRepository = departmentRepository;
         this.invitationRepository = invitationRepository;
