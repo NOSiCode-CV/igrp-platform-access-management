@@ -18,7 +18,6 @@ import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
 
 import java.util.List;
 import java.util.Map;
-import cv.igrp.platform.access_management.shared.application.constants.IdentifierType;
 
 @Component
 public class CancelUserInvitationCommandHandler implements CommandHandler<CancelUserInvitationCommand, ResponseEntity<InvitationDTO>> {
@@ -58,7 +57,7 @@ public class CancelUserInvitationCommandHandler implements CommandHandler<Cancel
 
          LOGGER.info("Notifying new user: token={}, type={}, value={}", updatedInvitation.getToken(), updatedInvitation.getIdentifierType(), updatedInvitation.getIdentifierValue());
 
-         if (IdentifierType.EMAIL.equals(updatedInvitation.getIdentifierType())) {
+         if ("EMAIL".equalsIgnoreCase(updatedInvitation.getIdentifierType())) {
              var notification = new Notification();
 
              notification.setRecipients(List.of(updatedInvitation.getIdentifierValue()));
