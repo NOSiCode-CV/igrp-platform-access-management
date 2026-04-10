@@ -47,7 +47,7 @@ public class UpdateUserCommandHandlerTest {
     void setUp() {
         user = new IGRPUserEntity();
         user.setName("Old Name");
-        user.setId(USER_ID);
+        user.setId(USER_ID + "");
         user.setStatus(Status.ACTIVE);
         user.setEmail("old@example.com");
 
