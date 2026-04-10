@@ -11,7 +11,6 @@ import lombok.NoArgsConstructor;
 import lombok.AllArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
-import cv.igrp.platform.access_management.shared.application.constants.IdentifierType;
 
 @Data
 @NoArgsConstructor
@@ -21,8 +20,8 @@ import cv.igrp.platform.access_management.shared.application.constants.Identifie
 @IgrpDTO
 public class InviteUserDTO  {
 
-  @NotNull(message = "Identifier type is required")
-  private IdentifierType identifierType;
+  @NotBlank(message = "Identifier type is required (EMAIL, PHONE, NIC)")
+  private String identifierType;
   
   @NotBlank(message = "Identifier value is required")
   private String identifierValue;
