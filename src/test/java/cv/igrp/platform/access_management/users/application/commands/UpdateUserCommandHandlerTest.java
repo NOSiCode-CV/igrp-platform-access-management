@@ -40,14 +40,14 @@ public class UpdateUserCommandHandlerTest {
     private final Integer USER_ID = 1;
 
     private UpdateUserCommand updateUserCommand(IGRPUserDTO igrpuserdto, Integer userId){
-        return new UpdateUserCommand(igrpuserdto, userId != null ? userId.toString() : null);
+        return new UpdateUserCommand(igrpuserdto, userId);
     }
 
     @BeforeEach
     void setUp() {
         user = new IGRPUserEntity();
         user.setName("Old Name");
-        user.setId(USER_ID + "");
+        user.setId(USER_ID);
         user.setStatus(Status.ACTIVE);
         user.setEmail("old@example.com");
 

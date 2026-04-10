@@ -12,7 +12,6 @@ import lombok.AllArgsConstructor;
 import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
 import cv.igrp.platform.access_management.shared.application.dto.CodeDescriptionDTO;
 import java.time.LocalDateTime;
-import cv.igrp.platform.access_management.shared.application.constants.IdentifierType;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -28,7 +27,7 @@ public class InvitationDTO  {
   
   private Integer id ;
   
-  private IdentifierType identifierType ;
+  private String identifierType ;
   
   
   private String identifierValue ;

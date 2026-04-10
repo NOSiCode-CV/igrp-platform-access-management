@@ -59,10 +59,6 @@ GROUP BY external_id HAVING COUNT(*) > 1;
 For CMDCV and CNI, `sub` IS the NIC — there is no separate NIC claim.
 For CNI logins, `profile.externalId()` and `profile.nic()` will be the same.
 
-NOTE: Autentika CMDCV tokens have a typo in the email claim — it is 'emaill'
-(double l), not 'email'. IgrpJwtAuthenticationConverter handles this:
-coalesce(opt(c, 'email'), opt(c, 'emaill'), opt(c, 'preferred_username'))
-
 ### How the authenticated user is surfaced
 
 `IgrpJwtAuthenticationConverter` (do not modify) converts every JWT into an
@@ -87,9 +83,7 @@ Always convert `""` → `null` before any lookup or save.
 - `IGRPUserEntity.java` — has `nic` (VARCHAR 13) and `phoneNumber` as fields.
   `username` is NOT NULL UNIQUE.
 - `IGRPUserEntityRepository.java` — has `findByExternalId`, `findByUsername`,
-  `existsByEmail`, and `findByAnyIdentifier` (searches by externalId, email, nic,
-  phoneNumber, AND username — the last condition handles Keycloak users where
-  username=email but externalId=UUID).
+  `existsByEmail`. Does NOT have `findByAnyIdentifier` yet.
 - `UserIdentifierEntity.java` and repository — exist for secondary lookups.
 - `AsyncConfig.java` — `@EnableAsync` already active.
 - `InviteUserCommandHandler.java` — must use `pwd`/`cmdcv`/`cni` for
@@ -166,11 +160,6 @@ Two public methods with different responsibilities:
 called only by `RespondUserInvitationCommandHandler`. Finds existing user or
 creates new one. Wraps save in `DataIntegrityViolationException` catch with
 retry. Returns `IGRPUserEntity`.
-
-Username selection for new users — use bestUsername() helper:
-- If externalId matches UUID pattern (Keycloak): username = email ?? externalId
-- Otherwise (Autentika): username = externalId ?? email
-This prevents UUID strings like 'a667f627-...' from becoming usernames.
 
 **`resolveOrEnrich(externalId, email, nic, phoneNumber, name)`** —
 called only by `UserIdentityResolutionListener`. Finds existing user and
@@ -271,11 +260,6 @@ IGRPUserEntity user = userIdentityResolutionService.resolveOrCreate(
 
 - **`IGRPUserEntity.setNic()` may still write to `username`.** Verify it
   sets `this.nic = nic`, not `this.username = nic`.
-
-  CNI fallback in IgrpJwtAuthenticationConverter: for CNI logins there is no
-  separate NIC claim — sub IS the NIC. The converter does:
-  if ('cni'.equals(method) && nic == null) { nic = normalizeNic(sub); }
-  This means profile.nic() and profile.externalId() will be equal for CNI logins.
 
 ---
 

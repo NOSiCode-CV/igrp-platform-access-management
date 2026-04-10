@@ -13,7 +13,6 @@ import cv.igrp.platform.access_management.shared.application.constants.Invitatio
 import java.time.LocalDateTime;
 import java.util.Set;
 import java.util.HashSet;
-import cv.igrp.platform.access_management.shared.application.constants.IdentifierType;
 
 
 @Getter
@@ -30,10 +29,9 @@ public class InvitationEntity extends AuditEntity {
     @Column(name = "id", unique = true, nullable = false)
     private Integer id;
 
-    @NotNull(message = "identifierType is mandatory")
-    @Enumerated(EnumType.STRING)
+    @NotBlank(message = "identifierType is mandatory")
     @Column(name="identifier_type", nullable = false)
-    private IdentifierType identifierType;
+    private String identifierType;
 
     @NotBlank(message = "identifierValue is mandatory")
     @Column(name="identifier_value", nullable = false)
