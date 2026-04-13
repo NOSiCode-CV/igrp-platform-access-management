@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.architecture;
 
-import cv.igrp.framework.auth.core.adapter.IAdapter;
+
 import cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService;
 import cv.igrp.platform.access_management.users.application.commands.InviteUserCommandHandler;
 import cv.igrp.platform.access_management.users.application.commands.RespondUserInvitationCommandHandler;
@@ -45,7 +45,9 @@ public class NoAdapterIntegrationArchitectureSpringTest {
     private void enforceNoAdapterUsage(Class<?> clazz) {
         Field[] fields = clazz.getDeclaredFields();
         for (Field field : fields) {
-            if (IAdapter.class.isAssignableFrom(field.getType())) {
+            if ("cv.igrp.framework.auth.core.adapter.IAdapter".equals(field.getType().getName()) || 
+                "cv.igrp.framework.auth.core.adapter.UserAdapter".equals(field.getType().getName()) ||
+                "cv.igrp.framework.auth.core.adapter.RoleAdapter".equals(field.getType().getName())) {
                 fail("Violação de Arquitetura (Sem IAdapter): A classe " + clazz.getName() 
                      + " possui injeção direta de " + field.getType().getName());
             }

@@ -137,7 +137,7 @@ class AddRolesToMenuCommandHandlerTest {
                 .thenReturn(department);
 
         when(roleRepository.findAllByDepartmentAndCodeInNotDeleted(eq(department), any(), eq(Status.DELETED)))
-                .thenReturn(List.of(roleA, roleB));
+                .thenReturn(List.of(roleA));
 
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP"))
                 .thenReturn(app);

@@ -81,7 +81,7 @@ public class AuthAuditService {
             identifierValue = jwt.hasClaim("email") ? jwt.getClaimAsString("email") : null;
         } else if (amr != null && amr.contains("OpenIDConnectAuthenticator")) {
             if ("cmdcv".equalsIgnoreCase(acr)) {
-                identifierType = IdentifierType.CMDCV;
+                identifierType = IdentifierType.PHONE;
                 identifierValue = jwt.hasClaim("phone_number") ? jwt.getClaimAsString("phone_number") : null;
             } else if ("cni".equalsIgnoreCase(acr)) {
                 identifierType = IdentifierType.CNI;
@@ -89,7 +89,7 @@ public class AuthAuditService {
             }
         } else if (amr == null || amr.isEmpty() || amr.contains("refresh_token")) {
             if (jwt.hasClaim("phone_number")) {
-                identifierType = IdentifierType.CMDCV;
+                identifierType = IdentifierType.PHONE;
                 identifierValue = jwt.getClaimAsString("phone_number");
             } else if (jwt.hasClaim("email")) {
                 identifierType = IdentifierType.EMAIL;

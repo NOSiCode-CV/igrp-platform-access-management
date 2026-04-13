@@ -103,9 +103,9 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
         invitation.setIdentifierValue(dto.getIdentifierValue());
 
         Set<String> allowed = new HashSet<>();
-        if (IdentifierType.EMAIL.equals(dto.getIdentifierType())) allowed.add("CREDENTIALS");
-        else if (IdentifierType.CMDCV.equals(dto.getIdentifierType())) allowed.add("CMD");
-        else if (IdentifierType.CNI.equals(dto.getIdentifierType())) allowed.add("CNI");
+        if (IdentifierType.EMAIL.equals(dto.getIdentifierType())) allowed.add("pwd");
+        else if (IdentifierType.PHONE.equals(dto.getIdentifierType())) allowed.add("cmdcv");
+        else if (IdentifierType.CNI.equals(dto.getIdentifierType())) allowed.add("cni");
         invitation.setAllowedAuthMethods(allowed);
 
         invitation.setStatus(InvitationStatus.PENDING);
@@ -138,12 +138,11 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
                         Map.of("invitationToken", savedInvitation.getToken(), "email", dto.getIdentifierValue()));
 
                 notificationAdapter.send(notification);
-            } catch (Exception e) {
-                LOGGER.error("Invitation Email failed", e);
             }
+        } catch (Exception e) {
+            LOGGER.error("Invitation Email failed", e);
         }
 
-        var url = userUtils.constructInvitationUrl(appCenterUrl, savedInvitation.getToken());
         LOGGER.info("User invited successfully with token={}", savedInvitation.getToken());
         return ResponseEntity.ok(invitationMapper.toDtoWithUrl(savedInvitation, url));
 

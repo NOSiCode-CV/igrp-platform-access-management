@@ -388,7 +388,7 @@ public class UserController {
       return commandBus.send(command);
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_CREATE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_CREATE)")
    @PostMapping(
    value = "users/invite"
   )

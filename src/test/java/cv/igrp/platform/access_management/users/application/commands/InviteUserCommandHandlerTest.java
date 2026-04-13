@@ -94,7 +94,7 @@ class InviteUserCommandHandlerTest {
         savedInvitation.setIdentifierType(IdentifierType.EMAIL);
         savedInvitation.setIdentifierValue("john@nosi.cv");
         savedInvitation.setToken("test-token");
-        when(invitationRepository.save(any(InvitationEntity.class))).thenReturn(savedInvitation);
+        when(invitationRepository.saveAndFlush(any(InvitationEntity.class))).thenReturn(savedInvitation);
 
         when(userUtils.constructInvitationUrl(any(), eq("test-token"))).thenReturn("http://test.url");
 
@@ -109,7 +109,7 @@ class InviteUserCommandHandlerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expectedDto, response.getBody());
 
-        verify(invitationRepository).save(any(InvitationEntity.class));
+        verify(invitationRepository).saveAndFlush(any(InvitationEntity.class));
         verify(notificationAdapter).send(any(Notification.class));
     }
 }

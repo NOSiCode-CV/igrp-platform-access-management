@@ -114,10 +114,11 @@ public class RespondUserInvitationCommandHandler
          primaryIdentifierValue = email != null ? email.toLowerCase() : null;
       }
 
-      if (primaryIdentifierValue == null || !primaryIdentifierValue.equals(invitation.getIdentifierValue())) {
+      if (primaryIdentifierValue == null || !matchIdentifier(authMethod, primaryIdentifierValue, invitation.getIdentifierValue())) {
          throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
-               "Authenticated identifier does not match the invitation");
+               "Authenticated identifier (" + primaryIdentifierValue + ") does not match the invitation (" + invitation.getIdentifierValue() + ")");
       }
+
 
       if (invitation.getAllowedAuthMethods() == null || !invitation.getAllowedAuthMethods().contains(authMethod)) {
          throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
@@ -211,6 +212,17 @@ public class RespondUserInvitationCommandHandler
          invitationRepository.save(invitation);
          return ResponseEntity.noContent().build();
       }
+   }
+
+   private boolean matchIdentifier(String authMethod, String tokenValue, String invitationValue) {
+       if (tokenValue == null || invitationValue == null) return false;
+       if ("cmdcv".equalsIgnoreCase(authMethod)) {
+           String clean1 = tokenValue.replaceAll("[^\\d]", "");
+           String clean2 = invitationValue.replaceAll("[^\\d]", "");
+           if (clean1.isEmpty() || clean2.isEmpty()) return false;
+           return clean1.endsWith(clean2) || clean2.endsWith(clean1);
+       }
+       return tokenValue.equalsIgnoreCase(invitationValue);
    }
 
 }
