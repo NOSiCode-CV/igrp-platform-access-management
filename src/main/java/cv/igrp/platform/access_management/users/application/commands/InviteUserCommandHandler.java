@@ -73,14 +73,13 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         var dto = command.getInviteuserdto();
 
-        if(dto.getIdentifierType() == null || dto.getIdentifierType() == IdentifierType.UNKNOWN || dto.getIdentifierValue() == null || dto.getIdentifierValue().isBlank()) {
-            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Identifier type and value are required");
+        if(dto.getIdentifierValue() == null || dto.getIdentifierValue().isBlank()) {
+            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Email identifier value is required");
         }
 
-        String normalizedValue = dto.getIdentifierValue().trim();
-        if (IdentifierType.EMAIL.equals(dto.getIdentifierType())) {
-            normalizedValue = normalizedValue.toLowerCase();
-        }
+        // Force EMAIL type
+        dto.setIdentifierType(IdentifierType.EMAIL);
+        String normalizedValue = dto.getIdentifierValue().trim().toLowerCase();
         dto.setIdentifierValue(normalizedValue);
 
         LOGGER.info("Inviting new user: type={}, value={}", dto.getIdentifierType(), dto.getIdentifierValue());
@@ -99,13 +98,13 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         // Create new invitation
         InvitationEntity invitation = new InvitationEntity();
-        invitation.setIdentifierType(dto.getIdentifierType());
+        invitation.setIdentifierType(IdentifierType.EMAIL);
         invitation.setIdentifierValue(dto.getIdentifierValue());
 
         Set<String> allowed = new HashSet<>();
-        if (IdentifierType.EMAIL.equals(dto.getIdentifierType())) allowed.add("pwd");
-        else if (IdentifierType.PHONE.equals(dto.getIdentifierType())) allowed.add("cmdcv");
-        else if (IdentifierType.CNI.equals(dto.getIdentifierType())) allowed.add("cni");
+        allowed.add("pwd");
+        allowed.add("cmdcv");
+        allowed.add("cni");
         invitation.setAllowedAuthMethods(allowed);
 
         invitation.setStatus(InvitationStatus.PENDING);
@@ -126,8 +125,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
         var url = userUtils.constructInvitationUrl(appCenterUrl, savedInvitation.getToken());
 
         try {
-            if (IdentifierType.EMAIL.equals(dto.getIdentifierType())) {
-                LOGGER.info("Inviting new user via email: token={}, email={}", savedInvitation.getToken(), dto.getIdentifierValue());
+            LOGGER.info("Inviting new user via email: token={}, email={}", savedInvitation.getToken(), dto.getIdentifierValue());
 
                 var notification = new Notification();
                 notification.setRecipients(List.of(dto.getIdentifierValue()));
@@ -138,7 +136,6 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
                         Map.of("invitationToken", savedInvitation.getToken(), "email", dto.getIdentifierValue()));
 
                 notificationAdapter.send(notification);
-            }
         } catch (Exception e) {
             LOGGER.error("Invitation Email failed", e);
         }

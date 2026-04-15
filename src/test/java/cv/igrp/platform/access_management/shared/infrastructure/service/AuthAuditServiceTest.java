@@ -58,7 +58,7 @@ public class AuthAuditServiceTest {
 
         AuthAuditContext context = AuthAuditService.fromAutentikaJwt(jwt, null);
 
-        assertEquals(IdentifierType.CMDCV, context.identifierType());
+        assertEquals(IdentifierType.PHONE, context.identifierType());
         assertEquals("+2391234567", context.identifierValue());
         assertEquals("12345678A001B", context.userId());
     }
@@ -91,7 +91,7 @@ public class AuthAuditServiceTest {
 
         AuthAuditContext context = AuthAuditService.fromAutentikaJwt(jwt, null);
 
-        assertEquals(IdentifierType.CMDCV, context.identifierType());
+        assertEquals(IdentifierType.PHONE, context.identifierType());
         assertEquals("+2391234567", context.identifierValue());
     }
 

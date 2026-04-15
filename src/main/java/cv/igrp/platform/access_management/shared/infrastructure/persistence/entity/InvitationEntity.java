@@ -63,6 +63,9 @@ public class InvitationEntity extends AuditEntity {
     @Column(name="comments")
     private String comments;
 
+    @Column(name="otp_id")
+    private Long otpId;
+
   
 
 

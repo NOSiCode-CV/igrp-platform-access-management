@@ -1320,6 +1320,74 @@
         ],
         "operator": "OR"
       }
+    },
+    {
+      "actionName": "validateInvitationEmail",
+      "summary": "Validate Invitation Email",
+      "description": "Validate email and send OTP",
+      "path": "users/invite/validate-email",
+      "method": "POST",
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "OtpResponseDTO",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "requestBody": {
+        "isRequired": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "ValidateInvitationEmailCommand",
+              "collectionType": "none"
+            }
+          }
+        }
+      },
+      "pathVariables": [],
+      "queryParams": [],
+      "headers": []
+    },
+    {
+      "actionName": "validateInvitationOtp",
+      "summary": "Validate Invitation OTP",
+      "description": "Validate OTP code",
+      "path": "users/invite/validate-otp",
+      "method": "POST",
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "OtpResponseDTO",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      },
+      "requestBody": {
+        "isRequired": true,
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "ValidateInvitationOtpCommand",
+              "collectionType": "none"
+            }
+          }
+        }
+      },
+      "pathVariables": [],
+      "queryParams": [],
+      "headers": []
     }
   ],
   "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser-getCurrentUser-AddRolesToUser-RemoveRolesFromUser-getUsers-getUsers-getUsers-inviteUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-inviteUser-updateUserStatus-getUser-getUserApplications-getUserApplicationMenus-getUserDepartments-getUserDepartmentRoles-respondUserInvitation-cancelUserInvitation-addFavoriteApplication-resendUserInvitation-addFavoriteApplication-removeFavoriteApplication-getRecentApplications-getCurrentUserApplications-getUserApplications-getUserInvitationByToken-getCurrentUserPermissions-getUserPermissions-setActiveUserRole"

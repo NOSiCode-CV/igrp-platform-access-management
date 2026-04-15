@@ -31,6 +31,7 @@ import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDepartmentDTO;
+import cv.igrp.platform.access_management.shared.application.dto.OtpResponseDTO;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 
 @IgrpController
@@ -273,10 +274,10 @@ public class UserController {
   )
   
   public ResponseEntity<InvitationDTO> respondUserInvitation(@Valid @RequestBody UserInvitationResponseDTO respondUserInvitationRequest
-    , @RequestParam(value = "token") String token)
+    , @RequestParam(value = "token") String token, @RequestParam(value = "otpId", required = false) Long otpId)
   {
 
-      final var command = new RespondUserInvitationCommand(respondUserInvitationRequest, token);
+      final var command = new RespondUserInvitationCommand(respondUserInvitationRequest, token, otpId);
 
       return commandBus.send(command);
 
@@ -417,6 +418,56 @@ public class UserController {
 
       return commandBus.send(command);
 
+  }
+
+   @PostMapping(
+   value = "users/invite/validate-email"
+  )
+  @Operation(
+    summary = "Validate Invitation Email",
+    description = "Validate email and send OTP",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = OtpResponseDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<OtpResponseDTO> validateInvitationEmail(@Valid @RequestBody ValidateInvitationEmailCommand validateInvitationEmailCommand
+    )
+  {
+      return commandBus.send(validateInvitationEmailCommand);
+  }
+
+   @PostMapping(
+   value = "users/invite/validate-otp"
+  )
+  @Operation(
+    summary = "Validate Invitation OTP",
+    description = "Validate OTP code",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = OtpResponseDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<OtpResponseDTO> validateInvitationOtp(@Valid @RequestBody ValidateInvitationOtpCommand validateInvitationOtpCommand
+    )
+  {
+      return commandBus.send(validateInvitationOtpCommand);
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
