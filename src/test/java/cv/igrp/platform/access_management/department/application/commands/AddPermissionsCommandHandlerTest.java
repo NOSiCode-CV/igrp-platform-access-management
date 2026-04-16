@@ -117,7 +117,7 @@ public class AddPermissionsCommandHandlerTest {
         deletedPermission.setStatus(Status.DELETED);
         deletedPermission.setName("test_deleted");
 
-        List<PermissionEntity> returnedPermissions = List.of(activePermission, deletedPermission);
+        List<PermissionEntity> returnedPermissions = List.of(activePermission);
 
         RoleEntity role = new RoleEntity();
         role.setId(roleId);
@@ -155,6 +155,8 @@ public class AddPermissionsCommandHandlerTest {
         verify(roleRepository).save(role);
         verify(roleRepository, times(1)).save(role);
         verify(roleMapper, times(1)).mapToDto(role);
+        
+        verify(roleRepository).findByDepartmentAndCodeAndStatusNot(any(), any(), any());
 
         verifyNoMoreInteractions(roleRepository, roleMapper);
     }
@@ -223,6 +225,8 @@ public class AddPermissionsCommandHandlerTest {
         verify(roleRepository).save(savedRole);
         verify(roleRepository, times(1)).save(savedRole);
         verify(roleMapper, times(1)).mapToDto(savedRole);
+        
+        verify(roleRepository).findByDepartmentAndCodeAndStatusNot(any(), any(), any());
 
         verifyNoMoreInteractions(roleRepository, roleMapper);
     }
@@ -277,6 +281,8 @@ public class AddPermissionsCommandHandlerTest {
         verify(roleRepository).save(savedRole);
         verify(roleRepository, times(1)).save(savedRole);
         verify(roleMapper, times(1)).mapToDto(savedRole);
+        
+        verify(roleRepository).findByDepartmentAndCodeAndStatusNot(any(), any(), any());
 
         verifyNoMoreInteractions(roleRepository, roleMapper);
     }
