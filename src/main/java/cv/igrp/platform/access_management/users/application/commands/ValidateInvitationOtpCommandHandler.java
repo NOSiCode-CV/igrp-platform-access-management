@@ -29,14 +29,10 @@ public class ValidateInvitationOtpCommandHandler implements CommandHandler<Valid
     @IgrpCommandHandler
     @Transactional
     public ResponseEntity<OtpResponseDTO> handle(ValidateInvitationOtpCommand command) {
-        LOGGER.info("Validating OTP for Id: {}", command.getOtpId());
+        LOGGER.info("Validating OTP for token: {}", command.getToken());
 
-        OtpEntity otpEntity = otpEntityRepository.findById(command.getOtpId())
-                .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "OTP Request not found"));
-
-        if (!"PENDING".equals(otpEntity.getStatus())) {
-            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "This OTP request is not in a pending state or has already been used");
-        }
+        OtpEntity otpEntity = otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedDateDesc(command.getToken(), "PENDING")
+                .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "No pending OTP request found for this token"));
 
         if (LocalDateTime.now().isAfter(otpEntity.getExpiresAt())) {
             otpEntity.setStatus("EXPIRED");
@@ -52,7 +48,7 @@ public class ValidateInvitationOtpCommandHandler implements CommandHandler<Valid
         otpEntityRepository.save(otpEntity);
 
         OtpResponseDTO response = new OtpResponseDTO();
-        response.setOtpId(otpEntity.getId());
+        response.setToken(command.getToken());
         response.setMessage("OTP successfully validated.");
 
         return ResponseEntity.ok(response);

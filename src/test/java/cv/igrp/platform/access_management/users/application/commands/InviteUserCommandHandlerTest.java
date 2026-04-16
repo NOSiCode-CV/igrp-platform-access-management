@@ -67,8 +67,7 @@ class InviteUserCommandHandlerTest {
     @BeforeEach
     void setUp() {
         inviteUserDTO = new InviteUserDTO();
-        inviteUserDTO.setIdentifierType(IdentifierType.EMAIL);
-        inviteUserDTO.setIdentifierValue("john@nosi.cv");
+        inviteUserDTO.setEmail("john@nosi.cv");
         inviteUserDTO.setDepartmentCode("DEPT_TEST");
         inviteUserDTO.setRoles(List.of("ROLE_TEST"));
 

@@ -8,5 +8,5 @@ import java.util.Optional;
 
 @Repository
 public interface OtpEntityRepository extends JpaRepository<OtpEntity, Long> {
-    Optional<OtpEntity> findByReferenceIdAndStatus(String referenceId, String status);
+    Optional<OtpEntity> findFirstByReferenceIdAndStatusOrderByCreatedDateDesc(String referenceId, String status);
 }

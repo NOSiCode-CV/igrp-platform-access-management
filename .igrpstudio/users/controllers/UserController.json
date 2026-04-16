@@ -1,1394 +1,1394 @@
 {
-  "type": "controller",
-  "name": "User",
-  "module": "users",
-  "description": "User",
-  "basePath": "api",
-  "actions": [
-    {
-      "actionName": "getUser",
-      "path": "users/{id}",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "IGRPUserDTO",
-                "name": "data",
-                "collectionType": "none"
-              }
-            }
-          }
-        }
-      },
-      "pathVariables": [
+    "type": "controller",
+    "name": "User",
+    "module": "users",
+    "description": "User",
+    "basePath": "api",
+    "actions": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.view"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "AddRolesToUser",
-      "path": "users/{id}/departments/{departmentCode}/roles",
-      "method": "POST",
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "string",
-              "name": "Role",
-              "collectionType": "list"
+            "actionName": "getUser",
+            "path": "users/{id}",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "IGRPUserDTO",
+                                "name": "data",
+                                "collectionType": "none"
+                            }
+                        }
+                    }
+                }
+            },
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.view"
+                ],
+                "operator": "OR"
             }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "Role",
-                "name": "data",
-                "collectionType": "list"
-              }
-            }
-          }
-        },
-        "201": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "Role",
-                "name": "data",
-                "collectionType": "list"
-              }
-            }
-          }
-        }
-      },
-      "pathVariables": [
-        {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
         },
         {
-          "name": "departmentCode",
-          "type": "string",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.manage"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "RemoveRolesFromUser",
-      "path": "users/{id}/departments/{departmentCode}/roles",
-      "method": "DELETE",
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "string",
-              "name": "Roles",
-              "collectionType": "list"
+            "actionName": "AddRolesToUser",
+            "path": "users/{id}/departments/{departmentCode}/roles",
+            "method": "POST",
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "string",
+                            "name": "Role",
+                            "collectionType": "list"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "Role",
+                                "name": "data",
+                                "collectionType": "list"
+                            }
+                        }
+                    }
+                },
+                "201": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "Role",
+                                "name": "data",
+                                "collectionType": "list"
+                            }
+                        }
+                    }
+                }
+            },
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                },
+                {
+                    "name": "departmentCode",
+                    "type": "string",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.manage"
+                ],
+                "operator": "OR"
             }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "RoleDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "pathVariables": [
-        {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
         },
         {
-          "name": "departmentCode",
-          "type": "string",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.manage"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "getUserRoles",
-      "path": "users/{id}/roles",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "RoleDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
+            "actionName": "RemoveRolesFromUser",
+            "path": "users/{id}/departments/{departmentCode}/roles",
+            "method": "DELETE",
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "string",
+                            "name": "Roles",
+                            "collectionType": "list"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "RoleDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                },
+                {
+                    "name": "departmentCode",
+                    "type": "string",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.manage"
+                ],
+                "operator": "OR"
             }
-          }
-        }
-      },
-      "pathVariables": [
-        {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.view"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "getUserPermissions",
-      "path": "users/{id}/permissions",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "PermissionDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "roleCode",
-          "description": "Role Code",
-          "isRequired": false
-        }
-      ],
-      "pathVariables": [
-        {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.view"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "getUsers",
-      "path": "users",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "IGRPUserDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "applicationCode",
-          "description": "Application Code",
-          "isRequired": false
         },
         {
-          "type": "string",
-          "name": "departmentCode",
-          "description": "Department Code",
-          "isRequired": false
+            "actionName": "getUserRoles",
+            "path": "users/{id}/roles",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "RoleDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.view"
+                ],
+                "operator": "OR"
+            }
         },
         {
-          "type": "string",
-          "name": "name",
-          "description": "Name",
-          "isRequired": false
+            "actionName": "getUserPermissions",
+            "path": "users/{id}/permissions",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "PermissionDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "roleCode",
+                    "description": "Role Code",
+                    "isRequired": false
+                }
+            ],
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.view"
+                ],
+                "operator": "OR"
+            }
         },
         {
-          "type": "integer",
-          "name": "id",
-          "description": "ID",
-          "isRequired": false
+            "actionName": "getUsers",
+            "path": "users",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "IGRPUserDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "applicationCode",
+                    "description": "Application Code",
+                    "isRequired": false
+                },
+                {
+                    "type": "string",
+                    "name": "departmentCode",
+                    "description": "Department Code",
+                    "isRequired": false
+                },
+                {
+                    "type": "string",
+                    "name": "name",
+                    "description": "Name",
+                    "isRequired": false
+                },
+                {
+                    "type": "integer",
+                    "name": "id",
+                    "description": "ID",
+                    "isRequired": false
+                },
+                {
+                    "type": "string",
+                    "name": "email",
+                    "description": "Email",
+                    "isRequired": false
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.list"
+                ],
+                "operator": "OR"
+            }
         },
         {
-          "type": "string",
-          "name": "email",
-          "description": "Email",
-          "isRequired": false
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.list"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "respondUserInvitation",
-      "path": "users/invite/response",
-      "method": "POST",
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "UserInvitationResponseDTO",
-              "name": "UserResponse",
-              "description": "User Invitation Response",
-              "objectType": "dto",
-              "module": "shared",
-              "collectionType": "none"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "InvitationDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "none",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "token",
-          "isRequired": true
-        }
-      ]
-    },
-    {
-      "actionName": "updateUser",
-      "path": "users/{id}",
-      "method": "PUT",
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "IGRPUserDTO",
-              "name": "User",
-              "description": "User Data",
-              "objectType": "dto",
-              "module": "shared"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "IGRPUserDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "none",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "pathVariables": [
-        {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.update"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "getCurrentUser",
-      "path": "users/me",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "IGRPUserDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "none",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "actionName": "inviteUser",
-      "path": "users/invite",
-      "method": "POST",
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "collectionType": "none",
-              "name": "data",
-              "type": "InviteUserDTO",
-              "objectType": "dto",
-              "module": "shared"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "InvitationDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "none",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "permission": {
-        "items": [
-          "igrp.user.create"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "cancelUserInvitation",
-      "path": "users/invite/{id}",
-      "method": "DELETE",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "InvitationDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "none",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "pathVariables": [
-        {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.manage"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "resendUserInvitation",
-      "path": "users/invite/{id}",
-      "method": "PUT",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "InvitationDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "none",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "pathVariables": [
-        {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.manage"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "updateUserStatus",
-      "path": "users/{id}/status",
-      "method": "PUT",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "IGRPUserDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "none",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "value",
-          "isRequired": true
-        }
-      ],
-      "pathVariables": [
-        {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.manage"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "getCurrentUserApplications",
-      "path": "users/me/applications",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "ApplicationDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "applicationCode",
-          "description": "Application Code",
-          "isRequired": false
+            "actionName": "respondUserInvitation",
+            "path": "users/invite/response",
+            "method": "POST",
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "UserInvitationResponseDTO",
+                            "name": "UserResponse",
+                            "description": "User Invitation Response",
+                            "objectType": "dto",
+                            "module": "shared",
+                            "collectionType": "none"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "InvitationDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "none",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "token",
+                    "isRequired": true
+                }
+            ]
         },
         {
-          "type": "string",
-          "name": "applicationName",
-          "description": "Application Name",
-          "isRequired": false
-        }
-      ]
-    },
-    {
-      "actionName": "getCurrentUserApplicationMenus",
-      "path": "users/me/applications/{applicationCode}/menus",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "MenuEntryDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
+            "actionName": "updateUser",
+            "path": "users/{id}",
+            "method": "PUT",
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "IGRPUserDTO",
+                            "name": "User",
+                            "description": "User Data",
+                            "objectType": "dto",
+                            "module": "shared"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "IGRPUserDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "none",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.update"
+                ],
+                "operator": "OR"
             }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "menuCode",
-          "description": "Menu Entry Code",
-          "isRequired": false
-        }
-      ],
-      "pathVariables": [
-        {
-          "name": "applicationCode",
-          "type": "string",
-          "isRequired": true
-        }
-      ]
-    },
-    {
-      "actionName": "getCurrentUserDepartments",
-      "path": "users/me/departments",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "DepartmentDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "departmentCode",
-          "description": "Department Code",
-          "isRequired": false
-        }
-      ]
-    },
-    {
-      "actionName": "getCurrentUserDepartmentRoles",
-      "path": "users/me/departments/{departmentCode}/roles",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "RoleDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "roleCode",
-          "description": "Role Code",
-          "isRequired": false
-        }
-      ],
-      "pathVariables": [
-        {
-          "name": "departmentCode",
-          "type": "string",
-          "isRequired": true
-        }
-      ]
-    },
-    {
-      "actionName": "getCurrentUserPermissions",
-      "path": "users/me/permissions",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "PermissionDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "roleCode",
-          "description": "Role Code",
-          "isRequired": false
-        }
-      ]
-    },
-    {
-      "actionName": "getCurrentUserRoles",
-      "path": "users/me/roles",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "RoleDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "departmentCode",
-          "description": "Department Code",
-          "isRequired": false
-        }
-      ]
-    },
-    {
-      "actionName": "getUserApplications",
-      "path": "users/{id}/applications",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "ApplicationDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "applicationCode",
-          "description": "Application Code",
-          "isRequired": false
         },
         {
-          "type": "string",
-          "name": "applicationName",
-          "description": "Application Name",
-          "isRequired": false
-        }
-      ],
-      "pathVariables": [
-        {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.view"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "getUserApplicationMenus",
-      "path": "users/{id}/applications/{applicationCode}/menus",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "MenuEntryDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
+            "actionName": "getCurrentUser",
+            "path": "users/me",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "IGRPUserDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "none",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
             }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "menuCode",
-          "description": "Menu Entry Code",
-          "isRequired": false
-        }
-      ],
-      "pathVariables": [
-        {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
         },
         {
-          "name": "applicationCode",
-          "type": "string",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.view"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "getUserDepartments",
-      "path": "users/{id}/departments",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "DepartmentDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
+            "actionName": "inviteUser",
+            "path": "users/invite",
+            "method": "POST",
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "collectionType": "none",
+                            "name": "data",
+                            "type": "InviteUserDTO",
+                            "objectType": "dto",
+                            "module": "shared"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "InvitationDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "none",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "permission": {
+                "items": [
+                    "igrp.user.create"
+                ],
+                "operator": "OR"
             }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "departmentCode",
-          "description": "Department Code",
-          "isRequired": false
-        }
-      ],
-      "pathVariables": [
-        {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.view"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "getUserDepartmentRoles",
-      "path": "users/{id}/departments/{departmentCode}/roles",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "RoleDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "roleCode",
-          "description": "Role Code",
-          "isRequired": false
-        }
-      ],
-      "pathVariables": [
-        {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
         },
         {
-          "name": "departmentCode",
-          "type": "string",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.view"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "registerAccessHistory",
-      "path": "users/me/applications/recent/{applicationCode}",
-      "method": "POST",
-      "responses": {
-        "204": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "string",
-                "name": "data",
-                "collectionType": "none"
-              }
+            "actionName": "cancelUserInvitation",
+            "path": "users/invite/{id}",
+            "method": "DELETE",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "InvitationDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "none",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.manage"
+                ],
+                "operator": "OR"
             }
-          }
-        }
-      },
-      "pathVariables": [
-        {
-          "name": "applicationCode",
-          "type": "string",
-          "isRequired": true
-        }
-      ]
-    },
-    {
-      "actionName": "getRecentApplications",
-      "path": "users/me/applications/recent",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "ApplicationDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "applicationCode",
-          "isRequired": false
         },
         {
-          "type": "string",
-          "name": "applicationName",
-          "isRequired": false
+            "actionName": "resendUserInvitation",
+            "path": "users/invite/{id}",
+            "method": "PUT",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "InvitationDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "none",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.manage"
+                ],
+                "operator": "OR"
+            }
         },
         {
-          "type": "integer",
-          "name": "max",
-          "isRequired": false
-        }
-      ]
-    },
-    {
-      "actionName": "getFavoriteApplications",
-      "path": "users/me/applications/favorites",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "ApplicationDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
+            "actionName": "updateUserStatus",
+            "path": "users/{id}/status",
+            "method": "PUT",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "IGRPUserDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "none",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "value",
+                    "isRequired": true
+                }
+            ],
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.manage"
+                ],
+                "operator": "OR"
             }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "applicationCode",
-          "isRequired": false
         },
         {
-          "type": "string",
-          "name": "applicationName",
-          "isRequired": false
-        }
-      ]
-    },
-    {
-      "actionName": "addFavoriteApplication",
-      "path": "users/me/applications/favorites/{applicationCode}",
-      "method": "POST",
-      "responses": {
-        "204": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "string",
-                "name": "data",
-                "collectionType": "none"
-              }
-            }
-          }
-        }
-      },
-      "pathVariables": [
-        {
-          "name": "applicationCode",
-          "type": "string",
-          "isRequired": true
-        }
-      ]
-    },
-    {
-      "actionName": "removeFavoriteApplication",
-      "path": "users/me/applications/favorites/{applicationCode}",
-      "method": "DELETE",
-      "responses": {
-        "204": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "string",
-                "name": "data",
-                "collectionType": "none"
-              }
-            }
-          }
-        }
-      },
-      "pathVariables": [
-        {
-          "name": "applicationCode",
-          "type": "string",
-          "isRequired": true
-        }
-      ]
-    },
-    {
-      "actionName": "getUserInvitations",
-      "path": "users/invite",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "InvitationDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "list",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "requestParams": [
-        {
-          "type": "string",
-          "name": "email",
-          "isRequired": false
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.manage"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "getUserInvitation",
-      "path": "users/invite/{id}",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "InvitationDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "none",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "pathVariables": [
-        {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
-        }
-      ]
-    },
-    {
-      "actionName": "getUserInvitationByToken",
-      "path": "users/invite/by-token/{token}",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "InvitationDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "none",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "pathVariables": [
-        {
-          "name": "token",
-          "type": "string",
-          "isRequired": true
-        }
-      ]
-    },
-    {
-      "actionName": "getActiveCurrentUserRole",
-      "path": "users/me/roles/active",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "RoleDepartmentDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "none",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "actionName": "getActiveUserRole",
-      "path": "users/{id}/roles/active",
-      "method": "GET",
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "RoleDepartmentDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "none",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "pathVariables": [
-        {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.manage"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "setActiveCurrentUserRole",
-      "path": "users/me/roles/active",
-      "method": "POST",
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "collectionType": "none",
-              "name": "data",
-              "type": "RoleDepartmentDTO",
-              "objectType": "dto",
-              "module": "shared"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "RoleDepartmentDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "none",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      }
-    },
-    {
-      "actionName": "updateCurrentUser",
-      "path": "users/me",
-      "method": "PUT",
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "IGRPUserDTO",
-              "name": "data",
-              "collectionType": "none",
-              "objectType": "dto",
-              "module": "shared"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "IGRPUserDTO",
-                "name": "data",
-                "collectionType": "none",
-                "objectType": "dto",
-                "module": "shared"
-              }
-            }
-          }
+            "actionName": "getCurrentUserApplications",
+            "path": "users/me/applications",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "ApplicationDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "applicationCode",
+                    "description": "Application Code",
+                    "isRequired": false
+                },
+                {
+                    "type": "string",
+                    "name": "applicationName",
+                    "description": "Application Name",
+                    "isRequired": false
+                }
+            ]
         },
-        "404": {
-          "content": {}
-        }
-      }
-    },
-    {
-      "actionName": "setActiveUserRole",
-      "path": "users/{id}/roles/active",
-      "method": "POST",
-      "requestBody": {
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "RoleDepartmentDTO",
-              "collectionType": "none",
-              "name": "data",
-              "objectType": "dto",
-              "module": "shared"
-            }
-          }
-        }
-      },
-      "responses": {
-        "200": {
-          "name": "OK",
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "RoleDepartmentDTO",
-                "objectType": "dto",
-                "name": "data",
-                "collectionType": "none",
-                "module": "shared"
-              }
-            }
-          }
-        }
-      },
-      "pathVariables": [
         {
-          "name": "id",
-          "type": "integer",
-          "isRequired": true
-        }
-      ],
-      "permission": {
-        "items": [
-          "igrp.user.manage"
-        ],
-        "operator": "OR"
-      }
-    },
-    {
-      "actionName": "validateInvitationEmail",
-      "summary": "Validate Invitation Email",
-      "description": "Validate email and send OTP",
-      "path": "users/invite/validate-email",
-      "method": "POST",
-      "responses": {
-        "200": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "OtpResponseDTO",
-                "name": "data",
-                "collectionType": "none"
-              }
+            "actionName": "getCurrentUserApplicationMenus",
+            "path": "users/me/applications/{applicationCode}/menus",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "MenuEntryDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "menuCode",
+                    "description": "Menu Entry Code",
+                    "isRequired": false
+                }
+            ],
+            "pathVariables": [
+                {
+                    "name": "applicationCode",
+                    "type": "string",
+                    "isRequired": true
+                }
+            ]
+        },
+        {
+            "actionName": "getCurrentUserDepartments",
+            "path": "users/me/departments",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "DepartmentDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "departmentCode",
+                    "description": "Department Code",
+                    "isRequired": false
+                }
+            ]
+        },
+        {
+            "actionName": "getCurrentUserDepartmentRoles",
+            "path": "users/me/departments/{departmentCode}/roles",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "RoleDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "roleCode",
+                    "description": "Role Code",
+                    "isRequired": false
+                }
+            ],
+            "pathVariables": [
+                {
+                    "name": "departmentCode",
+                    "type": "string",
+                    "isRequired": true
+                }
+            ]
+        },
+        {
+            "actionName": "getCurrentUserPermissions",
+            "path": "users/me/permissions",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "PermissionDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "roleCode",
+                    "description": "Role Code",
+                    "isRequired": false
+                }
+            ]
+        },
+        {
+            "actionName": "getCurrentUserRoles",
+            "path": "users/me/roles",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "RoleDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "departmentCode",
+                    "description": "Department Code",
+                    "isRequired": false
+                }
+            ]
+        },
+        {
+            "actionName": "getUserApplications",
+            "path": "users/{id}/applications",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "ApplicationDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "applicationCode",
+                    "description": "Application Code",
+                    "isRequired": false
+                },
+                {
+                    "type": "string",
+                    "name": "applicationName",
+                    "description": "Application Name",
+                    "isRequired": false
+                }
+            ],
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.view"
+                ],
+                "operator": "OR"
             }
-          }
-        }
-      },
-      "requestBody": {
-        "isRequired": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "ValidateInvitationEmailCommand",
-              "collectionType": "none"
+        },
+        {
+            "actionName": "getUserApplicationMenus",
+            "path": "users/{id}/applications/{applicationCode}/menus",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "MenuEntryDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "menuCode",
+                    "description": "Menu Entry Code",
+                    "isRequired": false
+                }
+            ],
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                },
+                {
+                    "name": "applicationCode",
+                    "type": "string",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.view"
+                ],
+                "operator": "OR"
             }
-          }
-        }
-      },
-      "pathVariables": [],
-      "queryParams": [],
-      "headers": []
-    },
-    {
-      "actionName": "validateInvitationOtp",
-      "summary": "Validate Invitation OTP",
-      "description": "Validate OTP code",
-      "path": "users/invite/validate-otp",
-      "method": "POST",
-      "responses": {
-        "200": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "OtpResponseDTO",
-                "name": "data",
-                "collectionType": "none"
-              }
+        },
+        {
+            "actionName": "getUserDepartments",
+            "path": "users/{id}/departments",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "DepartmentDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "departmentCode",
+                    "description": "Department Code",
+                    "isRequired": false
+                }
+            ],
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.view"
+                ],
+                "operator": "OR"
             }
-          }
-        }
-      },
-      "requestBody": {
-        "isRequired": true,
-        "content": {
-          "application/json": {
-            "schema": {
-              "type": "ValidateInvitationOtpCommand",
-              "collectionType": "none"
+        },
+        {
+            "actionName": "getUserDepartmentRoles",
+            "path": "users/{id}/departments/{departmentCode}/roles",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "RoleDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "roleCode",
+                    "description": "Role Code",
+                    "isRequired": false
+                }
+            ],
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                },
+                {
+                    "name": "departmentCode",
+                    "type": "string",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.view"
+                ],
+                "operator": "OR"
             }
-          }
+        },
+        {
+            "actionName": "registerAccessHistory",
+            "path": "users/me/applications/recent/{applicationCode}",
+            "method": "POST",
+            "responses": {
+                "204": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "string",
+                                "name": "data",
+                                "collectionType": "none"
+                            }
+                        }
+                    }
+                }
+            },
+            "pathVariables": [
+                {
+                    "name": "applicationCode",
+                    "type": "string",
+                    "isRequired": true
+                }
+            ]
+        },
+        {
+            "actionName": "getRecentApplications",
+            "path": "users/me/applications/recent",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "ApplicationDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "applicationCode",
+                    "isRequired": false
+                },
+                {
+                    "type": "string",
+                    "name": "applicationName",
+                    "isRequired": false
+                },
+                {
+                    "type": "integer",
+                    "name": "max",
+                    "isRequired": false
+                }
+            ]
+        },
+        {
+            "actionName": "getFavoriteApplications",
+            "path": "users/me/applications/favorites",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "ApplicationDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "applicationCode",
+                    "isRequired": false
+                },
+                {
+                    "type": "string",
+                    "name": "applicationName",
+                    "isRequired": false
+                }
+            ]
+        },
+        {
+            "actionName": "addFavoriteApplication",
+            "path": "users/me/applications/favorites/{applicationCode}",
+            "method": "POST",
+            "responses": {
+                "204": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "string",
+                                "name": "data",
+                                "collectionType": "none"
+                            }
+                        }
+                    }
+                }
+            },
+            "pathVariables": [
+                {
+                    "name": "applicationCode",
+                    "type": "string",
+                    "isRequired": true
+                }
+            ]
+        },
+        {
+            "actionName": "removeFavoriteApplication",
+            "path": "users/me/applications/favorites/{applicationCode}",
+            "method": "DELETE",
+            "responses": {
+                "204": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "string",
+                                "name": "data",
+                                "collectionType": "none"
+                            }
+                        }
+                    }
+                }
+            },
+            "pathVariables": [
+                {
+                    "name": "applicationCode",
+                    "type": "string",
+                    "isRequired": true
+                }
+            ]
+        },
+        {
+            "actionName": "getUserInvitations",
+            "path": "users/invite",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "InvitationDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "list",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestParams": [
+                {
+                    "type": "string",
+                    "name": "email",
+                    "isRequired": false
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.manage"
+                ],
+                "operator": "OR"
+            }
+        },
+        {
+            "actionName": "getUserInvitation",
+            "path": "users/invite/{id}",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "InvitationDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "none",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                }
+            ]
+        },
+        {
+            "actionName": "getUserInvitationByToken",
+            "path": "users/invite/by-token/{token}",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "InvitationDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "none",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "pathVariables": [
+                {
+                    "name": "token",
+                    "type": "string",
+                    "isRequired": true
+                }
+            ]
+        },
+        {
+            "actionName": "getActiveCurrentUserRole",
+            "path": "users/me/roles/active",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "RoleDepartmentDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "none",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "actionName": "getActiveUserRole",
+            "path": "users/{id}/roles/active",
+            "method": "GET",
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "RoleDepartmentDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "none",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.manage"
+                ],
+                "operator": "OR"
+            }
+        },
+        {
+            "actionName": "setActiveCurrentUserRole",
+            "path": "users/me/roles/active",
+            "method": "POST",
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "collectionType": "none",
+                            "name": "data",
+                            "type": "RoleDepartmentDTO",
+                            "objectType": "dto",
+                            "module": "shared"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "RoleDepartmentDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "none",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "actionName": "updateCurrentUser",
+            "path": "users/me",
+            "method": "PUT",
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "IGRPUserDTO",
+                            "name": "data",
+                            "collectionType": "none",
+                            "objectType": "dto",
+                            "module": "shared"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "IGRPUserDTO",
+                                "name": "data",
+                                "collectionType": "none",
+                                "objectType": "dto",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                },
+                "404": {
+                    "content": {}
+                }
+            }
+        },
+        {
+            "actionName": "setActiveUserRole",
+            "path": "users/{id}/roles/active",
+            "method": "POST",
+            "requestBody": {
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "RoleDepartmentDTO",
+                            "collectionType": "none",
+                            "name": "data",
+                            "objectType": "dto",
+                            "module": "shared"
+                        }
+                    }
+                }
+            },
+            "responses": {
+                "200": {
+                    "name": "OK",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "RoleDepartmentDTO",
+                                "objectType": "dto",
+                                "name": "data",
+                                "collectionType": "none",
+                                "module": "shared"
+                            }
+                        }
+                    }
+                }
+            },
+            "pathVariables": [
+                {
+                    "name": "id",
+                    "type": "integer",
+                    "isRequired": true
+                }
+            ],
+            "permission": {
+                "items": [
+                    "igrp.user.manage"
+                ],
+                "operator": "OR"
+            }
+        },
+        {
+            "actionName": "validateInvitationEmail",
+            "summary": "Validate Invitation Email",
+            "description": "Validate email and send OTP",
+            "path": "users/invite/validate-email",
+            "method": "POST",
+            "responses": {
+                "200": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "OtpResponseDTO",
+                                "name": "data",
+                                "collectionType": "none"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestBody": {
+                "isRequired": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "ValidateInvitationEmailCommand",
+                            "collectionType": "none"
+                        }
+                    }
+                }
+            },
+            "pathVariables": [],
+            "queryParams": [],
+            "headers": []
+        },
+        {
+            "actionName": "validateInvitationOtp",
+            "summary": "Validate Invitation OTP",
+            "description": "Validate OTP code",
+            "path": "users/invite/validate-otp",
+            "method": "POST",
+            "responses": {
+                "200": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "OtpResponseDTO",
+                                "name": "data",
+                                "collectionType": "none"
+                            }
+                        }
+                    }
+                }
+            },
+            "requestBody": {
+                "isRequired": true,
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "ValidateInvitationOtpCommand",
+                            "collectionType": "none"
+                        }
+                    }
+                }
+            },
+            "pathVariables": [],
+            "queryParams": [],
+            "headers": []
         }
-      },
-      "pathVariables": [],
-      "queryParams": [],
-      "headers": []
-    }
-  ],
-  "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser-getCurrentUser-AddRolesToUser-RemoveRolesFromUser-getUsers-getUsers-getUsers-inviteUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-inviteUser-updateUserStatus-getUser-getUserApplications-getUserApplicationMenus-getUserDepartments-getUserDepartmentRoles-respondUserInvitation-cancelUserInvitation-addFavoriteApplication-resendUserInvitation-addFavoriteApplication-removeFavoriteApplication-getRecentApplications-getCurrentUserApplications-getUserApplications-getUserInvitationByToken-getCurrentUserPermissions-getUserPermissions-setActiveUserRole"
+    ],
+    "id": "4nr03zni4p-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-CONTROLLER-getUserRoles-getUsers-AddRolesToUser-RemoveRolesFromUser-getCurrentUser-getCurrentUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-AddRolesToUser-RemoveRolesFromUser-createUser-getCurrentUser-AddRolesToUser-RemoveRolesFromUser-getUsers-getUsers-getUsers-inviteUser-getUser-AddRolesToUser-RemoveRolesFromUser-getUserRoles-getUsers-updateUser-inviteUser-updateUserStatus-getUser-getUserApplications-getUserApplicationMenus-getUserDepartments-getUserDepartmentRoles-respondUserInvitation-cancelUserInvitation-addFavoriteApplication-resendUserInvitation-addFavoriteApplication-removeFavoriteApplication-getRecentApplications-getCurrentUserApplications-getUserApplications-getUserInvitationByToken-getCurrentUserPermissions-getUserPermissions-setActiveUserRole"
 }

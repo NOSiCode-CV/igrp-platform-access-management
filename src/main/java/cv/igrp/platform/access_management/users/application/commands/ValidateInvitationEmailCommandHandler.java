@@ -81,7 +81,7 @@ public class ValidateInvitationEmailCommandHandler implements CommandHandler<Val
         }
 
         OtpResponseDTO response = new OtpResponseDTO();
-        response.setOtpId(savedOtp.getId());
+        response.setToken(command.getToken());
         response.setMessage("OTP code has been sent to your email.");
 
         return ResponseEntity.ok(response);

@@ -10,6 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @IgrpDTO
 public class OtpResponseDTO {
-    private Long otpId;
+    private String token;
     private String message;
 }

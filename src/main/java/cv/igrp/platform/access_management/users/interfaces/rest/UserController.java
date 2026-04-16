@@ -274,10 +274,10 @@ public class UserController {
   )
   
   public ResponseEntity<InvitationDTO> respondUserInvitation(@Valid @RequestBody UserInvitationResponseDTO respondUserInvitationRequest
-    , @RequestParam(value = "token") String token, @RequestParam(value = "otpId", required = false) Long otpId)
+    , @RequestParam(value = "token") String token)
   {
 
-      final var command = new RespondUserInvitationCommand(respondUserInvitationRequest, token, otpId);
+      final var command = new RespondUserInvitationCommand(respondUserInvitationRequest, token);
 
       return commandBus.send(command);
 

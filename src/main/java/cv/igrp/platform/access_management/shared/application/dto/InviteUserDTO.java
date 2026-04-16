@@ -21,11 +21,9 @@ import cv.igrp.platform.access_management.shared.application.constants.Identifie
 @IgrpDTO
 public class InviteUserDTO  {
 
-  @NotNull(message = "Identifier type is required")
-  private IdentifierType identifierType;
-  
-  @NotBlank(message = "Identifier value is required")
-  private String identifierValue;
+  @NotBlank(message = "Email is required")
+  @Email(message = "Email must be valid")
+  private String email;
   
   
   private String departmentCode ;

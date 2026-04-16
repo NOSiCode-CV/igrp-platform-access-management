@@ -109,34 +109,20 @@ public class RespondUserInvitationCommandHandler
       String phone = profile.phone();
       String email = profile.email();
 
-      if (command.getOtpId() != null) {
-          // Validate via OTP
-          var otpEntity = otpEntityRepository.findById(command.getOtpId())
-                  .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Provided OTP record not found"));
-                  
-          if (!"APPROVED".equals(otpEntity.getStatus())) {
-              throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "OTP not approved.");
-          }
-          if (!otpEntity.getReferenceId().equals(command.getToken())) {
-              throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "OTP record does not match this invitation token.");
-          }
-          
-          invitation.setOtpId(command.getOtpId());
+      var otpEntityOpt = otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedDateDesc(command.getToken(), "APPROVED");
+      
+      if (otpEntityOpt.isPresent()) {
+          invitation.setOtpId(otpEntityOpt.get().getId());
       } else {
           // Fallback via Claims
           String primaryIdentifierValue = email != null ? email.toLowerCase() : null;
 
           if (primaryIdentifierValue == null || !primaryIdentifierValue.equalsIgnoreCase(invitation.getIdentifierValue())) {
              throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
-                   "Authenticated email (" + primaryIdentifierValue + ") does not match the invitation (" + invitation.getIdentifierValue() + "). Please provide an OTP ID if you accepted via a different method.");
+                   "Authenticated email (" + primaryIdentifierValue + ") does not match the invitation (" + invitation.getIdentifierValue() + "). You must validate your email via OTP before accepting if you logged in via a different method.");
           }
       }
 
-
-      if (invitation.getAllowedAuthMethods() == null || !invitation.getAllowedAuthMethods().contains(authMethod)) {
-         throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
-               "Authentication method is not allowed for this invitation");
-      }
 
       if (dto.isAccept()) {
 

@@ -81,12 +81,14 @@ class RespondUserInvitationCommandHandlerTest {
     @BeforeEach
     void setUp() {
         responseDto = mock(UserInvitationResponseDTO.class);
-        command = new RespondUserInvitationCommand(responseDto, "mock-token", null);
+        command = new RespondUserInvitationCommand();
+        command.setUserinvitationresponsedto(responseDto);
+        command.setToken("mock-token");
 
         invitationEntity = new InvitationEntity();
         invitationEntity.setId(1);
         invitationEntity.setIdentifierValue("jane@example.com");
-        invitationEntity.setAllowedAuthMethods(Set.of("pwd", "cni"));
+        invitationEntity.setIdentifierValue("jane@example.com");
         
         RoleEntity role = new RoleEntity();
         role.setId(2);
@@ -127,20 +129,7 @@ class RespondUserInvitationCommandHandlerTest {
         assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getBody().getStatus());
         assertTrue(exception.getMessage().contains("does not match the invitation"));
     }
-
-    @Test
-    void testHandle_MethodNotAllowed() {
-        invitationEntity.setAllowedAuthMethods(Set.of("cni"));
-        when(invitationRepository.findByTokenAndStatusPending(any())).thenReturn(invitationEntity);
-        UserProfile profile = new UserProfile("sub", null, "John", "jane@example.com", null, null, "pwd", List.of());
-        mockSecurityContext(profile);
-
-        IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> commandHandler.handle(command));
-        assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getBody().getStatus());
-        assertTrue(exception.getMessage().contains("is not allowed for this invitation"));
-    }
-
-    @Test
+@Test
     void testHandle_RejectInvitation() {
         when(invitationRepository.findByTokenAndStatusPending(any())).thenReturn(invitationEntity);
         UserProfile profile = new UserProfile("sub", null, "John", "jane@example.com", null, null, "pwd", List.of());
@@ -200,20 +189,22 @@ class RespondUserInvitationCommandHandlerTest {
     @Test
     void testHandle_AcceptExistingUser_Cni_WithOtp() {
         invitationEntity.setIdentifierValue("jane@example.com");
-        invitationEntity.setAllowedAuthMethods(Set.of("cni", "pwd"));
+        invitationEntity.setIdentifierValue("jane@example.com");
         invitationEntity.setToken("mock-token");
         
         when(invitationRepository.findByTokenAndStatusPending(any())).thenReturn(invitationEntity);
         UserProfile profile = new UserProfile("sub", null, "Jane", null, null, "123456", "cni", List.of());
         mockSecurityContext(profile);
         when(responseDto.isAccept()).thenReturn(true);
-        command = new RespondUserInvitationCommand(responseDto, "mock-token", 99L);
+        command = new RespondUserInvitationCommand();
+        command.setUserinvitationresponsedto(responseDto);
+        command.setToken("mock-token");
         
         cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity otpEntity = new cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity();
         otpEntity.setId(99L);
         otpEntity.setStatus("APPROVED");
         otpEntity.setReferenceId("mock-token");
-        when(otpEntityRepository.findById(99L)).thenReturn(Optional.of(otpEntity));
+        when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedDateDesc("mock-token", "APPROVED")).thenReturn(Optional.of(otpEntity));
         
         IGRPUserEntity existingUser = new IGRPUserEntity();
         existingUser.setId(10);
@@ -241,34 +232,38 @@ class RespondUserInvitationCommandHandlerTest {
     @Test
     void testHandle_MismatchedIdentifierValue_WithoutOtp() {
         invitationEntity.setIdentifierValue("jane@example.com");
-        invitationEntity.setAllowedAuthMethods(Set.of("cni"));
+        invitationEntity.setIdentifierValue("jane@example.com");
         when(invitationRepository.findByTokenAndStatusPending(any())).thenReturn(invitationEntity);
         UserProfile profile = new UserProfile("sub", null, "John", null, null, "123456", "cni", List.of());
         mockSecurityContext(profile);
-        command = new RespondUserInvitationCommand(responseDto, "mock-token", null);
+        command = new RespondUserInvitationCommand();
+        command.setUserinvitationresponsedto(responseDto);
+        command.setToken("mock-token");
 
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> commandHandler.handle(command));
         assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getBody().getStatus());
-        assertTrue(exception.getMessage().contains("Please provide an OTP ID"));
+        assertTrue(exception.getMessage().contains("You must validate your email via OTP before accepting if you logged in via a different method."));
     }
 
     @Test
     void testHandle_AcceptNewUser_Cmdcv_WithOtp() {
         invitationEntity.setIdentifierValue("jane@example.com");
-        invitationEntity.setAllowedAuthMethods(Set.of("cmdcv", "pwd"));
+        invitationEntity.setIdentifierValue("jane@example.com");
         invitationEntity.setToken("mock-token");
         
         when(invitationRepository.findByTokenAndStatusPending(any())).thenReturn(invitationEntity);
         UserProfile profile = new UserProfile("sub", null, "Jane", null, "+2389999999", null, "cmdcv", List.of());
         mockSecurityContext(profile);
         when(responseDto.isAccept()).thenReturn(true);
-        command = new RespondUserInvitationCommand(responseDto, "mock-token", 99L);
+        command = new RespondUserInvitationCommand();
+        command.setUserinvitationresponsedto(responseDto);
+        command.setToken("mock-token");
 
         cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity otpEntity = new cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity();
         otpEntity.setId(99L);
         otpEntity.setStatus("APPROVED");
         otpEntity.setReferenceId("mock-token");
-        when(otpEntityRepository.findById(99L)).thenReturn(Optional.of(otpEntity));
+        when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedDateDesc("mock-token", "APPROVED")).thenReturn(Optional.of(otpEntity));
                 
         IGRPUserEntity savedUserMock = new IGRPUserEntity();
         savedUserMock.setId(10);

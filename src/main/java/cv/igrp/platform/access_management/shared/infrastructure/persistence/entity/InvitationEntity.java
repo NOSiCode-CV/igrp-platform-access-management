@@ -39,10 +39,6 @@ public class InvitationEntity extends AuditEntity {
     @Column(name="identifier_value", nullable = false)
     private String identifierValue;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "t_invitation_auth_methods", joinColumns = @JoinColumn(name = "invitation_id"))
-    @Column(name = "auth_method")
-    private Set<String> allowedAuthMethods = new HashSet<>();
 
   
     @NotNull(message = "status is mandatory")

@@ -18,5 +18,4 @@ public class RespondUserInvitationCommand implements Command {
   @NotBlank(message = "The field <token> is required")
   private String token;
 
-  private Long otpId;
 }

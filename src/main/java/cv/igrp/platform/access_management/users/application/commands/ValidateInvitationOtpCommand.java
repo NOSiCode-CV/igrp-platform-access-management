@@ -12,8 +12,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ValidateInvitationOtpCommand implements Command {
 
-    @NotNull(message = "The field <otpId> is required")
-    private Long otpId;
+    @NotBlank(message = "The field <token> is required")
+    private String token;
 
     @NotBlank(message = "The field <otpCode> is required")
     private String otpCode;
