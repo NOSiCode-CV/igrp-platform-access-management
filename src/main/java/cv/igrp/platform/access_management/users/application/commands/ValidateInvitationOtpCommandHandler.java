@@ -31,7 +31,7 @@ public class ValidateInvitationOtpCommandHandler implements CommandHandler<Valid
     public ResponseEntity<OtpResponseDTO> handle(ValidateInvitationOtpCommand command) {
         LOGGER.info("Validating OTP for token: {}", command.getToken());
 
-        OtpEntity otpEntity = otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedDateDesc(command.getToken(), "PENDING")
+        OtpEntity otpEntity = otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(command.getToken(), "PENDING")
                 .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "No pending OTP request found for this token"));
 
         if (LocalDateTime.now().isAfter(otpEntity.getExpiresAt())) {
