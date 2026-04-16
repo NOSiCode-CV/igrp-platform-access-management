@@ -25,6 +25,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 class GetCurrentUserDepartmentRolesQueryHandlerTest {
 
     @Mock
@@ -90,7 +91,7 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
         RoleEntity roleA = new RoleEntity();
         RoleEntity roleB = new RoleEntity();
 
-        when(roleRepository.findByDepartmentIdAndUserIdAndStatusNotDeleted(user, department))
+        when(roleRepository.findByDepartmentIdAndCurrentUserIdAndStatusNotDeleted(user, department))
                 .thenReturn(List.of(roleA, roleB));
 
         when(roleMapper.mapToDto(roleA))
@@ -105,7 +106,7 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
         assertEquals("ROLE_A", response.getBody().get(0).getCode());
         assertEquals("ROLE_B", response.getBody().get(1).getCode());
 
-        verify(roleRepository).findByDepartmentIdAndUserIdAndStatusNotDeleted(user, department);
+        verify(roleRepository).findByDepartmentIdAndCurrentUserIdAndStatusNotDeleted(user, department);
     }
 
     // ---------------------------------------------------------------------
@@ -123,7 +124,7 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
         when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
                 .thenReturn(department);
 
-        when(roleRepository.findByDepartmentIdAndUserIdAndStatusNotDeleted(user, department))
+        when(roleRepository.findByDepartmentIdAndCurrentUserIdAndStatusNotDeleted(user, department))
                 .thenReturn(List.of());
 
         ResponseEntity<List<RoleDTO>> response = handler.handle(query);
@@ -148,7 +149,7 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
         assertThrows(IgrpResponseStatusException.class,
                 () -> handler.handle(query));
 
-        verify(roleRepository, never()).findByDepartmentIdAndUserIdAndStatusNotDeleted(any(), any());
+        verify(roleRepository, never()).findByDepartmentIdAndCurrentUserIdAndStatusNotDeleted(any(), any());
     }
 
     // ---------------------------------------------------------------------

@@ -1,4 +1,4 @@
-package cv.igrp.platform.access_management.shared.domain.audit;
+package cv.igrp.platform.access_management.shared.application.constants;
 
 public enum IdentifierType {
     CNI,

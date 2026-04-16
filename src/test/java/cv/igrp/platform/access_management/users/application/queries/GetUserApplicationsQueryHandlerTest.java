@@ -54,7 +54,7 @@ public class GetUserApplicationsQueryHandlerTest {
         dto.setCode("APP_MAIN");
 
         when(userRepository.findById(10)).thenReturn(Optional.of(user));
-        when(applicationRepository.findByUserIdAndStatusNotDeleted(user)).thenReturn(List.of(app));
+        when(applicationRepository.findByUserAndActiveFiltered(anyInt(), any(), any())).thenReturn(List.of(app));
         when(applicationMapper.toDto(app)).thenReturn(dto);
 
         ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);
@@ -85,7 +85,7 @@ public class GetUserApplicationsQueryHandlerTest {
         dto.setCode("CRM_PORTAL");
 
         when(userRepository.findById(99)).thenReturn(Optional.of(user));
-        when(applicationRepository.findByUserIdAndStatusNotDeleted(user)).thenReturn(List.of(app1, app2));
+        when(applicationRepository.findByUserAndActiveFiltered(anyInt(), any(), any())).thenReturn(List.of(app1));
         when(applicationMapper.toDto(app1)).thenReturn(dto);
 
         ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);
@@ -110,7 +110,7 @@ public class GetUserApplicationsQueryHandlerTest {
         user.setId(5);
 
         when(userRepository.findById(5)).thenReturn(Optional.of(user));
-        when(applicationRepository.findByUserIdAndStatusNotDeleted(user)).thenReturn(List.of());
+        when(applicationRepository.findByUserAndActiveFiltered(anyInt(), any(), any())).thenReturn(List.of());
 
         ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);
 

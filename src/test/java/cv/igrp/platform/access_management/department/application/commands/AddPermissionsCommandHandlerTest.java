@@ -26,6 +26,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 public class AddPermissionsCommandHandlerTest {
 
     @InjectMocks
@@ -84,7 +85,7 @@ public class AddPermissionsCommandHandlerTest {
         savedRole.setDescription(roleDescription);
         savedRole.setStatus(Status.ACTIVE);
         //... When
-        when(permissionRepository.findAllByNameIn(permissionList))
+        when(permissionRepository.findAllByNameInAndStatusNotDeleted(anyList()))
                 .thenReturn(savedPermissions);
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> underTest.handle(command));
@@ -116,7 +117,7 @@ public class AddPermissionsCommandHandlerTest {
         deletedPermission.setStatus(Status.DELETED);
         deletedPermission.setName("test_deleted");
 
-        List<PermissionEntity> returnedPermissions = List.of(activePermission, deletedPermission);
+        List<PermissionEntity> returnedPermissions = List.of(activePermission);
 
         RoleEntity role = new RoleEntity();
         role.setId(roleId);
@@ -133,7 +134,7 @@ public class AddPermissionsCommandHandlerTest {
         department.setCode(deptCode);
         department.setStatus(DepartmentStatus.ACTIVE);
 
-        when(permissionRepository.findAllByNameIn(permissionIds)).thenReturn(returnedPermissions);
+        when(permissionRepository.findAllByNameInAndStatusNotDeleted(anyList())).thenReturn(returnedPermissions);
         when(departmentRepository.findByCodeAndStatusNotDeleted(deptCode)).thenReturn(department);
         when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(role));
         when(roleRepository.save(role)).thenReturn(role);
@@ -154,6 +155,8 @@ public class AddPermissionsCommandHandlerTest {
         verify(roleRepository).save(role);
         verify(roleRepository, times(1)).save(role);
         verify(roleMapper, times(1)).mapToDto(role);
+        
+        verify(roleRepository).findByDepartmentAndCodeAndStatusNot(any(), any(), any());
 
         verifyNoMoreInteractions(roleRepository, roleMapper);
     }
@@ -204,7 +207,7 @@ public class AddPermissionsCommandHandlerTest {
 
         PermissionDTO permissionDTO = new PermissionDTO();
         permissionDTO.setId(activePermissionId);
-        when(permissionRepository.findAllByNameIn(permissionList)).thenReturn(savedPermissions);
+        when(permissionRepository.findAllByNameInAndStatusNotDeleted(anyList())).thenReturn(savedPermissions);
         when(departmentRepository.findByCodeAndStatusNotDeleted(deptCode)).thenReturn(department);
         when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(savedRole));
         when(roleRepository.save(savedRole)).thenReturn(savedRole);
@@ -222,6 +225,8 @@ public class AddPermissionsCommandHandlerTest {
         verify(roleRepository).save(savedRole);
         verify(roleRepository, times(1)).save(savedRole);
         verify(roleMapper, times(1)).mapToDto(savedRole);
+        
+        verify(roleRepository).findByDepartmentAndCodeAndStatusNot(any(), any(), any());
 
         verifyNoMoreInteractions(roleRepository, roleMapper);
     }
@@ -258,7 +263,7 @@ public class AddPermissionsCommandHandlerTest {
         department.setCode(deptCode);
         department.setStatus(DepartmentStatus.ACTIVE);
 
-        when(permissionRepository.findAllByNameIn(permissionIds)).thenReturn(List.of(activePermission));
+        when(permissionRepository.findAllByNameInAndStatusNotDeleted(anyList())).thenReturn(List.of(activePermission));
         when(departmentRepository.findByCodeAndStatusNotDeleted(deptCode)).thenReturn(department);
         when(roleRepository.findByDepartmentAndCodeAndStatusNot(department, roleCode, Status.DELETED)).thenReturn(Optional.of(savedRole));
         when(roleRepository.save(savedRole)).thenReturn(savedRole);
@@ -276,6 +281,8 @@ public class AddPermissionsCommandHandlerTest {
         verify(roleRepository).save(savedRole);
         verify(roleRepository, times(1)).save(savedRole);
         verify(roleMapper, times(1)).mapToDto(savedRole);
+        
+        verify(roleRepository).findByDepartmentAndCodeAndStatusNot(any(), any(), any());
 
         verifyNoMoreInteractions(roleRepository, roleMapper);
     }

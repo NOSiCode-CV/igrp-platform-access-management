@@ -56,6 +56,7 @@ public class UpdateMenuCommandHandlerTest {
         existingMenu = new MenuEntryEntity();
         existingMenu.setId(1);
         existingMenu.setCode("MENU1");
+        existingMenu.setStatus(Status.ACTIVE);
 
         updatedMenu = new MenuEntryEntity();
         updatedMenu.setId(1);

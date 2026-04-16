@@ -72,7 +72,7 @@ public interface IGRPUserEntityRepository extends
         AND (
             (:externalId IS NOT NULL AND u.externalId = :externalId)
             OR (:email IS NOT NULL AND lower(u.email) = lower(:email))
-            OR (:nic IS NOT NULL AND upper(u.nic) = upper(:nic))
+            OR (:nic IS NOT NULL AND upper(cast(u.nic as string)) = upper(cast(:nic as string)))
             OR (:phoneNumber IS NOT NULL AND u.phoneNumber = :phoneNumber)
             OR (:externalId IS NOT NULL AND u.username = :externalId)
         )

@@ -32,9 +32,7 @@ public class InvitationDTO  {
   
   private String identifierValue ;
   
-  
-  private List<String> allowedAuthMethods = new ArrayList<>();
-  
+
   
   private InvitationStatus status ;
   

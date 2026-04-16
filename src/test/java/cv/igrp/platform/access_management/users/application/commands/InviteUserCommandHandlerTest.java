@@ -11,7 +11,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.InvitationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils;
@@ -19,44 +18,47 @@ import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.ContextConfiguration;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-
 import java.util.List;
 import java.util.Optional;
+import cv.igrp.platform.access_management.shared.application.constants.IdentifierType;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith(SpringExtension.class)
+@ContextConfiguration(classes = InviteUserCommandHandler.class)
 class InviteUserCommandHandlerTest {
 
-    @Mock
+    @MockBean
     private NotificationAdapter<NotificationResult> notificationAdapter;
 
-    @Mock
-    private IGRPUserEntityRepository userRepository;
+    @MockBean
+    private cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository userRepository;
 
-    @Mock
+    @MockBean
     private RoleEntityRepository roleRepository;
 
-    @Mock
+    @MockBean
     private DepartmentEntityRepository departmentRepository;
 
-    @Mock
+    @MockBean
     private InvitationEntityRepository invitationRepository;
 
-    @Mock
+    @MockBean
     private InvitationMapper invitationMapper;
 
-    @Mock
+    @MockBean
     private UserUtils userUtils;
 
-    @InjectMocks
+    @Autowired
     private InviteUserCommandHandler underTest;
 
     private InviteUserDTO inviteUserDTO;
@@ -65,8 +67,7 @@ class InviteUserCommandHandlerTest {
     @BeforeEach
     void setUp() {
         inviteUserDTO = new InviteUserDTO();
-        inviteUserDTO.setIdentifierType("EMAIL");
-        inviteUserDTO.setIdentifierValue("john@nosi.cv");
+        inviteUserDTO.setEmail("john@nosi.cv");
         inviteUserDTO.setDepartmentCode("DEPT_TEST");
         inviteUserDTO.setRoles(List.of("ROLE_TEST"));
 
@@ -78,7 +79,7 @@ class InviteUserCommandHandlerTest {
      */
     @Test
     void itShouldInviteUserSuccessfully() throws NotificationException {
-        when(invitationRepository.findByIdentifierTypeAndIdentifierValueAndStatus("EMAIL", "john@nosi.cv", InvitationStatus.PENDING)).thenReturn(Optional.empty());
+        when(invitationRepository.findByIdentifierTypeAndIdentifierValueAndStatus(IdentifierType.EMAIL, "john@nosi.cv", InvitationStatus.PENDING)).thenReturn(Optional.empty());
 
         DepartmentEntity department = new DepartmentEntity();
         department.setCode("DEPT_TEST");
@@ -89,15 +90,15 @@ class InviteUserCommandHandlerTest {
         when(roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, "ROLE_TEST")).thenReturn(role);
 
         InvitationEntity savedInvitation = new InvitationEntity();
-        savedInvitation.setIdentifierType("EMAIL");
+        savedInvitation.setIdentifierType(IdentifierType.EMAIL);
         savedInvitation.setIdentifierValue("john@nosi.cv");
         savedInvitation.setToken("test-token");
-        when(invitationRepository.save(any(InvitationEntity.class))).thenReturn(savedInvitation);
+        when(invitationRepository.saveAndFlush(any(InvitationEntity.class))).thenReturn(savedInvitation);
 
         when(userUtils.constructInvitationUrl(any(), eq("test-token"))).thenReturn("http://test.url");
 
         InvitationDTO expectedDto = new InvitationDTO();
-        expectedDto.setIdentifierType("EMAIL");
+        expectedDto.setIdentifierType(IdentifierType.EMAIL);
         expectedDto.setIdentifierValue("john@nosi.cv");
         when(invitationMapper.toDtoWithUrl(eq(savedInvitation), eq("http://test.url"))).thenReturn(expectedDto);
 
@@ -107,7 +108,7 @@ class InviteUserCommandHandlerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(expectedDto, response.getBody());
 
-        verify(invitationRepository).save(any(InvitationEntity.class));
+        verify(invitationRepository).saveAndFlush(any(InvitationEntity.class));
         verify(notificationAdapter).send(any(Notification.class));
     }
 }

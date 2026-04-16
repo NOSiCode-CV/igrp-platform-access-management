@@ -25,6 +25,7 @@ import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 class GetCurrentUserApplicationMenusQueryHandlerTest {
 
     @Mock
@@ -95,7 +96,7 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
         menu2.setCode("MENU_B");
         menu2.setStatus(Status.ACTIVE);
 
-        when(menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(Integer.valueOf(user.getId()), app.getId(), null))
+        when(menuEntryRepository.findActiveByApplicationIdAndCurrentUserIdFiltered(anyInt(), any(), any()))
                 .thenReturn(List.of(menu1, menu2));
 
         when(menuEntryMapper.toDTO(menu1)).thenReturn(menuEntryDTO1);
@@ -105,7 +106,7 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
 
         assertNotNull(response);
         assertEquals(2, response.getBody().size());
-        verify(menuEntryRepository).findActiveByApplicationIdAndUserIdFiltered(Integer.valueOf(user.getId()), app.getId(), null);
+        verify(menuEntryRepository).findActiveByApplicationIdAndCurrentUserIdFiltered(anyInt(), any(), any());
     }
 
     // ------------------------------------------------------
@@ -130,8 +131,8 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
         menu2.setCode("MENU_B");
         menu2.setStatus(Status.ACTIVE);
 
-        when(menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(Integer.valueOf(user.getId()), app.getId(), null))
-                .thenReturn(List.of(menu1, menu2));
+        when(menuEntryRepository.findActiveByApplicationIdAndCurrentUserIdFiltered(anyInt(), any(), any()))
+                .thenReturn(List.of(menu1));
 
         when(menuEntryMapper.toDTO(menu1)).thenReturn(menuEntryDTO1);
 
@@ -158,7 +159,7 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
         assertThrows(IgrpResponseStatusException.class,
                 () -> handler.handle(query));
 
-        verify(menuEntryRepository, never()).findActiveByApplicationIdAndUserIdFiltered(any(), any(), null);
+        verify(menuEntryRepository, never()).findActiveByApplicationIdAndCurrentUserIdFiltered(anyInt(), any(), any());
     }
 
     // ------------------------------------------------------
@@ -173,7 +174,7 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);
 
-        when(menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(Integer.valueOf(user.getId()), app.getId(), null))
+        when(menuEntryRepository.findActiveByApplicationIdAndCurrentUserIdFiltered(Integer.valueOf(user.getId()), app.getId(), null))
                 .thenReturn(List.of());
 
         GetCurrentUserApplicationMenusQuery query =

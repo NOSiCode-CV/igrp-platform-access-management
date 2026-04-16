@@ -25,6 +25,7 @@ import org.slf4j.LoggerFactory;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import org.springframework.transaction.annotation.Transactional;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserIdentifierEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.OtpEntityRepository;
 import cv.igrp.platform.access_management.users.application.service.UserIdentityResolutionService;
 
 import java.util.HashSet;
@@ -53,6 +54,7 @@ public class RespondUserInvitationCommandHandler
    private final SecurityAuditService auditService;
    private final UserIdentifierEntityRepository userIdentifierEntityRepository;
    private final UserIdentityResolutionService userIdentityResolutionService;
+   private final OtpEntityRepository otpEntityRepository;
 
    public RespondUserInvitationCommandHandler(
          NotificationAdapter<NotificationResult> notificationAdapter,
@@ -62,7 +64,8 @@ public class RespondUserInvitationCommandHandler
          InvitationMapper invitationMapper,
          SecurityAuditService auditService,
          UserIdentifierEntityRepository userIdentifierEntityRepository,
-         UserIdentityResolutionService userIdentityResolutionService) {
+         UserIdentityResolutionService userIdentityResolutionService,
+         OtpEntityRepository otpEntityRepository) {
       this.notificationAdapter = notificationAdapter;
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
@@ -71,6 +74,7 @@ public class RespondUserInvitationCommandHandler
       this.auditService = auditService;
       this.userIdentifierEntityRepository = userIdentifierEntityRepository;
       this.userIdentityResolutionService = userIdentityResolutionService;
+      this.otpEntityRepository = otpEntityRepository;
    }
 
    @IgrpCommandHandler
@@ -105,26 +109,16 @@ public class RespondUserInvitationCommandHandler
       String phone = profile.phone();
       String email = profile.email();
 
-      String primaryIdentifierValue = null;
-      if ("cmdcv".equalsIgnoreCase(authMethod)) {
-         primaryIdentifierValue = phone;
-      } else if ("cni".equalsIgnoreCase(authMethod)) {
-         primaryIdentifierValue = nic;
-      } else if ("pwd".equalsIgnoreCase(authMethod)) {
-         primaryIdentifierValue = email != null ? email.toLowerCase() : null;
-      }
-
-      if (primaryIdentifierValue == null || !primaryIdentifierValue.equals(invitation.getIdentifierValue())) {
-         throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
-               "Authenticated identifier does not match the invitation");
-      }
-
-      if (invitation.getAllowedAuthMethods() == null || !invitation.getAllowedAuthMethods().contains(authMethod)) {
-         throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
-               "Authentication method is not allowed for this invitation");
-      }
-
       if (dto.isAccept()) {
+
+         var otpEntityOpt = otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(command.getToken(), "APPROVED");
+         
+         if (otpEntityOpt.isPresent()) {
+             invitation.setOtpId(otpEntityOpt.get().getId());
+         } else {
+             throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
+                    "O código OTP não foi validado. Por favor, valide o seu código OTP antes de aceitar o convite.");
+         }
 
          invitation.setStatus(InvitationStatus.ACCEPTED);
          var updatedInvitation = invitationRepository.save(invitation);
