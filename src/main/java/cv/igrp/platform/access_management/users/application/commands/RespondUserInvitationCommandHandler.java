@@ -109,22 +109,16 @@ public class RespondUserInvitationCommandHandler
       String phone = profile.phone();
       String email = profile.email();
 
-      var otpEntityOpt = otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(command.getToken(), "APPROVED");
-      
-      if (otpEntityOpt.isPresent()) {
-          invitation.setOtpId(otpEntityOpt.get().getId());
-      } else {
-          // Fallback via Claims
-          String primaryIdentifierValue = email != null ? email.toLowerCase() : null;
-
-          if (primaryIdentifierValue == null || !primaryIdentifierValue.equalsIgnoreCase(invitation.getIdentifierValue())) {
-             throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
-                   "Authenticated email (" + primaryIdentifierValue + ") does not match the invitation (" + invitation.getIdentifierValue() + "). You must validate your email via OTP before accepting if you logged in via a different method.");
-          }
-      }
-
-
       if (dto.isAccept()) {
+
+         var otpEntityOpt = otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(command.getToken(), "APPROVED");
+         
+         if (otpEntityOpt.isPresent()) {
+             invitation.setOtpId(otpEntityOpt.get().getId());
+         } else {
+             throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
+                    "O código OTP não foi validado. Por favor, valide o seu código OTP antes de aceitar o convite.");
+         }
 
          invitation.setStatus(InvitationStatus.ACCEPTED);
          var updatedInvitation = invitationRepository.save(invitation);

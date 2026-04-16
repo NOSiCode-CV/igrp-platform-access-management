@@ -120,14 +120,16 @@ class RespondUserInvitationCommandHandlerTest {
     }
 
     @Test
-    void testHandle_MismatchedIdentifierValue() {
+    void testHandle_Accept_Without_Valid_Otp_Should_Throw() {
         when(invitationRepository.findByTokenAndStatusPending(any())).thenReturn(invitationEntity);
         UserProfile profile = new UserProfile("sub", null, "John", "other@example.com", null, null, "pwd", List.of());
         mockSecurityContext(profile);
+        when(responseDto.isAccept()).thenReturn(true);
+        when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(any(), any())).thenReturn(Optional.empty());
 
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> commandHandler.handle(command));
         assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getBody().getStatus());
-        assertTrue(exception.getMessage().contains("does not match the invitation"));
+        assertTrue(exception.getMessage().contains("O código OTP não foi validado."));
     }
 @Test
     void testHandle_RejectInvitation() {
@@ -152,6 +154,10 @@ class RespondUserInvitationCommandHandlerTest {
         UserProfile profile = new UserProfile("sub", null, "Jane", "jane@example.com", null, null, "pwd", List.of());
         mockSecurityContext(profile);
         when(responseDto.isAccept()).thenReturn(true);
+        
+        cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity otpEntity = new cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity();
+        otpEntity.setId(99L);
+        when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(any(), any())).thenReturn(Optional.of(otpEntity));
         IGRPUserEntity savedUserMock = new IGRPUserEntity();
         savedUserMock.setId(10);
         savedUserMock.setEmail("jane@example.com");
@@ -230,7 +236,7 @@ class RespondUserInvitationCommandHandlerTest {
     }
 
     @Test
-    void testHandle_MismatchedIdentifierValue_WithoutOtp() {
+    void testHandle_Accept_Without_Valid_Otp_Should_Throw_For_All() {
         invitationEntity.setIdentifierValue("jane@example.com");
         invitationEntity.setIdentifierValue("jane@example.com");
         when(invitationRepository.findByTokenAndStatusPending(any())).thenReturn(invitationEntity);
@@ -239,10 +245,12 @@ class RespondUserInvitationCommandHandlerTest {
         command = new RespondUserInvitationCommand();
         command.setUserinvitationresponsedto(responseDto);
         command.setToken("mock-token");
+        when(responseDto.isAccept()).thenReturn(true);
+        when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(any(), any())).thenReturn(Optional.empty());
 
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> commandHandler.handle(command));
         assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getBody().getStatus());
-        assertTrue(exception.getMessage().contains("You must validate your email via OTP before accepting if you logged in via a different method."));
+        assertTrue(exception.getMessage().contains("O código OTP não foi validado."));
     }
 
     @Test
