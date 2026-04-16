@@ -109,7 +109,7 @@ public class RespondUserInvitationCommandHandler
       String phone = profile.phone();
       String email = profile.email();
 
-      var otpEntityOpt = otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedDateDesc(command.getToken(), "APPROVED");
+      var otpEntityOpt = otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(command.getToken(), "APPROVED");
       
       if (otpEntityOpt.isPresent()) {
           invitation.setOtpId(otpEntityOpt.get().getId());

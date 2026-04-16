@@ -204,7 +204,7 @@ class RespondUserInvitationCommandHandlerTest {
         otpEntity.setId(99L);
         otpEntity.setStatus("APPROVED");
         otpEntity.setReferenceId("mock-token");
-        when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedDateDesc("mock-token", "APPROVED")).thenReturn(Optional.of(otpEntity));
+        when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc("mock-token", "APPROVED")).thenReturn(Optional.of(otpEntity));
         
         IGRPUserEntity existingUser = new IGRPUserEntity();
         existingUser.setId(10);
@@ -263,7 +263,7 @@ class RespondUserInvitationCommandHandlerTest {
         otpEntity.setId(99L);
         otpEntity.setStatus("APPROVED");
         otpEntity.setReferenceId("mock-token");
-        when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedDateDesc("mock-token", "APPROVED")).thenReturn(Optional.of(otpEntity));
+        when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc("mock-token", "APPROVED")).thenReturn(Optional.of(otpEntity));
                 
         IGRPUserEntity savedUserMock = new IGRPUserEntity();
         savedUserMock.setId(10);
