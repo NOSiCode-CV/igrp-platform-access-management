@@ -106,6 +106,18 @@
       "primaryKey": false
     },
     {
+      "name": "expiresAt",
+      "objectType": "java",
+      "type": "date",
+      "required": false,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
       "name": "permissions",
       "objectType": "java",
       "type": "string",

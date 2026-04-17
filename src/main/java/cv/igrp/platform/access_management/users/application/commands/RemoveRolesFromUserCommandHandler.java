@@ -9,6 +9,11 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
+import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
+import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
+import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -30,6 +35,9 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
    private final IGRPUserEntityRepository userRepository;
    private final RoleEntityRepository roleRepository;
    private final DepartmentEntityRepository departmentRepository;
+   private final UserRoleAssignmentRepository userRoleAssignmentRepository;
+   private final SecurityAuditService securityAuditService;
+   private final cv.igrp.platform.access_management.role.domain.service.RoleMapper roleMapper;
 
    /**
     * Constructs the handler with the required repository dependency.
@@ -38,10 +46,18 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
     * @param roleRepository the repository used to retrieve and save {@link RoleEntity} entities
     */
    public RemoveRolesFromUserCommandHandler(
-           IGRPUserEntityRepository userRepository, RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository) {
+           IGRPUserEntityRepository userRepository, 
+           RoleEntityRepository roleRepository, 
+           DepartmentEntityRepository departmentRepository, 
+           UserRoleAssignmentRepository userRoleAssignmentRepository,
+           SecurityAuditService securityAuditService,
+           cv.igrp.platform.access_management.role.domain.service.RoleMapper roleMapper) {
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
+      this.userRoleAssignmentRepository = userRoleAssignmentRepository;
+      this.securityAuditService = securityAuditService;
+      this.roleMapper = roleMapper;
    }
 
    /**
@@ -77,33 +93,39 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
 
       if (roleIdsToRemove != null && !roleIdsToRemove.isEmpty()) {
 
-         List<RoleEntity> rolesToRemove = user.getRoles().stream()
-                 .filter(role -> roleIdsToRemove.contains(role.getCode()))
+         List<UserRoleAssignment> assignments = userRoleAssignmentRepository.findActiveByUserId(userId);
+
+         List<UserRoleAssignment> assignmentsToRemove = assignments.stream()
+                 .filter(assignment -> roleIdsToRemove.contains(assignment.getRole().getCode()))
                  .toList();
 
-         if (!rolesToRemove.isEmpty()) {
+         if (!assignmentsToRemove.isEmpty()) {
 
-            // Remove association both ways to ensure consistency
-            for (var role : rolesToRemove) {
-               role.getUsers().remove(user);
+            userRoleAssignmentRepository.deleteAll(assignmentsToRemove);
+
+            for (var assignment : assignmentsToRemove) {
+               java.util.Map<String, Object> auditContext = new java.util.HashMap<>();
+               auditContext.put("userId", userId);
+               auditContext.put("roleCode", assignment.getRole().getCode());
+               securityAuditService.logEvent(AuditEventType.ROLE_REMOVED, AuditCategory.PRIVILEGE, auditContext);
             }
-            // Also remove roles from user's collection
-            user.getRoles().removeAll(rolesToRemove);
+
+            List<RoleEntity> rolesToRemove = assignmentsToRemove.stream().map(UserRoleAssignment::getRole).toList();
 
             Optional.ofNullable(user.getActiveRole()).ifPresent(
                     (it) -> {
                        if(rolesToRemove.contains(it)) {
-                          if(!user.getRoles().isEmpty()) {
-                             user.setActiveRole(user.getRoles().getFirst());
+                          List<UserRoleAssignment> remaining = userRoleAssignmentRepository.findActiveByUserId(userId);
+                          remaining.removeAll(assignmentsToRemove);
+                          if(!remaining.isEmpty()) {
+                             user.setActiveRole(remaining.getFirst().getRole());
                           } else {
                              user.setActiveRole(null);
                           }
+                          userRepository.save(user);
                        }
                     }
             );
-
-            // Persist changes to the user only when roles were actually removed
-            userRepository.save(user);
 
             logger.info("Roles removed successfully from user ID={}", userId);
          }
@@ -116,11 +138,8 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
       }
 
 
-      List<RoleDTO> result = user.getRoles().stream()
-              .map(role -> new RoleDTO(role.getId(), role.getCode(),
-                      role.getName(), role.getDescription(),
-                      null, null,
-                      null, null, null))
+      List<RoleDTO> result = userRoleAssignmentRepository.findActiveByUserId(userId).stream()
+              .map(roleMapper::mapToDto)
               .collect(Collectors.toList());
 
       logger.info("Returning {} remaining roles for user ID={}", result.size(), userId);

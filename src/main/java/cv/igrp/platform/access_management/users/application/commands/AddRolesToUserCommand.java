@@ -19,5 +19,7 @@ public class AddRolesToUserCommand implements Command {
   private Integer id;
   @NotBlank(message = "The field <departmentCode> is required")
   private String departmentCode;
+  
+  private java.time.LocalDateTime expiresAt;
 
 }

@@ -35,7 +35,16 @@ public class RoleMapper {
         roleDTO.setStatus(role.getStatus());
         roleDTO.setIcon(role.getIcon());
         roleDTO.setPermissions(role.getPermissions().stream().map(PermissionEntity::getName).toList());
-        return roleDTO;
+    return roleDTO;
+    }
+
+    /**
+     * Converts a {@link cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment} entity to a {@link RoleDTO}.
+     */
+    public RoleDTO mapToDto(cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment assignment) {
+        RoleDTO dto = mapToDto(assignment.getRole());
+        dto.setExpiresAt(assignment.getExpiresAt());
+        return dto;
     }
 
     /**

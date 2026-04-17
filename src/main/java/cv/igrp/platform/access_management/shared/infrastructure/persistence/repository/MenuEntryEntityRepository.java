@@ -104,8 +104,8 @@ public interface MenuEntryEntityRepository extends
         FROM t_menu_entry m
         JOIN t_menu_entry_roles rm ON rm.menu_entry_entity_id = m.id
         JOIN t_role r ON r.id = rm.roles_id
-        JOIN t_role_users ur ON ur.roles_id = r.id
-        JOIN t_user u ON u.id = ur.users_id
+        JOIN t_user_role_assignment ura ON ura.role_id = r.id
+        JOIN t_user u ON u.id = ura.user_id
         WHERE u.id = :userId
           AND m.application_id = :applicationId
           AND m.status <> 'DELETED'
@@ -136,8 +136,8 @@ public interface MenuEntryEntityRepository extends
         FROM t_menu_entry m
         JOIN t_menu_entry_roles rm ON rm.menu_entry_entity_id = m.id
         JOIN t_role r ON r.id = rm.roles_id
-        JOIN t_role_users ur ON ur.roles_id = r.id
-        JOIN t_user u ON u.id = ur.users_id
+        JOIN t_user_role_assignment ura ON ura.role_id = r.id
+        JOIN t_user u ON u.id = ura.user_id
         WHERE u.id = :userId
           AND m.application_id = :applicationId
           AND m.status = 'ACTIVE'
@@ -175,8 +175,8 @@ public interface MenuEntryEntityRepository extends
         FROM t_menu_entry m
         JOIN t_menu_entry_roles rm ON rm.menu_entry_entity_id = m.id
         JOIN t_role r ON r.id = rm.roles_id
-        JOIN t_role_users ur ON ur.roles_id = r.id
-        JOIN t_user u ON u.id = ur.users_id
+        JOIN t_user_role_assignment ura ON ura.role_id = r.id
+        JOIN t_user u ON u.id = ura.user_id
         WHERE u.id = :userId
           AND r.id = u.active_role_id
           AND m.application_id = :applicationId

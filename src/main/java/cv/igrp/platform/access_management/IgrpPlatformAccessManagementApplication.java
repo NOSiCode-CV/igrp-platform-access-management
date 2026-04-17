@@ -10,10 +10,12 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(
   exclude = WebFluxAutoConfiguration.class
 )
+@EnableScheduling
 @ComponentScan(basePackages = "cv.igrp")
 public class IgrpPlatformAccessManagementApplication {
 

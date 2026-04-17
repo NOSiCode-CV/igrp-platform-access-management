@@ -115,7 +115,7 @@ public class UserController {
     , @PathVariable(value = "id") Integer id,@PathVariable(value = "departmentCode") String departmentCode)
   {
 
-      final var command = new AddRolesToUserCommand(addRolesToUserRequest, id, departmentCode);
+      final var command = new AddRolesToUserCommand(addRolesToUserRequest, id, departmentCode, null);
 
       return commandBus.send(command);
 

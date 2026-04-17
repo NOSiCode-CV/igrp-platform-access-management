@@ -94,7 +94,8 @@ public interface RoleEntityRepository extends
     @Query(
     """
         select r from RoleEntity r
-        JOIN r.users u
+        join r.userRoleAssignments ura
+        join ura.user u
         where r.department = :department and u = :user and r.status <> 'DELETED'
     """
     )
@@ -103,7 +104,8 @@ public interface RoleEntityRepository extends
     @Query(
     """
         select r from RoleEntity r
-        JOIN r.users u
+        join r.userRoleAssignments ura
+        join ura.user u
         where r.department = :department and u = :user and r.status <> 'DELETED' and r = u.activeRole
     """
     )

@@ -55,16 +55,19 @@ class RespondUserInvitationCommandHandlerTest {
     private SecurityAuditService auditService;
 
     @Mock
+    private cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository userRoleAssignmentRepository;
+
+    @Mock
+    private cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService expireRoleService;
+
+    @Mock
+    private org.springframework.security.core.context.SecurityContext securityContext;
+
+    @Mock
+    private org.springframework.security.core.Authentication authentication;
+
+    @Mock
     private cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserIdentifierEntityRepository userIdentifierEntityRepository;
-
-    @Mock
-    private SecurityContext securityContext;
-
-    @Mock
-    private Authentication authentication;
-
-    @Mock
-    private Jwt jwt;
 
     @InjectMocks
     private RespondUserInvitationCommandHandler handler;
@@ -73,10 +76,15 @@ class RespondUserInvitationCommandHandlerTest {
 
     @BeforeEach
     void setUp() {
-        // Mock SecurityContext
         SecurityContextHolder.setContext(securityContext);
+    }
+
+    private void mockSecurityContext(cv.igrp.platform.access_management.shared.security.UserProfile profile) {
+        cv.igrp.platform.access_management.shared.security.IgrpOidcUser oidcUser = 
+            mock(cv.igrp.platform.access_management.shared.security.IgrpOidcUser.class);
         when(securityContext.getAuthentication()).thenReturn(authentication);
-        when(authentication.getPrincipal()).thenReturn(jwt);
+        when(authentication.getPrincipal()).thenReturn(oidcUser);
+        when(oidcUser.getUserProfile()).thenReturn(profile);
     }
 
     @Test
@@ -90,20 +98,23 @@ class RespondUserInvitationCommandHandlerTest {
         InvitationEntity invitation = new InvitationEntity();
         invitation.setIdentifierType("EMAIL");
         invitation.setIdentifierValue("test@example.com");
-        invitation.setAllowedAuthMethods(Set.of("CREDENTIALS"));
+        invitation.setAllowedAuthMethods(Set.of("pwd"));
         invitation.setStatus(InvitationStatus.PENDING);
         RoleEntity role = new RoleEntity();
         role.setId(1);
+        role.setCode("ADMIN");
         invitation.setRoles(Set.of(role));
 
+        cv.igrp.platform.access_management.shared.security.UserProfile profile = 
+            new cv.igrp.platform.access_management.shared.security.UserProfile(
+                "ext-123", "iss", "Test User", "test@example.com", null, "ext-123", "pwd", java.util.List.of()
+            );
+        mockSecurityContext(profile);
+
         when(invitationRepository.findByTokenAndStatusPending(token)).thenReturn(invitation);
-        lenient().when(jwt.getClaimAsString("auth_method")).thenReturn("CREDENTIALS");
-        lenient().when(jwt.getClaimAsString("email")).thenReturn("test@example.com");
-        lenient().when(jwt.getClaimAsString("phone_number")).thenReturn(null);
-        lenient().when(jwt.getSubject()).thenReturn("jwt-subject-123");
         when(invitationRepository.save(any())).thenReturn(invitation);
         when(userRepository.findByExternalId(any())).thenReturn(Optional.empty());
-        when(userRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(roleRepository.findById(1)).thenReturn(Optional.of(role));
         when(invitationMapper.toDto(any())).thenReturn(new InvitationDTO());
 
@@ -115,6 +126,7 @@ class RespondUserInvitationCommandHandlerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(invitationRepository).save(invitation);
         verify(userRepository).save(any(IGRPUserEntity.class));
+        verify(userRoleAssignmentRepository).save(any());
         verify(auditService).logUserChange(any(), eq("CREATE"));
     }
 
@@ -130,13 +142,16 @@ class RespondUserInvitationCommandHandlerTest {
         InvitationEntity invitation = new InvitationEntity();
         invitation.setIdentifierType("EMAIL");
         invitation.setIdentifierValue("test@example.com");
-        invitation.setAllowedAuthMethods(Set.of("CREDENTIALS"));
+        invitation.setAllowedAuthMethods(Set.of("pwd"));
         invitation.setStatus(InvitationStatus.PENDING);
 
+        cv.igrp.platform.access_management.shared.security.UserProfile profile = 
+            new cv.igrp.platform.access_management.shared.security.UserProfile(
+                "ext-123", "iss", "Test User", "test@example.com", null, "ext-123", "pwd", java.util.List.of()
+            );
+        mockSecurityContext(profile);
+
         when(invitationRepository.findByTokenAndStatusPending(token)).thenReturn(invitation);
-        lenient().when(jwt.getClaimAsString("auth_method")).thenReturn("CREDENTIALS");
-        lenient().when(jwt.getClaimAsString("email")).thenReturn("test@example.com");
-        lenient().when(jwt.getClaimAsString("phone_number")).thenReturn(null);
 
         // Act
         ResponseEntity<InvitationDTO> response = handler.handle(command);
@@ -162,13 +177,16 @@ class RespondUserInvitationCommandHandlerTest {
         InvitationEntity invitation = new InvitationEntity();
         invitation.setIdentifierType("EMAIL");
         invitation.setIdentifierValue("test@example.com");
-        invitation.setAllowedAuthMethods(Set.of("CREDENTIALS"));
+        invitation.setAllowedAuthMethods(Set.of("pwd"));
         invitation.setStatus(InvitationStatus.PENDING);
 
+        cv.igrp.platform.access_management.shared.security.UserProfile profile = 
+            new cv.igrp.platform.access_management.shared.security.UserProfile(
+                "ext-123", "iss", "Test User", "mismatch@example.com", null, "ext-123", "pwd", java.util.List.of()
+            );
+        mockSecurityContext(profile);
+
         when(invitationRepository.findByTokenAndStatusPending(token)).thenReturn(invitation);
-        lenient().when(jwt.getClaimAsString("auth_method")).thenReturn("CREDENTIALS");
-        lenient().when(jwt.getClaimAsString("email")).thenReturn("mismatch@example.com");
-        lenient().when(jwt.getClaimAsString("phone_number")).thenReturn(null);
 
         // Act & Assert
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,

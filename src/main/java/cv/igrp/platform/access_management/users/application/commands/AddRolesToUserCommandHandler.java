@@ -14,6 +14,12 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
+import cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService;
+import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
+import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
+import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -51,6 +57,9 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
    private final RoleEntityRepository roleRepository;
    private final DepartmentEntityRepository departmentRepository;
    private final RoleMapper roleMapper;
+   private final UserRoleAssignmentRepository userRoleAssignmentRepository;
+   private final ExpireRoleService expireRoleService;
+   private final SecurityAuditService securityAuditService;
 
    /**
     * Constructs the handler with required dependencies.
@@ -59,16 +68,25 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
     * @param roleRepository the repository used to retrieve and update roles
     * @param departmentRepository the repository used to retrieve department entities
     * @param roleMapper the mapper used to convert role entities to DTOs
+    * @param userRoleAssignmentRepository the repository for user role assignments
+    * @param expireRoleService the service for managing role expiration
+    * @param securityAuditService the service for security auditing
     */
    public AddRolesToUserCommandHandler(
            IGRPUserEntityRepository userRepository,
            RoleEntityRepository roleRepository,
            DepartmentEntityRepository departmentRepository,
-           RoleMapper roleMapper) {
+           RoleMapper roleMapper,
+           UserRoleAssignmentRepository userRoleAssignmentRepository,
+           ExpireRoleService expireRoleService,
+           SecurityAuditService securityAuditService) {
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
       this.roleMapper = roleMapper;
+      this.userRoleAssignmentRepository = userRoleAssignmentRepository;
+      this.expireRoleService = expireRoleService;
+      this.securityAuditService = securityAuditService;
    }
 
    /**
@@ -100,11 +118,12 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
                          "User not found with ID: %s".formatted(userId));
               });
 
-      List<RoleEntity> roles = user.getRoles();
+      List<UserRoleAssignment> assignments = userRoleAssignmentRepository.findActiveByUserId(userId);
 
-      Set<String> existingRoleCodes = roles.stream()
+      Set<String> existingRoleCodes = assignments.stream()
+              .map(assignment -> assignment.getRole())
               .filter(role -> !Objects.equals(role.getStatus(),Status.DELETED))
-              .map(RoleEntity::getName)
+              .map(RoleEntity::getCode)
               .collect(Collectors.toSet());
 
       for (String role : command.getAddRolesToUserRequest()) {
@@ -121,16 +140,25 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
                             HttpStatus.NOT_FOUND, "Invalid Role code",
                             "Role not found with code: %s".formatted(role));
                  });
-         if(roleEntity.getUsers()==null) {
-            roleEntity.setUsers(new HashSet<>());
-         }
-         roleEntity.getUsers().add(user);
-         roleRepository.save(roleEntity);
+         UserRoleAssignment ura = new UserRoleAssignment(user, roleEntity, command.getExpiresAt());
+         ura.setAssignedAt(java.time.LocalDateTime.now());
+         userRoleAssignmentRepository.save(ura);
+         expireRoleService.scheduleExpiration(ura);
          successfullyAssignedRoles.add(roleEntity);
+
+         Map<String, Object> auditContext = new HashMap<>();
+         auditContext.put("userId", userId);
+         auditContext.put("roleCode", roleEntity.getCode());
+         auditContext.put("expiresAt", command.getExpiresAt());
+         securityAuditService.logEvent(AuditEventType.ROLE_ASSIGNED, AuditCategory.PRIVILEGE, auditContext);
       }
 
-      // Return the assigned roles
-      List<RoleDTO> rolesDTO = successfullyAssignedRoles.stream().map(roleMapper::mapToDto).toList();
+      // Return the assigned roles mapped to DTO. Assuming successfully assigned roles will not have expiresAt returned natively via mapToDto(RoleEntity) unless modified, but we can do our best.
+      List<RoleDTO> rolesDTO = successfullyAssignedRoles.stream().map(r -> {
+         RoleDTO dto = roleMapper.mapToDto(r);
+         dto.setExpiresAt(command.getExpiresAt());
+         return dto;
+      }).toList();
 
       return ResponseEntity.status(HttpStatus.CREATED).body(rolesDTO);
 
