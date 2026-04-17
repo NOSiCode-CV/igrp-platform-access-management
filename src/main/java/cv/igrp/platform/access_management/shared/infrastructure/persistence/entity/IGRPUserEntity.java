@@ -15,7 +15,7 @@ import java.util.*;
 @Audited
 @Getter
 @Setter
-@ToString(exclude = {"roles"})
+@ToString(exclude = {"userRoleAssignments"})
 @IgrpEntity
 @Entity
 @NoArgsConstructor
@@ -72,8 +72,15 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     @ManyToOne(fetch = FetchType.LAZY)
     private RoleEntity activeRole;
 
-    @ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
-    private List<RoleEntity> roles = new ArrayList<>();
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserRoleAssignment> userRoleAssignments = new ArrayList<>();
+
+    public List<RoleEntity> getRoles() {
+        return userRoleAssignments.stream()
+                .filter(ura -> ura.getExpiresAt() == null || ura.getExpiresAt().isAfter(java.time.LocalDateTime.now()))
+                .map(UserRoleAssignment::getRole)
+                .toList();
+    }
 
     @ElementCollection
     @CollectionTable(name = "t_user_custom_fields", joinColumns = @JoinColumn(name = "user_id"))
@@ -82,6 +89,10 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     private Map<String, String> customFields = new HashMap<>();
 
     // Implementação da interface UserIdentity
+
+    public Integer getInternalId() {
+        return this.id;
+    }
 
     @Override
     public String getId() {

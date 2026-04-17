@@ -84,10 +84,9 @@ public class GetCurrentUserRolesQueryHandler implements QueryHandler<GetCurrentU
                             "User not found with external ID: " + id);
                 });
 
-        List<RoleEntity> roles = Optional.ofNullable(user.getRoles()).orElse(Collections.emptyList());
-
-        List<RoleDTO> result = roles.stream()
-                .filter(it -> Objects.equals(it.getStatus(), Status.ACTIVE))
+        List<RoleDTO> result = user.getUserRoleAssignments().stream()
+                .filter(ura -> ura.getExpiresAt() == null || ura.getExpiresAt().isAfter(java.time.LocalDateTime.now()))
+                .filter(ura -> Objects.equals(ura.getRole().getStatus(), Status.ACTIVE))
                 .map(roleMapper::mapToDto)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());

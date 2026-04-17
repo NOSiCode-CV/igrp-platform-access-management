@@ -84,7 +84,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         // Cancel any previous pending invitations
         var previousInvitationOpt = invitationRepository.findByIdentifierTypeAndIdentifierValueAndStatus(
-                IdentifierType.EMAIL, dto.getEmail(), InvitationStatus.PENDING);
+                IdentifierType.EMAIL.name(), dto.getEmail(), InvitationStatus.PENDING);
 
         if (previousInvitationOpt.isPresent()) {
             var previousInvitation = previousInvitationOpt.get();
@@ -96,7 +96,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         // Create new invitation
         InvitationEntity invitation = new InvitationEntity();
-        invitation.setIdentifierType(IdentifierType.EMAIL);
+        invitation.setIdentifierType(IdentifierType.EMAIL.name());
         invitation.setIdentifierValue(dto.getEmail());
 
         invitation.setStatus(InvitationStatus.PENDING);

@@ -5,6 +5,8 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
@@ -47,18 +49,22 @@ public class GetUserRolesQueryHandler implements QueryHandler<GetUserRolesQuery,
 
   private final IGRPUserEntityRepository userRepository;
   private final RoleMapper roleMapper;
+  private final UserRoleAssignmentRepository userRoleAssignmentRepository;
 
   /**
    * Constructs the handler with required dependencies.
    *
    * @param userRepository the repository used to retrieve user data
    * @param roleMapper     the mapper used to convert {@link RoleEntity} entities to {@link RoleDTO}
+   * @param userRoleAssignmentRepository the repository for user role assignments
    */
   public GetUserRolesQueryHandler(
           IGRPUserEntityRepository userRepository,
-          RoleMapper roleMapper) {
+          RoleMapper roleMapper,
+          UserRoleAssignmentRepository userRoleAssignmentRepository) {
     this.userRepository = userRepository;
     this.roleMapper = roleMapper;
+    this.userRoleAssignmentRepository = userRoleAssignmentRepository;
   }
 
   /**
@@ -83,9 +89,9 @@ public class GetUserRolesQueryHandler implements QueryHandler<GetUserRolesQuery,
                       "User not found with ID: " + id);
             });
 
-    List<RoleEntity> roles = Optional.ofNullable(user.getRoles()).orElse(Collections.emptyList());
+    List<UserRoleAssignment> assignments = userRoleAssignmentRepository.findActiveByUserId(id);
 
-    List<RoleDTO> result = roles.stream()
+    List<RoleDTO> result = assignments.stream()
             .map(roleMapper::mapToDto)
             .filter(Objects::nonNull)
             .collect(Collectors.toList());

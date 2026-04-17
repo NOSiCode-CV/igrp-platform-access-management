@@ -32,6 +32,7 @@ public enum AuditEventType {
     PROFILE_DEACTIVATED,
     ROLE_ASSIGNED,
     ROLE_REMOVED,
+    ROLE_EXPIRED,
 
     // Permission & Authorization Events
     PERMISSION_GRANTED,

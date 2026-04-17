@@ -14,8 +14,12 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserIdentifierEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.OtpEntityRepository;
 import cv.igrp.platform.access_management.shared.security.IgrpOidcUser;
 import cv.igrp.platform.access_management.shared.security.UserProfile;
+import cv.igrp.platform.access_management.users.application.service.UserIdentityResolutionService;
+import cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService;
 import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,6 +43,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(SpringExtension.class)
@@ -59,12 +64,14 @@ class RespondUserInvitationCommandHandlerTest {
     private SecurityAuditService auditService;
     @MockBean
     private UserIdentifierEntityRepository userIdentifierEntityRepository;
-
     @MockBean
-    private cv.igrp.platform.access_management.users.application.service.UserIdentityResolutionService userIdentityResolutionService;
-
+    private UserIdentityResolutionService userIdentityResolutionService;
     @MockBean
-    private cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.OtpEntityRepository otpEntityRepository;
+    private OtpEntityRepository otpEntityRepository;
+    @MockBean
+    private UserRoleAssignmentRepository userRoleAssignmentRepository;
+    @MockBean
+    private ExpireRoleService expireRoleService;
 
     @Mock
     private SecurityContext securityContext;
@@ -88,14 +95,13 @@ class RespondUserInvitationCommandHandlerTest {
         invitationEntity = new InvitationEntity();
         invitationEntity.setId(1);
         invitationEntity.setIdentifierValue("jane@example.com");
-        invitationEntity.setIdentifierValue("jane@example.com");
-        
+
         RoleEntity role = new RoleEntity();
         role.setId(2);
         role.setUsers(new HashSet<>());
         Set<RoleEntity> roles = new HashSet<>();
         roles.add(role);
-        
+
         invitationEntity.setRoles(roles);
 
         SecurityContextHolder.setContext(securityContext);
@@ -131,7 +137,8 @@ class RespondUserInvitationCommandHandlerTest {
         assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getBody().getStatus());
         assertTrue(exception.getMessage().contains("O código OTP não foi validado."));
     }
-@Test
+
+    @Test
     void testHandle_RejectInvitation() {
         when(invitationRepository.findByTokenAndStatusPending(any())).thenReturn(invitationEntity);
         UserProfile profile = new UserProfile("sub", null, "John", "jane@example.com", null, null, "pwd", List.of());
@@ -154,7 +161,7 @@ class RespondUserInvitationCommandHandlerTest {
         UserProfile profile = new UserProfile("sub", null, "Jane", "jane@example.com", null, null, "pwd", List.of());
         mockSecurityContext(profile);
         when(responseDto.isAccept()).thenReturn(true);
-        
+
         cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity otpEntity = new cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity();
         otpEntity.setId(99L);
         when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(any(), any())).thenReturn(Optional.of(otpEntity));
@@ -164,26 +171,27 @@ class RespondUserInvitationCommandHandlerTest {
         savedUserMock.setName("Jane");
         when(userIdentityResolutionService.resolveOrCreate(any(), any(), any(), any(), any())).thenReturn(savedUserMock);
         when(userRepository.save(any(IGRPUserEntity.class))).thenReturn(savedUserMock);
-        
+
         RoleEntity roleEntityMock = new RoleEntity();
         roleEntityMock.setId(2);
         when(roleRepository.findById(2)).thenReturn(Optional.of(roleEntityMock));
-        
+
         when(invitationMapper.toDto(any())).thenReturn(new InvitationDTO());
 
         ResponseEntity<InvitationDTO> response = commandHandler.handle(command);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertEquals(InvitationStatus.ACCEPTED, invitationEntity.getStatus());
-        
+
         ArgumentCaptor<IGRPUserEntity> userCaptor = ArgumentCaptor.forClass(IGRPUserEntity.class);
         verify(userRepository).save(userCaptor.capture());
         IGRPUserEntity savedUser = userCaptor.getValue();
         assertEquals("jane@example.com", savedUser.getEmail());
         assertEquals("Jane", savedUser.getName());
-        
+
+        verify(userRoleAssignmentRepository).save(any());
         verify(auditService).logUserChange(any(), eq("CREATE"));
-        
+
         // Assert user identifier is saved for email
         ArgumentCaptor<UserIdentifierEntity> identifierCaptor = ArgumentCaptor.forClass(UserIdentifierEntity.class);
         verify(userIdentifierEntityRepository).save(identifierCaptor.capture());
@@ -195,9 +203,8 @@ class RespondUserInvitationCommandHandlerTest {
     @Test
     void testHandle_AcceptExistingUser_Cni_WithOtp() {
         invitationEntity.setIdentifierValue("jane@example.com");
-        invitationEntity.setIdentifierValue("jane@example.com");
         invitationEntity.setToken("mock-token");
-        
+
         when(invitationRepository.findByTokenAndStatusPending(any())).thenReturn(invitationEntity);
         UserProfile profile = new UserProfile("sub", null, "Jane", null, null, "123456", "cni", List.of());
         mockSecurityContext(profile);
@@ -205,13 +212,13 @@ class RespondUserInvitationCommandHandlerTest {
         command = new RespondUserInvitationCommand();
         command.setUserinvitationresponsedto(responseDto);
         command.setToken("mock-token");
-        
+
         cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity otpEntity = new cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity();
         otpEntity.setId(99L);
         otpEntity.setStatus("APPROVED");
         otpEntity.setReferenceId("mock-token");
         when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc("mock-token", "APPROVED")).thenReturn(Optional.of(otpEntity));
-        
+
         IGRPUserEntity existingUser = new IGRPUserEntity();
         existingUser.setId(10);
         existingUser.setNic("123456");
@@ -219,17 +226,18 @@ class RespondUserInvitationCommandHandlerTest {
         when(userRepository.findByAnyIdentifier(any(), any(), any(), any())).thenReturn(Optional.of(existingUser));
         when(userIdentityResolutionService.resolveOrCreate(any(), any(), any(), any(), any())).thenReturn(existingUser);
         when(userRepository.save(any(IGRPUserEntity.class))).thenReturn(existingUser);
-        
+
         RoleEntity roleEntityMock = new RoleEntity();
         roleEntityMock.setId(2);
         when(roleRepository.findById(2)).thenReturn(Optional.of(roleEntityMock));
-        
+
         when(invitationMapper.toDto(any())).thenReturn(new InvitationDTO());
 
         ResponseEntity<InvitationDTO> response = commandHandler.handle(command);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(userRepository).save(existingUser);
+        verify(userRoleAssignmentRepository).save(any());
         verify(auditService).logUserChange(any(), eq("UPDATE"));
         verify(userIdentifierEntityRepository, never()).save(any());
         assertEquals(99L, invitationEntity.getOtpId());
@@ -237,7 +245,6 @@ class RespondUserInvitationCommandHandlerTest {
 
     @Test
     void testHandle_Accept_Without_Valid_Otp_Should_Throw_For_All() {
-        invitationEntity.setIdentifierValue("jane@example.com");
         invitationEntity.setIdentifierValue("jane@example.com");
         when(invitationRepository.findByTokenAndStatusPending(any())).thenReturn(invitationEntity);
         UserProfile profile = new UserProfile("sub", null, "John", null, null, "123456", "cni", List.of());
@@ -256,9 +263,8 @@ class RespondUserInvitationCommandHandlerTest {
     @Test
     void testHandle_AcceptNewUser_Cmdcv_WithOtp() {
         invitationEntity.setIdentifierValue("jane@example.com");
-        invitationEntity.setIdentifierValue("jane@example.com");
         invitationEntity.setToken("mock-token");
-        
+
         when(invitationRepository.findByTokenAndStatusPending(any())).thenReturn(invitationEntity);
         UserProfile profile = new UserProfile("sub", null, "Jane", null, "+2389999999", null, "cmdcv", List.of());
         mockSecurityContext(profile);
@@ -272,22 +278,24 @@ class RespondUserInvitationCommandHandlerTest {
         otpEntity.setStatus("APPROVED");
         otpEntity.setReferenceId("mock-token");
         when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc("mock-token", "APPROVED")).thenReturn(Optional.of(otpEntity));
-                
+
         IGRPUserEntity savedUserMock = new IGRPUserEntity();
         savedUserMock.setId(10);
         when(userIdentityResolutionService.resolveOrCreate(any(), any(), any(), any(), any())).thenReturn(savedUserMock);
         when(userRepository.save(any(IGRPUserEntity.class))).thenReturn(savedUserMock);
-        
+
         RoleEntity roleEntityMock = new RoleEntity();
         roleEntityMock.setId(2);
         when(roleRepository.findById(2)).thenReturn(Optional.of(roleEntityMock));
-        
+
         when(invitationMapper.toDto(any())).thenReturn(new InvitationDTO());
 
         ResponseEntity<InvitationDTO> response = commandHandler.handle(command);
 
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        
+
+        verify(userRoleAssignmentRepository).save(any());
+
         ArgumentCaptor<UserIdentifierEntity> identifierCaptor = ArgumentCaptor.forClass(UserIdentifierEntity.class);
         verify(userIdentifierEntityRepository).save(identifierCaptor.capture());
         UserIdentifierEntity identifier = identifierCaptor.getValue();

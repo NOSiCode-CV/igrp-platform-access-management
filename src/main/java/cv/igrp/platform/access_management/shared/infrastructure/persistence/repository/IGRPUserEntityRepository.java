@@ -24,7 +24,8 @@ public interface IGRPUserEntityRepository extends
 
     @Query("""
                 select u from IGRPUserEntity u
-                left join fetch u.roles r
+                left join fetch u.userRoleAssignments ura
+                left join fetch ura.role r
                 left join fetch r.permissions p
                 where u.externalId = :externalId and u.status != 'DELETED'
             """)
@@ -50,7 +51,8 @@ public interface IGRPUserEntityRepository extends
      * Find user external IDs by role and optionally by department
      */
     @Query("SELECT DISTINCT u.externalId FROM IGRPUserEntity u " +
-           "JOIN u.roles r " +
+           "JOIN u.userRoleAssignments ura " +
+           "JOIN ura.role r " +
            "WHERE r.code = :roleCode " +
            "AND (:departmentCode IS NULL OR r.department.code = :departmentCode) " +
            "AND u.status != 'DELETED'")
@@ -61,7 +63,8 @@ public interface IGRPUserEntityRepository extends
      * Find user external IDs by department only
      */
     @Query("SELECT DISTINCT u.externalId FROM IGRPUserEntity u " +
-           "JOIN u.roles r " +
+           "JOIN u.userRoleAssignments ura " +
+           "JOIN ura.role r " +
            "JOIN r.department d " +
            "WHERE d.code = :departmentCode " +
            "AND u.status != 'DELETED'")

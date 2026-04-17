@@ -12,6 +12,9 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
+import cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService;
 import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -55,6 +58,8 @@ public class RespondUserInvitationCommandHandler
    private final UserIdentifierEntityRepository userIdentifierEntityRepository;
    private final UserIdentityResolutionService userIdentityResolutionService;
    private final OtpEntityRepository otpEntityRepository;
+   private final UserRoleAssignmentRepository userRoleAssignmentRepository;
+   private final ExpireRoleService expireRoleService;
 
    public RespondUserInvitationCommandHandler(
          NotificationAdapter<NotificationResult> notificationAdapter,
@@ -65,7 +70,9 @@ public class RespondUserInvitationCommandHandler
          SecurityAuditService auditService,
          UserIdentifierEntityRepository userIdentifierEntityRepository,
          UserIdentityResolutionService userIdentityResolutionService,
-         OtpEntityRepository otpEntityRepository) {
+         OtpEntityRepository otpEntityRepository,
+         UserRoleAssignmentRepository userRoleAssignmentRepository,
+         ExpireRoleService expireRoleService) {
       this.notificationAdapter = notificationAdapter;
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
@@ -75,6 +82,8 @@ public class RespondUserInvitationCommandHandler
       this.userIdentifierEntityRepository = userIdentifierEntityRepository;
       this.userIdentityResolutionService = userIdentityResolutionService;
       this.otpEntityRepository = otpEntityRepository;
+      this.userRoleAssignmentRepository = userRoleAssignmentRepository;
+      this.expireRoleService = expireRoleService;
    }
 
    @IgrpCommandHandler
@@ -148,11 +157,17 @@ public class RespondUserInvitationCommandHandler
                   HttpStatus.NOT_FOUND,
                   "Role with ID <%s> was not found".formatted(role.getId())));
 
-            if (roleEntity.getUsers() == null) {
-               roleEntity.setUsers(new HashSet<>());
-            }
-            roleEntity.getUsers().add(savedUser);
-            roleRepository.save(roleEntity);
+            UserRoleAssignment ura = new UserRoleAssignment(savedUser, roleEntity, null);
+            ura.setAssignedAt(java.time.LocalDateTime.now());
+            userRoleAssignmentRepository.save(ura);
+
+            // Log role assignment
+            java.util.Map<String, Object> auditContext = new java.util.HashMap<>();
+            auditContext.put("userId", savedUser.getId());
+            auditContext.put("roleCode", roleEntity.getCode());
+            auditContext.put("source", "INVITATION");
+            auditService.logEvent(cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType.ROLE_ASSIGNED,
+                    cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory.PRIVILEGE, auditContext);
          }
 
          // Upsert secondary identifiers
