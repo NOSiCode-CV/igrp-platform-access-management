@@ -153,10 +153,11 @@ public class M2MController {
   )
   
   public ResponseEntity<String> syncApplicationMenus(@Valid @RequestBody List<MenuEntryDTO> syncApplicationMenusRequest
-    , @PathVariable(value = "code") String code)
+    , @PathVariable(value = "code") String code
+    , @RequestParam(value = "syncRoles", defaultValue = "true") boolean syncRoles)
   {
 
-      final var command = new SyncApplicationMenusCommand(syncApplicationMenusRequest, code);
+      final var command = new SyncApplicationMenusCommand(syncApplicationMenusRequest, code, syncRoles);
 
       return commandBus.send(command);
 

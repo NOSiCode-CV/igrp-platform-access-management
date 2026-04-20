@@ -43,8 +43,13 @@ public class MenuEntrySyncService {
 
     @Transactional
     public void synchronizeMenuEntries(String applicationCode, List<MenuEntryDTO> menuDtos) {
-        logger.info("[MenuSync] Starting synchronization for application '{}' with {} menu entries", applicationCode,
-                menuDtos == null ? 0 : menuDtos.size());
+        synchronizeMenuEntries(applicationCode, menuDtos, true);
+    }
+
+    @Transactional
+    public void synchronizeMenuEntries(String applicationCode, List<MenuEntryDTO> menuDtos, boolean syncRoles) {
+        logger.info("[MenuSync] Starting synchronization for application '{}' with {} menu entries (syncRoles={})", applicationCode,
+                menuDtos == null ? 0 : menuDtos.size(), syncRoles);
 
         ApplicationEntity app = applicationRepository.findByCodeAndStatusNotDeleted(applicationCode);
 
@@ -61,8 +66,8 @@ public class MenuEntrySyncService {
                 .sorted(Comparator.comparing(MenuEntryDTO::getCode, Comparator.nullsFirst(String::compareTo)))
                 .toList();
 
-        String existingHash = computeStructuralHash(existingDtos);
-        String incomingHash = computeStructuralHash(incoming);
+        String existingHash = computeStructuralHash(existingDtos, syncRoles);
+        String incomingHash = computeStructuralHash(incoming, syncRoles);
 
         if (incomingHash.equals(existingHash)) {
             logger.info("[MenuSync] Application '{}' menus already up-to-date.", applicationCode);
@@ -98,8 +103,8 @@ public class MenuEntrySyncService {
             // Ensure status is set (default ACTIVE)
             if (entity.getStatus() == null) entity.setStatus(Status.ACTIVE);
 
-            // Update roles by codes (if provided)
-            if (dto.getRoles() != null) {
+            // Update roles by codes (if provided and role sync is enabled)
+            if (syncRoles && dto.getRoles() != null) {
                 Set<RoleEntity> newRoles = dto.getRoles().stream()
                         .filter(Objects::nonNull)
                         .map(RoleDepartmentDTO::roleCode)
@@ -169,6 +174,10 @@ public class MenuEntrySyncService {
     }
 
     private String computeStructuralHash(List<MenuEntryDTO> dtos) {
+        return computeStructuralHash(dtos, true);
+    }
+
+    private String computeStructuralHash(List<MenuEntryDTO> dtos, boolean includeRoles) {
         try {
             ObjectMapper mapper = new ObjectMapper();
             // Reduce to a minimal comparable structure to avoid audit fields differences
@@ -184,8 +193,10 @@ public class MenuEntrySyncService {
                 m.put("url", d.getUrl());
                 m.put("pageSlug", d.getPageSlug());
                 m.put("parentCode", d.getParentCode());
-                List<String> roles = d.getRoles() == null ? List.of() : d.getRoles().stream().map(RoleDepartmentDTO::roleCode).sorted().toList();
-                m.put("roles", roles);
+                if (includeRoles) {
+                    List<String> roles = d.getRoles() == null ? List.of() : d.getRoles().stream().map(RoleDepartmentDTO::roleCode).sorted().toList();
+                    m.put("roles", roles);
+                }
                 return m;
             }).toList();
             String canonicalJson = mapper.writeValueAsString(minimal);

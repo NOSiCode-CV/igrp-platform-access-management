@@ -138,6 +138,14 @@
           "type": "string",
           "isRequired": true
         }
+      ],
+      "requestParams": [
+        {
+          "type": "boolean",
+          "name": "syncRoles",
+          "description": "When false, role associations on each menu are NOT synchronized (existing role bindings are preserved). Defaults to true.",
+          "isRequired": false
+        }
       ]
     },
     {

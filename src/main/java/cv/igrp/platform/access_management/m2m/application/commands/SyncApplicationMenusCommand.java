@@ -14,9 +14,14 @@ import java.util.List;
 @AllArgsConstructor
 public class SyncApplicationMenusCommand implements Command {
 
-  
+
   private List<MenuEntryDTO> menuentrydto;
   @NotBlank(message = "The field <code> is required")
   private String code;
+  private boolean syncRoles = true;
+
+  public SyncApplicationMenusCommand(List<MenuEntryDTO> menuentrydto, String code) {
+    this(menuentrydto, code, true);
+  }
 
 }

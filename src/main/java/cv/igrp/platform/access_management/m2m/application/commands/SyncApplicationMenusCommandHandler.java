@@ -44,8 +44,8 @@ public class SyncApplicationMenusCommandHandler implements CommandHandler<SyncAp
     */
    @IgrpCommandHandler
    public ResponseEntity<String> handle(SyncApplicationMenusCommand command) {
-      LOGGER.info("Synchronizing menus for application: {}", command.getCode());
-      menuEntrySyncService.synchronizeMenuEntries(command.getCode(), command.getMenuentrydto());
+      LOGGER.info("Synchronizing menus for application: {} (syncRoles={})", command.getCode(), command.isSyncRoles());
+      menuEntrySyncService.synchronizeMenuEntries(command.getCode(), command.getMenuentrydto(), command.isSyncRoles());
       return ResponseEntity.noContent().build();
    }
 
