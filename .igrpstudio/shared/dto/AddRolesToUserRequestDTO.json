@@ -1,0 +1,34 @@
+{
+  "type": "dto",
+  "module": "shared",
+  "name": "AddRolesToUserRequestDTO",
+  "template": "classic",
+  "enableCustonValidation": false,
+  "attributes": [
+    {
+      "name": "roles",
+      "objectType": "java",
+      "type": "string",
+      "collectionType": "list",
+      "required": true,
+      "before": false,
+      "after": false,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    },
+    {
+      "name": "expiresAt",
+      "objectType": "java",
+      "type": "datetime",
+      "required": false,
+      "before": false,
+      "after": true,
+      "positive": false,
+      "isEmail": false,
+      "isUrl": false,
+      "primaryKey": false
+    }
+  ]
+}
