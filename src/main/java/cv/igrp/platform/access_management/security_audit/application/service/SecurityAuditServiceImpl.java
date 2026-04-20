@@ -49,11 +49,11 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
             logEntity.setCategory(category);
             logEntity.setTimestamp(LocalDateTime.now());
 
-            logEntity.setUserId((String) fullContext.get("userId"));
-            logEntity.setUsername((String) fullContext.get("username"));
-            logEntity.setSessionId((String) fullContext.get("sessionId"));
-            logEntity.setIpAddress((String) fullContext.get("ipAddress"));
-            logEntity.setUserAgent((String) fullContext.get("userAgent"));
+            logEntity.setUserId(asString(fullContext.get("userId")));
+            logEntity.setUsername(asString(fullContext.get("username")));
+            logEntity.setSessionId(asString(fullContext.get("sessionId")));
+            logEntity.setIpAddress(asString(fullContext.get("ipAddress")));
+            logEntity.setUserAgent(asString(fullContext.get("userAgent")));
             logEntity.setCorrelationId(asString(fullContext.get("correlationId")));
             logEntity.setRequestPath(asString(fullContext.get("requestPath")));
             logEntity.setDecisionReason(resolveDecisionReason(category, fullContext));

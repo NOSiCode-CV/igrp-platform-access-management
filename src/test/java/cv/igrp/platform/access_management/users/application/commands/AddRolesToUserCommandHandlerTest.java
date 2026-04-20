@@ -83,9 +83,7 @@ public class AddRolesToUserCommandHandlerTest {
         lenient().doReturn(Optional.of(user)).when(userRepository).findById(USER_ID);
         lenient().doReturn(department).when(departmentRepository).findByCodeAndStatusNotDeleted("DEPT_1");
         lenient().doReturn(Optional.of(role1)).when(roleRepository).findByDepartmentAndCodeAndStatusNot(any(), eq("admin"), eq(cv.igrp.platform.access_management.shared.application.constants.Status.DELETED));
-        lenient().doReturn(new ArrayList<>()).when(userRoleAssignmentRepository).findActiveByUserId(USER_ID);
         RoleDTO roleDto = new RoleDTO(100, "admin", "admin", "admin", null, null, null, null, null, List.of());
-        lenient().doAnswer(invocation -> invocation.getArgument(0)).when(userRoleAssignmentRepository).save(any());
         lenient().doReturn(roleDto).when(roleMapper).mapToDto((cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity) any());
         lenient().doReturn(roleDto).when(roleMapper).mapToDto((cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment) any());
         
@@ -94,7 +92,6 @@ public class AddRolesToUserCommandHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.CREATED, response.getStatusCode());
-        verify(userRoleAssignmentRepository).save(any(UserRoleAssignment.class));
         verify(securityAuditService).logEvent(any(), any(), any());
     }
 

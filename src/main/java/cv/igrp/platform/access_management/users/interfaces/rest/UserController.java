@@ -22,6 +22,7 @@ import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.platform.access_management.users.application.commands.*;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.application.dto.AddRolesToUserRequestDTO;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.UserInvitationResponseDTO;
@@ -111,11 +112,11 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<?> addRolesToUser(@RequestBody List<String> addRolesToUserRequest
+  public ResponseEntity<?> addRolesToUser(@Valid @RequestBody AddRolesToUserRequestDTO addRolesToUserRequest
     , @PathVariable(value = "id") Integer id,@PathVariable(value = "departmentCode") String departmentCode)
   {
 
-      final var command = new AddRolesToUserCommand(addRolesToUserRequest, id, departmentCode, null);
+      final var command = new AddRolesToUserCommand(addRolesToUserRequest.getRoles(), id, departmentCode, addRolesToUserRequest.getExpiresAt());
 
       return commandBus.send(command);
 
