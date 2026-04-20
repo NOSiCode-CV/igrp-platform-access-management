@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.users.application.commands.AddRolesToUserCommand;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -16,6 +17,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleId;
 import cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
@@ -118,19 +120,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
                          "User not found with ID: %s".formatted(userId));
               });
 
-      List<UserRoleAssignment> assignments = userRoleAssignmentRepository.findActiveByUserId(userId);
-
-      Set<String> existingRoleCodes = assignments.stream()
-              .map(assignment -> assignment.getRole())
-              .filter(role -> !Objects.equals(role.getStatus(),Status.DELETED))
-              .map(RoleEntity::getCode)
-              .collect(Collectors.toSet());
-
       for (String role : command.getAddRolesToUserRequest()) {
-
-         if (existingRoleCodes.contains(role)) {
-            continue;
-         }
 
          logger.info("Assigning role name={} to user ID={}", role, userId);
          RoleEntity roleEntity = roleRepository.findByDepartmentAndCodeAndStatusNot(department, role, Status.DELETED)
@@ -140,14 +130,31 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
                             HttpStatus.NOT_FOUND, "Invalid Role code",
                             "Role not found with code: %s".formatted(role));
                  });
-         UserRoleAssignment ura = new UserRoleAssignment(user, roleEntity, command.getExpiresAt());
-         ura.setAssignedAt(java.time.LocalDateTime.now());
-         userRoleAssignmentRepository.save(ura);
+
+         // 1. Search in the user's existing collection to avoid NonUniqueObjectException
+         Optional<UserRoleAssignment> existingUraOpt = user.getUserRoleAssignments().stream()
+                 .filter(assignment -> assignment.getRole().getId().equals(roleEntity.getId()))
+                 .findFirst();
+
+         final UserRoleAssignment ura;
+         if (existingUraOpt.isPresent()) {
+             // 2. Update the instance already managed by Hibernate in the session
+             ura = existingUraOpt.get();
+             ura.setAssignedAt(java.time.LocalDateTime.now());
+             ura.setExpiresAt(command.getExpiresAt());
+         } else {
+             // 3. Create only if truly new
+             ura = new UserRoleAssignment(user, roleEntity, command.getExpiresAt());
+             ura.setAssignedAt(java.time.LocalDateTime.now());
+             user.getUserRoleAssignments().add(ura);
+         }
+
+         // Let Hibernate's CascadeType.ALL handle the persistence automatically
          expireRoleService.scheduleExpiration(ura);
          successfullyAssignedRoles.add(roleEntity);
 
          Map<String, Object> auditContext = new HashMap<>();
-         auditContext.put("userId", userId);
+         auditContext.put("userId", user.getExternalId());
          auditContext.put("roleCode", roleEntity.getCode());
          auditContext.put("expiresAt", command.getExpiresAt());
          securityAuditService.logEvent(AuditEventType.ROLE_ASSIGNED, AuditCategory.PRIVILEGE, auditContext);
