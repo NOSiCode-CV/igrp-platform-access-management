@@ -1,0 +1,21 @@
+{
+  "type": "model",
+  "module": "oauth_server",
+  "name": "UserIdentityEntity",
+  "tableName": "t_user_identity",
+  "audit": false,
+  "crud": false,
+  "revision": false,
+  "attributes": [
+    {"name": "id", "type": "uuid", "primaryKey": true, "nullable": false, "unique": true},
+    {"name": "provider", "type": "string", "length": 80, "nullable": false},
+    {"name": "userId", "type": "string", "length": 255, "nullable": false},
+    {"name": "connection", "type": "string", "length": 120, "nullable": true},
+    {"name": "user", "type": "IGRPUserEntity", "objectType": "model", "module": "shared", "relation": "ManyToOne", "nullable": false}
+  ],
+  "id": "oauth-server-model-user-identity",
+  "uniqueConstraints": [
+    {"name": "uk_user_identity_provider_sub", "columns": ["provider", "user_id"]}
+  ],
+  "indexes": []
+}

@@ -33,6 +33,8 @@ import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.dto.OtpResponseDTO;
+import cv.igrp.platform.access_management.shared.application.dto.UserMetadataDTO;
+import cv.igrp.platform.access_management.shared.application.dto.UpdateUserMetadataRequestDTO;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 
 @IgrpController
@@ -1215,7 +1217,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          
+
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -1225,7 +1227,7 @@ public class UserController {
       )
     }
   )
-  
+
   public ResponseEntity<RoleDepartmentDTO> setActiveUserRole(@Valid @RequestBody RoleDepartmentDTO setActiveUserRoleRequest
     , @PathVariable(value = "id") Integer id)
   {
@@ -1234,6 +1236,58 @@ public class UserController {
 
       return commandBus.send(command);
 
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
+   @GetMapping(
+   value = "users/{id}/metadata"
+  )
+  @Operation(
+    summary = "Get user metadata",
+    description = "Return the free-form metadata JSON associated with the user. Used by the OAuth2 authorization server for token enrichment.",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = UserMetadataDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  public ResponseEntity<UserMetadataDTO> getUserMetadata(
+    @PathVariable(value = "id") Integer id)
+  {
+      final var query = new GetUserMetadataQuery(id);
+      return queryBus.handle(query);
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_UPDATE)")
+   @PutMapping(
+   value = "users/{id}/metadata"
+  )
+  @Operation(
+    summary = "Update user metadata",
+    description = "Replace the user's metadata JSON. Used by operators and by OAuth federation flows to enrich the user profile.",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = UserMetadataDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  public ResponseEntity<UserMetadataDTO> updateUserMetadata(@Valid @RequestBody UpdateUserMetadataRequestDTO updateUserMetadataRequest
+    , @PathVariable(value = "id") Integer id)
+  {
+      final var command = new UpdateUserMetadataCommand(id, updateUserMetadataRequest.getMetadata());
+      return commandBus.send(command);
   }
 
 }

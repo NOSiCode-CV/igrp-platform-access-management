@@ -1,0 +1,167 @@
+package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
+
+import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.OAuthClientEntity;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.UserIdentityEntity;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.UserIdentityJpaRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+/**
+ * Builds the iGRP-specific claims injected into issued JWTs.
+ *
+ * <p>Values are resolved dynamically from the platform data model:
+ * <ul>
+ *     <li>{@code sub} — mapped to the internal {@link IGRPUserEntity} id
+ *         when the caller authenticated through a federated provider.</li>
+ *     <li>{@code selectedRole} — the user's active role code.</li>
+ *     <li>{@code org} — the user's owning application/resource (via client).</li>
+ *     <li>{@code permissions} — flattened permission codes for the active role.</li>
+ *     <li>{@code resource_access} — Keycloak-compatible per-client role map.</li>
+ *     <li>{@code scopes} — scopes configured on the OAuth client.</li>
+ *     <li>{@code metadata} — free-form user metadata JSON.</li>
+ * </ul>
+ */
+@Service
+public class ClaimsEnrichmentService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ClaimsEnrichmentService.class);
+
+    private final OAuthClientJpaRepository oauthClientRepository;
+    private final UserIdentityJpaRepository userIdentityRepository;
+    private final IGRPUserEntityRepository userRepository;
+
+    public ClaimsEnrichmentService(OAuthClientJpaRepository oauthClientRepository,
+                                   UserIdentityJpaRepository userIdentityRepository,
+                                   IGRPUserEntityRepository userRepository) {
+        this.oauthClientRepository = oauthClientRepository;
+        this.userIdentityRepository = userIdentityRepository;
+        this.userRepository = userRepository;
+    }
+
+    /**
+     * Resolve the internal IGRP user id given a federated (provider, sub) pair.
+     * Returns {@code null} if no mapping is found.
+     */
+    @Transactional(readOnly = true)
+    public String mapSubject(String provider, String externalUserId) {
+        if (provider == null || externalUserId == null) {
+            return null;
+        }
+        return userIdentityRepository
+                .findByProviderAndUserId(provider, externalUserId)
+                .map(UserIdentityEntity::getUser)
+                .map(IGRPUserEntity::getId)
+                .map(String::valueOf)
+                .orElse(null);
+    }
+
+    /**
+     * Scopes configured on the given client. Empty set if the client is not
+     * persisted (should not occur inside the authorization server pipeline).
+     */
+    @Transactional(readOnly = true)
+    public Set<String> getScopesByClientId(String clientId) {
+        return oauthClientRepository.findByClientId(clientId)
+                .map(OAuthClientEntity::getScopes)
+                .orElseGet(Collections::emptySet);
+    }
+
+    /**
+     * Build the custom claim map for the given subject / client id pair.
+     * Missing data is rendered as empty values rather than thrown exceptions
+     * so the token issuance pipeline stays robust.
+     */
+    @Transactional(readOnly = true)
+    public Map<String, Object> buildClaims(String subject, String clientId) {
+        Map<String, Object> claims = new LinkedHashMap<>();
+
+        Optional<OAuthClientEntity> client = clientId == null
+                ? Optional.empty()
+                : oauthClientRepository.findByClientId(clientId);
+
+        Optional<IGRPUserEntity> user = resolveUser(subject);
+
+        claims.put("selectedRole", selectedRole(user));
+        claims.put("org", selectedOrg(client));
+        claims.put("permissions", permissions(user));
+        claims.put("scopes", client.map(OAuthClientEntity::getScopes).orElseGet(Collections::emptySet));
+        claims.put("resource_access", resourceAccess(clientId, user));
+        claims.put("metadata", user.map(IGRPUserEntity::getMetadata).orElseGet(Collections::emptyMap));
+
+        LOGGER.debug("Enriched claims for subject={} clientId={} -> keys={}",
+                subject, clientId, claims.keySet());
+        return claims;
+    }
+
+    private Optional<IGRPUserEntity> resolveUser(String subject) {
+        if (subject == null) {
+            return Optional.empty();
+        }
+        try {
+            return userRepository.findById(Integer.parseInt(subject));
+        } catch (NumberFormatException ex) {
+            return userRepository.findByExternalId(subject);
+        }
+    }
+
+    private String selectedRole(Optional<IGRPUserEntity> user) {
+        return user.map(IGRPUserEntity::getActiveRole)
+                .map(RoleEntity::getCode)
+                .orElse("");
+    }
+
+    private String selectedOrg(Optional<OAuthClientEntity> client) {
+        return client.map(OAuthClientEntity::getApplication)
+                .map(ApplicationEntity::getCode)
+                .orElse("");
+    }
+
+    private Set<String> permissions(Optional<IGRPUserEntity> user) {
+        if (user.isEmpty() || user.get().getActiveRole() == null) {
+            return Collections.emptySet();
+        }
+        RoleEntity role = user.get().getActiveRole();
+        Set<PermissionEntity> perms = role.getPermissions();
+        if (perms == null) {
+            return Collections.emptySet();
+        }
+        return perms.stream()
+                .map(PermissionEntity::getName)
+                .filter(code -> code != null && !code.isBlank())
+                .collect(Collectors.toSet());
+    }
+
+    private Map<String, Object> resourceAccess(String clientId, Optional<IGRPUserEntity> user) {
+        if (clientId == null || user.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Set<String> roles = user.get().getRoles().stream()
+                .map(RoleEntity::getCode)
+                .filter(code -> code != null && !code.isBlank())
+                .collect(Collectors.toSet());
+        if (roles.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<String, Object> perClient = new HashMap<>();
+        perClient.put("roles", roles);
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put(clientId, perClient);
+        return out;
+    }
+}

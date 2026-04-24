@@ -1,0 +1,24 @@
+{
+  "type": "model",
+  "module": "oauth_server",
+  "name": "AuthAuditLogEntity",
+  "tableName": "t_auth_audit_log",
+  "audit": false,
+  "crud": false,
+  "revision": false,
+  "attributes": [
+    {"name": "id", "type": "uuid", "primaryKey": true, "nullable": false, "unique": true},
+    {"name": "username", "type": "string"},
+    {"name": "eventType", "type": "AuthEventType", "objectType": "enum", "module": "oauth_server", "nullable": false},
+    {"name": "ipAddress", "type": "string", "length": 64},
+    {"name": "userAgent", "type": "string", "length": 500},
+    {"name": "sessionId", "type": "string", "length": 120},
+    {"name": "timestamp", "type": "datetime", "nullable": false}
+  ],
+  "id": "oauth-server-model-audit",
+  "uniqueConstraints": [],
+  "indexes": [
+    {"name": "idx_auth_audit_username", "columns": ["username"]},
+    {"name": "idx_auth_audit_event_type", "columns": ["event_type"]}
+  ]
+}
