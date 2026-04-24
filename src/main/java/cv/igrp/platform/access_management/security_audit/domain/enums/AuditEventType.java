@@ -17,6 +17,8 @@ public enum AuditEventType {
     TOKEN_ACCEPTED,
     TOKEN_REJECTED,
     TOKEN_EXPIRED,
+    TOKEN_ISSUED,
+    TOKEN_REVOKED,
 
     // User Management Events
     USER_CREATED,

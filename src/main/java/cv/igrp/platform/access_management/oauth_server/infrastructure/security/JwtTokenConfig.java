@@ -6,6 +6,9 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
+import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
+import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
+import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -22,6 +25,7 @@ import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
 import java.security.interfaces.RSAPrivateKey;
 import java.security.interfaces.RSAPublicKey;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -82,7 +86,8 @@ public class JwtTokenConfig {
     }
 
     @Bean
-    public OAuth2TokenCustomizer<JwtEncodingContext> igrpTokenCustomizer(ClaimsEnrichmentService claimsService) {
+    public OAuth2TokenCustomizer<JwtEncodingContext> igrpTokenCustomizer(ClaimsEnrichmentService claimsService,
+                                                                         SecurityAuditService auditService) {
         return context -> {
             if (!OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
                 return;
@@ -102,6 +107,15 @@ public class JwtTokenConfig {
             String clientId = context.getRegisteredClient().getClientId();
             Map<String, Object> claims = claimsService.buildClaims(internalSub, clientId);
             claims.forEach((key, value) -> context.getClaims().claim(key, value));
+
+            // Record token issuance into the platform security audit trail.
+            Map<String, Object> auditContext = new HashMap<>();
+            auditContext.put("clientId", clientId);
+            auditContext.put("grantType", context.getAuthorizationGrantType().getValue());
+            if (internalSub != null) {
+                auditContext.put("sub", internalSub);
+            }
+            auditService.logEvent(AuditEventType.TOKEN_ISSUED, AuditCategory.AUTHENTICATION, auditContext);
         };
     }
 }
