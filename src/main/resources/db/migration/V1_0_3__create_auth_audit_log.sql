@@ -1,5 +1,5 @@
-CREATE TABLE auth_audit_log (
-    id               UUID         NOT NULL DEFAULT gen_random_uuid(),
+CREATE TABLE IF NOT EXISTS auth_audit_log (
+    id               UUID         NOT NULL,
     event_type       VARCHAR(50)  NOT NULL,
     identifier_type  VARCHAR(20)  NOT NULL DEFAULT 'UNKNOWN',
     identifier_value VARCHAR(64),
@@ -13,6 +13,6 @@ CREATE TABLE auth_audit_log (
     environment      VARCHAR(50),
     CONSTRAINT pk_auth_audit_log PRIMARY KEY (id)
 );
-CREATE INDEX idx_audit_timestamp        ON auth_audit_log (timestamp DESC);
-CREATE INDEX idx_audit_user_timestamp   ON auth_audit_log (user_id, timestamp DESC) WHERE user_id IS NOT NULL;
-CREATE INDEX idx_audit_identifier_event ON auth_audit_log (identifier_value, event_type) WHERE identifier_value IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_audit_timestamp        ON auth_audit_log (timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_user_timestamp   ON auth_audit_log (user_id, timestamp DESC) WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_audit_identifier_event ON auth_audit_log (identifier_value, event_type) WHERE identifier_value IS NOT NULL;

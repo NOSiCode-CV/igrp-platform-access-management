@@ -81,7 +81,7 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
 
       // Validate another department with same code does not exist
       departmentRepository.findByCodeAndStatusNot(departmentDto.getCode(), DepartmentStatus.DELETED)
-              .ifPresent(_ -> {
+              .ifPresent(existingDepartment -> {
                  logger.warn("Department code already exists: {}", departmentDto.getCode());
                  throw IgrpResponseStatusException.of(
                          HttpStatus.BAD_REQUEST,

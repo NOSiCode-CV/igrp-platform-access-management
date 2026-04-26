@@ -118,7 +118,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
                           List<UserRoleAssignment> remaining = userRoleAssignmentRepository.findActiveByUserId(userId);
                           remaining.removeAll(assignmentsToRemove);
                           if(!remaining.isEmpty()) {
-                             user.setActiveRole(remaining.getFirst().getRole());
+                             user.setActiveRole(remaining.get(0).getRole());
                           } else {
                              user.setActiveRole(null);
                           }

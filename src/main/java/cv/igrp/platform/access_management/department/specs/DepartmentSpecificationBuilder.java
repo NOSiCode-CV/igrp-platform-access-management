@@ -26,7 +26,7 @@ public class DepartmentSpecificationBuilder {
 
     @Scoped
     public Specification<DepartmentEntity> buildSpecification(GetDepartmentsQuery query, ScopeContext context) {
-        return (root, _, cb) -> {
+        return (root, criteriaQuery, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
             if (query.getName() != null && !query.getName().isEmpty()) {
@@ -60,7 +60,7 @@ public class DepartmentSpecificationBuilder {
 
     public Specification<DepartmentEntity> buildSpecification(GetDepartmentForBusinessCommand query) {
 
-        return (root, _, cb) -> {
+        return (root, criteriaQuery, cb) -> {
 
             List<Predicate> predicates = new ArrayList<>();
 

@@ -29,7 +29,7 @@ public class IgrpPlatformAccessManagementApplication {
     public CommandLineRunner startupRunner(ConfigurationService configService,
                                            RedisConnectionFactory connectionFactory
     ) {
-        return _ -> {
+        return args -> {
             try {
                 configService.initializeSystemConfiguration();
                 connectionFactory.getConnection().ping();

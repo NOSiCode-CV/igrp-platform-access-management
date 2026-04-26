@@ -77,7 +77,7 @@ public class MenuEntrySyncService {
         // Build lookup maps
         Map<String, MenuEntryEntity> existingByCode = existingMenus.stream()
                 .filter(me -> me.getCode() != null)
-                .collect(Collectors.toMap(MenuEntryEntity::getCode, Function.identity(), (a, _) -> a));
+                .collect(Collectors.toMap(MenuEntryEntity::getCode, Function.identity(), (existing, replacement) -> existing));
 
         Map<String, MenuEntryEntity> resultByCode = new HashMap<>(existingByCode);
         Set<String> incomingCodes = incoming.stream()

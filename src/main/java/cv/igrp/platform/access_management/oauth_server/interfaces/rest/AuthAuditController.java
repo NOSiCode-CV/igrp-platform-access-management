@@ -15,7 +15,7 @@ import java.util.List;
 /**
  * Read-only access to OAuth authorization server audit events.
  */
-@RestController
+@RestController("oauthServerAuthAuditController")
 @RequestMapping(path = "api/audit")
 @Tag(name = "OAuth Audit", description = "OAuth2 authorization server audit log")
 public class AuthAuditController {
