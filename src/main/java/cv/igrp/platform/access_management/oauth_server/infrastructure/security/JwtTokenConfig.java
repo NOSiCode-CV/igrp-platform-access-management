@@ -6,9 +6,10 @@ import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
+import cv.igrp.platform.access_management.shared.domain.audit.AuthEventType;
+import cv.igrp.platform.access_management.shared.infrastructure.service.AuthAuditService;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
-import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -87,6 +88,7 @@ public class JwtTokenConfig {
 
     @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> igrpTokenCustomizer(ClaimsEnrichmentService claimsService,
+                                                                         AuthAuditService authAuditService,
                                                                          SecurityAuditService auditService) {
         return context -> {
             if (!OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
@@ -108,6 +110,12 @@ public class JwtTokenConfig {
             Map<String, Object> claims = claimsService.buildClaims(internalSub, clientId);
             claims.forEach((key, value) -> context.getClaims().claim(key, value));
 
+            String auditSessionId = context.getAuthorization() != null ? context.getAuthorization().getId() : null;
+            authAuditService.logEvent(
+                    AuthEventType.TOKEN_ISSUED,
+                    claimsService.buildTokenIssuedAuditContext(internalSub, clientId, auditSessionId)
+            );
+
             // Record token issuance into the platform security audit trail.
             Map<String, Object> auditContext = new HashMap<>();
             auditContext.put("clientId", clientId);
@@ -115,7 +123,11 @@ public class JwtTokenConfig {
             if (internalSub != null) {
                 auditContext.put("sub", internalSub);
             }
-            auditService.logEvent(AuditEventType.TOKEN_ISSUED, AuditCategory.AUTHENTICATION, auditContext);
+            auditService.logEvent(
+                    cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType.TOKEN_ISSUED,
+                    AuditCategory.AUTHENTICATION,
+                    auditContext
+            );
         };
     }
 }

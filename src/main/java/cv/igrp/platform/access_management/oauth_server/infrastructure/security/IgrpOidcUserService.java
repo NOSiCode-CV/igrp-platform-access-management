@@ -5,17 +5,18 @@ import cv.igrp.platform.access_management.oauth_server.infrastructure.persistenc
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.security.IgrpOidcUser;
+import cv.igrp.platform.access_management.shared.security.UserProfile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
-import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -61,7 +62,11 @@ public class IgrpOidcUserService extends OidcUserService {
         LOGGER.debug("Federated OIDC login mapped: provider={} sub={} -> internalId={}",
                 provider, externalUserId, user.getId());
 
-        return new DefaultOidcUser(new ArrayList<>(), request.getIdToken(), oidcUser.getUserInfo());
+        return new IgrpOidcUser(
+                oidcUser.getAuthorities(),
+                request.getIdToken(),
+                buildUserProfile(oidcUser)
+        );
     }
 
     private IGRPUserEntity provisionUser(String provider, String externalUserId, Map<String, Object> attributes) {
@@ -102,7 +107,7 @@ public class IgrpOidcUserService extends OidcUserService {
             metadata = new LinkedHashMap<>();
         }
         // Standard OIDC claims to lift into user metadata; omit sub to avoid duplication.
-        for (String key : new String[]{"given_name", "family_name", "preferred_username", "email",
+        for (String key : new String[]{"name", "given_name", "family_name", "preferred_username", "email",
                 "email_verified", "locale", "picture", "phone_number"}) {
             Object value = attributes.get(key);
             if (value != null) {
@@ -110,5 +115,52 @@ public class IgrpOidcUserService extends OidcUserService {
             }
         }
         user.setMetadata(metadata);
+    }
+
+    private UserProfile buildUserProfile(OidcUser oidcUser) {
+        Map<String, Object> attributes = oidcUser.getAttributes();
+        List<String> amr = oidcUser.getClaimAsStringList("amr");
+        String acr = oidcUser.getClaimAsString("acr");
+
+        return new UserProfile(
+                oidcUser.getSubject(),
+                oidcUser.getIssuer() != null ? oidcUser.getIssuer().toString() : null,
+                firstNonBlank(oidcUser.getFullName(), oidcUser.getClaimAsString("name")),
+                oidcUser.getEmail(),
+                oidcUser.getClaimAsString("phone_number"),
+                resolveNic(attributes, acr),
+                resolveAuthMethod(amr, acr),
+                amr
+        );
+    }
+
+    private String resolveNic(Map<String, Object> attributes, String acr) {
+        if ("cni".equalsIgnoreCase(acr)) {
+            return attributes.get("sub") != null ? String.valueOf(attributes.get("sub")) : null;
+        }
+        Object nic = attributes.get("nic");
+        return nic != null ? String.valueOf(nic) : null;
+    }
+
+    private String resolveAuthMethod(List<String> amr, String acr) {
+        if (amr != null && amr.contains("BasicAuthenticator") && "pwd".equalsIgnoreCase(acr)) {
+            return "EMAIL";
+        }
+        if (amr != null && amr.contains("OpenIDConnectAuthenticator") && "cmdcv".equalsIgnoreCase(acr)) {
+            return "CMDCV";
+        }
+        if (amr != null && amr.contains("OpenIDConnectAuthenticator") && "cni".equalsIgnoreCase(acr)) {
+            return "CNI";
+        }
+        return "UNKNOWN";
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
     }
 }

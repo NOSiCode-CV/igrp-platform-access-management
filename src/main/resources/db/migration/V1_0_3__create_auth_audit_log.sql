@@ -1,4 +1,4 @@
-CREATE TABLE IF NOT EXISTS auth_audit_log (
+CREATE TABLE IF NOT EXISTS t_auth_audit_log (
     id               UUID         NOT NULL,
     event_type       VARCHAR(50)  NOT NULL,
     identifier_type  VARCHAR(20)  NOT NULL DEFAULT 'UNKNOWN',
@@ -11,8 +11,8 @@ CREATE TABLE IF NOT EXISTS auth_audit_log (
     failure_reason   VARCHAR(500),
     timestamp        TIMESTAMPTZ  NOT NULL DEFAULT now(),
     environment      VARCHAR(50),
-    CONSTRAINT pk_auth_audit_log PRIMARY KEY (id)
+    CONSTRAINT pk_t_auth_audit_log PRIMARY KEY (id)
 );
-CREATE INDEX IF NOT EXISTS idx_audit_timestamp        ON auth_audit_log (timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_user_timestamp   ON auth_audit_log (user_id, timestamp DESC) WHERE user_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_audit_identifier_event ON auth_audit_log (identifier_value, event_type) WHERE identifier_value IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_audit_timestamp        ON t_auth_audit_log (timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_user_timestamp   ON t_auth_audit_log (user_id, timestamp DESC) WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_audit_identifier_event ON t_auth_audit_log (identifier_value, event_type) WHERE identifier_value IS NOT NULL;

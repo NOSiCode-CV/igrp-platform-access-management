@@ -47,6 +47,24 @@ public interface IGRPUserEntityRepository extends
     """)
     boolean existsByEmail(@Param("email") String email);
 
+    @Query("""
+        select u from IGRPUserEntity u
+        where lower(cast(u.email as string)) = lower(:email) and u.status != 'DELETED'
+    """)
+    Optional<IGRPUserEntity> findByEmailIgnoreCase(@Param("email") String email);
+
+    @Query("""
+        select u from IGRPUserEntity u
+        where upper(cast(u.nic as string)) = upper(cast(:nic as string)) and u.status != 'DELETED'
+    """)
+    Optional<IGRPUserEntity> findByNicIgnoreCase(@Param("nic") String nic);
+
+    @Query("""
+        select u from IGRPUserEntity u
+        where u.phoneNumber = :phoneNumber and u.status != 'DELETED'
+    """)
+    Optional<IGRPUserEntity> findByPhoneNumber(@Param("phoneNumber") String phoneNumber);
+
     /**
      * Find user external IDs by role and optionally by department
      */

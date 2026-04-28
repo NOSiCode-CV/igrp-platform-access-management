@@ -4,6 +4,8 @@ import cv.igrp.platform.access_management.oauth_server.infrastructure.persistenc
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.UserIdentityEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.UserIdentityJpaRepository;
+import cv.igrp.platform.access_management.shared.domain.audit.AuthAuditContext;
+import cv.igrp.platform.access_management.shared.domain.audit.IdentifierType;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
@@ -33,8 +35,11 @@ import java.util.stream.Collectors;
  *     <li>{@code org} — the user's owning application/resource (via client).</li>
  *     <li>{@code permissions} — flattened permission codes for the active role.</li>
  *     <li>{@code resource_access} — Keycloak-compatible per-client role map.</li>
- *     <li>{@code scopes} — scopes configured on the OAuth client.</li>
- *     <li>{@code metadata} — free-form user metadata JSON.</li>
+ *     <li>Standard identity claims — {@code name}, {@code given_name},
+ *         {@code family_name}, {@code preferred_username}, {@code email},
+ *         {@code email_verified}, {@code picture}, {@code phone_number},
+ *         {@code locale}.</li>
+ *     <li>{@code metadata} — optional app-specific extension claims.</li>
  * </ul>
  */
 @Service
@@ -100,9 +105,13 @@ public class ClaimsEnrichmentService {
         claims.put("selectedRole", selectedRole(user));
         claims.put("org", selectedOrg(client));
         claims.put("permissions", permissions(user));
-        claims.put("scopes", client.map(OAuthClientEntity::getScopes).orElseGet(Collections::emptySet));
         claims.put("resource_access", resourceAccess(clientId, user));
-        claims.put("metadata", user.map(IGRPUserEntity::getMetadata).orElseGet(Collections::emptyMap));
+        claims.putAll(standardIdentityClaims(user));
+
+        Map<String, Object> metadata = user.map(IGRPUserEntity::getMetadata).orElseGet(Collections::emptyMap);
+        if (!metadata.isEmpty()) {
+            claims.put("metadata", metadata);
+        }
 
         LOGGER.debug("Enriched claims for subject={} clientId={} -> keys={}",
                 subject, clientId, claims.keySet());
@@ -130,6 +139,103 @@ public class ClaimsEnrichmentService {
         return client.map(OAuthClientEntity::getApplication)
                 .map(ApplicationEntity::getCode)
                 .orElse("");
+    }
+
+    private Map<String, Object> standardIdentityClaims(Optional<IGRPUserEntity> user) {
+        if (user.isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        IGRPUserEntity igrpUser = user.get();
+        Map<String, Object> metadata = igrpUser.getMetadata() != null
+                ? igrpUser.getMetadata()
+                : Collections.emptyMap();
+
+        Map<String, Object> claims = new LinkedHashMap<>();
+        putIfPresent(claims, "name", firstNonBlank(
+                asString(metadata.get("name")),
+                igrpUser.getName()
+        ));
+        putIfPresent(claims, "given_name", firstNonBlank(
+                asString(metadata.get("given_name"))
+        ));
+        putIfPresent(claims, "family_name", firstNonBlank(
+                asString(metadata.get("family_name"))
+        ));
+        putIfPresent(claims, "preferred_username", firstNonBlank(
+                asString(metadata.get("preferred_username")),
+                igrpUser.getUsername()
+        ));
+        putIfPresent(claims, "email", firstNonBlank(
+                asString(metadata.get("email")),
+                igrpUser.getEmail()
+        ));
+        putIfPresent(claims, "picture", firstNonBlank(
+                asString(metadata.get("picture")),
+                igrpUser.getPicture()
+        ));
+        putIfPresent(claims, "phone_number", firstNonBlank(
+                asString(metadata.get("phone_number")),
+                igrpUser.getPhoneNumber()
+        ));
+        putIfPresent(claims, "locale", firstNonBlank(
+                asString(metadata.get("locale"))
+        ));
+
+        Boolean emailVerified = firstNonNullBoolean(
+                metadata.get("email_verified"),
+                igrpUser.getEmailVerified()
+        );
+        if (emailVerified != null) {
+            claims.put("email_verified", emailVerified);
+        }
+
+        return claims;
+    }
+
+    /**
+     * Build a shared auth-audit context for tokens issued by the local
+     * authorization server. Uses the resolved internal user plus the owning
+     * application/client metadata instead of relying on transient browser
+     * request state.
+     */
+    @Transactional(readOnly = true)
+    public AuthAuditContext buildTokenIssuedAuditContext(String subject, String clientId, String sessionId) {
+        Optional<OAuthClientEntity> client = clientId == null
+                ? Optional.empty()
+                : oauthClientRepository.findByClientId(clientId);
+
+        Optional<IGRPUserEntity> user = resolveUser(subject);
+        IdentifierType identifierType = IdentifierType.UNKNOWN;
+        String identifierValue = null;
+
+        if (user.isPresent()) {
+            IGRPUserEntity igrpUser = user.get();
+            if (igrpUser.getPhoneNumber() != null && !igrpUser.getPhoneNumber().isBlank()) {
+                identifierType = IdentifierType.CMDCV;
+                identifierValue = igrpUser.getPhoneNumber();
+            } else if (igrpUser.getEmail() != null && !igrpUser.getEmail().isBlank()) {
+                identifierType = IdentifierType.EMAIL;
+                identifierValue = igrpUser.getEmail();
+            } else if (igrpUser.getNic() != null && !igrpUser.getNic().isBlank()) {
+                identifierType = IdentifierType.CNI;
+                identifierValue = igrpUser.getNic();
+            }
+        }
+
+        String applicationCode = client.map(OAuthClientEntity::getApplication)
+                .map(ApplicationEntity::getCode)
+                .filter(code -> code != null && !code.isBlank())
+                .orElse(clientId);
+
+        return new AuthAuditContext(
+                identifierType,
+                identifierValue,
+                subject,
+                applicationCode,
+                sessionId,
+                null
+        );
     }
 
     private Set<String> permissions(Optional<IGRPUserEntity> user) {
@@ -163,5 +269,36 @@ public class ClaimsEnrichmentService {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put(clientId, perClient);
         return out;
+    }
+
+    private void putIfPresent(Map<String, Object> claims, String key, String value) {
+        if (value != null && !value.isBlank()) {
+            claims.put(key, value);
+        }
+    }
+
+    private String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
+    }
+
+    private String asString(Object value) {
+        return value != null ? String.valueOf(value) : null;
+    }
+
+    private Boolean firstNonNullBoolean(Object... values) {
+        for (Object value : values) {
+            if (value instanceof Boolean bool) {
+                return bool;
+            }
+            if (value instanceof String str && !str.isBlank()) {
+                return Boolean.valueOf(str);
+            }
+        }
+        return null;
     }
 }

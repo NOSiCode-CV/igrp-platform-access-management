@@ -23,7 +23,7 @@ CREATE INDEX IF NOT EXISTS ix_session_expires_active ON t_user_session(expires_a
 CREATE UNIQUE INDEX IF NOT EXISTS ux_session_session_id ON t_user_session(session_id);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_one_active_session_per_user ON t_user_session(user_external_id) WHERE status = 'ACTIVE';
 
-CREATE TABLE IF NOT EXISTS auth_audit_log (
+CREATE TABLE IF NOT EXISTS t_auth_audit_log (
     id UUID NOT NULL,
     event_type VARCHAR(50) NOT NULL,
     identifier_type VARCHAR(20) NOT NULL DEFAULT 'UNKNOWN',
@@ -36,12 +36,12 @@ CREATE TABLE IF NOT EXISTS auth_audit_log (
     failure_reason VARCHAR(500),
     timestamp TIMESTAMPTZ NOT NULL DEFAULT now(),
     environment VARCHAR(50),
-    CONSTRAINT pk_auth_audit_log_v5 PRIMARY KEY (id)
+    CONSTRAINT pk_t_auth_audit_log_v5 PRIMARY KEY (id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON auth_audit_log (timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_audit_user_timestamp ON auth_audit_log (user_id, timestamp DESC) WHERE user_id IS NOT NULL;
-CREATE INDEX IF NOT EXISTS idx_audit_identifier_event ON auth_audit_log (identifier_value, event_type) WHERE identifier_value IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_audit_timestamp ON t_auth_audit_log (timestamp DESC);
+CREATE INDEX IF NOT EXISTS idx_audit_user_timestamp ON t_auth_audit_log (user_id, timestamp DESC) WHERE user_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_audit_identifier_event ON t_auth_audit_log (identifier_value, event_type) WHERE identifier_value IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS t_otp_verification (
     id BIGSERIAL PRIMARY KEY,
@@ -226,7 +226,7 @@ CREATE TABLE IF NOT EXISTS t_oauth_client_grant_type (
     grant_type VARCHAR(255) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS t_auth_audit_log (
+CREATE TABLE IF NOT EXISTS t_oauth_auth_audit_log (
     id UUID PRIMARY KEY,
     username VARCHAR(255),
     event_type VARCHAR(40) NOT NULL,
@@ -236,8 +236,8 @@ CREATE TABLE IF NOT EXISTS t_auth_audit_log (
     timestamp TIMESTAMP NOT NULL
 );
 
-CREATE INDEX IF NOT EXISTS idx_auth_audit_username ON t_auth_audit_log (username);
-CREATE INDEX IF NOT EXISTS idx_auth_audit_event_type ON t_auth_audit_log (event_type);
+CREATE INDEX IF NOT EXISTS idx_auth_audit_username ON t_oauth_auth_audit_log (username);
+CREATE INDEX IF NOT EXISTS idx_auth_audit_event_type ON t_oauth_auth_audit_log (event_type);
 
 CREATE TABLE IF NOT EXISTS t_user_identity (
     id UUID PRIMARY KEY,

@@ -5,6 +5,7 @@ import cv.igrp.platform.access_management.shared.domain.audit.AuthAuditLog;
 import cv.igrp.platform.access_management.shared.domain.audit.AuthEventType;
 import cv.igrp.platform.access_management.shared.domain.audit.IdentifierType;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.AuthAuditLogRepository;
+import cv.igrp.platform.access_management.shared.security.UserProfile;
 import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -81,7 +82,7 @@ public class AuthAuditService {
             identifierValue = jwt.hasClaim("email") ? jwt.getClaimAsString("email") : null;
         } else if (amr != null && amr.contains("OpenIDConnectAuthenticator")) {
             if ("cmdcv".equalsIgnoreCase(acr)) {
-                identifierType = IdentifierType.PHONE;
+                identifierType = IdentifierType.CMDCV;
                 identifierValue = jwt.hasClaim("phone_number") ? jwt.getClaimAsString("phone_number") : null;
             } else if ("cni".equalsIgnoreCase(acr)) {
                 identifierType = IdentifierType.CNI;
@@ -89,7 +90,7 @@ public class AuthAuditService {
             }
         } else if (amr == null || amr.isEmpty() || amr.contains("refresh_token")) {
             if (jwt.hasClaim("phone_number")) {
-                identifierType = IdentifierType.PHONE;
+                identifierType = IdentifierType.CMDCV;
                 identifierValue = jwt.getClaimAsString("phone_number");
             } else if (jwt.hasClaim("email")) {
                 identifierType = IdentifierType.EMAIL;
@@ -102,6 +103,40 @@ public class AuthAuditService {
         String applicationCode = jwt.hasClaim("application_code") ? jwt.getClaimAsString("application_code") : null;
 
         return new AuthAuditContext(identifierType, identifierValue, userId, applicationCode, sessionId, request);
+    }
+
+    public static AuthAuditContext fromUserProfile(UserProfile profile, HttpServletRequest request) {
+        IdentifierType identifierType = IdentifierType.UNKNOWN;
+        String identifierValue = null;
+
+        if (profile != null) {
+            if (profile.email() != null && !profile.email().isBlank()) {
+                identifierType = IdentifierType.EMAIL;
+                identifierValue = profile.email();
+            }
+            if (profile.phone() != null && !profile.phone().isBlank()) {
+                identifierType = IdentifierType.CMDCV;
+                identifierValue = profile.phone();
+            }
+            if (profile.nic() != null && !profile.nic().isBlank()) {
+                identifierType = IdentifierType.CNI;
+                identifierValue = profile.nic();
+            }
+        }
+
+        String sessionId = null;
+        if (request != null && request.getSession(false) != null) {
+            sessionId = request.getSession(false).getId();
+        }
+
+        return new AuthAuditContext(
+                identifierType,
+                identifierValue,
+                profile != null ? profile.externalId() : null,
+                null,
+                sessionId,
+                request
+        );
     }
 
     public static String hash(String value) {
