@@ -108,12 +108,13 @@ class ClaimsEnrichmentServiceTest {
         @SuppressWarnings("unchecked")
         Set<String> permissions = (Set<String>) claims.get("permissions");
         assertTrue(permissions.contains("IGRP_USERS_VIEW"));
-        assertEquals(Set.of("openid", "profile"), claims.get("scopes"));
         @SuppressWarnings("unchecked")
         Map<String, Object> resourceAccess = (Map<String, Object>) claims.get("resource_access");
         assertNotNull(resourceAccess.get("igrp-access-management"));
+        // metadata is only emitted when non-empty
         @SuppressWarnings("unchecked")
         Map<String, Object> userMd = (Map<String, Object>) claims.get("metadata");
+        assertNotNull(userMd, "metadata claim should be emitted when user metadata is non-empty");
         assertEquals("pt-CV", userMd.get("locale"));
     }
 
@@ -126,6 +127,6 @@ class ClaimsEnrichmentServiceTest {
         assertEquals("", claims.get("selectedRole"));
         assertEquals("", claims.get("org"));
         assertNotNull(claims.get("permissions"));
-        assertNotNull(claims.get("scopes"));
+        assertNotNull(claims.get("resource_access"));
     }
 }
