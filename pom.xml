@@ -400,6 +400,20 @@
                 <groupId>org.hibernate.orm.tooling</groupId>
                 <artifactId>hibernate-enhance-maven-plugin</artifactId>
                 <version>6.6.18.Final</version>
+                <!--
+                  Override the Byte Buddy version pulled in transitively by
+                  hibernate-enhance (1.15.x). The shipped version does not
+                  recognize the Java 25 class file format and aborts with
+                  "Java 25 (69) is not supported by the current version of
+                  Byte Buddy". 1.17.7+ adds official Java 25 support.
+                -->
+                <dependencies>
+                    <dependency>
+                        <groupId>net.bytebuddy</groupId>
+                        <artifactId>byte-buddy</artifactId>
+                        <version>1.17.7</version>
+                    </dependency>
+                </dependencies>
                 <executions>
                     <execution>
                         <configuration>
