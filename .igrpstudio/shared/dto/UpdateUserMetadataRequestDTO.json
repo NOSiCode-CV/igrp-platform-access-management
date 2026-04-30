@@ -1,0 +1,10 @@
+{
+  "type": "dto",
+  "module": "shared",
+  "name": "UpdateUserMetadataRequestDTO",
+  "template": "classic",
+  "attributes": [
+    {"name": "metadata", "type": "map", "keyType": "string", "valueType": "object", "required": true}
+  ],
+  "id": "shared-dto-update-user-metadata-request"
+}

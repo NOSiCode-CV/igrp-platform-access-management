@@ -7,7 +7,9 @@ import cv.igrp.framework.auth.core.model.UserIdentity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.envers.Audited;
+import org.hibernate.type.SqlTypes;
 import jakarta.validation.constraints.NotBlank;
 
 import java.util.*;
@@ -15,7 +17,7 @@ import java.util.*;
 @Audited
 @Getter
 @Setter
-@ToString(exclude = {"roles"})
+@ToString(exclude = {"userRoleAssignments"})
 @IgrpEntity
 @Entity
 @NoArgsConstructor
@@ -72,8 +74,15 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     @ManyToOne(fetch = FetchType.LAZY)
     private RoleEntity activeRole;
 
-    @ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
-    private List<RoleEntity> roles = new ArrayList<>();
+    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<UserRoleAssignment> userRoleAssignments = new ArrayList<>();
+
+    public List<RoleEntity> getRoles() {
+        return userRoleAssignments.stream()
+                .filter(ura -> ura.getExpiresAt() == null || ura.getExpiresAt().isAfter(java.time.LocalDateTime.now()))
+                .map(UserRoleAssignment::getRole)
+                .toList();
+    }
 
     @ElementCollection
     @CollectionTable(name = "t_user_custom_fields", joinColumns = @JoinColumn(name = "user_id"))
@@ -81,7 +90,19 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     @Column(name = "field_value")
     private Map<String, String> customFields = new HashMap<>();
 
+    /**
+     * Free-form metadata exposed through OAuth user management APIs and
+     * enriched into issued JWTs by the authorization server.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "metadata", columnDefinition = "jsonb")
+    private Map<String, Object> metadata = new LinkedHashMap<>();
+
     // Implementação da interface UserIdentity
+
+    public Integer getInternalId() {
+        return this.id;
+    }
 
     @Override
     public String getId() {

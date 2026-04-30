@@ -1,0 +1,25 @@
+{
+  "type": "dto",
+  "module": "oauth_server",
+  "name": "OAuthClientDTO",
+  "template": "classic",
+  "attributes": [
+    {"name": "id", "type": "uuid", "primaryKey": true},
+    {"name": "clientId", "type": "string"},
+    {"name": "clientSecret", "type": "string"},
+    {"name": "clientName", "type": "string"},
+    {"name": "description", "type": "string"},
+    {"name": "active", "type": "boolean"},
+    {"name": "applicationId", "type": "integer"},
+    {"name": "applicationCode", "type": "string"},
+    {"name": "accessTokenTtl", "type": "integer"},
+    {"name": "refreshTokenTtl", "type": "integer"},
+    {"name": "authorizationCodeTtl", "type": "integer"},
+    {"name": "scopes", "type": "string", "collectionType": "set"},
+    {"name": "redirectUris", "type": "string", "collectionType": "set"},
+    {"name": "grantTypes", "type": "string", "collectionType": "set"},
+    {"name": "createdAt", "type": "datetime"},
+    {"name": "updatedAt", "type": "datetime"}
+  ],
+  "id": "oauth-server-dto-client"
+}

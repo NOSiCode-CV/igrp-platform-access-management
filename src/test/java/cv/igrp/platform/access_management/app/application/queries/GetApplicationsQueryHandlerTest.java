@@ -114,9 +114,9 @@ public class GetApplicationsQueryHandlerTest {
         assertNotNull(result);
         assertEquals(2, result.size());
 
-        assertEquals("MyApp One", result.getFirst().getName());
-        assertEquals("APP001", result.getFirst().getCode());
-        assertEquals("my-app-one", result.getFirst().getSlug());
+        assertEquals("MyApp One", result.get(0).getName());
+        assertEquals("APP001", result.get(0).getCode());
+        assertEquals("my-app-one", result.get(0).getSlug());
     }
 
     @Test

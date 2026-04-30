@@ -8,9 +8,13 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -21,10 +25,19 @@ import java.util.Map;
 @Primary
 public class IgrpJwtAuthenticationConverter implements Converter<Jwt, AbstractAuthenticationToken> {
 
-    private static final org.slf4j.Logger log = 
+    private static final org.slf4j.Logger log =
         org.slf4j.LoggerFactory.getLogger(IgrpJwtAuthenticationConverter.class);
 
+    private final IGRPUserEntityRepository userRepository;
+    private final UserRoleAssignmentRepository userRoleAssignmentRepository;
+
     private final JwtAuthenticationConverter defaultConverter = new JwtAuthenticationConverter();
+
+    public IgrpJwtAuthenticationConverter(IGRPUserEntityRepository userRepository, 
+                                          UserRoleAssignmentRepository userRoleAssignmentRepository) {
+        this.userRepository = userRepository;
+        this.userRoleAssignmentRepository = userRoleAssignmentRepository;
+    }
 
     @Override
     public AbstractAuthenticationToken convert(Jwt jwt) {
@@ -32,17 +45,18 @@ public class IgrpJwtAuthenticationConverter implements Converter<Jwt, AbstractAu
         Collection<GrantedAuthority> authorities = new java.util.ArrayList<>(defaultToken.getAuthorities());
         Map<String, Object> c = jwt.getClaims();
 
-        // Map WSO2 roles from token to authorities
-        java.util.List<String> roles = optArray(c, "roles");
-        if (roles.isEmpty()) {
-            roles = optArray(c, "groups");
-        }
-        for (String role : roles) {
-            authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role));
-        }
+        // Defensive Extraction using Helpers (needed for sub)
+        String sub = req(c, "sub");
+
+        // Map roles from database instead of WSO2 token (following PAT-002)
+        userRepository.findByExternalId(sub).ifPresent(user -> {
+            List<UserRoleAssignment> assignments = userRoleAssignmentRepository.findActiveByUserId(user.getInternalId());
+            for (UserRoleAssignment assignment : assignments) {
+                authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + assignment.getRole().getCode()));
+            }
+        });
 
         // Defensive Extraction using Helpers
-        String sub = req(c, "sub");
         String iss = opt(c, "iss");
         String name = coalesce(opt(c, "name"), join(opt(c, "given_name"), opt(c, "family_name")));
         String email = normalizeEmail(coalesce(opt(c, "email"), opt(c, "emaill"), opt(c, "preferred_username")));

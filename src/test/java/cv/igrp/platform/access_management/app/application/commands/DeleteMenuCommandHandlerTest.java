@@ -77,6 +77,7 @@ public class DeleteMenuCommandHandlerTest {
         // Verify
         verify(applicationRepository, times(1)).findByCodeAndStatusNot("1", Status.DELETED);
         verify(menuEntryRepository, times(1)).findByApplicationIdAndCodeAndStatusNot(application, "MENU1", Status.DELETED);
+        verify(menuEntryRepository, times(1)).findByParentId(any());
         verify(menuEntryRepository, times(1)).save(menuEntry);
         verifyNoMoreInteractions(menuEntryRepository);
 
@@ -133,6 +134,7 @@ public class DeleteMenuCommandHandlerTest {
 
         // Assert
         assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        verify(menuEntryRepository).findByParentId(any());
         verify(menuEntryRepository).save(menuEntry);
     }
 }

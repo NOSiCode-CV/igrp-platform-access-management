@@ -17,6 +17,8 @@ public enum AuditEventType {
     TOKEN_ACCEPTED,
     TOKEN_REJECTED,
     TOKEN_EXPIRED,
+    TOKEN_ISSUED,
+    TOKEN_REVOKED,
 
     // User Management Events
     USER_CREATED,
@@ -32,6 +34,7 @@ public enum AuditEventType {
     PROFILE_DEACTIVATED,
     ROLE_ASSIGNED,
     ROLE_REMOVED,
+    ROLE_EXPIRED,
 
     // Permission & Authorization Events
     PERMISSION_GRANTED,

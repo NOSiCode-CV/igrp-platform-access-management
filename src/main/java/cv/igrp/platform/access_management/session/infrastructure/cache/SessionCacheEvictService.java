@@ -30,7 +30,7 @@ public class SessionCacheEvictService {
      * Evict all sessions from cache (emergency use only)
      */
     public void evictAll() {
-        evictMatchingKeys(_ -> true);
+        evictMatchingKeys(key -> true);
         LOGGER.warn("Evicted all sessions from cache - emergency operation");
     }
 

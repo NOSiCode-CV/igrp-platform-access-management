@@ -36,7 +36,7 @@ public class MenuSpecificationBuilder {
         }
 
         // Exclude deleted menus
-        spec = spec.and((root, _, cb) ->
+        spec = spec.and((root, criteriaQuery, cb) ->
                 cb.notEqual(root.get("status"), Status.DELETED)
         );
 

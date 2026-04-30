@@ -22,6 +22,7 @@ import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.platform.access_management.users.application.commands.*;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.application.dto.AddRolesToUserRequestDTO;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.UserInvitationResponseDTO;
@@ -31,6 +32,9 @@ import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDepartmentDTO;
+import cv.igrp.platform.access_management.shared.application.dto.OtpResponseDTO;
+import cv.igrp.platform.access_management.shared.application.dto.UserMetadataDTO;
+import cv.igrp.platform.access_management.shared.application.dto.UpdateUserMetadataRequestDTO;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 
 @IgrpController
@@ -114,11 +118,11 @@ public class UserController {
     }
   )
   
-  public ResponseEntity<?> addRolesToUser(@RequestBody List<String> addRolesToUserRequest
+  public ResponseEntity<?> addRolesToUser(@Valid @RequestBody AddRolesToUserRequestDTO addRolesToUserRequest
     , @PathVariable(value = "id") Integer id,@PathVariable(value = "departmentCode") String departmentCode)
   {
 
-      final var command = new AddRolesToUserCommand(addRolesToUserRequest, id, departmentCode);
+      final var command = new AddRolesToUserCommand(addRolesToUserRequest.getRoles(), id, departmentCode, addRolesToUserRequest.getExpiresAt());
 
       return commandBus.send(command);
 
@@ -388,7 +392,7 @@ public class UserController {
       return commandBus.send(command);
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USER_CREATE)")
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_CREATE)")
    @PostMapping(
    value = "users/invite"
   )
@@ -417,6 +421,56 @@ public class UserController {
 
       return commandBus.send(command);
 
+  }
+
+   @PostMapping(
+   value = "users/invite/validate-email"
+  )
+  @Operation(
+    summary = "Validate Invitation Email",
+    description = "Validate email and send OTP",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = OtpResponseDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<OtpResponseDTO> validateInvitationEmail(@Valid @RequestBody ValidateInvitationEmailCommand validateInvitationEmailCommand
+    )
+  {
+      return commandBus.send(validateInvitationEmailCommand);
+  }
+
+   @PostMapping(
+   value = "users/invite/validate-otp"
+  )
+  @Operation(
+    summary = "Validate Invitation OTP",
+    description = "Validate OTP code",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = OtpResponseDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  
+  public ResponseEntity<OtpResponseDTO> validateInvitationOtp(@Valid @RequestBody ValidateInvitationOtpCommand validateInvitationOtpCommand
+    )
+  {
+      return commandBus.send(validateInvitationOtpCommand);
   }
 
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
@@ -1163,7 +1217,7 @@ public class UserController {
     responses = {
       @ApiResponse(
           responseCode = "200",
-          
+
           content = @Content(
               mediaType = "application/json",
               schema = @Schema(
@@ -1173,7 +1227,7 @@ public class UserController {
       )
     }
   )
-  
+
   public ResponseEntity<RoleDepartmentDTO> setActiveUserRole(@Valid @RequestBody RoleDepartmentDTO setActiveUserRoleRequest
     , @PathVariable(value = "id") Integer id)
   {
@@ -1182,6 +1236,58 @@ public class UserController {
 
       return commandBus.send(command);
 
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
+   @GetMapping(
+   value = "users/{id}/metadata"
+  )
+  @Operation(
+    summary = "Get user metadata",
+    description = "Return the free-form metadata JSON associated with the user. Used by the OAuth2 authorization server for token enrichment.",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = UserMetadataDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  public ResponseEntity<UserMetadataDTO> getUserMetadata(
+    @PathVariable(value = "id") Integer id)
+  {
+      final var query = new GetUserMetadataQuery(id);
+      return queryBus.handle(query);
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_UPDATE)")
+   @PutMapping(
+   value = "users/{id}/metadata"
+  )
+  @Operation(
+    summary = "Update user metadata",
+    description = "Replace the user's metadata JSON. Used by operators and by OAuth federation flows to enrich the user profile.",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = UserMetadataDTO.class,
+                  type = "object")
+          )
+      )
+    }
+  )
+  public ResponseEntity<UserMetadataDTO> updateUserMetadata(@Valid @RequestBody UpdateUserMetadataRequestDTO updateUserMetadataRequest
+    , @PathVariable(value = "id") Integer id)
+  {
+      final var command = new UpdateUserMetadataCommand(id, updateUserMetadataRequest.getMetadata());
+      return commandBus.send(command);
   }
 
 }

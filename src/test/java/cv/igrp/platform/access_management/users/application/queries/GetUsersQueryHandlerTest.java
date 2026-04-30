@@ -79,7 +79,7 @@ public class GetUsersQueryHandlerTest {
     assertNotNull(response);
     assertNotNull(response.getBody());
     assertEquals(1, response.getBody().size());
-    assertEquals("John Doe", response.getBody().getFirst().getName());
+    assertEquals("John Doe", response.getBody().get(0).getName());
     verify(userRepository, times(1)).findAll(any(Specification.class));
     verify(userMapper, times(1)).toDto(mockUser);
   }

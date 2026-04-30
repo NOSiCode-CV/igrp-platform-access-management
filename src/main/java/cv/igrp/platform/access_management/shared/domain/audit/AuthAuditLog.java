@@ -12,7 +12,7 @@ import java.util.UUID;
  * This pattern is guaranteed to compile and work with JPA and Spring Data.
  */
 @Entity
-@Table(name = "auth_audit_log", indexes = {
+@Table(name = "t_auth_audit_log", indexes = {
     @Index(name = "idx_audit_timestamp",        columnList = "timestamp"),
     @Index(name = "idx_audit_user_timestamp",   columnList = "user_id,timestamp"),
     @Index(name = "idx_audit_identifier_event", columnList = "identifier_value,event_type")

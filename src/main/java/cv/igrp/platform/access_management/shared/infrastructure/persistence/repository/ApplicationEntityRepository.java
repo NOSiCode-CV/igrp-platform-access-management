@@ -25,7 +25,8 @@ public interface ApplicationEntityRepository extends
             FROM ApplicationEntity a
             JOIN a.departments d
             JOIN d.roles r
-            JOIN r.users u
+            JOIN r.userRoleAssignments ura
+            JOIN ura.user u
             WHERE a.status = :status
                    AND (u.id = :id OR u.email = :email)
                    AND r.department = d
@@ -43,7 +44,8 @@ public interface ApplicationEntityRepository extends
                          FROM ApplicationEntity app
                          JOIN app.departments d
                          JOIN d.roles r
-                         JOIN r.users u
+                         JOIN r.userRoleAssignments ura
+                        JOIN ura.user u
                          WHERE app.id = a.id AND (u.externalId = :externalId OR u.email = :uid)
                      )
             """)
@@ -132,7 +134,8 @@ public interface ApplicationEntityRepository extends
         from ApplicationEntity a
         join a.departments d
         join d.roles r
-        join r.users u
+        join r.userRoleAssignments ura
+        join ura.user u
         where u = :user
         and a.status <> 'DELETED'
     """)
@@ -143,7 +146,8 @@ public interface ApplicationEntityRepository extends
         from ApplicationEntity a
         join a.departments d
         join d.roles r
-        join r.users u
+        join r.userRoleAssignments ura
+        join ura.user u
         where u = :user
         and a.status = 'ACTIVE'
     """)
@@ -173,8 +177,8 @@ public interface ApplicationEntityRepository extends
     FROM t_application a
     JOIN t_department_application d ON d.application_id = a.id
     JOIN t_role r ON r.department = d.department_id
-    JOIN t_role_users ru ON ru.roles_id = r.id
-    JOIN t_user u ON u.id = ru.users_id
+    JOIN t_user_role_assignment ura ON ura.role_id = r.id
+    JOIN t_user u ON u.id = ura.user_id
     WHERE u.id = :userId
       AND a.status = 'ACTIVE'
       AND (:code IS NULL OR a.code ILIKE CONCAT('%', :code, '%'))
@@ -191,8 +195,8 @@ public interface ApplicationEntityRepository extends
     FROM t_application a
     JOIN t_department_application d ON d.application_id = a.id
     JOIN t_role r ON r.department = d.department_id
-    JOIN t_role_users ru ON ru.roles_id = r.id
-    JOIN t_user u ON u.id = ru.users_id
+    JOIN t_user_role_assignment ura ON ura.role_id = r.id
+    JOIN t_user u ON u.id = ura.user_id
     WHERE u.id = :userId
       AND a.status = 'ACTIVE'
       AND r.id = u.active_role_id

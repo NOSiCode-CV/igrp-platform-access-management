@@ -1,0 +1,11 @@
+{
+  "type": "dto",
+  "module": "shared",
+  "name": "UserMetadataDTO",
+  "template": "classic",
+  "attributes": [
+    {"name": "userId", "type": "integer"},
+    {"name": "metadata", "type": "map", "keyType": "string", "valueType": "object"}
+  ],
+  "id": "shared-dto-user-metadata"
+}

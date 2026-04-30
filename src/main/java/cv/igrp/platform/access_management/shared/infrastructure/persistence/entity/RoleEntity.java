@@ -87,8 +87,14 @@ private Set<PermissionEntity> permissions = new HashSet<>();
 
 
   
-    @ManyToMany(fetch = FetchType.LAZY)
-private Set<IGRPUserEntity> users = new HashSet<>();
+    @OneToMany(mappedBy = "role", fetch = FetchType.LAZY, cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<UserRoleAssignment> userRoleAssignments = new HashSet<>();
+
+    public Set<IGRPUserEntity> getUsers() {
+        return userRoleAssignments.stream()
+                .map(UserRoleAssignment::getUser)
+                .collect(java.util.stream.Collectors.toSet());
+    }
    @OneToMany(mappedBy = "parent")
 private List<RoleEntity> children = new ArrayList<>();
 

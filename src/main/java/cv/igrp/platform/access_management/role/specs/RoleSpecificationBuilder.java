@@ -26,21 +26,21 @@ public class RoleSpecificationBuilder {
 
         Specification<RoleEntity> specs = Specification.allOf();
 
-        specs = specs.and((root, _, criteriaBuilder) ->
+        specs = specs.and((root, criteriaQuery, criteriaBuilder) ->
                 criteriaBuilder.equal(root.get("department").get("code"), query.getCode())
         );
 
         if(query.getRoleCode() != null && !query.getRoleCode().isBlank()) {
-            specs = specs.and((root, _, criteriaBuilder) ->
+            specs = specs.and((root, criteriaQuery, criteriaBuilder) ->
                     criteriaBuilder.like(criteriaBuilder.lower(root.get("code")), "%" + query.getRoleCode().toLowerCase() + "%")
             );
         }
 
-        specs = specs.and((root, _, _) ->
+        specs = specs.and((root, criteriaQuery, criteriaBuilder) ->
                 root.get("status").in(Status.ACTIVE, Status.INACTIVE)
         );
 
-        specs = specs.and((root, _, criteriaBuilder) ->
+        specs = specs.and((root, criteriaQuery, criteriaBuilder) ->
                 criteriaBuilder.notEqual(root.get("code"), SUPER_ADMIN_ROLE)
         );
 
@@ -56,34 +56,34 @@ public class RoleSpecificationBuilder {
         Specification<RoleEntity> specs = Specification.allOf();
 
         if (query.getParentCode() != null) {
-            specs = specs.and((root, _, cb) ->
+            specs = specs.and((root, criteriaQuery, cb) ->
                     cb.equal(root.get("parent").get("code"), query.getParentCode())
             );
         }
 
         if (!query.isIncludeChildrenRoles() && query.getParentCode() == null) {
-            specs = specs.and((root, _, cb) ->
+            specs = specs.and((root, criteriaQuery, cb) ->
                     cb.isNull(root.get("parent"))
             );
         }
 
         if (query.getGetRolesForBusinessRequest() != null && !query.getGetRolesForBusinessRequest().isEmpty()) {
-            specs = specs.and((root, _, cb) ->
+            specs = specs.and((root, criteriaQuery, cb) ->
                     cb.in(root.get("code")).value(query.getGetRolesForBusinessRequest())
             );
         }
 
         if (query.isActiveOnly()) {
-            specs = specs.and((root, _, cb) ->
+            specs = specs.and((root, criteriaQuery, cb) ->
                     cb.equal(root.get("status"), Status.ACTIVE)
             );
         }
 
-        specs = specs.and((root, _, criteriaBuilder) ->
+        specs = specs.and((root, criteriaQuery, criteriaBuilder) ->
                 criteriaBuilder.notEqual(root.get("status"), Status.DELETED)
         );
 
-        specs = specs.and((root, _, criteriaBuilder) ->
+        specs = specs.and((root, criteriaQuery, criteriaBuilder) ->
                 criteriaBuilder.notEqual(root.get("code"), SUPER_ADMIN_ROLE)
         );
 
@@ -94,7 +94,7 @@ public class RoleSpecificationBuilder {
     private Specification<RoleEntity> applyScope(Specification<RoleEntity> spec, ScopeContext context) {
 
         if(!context.isSuperAdmin()) {
-            return spec.and((root, _, cb) ->
+            return spec.and((root, criteriaQuery, cb) ->
                     root.get("id").in(context.getRoleIds())
             );
         }

@@ -9,6 +9,8 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,6 +33,9 @@ public class GetUserRolesQueryHandlerTest {
     @Mock
     private RoleMapper roleMapper;
 
+    @Mock
+    private UserRoleAssignmentRepository userRoleAssignmentRepository;
+
 
     @InjectMocks
     private GetUserRolesQueryHandler getUserRolesQueryHandler;
@@ -50,33 +55,35 @@ public class GetUserRolesQueryHandlerTest {
     void setUp() {
         user = new IGRPUserEntity();
         user.setId(USER_ID);
-        user.setRoles(new ArrayList<>());
 
         role1 = new RoleEntity();
         role1.setId(100);
+        role1.setCode("Admin");
         role1.setName("Admin");
         role1.setDescription("Admin Role");
 
         role2 = new RoleEntity();
         role2.setId(200);
+        role2.setCode("User");
         role2.setName("User");
         role2.setDescription("User Role");
 
-        roleDto1 = new RoleDTO(100, "Admin", "Admin", "Admin Role", null, null, null, null, null);
-        roleDto2 = new RoleDTO(200, "User", "User", "User Role", null, null, null, null, null);
-
+        roleDto1 = new RoleDTO(100, "Admin", "Admin", "Admin Role", null, null, null, null, null, List.of());
+        roleDto2 = new RoleDTO(200, "User", "User", "User Role", null, null, null, null, null, List.of());
     }
 
     @Test
     @DisplayName("handle(): should return user roles when user exists")
     void handle_whenUserHasRoles_shouldReturnRoleDTOList() {
         // Arrange
-        var roles = List.of(role1, role2);
-        user.setRoles(new ArrayList<>());
-        user.getRoles().addAll(roles);
+        UserRoleAssignment ura1 = new UserRoleAssignment(user, role1, null);
+        UserRoleAssignment ura2 = new UserRoleAssignment(user, role2, null);
+        var assignments = List.of(ura1, ura2);
+        
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        when(roleMapper.mapToDto(role1)).thenReturn(roleDto1);
-        when(roleMapper.mapToDto(role2)).thenReturn(roleDto2);
+        when(userRoleAssignmentRepository.findActiveByUserId(USER_ID)).thenReturn(assignments);
+        when(roleMapper.mapToDto(ura1)).thenReturn(roleDto1);
+        when(roleMapper.mapToDto(ura2)).thenReturn(roleDto2);
 
         query = getUserRolesQuery(USER_ID);
 
@@ -93,18 +100,18 @@ public class GetUserRolesQueryHandlerTest {
 
         // Verify
         verify(userRepository, times(1)).findById(USER_ID);
-        verify(roleMapper, times(1)).mapToDto(role1);
-        verify(roleMapper, times(1)).mapToDto(role2);
-        verifyNoMoreInteractions(userRepository, roleMapper);
-
+        verify(userRoleAssignmentRepository, times(1)).findActiveByUserId(USER_ID);
+        verify(roleMapper, times(1)).mapToDto(ura1);
+        verify(roleMapper, times(1)).mapToDto(ura2);
+        verifyNoMoreInteractions(userRepository, userRoleAssignmentRepository, roleMapper);
     }
 
     @Test
     @DisplayName("should return empty list when user has no roles")
     void testHandle_whenUserHasNoRoles_shouldReturnEmptyList() {
         //Arrange
-        user.setRoles(Collections.unmodifiableList(new ArrayList<>()));
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRoleAssignmentRepository.findActiveByUserId(USER_ID)).thenReturn(Collections.emptyList());
 
         query = getUserRolesQuery(USER_ID);
 
@@ -119,7 +126,8 @@ public class GetUserRolesQueryHandlerTest {
 
         // Verify
         verify(userRepository, times(1)).findById(USER_ID);
-        verifyNoMoreInteractions(userRepository, roleMapper);
+        verify(userRoleAssignmentRepository, times(1)).findActiveByUserId(USER_ID);
+        verifyNoMoreInteractions(userRepository, userRoleAssignmentRepository, roleMapper);
     }
 
     @Test
@@ -147,12 +155,14 @@ public class GetUserRolesQueryHandlerTest {
     @DisplayName("should skip roles when mapper returns null")
     void testHandle_whenMapperReturnsNull_shouldIgnoreThatRole() {
         // Arrange
-        var roles = List.of(role1, role2);
-        user.setRoles(new ArrayList<>());
-        user.getRoles().addAll(roles);
+        UserRoleAssignment ura1 = new UserRoleAssignment(user, role1, null);
+        UserRoleAssignment ura2 = new UserRoleAssignment(user, role2, null);
+        var assignments = List.of(ura1, ura2);
+        
         when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
-        when(roleMapper.mapToDto(role1)).thenReturn(roleDto1);
-        when(roleMapper.mapToDto(role2)).thenReturn(null);
+        when(userRoleAssignmentRepository.findActiveByUserId(USER_ID)).thenReturn(assignments);
+        when(roleMapper.mapToDto(ura1)).thenReturn(roleDto1);
+        when(roleMapper.mapToDto(ura2)).thenReturn(null);
 
         query = getUserRolesQuery(USER_ID);
 
@@ -168,9 +178,9 @@ public class GetUserRolesQueryHandlerTest {
 
         // Verify
         verify(userRepository, times(1)).findById(USER_ID);
-        verify(roleMapper, times(1)).mapToDto(role1);
-        verify(roleMapper, times(1)).mapToDto(role2);
-        verifyNoMoreInteractions(userRepository, roleMapper);
-
+        verify(userRoleAssignmentRepository, times(1)).findActiveByUserId(USER_ID);
+        verify(roleMapper, times(1)).mapToDto(ura1);
+        verify(roleMapper, times(1)).mapToDto(ura2);
+        verifyNoMoreInteractions(userRepository, userRoleAssignmentRepository, roleMapper);
     }
 }

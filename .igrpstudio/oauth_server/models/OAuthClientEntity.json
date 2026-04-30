@@ -1,0 +1,31 @@
+{
+  "type": "model",
+  "module": "oauth_server",
+  "name": "OAuthClientEntity",
+  "tableName": "t_oauth_client",
+  "audit": false,
+  "crud": true,
+  "revision": false,
+  "attributes": [
+    {"name": "id", "type": "uuid", "primaryKey": true, "nullable": false, "unique": true},
+    {"name": "clientId", "type": "string", "length": 120, "nullable": false, "unique": true},
+    {"name": "clientSecret", "type": "string", "nullable": false},
+    {"name": "clientName", "type": "string", "length": 180, "nullable": true},
+    {"name": "description", "type": "string", "length": 500, "nullable": true},
+    {"name": "active", "type": "boolean", "nullable": false},
+    {"name": "accessTokenTtl", "type": "integer", "nullable": false},
+    {"name": "refreshTokenTtl", "type": "integer", "nullable": false},
+    {"name": "authorizationCodeTtl", "type": "integer", "nullable": false},
+    {"name": "application", "type": "ApplicationEntity", "objectType": "model", "module": "shared", "relation": "ManyToOne"},
+    {"name": "scopes", "type": "string", "objectType": "java", "collectionType": "set"},
+    {"name": "redirectUris", "type": "string", "objectType": "java", "collectionType": "set"},
+    {"name": "grantTypes", "type": "string", "objectType": "java", "collectionType": "set"},
+    {"name": "createdAt", "type": "datetime"},
+    {"name": "updatedAt", "type": "datetime"}
+  ],
+  "id": "oauth-server-model-client",
+  "uniqueConstraints": [],
+  "indexes": [
+    {"name": "idx_oauth_client_client_id", "columns": ["client_id"], "unique": true}
+  ]
+}

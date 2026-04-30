@@ -108,7 +108,7 @@ public class GetPermissionsByRoleIdQueryHandlerTest {
     // Then
     assertNotNull(result.getBody());
     assertEquals(1, result.getBody().size());
-    assertEquals(activePermissionDTO, result.getBody().getFirst());
+    assertEquals(activePermissionDTO, result.getBody().get(0));
 
     verify(permissionMapper).mapToDTO(activePermission);
     verify(permissionMapper, never()).mapToDTO(deletedPermission);

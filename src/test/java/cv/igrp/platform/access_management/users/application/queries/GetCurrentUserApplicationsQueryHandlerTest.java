@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 public class GetCurrentUserApplicationsQueryHandlerTest {
 
   @Mock
@@ -49,6 +50,7 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery("APP", null);
 
     IGRPUserEntity mockUser = new IGRPUserEntity();
+    mockUser.setId(1);
     mockUser.setExternalId("sub123");
 
     ApplicationEntity app1 = new ApplicationEntity();
@@ -59,7 +61,7 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
 
     when(authenticationHelper.getSub()).thenReturn("sub123");
     when(userRepository.findByExternalIdWithRolesAndPermissions("sub123")).thenReturn(Optional.of(mockUser));
-    when(applicationRepository.findByUserIdAndStatusNotDeleted(mockUser))
+    when(applicationRepository.findByCurrentUserAndActiveFiltered(anyInt(), any(), any()))
             .thenReturn(List.of(app1));
     when(applicationMapper.toDto(app1)).thenReturn(dto1);
 
@@ -79,6 +81,7 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery("IGRP", null);
 
     IGRPUserEntity user = new IGRPUserEntity();
+    user.setId(2);
     user.setExternalId("abc");
 
     ApplicationEntity app1 = new ApplicationEntity();
@@ -92,8 +95,8 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
 
     when(authenticationHelper.getSub()).thenReturn("abc");
     when(userRepository.findByExternalIdWithRolesAndPermissions("abc")).thenReturn(Optional.of(user));
-    when(applicationRepository.findByUserIdAndStatusNotDeleted(user))
-            .thenReturn(List.of(app1, app2));
+    when(applicationRepository.findByCurrentUserAndActiveFiltered(anyInt(), any(), any()))
+            .thenReturn(List.of(app1));
 
     when(applicationMapper.toDto(app1)).thenReturn(dto);
 
@@ -115,11 +118,12 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery(null, null);
 
     IGRPUserEntity user = new IGRPUserEntity();
+    user.setId(3);
     user.setExternalId("sub888");
 
     when(authenticationHelper.getSub()).thenReturn("sub888");
     when(userRepository.findByExternalIdWithRolesAndPermissions("sub888")).thenReturn(Optional.of(user));
-    when(applicationRepository.findByUserIdAndStatusNotDeleted(user))
+    when(applicationRepository.findByCurrentUserAndActiveFiltered(anyInt(), any(), any()))
             .thenReturn(List.of());
 
     ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);

@@ -138,7 +138,7 @@ public class BasicAuthSecurityConfiguration {
                         .anyRequest().authenticated()
                 )
                 .httpBasic(withDefaults())
-                .cors(cors -> cors.configurationSource(_ -> {
+                .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
                     configuration.addAllowedOriginPattern("*");
                     configuration.addAllowedMethod("*");

@@ -60,7 +60,8 @@ public interface DepartmentEntityRepository extends
                         select d
                         from DepartmentEntity d
                         join d.roles r
-                        join r.users u
+                        join r.userRoleAssignments ura
+                        join ura.user u
                         where u = :user and d.status <> 'DELETED'
                     """
     )
@@ -86,8 +87,8 @@ public interface DepartmentEntityRepository extends
                 SELECT DISTINCT d.*
                 FROM t_department d
                 JOIN t_role r ON r.department = d.id
-                JOIN t_role_users ru ON ru.roles_id = r.id
-                JOIN t_user u ON u.id = ru.users_id
+                JOIN t_user_role_assignment ura ON ura.role_id = r.id
+                JOIN t_user u ON u.id = ura.user_id
                 WHERE u.id = :userId
                   AND d.status <> 'DELETED'
                   AND (:code IS NULL OR d.name ILIKE CONCAT('%', :code, '%'))

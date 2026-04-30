@@ -63,7 +63,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      */
     @Query("SELECT DISTINCT s FROM SessionEntity s " +
            "JOIN IGRPUserEntity u ON s.userExternalId = u.externalId " +
-           "JOIN u.roles r " +
+           "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "JOIN r.department d " +
            "WHERE d.code = :departmentCode AND s.status = :status")
     Page<SessionEntity> findByDepartmentCodeAndStatus(@Param("departmentCode") String departmentCode, 
@@ -75,7 +75,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      */
     @Query("SELECT DISTINCT s FROM SessionEntity s " +
            "JOIN IGRPUserEntity u ON s.userExternalId = u.externalId " +
-           "JOIN u.roles r " +
+           "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "WHERE r.code = :roleCode AND s.status = :status")
     Page<SessionEntity> findByRoleCodeAndStatus(@Param("roleCode") String roleCode, 
                                               @Param("status") SessionStatus status, 
@@ -86,7 +86,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      */
     @Query("SELECT DISTINCT s FROM SessionEntity s " +
            "JOIN IGRPUserEntity u ON s.userExternalId = u.externalId " +
-           "JOIN u.roles r " +
+           "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "JOIN r.department d " +
            "WHERE r.code = :roleCode AND d.code = :departmentCode AND s.status = :status")
     Page<SessionEntity> findByRoleCodeAndDepartmentCodeAndStatus(@Param("roleCode") String roleCode, 
@@ -98,7 +98,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      * Get user external IDs for users with a specific role
      */
     @Query("SELECT DISTINCT u.externalId FROM IGRPUserEntity u " +
-           "JOIN u.roles r " +
+           "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "JOIN r.department d " +
            "WHERE r.code = :roleCode AND d.code = :departmentCode")
     Set<String> findUserIdsByRole(@Param("roleCode") String roleCode, @Param("departmentCode") String departmentCode);
@@ -107,7 +107,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      * Get user external IDs for users with roles in a specific department
      */
     @Query("SELECT DISTINCT u.externalId FROM IGRPUserEntity u " +
-           "JOIN u.roles r " +
+           "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "JOIN r.department d " +
            "WHERE d.code = :departmentCode")
     Set<String> findUserIdsByDepartment(@Param("departmentCode") String departmentCode);
@@ -140,7 +140,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
     @Query("UPDATE SessionEntity s SET s.status = :newStatus, s.endedAt = :endedAt, s.lastSeenAt = :lastSeenAt, " +
            "s.closedReason = :closedReason, s.closedBy = :closedBy " +
            "WHERE s.userExternalId IN (SELECT DISTINCT u.externalId FROM IGRPUserEntity u " +
-           "JOIN u.roles r JOIN r.department d WHERE r.code = :roleCode AND d.code = :departmentCode) " +
+           "JOIN u.userRoleAssignments ura JOIN ura.role r JOIN r.department d WHERE r.code = :roleCode AND d.code = :departmentCode) " +
            "AND s.status = :oldStatus")
     int invalidateSessionsByRole(@Param("roleCode") String roleCode, 
                                @Param("departmentCode") String departmentCode,
@@ -158,7 +158,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
     @Query("UPDATE SessionEntity s SET s.status = :newStatus, s.endedAt = :endedAt, s.lastSeenAt = :lastSeenAt, " +
            "s.closedReason = :closedReason, s.closedBy = :closedBy " +
            "WHERE s.userExternalId IN (SELECT DISTINCT u.externalId FROM IGRPUserEntity u " +
-           "JOIN u.roles r JOIN r.department d WHERE d.code = :departmentCode) " +
+           "JOIN u.userRoleAssignments ura JOIN ura.role r JOIN r.department d WHERE d.code = :departmentCode) " +
            "AND s.status = :oldStatus")
     int invalidateSessionsByDepartment(@Param("departmentCode") String departmentCode, 
                                     @Param("oldStatus") SessionStatus oldStatus, 
@@ -185,7 +185,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      */
     @Query("SELECT s FROM SessionEntity s " +
            "JOIN IGRPUserEntity u ON s.userExternalId = u.externalId " +
-           "JOIN u.roles r " +
+           "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "WHERE r.code = :roleCode " +
            "AND (:departmentCode IS NULL OR r.department.code = :departmentCode) " +
            "AND (:status IS NULL OR s.status = :status)")
@@ -199,7 +199,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      */
     @Query("SELECT s FROM SessionEntity s " +
            "JOIN IGRPUserEntity u ON s.userExternalId = u.externalId " +
-           "JOIN u.roles r " +
+           "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "JOIN r.department d " +
            "WHERE d.code = :departmentCode " +
            "AND (:status IS NULL OR s.status = :status)")

@@ -48,6 +48,7 @@ public class RoleDTO  {
   
   private String icon ;
   
+  private java.time.LocalDateTime expiresAt;
   
   private List<String> permissions = new ArrayList<>();
 

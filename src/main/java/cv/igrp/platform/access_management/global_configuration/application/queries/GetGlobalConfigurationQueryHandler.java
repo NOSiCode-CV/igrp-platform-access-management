@@ -41,7 +41,7 @@ public class GetGlobalConfigurationQueryHandler implements QueryHandler<GetGloba
     if(configurations.isEmpty())
       throw IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Global Configuration not found","Global Configuration with type: " +  query.getType() + " not found" );
 
-    var configuration = configurations.getFirst();
+    var configuration = configurations.get(0);
 
     GlobalConfigurationDTO dto = mapper.toDto(configuration);
 

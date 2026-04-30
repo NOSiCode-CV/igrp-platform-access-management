@@ -24,9 +24,6 @@ public class InvitationMapper {
         dto.setId(invitation.getId());
         dto.setIdentifierType(invitation.getIdentifierType());
         dto.setIdentifierValue(invitation.getIdentifierValue());
-        if(invitation.getAllowedAuthMethods() != null) {
-            dto.setAllowedAuthMethods(new ArrayList<>(invitation.getAllowedAuthMethods()));
-        }
         dto.setStatus(invitation.getStatus());
         dto.setInvitationDate(invitation.getCreatedDate());
         dto.setExpiry(invitation.getExpiry());

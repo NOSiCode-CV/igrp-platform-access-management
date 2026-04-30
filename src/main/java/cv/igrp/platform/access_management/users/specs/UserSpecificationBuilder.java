@@ -19,7 +19,7 @@ public class UserSpecificationBuilder {
         Specification<IGRPUserEntity> spec = Specification.anyOf();
 
         if (query.getApplicationCode() != null) {
-            spec = spec.and((root, _, cb) -> {
+            spec = spec.and((root, criteriaQuery, cb) -> {
                 Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
                 Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
                 Join<Object, Object> applicationJoin = departmentJoin.join("applications", JoinType.INNER);
@@ -28,7 +28,7 @@ public class UserSpecificationBuilder {
         }
 
         if (query.getDepartmentCode() != null) {
-            spec = spec.and((root, _, cb) -> {
+            spec = spec.and((root, criteriaQuery, cb) -> {
                 Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
                 Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
                 return cb.equal(departmentJoin.get("code"), query.getDepartmentCode());
@@ -36,15 +36,15 @@ public class UserSpecificationBuilder {
         }
 
         if (query.getName() != null && !query.getName().isEmpty()) {
-            spec = spec.and((root, _, cb) -> cb.like(cb.lower(root.get("name")), "%" + query.getName().toLowerCase() + "%"));
+            spec = spec.and((root, criteriaQuery, cb) -> cb.like(cb.lower(root.get("name")), "%" + query.getName().toLowerCase() + "%"));
         }
 
         if (query.getId() != null && query.getId() != 0) {
-            spec = spec.and((root, _, cb) -> cb.equal(root.get("id"), query.getId()));
+            spec = spec.and((root, criteriaQuery, cb) -> cb.equal(root.get("id"), query.getId()));
         }
 
         if (query.getEmail() != null && !query.getEmail().isEmpty()) {
-            spec = spec.and((root, _, cb) -> cb.like(cb.lower(root.get("email")), "%" + query.getEmail().toLowerCase() + "%"));
+            spec = spec.and((root, criteriaQuery, cb) -> cb.like(cb.lower(root.get("email")), "%" + query.getEmail().toLowerCase() + "%"));
         }
         
         // Apply scope
@@ -58,7 +58,7 @@ public class UserSpecificationBuilder {
         Specification<IGRPUserEntity> spec = Specification.anyOf();
 
         if (query.getApplicationCode() != null) {
-            spec = spec.and((root, _, cb) -> {
+            spec = spec.and((root, criteriaQuery, cb) -> {
                 Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
                 Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
                 Join<Object, Object> applicationJoin = departmentJoin.join("applications", JoinType.INNER);
@@ -67,7 +67,7 @@ public class UserSpecificationBuilder {
         }
 
         if (query.getDepartmentCode() != null) {
-            spec = spec.and((root, _, cb) -> {
+            spec = spec.and((root, criteriaQuery, cb) -> {
                 Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
                 Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
                 return cb.equal(departmentJoin.get("code"), query.getDepartmentCode());
@@ -75,14 +75,14 @@ public class UserSpecificationBuilder {
         }
 
         if (query.getRoleCode() != null) {
-            spec = spec.and((root, _, cb) -> {
+            spec = spec.and((root, criteriaQuery, cb) -> {
                 Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
                 return cb.equal(roleJoin.get("code"), query.getRoleCode());
             });
         }
 
         if (query.getPermissionName() != null) {
-            spec = spec.and((root, _, cb) -> {
+            spec = spec.and((root, criteriaQuery, cb) -> {
                 Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
                 Join<Object, Object> permissionJoin = roleJoin.join("permissions", JoinType.INNER);
                 return cb.equal(permissionJoin.get("name"), query.getPermissionName());
@@ -90,7 +90,7 @@ public class UserSpecificationBuilder {
         }
 
         if (query.getDepartmentCode() != null && query.isIncludeChildrenDepartments()) {
-            spec = spec.or((root, _, cb) -> {
+            spec = spec.or((root, criteriaQuery, cb) -> {
                 Join<Object, Object> roleJoin = root.join("roles", JoinType.LEFT);
                 Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.LEFT);
                 Join<Object, Object> parentDepartmentJoin = departmentJoin.join("parentId", JoinType.LEFT);
@@ -99,7 +99,7 @@ public class UserSpecificationBuilder {
         }
 
         if (query.getRoleCode() != null && query.isIncludeChildrenRoles()) {
-            spec = spec.or((root, _, cb) -> {
+            spec = spec.or((root, criteriaQuery, cb) -> {
                 Join<Object, Object> roleJoin = root.join("roles", JoinType.LEFT);
                 Join<Object, Object> parentRoleJoin = roleJoin.join("parent", JoinType.LEFT);
                 return cb.equal(parentRoleJoin.get("code"), query.getRoleCode());
@@ -108,16 +108,16 @@ public class UserSpecificationBuilder {
 
         if (query.getGetUsersForBusinessRequest() != null && !query.getGetUsersForBusinessRequest().isEmpty()) {
             if(query.getGetUsersForBusinessRequest().stream().allMatch(it -> it.contains("@"))) {
-                spec = spec.and((root, _, cb) -> cb.in(root.get("email")).value(query.getGetUsersForBusinessRequest()));
+                spec = spec.and((root, criteriaQuery, cb) -> cb.in(root.get("email")).value(query.getGetUsersForBusinessRequest()));
             } else if (query.getGetUsersForBusinessRequest().stream().allMatch(it -> it.matches("\\d+"))) {
-                spec = spec.and((root, _, cb) -> cb.in(root.get("id")).value(query.getGetUsersForBusinessRequest()));
+                spec = spec.and((root, criteriaQuery, cb) -> cb.in(root.get("id")).value(query.getGetUsersForBusinessRequest()));
             } else {
-                spec = spec.and((root, _, cb) -> cb.in(root.get("externalId")).value(query.getGetUsersForBusinessRequest()));
+                spec = spec.and((root, criteriaQuery, cb) -> cb.in(root.get("externalId")).value(query.getGetUsersForBusinessRequest()));
             }
         }
 
         if (query.isActiveOnly()) {
-            spec = spec.and((root, _, cb) -> cb.equal(root.get("status"), Status.ACTIVE));
+            spec = spec.and((root, criteriaQuery, cb) -> cb.equal(root.get("status"), Status.ACTIVE));
         }
 
         return spec;
@@ -126,7 +126,7 @@ public class UserSpecificationBuilder {
     private Specification<IGRPUserEntity> applyScope(Specification<IGRPUserEntity> spec, ScopeContext context) {
         
         if(!context.isSuperAdmin()) {
-            return spec.and((root, _, _) -> {
+            return spec.and((root, criteriaQuery, cb) -> {
                 Join<Object, Object> roleJoin = root.join("roles", JoinType.INNER);
                 Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
                 return departmentJoin.get("id").in(context.getDepartmentIds());

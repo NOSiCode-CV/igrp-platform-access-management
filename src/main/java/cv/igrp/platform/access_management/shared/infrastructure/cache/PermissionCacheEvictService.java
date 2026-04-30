@@ -48,7 +48,7 @@ public class PermissionCacheEvictService {
 
         List<String> subjects = jdbcTemplate.query(
                 "SELECT external_id FROM t_user WHERE id = ? AND status <> 'DELETED'",
-                (rs, _) -> rs.getString("external_id"),
+                (rs, rowNum) -> rs.getString("external_id"),
                 userId
         );
         evictBySubjects(subjects);
@@ -68,7 +68,7 @@ public class PermissionCacheEvictService {
                 WHERE r.code = ?
                   AND u.status <> 'DELETED'
                 """,
-                (rs, _) -> rs.getString("external_id"),
+                (rs, rowNum) -> rs.getString("external_id"),
                 roleCode
         );
         evictBySubjects(subjects);
@@ -89,7 +89,7 @@ public class PermissionCacheEvictService {
                 WHERE d.code = ?
                   AND u.status <> 'DELETED'
                 """,
-                (rs, _) -> rs.getString("external_id"),
+                (rs, rowNum) -> rs.getString("external_id"),
                 departmentCode
         );
         evictBySubjects(subjects);

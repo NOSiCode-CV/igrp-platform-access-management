@@ -310,10 +310,10 @@ public class SessionManagementService {
                 );
             }
 
-            // Map all roles
-            roles = Optional.ofNullable(user.getRoles()).orElse(Collections.emptyList())
-                    .stream()
-                    .filter(role -> Status.ACTIVE.equals(role.getStatus()))
+            // Map all roles using UserRoleAssignment to include expiresAt
+            roles = user.getUserRoleAssignments().stream()
+                    .filter(ura -> ura.getExpiresAt() == null || ura.getExpiresAt().isAfter(java.time.LocalDateTime.now()))
+                    .filter(ura -> Status.ACTIVE.equals(ura.getRole().getStatus()))
                     .map(roleMapper::mapToDto)
                     .filter(Objects::nonNull)
                     .map(roleDto -> new RoleDepartmentDTO(roleDto.getCode(), roleDto.getDepartmentCode()))

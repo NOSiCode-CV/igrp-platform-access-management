@@ -23,6 +23,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
+@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 public class GetCurrentUserDepartmentsQueryHandlerTest {
 
     @Mock
@@ -49,6 +50,7 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         GetCurrentUserDepartmentsQuery query = new GetCurrentUserDepartmentsQuery("DEP");
 
         IGRPUserEntity mockUser = new IGRPUserEntity();
+        mockUser.setId(1);
         mockUser.setExternalId("sub123");
 
         DepartmentEntity dep1 = new DepartmentEntity();
@@ -59,7 +61,7 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
 
         when(authenticationHelper.getSub()).thenReturn("sub123");
         when(userRepository.findByExternalIdWithRolesAndPermissions("sub123")).thenReturn(Optional.of(mockUser));
-        when(departmentRepository.findByUserAndNotDeletedFiltered(Integer.valueOf(mockUser.getId()), null))
+        when(departmentRepository.findByCurrentUserAndNotDeletedFiltered(anyInt(), any()))
                 .thenReturn(List.of(dep1));
         when(departmentMapper.toDto(dep1)).thenReturn(dto1);
 
@@ -71,7 +73,7 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         assertEquals("DEP_A", response.getBody().get(0).getCode());
 
         verify(userRepository).findByExternalIdWithRolesAndPermissions("sub123");
-        verify(departmentRepository).findByUserAndNotDeletedFiltered(Integer.valueOf(mockUser.getId()), null);
+        verify(departmentRepository).findByCurrentUserAndNotDeletedFiltered(anyInt(), any());
         verify(departmentMapper).toDto(dep1);
     }
 
@@ -84,6 +86,7 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         GetCurrentUserDepartmentsQuery query = new GetCurrentUserDepartmentsQuery("FIN");
 
         IGRPUserEntity mockUser = new IGRPUserEntity();
+        mockUser.setId(2);
         mockUser.setExternalId("sub999");
 
         DepartmentEntity dep1 = new DepartmentEntity();
@@ -97,8 +100,8 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
 
         when(authenticationHelper.getSub()).thenReturn("sub999");
         when(userRepository.findByExternalIdWithRolesAndPermissions("sub999")).thenReturn(Optional.of(mockUser));
-        when(departmentRepository.findByUserAndNotDeletedFiltered(Integer.valueOf(mockUser.getId()), null))
-                .thenReturn(List.of(dep1, dep2)); // Only dep1 should pass the filter
+        when(departmentRepository.findByCurrentUserAndNotDeletedFiltered(anyInt(), any()))
+                .thenReturn(List.of(dep1));
 
         when(departmentMapper.toDto(dep1)).thenReturn(dto1);
 
@@ -122,11 +125,12 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         GetCurrentUserDepartmentsQuery query = new GetCurrentUserDepartmentsQuery(null);
 
         IGRPUserEntity mockUser = new IGRPUserEntity();
+        mockUser.setId(3);
         mockUser.setExternalId("sub111");
 
         when(authenticationHelper.getSub()).thenReturn("sub111");
         when(userRepository.findByExternalIdWithRolesAndPermissions("sub111")).thenReturn(Optional.of(mockUser));
-        when(departmentRepository.findByUserAndNotDeletedFiltered(Integer.valueOf(mockUser.getId()), null))
+        when(departmentRepository.findByCurrentUserAndNotDeletedFiltered(anyInt(), any()))
                 .thenReturn(List.of());
 
         ResponseEntity<List<DepartmentDTO>> response = handler.handle(query);

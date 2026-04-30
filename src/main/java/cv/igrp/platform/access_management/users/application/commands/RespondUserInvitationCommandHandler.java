@@ -12,6 +12,9 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
+import cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService;
 import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -25,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import org.springframework.transaction.annotation.Transactional;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserIdentifierEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.OtpEntityRepository;
 import cv.igrp.platform.access_management.users.application.service.UserIdentityResolutionService;
 
 import java.util.HashSet;
@@ -53,6 +57,9 @@ public class RespondUserInvitationCommandHandler
    private final SecurityAuditService auditService;
    private final UserIdentifierEntityRepository userIdentifierEntityRepository;
    private final UserIdentityResolutionService userIdentityResolutionService;
+   private final OtpEntityRepository otpEntityRepository;
+   private final UserRoleAssignmentRepository userRoleAssignmentRepository;
+   private final ExpireRoleService expireRoleService;
 
    public RespondUserInvitationCommandHandler(
          NotificationAdapter<NotificationResult> notificationAdapter,
@@ -62,7 +69,10 @@ public class RespondUserInvitationCommandHandler
          InvitationMapper invitationMapper,
          SecurityAuditService auditService,
          UserIdentifierEntityRepository userIdentifierEntityRepository,
-         UserIdentityResolutionService userIdentityResolutionService) {
+         UserIdentityResolutionService userIdentityResolutionService,
+         OtpEntityRepository otpEntityRepository,
+         UserRoleAssignmentRepository userRoleAssignmentRepository,
+         ExpireRoleService expireRoleService) {
       this.notificationAdapter = notificationAdapter;
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
@@ -71,6 +81,9 @@ public class RespondUserInvitationCommandHandler
       this.auditService = auditService;
       this.userIdentifierEntityRepository = userIdentifierEntityRepository;
       this.userIdentityResolutionService = userIdentityResolutionService;
+      this.otpEntityRepository = otpEntityRepository;
+      this.userRoleAssignmentRepository = userRoleAssignmentRepository;
+      this.expireRoleService = expireRoleService;
    }
 
    @IgrpCommandHandler
@@ -105,26 +118,16 @@ public class RespondUserInvitationCommandHandler
       String phone = profile.phone();
       String email = profile.email();
 
-      String primaryIdentifierValue = null;
-      if ("cmdcv".equalsIgnoreCase(authMethod)) {
-         primaryIdentifierValue = phone;
-      } else if ("cni".equalsIgnoreCase(authMethod)) {
-         primaryIdentifierValue = nic;
-      } else if ("pwd".equalsIgnoreCase(authMethod)) {
-         primaryIdentifierValue = email != null ? email.toLowerCase() : null;
-      }
-
-      if (primaryIdentifierValue == null || !primaryIdentifierValue.equals(invitation.getIdentifierValue())) {
-         throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
-               "Authenticated identifier does not match the invitation");
-      }
-
-      if (invitation.getAllowedAuthMethods() == null || !invitation.getAllowedAuthMethods().contains(authMethod)) {
-         throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
-               "Authentication method is not allowed for this invitation");
-      }
-
       if (dto.isAccept()) {
+
+         var otpEntityOpt = otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(command.getToken(), "APPROVED");
+         
+         if (otpEntityOpt.isPresent()) {
+             invitation.setOtpId(otpEntityOpt.get().getId());
+         } else {
+             throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
+                    "O código OTP não foi validado. Por favor, valide o seu código OTP antes de aceitar o convite.");
+         }
 
          invitation.setStatus(InvitationStatus.ACCEPTED);
          var updatedInvitation = invitationRepository.save(invitation);
@@ -154,11 +157,17 @@ public class RespondUserInvitationCommandHandler
                   HttpStatus.NOT_FOUND,
                   "Role with ID <%s> was not found".formatted(role.getId())));
 
-            if (roleEntity.getUsers() == null) {
-               roleEntity.setUsers(new HashSet<>());
-            }
-            roleEntity.getUsers().add(savedUser);
-            roleRepository.save(roleEntity);
+            UserRoleAssignment ura = new UserRoleAssignment(savedUser, roleEntity, null);
+            ura.setAssignedAt(java.time.LocalDateTime.now());
+            userRoleAssignmentRepository.save(ura);
+
+            // Log role assignment
+            java.util.Map<String, Object> auditContext = new java.util.HashMap<>();
+            auditContext.put("userId", savedUser.getId());
+            auditContext.put("roleCode", roleEntity.getCode());
+            auditContext.put("source", "INVITATION");
+            auditService.logEvent(cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType.ROLE_ASSIGNED,
+                    cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory.PRIVILEGE, auditContext);
          }
 
          // Upsert secondary identifiers

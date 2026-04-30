@@ -251,7 +251,7 @@ public class RemovePermissionsCommandHandlerTest {
         RoleDTO responseBody = result.getBody();
         assertNotNull(responseBody);
         assertEquals(1, responseBody.getPermissions().size());
-        assertEquals(permissionToKeepName, responseBody.getPermissions().getFirst());
+        assertEquals(permissionToKeepName, responseBody.getPermissions().get(0));
 
         assertFalse(role.getPermissions().contains(permissionToRemove));
         assertTrue(role.getPermissions().contains(permissionToKeep));
@@ -413,7 +413,7 @@ public class RemovePermissionsCommandHandlerTest {
         RoleDTO responseBody = result.getBody();
         assertNotNull(responseBody);
         assertEquals(1, responseBody.getPermissions().size());
-        assertEquals(permissionToKeepName, responseBody.getPermissions().getFirst());
+        assertEquals(permissionToKeepName, responseBody.getPermissions().get(0));
 
         verify(roleMapper).mapToDto(role);
 

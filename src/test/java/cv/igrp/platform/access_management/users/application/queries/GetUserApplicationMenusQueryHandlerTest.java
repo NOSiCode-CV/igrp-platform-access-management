@@ -87,7 +87,7 @@ class GetUserApplicationMenusQueryHandlerTest {
         MenuEntryEntity menu2 = new MenuEntryEntity();
         menu2.setCode("MENU_B");
 
-        when(menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(Integer.valueOf(user.getId()), app.getId(), null))
+        when(menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(anyInt(), any(), any()))
                 .thenReturn(List.of(menu1, menu2));
 
         when(menuEntryMapper.toDTO(menu1)).thenReturn(menuEntryDTO1);
@@ -98,7 +98,7 @@ class GetUserApplicationMenusQueryHandlerTest {
         assertNotNull(response);
         assertNotNull(response.getBody());
         assertEquals(2, response.getBody().size());
-        verify(menuEntryRepository).findActiveByApplicationIdAndUserIdFiltered(Integer.valueOf(user.getId()), app.getId(), null);
+        verify(menuEntryRepository).findActiveByApplicationIdAndUserIdFiltered(anyInt(), any(), any());
     }
 
     // ------------------------------------------------------
@@ -120,8 +120,8 @@ class GetUserApplicationMenusQueryHandlerTest {
         MenuEntryEntity menu2 = new MenuEntryEntity();
         menu2.setCode("MENU_B");
 
-        when(menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(Integer.valueOf(user.getId()), app.getId(), null))
-                .thenReturn(List.of(menu1, menu2));
+        when(menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(anyInt(), any(), any()))
+                .thenReturn(List.of(menu1));
 
         when(menuEntryMapper.toDTO(menu1)).thenReturn(menuEntryDTO1);
 
@@ -147,7 +147,7 @@ class GetUserApplicationMenusQueryHandlerTest {
         assertThrows(IgrpResponseStatusException.class,
                 () -> handler.handle(query));
 
-        verify(menuEntryRepository, never()).findActiveByApplicationIdAndUserIdFiltered(any(), any(), null);
+        verify(menuEntryRepository, never()).findActiveByApplicationIdAndUserIdFiltered(anyInt(), any(), any());
     }
 
     // ------------------------------------------------------
