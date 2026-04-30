@@ -147,7 +147,7 @@ public class AddPermissionsCommandHandlerTest {
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertNotNull(result.getBody());
         assertEquals(1, result.getBody().getPermissions().size());
-        assertEquals(activePermissionName, result.getBody().getPermissions().getFirst());
+        assertEquals(activePermissionName, result.getBody().getPermissions().get(0));
 
         assertTrue(role.getPermissions().contains(activePermission));
         assertFalse(role.getPermissions().contains(deletedPermission));
@@ -220,7 +220,7 @@ public class AddPermissionsCommandHandlerTest {
         assertEquals(HttpStatus.OK, result.getStatusCode());
         assertNotNull(result.getBody());
         assertEquals(1, result.getBody().getPermissions().size());
-        assertEquals(activePermissionName, result.getBody().getPermissions().getFirst());
+        assertEquals(activePermissionName, result.getBody().getPermissions().get(0));
 
         verify(roleRepository).save(savedRole);
         verify(roleRepository, times(1)).save(savedRole);
@@ -275,7 +275,7 @@ public class AddPermissionsCommandHandlerTest {
         // Then
         assertNotNull(result.getBody());
         assertEquals(1, result.getBody().getPermissions().size());
-        assertEquals(activePermission.getName(), result.getBody().getPermissions().getFirst());
+        assertEquals(activePermission.getName(), result.getBody().getPermissions().get(0));
         assertEquals(1, savedRole.getPermissions().size());
 
         verify(roleRepository).save(savedRole);

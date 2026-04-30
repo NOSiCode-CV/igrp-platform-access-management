@@ -50,7 +50,7 @@ public class UserIdentityResolutionService {
 
         guardAllNull(normEmail, normExtId, normNic, normPhone);
 
-        Optional<IGRPUserEntity> userOpt = userRepository.findByAnyIdentifier(normEmail, normExtId, normNic, normPhone);
+        Optional<IGRPUserEntity> userOpt = findByAnyIdentifier(normEmail, normExtId, normNic, normPhone);
 
         if (userOpt.isPresent()) {
             return enrich(userOpt.get(), normExtId, normEmail, normNic, normPhone, name);
@@ -71,7 +71,7 @@ public class UserIdentityResolutionService {
             return userRepository.save(newUser);
         } catch (DataIntegrityViolationException e) {
             log.warn("[IDENTITY] Race condition on creation, retrying lookup...");
-            return userRepository.findByAnyIdentifier(normEmail, normExtId, normNic, normPhone)
+            return findByAnyIdentifier(normEmail, normExtId, normNic, normPhone)
                     .orElseThrow(() -> e);
         }
     }
@@ -112,7 +112,7 @@ public class UserIdentityResolutionService {
             return;
         }
 
-        Optional<IGRPUserEntity> userOpt = userRepository.findByAnyIdentifier(normEmail, normExtId, normNic, normPhone);
+        Optional<IGRPUserEntity> userOpt = findByAnyIdentifier(normEmail, normExtId, normNic, normPhone);
 
         if (userOpt.isEmpty()) {
             log.info("[IDENTITY] No account found for externalId={} — enrichment skipped", externalId);
@@ -192,6 +192,40 @@ public class UserIdentityResolutionService {
 
     private static String normalize(String value) {
         return (value != null && !value.isBlank()) ? value.trim().toLowerCase() : null;
+    }
+
+    private Optional<IGRPUserEntity> findByAnyIdentifier(String email, String externalId, String nic, String phoneNumber) {
+        if (externalId != null) {
+            Optional<IGRPUserEntity> byExternalId = userRepository.findByExternalId(externalId);
+            if (byExternalId.isPresent()) {
+                return byExternalId;
+            }
+
+            Optional<IGRPUserEntity> byUsername = userRepository.findByUsername(externalId);
+            if (byUsername.isPresent()) {
+                return byUsername;
+            }
+        }
+
+        if (nic != null) {
+            Optional<IGRPUserEntity> byNic = userRepository.findByNicIgnoreCase(nic);
+            if (byNic.isPresent()) {
+                return byNic;
+            }
+        }
+
+        if (phoneNumber != null) {
+            Optional<IGRPUserEntity> byPhone = userRepository.findByPhoneNumber(phoneNumber);
+            if (byPhone.isPresent()) {
+                return byPhone;
+            }
+        }
+
+        if (email != null) {
+            return userRepository.findByEmailIgnoreCase(email);
+        }
+
+        return Optional.empty();
     }
 
     private static void guardAllNull(String... values) {

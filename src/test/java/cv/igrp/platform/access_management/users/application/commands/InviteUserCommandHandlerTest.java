@@ -79,7 +79,7 @@ class InviteUserCommandHandlerTest {
      */
     @Test
     void itShouldInviteUserSuccessfully() throws NotificationException {
-        when(invitationRepository.findByIdentifierTypeAndIdentifierValueAndStatus(IdentifierType.EMAIL, "john@nosi.cv", InvitationStatus.PENDING)).thenReturn(Optional.empty());
+        when(invitationRepository.findByIdentifierTypeAndIdentifierValueAndStatus(IdentifierType.EMAIL.name(), "john@nosi.cv", InvitationStatus.PENDING)).thenReturn(Optional.empty());
 
         DepartmentEntity department = new DepartmentEntity();
         department.setCode("DEPT_TEST");
@@ -90,7 +90,7 @@ class InviteUserCommandHandlerTest {
         when(roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, "ROLE_TEST")).thenReturn(role);
 
         InvitationEntity savedInvitation = new InvitationEntity();
-        savedInvitation.setIdentifierType(IdentifierType.EMAIL);
+        savedInvitation.setIdentifierType(IdentifierType.EMAIL.name());
         savedInvitation.setIdentifierValue("john@nosi.cv");
         savedInvitation.setToken("test-token");
         when(invitationRepository.saveAndFlush(any(InvitationEntity.class))).thenReturn(savedInvitation);
@@ -98,7 +98,7 @@ class InviteUserCommandHandlerTest {
         when(userUtils.constructInvitationUrl(any(), eq("test-token"))).thenReturn("http://test.url");
 
         InvitationDTO expectedDto = new InvitationDTO();
-        expectedDto.setIdentifierType(IdentifierType.EMAIL);
+        expectedDto.setIdentifierType(IdentifierType.EMAIL.name());
         expectedDto.setIdentifierValue("john@nosi.cv");
         when(invitationMapper.toDtoWithUrl(eq(savedInvitation), eq("http://test.url"))).thenReturn(expectedDto);
 

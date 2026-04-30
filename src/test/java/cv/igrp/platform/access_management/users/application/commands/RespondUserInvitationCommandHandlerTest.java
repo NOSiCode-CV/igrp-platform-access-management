@@ -98,7 +98,6 @@ class RespondUserInvitationCommandHandlerTest {
 
         RoleEntity role = new RoleEntity();
         role.setId(2);
-        role.setUsers(new HashSet<>());
         Set<RoleEntity> roles = new HashSet<>();
         roles.add(role);
 

@@ -1,0 +1,135 @@
+{
+  "type": "controller",
+  "name": "OAuthClient",
+  "module": "oauth_server",
+  "description": "Manage OAuth2 clients",
+  "basePath": "api",
+  "actions": [
+    {
+      "actionName": "findAllOAuthClients",
+      "path": "clients",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "OAuthClientDTO",
+                "name": "data",
+                "collectionType": "list",
+                "objectType": "dto",
+                "module": "oauth_server"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "findOAuthClientById",
+      "path": "clients/{id}",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "OAuthClientDTO",
+                "name": "data",
+                "collectionType": "none",
+                "objectType": "dto",
+                "module": "oauth_server"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {"name": "id", "type": "uuid", "isRequired": true}
+      ]
+    },
+    {
+      "actionName": "createOAuthClient",
+      "path": "clients",
+      "method": "POST",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "OAuthClientRequestDTO",
+              "name": "data",
+              "objectType": "dto",
+              "module": "oauth_server",
+              "collectionType": "none"
+            }
+          }
+        }
+      },
+      "responses": {
+        "201": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "OAuthClientDTO",
+                "name": "data",
+                "collectionType": "none",
+                "objectType": "dto",
+                "module": "oauth_server"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "updateOAuthClient",
+      "path": "clients/{id}",
+      "method": "PUT",
+      "requestBody": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "type": "OAuthClientRequestDTO",
+              "name": "data",
+              "objectType": "dto",
+              "module": "oauth_server",
+              "collectionType": "none"
+            }
+          }
+        }
+      },
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "OAuthClientDTO",
+                "name": "data",
+                "collectionType": "none",
+                "objectType": "dto",
+                "module": "oauth_server"
+              }
+            }
+          }
+        }
+      },
+      "pathVariables": [
+        {"name": "id", "type": "uuid", "isRequired": true}
+      ]
+    },
+    {
+      "actionName": "deleteOAuthClient",
+      "path": "clients/{id}",
+      "method": "DELETE",
+      "responses": {
+        "204": {
+          "content": {}
+        }
+      },
+      "pathVariables": [
+        {"name": "id", "type": "uuid", "isRequired": true}
+      ]
+    }
+  ],
+  "id": "oauth-server-controller-clients"
+}

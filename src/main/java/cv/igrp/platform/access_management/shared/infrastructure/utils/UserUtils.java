@@ -58,11 +58,11 @@ public class UserUtils {
         Map<String, Set<String>> result = new HashMap<>();
 
         try {
-            jdbcTemplate.query(sql, (rs, _) -> {
+            jdbcTemplate.query(sql, (rs, rowNum) -> {
                 String departmentCode = rs.getString("department_code");
                 String roleName = rs.getString("role_name");
 
-                result.computeIfAbsent(departmentCode, _ -> new HashSet<>())
+                result.computeIfAbsent(departmentCode, key -> new HashSet<>())
                         .add(RoleValidator.normalizeRoleCodeForAdapter(roleName, departmentCode));
                 return null;
             }, userId, ACTIVE_STATUS, ACTIVE_STATUS);

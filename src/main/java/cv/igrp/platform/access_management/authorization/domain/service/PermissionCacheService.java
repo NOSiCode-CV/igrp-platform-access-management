@@ -85,7 +85,7 @@ public class PermissionCacheService {
                 WHERE ru.users_id = CAST(? AS integer) AND r.code = ?
                 LIMIT 1
                 """;
-        List<Integer> superAdminResults = jdbcTemplate.query(superAdminSql, (_, _) -> 1, userOpt.get().getId(), SUPER_ADMIN_ROLE);
+        List<Integer> superAdminResults = jdbcTemplate.query(superAdminSql, (rs, rowNum) -> 1, userOpt.get().getId(), SUPER_ADMIN_ROLE);
 
         if (!superAdminResults.isEmpty()) {
             LOGGER.info("User {} is superadmin", subject);
@@ -109,7 +109,7 @@ public class PermissionCacheService {
                         LIMIT 1;
                 """;
 
-        List<Integer> results = jdbcTemplate.query(sql, (_,_) -> 1, subject, permissionName);
+        List<Integer> results = jdbcTemplate.query(sql, (rs, rowNum) -> 1, subject, permissionName);
 
         return !results.isEmpty();
     }

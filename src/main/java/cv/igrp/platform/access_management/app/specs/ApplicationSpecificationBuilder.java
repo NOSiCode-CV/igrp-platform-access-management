@@ -29,22 +29,22 @@ public class ApplicationSpecificationBuilder {
     public Specification<ApplicationEntity> buildSpecification(GetApplicationsQuery query, ScopeContext context) {
         Specification<ApplicationEntity> spec = Specification.allOf();
         if (query.getCode() != null && !query.getCode().isEmpty()) {
-            spec = spec.and((root, _, cb) ->
+            spec = spec.and((root, criteriaQuery, cb) ->
                     cb.equal(root.get("code"), query.getCode())
             );
         }
         if (query.getName() != null && !query.getName().isEmpty()) {
-            spec = spec.and((root, _, cb) ->
+            spec = spec.and((root, criteriaQuery, cb) ->
                     cb.like(cb.lower(root.get("name")), "%" + query.getName().toLowerCase() + "%")
             );
         }
         if (query.getSlug() != null && !query.getSlug().isEmpty()) {
-            spec = spec.and((root, _, cb) ->
+            spec = spec.and((root, criteriaQuery, cb) ->
                     cb.equal(cb.lower(root.get("slug")), query.getSlug().toLowerCase())
             );
         }
         if (query.getType() != null && !query.getType().isEmpty()) {
-            spec = spec.and((root, _, cb) ->
+            spec = spec.and((root, criteriaQuery, cb) ->
                     cb.equal(root.get("type"), AppType.fromCodeOrThrow(query.getType()))
             );
         }
@@ -57,7 +57,7 @@ public class ApplicationSpecificationBuilder {
         }
 
         // Exclude deleted applications
-        spec = spec.and((root, _, cb) ->
+        spec = spec.and((root, criteriaQuery, cb) ->
                 cb.notEqual(root.get("status"), Status.DELETED)
         );
 
@@ -75,7 +75,7 @@ public class ApplicationSpecificationBuilder {
     private Specification<ApplicationEntity> applyScope(Specification<ApplicationEntity> spec, ScopeContext context) {
 
         if (!context.isSuperAdmin()) {
-            return spec.and((root, _, _) ->
+            return spec.and((root, criteriaQuery, cb) ->
                     root.get("id").in(context.getApplicationIds())
             );
         }

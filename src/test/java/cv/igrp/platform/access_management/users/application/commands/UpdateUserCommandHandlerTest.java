@@ -40,7 +40,7 @@ public class UpdateUserCommandHandlerTest {
     private final Integer USER_ID = 1;
 
     private UpdateUserCommand updateUserCommand(IGRPUserDTO igrpuserdto, Integer userId){
-        return new UpdateUserCommand(igrpuserdto, userId);
+        return new UpdateUserCommand(igrpuserdto, userId != null ? userId.toString() : null);
     }
 
     @BeforeEach

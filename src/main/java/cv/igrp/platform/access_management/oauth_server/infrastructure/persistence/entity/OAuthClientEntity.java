@@ -1,0 +1,91 @@
+package cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity;
+
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
+
+import java.time.LocalDateTime;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
+
+/**
+ * OAuth2 client persisted in the platform database. Each client is owned by a
+ * single {@link ApplicationEntity} (1 application → N clients) so that tokens
+ * issued by the authorization server can be linked back to the calling app /
+ * resource.
+ */
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Entity
+@Table(name = "t_oauth_client", indexes = {
+        @Index(name = "idx_oauth_client_client_id", columnList = "client_id", unique = true)
+})
+public class OAuthClientEntity {
+
+    @Id
+    @Column(name = "id", unique = true, nullable = false)
+    private UUID id;
+
+    @Column(name = "client_id", unique = true, nullable = false, length = 120)
+    private String clientId;
+
+    @Column(name = "client_secret", nullable = false)
+    private String clientSecret;
+
+    @Column(name = "client_name", length = 180)
+    private String clientName;
+
+    @Column(name = "description", length = 500)
+    private String description;
+
+    @Column(name = "active", nullable = false)
+    private boolean active = true;
+
+    @Column(name = "access_token_ttl", nullable = false)
+    private int accessTokenTtl;
+
+    @Column(name = "refresh_token_ttl", nullable = false)
+    private int refreshTokenTtl;
+
+    @Column(name = "authorization_code_ttl", nullable = false)
+    private int authorizationCodeTtl;
+
+    /**
+     * Owning application / resource. Each client belongs to exactly one app;
+     * an app may have many clients.
+     */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "application_id")
+    private ApplicationEntity application;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "t_oauth_client_scope", joinColumns = @JoinColumn(name = "client_id"))
+    @Column(name = "scope")
+    private Set<String> scopes = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "t_oauth_client_redirect_uri", joinColumns = @JoinColumn(name = "client_id"))
+    @Column(name = "redirect_uri")
+    private Set<String> redirectUris = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "t_oauth_client_grant_type", joinColumns = @JoinColumn(name = "client_id"))
+    @Column(name = "grant_type")
+    private Set<String> grantTypes = new HashSet<>();
+
+    @CreationTimestamp
+    @Column(name = "created_at", updatable = false)
+    private LocalDateTime createdAt;
+
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private LocalDateTime updatedAt;
+}

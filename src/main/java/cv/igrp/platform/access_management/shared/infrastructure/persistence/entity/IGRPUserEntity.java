@@ -7,7 +7,9 @@ import cv.igrp.framework.auth.core.model.UserIdentity;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.envers.Audited;
+import org.hibernate.type.SqlTypes;
 import jakarta.validation.constraints.NotBlank;
 
 import java.util.*;
@@ -87,6 +89,14 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     @MapKeyColumn(name = "field_key")
     @Column(name = "field_value")
     private Map<String, String> customFields = new HashMap<>();
+
+    /**
+     * Free-form metadata exposed through OAuth user management APIs and
+     * enriched into issued JWTs by the authorization server.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "metadata", columnDefinition = "jsonb")
+    private Map<String, Object> metadata = new LinkedHashMap<>();
 
     // Implementação da interface UserIdentity
 

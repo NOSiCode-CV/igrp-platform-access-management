@@ -143,7 +143,7 @@ public class OAuth2SecurityConfiguration {
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
                         jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)
                 ))
-                .cors(cors -> cors.configurationSource(_ -> {
+                .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
                     configuration.addAllowedOriginPattern("*");
                     configuration.addAllowedMethod("*");
