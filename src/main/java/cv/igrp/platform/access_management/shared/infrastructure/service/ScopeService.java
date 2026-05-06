@@ -58,10 +58,11 @@ public class ScopeService {
 
         // Check in DB if the user has the superadmin role
         String sql = """
-                SELECT 1 FROM t_role_users ru
-                JOIN t_role r ON r.id = ru.roles_id
-                JOIN t_user u ON u.id = ru.users_id
+                SELECT 1 FROM t_user_role_assignment ura
+                JOIN t_role r ON r.id = ura.role_id
+                JOIN t_user u ON u.id = ura.user_id
                 WHERE u.external_id = ? AND r.code = ?
+                  AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                 LIMIT 1
                 """;
 

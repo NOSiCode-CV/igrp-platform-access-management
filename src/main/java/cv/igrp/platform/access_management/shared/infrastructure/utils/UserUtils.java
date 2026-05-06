@@ -48,11 +48,12 @@ public class UserUtils {
 
         String sql = """
                 SELECT d.code as department_code, r.name as role_name
-                FROM t_role_users ru
-                LEFT JOIN t_user u ON ru.users_id = u.id
-                LEFT JOIN t_role r ON ru.roles_id = r.id
+                FROM t_user_role_assignment ura
+                LEFT JOIN t_user u ON ura.user_id = u.id
+                LEFT JOIN t_role r ON ura.role_id = r.id
                 LEFT JOIN t_department d ON r.department = d.id
                 WHERE u.id = ? AND r.status = ? AND d.status = ?
+                  AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                 """;
 
         Map<String, Set<String>> result = new HashMap<>();

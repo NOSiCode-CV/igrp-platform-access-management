@@ -84,9 +84,13 @@ public class ConfigurationService {
             Long userId = superAdminExists ? getId("SELECT id FROM t_user WHERE external_id='%s'".formatted(SUPER_ADMIN_EXTERNAL_ID)) :
                     createSuperAdminUserInDB();
 
-            // 3. Assign role to superadmin user in DB
+            // 3. Assign role to superadmin user in DB and force the active role
+            //    to the superadmin role so the runtime permission checks
+            //    (which require r.id = u.active_role_id) succeed even when
+            //    the user already existed without an active role configured.
             if (userId != null && roleId != null) {
                 assignRoleToSuperAdminUserInDB(roleId, userId);
+                ensureSuperAdminActiveRole(roleId, userId);
             }
 
             // 4. Create default menus
@@ -279,18 +283,48 @@ public class ConfigurationService {
     }
 
     void assignRoleToSuperAdminUserInDB(Long roleId, Long userId) {
-        // Assign role in database
+        // Assign role in database via the canonical t_user_role_assignment table.
+        // The legacy t_role_users many-to-many table was deprecated when role
+        // assignments gained an expiry / audit lifecycle — see migration V4.
         String sql = """
-                    INSERT INTO t_role_users
-                    (users_id, roles_id)
-                    SELECT ?, ?
+                    INSERT INTO t_user_role_assignment
+                    (user_id, role_id, assigned_at)
+                    SELECT ?, ?, NOW()
                     WHERE NOT EXISTS (
-                        SELECT 1 FROM t_role_users WHERE users_id = ? AND roles_id = ?
+                        SELECT 1 FROM t_user_role_assignment WHERE user_id = ? AND role_id = ?
                     )
                 """;
         jdbcTemplate.update(sql, userId, roleId, userId, roleId);
 
         LOGGER.info("[Startup Config] Superadmin user linked to role in DB");
+    }
+
+    /**
+     * Make sure the superadmin user's {@code active_role_id} is pinned to the
+     * superadmin role. The runtime permission resolution requires
+     * {@code r.id = u.active_role_id} for the role-permission join to succeed,
+     * so a superadmin without an active role would fail every permission
+     * check despite owning the role.
+     *
+     * <p>This method is idempotent and intentionally overwrites any
+     * pre-existing {@code active_role_id} value on the superadmin user — if
+     * something else changed it the user would be locked out.
+     */
+    void ensureSuperAdminActiveRole(Long roleId, Long userId) {
+        String sql = """
+                    UPDATE t_user
+                       SET active_role_id = ?,
+                           last_modified_by = ?,
+                           last_modified_date = NOW()
+                     WHERE id = ?
+                       AND (active_role_id IS DISTINCT FROM ?)
+                """;
+        int updated = jdbcTemplate.update(sql, roleId, SYSTEM_USER, userId, roleId);
+        if (updated > 0) {
+            LOGGER.info("[Startup Config] Superadmin user {} active_role_id set to {}", userId, roleId);
+        } else {
+            LOGGER.debug("[Startup Config] Superadmin user {} active_role_id already {}", userId, roleId);
+        }
     }
 
     // =====================================================
