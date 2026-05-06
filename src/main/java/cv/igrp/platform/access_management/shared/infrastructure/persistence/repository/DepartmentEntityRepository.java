@@ -99,11 +99,12 @@ public interface DepartmentEntityRepository extends
                 SELECT DISTINCT d.*
                 FROM t_department d
                 JOIN t_role r ON r.department = d.id
-                JOIN t_role_users ru ON ru.roles_id = r.id
-                JOIN t_user u ON u.id = ru.users_id
+                JOIN t_user_role_assignment ura ON ura.role_id = r.id
+                JOIN t_user u ON u.id = ura.user_id
                 WHERE u.id = :userId
                   AND r.id = u.active_role_id
                   AND d.status <> 'DELETED'
+                  AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                   AND (:code IS NULL OR d.name ILIKE CONCAT('%', :code, '%'))
             """, nativeQuery = true)
     List<DepartmentEntity> findByCurrentUserAndNotDeletedFiltered(Integer userId, @Param("code") String departmentCode);

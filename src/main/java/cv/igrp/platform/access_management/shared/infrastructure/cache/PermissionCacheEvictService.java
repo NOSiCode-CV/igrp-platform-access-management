@@ -63,10 +63,11 @@ public class PermissionCacheEvictService {
                 """
                 SELECT DISTINCT u.external_id
                 FROM t_user u
-                JOIN t_role_users ru ON ru.users_id = u.id
-                JOIN t_role r ON r.id = ru.roles_id
+                JOIN t_user_role_assignment ura ON ura.user_id = u.id
+                JOIN t_role r ON r.id = ura.role_id
                 WHERE r.code = ?
                   AND u.status <> 'DELETED'
+                  AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                 """,
                 (rs, rowNum) -> rs.getString("external_id"),
                 roleCode
@@ -83,11 +84,12 @@ public class PermissionCacheEvictService {
                 """
                 SELECT DISTINCT u.external_id
                 FROM t_user u
-                JOIN t_role_users ru ON ru.users_id = u.id
-                JOIN t_role r ON r.id = ru.roles_id
+                JOIN t_user_role_assignment ura ON ura.user_id = u.id
+                JOIN t_role r ON r.id = ura.role_id
                 JOIN t_department d ON d.id = r.department
                 WHERE d.code = ?
                   AND u.status <> 'DELETED'
+                  AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                 """,
                 (rs, rowNum) -> rs.getString("external_id"),
                 departmentCode
