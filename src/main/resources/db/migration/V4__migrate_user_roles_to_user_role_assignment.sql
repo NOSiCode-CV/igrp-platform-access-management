@@ -16,7 +16,7 @@ DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 't_role_users') THEN
         INSERT INTO t_user_role_assignment (user_id, role_id, assigned_at, expires_at)
-        SELECT users_id as user_id, role_entity_id as role_id, CURRENT_TIMESTAMP, NULL
+        SELECT users_id as user_id, roles_id as role_id, CURRENT_TIMESTAMP, NULL
         FROM t_role_users;
         
         -- Step 3: Rename the old table as backup
