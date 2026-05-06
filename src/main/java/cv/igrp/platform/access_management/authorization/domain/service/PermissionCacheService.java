@@ -39,9 +39,25 @@ public class PermissionCacheService {
     }
 
 
+    /**
+     * Entry point. Superadmin grants are NOT cached — they're resolved fresh
+     * on every call so that promoting a user to superadmin (or fixing an
+     * existing one whose assignment was missing) takes effect immediately
+     * without a cache flush. Regular permission decisions go through the
+     * cached path below.
+     */
+    public PermissionCacheEntryDTO getOrLoadPermission(PermissionCheckRequest request) {
+        if (isSuperAdmin(request.getSubject())) {
+            setFromCacheAsFalse();
+            return new PermissionCacheEntryDTO(true, Collections.emptyList(),
+                    "Permission granted (superadmin)");
+        }
+        return getOrLoadPermissionCached(request);
+    }
+
     @Cacheable(value = CACHE_NAME,
             keyGenerator = "permissionCacheKeyGenerator")
-    public PermissionCacheEntryDTO getOrLoadPermission(PermissionCheckRequest request) {
+    public PermissionCacheEntryDTO getOrLoadPermissionCached(PermissionCheckRequest request) {
 
         LOGGER.info("Cache MISS - Checking in database: {}:{}:{}",
                 request.getSubject(),
@@ -49,6 +65,59 @@ public class PermissionCacheService {
                 request.getAction());
 
         return checkInternal(request);
+    }
+
+    @Transactional(readOnly = true)
+    public boolean isSuperAdmin(String subject) {
+        if (subject == null || subject.isBlank()) {
+            return false;
+        }
+        // 1) In-memory check off the eagerly-fetched user graph
+        var userOpt = userRepository.findByExternalIdWithRolesAndPermissions(subject);
+        if (userOpt.isPresent()
+                && userOpt.get().getStatus() != Status.DELETED
+                && userOpt.get().getStatus() != Status.INACTIVE) {
+            var user = userOpt.get();
+            boolean hasRole = user.getRoles().stream()
+                    .map(r -> r != null ? r.getCode() : null)
+                    .filter(Objects::nonNull)
+                    .anyMatch(SUPER_ADMIN_ROLE::equals);
+            if (hasRole) {
+                LOGGER.debug("Superadmin shortcut hit (entity) for subject '{}' (id={})",
+                        subject, user.getId());
+                return true;
+            }
+            // 2) Defensive SQL fallback in case the user-role collection was
+            // not populated (e.g. detached entity / async edge case).
+            String sql = """
+                    SELECT 1 FROM t_user_role_assignment ura
+                    JOIN t_role r ON r.id = ura.role_id
+                    WHERE ura.user_id = ? AND r.code = ?
+                      AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
+                    LIMIT 1
+                    """;
+            List<Integer> rows = jdbcTemplate.query(sql, (rs, rowNum) -> 1,
+                    user.getId(), SUPER_ADMIN_ROLE);
+            if (!rows.isEmpty()) {
+                LOGGER.debug("Superadmin shortcut hit (SQL) for subject '{}' (id={})",
+                        subject, user.getId());
+                return true;
+            }
+        }
+        // 3) Last-resort fallback by external_id: handles the case where the
+        // user record cannot be loaded through the JPA fetch graph at all.
+        String sqlByExternalId = """
+                SELECT 1 FROM t_user u
+                JOIN t_user_role_assignment ura ON ura.user_id = u.id
+                JOIN t_role r ON r.id = ura.role_id
+                WHERE u.external_id = ? AND r.code = ?
+                  AND u.status NOT IN ('DELETED', 'INACTIVE')
+                  AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
+                LIMIT 1
+                """;
+        List<Integer> rows = jdbcTemplate.query(sqlByExternalId, (rs, rowNum) -> 1,
+                subject, SUPER_ADMIN_ROLE);
+        return !rows.isEmpty();
     }
 
     @Transactional(readOnly = true)
@@ -69,31 +138,22 @@ public class PermissionCacheService {
     }
 
     private Boolean checkPermission(String subject, String permissionName) {
+        // Superadmin is resolved by the non-cached entry-point in
+        // getOrLoadPermission(...). By the time we reach here we are doing a
+        // regular role/permission match.
 
         // Verifies if the user exists or if it is deleted or disabled
         var userOpt = userRepository.findByExternalIdWithRolesAndPermissions(subject);
         if (userOpt.isEmpty() || userOpt.get().getStatus() == Status.DELETED || userOpt.get().getStatus() == Status.INACTIVE) {
-            LOGGER.info("User {} is not active or deleted", subject);
+            LOGGER.info("User '{}' not found or not active for permission check '{}'", subject, permissionName);
             return false;
         }
 
-        // If the user is superadmin it is allowed to do anything
-        // Using direct SQL check to avoid LazyInitializationException in async threads
-        String superAdminSql = """
-                SELECT 1 FROM t_user_role_assignment ura
-                JOIN t_role r ON r.id = ura.role_id
-                WHERE ura.user_id = CAST(? AS integer) AND r.code = ?
-                  AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
-                LIMIT 1
-                """;
-        List<Integer> superAdminResults = jdbcTemplate.query(superAdminSql, (rs, rowNum) -> 1, userOpt.get().getId(), SUPER_ADMIN_ROLE);
+        var user = userOpt.get();
 
-        if (!superAdminResults.isEmpty()) {
-            LOGGER.info("User {} is superadmin", subject);
-            return true;
-        }
-
-        LOGGER.info("Checking permission {} for user {}", permissionName, subject);
+        LOGGER.debug("Checking permission '{}' for user '{}' (id={}, activeRole={})",
+                permissionName, subject, user.getId(),
+                user.getActiveRole() != null ? user.getActiveRole().getCode() : "<none>");
 
         String sql = """
                  SELECT 1 AS result

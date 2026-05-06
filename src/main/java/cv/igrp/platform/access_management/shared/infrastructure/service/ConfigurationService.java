@@ -294,9 +294,27 @@ public class ConfigurationService {
                         SELECT 1 FROM t_user_role_assignment WHERE user_id = ? AND role_id = ?
                     )
                 """;
-        jdbcTemplate.update(sql, userId, roleId, userId, roleId);
+        int inserted = jdbcTemplate.update(sql, userId, roleId, userId, roleId);
 
-        LOGGER.info("[Startup Config] Superadmin user linked to role in DB");
+        // Re-read so we log the actual landed state, not just whether we
+        // inserted on this run (which is false on every restart after the
+        // first one).
+        Integer assigned = jdbcTemplate.queryForObject(
+                """
+                SELECT COUNT(*) FROM t_user_role_assignment
+                 WHERE user_id = ? AND role_id = ?
+                   AND (expires_at IS NULL OR expires_at > NOW())
+                """,
+                Integer.class, userId, roleId);
+
+        if (assigned != null && assigned > 0) {
+            LOGGER.info("[Startup Config] Superadmin user={} role={} assignment present (insertedNow={})",
+                    userId, roleId, inserted);
+        } else {
+            LOGGER.error("[Startup Config] Superadmin user={} role={} assignment MISSING after INSERT — " +
+                    "permission checks will fail. Inspect t_user_role_assignment.",
+                    userId, roleId);
+        }
     }
 
     /**
