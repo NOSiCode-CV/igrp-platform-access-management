@@ -80,9 +80,10 @@ public class PermissionCacheService {
         // If the user is superadmin it is allowed to do anything
         // Using direct SQL check to avoid LazyInitializationException in async threads
         String superAdminSql = """
-                SELECT 1 FROM t_role_users ru
-                JOIN t_role r ON r.id = ru.roles_id
-                WHERE ru.users_id = CAST(? AS integer) AND r.code = ?
+                SELECT 1 FROM t_user_role_assignment ura
+                JOIN t_role r ON r.id = ura.role_id
+                WHERE ura.user_id = CAST(? AS integer) AND r.code = ?
+                  AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                 LIMIT 1
                 """;
         List<Integer> superAdminResults = jdbcTemplate.query(superAdminSql, (rs, rowNum) -> 1, userOpt.get().getId(), SUPER_ADMIN_ROLE);
@@ -97,15 +98,16 @@ public class PermissionCacheService {
         String sql = """
                  SELECT 1 AS result
                         FROM t_user u
-                        JOIN t_role_users ru ON ru.users_id = u.id
-                        JOIN t_role_permission rp ON rp.role_id = ru.roles_id
-                        JOIN t_role r ON r.id = ru.roles_id
+                        JOIN t_user_role_assignment ura ON ura.user_id = u.id
+                        JOIN t_role_permission rp ON rp.role_id = ura.role_id
+                        JOIN t_role r ON r.id = ura.role_id
                         JOIN t_permission p ON p.id = rp.permission
                         WHERE u.external_id = ?
                           AND p.name = ?
                           AND p.status = 'ACTIVE'
                           AND r.status = 'ACTIVE'
                           AND r.id = u.active_role_id
+                          AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                         LIMIT 1;
                 """;
 
