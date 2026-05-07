@@ -132,7 +132,7 @@ public class AuthAuditService {
         return new AuthAuditContext(
                 identifierType,
                 identifierValue,
-                profile != null ? profile.externalId() : null,
+                profile != null ? profile.id() : null,
                 null,
                 sessionId,
                 request

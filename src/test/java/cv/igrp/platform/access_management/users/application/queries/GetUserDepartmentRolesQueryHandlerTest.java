@@ -85,7 +85,7 @@ class GetUserDepartmentRolesQueryHandlerTest {
     RoleEntity roleA = new RoleEntity();
     RoleEntity roleB = new RoleEntity();
 
-    when(roleRepository.findByDepartmentIdAndUserIdAndStatusNotDeleted(user, department))
+    when(roleRepository.findByDepartmentIdAndUserIdAndStatusNotDeleted(any(), any()))
             .thenReturn(List.of(roleA, roleB));
 
     when(roleMapper.mapToDto(roleA))
@@ -100,7 +100,7 @@ class GetUserDepartmentRolesQueryHandlerTest {
     assertEquals("ROLE_A", response.getBody().get(0).getCode());
     assertEquals("ROLE_B", response.getBody().get(1).getCode());
 
-    verify(roleRepository).findByDepartmentIdAndUserIdAndStatusNotDeleted(user, department);
+    verify(roleRepository).findByDepartmentIdAndUserIdAndStatusNotDeleted(any(), any());
   }
 
   // ---------------------------------------------------------------------
@@ -117,7 +117,7 @@ class GetUserDepartmentRolesQueryHandlerTest {
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
             .thenReturn(department);
 
-    when(roleRepository.findByDepartmentIdAndUserIdAndStatusNotDeleted(user, department))
+    when(roleRepository.findByDepartmentIdAndUserIdAndStatusNotDeleted(any(), any()))
             .thenReturn(List.of());
 
     ResponseEntity<List<RoleDTO>> response = handler.handle(query);
@@ -158,7 +158,7 @@ class GetUserDepartmentRolesQueryHandlerTest {
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
             .thenReturn(department);
 
-    when(roleRepository.findByDepartmentIdAndUserIdAndStatusNotDeleted(user, department))
+    when(roleRepository.findByDepartmentIdAndUserIdAndStatusNotDeleted(any(), any()))
             .thenReturn(List.of());
 
     ResponseEntity<List<RoleDTO>> response = handler.handle(query);

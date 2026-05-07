@@ -46,7 +46,7 @@ public class GetCurrentUserApplicationsQueryHandler implements QueryHandler<GetC
     @IgrpQueryHandler
     public ResponseEntity<List<ApplicationDTO>> handle(GetCurrentUserApplicationsQuery query) {
 
-        var user = userRepository.findByExternalIdWithRolesAndPermissions(authenticationHelper.getSub()).orElseThrow(
+        var user = userRepository.findByIdWithRolesAndPermissions(Integer.parseInt(authenticationHelper.getSub())).orElseThrow(
                 () -> IgrpResponseStatusException.of(
                         HttpStatus.UNAUTHORIZED,
                         "User not found",
@@ -57,7 +57,7 @@ public class GetCurrentUserApplicationsQueryHandler implements QueryHandler<GetC
         LOGGER.info("Getting applications for user: {}", user.getEmail());
 
         List<ApplicationDTO> applications =
-                user.getExternalId().equals(SUPER_ADMIN_EXTERNAL_ID)
+                SUPER_ADMIN_EXTERNAL_ID.equals(user.getUsername())
                         ? applicationRepository
                         .findAllActiveFiltered(
                                 query.getApplicationCode(),

@@ -45,6 +45,7 @@ public class GetUserDepartmentsQueryHandlerTest {
     GetUserDepartmentsQuery query = new GetUserDepartmentsQuery("DEP", 1);
 
     IGRPUserEntity mockUser = new IGRPUserEntity();
+        mockUser.setId(1);
     mockUser.setId(1);
 
     DepartmentEntity dep1 = new DepartmentEntity();
@@ -54,7 +55,7 @@ public class GetUserDepartmentsQueryHandlerTest {
     dto1.setCode("DEP_A");
 
     when(userRepository.findById(1)).thenReturn(Optional.of(mockUser));
-    when(departmentRepository.findByUserAndNotDeletedFiltered(anyInt(), any()))
+    when(departmentRepository.findByUserAndNotDeletedFiltered(any(), any()))
             .thenReturn(List.of(dep1));
     when(departmentMapper.toDto(dep1)).thenReturn(dto1);
 
@@ -66,7 +67,7 @@ public class GetUserDepartmentsQueryHandlerTest {
     assertEquals("DEP_A", response.getBody().get(0).getCode());
 
     verify(userRepository).findById(1);
-    verify(departmentRepository).findByUserAndNotDeletedFiltered(anyInt(), any());
+    verify(departmentRepository).findByUserAndNotDeletedFiltered(any(), any());
     verify(departmentMapper).toDto(dep1);
   }
 
@@ -79,6 +80,7 @@ public class GetUserDepartmentsQueryHandlerTest {
     GetUserDepartmentsQuery query = new GetUserDepartmentsQuery("FIN", 1);
 
     IGRPUserEntity mockUser = new IGRPUserEntity();
+        mockUser.setId(1);
     mockUser.setId(1);
 
     DepartmentEntity dep1 = new DepartmentEntity();
@@ -91,8 +93,8 @@ public class GetUserDepartmentsQueryHandlerTest {
     dto1.setCode("FIN_DEPT");
 
     when(userRepository.findById(1)).thenReturn(Optional.of(mockUser));
-    when(departmentRepository.findByUserAndNotDeletedFiltered(anyInt(), any()))
-            .thenReturn(List.of(dep1));
+    when(departmentRepository.findByUserAndNotDeletedFiltered(any(), any()))
+            .thenReturn(List.of(dep1, dep2)); // Only dep1 should pass the filter
 
     when(departmentMapper.toDto(dep1)).thenReturn(dto1);
 
@@ -116,10 +118,11 @@ public class GetUserDepartmentsQueryHandlerTest {
     GetUserDepartmentsQuery query = new GetUserDepartmentsQuery(null, 1);
 
     IGRPUserEntity mockUser = new IGRPUserEntity();
+        mockUser.setId(1);
     mockUser.setId(1);
 
     when(userRepository.findById(1)).thenReturn(Optional.of(mockUser));
-    when(departmentRepository.findByUserAndNotDeletedFiltered(anyInt(), any()))
+    when(departmentRepository.findByUserAndNotDeletedFiltered(any(), any()))
             .thenReturn(List.of());
 
     ResponseEntity<List<DepartmentDTO>> response = handler.handle(query);

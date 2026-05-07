@@ -111,12 +111,24 @@ public class RespondUserInvitationCommandHandler
       }
 
       String authMethod = profile.authMethod() != null ? profile.authMethod() : "pwd";
-      // String nic = profile.externalId();
-      // String nic = profile.nic();
-      String externalId = profile.externalId();
-      String nic = (profile.nic() != null && !profile.nic().isBlank()) ? profile.nic() : null;
+      String idStr = profile.id();
+      Integer userId;
+      try {
+          userId = Integer.parseInt(idStr);
+      } catch (NumberFormatException e) {
+          throw IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "Invalid Token sub: must be an integer ID");
+      }
       String phone = profile.phone();
       String email = profile.email();
+
+      String primaryIdentifierValue = null;
+      if ("cmdcv".equalsIgnoreCase(authMethod)) {
+         primaryIdentifierValue = phone;
+      } else if ("cni".equalsIgnoreCase(authMethod)) {
+         primaryIdentifierValue = profile.nic(); // Use the actual NIC from profile if it's CNI
+      } else if ("pwd".equalsIgnoreCase(authMethod)) {
+         primaryIdentifierValue = email != null ? email.toLowerCase() : null;
+      }
 
       if (dto.isAccept()) {
 
@@ -132,17 +144,28 @@ public class RespondUserInvitationCommandHandler
          invitation.setStatus(InvitationStatus.ACCEPTED);
          var updatedInvitation = invitationRepository.save(invitation);
 
-         // Resolve or create user via identity resolution service
-         // boolean userExisted = userRepository.findByAnyIdentifier(email != null ?
-         // email.toLowerCase() : null, nic, nic, phone).isPresent();
-         boolean userExisted = userRepository
-               .findByAnyIdentifier(email != null ? email.toLowerCase() : null, externalId, nic, phone).isPresent();
-
-         // IGRPUserEntity user = userIdentityResolutionService.resolveOrCreate(nic,
-         // email, nic, phone, profile.fullName());
-         IGRPUserEntity user = userIdentityResolutionService.resolveOrCreate(externalId, email, nic, phone,
-               profile.fullName());
-         boolean isNewUser = !userExisted;
+         boolean isNewUser = false;
+         IGRPUserEntity user = userRepository.findById(userId).orElse(null);
+         if (user == null) {
+             user = new IGRPUserEntity();
+             isNewUser = true;
+             // If we're creating a new user, we must ensure it gets the ID from the token if possible, 
+             // but ID is auto-generated usually. If the IdP knows the ID, we might need to set it,
+             // but JPA @GeneratedValue might ignore it. Let's just set the NIC.
+             if (profile.nic() != null) {
+                 user.setNic(profile.nic());
+             } else {
+                 user.setNic(idStr); // fallback for username/nic requirement
+             }
+         }
+         
+         if (email != null) {
+             user.setEmail(email.toLowerCase());
+         }
+         
+         if (profile.fullName() != null && !profile.fullName().isBlank()) {
+             user.setName(profile.fullName());
+         }
 
          if (invitation.getRoles() != null && !invitation.getRoles().isEmpty()) {
             Integer roleId = invitation.getRoles().iterator().next().getId();

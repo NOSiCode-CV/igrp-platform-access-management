@@ -45,11 +45,11 @@ public interface ApplicationEntityRepository extends
                          JOIN app.departments d
                          JOIN d.roles r
                          JOIN r.userRoleAssignments ura
-                        JOIN ura.user u
-                         WHERE app.id = a.id AND (u.externalId = :externalId OR u.email = :uid)
+                         JOIN ura.user u
+                         WHERE app.id = a.id AND (u.id = :id OR u.email = :uid)
                      )
             """)
-    List<ApplicationEntity> findDeniedApplications(@Param("externalId") String externalId);
+    List<ApplicationEntity> findDeniedApplications(@Param("id") Integer id, @Param("uid") String uid);
 
     // Case 1: Department is top-level, all applications that are not assigned will appear
     // Case 2: Application is inherited from the parent department for attribution

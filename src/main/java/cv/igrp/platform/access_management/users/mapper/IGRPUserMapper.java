@@ -35,7 +35,8 @@ public class IGRPUserMapper {
         dto.setStatus(user.getStatus());
         dto.setPicture(user.getPicture());
         dto.setSignature(user.getSignature());
-        dto.setNic(user.getNic());
+        // NIC falls back to username when no explicit NIC is recorded.
+        dto.setNic(user.getNic() != null ? user.getNic() : user.getUsername());
         dto.setPhoneNumber(user.getPhoneNumber());
         return dto;
     }
@@ -81,7 +82,8 @@ public class IGRPUserMapper {
         user.setStatus(Objects.nonNull(dto.getStatus()) ? dto.getStatus() : Status.ACTIVE);
         user.setPicture(dto.getPicture());
         user.setSignature(dto.getSignature());
-        user.setNic(dto.getNic());
+        // NIC defaults to the username when the DTO does not carry one.
+        user.setNic(dto.getNic() != null ? dto.getNic() : dto.getUsername());
         user.setPhoneNumber(dto.getPhoneNumber());
         return user;
     }

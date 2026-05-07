@@ -136,7 +136,7 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
 
     @Override
     public String getExternalId() {
-        return this.externalId;
+        return this.id != null ? this.id.toString() : null;
     }
 
     @Override

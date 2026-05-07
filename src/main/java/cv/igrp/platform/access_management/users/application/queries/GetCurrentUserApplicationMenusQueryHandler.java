@@ -53,7 +53,7 @@ public class GetCurrentUserApplicationMenusQueryHandler implements QueryHandler<
     @Transactional(readOnly = true)
     public ResponseEntity<List<MenuEntryDTO>> handle(GetCurrentUserApplicationMenusQuery query) {
 
-        var user = userRepository.findByExternalIdWithRolesAndPermissions(authenticationHelper.getSub()).orElseThrow(
+        var user = userRepository.findByIdWithRolesAndPermissions(Integer.parseInt(authenticationHelper.getSub())).orElseThrow(
                 () -> IgrpResponseStatusException.of(
                         HttpStatus.UNAUTHORIZED,
                         "User not found",
@@ -65,7 +65,7 @@ public class GetCurrentUserApplicationMenusQueryHandler implements QueryHandler<
 
         var application = applicationRepository.findByCodeAndStatusNotDeleted(query.getApplicationCode());
 
-        List<MenuEntryDTO> menuEntries = user.getExternalId().equals(SUPER_ADMIN_EXTERNAL_ID) ?
+        List<MenuEntryDTO> menuEntries = SUPER_ADMIN_EXTERNAL_ID.equals(user.getUsername()) ?
                 menuEntryRepository.findByApplicationAndStatusAndMenuName(application.getId(), List.of(Status.ACTIVE.getCode()), query.getMenuCode())
                         .stream()
                         .map(menuEntryMapper::toDTO)

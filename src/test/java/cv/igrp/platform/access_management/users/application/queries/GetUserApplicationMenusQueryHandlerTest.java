@@ -87,7 +87,7 @@ class GetUserApplicationMenusQueryHandlerTest {
         MenuEntryEntity menu2 = new MenuEntryEntity();
         menu2.setCode("MENU_B");
 
-        when(menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(anyInt(), any(), any()))
+        when(menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(any(), any(), any()))
                 .thenReturn(List.of(menu1, menu2));
 
         when(menuEntryMapper.toDTO(menu1)).thenReturn(menuEntryDTO1);
@@ -98,7 +98,7 @@ class GetUserApplicationMenusQueryHandlerTest {
         assertNotNull(response);
         assertNotNull(response.getBody());
         assertEquals(2, response.getBody().size());
-        verify(menuEntryRepository).findActiveByApplicationIdAndUserIdFiltered(anyInt(), any(), any());
+        verify(menuEntryRepository).findActiveByApplicationIdAndCurrentUserIdFiltered(Integer.valueOf(user.getId()), app.getId(), null);
     }
 
     // ------------------------------------------------------
@@ -120,7 +120,7 @@ class GetUserApplicationMenusQueryHandlerTest {
         MenuEntryEntity menu2 = new MenuEntryEntity();
         menu2.setCode("MENU_B");
 
-        when(menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(anyInt(), any(), any()))
+        when(menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(any(), any(), any()))
                 .thenReturn(List.of(menu1));
 
         when(menuEntryMapper.toDTO(menu1)).thenReturn(menuEntryDTO1);
@@ -147,7 +147,7 @@ class GetUserApplicationMenusQueryHandlerTest {
         assertThrows(IgrpResponseStatusException.class,
                 () -> handler.handle(query));
 
-        verify(menuEntryRepository, never()).findActiveByApplicationIdAndUserIdFiltered(anyInt(), any(), any());
+        verify(menuEntryRepository, never()).findActiveByApplicationIdAndUserIdFiltered(any(), any(), isNull());
     }
 
     // ------------------------------------------------------
@@ -161,7 +161,7 @@ class GetUserApplicationMenusQueryHandlerTest {
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);
 
-        when(menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(Integer.valueOf(user.getId()), app.getId(), null))
+        when(menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(any(), any(), any()))
                 .thenReturn(List.of());
 
         GetUserApplicationMenusQuery query =

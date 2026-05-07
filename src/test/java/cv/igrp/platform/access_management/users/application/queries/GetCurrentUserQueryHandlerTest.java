@@ -1,4 +1,5 @@
 package cv.igrp.platform.access_management.users.application.queries;
+import static org.mockito.ArgumentMatchers.anyInt;
 
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
@@ -36,7 +37,7 @@ class GetCurrentUserQueryHandlerTest {
 
     private IGRPUserEntity mockUser;
     private IGRPUserDTO mockDto;
-    private final String mockExternalId = "f8c3de3d-1fea-4d7c-a8b0-29f63c4c3454";
+    private final String mockExternalId = "1";
 
     @BeforeEach
     void setUp() {
@@ -57,7 +58,7 @@ class GetCurrentUserQueryHandlerTest {
     void testHandle_whenUserExists_shouldReturnUserDTO() {
         // Arrange
         when(authenticationHelper.getSub()).thenReturn(mockExternalId);
-        when(userRepository.findByExternalIdWithRolesAndPermissions(mockExternalId)).thenReturn(Optional.of(mockUser));
+        when(userRepository.findByIdWithRolesAndPermissions(anyInt())).thenReturn(Optional.of(mockUser));
         when(userMapper.toDto(mockUser)).thenReturn(mockDto);
 
         // Act
@@ -71,7 +72,7 @@ class GetCurrentUserQueryHandlerTest {
 
         // Verify
         verify(authenticationHelper, times(1)).getSub();
-        verify(userRepository, times(1)).findByExternalIdWithRolesAndPermissions(mockExternalId);
+        verify(userRepository, times(1)).findByIdWithRolesAndPermissions(anyInt());
         verify(userMapper, times(1)).toDto(mockUser);
     }
 
@@ -80,7 +81,7 @@ class GetCurrentUserQueryHandlerTest {
     void testHandle_whenUserNotFound_shouldReturnNotFound() {
         // Arrange
         when(authenticationHelper.getSub()).thenReturn(mockExternalId);
-        when(userRepository.findByExternalIdWithRolesAndPermissions(mockExternalId)).thenReturn(Optional.empty());
+        when(userRepository.findByIdWithRolesAndPermissions(anyInt())).thenReturn(Optional.empty());
 
         // Act
         ResponseEntity<IGRPUserDTO> response = handler.handle(new GetCurrentUserQuery());
@@ -91,7 +92,7 @@ class GetCurrentUserQueryHandlerTest {
 
         // Verify
         verify(authenticationHelper, times(1)).getSub();
-        verify(userRepository, times(1)).findByExternalIdWithRolesAndPermissions(mockExternalId);
+        verify(userRepository, times(1)).findByIdWithRolesAndPermissions(anyInt());
         verifyNoInteractions(userMapper);
     }
 }

@@ -43,7 +43,7 @@ public class GetRecentApplicationsQueryHandler implements QueryHandler<GetRecent
 
         LOGGER.info("Getting recent applications for user: {}", currentUserSub);
 
-        var user = userEntityRepository.findByExternalIdWithRolesAndPermissions(currentUserSub).orElseThrow(
+        var user = userEntityRepository.findByIdWithRolesAndPermissions(Integer.parseInt(currentUserSub)).orElseThrow(
                 () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
         );
 

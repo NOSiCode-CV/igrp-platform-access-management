@@ -40,25 +40,31 @@ public class GetActiveCurrentUserRoleQueryHandler implements QueryHandler<GetAct
     @IgrpQueryHandler
     public ResponseEntity<RoleDepartmentDTO> handle(GetActiveCurrentUserRoleQuery query) {
 
-        String externalId = authenticationHelper.getSub();
+        Integer userId;
+        try {
+            userId = Integer.parseInt(authenticationHelper.getSub());
+        } catch (NumberFormatException e) {
+            logger.error("Invalid token sub: expected an integer ID but got '{}'", authenticationHelper.getSub());
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
 
-        logger.info("Fetching current user active role with sub: {}", externalId);
+        logger.info("Fetching current user active role with id: {}", userId);
 
-        Optional<IGRPUserEntity> optionalUser = igrpUserRepository.findByExternalIdWithRolesAndPermissions(externalId);
+        Optional<IGRPUserEntity> optionalUser = igrpUserRepository.findByIdWithRolesAndPermissions(userId);
         if (optionalUser.isEmpty()) {
-            logger.warn("No user found with sub: {}", externalId);
+            logger.warn("No user found with id: {}", userId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
         IGRPUserEntity user = optionalUser.get();
 
         if (user.getActiveRole() == null) {
-            logger.warn("User with sub: {} has no active roles", externalId);
+            logger.warn("User with id: {} has no active roles", userId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
         RoleDepartmentDTO dto = new RoleDepartmentDTO(user.getActiveRole().getCode(), user.getActiveRole().getDepartment().getCode());
-        logger.info("User ID : {} has active role: {} (Department: {})",  externalId, user.getActiveRole().getCode(),  user.getActiveRole().getDepartment().getCode());
+        logger.info("User ID : {} has active role: {} (Department: {})",  userId, user.getActiveRole().getCode(),  user.getActiveRole().getDepartment().getCode());
 
         return ResponseEntity.ok(dto);
 

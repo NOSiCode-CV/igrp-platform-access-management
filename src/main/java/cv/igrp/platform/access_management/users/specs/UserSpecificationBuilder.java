@@ -112,7 +112,7 @@ public class UserSpecificationBuilder {
             } else if (query.getGetUsersForBusinessRequest().stream().allMatch(it -> it.matches("\\d+"))) {
                 spec = spec.and((root, criteriaQuery, cb) -> cb.in(root.get("id")).value(query.getGetUsersForBusinessRequest()));
             } else {
-                spec = spec.and((root, criteriaQuery, cb) -> cb.in(root.get("externalId")).value(query.getGetUsersForBusinessRequest()));
+                spec = spec.and((root, _, cb) -> cb.in(root.get("username")).value(query.getGetUsersForBusinessRequest()));
             }
         }
 

@@ -58,14 +58,19 @@ public class GetCurrentUserQueryHandler implements QueryHandler<GetCurrentUserQu
    */
   @IgrpQueryHandler
   public ResponseEntity<IGRPUserDTO> handle(GetCurrentUserQuery query) {
-    String externalId = authenticationHelper.getSub();
+    Integer userId;
+    try {
+        userId = Integer.parseInt(authenticationHelper.getSub());
+    } catch (NumberFormatException e) {
+        logger.error("Invalid token sub: expected an integer ID but got '{}'", authenticationHelper.getSub());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+    }
 
-    logger.info("Fetching current user with sub: {}", externalId);
+    logger.info("Fetching current user with id: {}", userId);
 
-
-    Optional<IGRPUserEntity> optionalUser = igrpUserRepository.findByExternalIdWithRolesAndPermissions(externalId);
+    Optional<IGRPUserEntity> optionalUser = igrpUserRepository.findByIdWithRolesAndPermissions(userId);
     if (optionalUser.isEmpty()) {
-      logger.warn("No user found with sub: {}", externalId);
+      logger.warn("No user found with id: {}", userId);
       return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
     }
 

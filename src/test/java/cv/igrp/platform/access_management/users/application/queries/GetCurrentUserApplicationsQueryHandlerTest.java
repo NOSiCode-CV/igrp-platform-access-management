@@ -1,4 +1,5 @@
 package cv.igrp.platform.access_management.users.application.queries;
+import static org.mockito.ArgumentMatchers.anyInt;
 
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
@@ -23,7 +24,6 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-@org.mockito.junit.jupiter.MockitoSettings(strictness = org.mockito.quality.Strictness.LENIENT)
 public class GetCurrentUserApplicationsQueryHandlerTest {
 
   @Mock
@@ -50,8 +50,8 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery("APP", null);
 
     IGRPUserEntity mockUser = new IGRPUserEntity();
-    mockUser.setId(1);
-    mockUser.setExternalId("sub123");
+        mockUser.setId(1);
+    mockUser.setExternalId("123");
 
     ApplicationEntity app1 = new ApplicationEntity();
     app1.setCode("APP_MAIN");
@@ -59,9 +59,9 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     ApplicationDTO dto1 = new ApplicationDTO();
     dto1.setCode("APP_MAIN");
 
-    when(authenticationHelper.getSub()).thenReturn("sub123");
-    when(userRepository.findByExternalIdWithRolesAndPermissions("sub123")).thenReturn(Optional.of(mockUser));
-    when(applicationRepository.findByCurrentUserAndActiveFiltered(anyInt(), any(), any()))
+    when(authenticationHelper.getSub()).thenReturn("123");
+    when(userRepository.findByIdWithRolesAndPermissions(anyInt())).thenReturn(Optional.of(mockUser));
+    when(applicationRepository.findByCurrentUserAndActiveFiltered(any(), any(), any()))
             .thenReturn(List.of(app1));
     when(applicationMapper.toDto(app1)).thenReturn(dto1);
 
@@ -81,8 +81,8 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery("IGRP", null);
 
     IGRPUserEntity user = new IGRPUserEntity();
-    user.setId(2);
-    user.setExternalId("abc");
+        user.setId(1);
+    user.setExternalId("1");
 
     ApplicationEntity app1 = new ApplicationEntity();
     app1.setCode("IGRP_PLATFORM");
@@ -93,10 +93,10 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     ApplicationDTO dto = new ApplicationDTO();
     dto.setCode("IGRP_PLATFORM");
 
-    when(authenticationHelper.getSub()).thenReturn("abc");
-    when(userRepository.findByExternalIdWithRolesAndPermissions("abc")).thenReturn(Optional.of(user));
-    when(applicationRepository.findByCurrentUserAndActiveFiltered(anyInt(), any(), any()))
-            .thenReturn(List.of(app1));
+    when(authenticationHelper.getSub()).thenReturn("1");
+    when(userRepository.findByIdWithRolesAndPermissions(anyInt())).thenReturn(Optional.of(user));
+    when(applicationRepository.findByCurrentUserAndActiveFiltered(any(), any(), any()))
+            .thenReturn(List.of(app1, app2));
 
     when(applicationMapper.toDto(app1)).thenReturn(dto);
 
@@ -118,12 +118,12 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery(null, null);
 
     IGRPUserEntity user = new IGRPUserEntity();
-    user.setId(3);
-    user.setExternalId("sub888");
+        user.setId(1);
+    user.setExternalId("888");
 
-    when(authenticationHelper.getSub()).thenReturn("sub888");
-    when(userRepository.findByExternalIdWithRolesAndPermissions("sub888")).thenReturn(Optional.of(user));
-    when(applicationRepository.findByCurrentUserAndActiveFiltered(anyInt(), any(), any()))
+    when(authenticationHelper.getSub()).thenReturn("888");
+    when(userRepository.findByIdWithRolesAndPermissions(anyInt())).thenReturn(Optional.of(user));
+    when(applicationRepository.findByCurrentUserAndActiveFiltered(any(), any(), any()))
             .thenReturn(List.of());
 
     ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);
@@ -139,8 +139,8 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
 
     GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery(null, null);
 
-    when(authenticationHelper.getSub()).thenReturn("missing");
-    when(userRepository.findByExternalIdWithRolesAndPermissions("missing")).thenReturn(Optional.empty());
+    when(authenticationHelper.getSub()).thenReturn("2");
+    when(userRepository.findByIdWithRolesAndPermissions(anyInt())).thenReturn(Optional.empty());
 
     assertThrows(IgrpResponseStatusException.class, () -> handler.handle(query));
   }

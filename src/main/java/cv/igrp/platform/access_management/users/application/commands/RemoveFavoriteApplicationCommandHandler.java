@@ -40,7 +40,7 @@ public class RemoveFavoriteApplicationCommandHandler implements CommandHandler<R
 
        LOGGER.info("Removing application <{}> as favorite to user: {}",  command.getApplicationCode(), currentUserSub);
 
-       var user = userEntityRepository.findByExternalIdWithRolesAndPermissions(currentUserSub).orElseThrow(
+       var user = userEntityRepository.findByIdWithRolesAndPermissions(Integer.parseInt(currentUserSub)).orElseThrow(
                () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
        );
 

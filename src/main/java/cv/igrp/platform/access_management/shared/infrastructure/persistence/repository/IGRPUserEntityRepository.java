@@ -18,18 +18,25 @@ public interface IGRPUserEntityRepository extends
         RevisionRepository<IGRPUserEntity, Integer, Integer> {
 
     @Query("""
-        select u from IGRPUserEntity u where u.externalId = :externalId and u.status != 'DELETED'
-    """)
-    Optional<IGRPUserEntity> findByExternalId(@Param("externalId") String externalId);
-
-    @Query("""
                 select u from IGRPUserEntity u
                 left join fetch u.userRoleAssignments ura
                 left join fetch ura.role r
                 left join fetch r.permissions p
+                where u.id = :id and u.status != 'DELETED'
+            """)
+    Optional<IGRPUserEntity> findByIdWithRolesAndPermissions(@Param("id") Integer id);
+
+    /**
+     * Lookup by the persisted external_id column. Used by OIDC federation
+     * flows that need to map an external OpenID subject to an internal user
+     * record. The column itself remains on the entity even though most lookup
+     * paths have switched to the internal id.
+     */
+    @Query("""
+                select u from IGRPUserEntity u
                 where u.externalId = :externalId and u.status != 'DELETED'
             """)
-    Optional<IGRPUserEntity> findByExternalIdWithRolesAndPermissions(String externalId);
+    Optional<IGRPUserEntity> findByExternalId(@Param("externalId") String externalId);
 
 
     @Query("""
@@ -66,27 +73,27 @@ public interface IGRPUserEntityRepository extends
     Optional<IGRPUserEntity> findByPhoneNumber(@Param("phoneNumber") String phoneNumber);
 
     /**
-     * Find user external IDs by role and optionally by department
+     * Find user IDs by role and optionally by department
      */
-    @Query("SELECT DISTINCT u.externalId FROM IGRPUserEntity u " +
+    @Query("SELECT DISTINCT u.id FROM IGRPUserEntity u " +
            "JOIN u.userRoleAssignments ura " +
            "JOIN ura.role r " +
            "WHERE r.code = :roleCode " +
            "AND (:departmentCode IS NULL OR r.department.code = :departmentCode) " +
            "AND u.status != 'DELETED'")
-    Set<String> findUserExternalIdsByRoleAndDepartment(@Param("roleCode") String roleCode,
+    Set<Integer> findUserIdsByRoleAndDepartment(@Param("roleCode") String roleCode,
                                                       @Param("departmentCode") String departmentCode);
 
     /**
-     * Find user external IDs by department only
+     * Find user IDs by department only
      */
-    @Query("SELECT DISTINCT u.externalId FROM IGRPUserEntity u " +
+    @Query("SELECT DISTINCT u.id FROM IGRPUserEntity u " +
            "JOIN u.userRoleAssignments ura " +
            "JOIN ura.role r " +
            "JOIN r.department d " +
            "WHERE d.code = :departmentCode " +
            "AND u.status != 'DELETED'")
-    Set<String> findUserExternalIdsByDepartment(@Param("departmentCode") String departmentCode);
+    Set<Integer> findUserIdsByDepartment(@Param("departmentCode") String departmentCode);
 
     @Query("""
         SELECT u FROM IGRPUserEntity u WHERE u.status != 'DELETED'

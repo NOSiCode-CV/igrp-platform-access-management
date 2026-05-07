@@ -71,18 +71,18 @@ public class GetCurrentUserRolesQueryHandler implements QueryHandler<GetCurrentU
     @IgrpQueryHandler
     public ResponseEntity<List<RoleDTO>> handle(GetCurrentUserRolesQuery query) {
 
-        String id = authenticationHelper.getSub();
+        Integer userId;
+        try {
+            userId = Integer.parseInt(authenticationHelper.getSub());
+        } catch (NumberFormatException e) {
+            LOGGER.error("Invalid token sub: expected an integer ID but got '{}'", authenticationHelper.getSub());
+            throw IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "Invalid Token", "Token sub must be an integer ID");
+        }
 
-        LOGGER.info("Fetching roles for user external ID={}", id);
+        LOGGER.info("Fetching roles for user ID={}", userId);
 
-        IGRPUserEntity user = userRepository.findByExternalIdWithRolesAndPermissions(id)
-                .orElseThrow(() -> {
-                    LOGGER.warn("User not found with external ID ={}", id);
-                    return IgrpResponseStatusException.of(
-                            HttpStatus.NOT_FOUND,
-                            "Invalid User",
-                            "User not found with external ID: " + id);
-                });
+        IGRPUserEntity user = userRepository.findByIdWithRolesAndPermissions(userId)
+                .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Invalid User", "User not found with id: " + userId));
 
         List<RoleDTO> result = user.getUserRoleAssignments().stream()
                 .filter(ura -> ura.getExpiresAt() == null || ura.getExpiresAt().isAfter(java.time.LocalDateTime.now()))
@@ -91,7 +91,7 @@ public class GetCurrentUserRolesQueryHandler implements QueryHandler<GetCurrentU
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
 
-        LOGGER.info("User external ID={} has {} role(s)", id, result.size());
+        LOGGER.info("User {} has {} roles loaded", userId, result.size());
 
         return ResponseEntity.ok(result);
 

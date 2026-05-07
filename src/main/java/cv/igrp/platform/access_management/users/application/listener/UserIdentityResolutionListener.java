@@ -40,7 +40,7 @@ public class UserIdentityResolutionListener implements ApplicationListener<Authe
             UserProfile profile = oidcUser.getUserProfile();
 
             // Extract synchronously before any async call
-            String externalId = profile.externalId();
+            String externalId = profile.id();
             String email = nullIfBlank(profile.email());
             String phone = nullIfBlank(profile.phone());
             String nic = nullIfBlank(profile.nic());
