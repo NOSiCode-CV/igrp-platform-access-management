@@ -46,7 +46,7 @@ public class GetCurrentUserDepartmentsQueryHandler implements QueryHandler<GetCu
     @IgrpQueryHandler
     public ResponseEntity<List<DepartmentDTO>> handle(GetCurrentUserDepartmentsQuery query) {
 
-        var user = userRepository.findByExternalIdWithRolesAndPermissions(authenticationHelper.getSub()).orElseThrow(
+        var user = userRepository.findByIdWithRolesAndPermissions(Integer.parseInt(authenticationHelper.getSub())).orElseThrow(
                 () -> IgrpResponseStatusException.of(
                         HttpStatus.UNAUTHORIZED,
                         "User not found",
@@ -56,7 +56,7 @@ public class GetCurrentUserDepartmentsQueryHandler implements QueryHandler<GetCu
 
         LOGGER.info("Getting departments for user: {}", user.getExternalId());
 
-        List<DepartmentDTO> departments = user.getExternalId().equals(SUPER_ADMIN_EXTERNAL_ID) ?
+        List<DepartmentDTO> departments = SUPER_ADMIN_EXTERNAL_ID.equals(user.getUsername()) ?
                 departmentRepository.findAllActiveFiltered(query.getDepartmentCode())
                         .stream()
                         .map(departmentMapper::toDto)

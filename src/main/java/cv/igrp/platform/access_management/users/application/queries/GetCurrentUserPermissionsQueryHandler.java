@@ -44,21 +44,28 @@ public class GetCurrentUserPermissionsQueryHandler implements QueryHandler<GetCu
     @Transactional
     public ResponseEntity<List<PermissionDTO>> handle(GetCurrentUserPermissionsQuery query) {
 
-        String externalId = authenticationHelper.getSub();
-        LOGGER.info("Fetching permissions for user external ID={}", externalId);
+        Integer userId;
+        try {
+            userId = Integer.parseInt(authenticationHelper.getSub());
+        } catch (NumberFormatException e) {
+            LOGGER.error("Invalid token sub: expected an integer ID but got '{}'", authenticationHelper.getSub());
+            throw IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "Invalid Token", "Token sub must be an integer ID");
+        }
 
-        IGRPUserEntity user = userRepository.findByExternalIdWithRolesAndPermissions(externalId)
+        LOGGER.info("Fetching permissions for user id={}", userId);
+
+        IGRPUserEntity user = userRepository.findByIdWithRolesAndPermissions(userId)
                 .orElseThrow(() -> {
-                    LOGGER.warn("User not found with external ID ={}", externalId);
+                    LOGGER.warn("User not found with id={}", userId);
                     return IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND,
                             "Invalid User",
-                            "User not found with external ID: " + externalId);
+                            "User not found with id: " + userId);
                 });
 
         List<RoleEntity> roles = Optional.ofNullable(user.getRoles()).orElse(Collections.emptyList());
 
-        LOGGER.info("User {} has {} roles loaded", externalId, roles.size());
+        LOGGER.info("User {} has {} roles loaded", userId, roles.size());
         roles.forEach(role -> LOGGER.info("Role: {} (status: {})", role.getCode(), role.getStatus()));
 
         String roleCode = query.getRoleCode();
@@ -86,7 +93,7 @@ public class GetCurrentUserPermissionsQueryHandler implements QueryHandler<GetCu
                 .filter(dto -> dto.getId() == null || seenIds.add(dto.getId()))
                 .collect(Collectors.toList());
 
-        LOGGER.info("User external ID={} has {} permission(s)", externalId, result.size());
+        LOGGER.info("User id={} has {} permission(s)", userId, result.size());
 
         return ResponseEntity.ok(result);
     }

@@ -60,13 +60,19 @@ public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<Se
     @IgrpCommandHandler
     public ResponseEntity<RoleDepartmentDTO> handle(SetActiveCurrentUserRoleCommand command) {
 
-        String externalId = authenticationHelper.getSub();
+        Integer userId;
+        try {
+            userId = Integer.parseInt(authenticationHelper.getSub());
+        } catch (NumberFormatException e) {
+            logger.error("Invalid token sub: expected an integer ID but got '{}'", authenticationHelper.getSub());
+            throw IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "Invalid Token", "Token sub must be an integer ID");
+        }
 
-        logger.info("Setting current user active role with sub: {}", externalId);
+        logger.info("Setting current user active role with id: {}", userId);
 
-        Optional<IGRPUserEntity> optionalUser = igrpUserRepository.findByExternalIdWithRolesAndPermissions(externalId);
+        Optional<IGRPUserEntity> optionalUser = igrpUserRepository.findByIdWithRolesAndPermissions(userId);
         if (optionalUser.isEmpty()) {
-            logger.warn("No user found with sub: {}", externalId);
+            logger.warn("No user found with id: {}", userId);
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
@@ -76,15 +82,15 @@ public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<Se
         DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(command.getRoledepartmentdto().departmentCode());
 
         if (department.getStatus() != DepartmentStatus.ACTIVE) {
-            logger.warn("Could not set active role for user with sub: {} because the department is inactive", externalId);
-            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Department Inactive", "Could not set active role for user with sub <%s> because the department is inactive".formatted(externalId));
+            logger.warn("Could not set active role for user with sub: {} because the department is inactive", userId);
+            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Department Inactive", "Could not set active role for user with sub <%s> because the department is inactive".formatted(userId));
         }
 
         RoleEntity role = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, command.getRoledepartmentdto().roleCode());
 
         if (role.getStatus() != Status.ACTIVE) {
-            logger.warn("Could not set active role for user with sub: {} because the role is inactive", externalId);
-            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Department Inactive", "Could not set active role for user with sub <%s> because the role is inactive".formatted(externalId));
+            logger.warn("Could not set active role for user with sub: {} because the role is inactive", userId);
+            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Department Inactive", "Could not set active role for user with sub <%s> because the role is inactive".formatted(userId));
         }
 
         user.setActiveRole(role);
@@ -95,7 +101,7 @@ public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<Se
         auditService.logProfileSwitch(oldRoleId, savedUser.getActiveRole().getId());
 
         RoleDepartmentDTO dto = new RoleDepartmentDTO(savedUser.getActiveRole().getCode(), savedUser.getActiveRole().getDepartment().getCode());
-        logger.info("User ID : {} has active role: {} (Department: {})", externalId, savedUser.getActiveRole().getCode(), savedUser.getActiveRole().getDepartment().getCode());
+        logger.info("User ID : {} has active role: {} (Department: {})", userId, savedUser.getActiveRole().getCode(), savedUser.getActiveRole().getDepartment().getCode());
 
         return ResponseEntity.ok(dto);
 

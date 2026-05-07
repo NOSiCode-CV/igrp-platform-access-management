@@ -45,6 +45,7 @@ public class GetUserApplicationsQueryHandlerTest {
         GetUserApplicationsQuery query = new GetUserApplicationsQuery("APP", null, 10);
 
         IGRPUserEntity user = new IGRPUserEntity();
+        user.setId(1);
         user.setId(10);
 
         ApplicationEntity app = new ApplicationEntity();
@@ -54,7 +55,7 @@ public class GetUserApplicationsQueryHandlerTest {
         dto.setCode("APP_MAIN");
 
         when(userRepository.findById(10)).thenReturn(Optional.of(user));
-        when(applicationRepository.findByUserAndActiveFiltered(anyInt(), any(), any())).thenReturn(List.of(app));
+        when(applicationRepository.findByUserAndActiveFiltered(any(), any(), any())).thenReturn(List.of(app));
         when(applicationMapper.toDto(app)).thenReturn(dto);
 
         ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);
@@ -73,6 +74,7 @@ public class GetUserApplicationsQueryHandlerTest {
         GetUserApplicationsQuery query = new GetUserApplicationsQuery("CRM", null, 99);
 
         IGRPUserEntity user = new IGRPUserEntity();
+        user.setId(1);
         user.setId(99);
 
         ApplicationEntity app1 = new ApplicationEntity();
@@ -85,7 +87,7 @@ public class GetUserApplicationsQueryHandlerTest {
         dto.setCode("CRM_PORTAL");
 
         when(userRepository.findById(99)).thenReturn(Optional.of(user));
-        when(applicationRepository.findByUserAndActiveFiltered(anyInt(), any(), any())).thenReturn(List.of(app1));
+        when(applicationRepository.findByUserAndActiveFiltered(any(), any(), any())).thenReturn(List.of(app1, app2));
         when(applicationMapper.toDto(app1)).thenReturn(dto);
 
         ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);
@@ -107,10 +109,11 @@ public class GetUserApplicationsQueryHandlerTest {
         GetUserApplicationsQuery query = new GetUserApplicationsQuery(null, null, 5);
 
         IGRPUserEntity user = new IGRPUserEntity();
+        user.setId(1);
         user.setId(5);
 
         when(userRepository.findById(5)).thenReturn(Optional.of(user));
-        when(applicationRepository.findByUserAndActiveFiltered(anyInt(), any(), any())).thenReturn(List.of());
+        when(applicationRepository.findByUserAndActiveFiltered(any(), any(), any())).thenReturn(List.of());
 
         ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);
 

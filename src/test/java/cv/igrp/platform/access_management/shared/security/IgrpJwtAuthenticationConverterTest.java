@@ -130,7 +130,7 @@ class IgrpJwtAuthenticationConverterTest {
         IgrpOidcUser oidcUser = (IgrpOidcUser) token.getPrincipal();
         UserProfile profile = oidcUser.getUserProfile();
 
-        assertEquals("user-123", profile.externalId());
+        assertEquals("user-123", profile.id());
         assertEquals("https://mock-issuer.com", profile.issuer());
         assertEquals("test@example.com", profile.email());
         assertEquals("pwd", profile.authMethod());
@@ -175,7 +175,7 @@ class IgrpJwtAuthenticationConverterTest {
 
         assertEquals("cni", profile.authMethod());
         assertEquals("12345678M", profile.nic());
-        assertEquals("user-cni", profile.externalId());
+        assertEquals("user-cni", profile.id());
     }
 
     @Test
@@ -213,6 +213,6 @@ class IgrpJwtAuthenticationConverterTest {
         assertEquals("", profile.email());
         assertEquals("+2389999999", profile.phone());
         assertEquals("", profile.nic());
-        assertEquals("user", profile.externalId());
+        assertEquals("user", profile.id());
     }
 }

@@ -1,4 +1,5 @@
 package cv.igrp.platform.access_management.users.application.queries;
+import static org.mockito.ArgumentMatchers.anyInt;
 
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
@@ -55,7 +56,7 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
     void setUp() {
         user = new IGRPUserEntity();
         user.setId(1);
-        user.setExternalId("user-ext-1");
+        user.setExternalId("1");
 
         department = new DepartmentEntity();
         department.setId(1);
@@ -82,8 +83,8 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
         GetCurrentUserDepartmentRolesQuery query =
                 new GetCurrentUserDepartmentRolesQuery(null, "DEPT1");
 
-        when(authenticationHelper.getSub()).thenReturn("user-ext-1");
-        when(userRepository.findByExternalIdWithRolesAndPermissions("user-ext-1"))
+        when(authenticationHelper.getSub()).thenReturn("1");
+        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
                 .thenReturn(Optional.of(user));
         when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
                 .thenReturn(department);
@@ -91,7 +92,7 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
         RoleEntity roleA = new RoleEntity();
         RoleEntity roleB = new RoleEntity();
 
-        when(roleRepository.findByDepartmentIdAndCurrentUserIdAndStatusNotDeleted(user, department))
+        when(roleRepository.findByDepartmentIdAndCurrentUserIdAndStatusNotDeleted(any(), any()))
                 .thenReturn(List.of(roleA, roleB));
 
         when(roleMapper.mapToDto(roleA))
@@ -118,13 +119,13 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
         GetCurrentUserDepartmentRolesQuery query =
                 new GetCurrentUserDepartmentRolesQuery(null, "DEPT1");
 
-        when(authenticationHelper.getSub()).thenReturn("user-ext-1");
-        when(userRepository.findByExternalIdWithRolesAndPermissions("user-ext-1"))
+        when(authenticationHelper.getSub()).thenReturn("1");
+        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
                 .thenReturn(Optional.of(user));
         when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
                 .thenReturn(department);
 
-        when(roleRepository.findByDepartmentIdAndCurrentUserIdAndStatusNotDeleted(user, department))
+        when(roleRepository.findByDepartmentIdAndCurrentUserIdAndStatusNotDeleted(any(), any()))
                 .thenReturn(List.of());
 
         ResponseEntity<List<RoleDTO>> response = handler.handle(query);
@@ -139,8 +140,8 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
     @Test
     void handle_userNotFound_throwsUnauthorized() {
 
-        when(authenticationHelper.getSub()).thenReturn("unknown-ext");
-        when(userRepository.findByExternalIdWithRolesAndPermissions("unknown-ext"))
+        when(authenticationHelper.getSub()).thenReturn("2");
+        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
                 .thenReturn(Optional.empty());
 
         GetCurrentUserDepartmentRolesQuery query =
@@ -161,13 +162,13 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
         GetCurrentUserDepartmentRolesQuery query =
                 new GetCurrentUserDepartmentRolesQuery(null, "DEPT1");
 
-        when(authenticationHelper.getSub()).thenReturn("user-ext-1");
-        when(userRepository.findByExternalIdWithRolesAndPermissions("user-ext-1"))
+        when(authenticationHelper.getSub()).thenReturn("1");
+        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
                 .thenReturn(Optional.of(user));
         when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
                 .thenReturn(department);
 
-        when(roleRepository.findByDepartmentIdAndUserIdAndStatusNotDeleted(user, department))
+        when(roleRepository.findByDepartmentIdAndCurrentUserIdAndStatusNotDeleted(any(), any()))
                 .thenReturn(List.of());
 
         ResponseEntity<List<RoleDTO>> response = handler.handle(query);

@@ -61,12 +61,12 @@ public class ScopeService {
                 SELECT 1 FROM t_user_role_assignment ura
                 JOIN t_role r ON r.id = ura.role_id
                 JOIN t_user u ON u.id = ura.user_id
-                WHERE u.external_id = ? AND r.code = ?
+                WHERE u.id = ? AND r.code = ?
                   AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                 LIMIT 1
                 """;
 
-        var results = jdbcTemplate.query(sql, (rs, rowNum) -> 1, sub, SUPER_ADMIN_ROLE);
+        var results = jdbcTemplate.query(sql, (rs, rowNum) -> 1, Integer.parseInt(sub), SUPER_ADMIN_ROLE);
 
         return !results.isEmpty();
 
@@ -96,7 +96,7 @@ public class ScopeService {
         boolean isSuperAdmin = this.isSuperAdmin();
 
         return new ActorPrincipal(
-                sub,
+                Integer.parseInt(sub),
                 roles,
                 isSuperAdmin,
                 auth.getPrincipal()
@@ -214,7 +214,7 @@ public class ScopeService {
     }
 
     public record ActorPrincipal(
-            String externalId,
+            Integer id,
             Set<String> roles,
             boolean superAdmin,
             Object rawPrincipal

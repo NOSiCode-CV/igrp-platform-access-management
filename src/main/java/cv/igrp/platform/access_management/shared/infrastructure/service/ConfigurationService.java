@@ -58,7 +58,7 @@ public class ConfigurationService {
 
         try {
             // 1. Check existence in database
-            boolean superAdminExists = exists("SELECT 1 FROM t_user WHERE external_id='%s' LIMIT 1".formatted(SUPER_ADMIN_EXTERNAL_ID));
+            boolean superAdminExists = exists("SELECT 1 FROM t_user WHERE username='%s' LIMIT 1".formatted(SUPER_ADMIN_EXTERNAL_ID));
             boolean departmentExists = exists("SELECT 1 FROM t_department WHERE code='%s' LIMIT 1".formatted(IGRP_DEPARTMENT));
             boolean appExists = exists("SELECT 1 FROM t_application WHERE type='SYSTEM' LIMIT 1");
             boolean permissionExists = exists("SELECT 1 FROM t_permission WHERE name='%s' LIMIT 1".formatted(IGRP_PERMISSION));
@@ -81,7 +81,7 @@ public class ConfigurationService {
             Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE code='%s'".formatted(SUPER_ADMIN_ROLE)) :
                     createDefaultRoleInDB(departmentId, permissionId, appId);
 
-            Long userId = superAdminExists ? getId("SELECT id FROM t_user WHERE external_id='%s'".formatted(SUPER_ADMIN_EXTERNAL_ID)) :
+            Long userId = superAdminExists ? getId("SELECT id FROM t_user WHERE username='%s'".formatted(SUPER_ADMIN_EXTERNAL_ID)) :
                     createSuperAdminUserInDB();
 
             // 3. Assign role to superadmin user in DB and force the active role
@@ -270,7 +270,7 @@ public class ConfigurationService {
     private Long createSuperAdminUserInDB() {
         String sql = """
                     INSERT INTO t_user
-                    (name, external_id, email, status,
+                    (name, username, email, status,
                      created_by, created_date, last_modified_by, last_modified_date)
                     VALUES (?, ?, ?, ?, ?, now(), ?, now())
                     RETURNING id

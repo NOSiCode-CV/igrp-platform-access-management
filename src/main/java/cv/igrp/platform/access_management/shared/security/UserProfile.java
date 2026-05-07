@@ -7,7 +7,7 @@ import java.util.List;
  * This ensures type safety and predictable format (CNI, CMD handling) across the application.
  */
 public record UserProfile(
-        String externalId,
+        String id,
         String issuer,
         String fullName,
         String email,

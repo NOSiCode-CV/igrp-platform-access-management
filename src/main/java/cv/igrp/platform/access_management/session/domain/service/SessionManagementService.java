@@ -109,12 +109,19 @@ public class SessionManagementService {
                                            String userAgent, String deviceId) {
         log.info("Initializing session for user: {}", userExternalId);
 
+        Integer userId;
+        try {
+            userId = Integer.parseInt(userExternalId);
+        } catch (NumberFormatException e) {
+            throw IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "Invalid Token sub", "must be an integer ID");
+        }
+
         // Validate user exists and is active
-        IGRPUserEntity user = userRepository.findByExternalId(userExternalId)
+        IGRPUserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> IgrpResponseStatusException.of(
                         HttpStatus.NOT_FOUND,
                         "USER_NOT_FOUND",
-                        "User not found with external ID: " + userExternalId
+                        "User not found with id: " + userId
                 ));
         if (!Status.ACTIVE.equals(user.getStatus())) {
             log.warn("Inactive user attempting to create session: {}", userExternalId);
@@ -282,8 +289,13 @@ public class SessionManagementService {
      */
     private SessionResponseDTO buildSessionResponse(SessionEntity session, String userExternalId) {
         // Get user information
-        IGRPUserEntity user = userRepository.findByExternalId(userExternalId)
-                .orElse(null);
+        IGRPUserEntity user = null;
+        try {
+            Integer userId = Integer.parseInt(userExternalId);
+            user = userRepository.findById(userId).orElse(null);
+        } catch (NumberFormatException e) {
+            log.warn("Invalid user ID format: {}", userExternalId);
+        }
 
         IGRPUserDTO userProfile = null;
         RoleDepartmentDTO currentActiveRole = null;
@@ -383,7 +395,8 @@ public class SessionManagementService {
         log.info("Killing sessions for role: {} in department: {} by: {}", roleCode, departmentCode, killedBy);
 
         // Find all users with the specified role/department
-        Set<String> userExternalIds = userRepository.findUserExternalIdsByRoleAndDepartment(roleCode, departmentCode);
+        Set<Integer> userIds = userRepository.findUserIdsByRoleAndDepartment(roleCode, departmentCode);
+        Set<String> userExternalIds = userIds.stream().map(String::valueOf).collect(Collectors.toSet());
         
         if (userExternalIds.isEmpty()) {
             log.info("No users found with role: {} in department: {}", roleCode, departmentCode);

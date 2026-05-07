@@ -56,7 +56,7 @@ public class MenuSpecificationBuilder {
                 var roleJoin = root.join("roles");
                 var userJoin = roleJoin.join("users");
 
-                return cb.equal(userJoin.get("externalId"), context.getExternalUserId());
+                return cb.equal(userJoin.get("id"), context.getUserId());
             });
         }
 

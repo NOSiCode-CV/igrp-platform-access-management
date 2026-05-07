@@ -31,7 +31,7 @@ public class AuthenticationHelper {
 
         // Case 1: Native OIDC User (New flow)
         if (authentication.getPrincipal() instanceof IgrpOidcUser oidcUser) {
-            return oidcUser.getUserProfile().externalId();
+            return oidcUser.getUserProfile().id();
         }
 
         // Case 2: JWT (Fallback for raw OAuth2 user)

@@ -72,8 +72,17 @@ public class PermissionCacheService {
         if (subject == null || subject.isBlank()) {
             return false;
         }
+        // The new identity model uses the internal user id as the JWT sub.
+        Integer userId;
+        try {
+            userId = Integer.parseInt(subject);
+        } catch (NumberFormatException ex) {
+            // Fallback path for non-numeric subjects (legacy tokens / test stubs).
+            return isSuperAdminByUsername(subject);
+        }
+
         // 1) In-memory check off the eagerly-fetched user graph
-        var userOpt = userRepository.findByExternalIdWithRolesAndPermissions(subject);
+        var userOpt = userRepository.findByIdWithRolesAndPermissions(userId);
         if (userOpt.isPresent()
                 && userOpt.get().getStatus() != Status.DELETED
                 && userOpt.get().getStatus() != Status.INACTIVE) {
@@ -83,40 +92,37 @@ public class PermissionCacheService {
                     .filter(Objects::nonNull)
                     .anyMatch(SUPER_ADMIN_ROLE::equals);
             if (hasRole) {
-                LOGGER.debug("Superadmin shortcut hit (entity) for subject '{}' (id={})",
-                        subject, user.getId());
-                return true;
-            }
-            // 2) Defensive SQL fallback in case the user-role collection was
-            // not populated (e.g. detached entity / async edge case).
-            String sql = """
-                    SELECT 1 FROM t_user_role_assignment ura
-                    JOIN t_role r ON r.id = ura.role_id
-                    WHERE ura.user_id = ? AND r.code = ?
-                      AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
-                    LIMIT 1
-                    """;
-            List<Integer> rows = jdbcTemplate.query(sql, (rs, rowNum) -> 1,
-                    user.getId(), SUPER_ADMIN_ROLE);
-            if (!rows.isEmpty()) {
-                LOGGER.debug("Superadmin shortcut hit (SQL) for subject '{}' (id={})",
-                        subject, user.getId());
+                LOGGER.debug("Superadmin shortcut hit (entity) for user id={}", user.getId());
                 return true;
             }
         }
-        // 3) Last-resort fallback by external_id: handles the case where the
-        // user record cannot be loaded through the JPA fetch graph at all.
-        String sqlByExternalId = """
-                SELECT 1 FROM t_user u
-                JOIN t_user_role_assignment ura ON ura.user_id = u.id
+        // 2) Defensive SQL fallback in case the user-role collection was not
+        // populated (e.g. detached entity / async edge case) or the user is
+        // outside the active filter window.
+        String sql = """
+                SELECT 1 FROM t_user_role_assignment ura
                 JOIN t_role r ON r.id = ura.role_id
-                WHERE u.external_id = ? AND r.code = ?
+                JOIN t_user u ON u.id = ura.user_id
+                WHERE ura.user_id = ? AND r.code = ?
                   AND u.status NOT IN ('DELETED', 'INACTIVE')
                   AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                 LIMIT 1
                 """;
-        List<Integer> rows = jdbcTemplate.query(sqlByExternalId, (rs, rowNum) -> 1,
-                subject, SUPER_ADMIN_ROLE);
+        List<Integer> rows = jdbcTemplate.query(sql, (rs, rowNum) -> 1, userId, SUPER_ADMIN_ROLE);
+        return !rows.isEmpty();
+    }
+
+    private boolean isSuperAdminByUsername(String username) {
+        String sql = """
+                SELECT 1 FROM t_user u
+                JOIN t_user_role_assignment ura ON ura.user_id = u.id
+                JOIN t_role r ON r.id = ura.role_id
+                WHERE u.username = ? AND r.code = ?
+                  AND u.status NOT IN ('DELETED', 'INACTIVE')
+                  AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
+                LIMIT 1
+                """;
+        List<Integer> rows = jdbcTemplate.query(sql, (rs, rowNum) -> 1, username, SUPER_ADMIN_ROLE);
         return !rows.isEmpty();
     }
 
@@ -143,7 +149,7 @@ public class PermissionCacheService {
         // regular role/permission match.
 
         // Verifies if the user exists or if it is deleted or disabled
-        var userOpt = userRepository.findByExternalIdWithRolesAndPermissions(subject);
+        var userOpt = userRepository.findByIdWithRolesAndPermissions(Integer.parseInt(subject));
         if (userOpt.isEmpty() || userOpt.get().getStatus() == Status.DELETED || userOpt.get().getStatus() == Status.INACTIVE) {
             LOGGER.info("User '{}' not found or not active for permission check '{}'", subject, permissionName);
             return false;
@@ -162,7 +168,7 @@ public class PermissionCacheService {
                         JOIN t_role_permission rp ON rp.role_id = ura.role_id
                         JOIN t_role r ON r.id = ura.role_id
                         JOIN t_permission p ON p.id = rp.permission
-                        WHERE u.external_id = ?
+                        WHERE u.id = ?
                           AND p.name = ?
                           AND p.status = 'ACTIVE'
                           AND r.status = 'ACTIVE'
@@ -171,7 +177,7 @@ public class PermissionCacheService {
                         LIMIT 1;
                 """;
 
-        List<Integer> results = jdbcTemplate.query(sql, (rs, rowNum) -> 1, subject, permissionName);
+        List<Integer> results = jdbcTemplate.query(sql, (rs, rowNum) -> 1, user.getId(), permissionName);
 
         return !results.isEmpty();
     }

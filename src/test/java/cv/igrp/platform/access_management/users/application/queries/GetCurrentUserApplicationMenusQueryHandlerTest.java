@@ -1,4 +1,5 @@
 package cv.igrp.platform.access_management.users.application.queries;
+import static org.mockito.ArgumentMatchers.anyInt;
 
 import cv.igrp.platform.access_management.app.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -56,7 +57,7 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
         user = new IGRPUserEntity();
         user.setId(1);
         user.setEmail("user@igrp.cv");
-        user.setExternalId("ext-user-1");
+        user.setExternalId("1");
 
         app = new ApplicationEntity();
         app.setId(1);
@@ -83,8 +84,8 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
         GetCurrentUserApplicationMenusQuery query =
                 new GetCurrentUserApplicationMenusQuery(null, "APP1");
 
-        when(authenticationHelper.getSub()).thenReturn("ext-user-1");
-        when(userRepository.findByExternalIdWithRolesAndPermissions("ext-user-1"))
+        when(authenticationHelper.getSub()).thenReturn("1");
+        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
                 .thenReturn(Optional.of(user));
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);
@@ -96,7 +97,7 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
         menu2.setCode("MENU_B");
         menu2.setStatus(Status.ACTIVE);
 
-        when(menuEntryRepository.findActiveByApplicationIdAndCurrentUserIdFiltered(anyInt(), any(), any()))
+        when(menuEntryRepository.findActiveByApplicationIdAndCurrentUserIdFiltered(any(), any(), any()))
                 .thenReturn(List.of(menu1, menu2));
 
         when(menuEntryMapper.toDTO(menu1)).thenReturn(menuEntryDTO1);
@@ -106,7 +107,7 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
 
         assertNotNull(response);
         assertEquals(2, response.getBody().size());
-        verify(menuEntryRepository).findActiveByApplicationIdAndCurrentUserIdFiltered(anyInt(), any(), any());
+        verify(menuEntryRepository).findActiveByApplicationIdAndCurrentUserIdFiltered(Integer.valueOf(user.getId()), app.getId(), null);
     }
 
     // ------------------------------------------------------
@@ -118,8 +119,8 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
         GetCurrentUserApplicationMenusQuery query =
                 new GetCurrentUserApplicationMenusQuery("A", "APP1");
 
-        when(authenticationHelper.getSub()).thenReturn("ext-user-1");
-        when(userRepository.findByExternalIdWithRolesAndPermissions("ext-user-1"))
+        when(authenticationHelper.getSub()).thenReturn("1");
+        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
                 .thenReturn(Optional.of(user));
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);
@@ -131,7 +132,7 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
         menu2.setCode("MENU_B");
         menu2.setStatus(Status.ACTIVE);
 
-        when(menuEntryRepository.findActiveByApplicationIdAndCurrentUserIdFiltered(anyInt(), any(), any()))
+        when(menuEntryRepository.findActiveByApplicationIdAndCurrentUserIdFiltered(any(), any(), any()))
                 .thenReturn(List.of(menu1));
 
         when(menuEntryMapper.toDTO(menu1)).thenReturn(menuEntryDTO1);
@@ -149,8 +150,8 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
     @Test
     void handle_userNotFound_throwsUnauthorized() {
 
-        when(authenticationHelper.getSub()).thenReturn("unknown-user");
-        when(userRepository.findByExternalIdWithRolesAndPermissions("unknown-user"))
+        when(authenticationHelper.getSub()).thenReturn("2");
+        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
                 .thenReturn(Optional.empty());
 
         GetCurrentUserApplicationMenusQuery query =
@@ -159,7 +160,7 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
         assertThrows(IgrpResponseStatusException.class,
                 () -> handler.handle(query));
 
-        verify(menuEntryRepository, never()).findActiveByApplicationIdAndCurrentUserIdFiltered(anyInt(), any(), any());
+        verify(menuEntryRepository, never()).findActiveByApplicationIdAndCurrentUserIdFiltered(any(), any(), isNull());
     }
 
     // ------------------------------------------------------
@@ -168,13 +169,13 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
     @Test
     void handle_success_returnsEmptyList() {
 
-        when(authenticationHelper.getSub()).thenReturn("ext-user-1");
-        when(userRepository.findByExternalIdWithRolesAndPermissions("ext-user-1"))
+        when(authenticationHelper.getSub()).thenReturn("1");
+        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
                 .thenReturn(Optional.of(user));
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);
 
-        when(menuEntryRepository.findActiveByApplicationIdAndCurrentUserIdFiltered(Integer.valueOf(user.getId()), app.getId(), null))
+        when(menuEntryRepository.findActiveByApplicationIdAndCurrentUserIdFiltered(any(), any(), any()))
                 .thenReturn(List.of());
 
         GetCurrentUserApplicationMenusQuery query =
