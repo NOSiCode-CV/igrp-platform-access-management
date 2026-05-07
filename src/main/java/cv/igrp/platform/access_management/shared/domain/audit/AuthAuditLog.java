@@ -12,11 +12,12 @@ import java.util.UUID;
  * This pattern is guaranteed to compile and work with JPA and Spring Data.
  */
 @Entity
-@Table(name = "t_auth_audit_log", indexes = {
-    @Index(name = "idx_audit_timestamp",        columnList = "timestamp"),
-    @Index(name = "idx_audit_user_timestamp",   columnList = "user_id,timestamp"),
-    @Index(name = "idx_audit_identifier_event", columnList = "identifier_value,event_type")
-})
+@Table(name = "t_auth_audit_log")
+// NOTE: Indexes for this table are created by DatabaseMigrationRunner with
+// CREATE INDEX IF NOT EXISTS. They are intentionally not declared as JPA
+// @Index here because Hibernate's ddl-auto=update keeps re-issuing the
+// CREATE statements on every boot, polluting the logs with
+// "relation already exists" stack traces.
 public class AuthAuditLog {
 
     @Id
