@@ -51,6 +51,7 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
     private static final String CLAIM_SID = "sid";
     private static final List<String> SKIPPED_PREFIXES = List.of(
             "/api/m2m/",
+            "/api/session/check",
             "/v3/api-docs",
             "/swagger-ui",
             "/swagger-resources",

@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.session.interfaces.rest;
 
 import cv.igrp.framework.stereotype.IgrpController;
+import cv.igrp.platform.access_management.session.application.dto.SessionCheckResponseDTO;
 import cv.igrp.platform.access_management.session.application.dto.SessionInitRequestDTO;
 import cv.igrp.platform.access_management.session.application.dto.SessionRefreshRequestDTO;
 import cv.igrp.platform.access_management.session.application.dto.SessionResponseDTO;
@@ -8,8 +9,10 @@ import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.platform.access_management.session.application.queries.GetCurrentSessionQuery;
+import cv.igrp.platform.access_management.session.application.queries.GetSessionCheckQuery;
 import cv.igrp.platform.access_management.session.application.commands.RefreshSessionCommand;
 import cv.igrp.platform.access_management.session.application.commands.RotateSessionCommand;
+import org.springframework.security.oauth2.jwt.Jwt;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
@@ -23,6 +26,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
+import java.util.UUID;
 
 @Slf4j
 @IgrpController
@@ -71,6 +75,38 @@ public class SessionController {
 
         return session.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.noContent().build());
+    }
+
+    @GetMapping("/check")
+    @Operation(
+        summary = "Check session validity",
+        description = "Returns the combined JWT + server-side session state for the authenticated caller. "
+                + "This endpoint is exempt from the SessionEnforcementFilter so a revoked-session JWT can "
+                + "still receive valid=false with a reason instead of an opaque 401."
+    )
+    @ApiResponse(
+        responseCode = "200",
+        description = "Session check result",
+        content = @Content(schema = @Schema(implementation = SessionCheckResponseDTO.class))
+    )
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<SessionCheckResponseDTO> checkSession() {
+        Jwt jwt = authenticationHelper.getJwtToken();
+        String sub = jwt.getClaimAsString("sub");
+        String sidClaim = jwt.getClaimAsString("sid");
+
+        UUID sid = null;
+        if (sidClaim != null && !sidClaim.isBlank()) {
+            try {
+                sid = UUID.fromString(sidClaim);
+            } catch (IllegalArgumentException ignored) {
+                // sid malformed → handler returns valid=false with MISSING_SID/SESSION_NOT_FOUND
+            }
+        }
+
+        var query = new GetSessionCheckQuery(sid, sub);
+        SessionCheckResponseDTO response = queryBus.handle(query);
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/refresh")

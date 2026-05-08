@@ -11,7 +11,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.jdbc.datasource.init.ScriptException;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -31,7 +30,9 @@ public class AuthorizationServerConfig {
     @Bean
     @Order(0)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http,
-                                                                      IgrpOidcUserService igrpOidcUserService) throws Exception {
+                                                                      IgrpOidcUserService igrpOidcUserService,
+                                                                      SessionAwareIntrospector sessionAwareIntrospector,
+                                                                      SessionLogoutHandler sessionLogoutHandler) throws Exception {
         OAuth2AuthorizationServerConfigurer authServerConfigurer = new OAuth2AuthorizationServerConfigurer();
         var authorizationEndpoints = new OrRequestMatcher(
                 AntPathRequestMatcher.antMatcher("/oauth2/authorize"),
@@ -47,7 +48,17 @@ public class AuthorizationServerConfig {
         );
 
         http.securityMatcher(authorizationEndpoints)
-                .with(authServerConfigurer, cfg -> cfg.oidc(Customizer.withDefaults()))
+                .with(authServerConfigurer, cfg -> cfg
+                        // Phase E2 — wrap the introspection response so iGRP-bound
+                        // tokens with a dead session report active=false even when
+                        // their JWT signature would still validate.
+                        .tokenIntrospectionEndpoint(introspection ->
+                                introspection.introspectionResponseHandler(sessionAwareIntrospector))
+                        .oidc(oidc -> oidc
+                                // Phase E3 — RP-initiated logout cascades to a
+                                // SessionEntity revoke + OAuth2Authorization remove.
+                                .logoutEndpoint(logout ->
+                                        logout.logoutResponseHandler(sessionLogoutHandler))))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 /*
