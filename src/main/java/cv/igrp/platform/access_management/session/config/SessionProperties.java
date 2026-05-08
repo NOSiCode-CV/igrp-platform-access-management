@@ -35,6 +35,14 @@ public class SessionProperties {
     private long heartbeatDebounceSeconds = 30L;
 
     /**
+     * Whether the {@code SessionEnforcementFilter} is wired into the OAuth2
+     * resource-server chain (default: true). Flip to {@code false} as an
+     * emergency switch — e.g. when Redis + DB are both down — so the chain
+     * does not produce a 401 storm.
+     */
+    private boolean enforcementEnabled = true;
+
+    /**
      * Session cleanup interval in seconds (default: 5 minutes)
      */
     private long cleanupIntervalSeconds = 300L;

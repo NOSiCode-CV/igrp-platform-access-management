@@ -82,9 +82,15 @@ public class AuthorizationServerConfig {
      */
     @Bean
     public OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate,
-                                                           RegisteredClientRepository registeredClientRepository) {
+                                                           RegisteredClientRepository registeredClientRepository,
+                                                           RevocationCascadeListener revocationCascadeListener) {
         ensureAuthorizationSchema(jdbcTemplate);
-        return new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
+        JdbcOAuth2AuthorizationService delegate =
+                new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
+        // Phase C3 — every remove() (revoke / logout / one-shot consume) cascades
+        // into a SessionEntity revocation so the enforcement filter (Phase C1)
+        // denies the next request carrying the same sid.
+        return new CascadingAuthorizationService(delegate, revocationCascadeListener);
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationServerConfig.class);

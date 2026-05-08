@@ -24,6 +24,7 @@ import org.springframework.security.oauth2.server.resource.authentication.JwtAut
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.context.RequestAttributeSecurityContextRepository;
@@ -47,12 +48,15 @@ public class OAuth2SecurityConfiguration {
     private static final Logger log = LoggerFactory.getLogger(OAuth2SecurityConfiguration.class);
 
     private final Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter;
+    private final SessionEnforcementFilter sessionEnforcementFilter;
 
     @Value("${igrp.access.m2m.sync-token:}")
     private String machineAuthToken;
 
-    public OAuth2SecurityConfiguration(Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter) {
+    public OAuth2SecurityConfiguration(Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter,
+                                       SessionEnforcementFilter sessionEnforcementFilter) {
         this.jwtAuthenticationConverter = jwtAuthenticationConverter;
+        this.sessionEnforcementFilter = sessionEnforcementFilter;
     }
 
     /**
@@ -143,6 +147,9 @@ public class OAuth2SecurityConfiguration {
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
                         jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)
                 ))
+                // Phase C1 — enforce session state on every authenticated request,
+                // immediately after the bearer token is authenticated.
+                .addFilterAfter(sessionEnforcementFilter, BearerTokenAuthenticationFilter.class)
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
                     configuration.addAllowedOriginPattern("*");
