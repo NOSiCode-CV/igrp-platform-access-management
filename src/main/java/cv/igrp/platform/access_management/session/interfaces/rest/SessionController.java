@@ -8,9 +8,7 @@ import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.platform.access_management.session.application.queries.GetCurrentSessionQuery;
-import cv.igrp.platform.access_management.session.application.commands.InitializeSessionCommand;
 import cv.igrp.platform.access_management.session.application.commands.RefreshSessionCommand;
-import cv.igrp.platform.access_management.session.application.commands.CloseSessionCommand;
 import cv.igrp.platform.access_management.session.application.commands.RotateSessionCommand;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -20,7 +18,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -76,42 +73,6 @@ public class SessionController {
                 .orElse(ResponseEntity.noContent().build());
     }
 
-    @PostMapping("/init")
-    @Operation(
-        summary = "Initialize session",
-        description = "Creates a new session for the authenticated user, closing any existing active session"
-    )
-    @ApiResponse(
-        responseCode = "201",
-        description = "Session created successfully",
-        content = @Content(schema = @Schema(implementation = SessionResponseDTO.class))
-    )
-    @ApiResponse(
-        responseCode = "403",
-        description = "User account is not active"
-    )
-    @ApiResponse(
-        responseCode = "404",
-        description = "User not found"
-    )
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<SessionResponseDTO> initializeSession(
-            @Valid @RequestBody SessionInitRequestDTO request,
-            HttpServletRequest httpRequest) {
-        
-        String clientIp = httpRequest.getRemoteAddr();
-        String userAgent = httpRequest.getHeader("User-Agent");
-        String deviceId = request.getDeviceId();
-        Integer userId = Integer.parseInt(authenticationHelper.getSub());
-        
-        log.info("Initializing session for user: {}", userId);
-        
-        var command = new InitializeSessionCommand(userId, clientIp, userAgent, deviceId);
-        SessionResponseDTO session = commandBus.send(command);
-        
-        return ResponseEntity.status(HttpStatus.CREATED).body(session);
-    }
-
     @PostMapping("/refresh")
     @Operation(
         summary = "Refresh session",
@@ -129,42 +90,17 @@ public class SessionController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SessionResponseDTO> refreshSession(
             @Valid @RequestBody(required = false) SessionRefreshRequestDTO request) {
-        
+
         Integer userId = Integer.parseInt(authenticationHelper.getSub());
         log.debug("Refreshing session for user: {}", userId);
 
         Integer extensionSeconds = request != null ? request.getExtensionSeconds() : null;
-        
+
         var command = new RefreshSessionCommand(userId, extensionSeconds);
         Optional<SessionResponseDTO> session = commandBus.send(command);
 
         return session.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
-    }
-
-    @PostMapping("/close")
-    @Operation(
-        summary = "Close session",
-        description = "Closes the current active session for the authenticated user"
-    )
-    @ApiResponse(
-        responseCode = "204",
-        description = "Session closed successfully"
-    )
-    @ApiResponse(
-        responseCode = "404",
-        description = "No active session to close"
-    )
-    @PreAuthorize("isAuthenticated()")
-    public ResponseEntity<Void> closeSession() {
-        Integer userId = Integer.parseInt(authenticationHelper.getSub());
-        log.info("Closing session for user: {}", userId);
-
-        var command = new CloseSessionCommand(userId, "USER_CLOSED");
-        boolean closed = commandBus.send(command);
-
-        return closed ? ResponseEntity.noContent().build()
-                : ResponseEntity.notFound().build();
     }
 
     @PostMapping("/rotate")
@@ -181,7 +117,7 @@ public class SessionController {
     public ResponseEntity<SessionResponseDTO> rotateSession(
             @Valid @RequestBody SessionInitRequestDTO request,
             HttpServletRequest httpRequest) {
-        
+
         Integer userId = Integer.parseInt(authenticationHelper.getSub());
         log.info("Rotating session for user: {}", userId);
 

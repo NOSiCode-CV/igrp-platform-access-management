@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.shared.domain.events;
 
+import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
@@ -19,6 +20,22 @@ public class EventPublisher {
      * @param <T> the event type
      */
     public <T> void publish(T event) {
+        applicationEventPublisher.publishEvent(event);
+    }
+
+    public void publishUserRoleChanged(UserRoleChangedEvent event) {
+        applicationEventPublisher.publishEvent(event);
+    }
+
+    public void publishRolePermissionChanged(RolePermissionChangedEvent event) {
+        applicationEventPublisher.publishEvent(event);
+    }
+
+    public void publishUserStatusChanged(UserStatusChangedEvent event) {
+        applicationEventPublisher.publishEvent(event);
+    }
+
+    public void publishPermissionDeleted(DeletePermissionEvent event) {
         applicationEventPublisher.publishEvent(event);
     }
 }

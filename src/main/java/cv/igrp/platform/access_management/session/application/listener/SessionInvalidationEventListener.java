@@ -1,8 +1,8 @@
 package cv.igrp.platform.access_management.session.application.listener;
 
 import cv.igrp.platform.access_management.session.domain.service.SessionInvalidationService;
-import cv.igrp.platform.access_management.session.domain.event.UserRoleChangedEvent;
 import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
+import cv.igrp.platform.access_management.shared.domain.events.UserRoleChangedEvent;
 import cv.igrp.platform.access_management.shared.domain.events.DeletePermissionEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
