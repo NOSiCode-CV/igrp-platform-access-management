@@ -5,11 +5,11 @@ import lombok.Getter;
 
 @Getter
 public class CloseSessionCommand implements Command {
-    private final String userExternalId;
+    private final Integer userId;
     private final String reason;
-    
-    public CloseSessionCommand(String userExternalId, String reason) {
-        this.userExternalId = userExternalId;
+
+    public CloseSessionCommand(Integer userId, String reason) {
+        this.userId = userId;
         this.reason = reason;
     }
 }

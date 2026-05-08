@@ -57,16 +57,16 @@ public class SessionCleanupScheduler {
             // Mark sessions as expired
             expiredSessions.forEach(session -> {
                 session.expire();
-                log.debug("Marking session {} as expired for user: {}", 
-                        session.getSessionId(), session.getUserExternalId());
+                log.debug("Marking session {} as expired for user: {}",
+                        session.getSessionId(), session.getUserId());
             });
 
             // Save to database
             sessionRepository.saveAll(expiredSessions);
 
             // Collect user IDs for cache eviction
-            Set<String> userIds = expiredSessions.stream()
-                    .map(SessionEntity::getUserExternalId)
+            Set<Integer> userIds = expiredSessions.stream()
+                    .map(SessionEntity::getUserId)
                     .collect(java.util.stream.Collectors.toSet());
 
             // Evict from cache

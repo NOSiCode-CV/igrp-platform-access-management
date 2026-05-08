@@ -18,6 +18,23 @@ public class SessionProperties {
     private long timeoutSeconds = 1800L;
 
     /**
+     * Absolute session lifetime ceiling in seconds (default: 8 hours).
+     * Refresh-token rotations cannot push {@code expiresAt} past creation + this value.
+     */
+    private long absoluteTimeoutSeconds = 28800L;
+
+    /**
+     * Maximum concurrent ACTIVE sessions per user across distinct devices (default: 5).
+     */
+    private int maxPerUser = 5;
+
+    /**
+     * Minimum interval between {@code last_seen_at} writes for the enforcement
+     * filter heartbeat (default: 30 seconds).
+     */
+    private long heartbeatDebounceSeconds = 30L;
+
+    /**
      * Session cleanup interval in seconds (default: 5 minutes)
      */
     private long cleanupIntervalSeconds = 300L;

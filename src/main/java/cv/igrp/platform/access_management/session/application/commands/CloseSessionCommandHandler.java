@@ -42,14 +42,14 @@ public class CloseSessionCommandHandler implements CommandHandler<CloseSessionCo
     @IgrpCommandHandler
     public Boolean handle(CloseSessionCommand command) {
         log.info("Handling CloseSessionCommand for user: {} with reason: {}", 
-                command.getUserExternalId(), command.getReason());
+                command.getUserId(), command.getReason());
         
-        boolean closed = sessionManagementService.closeSession(command.getUserExternalId(), command.getReason());
+        boolean closed = sessionManagementService.closeSession(command.getUserId(), command.getReason());
         
         if (closed) {
-            log.info("Session closed successfully for user: {}", command.getUserExternalId());
+            log.info("Session closed successfully for user: {}", command.getUserId());
         } else {
-            log.debug("No active session found to close for user: {}", command.getUserExternalId());
+            log.debug("No active session found to close for user: {}", command.getUserId());
         }
         
         return closed;

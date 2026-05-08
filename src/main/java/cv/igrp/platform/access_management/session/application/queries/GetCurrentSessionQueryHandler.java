@@ -45,14 +45,14 @@ public class GetCurrentSessionQueryHandler implements QueryHandler<GetCurrentSes
      */
     @IgrpQueryHandler
     public Optional<SessionResponseDTO> handle(GetCurrentSessionQuery query) {
-        log.debug("Handling GetCurrentSessionQuery for user: {}", query.getUserExternalId());
+        log.debug("Handling GetCurrentSessionQuery for user: {}", query.getUserId());
         
-        Optional<SessionResponseDTO> session = sessionManagementService.getCurrentSession(query.getUserExternalId());
+        Optional<SessionResponseDTO> session = sessionManagementService.getCurrentSession(query.getUserId());
         
         if (session.isPresent()) {
-            log.debug("Current session found for user: {}", query.getUserExternalId());
+            log.debug("Current session found for user: {}", query.getUserId());
         } else {
-            log.debug("No active session found for user: {}", query.getUserExternalId());
+            log.debug("No active session found for user: {}", query.getUserId());
         }
         
         return session;

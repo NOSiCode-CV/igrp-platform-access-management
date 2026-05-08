@@ -29,11 +29,11 @@ public class SessionInvalidationEventListener {
      */
     @EventListener
     public void handleUserRoleChanged(UserRoleChangedEvent event) {
-        String userExternalId = event.getUserExternalId();
-        log.info("User role changed for: {}, invalidating sessions", userExternalId);
-        
-        Set<String> userIds = new HashSet<>();
-        userIds.add(userExternalId);
+        Integer userId = event.getUserId();
+        log.info("User role changed for: {}, invalidating sessions", userId);
+
+        Set<Integer> userIds = new HashSet<>();
+        userIds.add(userId);
         sessionInvalidationService.invalidateUserSessions(userIds, "USER_ROLE_CHANGED");
     }
 

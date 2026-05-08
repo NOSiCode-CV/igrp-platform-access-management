@@ -13,16 +13,16 @@ import java.util.Set;
 @EqualsAndHashCode(callSuper = true)
 public class UserRoleChangedEvent extends SessionEvent {
 
-    private String userExternalId;
+    private Integer userId;
     private Set<String> affectedRoleCodes;
     private String departmentCode;
     private String changeType; // ADDED, REMOVED, ACTIVE_ROLE_CHANGED
     private Instant timestamp;
 
-    public UserRoleChangedEvent(String userExternalId, Set<String> affectedRoleCodes, 
+    public UserRoleChangedEvent(Integer userId, Set<String> affectedRoleCodes,
                                 String departmentCode, String changeType, String triggeredBy) {
-        super(null, userExternalId, triggeredBy);
-        this.userExternalId = userExternalId;
+        super(null, userId, triggeredBy);
+        this.userId = userId;
         this.affectedRoleCodes = affectedRoleCodes;
         this.departmentCode = departmentCode;
         this.changeType = changeType;

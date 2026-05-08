@@ -21,6 +21,55 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
     public void run(String... args) {
         cleanupRemovedColumns();
         ensureAuthAuditLogIndexes();
+        ensureUserSessionSchema();
+    }
+
+    /**
+     * Phase B (session-management) migrations on {@code t_user_session}:
+     * <ul>
+     *   <li>Drop the legacy single-active-session-per-user unique constraint.</li>
+     *   <li>Rename the legacy {@code user_external_id} column to {@code user_id}
+     *       and retype it from {@code VARCHAR} to {@code INTEGER} so it lines up
+     *       with {@code IGRPUserEntity.id}. Stored values were already integer
+     *       strings on this branch (see commit {@code 648d4f4c}).</li>
+     *   <li>Replace the legacy active-per-user uniqueness with a per-(user, device)
+     *       partial unique index so the same user can hold concurrent sessions
+     *       across distinct devices.</li>
+     * </ul>
+     */
+    private void ensureUserSessionSchema() {
+        try {
+            jdbcTemplate.execute(
+                    "ALTER TABLE t_user_session DROP CONSTRAINT IF EXISTS ux_one_active_session_per_user");
+            jdbcTemplate.execute(
+                    "DROP INDEX IF EXISTS ux_one_active_session_per_user");
+            // Rename legacy column if still present.
+            jdbcTemplate.execute(
+                    "DO $$ BEGIN " +
+                    "  IF EXISTS (SELECT 1 FROM information_schema.columns " +
+                    "             WHERE table_name='t_user_session' AND column_name='user_external_id') " +
+                    "  AND NOT EXISTS (SELECT 1 FROM information_schema.columns " +
+                    "                  WHERE table_name='t_user_session' AND column_name='user_id') THEN " +
+                    "    ALTER TABLE t_user_session RENAME COLUMN user_external_id TO user_id; " +
+                    "  END IF; " +
+                    "END $$;");
+            // Retype to integer if still varchar (no-op if already integer).
+            jdbcTemplate.execute(
+                    "DO $$ BEGIN " +
+                    "  IF EXISTS (SELECT 1 FROM information_schema.columns " +
+                    "             WHERE table_name='t_user_session' AND column_name='user_id' " +
+                    "             AND data_type IN ('character varying','text')) THEN " +
+                    "    ALTER TABLE t_user_session ALTER COLUMN user_id TYPE INTEGER USING user_id::integer; " +
+                    "  END IF; " +
+                    "END $$;");
+            jdbcTemplate.execute(
+                    "CREATE UNIQUE INDEX IF NOT EXISTS ux_session_user_device_active " +
+                    "ON t_user_session (user_id, device_id) " +
+                    "WHERE status = 'ACTIVE'");
+            LOGGER.debug("t_user_session schema migrations ensured.");
+        } catch (Exception e) {
+            LOGGER.warn("Could not ensure t_user_session schema (may not exist yet): {}", e.getMessage());
+        }
     }
 
     /**

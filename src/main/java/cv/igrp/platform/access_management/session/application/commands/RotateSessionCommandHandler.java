@@ -45,10 +45,10 @@ public class RotateSessionCommandHandler implements CommandHandler<RotateSession
      */
     @IgrpCommandHandler
     public Optional<SessionResponseDTO> handle(RotateSessionCommand command) {
-        log.info("Handling RotateSessionCommand for user: {}", command.getUserExternalId());
+        log.info("Handling RotateSessionCommand for user: {}", command.getUserId());
         
         Optional<SessionResponseDTO> session = sessionManagementService.rotateSession(
-                command.getUserExternalId(),
+                command.getUserId(),
                 command.getClientIp(),
                 command.getUserAgent(),
                 command.getDeviceId()
@@ -56,9 +56,9 @@ public class RotateSessionCommandHandler implements CommandHandler<RotateSession
         
         if (session.isPresent()) {
             log.info("Session rotated successfully for user: {} with new session ID: {}", 
-                    command.getUserExternalId(), session.get().getSessionId());
+                    command.getUserId(), session.get().getSessionId());
         } else {
-            log.debug("No active session found to rotate for user: {}", command.getUserExternalId());
+            log.debug("No active session found to rotate for user: {}", command.getUserId());
         }
         
         return session;

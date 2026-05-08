@@ -66,10 +66,10 @@ public class SessionController {
     )
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SessionResponseDTO> getCurrentSession() {
-        String userExternalId = authenticationHelper.getSub();
-        log.debug("Getting current session for user: {}", userExternalId);
+        Integer userId = Integer.parseInt(authenticationHelper.getSub());
+        log.debug("Getting current session for user: {}", userId);
 
-        var query = new GetCurrentSessionQuery(userExternalId);
+        var query = new GetCurrentSessionQuery(userId);
         Optional<SessionResponseDTO> session = queryBus.handle(query);
 
         return session.map(ResponseEntity::ok)
@@ -102,11 +102,11 @@ public class SessionController {
         String clientIp = httpRequest.getRemoteAddr();
         String userAgent = httpRequest.getHeader("User-Agent");
         String deviceId = request.getDeviceId();
-        String userExternalId = authenticationHelper.getSub();
+        Integer userId = Integer.parseInt(authenticationHelper.getSub());
         
-        log.info("Initializing session for user: {}", userExternalId);
+        log.info("Initializing session for user: {}", userId);
         
-        var command = new InitializeSessionCommand(userExternalId, clientIp, userAgent, deviceId);
+        var command = new InitializeSessionCommand(userId, clientIp, userAgent, deviceId);
         SessionResponseDTO session = commandBus.send(command);
         
         return ResponseEntity.status(HttpStatus.CREATED).body(session);
@@ -130,12 +130,12 @@ public class SessionController {
     public ResponseEntity<SessionResponseDTO> refreshSession(
             @Valid @RequestBody(required = false) SessionRefreshRequestDTO request) {
         
-        String userExternalId = authenticationHelper.getSub();
-        log.debug("Refreshing session for user: {}", userExternalId);
+        Integer userId = Integer.parseInt(authenticationHelper.getSub());
+        log.debug("Refreshing session for user: {}", userId);
 
         Integer extensionSeconds = request != null ? request.getExtensionSeconds() : null;
         
-        var command = new RefreshSessionCommand(userExternalId, extensionSeconds);
+        var command = new RefreshSessionCommand(userId, extensionSeconds);
         Optional<SessionResponseDTO> session = commandBus.send(command);
 
         return session.map(ResponseEntity::ok)
@@ -157,10 +157,10 @@ public class SessionController {
     )
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> closeSession() {
-        String userExternalId = authenticationHelper.getSub();
-        log.info("Closing session for user: {}", userExternalId);
+        Integer userId = Integer.parseInt(authenticationHelper.getSub());
+        log.info("Closing session for user: {}", userId);
 
-        var command = new CloseSessionCommand(userExternalId, "USER_CLOSED");
+        var command = new CloseSessionCommand(userId, "USER_CLOSED");
         boolean closed = commandBus.send(command);
 
         return closed ? ResponseEntity.noContent().build()
@@ -182,14 +182,14 @@ public class SessionController {
             @Valid @RequestBody SessionInitRequestDTO request,
             HttpServletRequest httpRequest) {
         
-        String userExternalId = authenticationHelper.getSub();
-        log.info("Rotating session for user: {}", userExternalId);
+        Integer userId = Integer.parseInt(authenticationHelper.getSub());
+        log.info("Rotating session for user: {}", userId);
 
         String clientIp = getClientIp(httpRequest);
         String userAgent = httpRequest.getHeader("User-Agent");
         String deviceId = request.getDeviceId();
 
-        var command = new RotateSessionCommand(userExternalId, clientIp, userAgent, deviceId);
+        var command = new RotateSessionCommand(userId, clientIp, userAgent, deviceId);
         Optional<SessionResponseDTO> session = commandBus.send(command);
 
         return session.map(ResponseEntity::ok)

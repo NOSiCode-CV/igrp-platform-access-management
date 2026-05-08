@@ -373,9 +373,6 @@ public class UserController {
   @PreAuthorize("isAuthenticated()")
   public ResponseEntity<IGRPUserDTO> updateCurrentUser(@Valid @RequestBody IGRPUserDTO updateUserRequest)
   {
-      // Get current user's external ID from JWT token
-      String userExternalId = authenticationHelper.getSub();
-      
       // Get current user to find their internal ID
       var getCurrentUserQuery = new GetCurrentUserQuery();
       ResponseEntity<IGRPUserDTO> currentUserResponse = queryBus.handle(getCurrentUserQuery);

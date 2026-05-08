@@ -43,17 +43,17 @@ public class InitializeSessionCommandHandler implements CommandHandler<Initializ
      */
     @IgrpCommandHandler
     public SessionResponseDTO handle(InitializeSessionCommand command) {
-        log.info("Handling InitializeSessionCommand for user: {}", command.getUserExternalId());
+        log.info("Handling InitializeSessionCommand for user: {}", command.getUserId());
         
         SessionResponseDTO session = sessionManagementService.initializeSession(
-                command.getUserExternalId(),
+                command.getUserId(),
                 command.getClientIp(),
                 command.getUserAgent(),
                 command.getDeviceId()
         );
         
         log.info("Session initialized successfully for user: {} with session ID: {}", 
-                command.getUserExternalId(), session.getSessionId());
+                command.getUserId(), session.getSessionId());
         
         return session;
     }
