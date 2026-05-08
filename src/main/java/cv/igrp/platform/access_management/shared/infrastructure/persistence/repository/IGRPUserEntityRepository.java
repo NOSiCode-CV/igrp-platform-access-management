@@ -107,6 +107,23 @@ public interface IGRPUserEntityRepository extends
            "AND u.status != 'DELETED'")
     Set<Integer> findUserIdsByPermissionName(@Param("permissionName") String permissionName);
 
+    /**
+     * Phase F1 — read just the {@code tokens_not_valid_before} floor for a user
+     * without dragging the full entity into the persistence context. Hot-path
+     * lookup from {@code SessionEnforcementFilter}.
+     */
+    @Query("SELECT u.tokensNotValidBefore FROM IGRPUserEntity u WHERE u.id = :id")
+    Optional<java.time.Instant> findTokensNotValidBeforeById(@Param("id") Integer id);
+
+    /**
+     * Phase F1 — bump the user-wide token validity floor to {@code now}, used by
+     * forced re-auth / password-reset flows. Bulk update so every concurrent JWT
+     * for the user becomes invalid in a single statement.
+     */
+    @org.springframework.data.jpa.repository.Modifying
+    @Query("UPDATE IGRPUserEntity u SET u.tokensNotValidBefore = :now WHERE u.id = :id")
+    int updateTokensNotValidBefore(@Param("id") Integer id, @Param("now") java.time.Instant now);
+
     @Query("""
         SELECT u FROM IGRPUserEntity u WHERE u.status != 'DELETED'
         AND (

@@ -3,8 +3,10 @@ package cv.igrp.platform.access_management.shared.security;
 import cv.igrp.platform.access_management.session.config.SessionProperties;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import cv.igrp.platform.access_management.session.domain.service.SessionHeartbeatService;
+import cv.igrp.platform.access_management.session.infrastructure.metrics.SessionMetrics;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -67,15 +69,21 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
     private final SessionRepository sessionRepository;
     private final SessionHeartbeatService heartbeatService;
     private final SessionProperties sessionProperties;
+    private final IGRPUserEntityRepository userRepository;
+    private final SessionMetrics sessionMetrics;
     private final boolean enforcementEnabled;
 
     public SessionEnforcementFilter(SessionRepository sessionRepository,
                                     SessionHeartbeatService heartbeatService,
                                     SessionProperties sessionProperties,
+                                    IGRPUserEntityRepository userRepository,
+                                    SessionMetrics sessionMetrics,
                                     @Value("${igrp.session.enforcement-enabled:true}") boolean enforcementEnabled) {
         this.sessionRepository = sessionRepository;
         this.heartbeatService = heartbeatService;
         this.sessionProperties = sessionProperties;
+        this.userRepository = userRepository;
+        this.sessionMetrics = sessionMetrics;
         this.enforcementEnabled = enforcementEnabled;
         LOGGER.info("SessionEnforcementFilter initialized (enforcementEnabled={})", enforcementEnabled);
     }
@@ -127,12 +135,26 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
 
         Instant now = Instant.now();
 
+        // F1 — reject any JWT issued before the user-wide validity floor
+        // (set on password reset / forced re-auth).
+        Integer userIdFromToken = parseUserId(jwt.getSubject());
+        if (userIdFromToken != null) {
+            Instant iat = jwt.getIssuedAt();
+            Instant floor = userRepository.findTokensNotValidBeforeById(userIdFromToken).orElse(null);
+            if (floor != null && iat != null && iat.isBefore(floor)) {
+                sessionMetrics.recordRejectedRevoked("tokens_invalidated");
+                unauthorized(response, "invalid_token", "tokens_invalidated");
+                return;
+            }
+        }
+
         // Hot path: Redis snapshot.
         Optional<SessionHeartbeatService.Snapshot> cached = heartbeatService.findCached(sid);
         if (cached.isPresent()) {
             String denial = denialReason(cached.get().status(),
                     cached.get().expiresAt(), cached.get().absoluteExpiresAt(), now);
             if (denial != null) {
+                sessionMetrics.recordRejectedRevoked(denial);
                 unauthorized(response, "invalid_token", denial);
                 return;
             }
@@ -140,6 +162,7 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
             if (heartbeatRequired(cached.get().lastSeenAt(), now)) {
                 touchFromDb(sid, now);
             }
+            sessionMetrics.recordHeartbeat();
             filterChain.doFilter(request, response);
             return;
         }
@@ -158,6 +181,7 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
         }
 
         if (session == null) {
+            sessionMetrics.recordRejectedRevoked("session_revoked");
             unauthorized(response, "invalid_token", "session_revoked");
             return;
         }
@@ -165,14 +189,27 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
         String denial = denialReason(session.getStatus(),
                 session.getExpiresAt(), session.getAbsoluteExpiresAt(), now);
         if (denial != null) {
+            sessionMetrics.recordRejectedRevoked(denial);
             unauthorized(response, "invalid_token", denial);
             return;
         }
 
         heartbeatService.cache(session);
         heartbeatService.touch(session, now, sessionProperties.getHeartbeatDebounceSeconds());
+        sessionMetrics.recordHeartbeat();
 
         filterChain.doFilter(request, response);
+    }
+
+    private static Integer parseUserId(String sub) {
+        if (sub == null || sub.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(sub);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 
     private boolean heartbeatRequired(Instant lastSeenAt, Instant now) {

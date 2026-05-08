@@ -22,6 +22,26 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
         cleanupRemovedColumns();
         ensureAuthAuditLogIndexes();
         ensureUserSessionSchema();
+        ensureUserTokensFloor();
+    }
+
+    /**
+     * Phase F1 — add the {@code tokens_not_valid_before} floor column on
+     * {@code t_user}. Idempotent so the runner can ship before Hibernate's
+     * {@code ddl-auto=update} pass picks up the new {@link
+     * cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity}
+     * field, and so it's a no-op on environments where Hibernate already
+     * created the column.
+     */
+    private void ensureUserTokensFloor() {
+        try {
+            jdbcTemplate.execute(
+                    "ALTER TABLE t_user ADD COLUMN IF NOT EXISTS tokens_not_valid_before TIMESTAMPTZ");
+            LOGGER.debug("t_user.tokens_not_valid_before ensured.");
+        } catch (Exception e) {
+            LOGGER.warn("Could not ensure t_user.tokens_not_valid_before (may not exist yet): {}",
+                    e.getMessage());
+        }
     }
 
     /**

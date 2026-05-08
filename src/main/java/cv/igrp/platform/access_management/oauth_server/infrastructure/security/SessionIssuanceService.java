@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 import cv.igrp.platform.access_management.session.config.SessionProperties;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import cv.igrp.platform.access_management.session.infrastructure.cache.SessionCacheEvictService;
+import cv.igrp.platform.access_management.session.infrastructure.metrics.SessionMetrics;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
 import jakarta.servlet.http.HttpServletRequest;
@@ -57,13 +58,16 @@ public class SessionIssuanceService {
     private final SessionRepository sessionRepository;
     private final SessionCacheEvictService sessionCacheEvictService;
     private final SessionProperties sessionProperties;
+    private final SessionMetrics sessionMetrics;
 
     public SessionIssuanceService(SessionRepository sessionRepository,
                                   SessionCacheEvictService sessionCacheEvictService,
-                                  SessionProperties sessionProperties) {
+                                  SessionProperties sessionProperties,
+                                  SessionMetrics sessionMetrics) {
         this.sessionRepository = sessionRepository;
         this.sessionCacheEvictService = sessionCacheEvictService;
         this.sessionProperties = sessionProperties;
+        this.sessionMetrics = sessionMetrics;
     }
 
     /**
@@ -140,6 +144,7 @@ public class SessionIssuanceService {
                                        Instant now,
                                        long ttlSeconds) {
         if (!SessionStatus.ACTIVE.equals(session.getStatus())) {
+            sessionMetrics.recordRefreshRejected("session_not_active");
             throw new SessionRefreshRejectedException(
                     "session_not_active", "Session " + session.getSessionId() + " is no longer active");
         }
@@ -148,6 +153,7 @@ public class SessionIssuanceService {
             session.expire();
             sessionRepository.save(session);
             sessionCacheEvictService.evictBySubject(session.getUserId());
+            sessionMetrics.recordRefreshRejected("absolute_lifetime_exceeded");
             throw new SessionRefreshRejectedException(
                     "absolute_lifetime_exceeded",
                     "Session " + session.getSessionId() + " hit its absolute lifetime ceiling");
@@ -194,6 +200,7 @@ public class SessionIssuanceService {
             SessionEntity victim = active.get(i);
             victim.close("SESSION_LIMIT_EXCEEDED", "SYSTEM");
             sessionRepository.save(victim);
+            sessionMetrics.recordEvictedLru();
             LOGGER.info("LRU-evicted session {} for user={} (cap={})",
                     victim.getSessionId(), userId, maxPerUser);
         }
@@ -215,6 +222,7 @@ public class SessionIssuanceService {
         }
         SessionEntity saved = sessionRepository.save(entity);
         sessionCacheEvictService.evictBySubject(userId);
+        sessionMetrics.recordCreated();
         LOGGER.debug("Issued session {} for user={} device={} client={} jti={} exp={} abs={}",
                 saved.getSessionId(), userId, deviceId, clientId, jti,
                 saved.getExpiresAt(), saved.getAbsoluteExpiresAt());
