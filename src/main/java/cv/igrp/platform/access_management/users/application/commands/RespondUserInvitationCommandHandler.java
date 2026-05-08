@@ -26,6 +26,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.domain.events.UserRoleChangedEvent;
 import org.springframework.transaction.annotation.Transactional;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserIdentifierEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.OtpEntityRepository;
@@ -60,6 +62,7 @@ public class RespondUserInvitationCommandHandler
    private final OtpEntityRepository otpEntityRepository;
    private final UserRoleAssignmentRepository userRoleAssignmentRepository;
    private final ExpireRoleService expireRoleService;
+   private final EventPublisher eventPublisher;
 
    public RespondUserInvitationCommandHandler(
          NotificationAdapter<NotificationResult> notificationAdapter,
@@ -72,7 +75,8 @@ public class RespondUserInvitationCommandHandler
          UserIdentityResolutionService userIdentityResolutionService,
          OtpEntityRepository otpEntityRepository,
          UserRoleAssignmentRepository userRoleAssignmentRepository,
-         ExpireRoleService expireRoleService) {
+         ExpireRoleService expireRoleService,
+         EventPublisher eventPublisher) {
       this.notificationAdapter = notificationAdapter;
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
@@ -84,6 +88,7 @@ public class RespondUserInvitationCommandHandler
       this.otpEntityRepository = otpEntityRepository;
       this.userRoleAssignmentRepository = userRoleAssignmentRepository;
       this.expireRoleService = expireRoleService;
+      this.eventPublisher = eventPublisher;
    }
 
    @IgrpCommandHandler
@@ -191,6 +196,24 @@ public class RespondUserInvitationCommandHandler
             auditContext.put("source", "INVITATION");
             auditService.logEvent(cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType.ROLE_ASSIGNED,
                     cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory.PRIVILEGE, auditContext);
+         }
+
+         if (invitation.getRoles() != null && !invitation.getRoles().isEmpty()) {
+            java.util.Set<String> grantedCodes = invitation.getRoles().stream()
+                    .map(r -> r.getCode())
+                    .collect(java.util.stream.Collectors.toSet());
+            String departmentCode = invitation.getRoles().iterator().next().getDepartment() != null
+                    ? invitation.getRoles().iterator().next().getDepartment().getCode()
+                    : null;
+            Integer savedUserId;
+            try {
+               savedUserId = Integer.parseInt(savedUser.getId());
+            } catch (NumberFormatException nfe) {
+               savedUserId = userId;
+            }
+            eventPublisher.publishUserRoleChanged(new UserRoleChangedEvent(
+                    savedUserId, grantedCodes, departmentCode,
+                    UserRoleChangedEvent.CHANGE_ADDED, "INVITATION"));
          }
 
          // Upsert secondary identifiers

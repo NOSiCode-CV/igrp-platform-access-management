@@ -38,4 +38,8 @@ public class EventPublisher {
     public void publishPermissionDeleted(DeletePermissionEvent event) {
         applicationEventPublisher.publishEvent(event);
     }
+
+    public void publishDepartmentScopeChanged(DepartmentScopeChangedEvent event) {
+        applicationEventPublisher.publishEvent(event);
+    }
 }

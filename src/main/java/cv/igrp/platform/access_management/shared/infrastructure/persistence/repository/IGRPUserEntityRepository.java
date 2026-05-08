@@ -95,6 +95,18 @@ public interface IGRPUserEntityRepository extends
            "AND u.status != 'DELETED'")
     Set<Integer> findUserIdsByDepartment(@Param("departmentCode") String departmentCode);
 
+    /**
+     * Find user IDs holding a permission (by name) through any of their assigned roles.
+     * Used by the session-invalidation cascade when a permission is deleted (Phase D8).
+     */
+    @Query("SELECT DISTINCT u.id FROM IGRPUserEntity u " +
+           "JOIN u.userRoleAssignments ura " +
+           "JOIN ura.role r " +
+           "JOIN r.permissions p " +
+           "WHERE p.name = :permissionName " +
+           "AND u.status != 'DELETED'")
+    Set<Integer> findUserIdsByPermissionName(@Param("permissionName") String permissionName);
+
     @Query("""
         SELECT u FROM IGRPUserEntity u WHERE u.status != 'DELETED'
         AND (
