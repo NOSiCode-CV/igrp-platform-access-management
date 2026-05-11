@@ -1,3 +1,14 @@
+CREATE TABLE IF NOT EXISTS t_refresh_token_tombstone (
+    token_hash      VARCHAR(64) PRIMARY KEY,
+    session_id      UUID NULL,
+    user_id         INTEGER NULL,
+    invalidated_at  TIMESTAMPTZ NOT NULL,
+    expires_at      TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS ix_rtt_expires_at ON t_refresh_token_tombstone (expires_at);
+CREATE INDEX IF NOT EXISTS ix_rtt_session_id ON t_refresh_token_tombstone (session_id);
+
 CREATE TABLE IF NOT EXISTS t_user_session (
     id BIGSERIAL PRIMARY KEY,
     session_id UUID NOT NULL,

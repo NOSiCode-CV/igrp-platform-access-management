@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.session.infrastructure.scheduler;
 
+import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.RefreshTokenTombstoneRepository;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
@@ -20,6 +21,7 @@ public class SessionCleanupScheduler {
 
     private final SessionRepository sessionRepository;
     private final SessionCacheEvictService sessionCacheEvictService;
+    private final RefreshTokenTombstoneRepository refreshTokenTombstoneRepository;
 
     // Configuration properties
     private final long cleanupIntervalSeconds;
@@ -28,10 +30,12 @@ public class SessionCleanupScheduler {
     public SessionCleanupScheduler(
             SessionRepository sessionRepository,
             SessionCacheEvictService sessionCacheEvictService,
+            RefreshTokenTombstoneRepository refreshTokenTombstoneRepository,
             @Value("${igrp.session.cleanup.interval-seconds:300}") long cleanupIntervalSeconds,
             @Value("${igrp.session.old-session.retention-days:30}") long oldSessionRetentionDays) {
         this.sessionRepository = sessionRepository;
         this.sessionCacheEvictService = sessionCacheEvictService;
+        this.refreshTokenTombstoneRepository = refreshTokenTombstoneRepository;
         this.cleanupIntervalSeconds = cleanupIntervalSeconds;
         this.oldSessionRetentionDays = oldSessionRetentionDays;
     }
@@ -95,11 +99,20 @@ public class SessionCleanupScheduler {
                     List.of(SessionStatus.CLOSED, SessionStatus.EXPIRED, SessionStatus.REVOKED),
                     cutoffDate);
 
-            log.info("Deleted {} old session records older than {}", 
+            log.info("Deleted {} old session records older than {}",
                     deletedCount, cutoffDate);
 
         } catch (Exception e) {
             log.error("Error during old session cleanup", e);
+        }
+
+        try {
+            int purgedTombstones = refreshTokenTombstoneRepository.deleteExpired(Instant.now());
+            if (purgedTombstones > 0) {
+                log.info("Purged {} expired refresh-token tombstones", purgedTombstones);
+            }
+        } catch (Exception e) {
+            log.warn("Error purging expired refresh-token tombstones: {}", e.getMessage());
         }
     }
 

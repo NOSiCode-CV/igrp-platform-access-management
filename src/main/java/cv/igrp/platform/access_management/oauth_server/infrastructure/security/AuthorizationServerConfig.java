@@ -94,14 +94,18 @@ public class AuthorizationServerConfig {
     @Bean
     public OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate,
                                                            RegisteredClientRepository registeredClientRepository,
-                                                           RevocationCascadeListener revocationCascadeListener) {
+                                                           RevocationCascadeListener revocationCascadeListener,
+                                                           RefreshTokenReuseGuard refreshTokenReuseGuard) {
         ensureAuthorizationSchema(jdbcTemplate);
         JdbcOAuth2AuthorizationService delegate =
                 new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
         // Phase C3 — every remove() (revoke / logout / one-shot consume) cascades
         // into a SessionEntity revocation so the enforcement filter (Phase C1)
         // denies the next request carrying the same sid.
-        return new CascadingAuthorizationService(delegate, revocationCascadeListener);
+        // FR-8 — save() tombstones rotated refresh tokens; findByToken() consults
+        // those tombstones on a miss so replays revoke the session and publish
+        // SessionRevokedEvent before Spring AS returns invalid_grant.
+        return new CascadingAuthorizationService(delegate, revocationCascadeListener, refreshTokenReuseGuard);
     }
 
     private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationServerConfig.class);
