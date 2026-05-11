@@ -101,7 +101,11 @@ class ClaimsEnrichmentServiceTest {
         when(userRepository.findById(7)).thenReturn(Optional.of(user));
         when(oauthClientRepository.findByClientId("igrp-access-management")).thenReturn(Optional.of(client));
 
-        Map<String, Object> claims = service.buildClaims("7", "igrp-access-management");
+        Map<String, Object> claims = service.buildClaims(
+                "7",
+                "igrp-access-management",
+                Set.of("openid", "profile")
+        );
 
         assertEquals("ROLE_ADMIN", claims.get("selectedRole"));
         assertEquals("IGRP_APP", claims.get("org"));
@@ -111,18 +115,15 @@ class ClaimsEnrichmentServiceTest {
         @SuppressWarnings("unchecked")
         Map<String, Object> resourceAccess = (Map<String, Object>) claims.get("resource_access");
         assertNotNull(resourceAccess.get("igrp-access-management"));
-        // metadata is only emitted when non-empty
-        @SuppressWarnings("unchecked")
-        Map<String, Object> userMd = (Map<String, Object>) claims.get("metadata");
-        assertNotNull(userMd, "metadata claim should be emitted when user metadata is non-empty");
-        assertEquals("pt-CV", userMd.get("locale"));
+        assertEquals("pt-CV", claims.get("locale"));
+        assertFalse(claims.containsKey("metadata"));
     }
 
     @Test
     void buildClaimsToleratesMissingUserOrClient() {
         when(oauthClientRepository.findByClientId("no-such")).thenReturn(Optional.empty());
 
-        Map<String, Object> claims = service.buildClaims(null, "no-such");
+        Map<String, Object> claims = service.buildClaims(null, "no-such", Set.of("openid"));
 
         assertEquals("", claims.get("selectedRole"));
         assertEquals("", claims.get("org"));
