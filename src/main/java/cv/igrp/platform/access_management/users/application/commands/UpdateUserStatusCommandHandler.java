@@ -17,6 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.domain.events.UserStatusChangedEvent;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
@@ -31,18 +33,21 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
    private final IGRPUserMapper userMapper;
    private final UserUtils utils;
    private final SecurityAuditService auditService;
+   private final EventPublisher eventPublisher;
 
-   
+
    public UpdateUserStatusCommandHandler(
            IGRPUserEntityRepository userRepository,
            IGRPUserMapper userMapper,
            UserUtils utils,
-           SecurityAuditService auditService
+           SecurityAuditService auditService,
+           EventPublisher eventPublisher
    ) {
        this.userRepository = userRepository;
        this.userMapper = userMapper;
        this.utils = utils;
        this.auditService = auditService;
+       this.eventPublisher = eventPublisher;
    }
 
    /**
@@ -87,6 +92,11 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
       var updatedUser = userRepository.save(user);
 
       auditService.logUserChange(updatedUser.getId(), newStatus);
+
+      if (!oldStatus.equals(newStatus)) {
+         eventPublisher.publishUserStatusChanged(new UserStatusChangedEvent(
+                 userId, oldStatus, newStatus, null));
+      }
 
       LOGGER.info("User status updated successfully: id={}, email={}", updatedUser.getId(), updatedUser.getEmail());
 

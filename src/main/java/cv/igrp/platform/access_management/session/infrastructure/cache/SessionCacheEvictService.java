@@ -37,30 +37,30 @@ public class SessionCacheEvictService {
     /**
      * Evict session for a specific user
      */
-    public void evictBySubject(String userExternalId) {
-        evictMatchingKeys(key -> key.equals("%s%s".formatted(CACHE_PREFIX, userExternalId)));
-        LOGGER.info("Evicted session from cache for user: {}", userExternalId);
+    public void evictBySubject(Integer userId) {
+        evictMatchingKeys(key -> key.equals("%s%d".formatted(CACHE_PREFIX, userId)));
+        LOGGER.info("Evicted session from cache for user: {}", userId);
     }
 
     /**
      * Evict sessions for multiple users
      */
-    public void evictBySubjects(Set<String> userExternalIds) {
-        if (userExternalIds.isEmpty()) {
+    public void evictBySubjects(Set<Integer> userIds) {
+        if (userIds.isEmpty()) {
             return;
         }
-        
+
         Set<String> keysToDelete = new HashSet<>();
-        for (String userExternalId : userExternalIds) {
-            keysToDelete.add("%s%s".formatted(CACHE_PREFIX, userExternalId));
+        for (Integer userId : userIds) {
+            keysToDelete.add("%s%d".formatted(CACHE_PREFIX, userId));
         }
-        
+
         if (!keysToDelete.isEmpty()) {
             try {
                 redisTemplate.delete(keysToDelete);
-                LOGGER.info("Evicted sessions from cache for users: {}", userExternalIds);
+                LOGGER.info("Evicted sessions from cache for users: {}", userIds);
             } catch (Exception ex) {
-                LOGGER.error("Redis unavailable while evicting sessions for users: {}", userExternalIds, ex);
+                LOGGER.error("Redis unavailable while evicting sessions for users: {}", userIds, ex);
             }
         }
     }

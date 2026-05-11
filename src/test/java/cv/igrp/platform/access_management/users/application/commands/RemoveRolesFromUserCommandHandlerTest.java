@@ -14,6 +14,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -47,6 +48,9 @@ public class RemoveRolesFromUserCommandHandlerTest {
 
     @Mock
     RoleMapper roleMapper;
+
+    @Mock
+    EventPublisher eventPublisher;
 
     @InjectMocks
     private RemoveRolesFromUserCommandHandler handler;

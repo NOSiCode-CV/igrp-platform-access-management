@@ -14,6 +14,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
+import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
@@ -22,6 +26,7 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
 import java.security.interfaces.RSAPrivateKey;
@@ -89,7 +94,8 @@ public class JwtTokenConfig {
     @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> igrpTokenCustomizer(ClaimsEnrichmentService claimsService,
                                                                          AuthAuditService authAuditService,
-                                                                         SecurityAuditService auditService) {
+                                                                         SecurityAuditService auditService,
+                                                                         SessionIssuanceService sessionIssuanceService) {
         return context -> {
             if (!OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
                 return;
@@ -104,6 +110,12 @@ public class JwtTokenConfig {
                 if (internalSub != null) {
                     context.getClaims().subject(internalSub);
                 }
+            } else if (context.getPrincipal() != null
+                    && !(context.getPrincipal() instanceof OAuth2ClientAuthenticationToken)) {
+                Object name = context.getPrincipal().getName();
+                if (name != null) {
+                    internalSub = String.valueOf(name);
+                }
             }
 
             String clientId = context.getRegisteredClient().getClientId();
@@ -113,6 +125,27 @@ public class JwtTokenConfig {
                     context.getAuthorizedScopes()
             );
             claims.forEach((key, value) -> context.getClaims().claim(key, value));
+
+            // Phase B — bind the JWT to a server-side session and add sid/device_id claims.
+            // Skipped for client_credentials (M2M) where there is no end-user subject.
+            boolean isClientCredentials = AuthorizationGrantType.CLIENT_CREDENTIALS
+                    .equals(context.getAuthorizationGrantType());
+            Integer issuanceUserId = parseUserId(internalSub);
+            if (!isClientCredentials && issuanceUserId != null) {
+                String jti = context.getClaims().build().getId();
+                try {
+                    SessionIssuanceService.IssuanceBinding binding =
+                            sessionIssuanceService.bindAccessToken(context, issuanceUserId, clientId, jti);
+                    context.getClaims().claim("sid", binding.sid().toString());
+                    context.getClaims().claim("device_id", binding.deviceId());
+                } catch (SessionIssuanceService.SessionRefreshRejectedException ex) {
+                    throw new OAuth2AuthenticationException(
+                            new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT,
+                                    ex.getMessage(),
+                                    null),
+                            ex);
+                }
+            }
 
             String auditSessionId = context.getAuthorization() != null ? context.getAuthorization().getId() : null;
             authAuditService.logEvent(
@@ -133,5 +166,16 @@ public class JwtTokenConfig {
                     auditContext
             );
         };
+    }
+
+    private static Integer parseUserId(String sub) {
+        if (sub == null || sub.isBlank()) {
+            return null;
+        }
+        try {
+            return Integer.parseInt(sub);
+        } catch (NumberFormatException ex) {
+            return null;
+        }
     }
 }

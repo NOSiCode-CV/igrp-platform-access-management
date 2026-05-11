@@ -11,7 +11,15 @@ public enum AuditEventType {
     LOGIN_FAILURE,
     LOGOUT,
     TOKEN_REFRESH,
+
+    // Session lifecycle (NFR-4) — every state change emits one row.
+    SESSION_CREATED,
+    SESSION_REPLACED,
+    SESSION_LIMIT_EXCEEDED,
+    SESSION_REFRESHED,
+    SESSION_REVOKED,
     SESSION_EXPIRED,
+    SESSION_FORCED_REAUTH,
 
     // Token / Auth
     TOKEN_ACCEPTED,

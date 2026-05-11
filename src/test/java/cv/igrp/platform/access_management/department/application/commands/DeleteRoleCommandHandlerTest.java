@@ -32,6 +32,9 @@ public class DeleteRoleCommandHandlerTest {
     @Mock
     private DepartmentEntityRepository departmentRepository;
 
+    @Mock
+    private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
+
     @Test
     void itShouldStartContext() {
         assertNotNull(underTest);

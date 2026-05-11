@@ -1,11 +1,25 @@
+CREATE TABLE IF NOT EXISTS t_refresh_token_tombstone (
+    token_hash      VARCHAR(64) PRIMARY KEY,
+    session_id      UUID NULL,
+    user_id         INTEGER NULL,
+    invalidated_at  TIMESTAMPTZ NOT NULL,
+    expires_at      TIMESTAMPTZ NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS ix_rtt_expires_at ON t_refresh_token_tombstone (expires_at);
+CREATE INDEX IF NOT EXISTS ix_rtt_session_id ON t_refresh_token_tombstone (session_id);
+
 CREATE TABLE IF NOT EXISTS t_user_session (
     id BIGSERIAL PRIMARY KEY,
     session_id UUID NOT NULL,
-    user_external_id VARCHAR(255) NOT NULL,
+    user_id INTEGER NOT NULL,
     status VARCHAR(16) NOT NULL,
     started_at TIMESTAMPTZ NOT NULL,
     last_seen_at TIMESTAMPTZ NOT NULL,
     expires_at TIMESTAMPTZ NOT NULL,
+    absolute_expires_at TIMESTAMPTZ NULL,
+    jti VARCHAR(64) NULL,
+    client_id VARCHAR(128) NULL,
     ended_at TIMESTAMPTZ NULL,
     client_ip INET NULL,
     user_agent_hash VARCHAR(64) NULL,
@@ -18,10 +32,12 @@ CREATE TABLE IF NOT EXISTS t_user_session (
     last_modified_date TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX IF NOT EXISTS ix_session_user_status ON t_user_session(user_external_id, status);
+CREATE INDEX IF NOT EXISTS ix_session_user_status ON t_user_session(user_id, status);
 CREATE INDEX IF NOT EXISTS ix_session_expires_active ON t_user_session(expires_at) WHERE status = 'ACTIVE';
+CREATE INDEX IF NOT EXISTS ix_session_user_device ON t_user_session(user_id, device_id);
+CREATE INDEX IF NOT EXISTS ix_session_jti ON t_user_session(jti);
 CREATE UNIQUE INDEX IF NOT EXISTS ux_session_session_id ON t_user_session(session_id);
-CREATE UNIQUE INDEX IF NOT EXISTS ux_one_active_session_per_user ON t_user_session(user_external_id) WHERE status = 'ACTIVE';
+CREATE UNIQUE INDEX IF NOT EXISTS ux_session_user_device_active ON t_user_session(user_id, device_id) WHERE status = 'ACTIVE';
 
 CREATE TABLE IF NOT EXISTS t_auth_audit_log (
     id UUID NOT NULL,

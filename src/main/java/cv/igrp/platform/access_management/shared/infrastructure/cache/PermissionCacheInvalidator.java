@@ -20,7 +20,7 @@ public class PermissionCacheInvalidator {
 
     @EventListener
     public void onUserRoleChanged(UserRoleChangedEvent event) {
-        evictService.evictBySubject(event.username());
+        evictService.evictBySubject(String.valueOf(event.getUserId()));
     }
 
     @EventListener

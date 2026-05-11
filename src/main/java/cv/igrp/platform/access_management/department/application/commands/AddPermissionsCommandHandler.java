@@ -14,6 +14,8 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -50,6 +52,7 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
    private final RoleEntityRepository roleRepository;
    private final DepartmentEntityRepository departmentRepository;
    private final RoleMapper roleMapper;
+   private final EventPublisher eventPublisher;
 
    /**
     * Constructs the handler with necessary repositories and mappers.
@@ -58,12 +61,14 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
     * @param roleRepository       repository used to retrieve and save roles
     * @param departmentRepository repository used to fetch departments
     * @param roleMapper           mapper for converting {@link RoleEntity} entities to {@link RoleDTO}
+    * @param eventPublisher       publishes session-invalidation events
     */
-   public AddPermissionsCommandHandler(PermissionEntityRepository permissionRepository, RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper) {
+   public AddPermissionsCommandHandler(PermissionEntityRepository permissionRepository, RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper, EventPublisher eventPublisher) {
       this.permissionRepository = permissionRepository;
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
       this.roleMapper = roleMapper;
+      this.eventPublisher = eventPublisher;
    }
 
    /**
@@ -128,6 +133,9 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
 
       foundRole.getPermissions().addAll(permissionList);
       RoleEntity savedRole = roleRepository.save(foundRole);
+
+      eventPublisher.publishRolePermissionChanged(new RolePermissionChangedEvent(
+              savedRole.getCode(), departmentCode, "PERMISSIONS_ADDED", null));
 
       Set<Integer> addedPermissionIds = permissionList.stream()
               .map(PermissionEntity::getId)
