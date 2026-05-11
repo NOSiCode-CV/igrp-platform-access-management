@@ -26,10 +26,19 @@ import java.util.List;
         description = """
                 Bearer JWT issued by the iGRP authorization server.
 
-                In addition to the standard claims (sub, iat, exp, jti, iss, aud), every
-                user-bound access token carries two iGRP-specific claims that drive
-                server-side session enforcement:
+                ### Access-token claims
 
+                Standard OAuth2/OIDC:
+                - **sub** (string) — internal user id (subject).
+                - **jti** (string) — unique token id. Mirrored to `SessionEntity.jti`.
+                - **iat** (number, seconds since epoch) — token issuance time. Compared
+                  against the user-wide `tokens_not_valid_before` floor on every
+                  authenticated request (Phase F1).
+                - **exp** (number, seconds since epoch) — token-level expiry.
+                - **iss** (string) — issuer (the authorization server URL).
+                - **aud** (string | string[]) — audience(s) the token is intended for.
+
+                iGRP session-binding (NEW, mandatory on user-bound tokens):
                 - **sid** (string, UUID) — canonical session identifier. Equal to
                   `t_user_session.session_id`. The `SessionEnforcementFilter` rejects
                   the request when the row is no longer ACTIVE or has expired.
@@ -37,6 +46,17 @@ import java.util.List;
                   `X-Device-Id` request header on the token endpoint, or derived as a
                   SHA-256 hash of `(User-Agent, client IP, client_id)` when not
                   supplied. Two concurrent sessions cannot share `(user, device_id)`.
+
+                iGRP authorization enrichment (added by `ClaimsEnrichmentService`):
+                - **selectedRole** (string) — the user's currently-active role code.
+                - **org** (object) — organizational unit context (department / scope).
+                - **permissions** (string[]) — flattened permission names granted via
+                  the active role.
+                - **resource_access** (object) — Keycloak-shaped per-client role map
+                  for downstream resource servers.
+                - **identity claims** — user profile fields (name, email,
+                  email_verified, preferred_username, phone_number, picture, nic, etc.)
+                  copied from `IGRPUserEntity` for the configured client.
 
                 Tokens issued via `client_credentials` (M2M) carry neither `sid` nor
                 `device_id` and bypass the session enforcement filter.
