@@ -1,17 +1,12 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
-import org.springframework.core.io.ClassPathResource;
-import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
-import org.springframework.jdbc.datasource.init.ScriptException;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
@@ -20,6 +15,9 @@ import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 
@@ -60,11 +58,12 @@ public class AuthorizationServerConfig {
                                 .logoutEndpoint(logout ->
                                         logout.logoutResponseHandler(sessionLogoutHandler))))
                 .csrf(AbstractHttpConfigurer::disable)
+                .securityContext(ctx -> ctx.securityContextRepository(new HttpSessionSecurityContextRepository()))
+                .requestCache(cache -> cache.requestCache(new HttpSessionRequestCache()))
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-                /*
 				.exceptionHandling(ex -> ex.authenticationEntryPoint(
                         new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp")))
-                */
 				.oauth2Login(oauth2 -> oauth2.userInfoEndpoint(userInfo ->
                         userInfo.oidcUserService(igrpOidcUserService)));
 
@@ -96,7 +95,6 @@ public class AuthorizationServerConfig {
                                                            RegisteredClientRepository registeredClientRepository,
                                                            RevocationCascadeListener revocationCascadeListener,
                                                            RefreshTokenReuseGuard refreshTokenReuseGuard) {
-        ensureAuthorizationSchema(jdbcTemplate);
         JdbcOAuth2AuthorizationService delegate =
                 new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
         // Phase C3 — every remove() (revoke / logout / one-shot consume) cascades
@@ -106,30 +104,5 @@ public class AuthorizationServerConfig {
         // those tombstones on a miss so replays revoke the session and publish
         // SessionRevokedEvent before Spring AS returns invalid_grant.
         return new CascadingAuthorizationService(delegate, revocationCascadeListener, refreshTokenReuseGuard);
-    }
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationServerConfig.class);
-
-    /**
-     * Idempotently provision the {@code oauth2_authorization} / {@code oauth2_authorization_consent}
-     * tables before the {@link JdbcOAuth2AuthorizationService} is wired, so the
-     * authorization-server pipeline can persist authorizations on the first
-     * token issuance after boot.
-     */
-    private void ensureAuthorizationSchema(JdbcTemplate jdbcTemplate) {
-        Resource script = new ClassPathResource("db/oauth2-authorization-schema-postgres.sql");
-        if (!script.exists()) {
-            LOGGER.warn("oauth2-authorization-schema-postgres.sql missing on classpath; skipping bootstrap.");
-            return;
-        }
-        try {
-            ResourceDatabasePopulator populator = new ResourceDatabasePopulator(script);
-            populator.setContinueOnError(false);
-            populator.setIgnoreFailedDrops(true);
-            populator.execute(jdbcTemplate.getDataSource());
-            LOGGER.debug("oauth2_authorization schema ensured.");
-        } catch (ScriptException e) {
-            LOGGER.warn("Could not provision oauth2_authorization schema: {}", e.getMessage());
-        }
     }
 }
