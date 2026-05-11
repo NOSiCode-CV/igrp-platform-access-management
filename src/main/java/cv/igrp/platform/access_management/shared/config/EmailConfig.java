@@ -32,11 +32,14 @@ public class EmailConfig {
     @Value("${igrp.mail.password:}")
     private String password;
 
-    @Value("${igrp.mail.auth:false}")
+    @Value("${igrp.mail.auth:true}")
     private boolean auth;
 
-    @Value("${igrp.mail.starttls.enable:false}")
+    @Value("${igrp.mail.starttls.enable:true}")
     private boolean starttls;
+
+    @Value("${igrp.mail.starttls.required:true}")
+    private boolean starttlsRequired;
 
     @Value("${igrp.mail.properties.sender-id}")
     private String senderId;
@@ -56,6 +59,7 @@ public class EmailConfig {
         props.put("mail.transport.protocol", "smtp");
         props.put("mail.smtp.auth", auth);
         props.put("mail.smtp.starttls.enable", starttls);
+        props.put("mail.smtp.starttls.required", starttlsRequired);
         props.put("mail.smtp.from", senderId != null && !senderId.isEmpty() ? senderId : username);
         props.put("mail.debug", debug);
 
