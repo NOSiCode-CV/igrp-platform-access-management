@@ -39,11 +39,21 @@ import java.util.UUID;
  * passed its absolute lifetime — making "kill session = effective immediately"
  * true regardless of the JWT's own {@code exp}.
  *
- * <p>Skipped for: M2M ({@code /api/m2m/**}), public endpoints (Swagger / actuator),
- * authorization-server endpoints, and tokens without an {@code sid} (e.g. M2M
- * client_credentials issuance). Behind a feature flag
- * {@code igrp.session.enforcement-enabled} (default {@code true}) so the chain
- * can be disabled in an emergency.
+ * <p>Path-based skip (FR-11): M2M ({@code /api/m2m/**}), Swagger/actuator,
+ * authorization-server endpoints ({@code /oauth2/**}, {@code /connect/**},
+ * {@code /.well-known/**}, {@code /login}, {@code /userinfo}) and
+ * {@code /api/session/check} bypass the filter entirely.
+ *
+ * <p>FR-13: tokens that reach an enforced path WITHOUT a {@code sid} claim are
+ * rejected with 401 ({@code error_description="missing_sid"}). There is no
+ * legacy fallback — Phase B made {@code sid} mandatory at issuance for every
+ * non-{@code client_credentials} grant in {@code JwtTokenConfig.igrpTokenCustomizer},
+ * and M2M {@code client_credentials} tokens only travel over {@code /api/m2m/**}
+ * which is skipped above. Any sid-less JWT seen here is either misissued or
+ * forged.
+ *
+ * <p>Behind a feature flag {@code igrp.session.enforcement-enabled}
+ * (default {@code true}) so the chain can be disabled in an emergency.
  */
 @Component
 public class SessionEnforcementFilter extends OncePerRequestFilter {
@@ -119,9 +129,12 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
 
         String sidClaim = jwt.getClaimAsString(CLAIM_SID);
         if (sidClaim == null || sidClaim.isBlank()) {
-            // Tokens without sid (M2M client_credentials, legacy paths) are not subject
-            // to session enforcement.
-            filterChain.doFilter(request, response);
+            // FR-13: no legacy fallback. M2M tokens (the only legitimate sid-less
+            // issuance branch in JwtTokenConfig) only travel over /api/m2m/** and
+            // are already filtered out by shouldNotFilter() above. A sid-less JWT
+            // reaching this point is either misissued or forged — reject.
+            sessionMetrics.recordRejectedRevoked("missing_sid");
+            unauthorized(response, "invalid_token", "missing_sid");
             return;
         }
 
