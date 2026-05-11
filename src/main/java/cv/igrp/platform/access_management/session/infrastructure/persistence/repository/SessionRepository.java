@@ -22,7 +22,29 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
     /**
      * Find active session for a specific user
      */
-    Optional<SessionEntity> findByUserExternalIdAndStatus(String userExternalId, SessionStatus status);
+    Optional<SessionEntity> findByUserIdAndStatus(Integer userId, SessionStatus status);
+
+    /**
+     * Find active session for a specific (user, device) pair. Used by the
+     * token-issuance pipeline to atomically replace any previous session bound
+     * to the same physical device before opening a new one.
+     */
+    Optional<SessionEntity> findByUserIdAndDeviceIdAndStatus(Integer userId,
+                                                             String deviceId,
+                                                             SessionStatus status);
+
+    /**
+     * List active sessions of a user ordered oldest-first by {@code last_seen_at}.
+     * Used by the LRU eviction step when the per-user concurrency cap is exceeded.
+     */
+    List<SessionEntity> findByUserIdAndStatusOrderByLastSeenAtAsc(Integer userId,
+                                                                  SessionStatus status);
+
+    /**
+     * Find the active session bound to the given JWT id. Used by the refresh
+     * grant to recover the canonical {@code sid} from the rotating access token.
+     */
+    Optional<SessionEntity> findByJtiAndStatus(String jti, SessionStatus status);
 
     /**
      * Find session by session ID
@@ -37,7 +59,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
     /**
      * Find all sessions for a specific user
      */
-    List<SessionEntity> findByUserExternalId(String userExternalId);
+    List<SessionEntity> findByUserId(Integer userId);
 
     /**
      * Find expired active sessions
@@ -51,72 +73,72 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
     Page<SessionEntity> findByStatus(SessionStatus status, Pageable pageable);
 
     /**
-     * Find sessions by user external IDs with pagination
+     * Find sessions by user IDs with pagination
      */
-    @Query("SELECT s FROM SessionEntity s WHERE s.userExternalId IN :userIds AND s.status = :status")
-    Page<SessionEntity> findByUserExternalIdsAndStatus(@Param("userIds") Set<String> userIds, 
-                                                   @Param("status") SessionStatus status, 
-                                                   Pageable pageable);
+    @Query("SELECT s FROM SessionEntity s WHERE s.userId IN :userIds AND s.status = :status")
+    Page<SessionEntity> findByUserIdsAndStatus(@Param("userIds") Set<Integer> userIds,
+                                                @Param("status") SessionStatus status,
+                                                Pageable pageable);
 
     /**
      * Find sessions by department (through user roles)
      */
     @Query("SELECT DISTINCT s FROM SessionEntity s " +
-           "JOIN IGRPUserEntity u ON s.userExternalId = cast(u.id as string) " +
+           "JOIN IGRPUserEntity u ON s.userId = u.id " +
            "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "JOIN r.department d " +
            "WHERE d.code = :departmentCode AND s.status = :status")
-    Page<SessionEntity> findByDepartmentCodeAndStatus(@Param("departmentCode") String departmentCode, 
-                                                   @Param("status") SessionStatus status, 
+    Page<SessionEntity> findByDepartmentCodeAndStatus(@Param("departmentCode") String departmentCode,
+                                                   @Param("status") SessionStatus status,
                                                    Pageable pageable);
 
     /**
      * Find sessions by role (through user roles)
      */
     @Query("SELECT DISTINCT s FROM SessionEntity s " +
-           "JOIN IGRPUserEntity u ON s.userExternalId = cast(u.id as string) " +
+           "JOIN IGRPUserEntity u ON s.userId = u.id " +
            "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "WHERE r.code = :roleCode AND s.status = :status")
-    Page<SessionEntity> findByRoleCodeAndStatus(@Param("roleCode") String roleCode, 
-                                              @Param("status") SessionStatus status, 
+    Page<SessionEntity> findByRoleCodeAndStatus(@Param("roleCode") String roleCode,
+                                              @Param("status") SessionStatus status,
                                               Pageable pageable);
 
     /**
      * Find sessions by role and department (through user roles)
      */
     @Query("SELECT DISTINCT s FROM SessionEntity s " +
-           "JOIN IGRPUserEntity u ON s.userExternalId = cast(u.id as string) " +
+           "JOIN IGRPUserEntity u ON s.userId = u.id " +
            "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "JOIN r.department d " +
            "WHERE r.code = :roleCode AND d.code = :departmentCode AND s.status = :status")
-    Page<SessionEntity> findByRoleCodeAndDepartmentCodeAndStatus(@Param("roleCode") String roleCode, 
-                                                            @Param("departmentCode") String departmentCode, 
-                                                            @Param("status") SessionStatus status, 
+    Page<SessionEntity> findByRoleCodeAndDepartmentCodeAndStatus(@Param("roleCode") String roleCode,
+                                                            @Param("departmentCode") String departmentCode,
+                                                            @Param("status") SessionStatus status,
                                                             Pageable pageable);
 
     /**
-     * Get user external IDs for users with a specific role
+     * Get user IDs for users with a specific role/department
      */
-    @Query("SELECT DISTINCT cast(u.id as string) FROM IGRPUserEntity u " +
+    @Query("SELECT DISTINCT u.id FROM IGRPUserEntity u " +
            "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "JOIN r.department d " +
            "WHERE r.code = :roleCode AND d.code = :departmentCode")
-    Set<String> findUserIdsByRole(@Param("roleCode") String roleCode, @Param("departmentCode") String departmentCode);
+    Set<Integer> findUserIdsByRole(@Param("roleCode") String roleCode, @Param("departmentCode") String departmentCode);
 
     /**
-     * Get user external IDs for users with roles in a specific department
+     * Get user IDs for users with roles in a specific department
      */
-    @Query("SELECT DISTINCT cast(u.id as string) FROM IGRPUserEntity u " +
+    @Query("SELECT DISTINCT u.id FROM IGRPUserEntity u " +
            "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "JOIN r.department d " +
            "WHERE d.code = :departmentCode")
-    Set<String> findUserIdsByDepartment(@Param("departmentCode") String departmentCode);
+    Set<Integer> findUserIdsByDepartment(@Param("departmentCode") String departmentCode);
 
     /**
      * Count active sessions by user
      */
-    @Query("SELECT COUNT(s) FROM SessionEntity s WHERE s.userExternalId = :userExternalId AND s.status = :status")
-    long countActiveSessionsByUser(@Param("userExternalId") String userExternalId, @Param("status") SessionStatus status);
+    @Query("SELECT COUNT(s) FROM SessionEntity s WHERE s.userId = :userId AND s.status = :status")
+    long countActiveSessionsByUser(@Param("userId") Integer userId, @Param("status") SessionStatus status);
 
     /**
      * Mark sessions as expired for a set of users
@@ -124,10 +146,10 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
     @Modifying
     @Query("UPDATE SessionEntity s SET s.status = :newStatus, s.endedAt = :endedAt, s.lastSeenAt = :lastSeenAt, " +
            "s.closedReason = :closedReason, s.closedBy = :closedBy " +
-           "WHERE s.userExternalId IN :userIds AND s.status = :oldStatus")
-    int invalidateUserSessions(@Param("userIds") Set<String> userIds, 
-                           @Param("oldStatus") SessionStatus oldStatus, 
-                           @Param("newStatus") SessionStatus newStatus, 
+           "WHERE s.userId IN :userIds AND s.status = :oldStatus")
+    int invalidateUserSessions(@Param("userIds") Set<Integer> userIds,
+                           @Param("oldStatus") SessionStatus oldStatus,
+                           @Param("newStatus") SessionStatus newStatus,
                            @Param("endedAt") Instant endedAt,
                            @Param("lastSeenAt") Instant lastSeenAt,
                            @Param("closedReason") String closedReason,
@@ -139,13 +161,13 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
     @Modifying
     @Query("UPDATE SessionEntity s SET s.status = :newStatus, s.endedAt = :endedAt, s.lastSeenAt = :lastSeenAt, " +
            "s.closedReason = :closedReason, s.closedBy = :closedBy " +
-           "WHERE s.userExternalId IN (SELECT DISTINCT cast(u.id as string) FROM IGRPUserEntity u " +
+           "WHERE s.userId IN (SELECT DISTINCT u.id FROM IGRPUserEntity u " +
            "JOIN u.userRoleAssignments ura JOIN ura.role r JOIN r.department d WHERE r.code = :roleCode AND d.code = :departmentCode) " +
            "AND s.status = :oldStatus")
-    int invalidateSessionsByRole(@Param("roleCode") String roleCode, 
+    int invalidateSessionsByRole(@Param("roleCode") String roleCode,
                                @Param("departmentCode") String departmentCode,
-                               @Param("oldStatus") SessionStatus oldStatus, 
-                               @Param("newStatus") SessionStatus newStatus, 
+                               @Param("oldStatus") SessionStatus oldStatus,
+                               @Param("newStatus") SessionStatus newStatus,
                                @Param("endedAt") Instant endedAt,
                                @Param("lastSeenAt") Instant lastSeenAt,
                                @Param("closedReason") String closedReason,
@@ -157,12 +179,12 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
     @Modifying
     @Query("UPDATE SessionEntity s SET s.status = :newStatus, s.endedAt = :endedAt, s.lastSeenAt = :lastSeenAt, " +
            "s.closedReason = :closedReason, s.closedBy = :closedBy " +
-           "WHERE s.userExternalId IN (SELECT DISTINCT cast(u.id as string) FROM IGRPUserEntity u " +
+           "WHERE s.userId IN (SELECT DISTINCT u.id FROM IGRPUserEntity u " +
            "JOIN u.userRoleAssignments ura JOIN ura.role r JOIN r.department d WHERE d.code = :departmentCode) " +
            "AND s.status = :oldStatus")
-    int invalidateSessionsByDepartment(@Param("departmentCode") String departmentCode, 
-                                    @Param("oldStatus") SessionStatus oldStatus, 
-                                    @Param("newStatus") SessionStatus newStatus, 
+    int invalidateSessionsByDepartment(@Param("departmentCode") String departmentCode,
+                                    @Param("oldStatus") SessionStatus oldStatus,
+                                    @Param("newStatus") SessionStatus newStatus,
                                     @Param("endedAt") Instant endedAt,
                                     @Param("lastSeenAt") Instant lastSeenAt,
                                     @Param("closedReason") String closedReason,
@@ -184,7 +206,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      * Find sessions by role and optionally by department
      */
     @Query("SELECT s FROM SessionEntity s " +
-           "JOIN IGRPUserEntity u ON s.userExternalId = cast(u.id as string) " +
+           "JOIN IGRPUserEntity u ON s.userId = u.id " +
            "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "WHERE r.code = :roleCode " +
            "AND (:departmentCode IS NULL OR r.department.code = :departmentCode) " +
@@ -198,7 +220,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      * Find sessions by department only
      */
     @Query("SELECT s FROM SessionEntity s " +
-           "JOIN IGRPUserEntity u ON s.userExternalId = cast(u.id as string) " +
+           "JOIN IGRPUserEntity u ON s.userId = u.id " +
            "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "JOIN r.department d " +
            "WHERE d.code = :departmentCode " +

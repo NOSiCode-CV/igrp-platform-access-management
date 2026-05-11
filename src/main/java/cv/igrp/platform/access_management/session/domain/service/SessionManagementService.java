@@ -1,8 +1,6 @@
 package cv.igrp.platform.access_management.session.domain.service;
 
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
-import cv.igrp.platform.access_management.session.application.dto.SessionInitRequestDTO;
-import cv.igrp.platform.access_management.session.application.dto.SessionRefreshRequestDTO;
 import cv.igrp.platform.access_management.session.application.dto.SessionResponseDTO;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -17,7 +15,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
-import cv.igrp.platform.access_management.session.domain.service.SessionCacheService;
 import cv.igrp.platform.access_management.session.infrastructure.cache.SessionCacheEvictService;
 import cv.igrp.platform.access_management.session.config.SessionProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -66,57 +63,46 @@ public class SessionManagementService {
      * Get current session for user
      */
     @Transactional(readOnly = true)
-    public Optional<SessionResponseDTO> getCurrentSession(String userExternalId) {
-        log.debug("Getting current session for user: {}", userExternalId);
+    public Optional<SessionResponseDTO> getCurrentSession(Integer userId) {
+        log.debug("Getting current session for user: {}", userId);
 
         // First check cache
-        SessionResponseDTO cachedSession = sessionCacheService.getOrLoadSession(userExternalId);
+        SessionResponseDTO cachedSession = sessionCacheService.getOrLoadSession(userId);
         if (cachedSession != null && sessionCacheService.isFromCache()) {
-            log.debug("Session found in cache for user: {}", userExternalId);
+            log.debug("Session found in cache for user: {}", userId);
             return Optional.of(cachedSession);
         }
 
-        // Check database for active session
         Optional<SessionEntity> sessionOpt = sessionRepository
-                .findByUserExternalIdAndStatus(userExternalId, SessionStatus.ACTIVE);
+                .findByUserIdAndStatus(userId, SessionStatus.ACTIVE);
 
         if (sessionOpt.isEmpty()) {
-            log.debug("No active session found for user: {}", userExternalId);
+            log.debug("No active session found for user: {}", userId);
             return Optional.empty();
         }
 
         SessionEntity session = sessionOpt.get();
 
-        // Check if session is expired
         if (session.isExpired()) {
-            log.info("Session expired for user: {}, marking as expired", userExternalId);
+            log.info("Session expired for user: {}, marking as expired", userId);
             session.expire();
             sessionRepository.save(session);
-            sessionCacheEvictService.evictBySubject(userExternalId);
+            sessionCacheEvictService.evictBySubject(userId);
             return Optional.empty();
         }
 
-        // Build response
-        SessionResponseDTO response = buildSessionResponse(session, userExternalId);
-        sessionCacheService.cacheSession(userExternalId, response);
+        SessionResponseDTO response = buildSessionResponse(session, userId);
+        sessionCacheService.cacheSession(userId, response);
         return Optional.of(response);
     }
 
     /**
      * Initialize a new session for user
      */
-    public SessionResponseDTO initializeSession(String userExternalId, String clientIp, 
+    public SessionResponseDTO initializeSession(Integer userId, String clientIp,
                                            String userAgent, String deviceId) {
-        log.info("Initializing session for user: {}", userExternalId);
+        log.info("Initializing session for user: {}", userId);
 
-        Integer userId;
-        try {
-            userId = Integer.parseInt(userExternalId);
-        } catch (NumberFormatException e) {
-            throw IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "Invalid Token sub", "must be an integer ID");
-        }
-
-        // Validate user exists and is active
         IGRPUserEntity user = userRepository.findById(userId)
                 .orElseThrow(() -> IgrpResponseStatusException.of(
                         HttpStatus.NOT_FOUND,
@@ -124,25 +110,23 @@ public class SessionManagementService {
                         "User not found with id: " + userId
                 ));
         if (!Status.ACTIVE.equals(user.getStatus())) {
-            log.warn("Inactive user attempting to create session: {}", userExternalId);
+            log.warn("Inactive user attempting to create session: {}", userId);
             throw IgrpResponseStatusException.of(
                     HttpStatus.FORBIDDEN,
                     "Inactive User",
                     "User account is not active");
         }
 
-        // Close any existing active session
-        sessionRepository.findByUserExternalIdAndStatus(userExternalId, SessionStatus.ACTIVE)
+        sessionRepository.findByUserIdAndStatus(userId, SessionStatus.ACTIVE)
                 .ifPresent(existingSession -> {
-                    log.info("Closing existing session for user: {}", userExternalId);
+                    log.info("Closing existing session for user: {}", userId);
                     existingSession.close("SESSION_REPLACED", "SYSTEM");
                     sessionRepository.save(existingSession);
                 });
 
-        // Create new session
         SessionEntity newSession = new SessionEntity();
         newSession.setSessionId(UUID.randomUUID());
-        newSession.setUserExternalId(userExternalId);
+        newSession.setUserId(userId);
         newSession.setStatus(SessionStatus.ACTIVE);
         newSession.setStartedAt(Instant.now());
         newSession.setLastSeenAt(Instant.now());
@@ -152,65 +136,61 @@ public class SessionManagementService {
         newSession.setDeviceId(deviceId);
 
         SessionEntity savedSession = sessionRepository.save(newSession);
-        log.info("Created new session {} for user: {}", savedSession.getSessionId(), userExternalId);
+        log.info("Created new session {} for user: {}", savedSession.getSessionId(), userId);
 
-        // Evict cache for this user
-        sessionCacheEvictService.evictBySubject(userExternalId);
+        sessionCacheEvictService.evictBySubject(userId);
 
-        return buildSessionResponse(savedSession, userExternalId);
+        return buildSessionResponse(savedSession, userId);
     }
 
     /**
      * Refresh existing session
      */
-    public Optional<SessionResponseDTO> refreshSession(String userExternalId, Integer extensionSeconds) {
-        log.debug("Refreshing session for user: {}", userExternalId);
+    public Optional<SessionResponseDTO> refreshSession(Integer userId, Integer extensionSeconds) {
+        log.debug("Refreshing session for user: {}", userId);
 
         Optional<SessionEntity> sessionOpt = sessionRepository
-                .findByUserExternalIdAndStatus(userExternalId, SessionStatus.ACTIVE);
+                .findByUserIdAndStatus(userId, SessionStatus.ACTIVE);
 
         if (sessionOpt.isEmpty()) {
-            log.debug("No active session to refresh for user: {}", userExternalId);
+            log.debug("No active session to refresh for user: {}", userId);
             return Optional.empty();
         }
 
         SessionEntity session = sessionOpt.get();
 
-        // Check if session is expired
         if (session.isExpired()) {
-            log.info("Cannot refresh expired session for user: {}", userExternalId);
+            log.info("Cannot refresh expired session for user: {}", userId);
             session.expire();
             sessionRepository.save(session);
-            sessionCacheEvictService.evictBySubject(userExternalId);
+            sessionCacheEvictService.evictBySubject(userId);
             return Optional.empty();
         }
 
-        // Extend session
         long extension = extensionSeconds != null ? extensionSeconds : sessionProperties.getTimeoutSeconds();
         Instant newExpiresAt = Instant.now().plusSeconds(extension);
         session.refresh(newExpiresAt);
         sessionRepository.save(session);
 
-        log.info("Extended session {} for user: {} until {}", 
-                session.getSessionId(), userExternalId, newExpiresAt);
+        log.info("Extended session {} for user: {} until {}",
+                session.getSessionId(), userId, newExpiresAt);
 
-        // Evict cache to force refresh
-        sessionCacheEvictService.evictBySubject(userExternalId);
+        sessionCacheEvictService.evictBySubject(userId);
 
-        return Optional.of(buildSessionResponse(session, userExternalId));
+        return Optional.of(buildSessionResponse(session, userId));
     }
 
     /**
      * Close current session
      */
-    public boolean closeSession(String userExternalId, String reason) {
-        log.info("Closing session for user: {} with reason: {}", userExternalId, reason);
+    public boolean closeSession(Integer userId, String reason) {
+        log.info("Closing session for user: {} with reason: {}", userId, reason);
 
         Optional<SessionEntity> sessionOpt = sessionRepository
-                .findByUserExternalIdAndStatus(userExternalId, SessionStatus.ACTIVE);
+                .findByUserIdAndStatus(userId, SessionStatus.ACTIVE);
 
         if (sessionOpt.isEmpty()) {
-            log.debug("No active session to close for user: {}", userExternalId);
+            log.debug("No active session to close for user: {}", userId);
             return false;
         }
 
@@ -218,29 +198,26 @@ public class SessionManagementService {
         session.close(reason, "USER");
         sessionRepository.save(session);
 
-        // Evict cache
-        sessionCacheEvictService.evictBySubject(userExternalId);
+        sessionCacheEvictService.evictBySubject(userId);
 
-        log.info("Closed session {} for user: {}", session.getSessionId(), userExternalId);
+        log.info("Closed session {} for user: {}", session.getSessionId(), userId);
         return true;
     }
 
     /**
      * Rotate session (close current and create new one)
      */
-    public Optional<SessionResponseDTO> rotateSession(String userExternalId, String clientIp, 
+    public Optional<SessionResponseDTO> rotateSession(Integer userId, String clientIp,
                                                  String userAgent, String deviceId) {
-        log.info("Rotating session for user: {}", userExternalId);
+        log.info("Rotating session for user: {}", userId);
 
-        // Close existing session
-        boolean closed = closeSession(userExternalId, "SESSION_ROTATION");
-        
-        // Create new session
-        SessionResponseDTO newSession = initializeSession(userExternalId, clientIp, userAgent, deviceId);
-        
-        log.info("Session rotation completed for user: {}, old session closed: {}", 
-                userExternalId, closed);
-        
+        boolean closed = closeSession(userId, "SESSION_ROTATION");
+
+        SessionResponseDTO newSession = initializeSession(userId, clientIp, userAgent, deviceId);
+
+        log.info("Session rotation completed for user: {}, old session closed: {}",
+                userId, closed);
+
         return Optional.of(newSession);
     }
 
@@ -261,10 +238,9 @@ public class SessionManagementService {
         session.revoke(reason, killedBy);
         sessionRepository.save(session);
 
-        // Evict cache for the user
-        sessionCacheEvictService.evictBySubject(session.getUserExternalId());
+        sessionCacheEvictService.evictBySubject(session.getUserId());
 
-        log.info("Killed session {} for user: {}", sessionId, session.getUserExternalId());
+        log.info("Killed session {} for user: {}", sessionId, session.getUserId());
         return true;
     }
 
@@ -276,9 +252,9 @@ public class SessionManagementService {
         log.debug("Listing sessions with status: {}", status);
 
         Page<SessionEntity> sessionPage = sessionRepository.findByStatus(status, pageable);
-        
+
         List<SessionResponseDTO> sessionDTOs = sessionPage.getContent().stream()
-                .map(session -> buildSessionResponse(session, session.getUserExternalId()))
+                .map(session -> buildSessionResponse(session, session.getUserId()))
                 .collect(Collectors.toList());
 
         return new PageImpl<>(sessionDTOs, pageable, sessionPage.getTotalElements());
@@ -287,15 +263,8 @@ public class SessionManagementService {
     /**
      * Build session response DTO from entity
      */
-    private SessionResponseDTO buildSessionResponse(SessionEntity session, String userExternalId) {
-        // Get user information
-        IGRPUserEntity user = null;
-        try {
-            Integer userId = Integer.parseInt(userExternalId);
-            user = userRepository.findById(userId).orElse(null);
-        } catch (NumberFormatException e) {
-            log.warn("Invalid user ID format: {}", userExternalId);
-        }
+    private SessionResponseDTO buildSessionResponse(SessionEntity session, Integer userId) {
+        IGRPUserEntity user = userId != null ? userRepository.findById(userId).orElse(null) : null;
 
         IGRPUserDTO userProfile = null;
         RoleDepartmentDTO currentActiveRole = null;
@@ -303,9 +272,7 @@ public class SessionManagementService {
         List<CodeDescriptionDTO> departments = Collections.emptyList();
 
         if (user != null) {
-            // Map user profile
             userProfile = new IGRPUserDTO();
-            // Don't set internal ID - use external ID from UserIdentity interface
             userProfile.setName(user.getName());
             userProfile.setUsername(user.getUsername());
             userProfile.setEmail(user.getEmail());
@@ -313,7 +280,6 @@ public class SessionManagementService {
             userProfile.setPicture(user.getPicture());
             userProfile.setSignature(user.getSignature());
 
-            // Map current active role
             if (user.getActiveRole() != null) {
                 RoleDTO fullRoleDto = roleMapper.mapToDto(user.getActiveRole());
                 currentActiveRole = new RoleDepartmentDTO(
@@ -322,7 +288,6 @@ public class SessionManagementService {
                 );
             }
 
-            // Map all roles using UserRoleAssignment to include expiresAt
             roles = user.getUserRoleAssignments().stream()
                     .filter(ura -> ura.getExpiresAt() == null || ura.getExpiresAt().isAfter(java.time.LocalDateTime.now()))
                     .filter(ura -> Status.ACTIVE.equals(ura.getRole().getStatus()))
@@ -331,16 +296,14 @@ public class SessionManagementService {
                     .map(roleDto -> new RoleDepartmentDTO(roleDto.getCode(), roleDto.getDepartmentCode()))
                     .collect(Collectors.toList());
 
-            // Extract departments from roles
             departments = roles.stream()
                     .map(RoleDepartmentDTO::departmentCode)
                     .filter(Objects::nonNull)
                     .distinct()
-                    .map(deptCode -> new CodeDescriptionDTO(deptCode, deptCode)) // Using code as description for now
+                    .map(deptCode -> new CodeDescriptionDTO(deptCode, deptCode))
                     .collect(Collectors.toList());
         }
 
-        // Build session response
         SessionResponseDTO response = new SessionResponseDTO();
         response.setSessionId(session.getSessionId());
         response.setStatus(session.getStatus());
@@ -364,27 +327,27 @@ public class SessionManagementService {
      * List sessions filtered by role and optionally by department
      */
     @Transactional(readOnly = true)
-    public Page<SessionResponseDTO> listSessionsByRole(String roleCode, String departmentCode, 
+    public Page<SessionResponseDTO> listSessionsByRole(String roleCode, String departmentCode,
                                                        SessionStatus status, Pageable pageable) {
-        log.debug("Listing sessions for role: {} in department: {} with status: {}", 
+        log.debug("Listing sessions for role: {} in department: {} with status: {}",
                  roleCode, departmentCode, status);
 
         Page<SessionEntity> sessions = sessionRepository.findByRoleAndDepartment(roleCode, departmentCode, status, pageable);
-        
-        return sessions.map(session -> buildSessionResponse(session, session.getUserExternalId()));
+
+        return sessions.map(session -> buildSessionResponse(session, session.getUserId()));
     }
 
     /**
      * List sessions filtered by department only
      */
     @Transactional(readOnly = true)
-    public Page<SessionResponseDTO> listSessionsByDepartment(String departmentCode, 
+    public Page<SessionResponseDTO> listSessionsByDepartment(String departmentCode,
                                                            SessionStatus status, Pageable pageable) {
         log.debug("Listing sessions for department: {} with status: {}", departmentCode, status);
 
         Page<SessionEntity> sessions = sessionRepository.findByDepartment(departmentCode, status, pageable);
-        
-        return sessions.map(session -> buildSessionResponse(session, session.getUserExternalId()));
+
+        return sessions.map(session -> buildSessionResponse(session, session.getUserId()));
     }
 
     /**
@@ -394,30 +357,23 @@ public class SessionManagementService {
     public int killSessionsByRole(String roleCode, String departmentCode, String reason, String killedBy) {
         log.info("Killing sessions for role: {} in department: {} by: {}", roleCode, departmentCode, killedBy);
 
-        // Find all users with the specified role/department
         Set<Integer> userIds = userRepository.findUserIdsByRoleAndDepartment(roleCode, departmentCode);
-        Set<String> userExternalIds = userIds.stream().map(String::valueOf).collect(Collectors.toSet());
-        
-        if (userExternalIds.isEmpty()) {
+
+        if (userIds.isEmpty()) {
             log.info("No users found with role: {} in department: {}", roleCode, departmentCode);
             return 0;
         }
 
-        // Kill all active sessions for these users
         int killedCount = sessionRepository.invalidateUserSessions(
-                userExternalIds, SessionStatus.ACTIVE, SessionStatus.REVOKED, 
+                userIds, SessionStatus.ACTIVE, SessionStatus.REVOKED,
                 Instant.now(), Instant.now(), reason, killedBy);
 
-        // Evict from cache
-        sessionCacheEvictService.evictBySubjects(userExternalIds);
+        sessionCacheEvictService.evictBySubjects(userIds);
 
         log.info("Killed {} sessions for role: {} in department: {}", killedCount, roleCode, departmentCode);
         return killedCount;
     }
 
-    /**
-     * Hash user agent for privacy
-     */
     private String hashUserAgent(String userAgent) {
         if (userAgent == null || userAgent.trim().isEmpty()) {
             return null;

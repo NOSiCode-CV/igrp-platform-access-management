@@ -1,17 +1,41 @@
 package cv.igrp.platform.access_management.shared.domain.events;
 
-import org.springframework.context.ApplicationEvent;
+import lombok.Data;
 
-public class UserRoleChangedEvent extends ApplicationEvent {
+import java.time.Instant;
+import java.util.Set;
 
-    private final String username;
+/**
+ * Canonical event fired when a user's role membership changes.
+ *
+ * Consumed by:
+ * - SessionInvalidationEventListener (invalidates server-side sessions)
+ * - PermissionCacheInvalidator (evicts permission cache entries)
+ */
+@Data
+public class UserRoleChangedEvent {
 
-    public UserRoleChangedEvent(Object source, String username) {
-        super(source);
-        this.username = username;
-    }
+    public static final String CHANGE_ADDED = "ADDED";
+    public static final String CHANGE_REMOVED = "REMOVED";
+    public static final String CHANGE_ACTIVE_ROLE_CHANGED = "ACTIVE_ROLE_CHANGED";
 
-    public String username() {
-        return username;
+    private final Integer userId;
+    private final Set<String> affectedRoleCodes;
+    private final String departmentCode;
+    private final String changeType;
+    private final String triggeredBy;
+    private final Instant timestamp;
+
+    public UserRoleChangedEvent(Integer userId,
+                                Set<String> affectedRoleCodes,
+                                String departmentCode,
+                                String changeType,
+                                String triggeredBy) {
+        this.userId = userId;
+        this.affectedRoleCodes = affectedRoleCodes;
+        this.departmentCode = departmentCode;
+        this.changeType = changeType;
+        this.triggeredBy = triggeredBy;
+        this.timestamp = Instant.now();
     }
 }

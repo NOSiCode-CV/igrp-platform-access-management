@@ -48,11 +48,11 @@
     {
       "actionName": "getUserSession",
       "method": "GET",
-      "path": "/users/{userExternalId}",
+      "path": "/users/{userId}",
       "pathVariables": [
         {
-          "type": "string",
-          "name": "userExternalId",
+          "type": "integer",
+          "name": "userId",
           "isRequired": true
         }
       ],

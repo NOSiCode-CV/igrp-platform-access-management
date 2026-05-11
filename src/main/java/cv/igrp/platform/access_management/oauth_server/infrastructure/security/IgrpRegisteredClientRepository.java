@@ -67,6 +67,7 @@ public class IgrpRegisteredClientRepository implements RegisteredClientRepositor
                         .accessTokenTimeToLive(Duration.ofSeconds(client.getAccessTokenTtl()))
                         .refreshTokenTimeToLive(Duration.ofSeconds(client.getRefreshTokenTtl()))
                         .authorizationCodeTimeToLive(Duration.ofSeconds(client.getAuthorizationCodeTtl()))
+                        .reuseRefreshTokens(false)
                         .build())
                 .clientSettings(ClientSettings.builder()
                         .requireProofKey(false)

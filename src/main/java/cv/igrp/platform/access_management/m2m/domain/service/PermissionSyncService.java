@@ -3,6 +3,8 @@ package cv.igrp.platform.access_management.m2m.domain.service;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
+import cv.igrp.platform.access_management.shared.domain.events.DeletePermissionEvent;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -33,12 +35,18 @@ public class PermissionSyncService {
     private final PermissionEntityRepository permissionRepository;
     private final ResourceEntityRepository resourceEntityRepository;
     private final ObjectMapper objectMapper;
+    private final EventPublisher eventPublisher;
 
-    public PermissionSyncService(PermissionEntityRepository permissionRepository, ResourceEntityRepository resourceEntityRepository, ObjectMapper objectMapper, AuthenticationHelper authenticationHelper) {
+    public PermissionSyncService(PermissionEntityRepository permissionRepository,
+                                 ResourceEntityRepository resourceEntityRepository,
+                                 ObjectMapper objectMapper,
+                                 AuthenticationHelper authenticationHelper,
+                                 EventPublisher eventPublisher) {
         this.authenticationHelper = authenticationHelper;
         this.permissionRepository = permissionRepository;
         this.resourceEntityRepository = resourceEntityRepository;
         this.objectMapper = objectMapper;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -136,6 +144,12 @@ public class PermissionSyncService {
                 perm.setStatus(Status.DELETED);
                 permissionRepository.save(perm);
                 LOGGER.info("[PermissionSync] Deleted permission '{}'", perm.getName());
+
+                // Phase D / FR-16 cascade: publish so SessionInvalidationEventListener
+                // can resolve every user that held this permission and revoke their
+                // sessions, and so PermissionCacheInvalidator can evict cached entries.
+                eventPublisher.publishPermissionDeleted(
+                        new DeletePermissionEvent(this, perm.getName()));
             }
         }
 

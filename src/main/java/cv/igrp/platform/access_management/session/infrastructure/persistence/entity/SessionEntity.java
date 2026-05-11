@@ -4,7 +4,6 @@ import cv.igrp.platform.access_management.shared.config.AuditEntity;
 import cv.igrp.framework.stereotype.IgrpEntity;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -24,15 +23,15 @@ import java.util.UUID;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "t_user_session", 
+@Table(name = "t_user_session",
        indexes = {
-           @Index(name = "ix_session_user_status", columnList = "user_external_id, status"),
-           @Index(name = "ix_session_expires_active", columnList = "expires_at")
+           @Index(name = "ix_session_user_status", columnList = "user_id, status"),
+           @Index(name = "ix_session_expires_active", columnList = "expires_at"),
+           @Index(name = "ix_session_user_device", columnList = "user_id, device_id"),
+           @Index(name = "ix_session_jti", columnList = "jti")
        },
        uniqueConstraints = {
-           @UniqueConstraint(name = "ux_session_session_id", columnNames = {"session_id"}),
-           @UniqueConstraint(name = "ux_one_active_session_per_user", 
-                           columnNames = {"user_external_id"})
+           @UniqueConstraint(name = "ux_session_session_id", columnNames = {"session_id"})
        })
 public class SessionEntity extends AuditEntity {
 
@@ -44,9 +43,9 @@ public class SessionEntity extends AuditEntity {
     @Column(name = "session_id", nullable = false, unique = true)
     private UUID sessionId;
 
-    @NotBlank(message = "User external ID is mandatory")
-    @Column(name = "user_external_id", nullable = false)
-    private String userExternalId;
+    @NotNull(message = "User id is mandatory")
+    @Column(name = "user_id", nullable = false)
+    private Integer userId;
 
     @NotNull(message = "Session status is mandatory")
     @Enumerated(EnumType.STRING)
@@ -64,6 +63,15 @@ public class SessionEntity extends AuditEntity {
     @NotNull(message = "Expires at is mandatory")
     @Column(name = "expires_at", nullable = false)
     private Instant expiresAt;
+
+    @Column(name = "absolute_expires_at")
+    private Instant absoluteExpiresAt;
+
+    @Column(name = "jti", length = 64)
+    private String jti;
+
+    @Column(name = "client_id", length = 128)
+    private String clientId;
 
     @Column(name = "ended_at")
     private Instant endedAt;

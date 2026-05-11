@@ -18,6 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
+import cv.igrp.platform.access_management.shared.domain.events.DepartmentScopeChangedEvent;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
@@ -47,6 +49,7 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
    private final RoleEntityRepository roleRepository;
    private final DepartmentMapper departmentMapper;
    private final UserUtils userUtils;
+   private final EventPublisher eventPublisher;
 
    /**
     * Constructs the command handler with required dependencies.
@@ -55,17 +58,20 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
     * @param roleRepository       the repository used to retrieve and save role entities
     * @param departmentMapper     the mapper used to convert between DTOs and entities
     * @param userUtils            the utility class used to validate user roles
+    * @param eventPublisher       publishes session-invalidation events
     */
    public UpdateDepartmentCommandHandler(
            DepartmentEntityRepository departmentRepository,
            RoleEntityRepository roleRepository,
            DepartmentMapper departmentMapper,
-           UserUtils userUtils
+           UserUtils userUtils,
+           EventPublisher eventPublisher
    ) {
       this.departmentRepository = departmentRepository;
       this.roleRepository = roleRepository;
       this.departmentMapper = departmentMapper;
       this.userUtils = userUtils;
+      this.eventPublisher = eventPublisher;
    }
 
    /**
@@ -89,15 +95,21 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
                          HttpStatus.NOT_FOUND, "Invalid Department Code", "Department not found with code: " + departmentCode);
               });
 
-      if(command.getDepartmentdto().getStatus() != null &&
-              !Objects.equals(command.getDepartmentdto().getStatus(), department.getStatus())
-      ) {
+      boolean statusChanged = command.getDepartmentdto().getStatus() != null &&
+              !Objects.equals(command.getDepartmentdto().getStatus(), department.getStatus());
+
+      if(statusChanged) {
           updateRelatedEntitiesStatus(department, command.getDepartmentdto().getStatus());
       }
 
       departmentMapper.updateEntityFromDto(command.getDepartmentdto(), department);
 
       DepartmentEntity updated = departmentRepository.save(department);
+
+      if (statusChanged) {
+         eventPublisher.publishDepartmentScopeChanged(new DepartmentScopeChangedEvent(
+                 updated.getCode(), DepartmentScopeChangedEvent.CHANGE_STATUS, null));
+      }
 
       logger.info("Successfully updated department with code={}", updated.getCode());
 

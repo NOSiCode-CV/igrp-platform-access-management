@@ -13,6 +13,8 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,6 +51,7 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
    private final RoleEntityRepository roleRepository;
    private final DepartmentEntityRepository departmentRepository;
    private final RoleMapper roleMapper;
+   private final EventPublisher eventPublisher;
 
    /**
     * Constructs a new instance of {@code RemovePermissionsCommandHandler} with the necessary dependencies.
@@ -56,11 +59,13 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
     * @param roleRepository       the repository used to retrieve and persist role entities
     * @param departmentRepository repository used to retrieve department entities
     * @param roleMapper           mapper used to convert {@link RoleEntity} entities into {@link RoleDTO}
+    * @param eventPublisher       publishes session-invalidation events
     */
-   public RemovePermissionsCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper) {
+   public RemovePermissionsCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper, EventPublisher eventPublisher) {
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
       this.roleMapper = roleMapper;
+      this.eventPublisher = eventPublisher;
    }
 
    /**
@@ -94,6 +99,8 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
       log.info("Permissions with IDs {} removed from Role with code: {} successfully.", command.getRemovePermissionsRequest(), command.getRoleCode());
       removePermissionsForChildren(departmentEntity, foundRole, command.getRemovePermissionsRequest());
       var response = roleMapper.mapToDto(roleRepository.save(foundRole));
+      eventPublisher.publishRolePermissionChanged(new RolePermissionChangedEvent(
+              foundRole.getCode(), command.getDepartmentCode(), "PERMISSIONS_REMOVED", null));
       return new ResponseEntity<>(response, HttpStatus.OK);
    }
 

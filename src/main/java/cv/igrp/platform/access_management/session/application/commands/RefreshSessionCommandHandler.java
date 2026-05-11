@@ -46,17 +46,17 @@ public class RefreshSessionCommandHandler implements CommandHandler<RefreshSessi
     @IgrpCommandHandler
     public Optional<SessionResponseDTO> handle(RefreshSessionCommand command) {
         log.debug("Handling RefreshSessionCommand for user: {} with extension: {} seconds", 
-                command.getUserExternalId(), command.getExtensionSeconds());
+                command.getUserId(), command.getExtensionSeconds());
         
         Optional<SessionResponseDTO> session = sessionManagementService.refreshSession(
-                command.getUserExternalId(),
+                command.getUserId(),
                 command.getExtensionSeconds()
         );
         
         if (session.isPresent()) {
-            log.debug("Session refreshed successfully for user: {}", command.getUserExternalId());
+            log.debug("Session refreshed successfully for user: {}", command.getUserId());
         } else {
-            log.debug("No active session found to refresh for user: {}", command.getUserExternalId());
+            log.debug("No active session found to refresh for user: {}", command.getUserId());
         }
         
         return session;

@@ -10,8 +10,8 @@ public class SessionCreatedEvent extends SessionEvent {
     private final String clientIp;
     private final String deviceId;
 
-    public SessionCreatedEvent(UUID sessionId, String userExternalId, String clientIp, String deviceId) {
-        super(sessionId, userExternalId, "SESSION_MANAGEMENT");
+    public SessionCreatedEvent(UUID sessionId, Integer userId, String clientIp, String deviceId) {
+        super(sessionId, userId, "SESSION_MANAGEMENT");
         this.clientIp = clientIp;
         this.deviceId = deviceId;
     }
@@ -28,7 +28,7 @@ public class SessionCreatedEvent extends SessionEvent {
     public String toString() {
         return "SessionCreatedEvent{" +
                 "sessionId=" + getSessionId() +
-                ", userExternalId='" + getUserExternalId() + '\'' +
+                ", userId='" + getUserId() + '\'' +
                 ", clientIp='" + clientIp + '\'' +
                 ", deviceId='" + deviceId + '\'' +
                 ", timestamp=" + getTimestamp() +

@@ -89,7 +89,7 @@ public class AdminSessionController {
         return ResponseEntity.ok(sessions);
     }
 
-    @GetMapping("/users/{userExternalId}")
+    @GetMapping("/users/{userId}")
     @Operation(
         summary = "Get user session",
         description = "Retrieves the current active session for a specific user"
@@ -105,12 +105,12 @@ public class AdminSessionController {
     )
     @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<SessionResponseDTO> getUserSession(
-            @Parameter(description = "User external ID") 
-            @PathVariable String userExternalId) {
-        
-        log.debug("Admin getting session for user: {}", userExternalId);
-        
-        var query = new GetUserSessionQuery(userExternalId);
+            @Parameter(description = "User id")
+            @PathVariable Integer userId) {
+
+        log.debug("Admin getting session for user: {}", userId);
+
+        var query = new GetUserSessionQuery(userId);
         Optional<SessionResponseDTO> session = queryBus.handle(query);
         
         return session.map(ResponseEntity::ok)

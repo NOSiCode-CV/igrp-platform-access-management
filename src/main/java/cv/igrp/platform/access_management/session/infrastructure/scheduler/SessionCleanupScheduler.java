@@ -1,8 +1,10 @@
 package cv.igrp.platform.access_management.session.infrastructure.scheduler;
 
+import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.RefreshTokenTombstoneRepository;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
+import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.session.infrastructure.cache.SessionCacheEvictService;
 import cv.igrp.platform.access_management.session.config.SessionProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -20,6 +22,8 @@ public class SessionCleanupScheduler {
 
     private final SessionRepository sessionRepository;
     private final SessionCacheEvictService sessionCacheEvictService;
+    private final RefreshTokenTombstoneRepository refreshTokenTombstoneRepository;
+    private final SessionAuditLogger sessionAuditLogger;
 
     // Configuration properties
     private final long cleanupIntervalSeconds;
@@ -28,10 +32,14 @@ public class SessionCleanupScheduler {
     public SessionCleanupScheduler(
             SessionRepository sessionRepository,
             SessionCacheEvictService sessionCacheEvictService,
+            RefreshTokenTombstoneRepository refreshTokenTombstoneRepository,
+            SessionAuditLogger sessionAuditLogger,
             @Value("${igrp.session.cleanup.interval-seconds:300}") long cleanupIntervalSeconds,
             @Value("${igrp.session.old-session.retention-days:30}") long oldSessionRetentionDays) {
         this.sessionRepository = sessionRepository;
         this.sessionCacheEvictService = sessionCacheEvictService;
+        this.refreshTokenTombstoneRepository = refreshTokenTombstoneRepository;
+        this.sessionAuditLogger = sessionAuditLogger;
         this.cleanupIntervalSeconds = cleanupIntervalSeconds;
         this.oldSessionRetentionDays = oldSessionRetentionDays;
     }
@@ -54,19 +62,24 @@ public class SessionCleanupScheduler {
                 return;
             }
 
-            // Mark sessions as expired
+            // Mark sessions as expired and audit each transition (NFR-4).
             expiredSessions.forEach(session -> {
+                String reason = (session.getAbsoluteExpiresAt() != null
+                        && !now.isBefore(session.getAbsoluteExpiresAt()))
+                        ? "ABSOLUTE_TIMEOUT"
+                        : "IDLE_TIMEOUT";
                 session.expire();
-                log.debug("Marking session {} as expired for user: {}", 
-                        session.getSessionId(), session.getUserExternalId());
+                sessionAuditLogger.recordExpired(session.getSessionId(), session.getUserId(), reason);
+                log.debug("Marking session {} as expired for user: {} ({})",
+                        session.getSessionId(), session.getUserId(), reason);
             });
 
             // Save to database
             sessionRepository.saveAll(expiredSessions);
 
             // Collect user IDs for cache eviction
-            Set<String> userIds = expiredSessions.stream()
-                    .map(SessionEntity::getUserExternalId)
+            Set<Integer> userIds = expiredSessions.stream()
+                    .map(SessionEntity::getUserId)
                     .collect(java.util.stream.Collectors.toSet());
 
             // Evict from cache
@@ -95,11 +108,20 @@ public class SessionCleanupScheduler {
                     List.of(SessionStatus.CLOSED, SessionStatus.EXPIRED, SessionStatus.REVOKED),
                     cutoffDate);
 
-            log.info("Deleted {} old session records older than {}", 
+            log.info("Deleted {} old session records older than {}",
                     deletedCount, cutoffDate);
 
         } catch (Exception e) {
             log.error("Error during old session cleanup", e);
+        }
+
+        try {
+            int purgedTombstones = refreshTokenTombstoneRepository.deleteExpired(Instant.now());
+            if (purgedTombstones > 0) {
+                log.info("Purged {} expired refresh-token tombstones", purgedTombstones);
+            }
+        } catch (Exception e) {
+            log.warn("Error purging expired refresh-token tombstones: {}", e.getMessage());
         }
     }
 

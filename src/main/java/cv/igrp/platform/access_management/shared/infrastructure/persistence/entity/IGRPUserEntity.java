@@ -98,6 +98,21 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     @Column(name = "metadata", columnDefinition = "jsonb")
     private Map<String, Object> metadata = new LinkedHashMap<>();
 
+    /**
+     * Phase F1 — global "tokens issued before this instant are invalid" floor.
+     * Set on password reset / forced re-auth: the {@code SessionEnforcementFilter}
+     * rejects every JWT whose {@code iat} predates this value, even if the bound
+     * session row is still ACTIVE.
+     *
+     * <p>Marked {@link org.hibernate.envers.NotAudited} so the column does not
+     * have to round-trip through {@code t_user_aud}; the underlying password
+     * reset / forced re-auth flows are audited at the action layer through
+     * {@code SecurityAuditService}.
+     */
+    @org.hibernate.envers.NotAudited
+    @Column(name = "tokens_not_valid_before")
+    private java.time.Instant tokensNotValidBefore;
+
     // Implementação da interface UserIdentity
 
     public Integer getInternalId() {

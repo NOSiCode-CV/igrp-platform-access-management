@@ -30,6 +30,9 @@ public class UpdateDepartmentCommandHandlerTest {
     @Mock
     private DepartmentMapper departmentMapper;
 
+    @Mock
+    private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
+
     @InjectMocks
     private UpdateDepartmentCommandHandler updateDepartmentCommandHandler;
 

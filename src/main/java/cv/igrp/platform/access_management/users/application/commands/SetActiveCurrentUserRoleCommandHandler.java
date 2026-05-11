@@ -20,8 +20,11 @@ import org.slf4j.LoggerFactory;
 
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDepartmentDTO;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.domain.events.UserRoleChangedEvent;
 
 import java.util.Optional;
+import java.util.Set;
 
 @Component
 public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<SetActiveCurrentUserRoleCommand, ResponseEntity<RoleDepartmentDTO>> {
@@ -33,6 +36,7 @@ public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<Se
     private final DepartmentEntityRepository departmentRepository;
     private final AuthenticationHelper authenticationHelper;
     private final SecurityAuditService auditService;
+    private final EventPublisher eventPublisher;
 
     /**
      * Constructs the handler with necessary dependencies.
@@ -48,13 +52,15 @@ public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<Se
             RoleEntityRepository roleRepository,
             DepartmentEntityRepository departmentRepository,
             AuthenticationHelper authenticationHelper,
-            SecurityAuditService auditService
+            SecurityAuditService auditService,
+            EventPublisher eventPublisher
     ) {
         this.igrpUserRepository = igrpUserRepository;
         this.roleRepository = roleRepository;
         this.departmentRepository = departmentRepository;
         this.authenticationHelper = authenticationHelper;
         this.auditService = auditService;
+        this.eventPublisher = eventPublisher;
     }
 
     @IgrpCommandHandler
@@ -99,6 +105,13 @@ public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<Se
 
         // Audit the profile switch
         auditService.logProfileSwitch(oldRoleId, savedUser.getActiveRole().getId());
+
+        eventPublisher.publishUserRoleChanged(new UserRoleChangedEvent(
+                userId,
+                Set.of(savedUser.getActiveRole().getCode()),
+                savedUser.getActiveRole().getDepartment().getCode(),
+                UserRoleChangedEvent.CHANGE_ACTIVE_ROLE_CHANGED,
+                authenticationHelper.getSub()));
 
         RoleDepartmentDTO dto = new RoleDepartmentDTO(savedUser.getActiveRole().getCode(), savedUser.getActiveRole().getDepartment().getCode());
         logger.info("User ID : {} has active role: {} (Department: {})", userId, savedUser.getActiveRole().getCode(), savedUser.getActiveRole().getDepartment().getCode());

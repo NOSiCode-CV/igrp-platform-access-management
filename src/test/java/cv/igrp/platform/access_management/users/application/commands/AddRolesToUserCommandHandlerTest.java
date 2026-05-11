@@ -14,6 +14,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -52,6 +53,9 @@ public class AddRolesToUserCommandHandlerTest {
 
     @Mock
     private RoleMapper roleMapper;
+
+    @Mock
+    private EventPublisher eventPublisher;
 
     @InjectMocks
     private AddRolesToUserCommandHandler handler;

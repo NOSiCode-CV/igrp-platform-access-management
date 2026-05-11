@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -46,6 +47,18 @@ import java.util.stream.Collectors;
 public class ClaimsEnrichmentService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClaimsEnrichmentService.class);
+    private static final Set<String> RESERVED_METADATA_KEYS = Set.of(
+            "name",
+            "given_name",
+            "family_name",
+            "preferred_username",
+            "email",
+            "email_verified",
+            "picture",
+            "phone_number",
+            "locale",
+            "nic"
+    );
 
     private final OAuthClientJpaRepository oauthClientRepository;
     private final UserIdentityJpaRepository userIdentityRepository;
@@ -93,8 +106,9 @@ public class ClaimsEnrichmentService {
      * so the token issuance pipeline stays robust.
      */
     @Transactional(readOnly = true)
-    public Map<String, Object> buildClaims(String subject, String clientId) {
+    public Map<String, Object> buildClaims(String subject, String clientId, Set<String> grantedScopes) {
         Map<String, Object> claims = new LinkedHashMap<>();
+        Set<String> scopes = grantedScopes != null ? new HashSet<>(grantedScopes) : Collections.emptySet();
 
         Optional<OAuthClientEntity> client = clientId == null
                 ? Optional.empty()
@@ -106,9 +120,9 @@ public class ClaimsEnrichmentService {
         claims.put("org", selectedOrg(client));
         claims.put("permissions", permissions(user));
         claims.put("resource_access", resourceAccess(clientId, user));
-        claims.putAll(standardIdentityClaims(user));
+        claims.putAll(standardIdentityClaims(user, scopes));
 
-        Map<String, Object> metadata = user.map(IGRPUserEntity::getMetadata).orElseGet(Collections::emptyMap);
+        Map<String, Object> metadata = filteredMetadata(user);
         if (!metadata.isEmpty()) {
             claims.put("metadata", metadata);
         }
@@ -141,7 +155,7 @@ public class ClaimsEnrichmentService {
                 .orElse("");
     }
 
-    private Map<String, Object> standardIdentityClaims(Optional<IGRPUserEntity> user) {
+    private Map<String, Object> standardIdentityClaims(Optional<IGRPUserEntity> user, Set<String> scopes) {
         if (user.isEmpty()) {
             return Collections.emptyMap();
         }
@@ -152,45 +166,75 @@ public class ClaimsEnrichmentService {
                 : Collections.emptyMap();
 
         Map<String, Object> claims = new LinkedHashMap<>();
-        putIfPresent(claims, "name", firstNonBlank(
-                asString(metadata.get("name")),
-                igrpUser.getName()
-        ));
-        putIfPresent(claims, "given_name", firstNonBlank(
-                asString(metadata.get("given_name"))
-        ));
-        putIfPresent(claims, "family_name", firstNonBlank(
-                asString(metadata.get("family_name"))
-        ));
-        putIfPresent(claims, "preferred_username", firstNonBlank(
-                asString(metadata.get("preferred_username")),
-                igrpUser.getUsername()
-        ));
-        putIfPresent(claims, "email", firstNonBlank(
-                asString(metadata.get("email")),
-                igrpUser.getEmail()
-        ));
-        putIfPresent(claims, "picture", firstNonBlank(
-                asString(metadata.get("picture")),
-                igrpUser.getPicture()
-        ));
-        putIfPresent(claims, "phone_number", firstNonBlank(
-                asString(metadata.get("phone_number")),
-                igrpUser.getPhoneNumber()
-        ));
-        putIfPresent(claims, "locale", firstNonBlank(
-                asString(metadata.get("locale"))
-        ));
+        if (hasScope(scopes, "profile")) {
+            putIfPresent(claims, "name", firstNonBlank(
+                    igrpUser.getName(),
+                    asString(metadata.get("name"))
+            ));
+            putIfPresent(claims, "given_name", firstNonBlank(
+                    asString(metadata.get("given_name"))
+            ));
+            putIfPresent(claims, "family_name", firstNonBlank(
+                    asString(metadata.get("family_name"))
+            ));
+            putIfPresent(claims, "preferred_username", firstNonBlank(
+                    igrpUser.getUsername(),
+                    asString(metadata.get("preferred_username"))
+            ));
+            putIfPresent(claims, "picture", firstNonBlank(
+                    igrpUser.getPicture(),
+                    asString(metadata.get("picture"))
+            ));
+            putIfPresent(claims, "locale", firstNonBlank(
+                    asString(metadata.get("locale"))
+            ));
+        }
 
-        Boolean emailVerified = firstNonNullBoolean(
-                metadata.get("email_verified"),
-                igrpUser.getEmailVerified()
-        );
-        if (emailVerified != null) {
-            claims.put("email_verified", emailVerified);
+        if (hasScope(scopes, "email")) {
+            putIfPresent(claims, "email", firstNonBlank(
+                    igrpUser.getEmail(),
+                    asString(metadata.get("email"))
+            ));
+
+            Boolean emailVerified = firstNonNullBoolean(
+                    igrpUser.getEmailVerified(),
+                    metadata.get("email_verified")
+            );
+            if (emailVerified != null) {
+                claims.put("email_verified", emailVerified);
+            }
+        }
+
+        if (hasScope(scopes, "phone")) {
+            putIfPresent(claims, "phone_number", firstNonBlank(
+                    igrpUser.getPhoneNumber(),
+                    asString(metadata.get("phone_number"))
+            ));
+        }
+
+        if (hasScope(scopes, "nic")) {
+            putIfPresent(claims, "nic", firstNonBlank(
+                    igrpUser.getNic(),
+                    asString(metadata.get("nic"))
+            ));
         }
 
         return claims;
+    }
+
+    private Map<String, Object> filteredMetadata(Optional<IGRPUserEntity> user) {
+        if (user.isEmpty() || user.get().getMetadata() == null || user.get().getMetadata().isEmpty()) {
+            return Collections.emptyMap();
+        }
+
+        return user.get().getMetadata().entrySet().stream()
+                .filter(entry -> !RESERVED_METADATA_KEYS.contains(entry.getKey()))
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        Map.Entry::getValue,
+                        (left, right) -> right,
+                        LinkedHashMap::new
+                ));
     }
 
     /**
@@ -275,6 +319,10 @@ public class ClaimsEnrichmentService {
         if (value != null && !value.isBlank()) {
             claims.put(key, value);
         }
+    }
+
+    private boolean hasScope(Set<String> scopes, String expectedScope) {
+        return scopes != null && scopes.contains(expectedScope);
     }
 
     private String firstNonBlank(String... values) {

@@ -1,11 +1,20 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
+import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
+import org.springframework.jdbc.datasource.init.ScriptException;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -21,7 +30,9 @@ public class AuthorizationServerConfig {
     @Bean
     @Order(0)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http,
-                                                                      IgrpOidcUserService igrpOidcUserService) throws Exception {
+                                                                      IgrpOidcUserService igrpOidcUserService,
+                                                                      SessionAwareIntrospector sessionAwareIntrospector,
+                                                                      SessionLogoutHandler sessionLogoutHandler) throws Exception {
         OAuth2AuthorizationServerConfigurer authServerConfigurer = new OAuth2AuthorizationServerConfigurer();
         var authorizationEndpoints = new OrRequestMatcher(
                 AntPathRequestMatcher.antMatcher("/oauth2/authorize"),
@@ -37,7 +48,17 @@ public class AuthorizationServerConfig {
         );
 
         http.securityMatcher(authorizationEndpoints)
-                .with(authServerConfigurer, cfg -> cfg.oidc(Customizer.withDefaults()))
+                .with(authServerConfigurer, cfg -> cfg
+                        // Phase E2 — wrap the introspection response so iGRP-bound
+                        // tokens with a dead session report active=false even when
+                        // their JWT signature would still validate.
+                        .tokenIntrospectionEndpoint(introspection ->
+                                introspection.introspectionResponseHandler(sessionAwareIntrospector))
+                        .oidc(oidc -> oidc
+                                // Phase E3 — RP-initiated logout cascades to a
+                                // SessionEntity revoke + OAuth2Authorization remove.
+                                .logoutEndpoint(logout ->
+                                        logout.logoutResponseHandler(sessionLogoutHandler))))
                 .csrf(AbstractHttpConfigurer::disable)
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 /*
@@ -62,5 +83,53 @@ public class AuthorizationServerConfig {
     @Bean
     public PasswordEncoder oauthPasswordEncoder() {
         return new BCryptPasswordEncoder();
+    }
+
+    /**
+     * Persist OAuth2 authorizations in PostgreSQL so revocations and refresh-token
+     * rotations survive restarts and can be joined to {@code SessionEntity} rows.
+     * The accompanying schema is provisioned by {@code DatabaseMigrationRunner}
+     * before any authorization is written.
+     */
+    @Bean
+    public OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate,
+                                                           RegisteredClientRepository registeredClientRepository,
+                                                           RevocationCascadeListener revocationCascadeListener,
+                                                           RefreshTokenReuseGuard refreshTokenReuseGuard) {
+        ensureAuthorizationSchema(jdbcTemplate);
+        JdbcOAuth2AuthorizationService delegate =
+                new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
+        // Phase C3 — every remove() (revoke / logout / one-shot consume) cascades
+        // into a SessionEntity revocation so the enforcement filter (Phase C1)
+        // denies the next request carrying the same sid.
+        // FR-8 — save() tombstones rotated refresh tokens; findByToken() consults
+        // those tombstones on a miss so replays revoke the session and publish
+        // SessionRevokedEvent before Spring AS returns invalid_grant.
+        return new CascadingAuthorizationService(delegate, revocationCascadeListener, refreshTokenReuseGuard);
+    }
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AuthorizationServerConfig.class);
+
+    /**
+     * Idempotently provision the {@code oauth2_authorization} / {@code oauth2_authorization_consent}
+     * tables before the {@link JdbcOAuth2AuthorizationService} is wired, so the
+     * authorization-server pipeline can persist authorizations on the first
+     * token issuance after boot.
+     */
+    private void ensureAuthorizationSchema(JdbcTemplate jdbcTemplate) {
+        Resource script = new ClassPathResource("db/oauth2-authorization-schema-postgres.sql");
+        if (!script.exists()) {
+            LOGGER.warn("oauth2-authorization-schema-postgres.sql missing on classpath; skipping bootstrap.");
+            return;
+        }
+        try {
+            ResourceDatabasePopulator populator = new ResourceDatabasePopulator(script);
+            populator.setContinueOnError(false);
+            populator.setIgnoreFailedDrops(true);
+            populator.execute(jdbcTemplate.getDataSource());
+            LOGGER.debug("oauth2_authorization schema ensured.");
+        } catch (ScriptException e) {
+            LOGGER.warn("Could not provision oauth2_authorization schema: {}", e.getMessage());
+        }
     }
 }

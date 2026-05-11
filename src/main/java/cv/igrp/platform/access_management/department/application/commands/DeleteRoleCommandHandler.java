@@ -9,6 +9,8 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -39,16 +41,19 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
 
    private final RoleEntityRepository roleRepository;
    private final DepartmentEntityRepository departmentRepository;
+   private final EventPublisher eventPublisher;
 
    /**
     * Constructs a new instance of {@code DeleteRoleCommandHandler} with the required dependencies.
     *
     * @param roleRepository       repository for accessing and updating role entities
     * @param departmentRepository repository for accessing and updating department entities
+    * @param eventPublisher       publishes session-invalidation events
     */
-   public DeleteRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository) {
+   public DeleteRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, EventPublisher eventPublisher) {
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
+      this.eventPublisher = eventPublisher;
    }
 
    /**
@@ -85,6 +90,9 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
       role.setStatus(Status.DELETED);
 
       roleRepository.save(role);
+
+      eventPublisher.publishRolePermissionChanged(new RolePermissionChangedEvent(
+              role.getCode(), departmentCode, "ROLE_DELETED", null));
 
       log.info("Role with code: {} deleted successfully.", command.getRoleCode());
       return new ResponseEntity<>(true, HttpStatus.NO_CONTENT);

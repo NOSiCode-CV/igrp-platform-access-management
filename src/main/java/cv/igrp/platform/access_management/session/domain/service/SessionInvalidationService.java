@@ -28,17 +28,17 @@ public class SessionInvalidationService {
     /**
      * Invalidate sessions for specific users
      */
-    public void invalidateUserSessions(Set<String> userExternalIds, String reason) {
-        if (userExternalIds.isEmpty()) {
+    public void invalidateUserSessions(Set<Integer> userIds, String reason) {
+        if (userIds.isEmpty()) {
             log.debug("No users to invalidate sessions for");
             return;
         }
 
-        log.info("Invalidating sessions for users: {} with reason: {}", userExternalIds, reason);
+        log.info("Invalidating sessions for users: {} with reason: {}", userIds, reason);
 
         Instant now = Instant.now();
         int invalidatedCount = sessionRepository.invalidateUserSessions(
-                userExternalIds,
+                userIds,
                 SessionStatus.ACTIVE,
                 SessionStatus.REVOKED,
                 now,
@@ -48,10 +48,10 @@ public class SessionInvalidationService {
         );
 
         // Evict from cache
-        sessionCacheEvictService.evictBySubjects(userExternalIds);
+        sessionCacheEvictService.evictBySubjects(userIds);
 
         log.info("Invalidated {} sessions for {} users with reason: {}", 
-                invalidatedCount, userExternalIds.size(), reason);
+                invalidatedCount, userIds.size(), reason);
     }
 
     /**
@@ -62,7 +62,7 @@ public class SessionInvalidationService {
                 roleCode, departmentCode, reason);
 
         // Get user IDs for users with this role
-        Set<String> userIds = sessionRepository.findUserIdsByRole(roleCode, departmentCode);
+        Set<Integer> userIds = sessionRepository.findUserIdsByRole(roleCode, departmentCode);
 
         if (userIds.isEmpty()) {
             log.debug("No users found with role: {} in department: {}", roleCode, departmentCode);
@@ -95,7 +95,7 @@ public class SessionInvalidationService {
         log.info("Invalidating sessions for department: {} with reason: {}", departmentCode, reason);
 
         // Get user IDs for users in this department
-        Set<String> userIds = sessionRepository.findUserIdsByDepartment(departmentCode);
+        Set<Integer> userIds = sessionRepository.findUserIdsByDepartment(departmentCode);
 
         if (userIds.isEmpty()) {
             log.debug("No users found in department: {}", departmentCode);
@@ -137,9 +137,9 @@ public class SessionInvalidationService {
     /**
      * Invalidate session for a single user
      */
-    public void invalidateUserSession(String userExternalId, String reason) {
-        log.info("Invalidating session for user: {} with reason: {}", userExternalId, reason);
-        invalidateUserSessions(Set.of(userExternalId), reason);
+    public void invalidateUserSession(Integer userId, String reason) {
+        log.info("Invalidating session for user: {} with reason: {}", userId, reason);
+        invalidateUserSessions(Set.of(userId), reason);
     }
 
     /**

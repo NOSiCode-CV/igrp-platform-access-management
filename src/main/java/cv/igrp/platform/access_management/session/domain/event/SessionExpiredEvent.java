@@ -7,15 +7,15 @@ import java.util.UUID;
  */
 public class SessionExpiredEvent extends SessionEvent {
 
-    public SessionExpiredEvent(UUID sessionId, String userExternalId) {
-        super(sessionId, userExternalId, "SESSION_TIMEOUT");
+    public SessionExpiredEvent(UUID sessionId, Integer userId) {
+        super(sessionId, userId, "SESSION_TIMEOUT");
     }
 
     @Override
     public String toString() {
         return "SessionExpiredEvent{" +
                 "sessionId=" + getSessionId() +
-                ", userExternalId='" + getUserExternalId() + '\'' +
+                ", userId='" + getUserId() + '\'' +
                 ", timestamp=" + getTimestamp() +
                 ", source='" + getSource() + '\'' +
                 '}';

@@ -11,6 +11,8 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.domain.events.UserRoleChangedEvent;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
@@ -38,6 +40,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
    private final UserRoleAssignmentRepository userRoleAssignmentRepository;
    private final SecurityAuditService securityAuditService;
    private final cv.igrp.platform.access_management.role.domain.service.RoleMapper roleMapper;
+   private final EventPublisher eventPublisher;
 
    /**
     * Constructs the handler with the required repository dependency.
@@ -51,13 +54,15 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
            DepartmentEntityRepository departmentRepository, 
            UserRoleAssignmentRepository userRoleAssignmentRepository,
            SecurityAuditService securityAuditService,
-           cv.igrp.platform.access_management.role.domain.service.RoleMapper roleMapper) {
+           cv.igrp.platform.access_management.role.domain.service.RoleMapper roleMapper,
+           EventPublisher eventPublisher) {
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
       this.userRoleAssignmentRepository = userRoleAssignmentRepository;
       this.securityAuditService = securityAuditService;
       this.roleMapper = roleMapper;
+      this.eventPublisher = eventPublisher;
    }
 
    /**
@@ -126,6 +131,13 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
                        }
                     }
             );
+
+            java.util.Set<String> removedCodes = assignmentsToRemove.stream()
+                    .map(a -> a.getRole().getCode())
+                    .collect(Collectors.toSet());
+            eventPublisher.publishUserRoleChanged(new UserRoleChangedEvent(
+                    userId, removedCodes, command.getDepartmentCode(),
+                    UserRoleChangedEvent.CHANGE_REMOVED, null));
 
             logger.info("Roles removed successfully from user ID={}", userId);
          }

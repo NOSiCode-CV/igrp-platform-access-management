@@ -39,6 +39,8 @@ public class AddPermissionsCommandHandlerTest {
     private DepartmentEntityRepository departmentRepository;
     @Mock
     private RoleMapper roleMapper;
+    @Mock
+    private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
 
     @Test
     void itShouldStartContext() {

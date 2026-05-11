@@ -8,13 +8,13 @@ import java.util.UUID;
  */
 public abstract class SessionEvent {
     private final UUID sessionId;
-    private final String userExternalId;
+    private final Integer userId;
     private final Instant timestamp;
     private final String source;
 
-    protected SessionEvent(UUID sessionId, String userExternalId, String source) {
+    protected SessionEvent(UUID sessionId, Integer userId, String source) {
         this.sessionId = sessionId;
-        this.userExternalId = userExternalId;
+        this.userId = userId;
         this.timestamp = Instant.now();
         this.source = source;
     }
@@ -23,8 +23,8 @@ public abstract class SessionEvent {
         return sessionId;
     }
 
-    public String getUserExternalId() {
-        return userExternalId;
+    public Integer getUserId() {
+        return userId;
     }
 
     public Instant getTimestamp() {
@@ -39,7 +39,7 @@ public abstract class SessionEvent {
     public String toString() {
         return "SessionEvent{" +
                 "sessionId=" + sessionId +
-                ", userExternalId='" + userExternalId + '\'' +
+                ", userId='" + userId + '\'' +
                 ", timestamp=" + timestamp +
                 ", source='" + source + '\'' +
                 '}';

@@ -18,6 +18,8 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleId;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.domain.events.UserRoleChangedEvent;
 import cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
@@ -62,6 +64,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
    private final UserRoleAssignmentRepository userRoleAssignmentRepository;
    private final ExpireRoleService expireRoleService;
    private final SecurityAuditService securityAuditService;
+   private final EventPublisher eventPublisher;
 
    /**
     * Constructs the handler with required dependencies.
@@ -81,7 +84,8 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
            RoleMapper roleMapper,
            UserRoleAssignmentRepository userRoleAssignmentRepository,
            ExpireRoleService expireRoleService,
-           SecurityAuditService securityAuditService) {
+           SecurityAuditService securityAuditService,
+           EventPublisher eventPublisher) {
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
@@ -89,6 +93,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
       this.userRoleAssignmentRepository = userRoleAssignmentRepository;
       this.expireRoleService = expireRoleService;
       this.securityAuditService = securityAuditService;
+      this.eventPublisher = eventPublisher;
    }
 
    /**
@@ -158,6 +163,14 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
          auditContext.put("roleCode", roleEntity.getCode());
          auditContext.put("expiresAt", command.getExpiresAt());
          securityAuditService.logEvent(AuditEventType.ROLE_ASSIGNED, AuditCategory.PRIVILEGE, auditContext);
+      }
+
+      if (!successfullyAssignedRoles.isEmpty()) {
+         java.util.Set<String> roleCodes = successfullyAssignedRoles.stream()
+                 .map(RoleEntity::getCode)
+                 .collect(Collectors.toSet());
+         eventPublisher.publishUserRoleChanged(new UserRoleChangedEvent(
+                 userId, roleCodes, departmentCode, UserRoleChangedEvent.CHANGE_ADDED, null));
       }
 
       // Return the assigned roles mapped to DTO. Assuming successfully assigned roles will not have expiresAt returned natively via mapToDto(RoleEntity) unless modified, but we can do our best.

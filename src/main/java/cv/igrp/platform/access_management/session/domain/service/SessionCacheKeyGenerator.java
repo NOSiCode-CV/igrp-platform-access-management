@@ -12,9 +12,9 @@ public class SessionCacheKeyGenerator implements KeyGenerator {
     @NotNull
     @Override
     public Object generate(@NotNull Object target, @NotNull Method method, Object... params) {
-        if (params.length == 1 && params[0] instanceof String userExternalId) {
-            return userExternalId;
+        if (params.length == 1 && params[0] instanceof Integer userId) {
+            return userId.toString();
         }
-        throw new IllegalArgumentException("Session cache key generation requires a single String parameter (userExternalId)");
+        throw new IllegalArgumentException("Session cache key generation requires a single Integer parameter (userId)");
     }
 }

@@ -71,6 +71,9 @@ class RespondUserInvitationCommandHandlerTest {
     private cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService expireRoleService;
 
     @Mock
+    private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
+
+    @Mock
     private SecurityContext securityContext;
 
     @Mock
