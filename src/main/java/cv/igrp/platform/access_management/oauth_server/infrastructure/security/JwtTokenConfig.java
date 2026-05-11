@@ -107,7 +107,11 @@ public class JwtTokenConfig {
             }
 
             String clientId = context.getRegisteredClient().getClientId();
-            Map<String, Object> claims = claimsService.buildClaims(internalSub, clientId);
+            Map<String, Object> claims = claimsService.buildClaims(
+                    internalSub,
+                    clientId,
+                    context.getAuthorizedScopes()
+            );
             claims.forEach((key, value) -> context.getClaims().claim(key, value));
 
             String auditSessionId = context.getAuthorization() != null ? context.getAuthorization().getId() : null;
@@ -116,7 +120,7 @@ public class JwtTokenConfig {
                     claimsService.buildTokenIssuedAuditContext(internalSub, clientId, auditSessionId)
             );
 
-            // Record token issuance into the platform security audit trail.
+            // Record token issuance into the platform security audit trail
             Map<String, Object> auditContext = new HashMap<>();
             auditContext.put("clientId", clientId);
             auditContext.put("grantType", context.getAuthorizationGrantType().getValue());
