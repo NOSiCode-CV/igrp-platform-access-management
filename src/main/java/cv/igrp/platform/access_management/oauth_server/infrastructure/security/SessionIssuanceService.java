@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.session.config.SessionProperties;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
+import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.session.infrastructure.cache.SessionCacheEvictService;
 import cv.igrp.platform.access_management.session.infrastructure.metrics.SessionMetrics;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
@@ -59,15 +60,18 @@ public class SessionIssuanceService {
     private final SessionCacheEvictService sessionCacheEvictService;
     private final SessionProperties sessionProperties;
     private final SessionMetrics sessionMetrics;
+    private final SessionAuditLogger sessionAuditLogger;
 
     public SessionIssuanceService(SessionRepository sessionRepository,
                                   SessionCacheEvictService sessionCacheEvictService,
                                   SessionProperties sessionProperties,
-                                  SessionMetrics sessionMetrics) {
+                                  SessionMetrics sessionMetrics,
+                                  SessionAuditLogger sessionAuditLogger) {
         this.sessionRepository = sessionRepository;
         this.sessionCacheEvictService = sessionCacheEvictService;
         this.sessionProperties = sessionProperties;
         this.sessionMetrics = sessionMetrics;
+        this.sessionAuditLogger = sessionAuditLogger;
     }
 
     /**
@@ -171,6 +175,8 @@ public class SessionIssuanceService {
         }
         SessionEntity saved = sessionRepository.save(session);
         sessionCacheEvictService.evictBySubject(saved.getUserId());
+        sessionAuditLogger.recordRefreshed(saved.getSessionId(), saved.getUserId(),
+                saved.getDeviceId(), saved.getClientId(), SessionAuditLogger.USER);
         LOGGER.debug("Refreshed session {} for sub={} device={} until {}",
                 saved.getSessionId(), saved.getUserId(), saved.getDeviceId(), saved.getExpiresAt());
         return saved;
@@ -189,6 +195,8 @@ public class SessionIssuanceService {
                 .ifPresent(prev -> {
                     prev.close("SESSION_REPLACED", "SYSTEM");
                     sessionRepository.save(prev);
+                    sessionAuditLogger.recordReplaced(prev.getSessionId(), prev.getUserId(),
+                            prev.getDeviceId(), prev.getClientId(), SessionAuditLogger.USER);
                 });
 
         // FR-5: enforce the per-user cap with LRU eviction.
@@ -201,6 +209,8 @@ public class SessionIssuanceService {
             victim.close("SESSION_LIMIT_EXCEEDED", "SYSTEM");
             sessionRepository.save(victim);
             sessionMetrics.recordEvictedLru();
+            sessionAuditLogger.recordLimitExceeded(victim.getSessionId(), victim.getUserId(),
+                    victim.getDeviceId(), victim.getClientId());
             LOGGER.info("LRU-evicted session {} for user={} (cap={})",
                     victim.getSessionId(), userId, maxPerUser);
         }
@@ -223,6 +233,8 @@ public class SessionIssuanceService {
         SessionEntity saved = sessionRepository.save(entity);
         sessionCacheEvictService.evictBySubject(userId);
         sessionMetrics.recordCreated();
+        sessionAuditLogger.recordCreated(saved.getSessionId(), saved.getUserId(),
+                saved.getDeviceId(), saved.getClientId(), SessionAuditLogger.USER);
         LOGGER.debug("Issued session {} for user={} device={} client={} jti={} exp={} abs={}",
                 saved.getSessionId(), userId, deviceId, clientId, jti,
                 saved.getExpiresAt(), saved.getAbsoluteExpiresAt());

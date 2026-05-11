@@ -50,13 +50,16 @@ class RefreshTokenReuseGuardTest {
     private SessionCacheEvictService sessionCacheEvictService;
     @Mock
     private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger sessionAuditLogger;
 
     private RefreshTokenReuseGuard guard;
 
     @BeforeEach
     void setUp() {
         guard = new RefreshTokenReuseGuard(
-                tombstoneRepository, sessionRepository, sessionCacheEvictService, eventPublisher);
+                tombstoneRepository, sessionRepository, sessionCacheEvictService, eventPublisher,
+                sessionAuditLogger);
     }
 
     @Test

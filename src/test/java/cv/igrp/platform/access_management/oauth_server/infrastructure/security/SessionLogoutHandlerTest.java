@@ -53,6 +53,8 @@ class SessionLogoutHandlerTest {
     private OAuth2AuthorizationService authorizationService;
     @Mock
     private ApplicationEventPublisher eventPublisher;
+    @Mock
+    private cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger sessionAuditLogger;
 
     private SessionLogoutHandler handler;
     private MockHttpServletRequest request;
@@ -61,7 +63,7 @@ class SessionLogoutHandlerTest {
     @BeforeEach
     void setUp() {
         handler = new SessionLogoutHandler(sessionRepository, sessionCacheEvictService,
-                heartbeatService, authorizationService, eventPublisher);
+                heartbeatService, authorizationService, eventPublisher, sessionAuditLogger);
         request = new MockHttpServletRequest("POST", "/connect/logout");
         response = new MockHttpServletResponse();
     }

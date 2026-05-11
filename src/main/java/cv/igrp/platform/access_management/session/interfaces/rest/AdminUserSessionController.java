@@ -7,6 +7,7 @@ import cv.igrp.platform.access_management.session.application.commands.KillAllUs
 import cv.igrp.platform.access_management.session.application.commands.KillSessionCommand;
 import cv.igrp.platform.access_management.session.application.dto.SessionKillRequestDTO;
 import cv.igrp.platform.access_management.session.domain.service.ForcedReAuthService;
+import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
@@ -50,15 +51,18 @@ public class AdminUserSessionController {
     private final SessionRepository sessionRepository;
     private final IGRPUserEntityRepository userRepository;
     private final ForcedReAuthService forcedReAuthService;
+    private final SessionAuditLogger sessionAuditLogger;
 
     public AdminUserSessionController(CommandBus commandBus,
                                       SessionRepository sessionRepository,
                                       IGRPUserEntityRepository userRepository,
-                                      ForcedReAuthService forcedReAuthService) {
+                                      ForcedReAuthService forcedReAuthService,
+                                      SessionAuditLogger sessionAuditLogger) {
         this.commandBus = commandBus;
         this.sessionRepository = sessionRepository;
         this.userRepository = userRepository;
         this.forcedReAuthService = forcedReAuthService;
+        this.sessionAuditLogger = sessionAuditLogger;
     }
 
     @PostMapping("/{userExternalId}/sessions/{sessionId}/kill")
@@ -89,8 +93,13 @@ public class AdminUserSessionController {
         }
         log.info("Admin killing session {} for user externalId={} reason={} by={}",
                 sessionId, userExternalId, request.getReason(), request.getKilledBy());
-        var command = new KillSessionCommand(sessionId, request.getReason(), request.getKilledBy());
+        String reason = request.getReason() != null ? request.getReason() : "ADMIN_KILL";
+        var command = new KillSessionCommand(sessionId, reason, request.getKilledBy());
         boolean killed = commandBus.send(command);
+        if (killed) {
+            sessionAuditLogger.recordRevoked(sessionId, user.get().getInternalId(),
+                    reason, SessionAuditLogger.adminActor(userExternalId));
+        }
         return killed ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
@@ -108,11 +117,18 @@ public class AdminUserSessionController {
 
         log.info("Admin logout-all for user externalId={} reason={} by={}",
                 userExternalId, request.getReason(), request.getKilledBy());
+        String reason = request.getReason() != null ? request.getReason() : "ADMIN_LOGOUT_ALL";
         var command = new KillAllUserSessionsCommand(
                 userExternalId,
-                request.getReason() != null ? request.getReason() : "ADMIN_LOGOUT_ALL",
+                reason,
                 request.getKilledBy() != null ? request.getKilledBy() : "ADMIN");
         Boolean ok = commandBus.send(command);
+        if (Boolean.TRUE.equals(ok)) {
+            Integer internalId = userRepository.findByExternalId(userExternalId)
+                    .map(u -> u.getInternalId()).orElse(null);
+            sessionAuditLogger.recordRevoked(null, internalId,
+                    reason, SessionAuditLogger.adminActor(userExternalId));
+        }
         return Boolean.TRUE.equals(ok)
                 ? ResponseEntity.noContent().build()
                 : ResponseEntity.notFound().build();
@@ -141,7 +157,8 @@ public class AdminUserSessionController {
         String reason = request.getReason() != null ? request.getReason() : "ADMIN_FORCE_REAUTH";
         log.info("Admin force-reauth for user externalId={} reason={} by={}",
                 userExternalId, reason, request.getKilledBy());
-        forcedReAuthService.forceReAuthentication(user.get().getInternalId(), reason);
+        forcedReAuthService.forceReAuthentication(user.get().getInternalId(), reason,
+                SessionAuditLogger.adminActor(userExternalId));
         return ResponseEntity.noContent().build();
     }
 }

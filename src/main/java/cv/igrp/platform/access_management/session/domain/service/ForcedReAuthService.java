@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.session.domain.service;
 
+import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,11 +27,14 @@ public class ForcedReAuthService {
 
     private final IGRPUserEntityRepository userRepository;
     private final SessionInvalidationService sessionInvalidationService;
+    private final SessionAuditLogger sessionAuditLogger;
 
     public ForcedReAuthService(IGRPUserEntityRepository userRepository,
-                               SessionInvalidationService sessionInvalidationService) {
+                               SessionInvalidationService sessionInvalidationService,
+                               SessionAuditLogger sessionAuditLogger) {
         this.userRepository = userRepository;
         this.sessionInvalidationService = sessionInvalidationService;
+        this.sessionAuditLogger = sessionAuditLogger;
     }
 
     /**
@@ -38,16 +42,21 @@ public class ForcedReAuthService {
      * AND revoke any live sessions in the same transaction. Callers should use
      * this for password resets and admin-driven "log this user out everywhere"
      * actions.
+     *
+     * @param actor NFR-4 actor token — {@code "SYSTEM"} for password-reset
+     *              automation, {@link SessionAuditLogger#adminActor(String)}
+     *              for an admin-initiated force-reauth.
      */
     @Transactional
-    public void forceReAuthentication(Integer userId, String reason) {
+    public void forceReAuthentication(Integer userId, String reason, String actor) {
         if (userId == null) {
             return;
         }
         Instant now = Instant.now();
         int updated = userRepository.updateTokensNotValidBefore(userId, now);
-        LOGGER.info("Forced re-auth for user={} reason={} floor={} rows={}",
-                userId, reason, now, updated);
+        LOGGER.info("Forced re-auth for user={} reason={} actor={} floor={} rows={}",
+                userId, reason, actor, now, updated);
         sessionInvalidationService.invalidateUserSession(userId, reason);
+        sessionAuditLogger.recordForcedReauth(userId, actor);
     }
 }

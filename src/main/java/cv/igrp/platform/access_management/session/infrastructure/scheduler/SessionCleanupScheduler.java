@@ -4,6 +4,7 @@ import cv.igrp.platform.access_management.oauth_server.infrastructure.persistenc
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
+import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.session.infrastructure.cache.SessionCacheEvictService;
 import cv.igrp.platform.access_management.session.config.SessionProperties;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,7 @@ public class SessionCleanupScheduler {
     private final SessionRepository sessionRepository;
     private final SessionCacheEvictService sessionCacheEvictService;
     private final RefreshTokenTombstoneRepository refreshTokenTombstoneRepository;
+    private final SessionAuditLogger sessionAuditLogger;
 
     // Configuration properties
     private final long cleanupIntervalSeconds;
@@ -31,11 +33,13 @@ public class SessionCleanupScheduler {
             SessionRepository sessionRepository,
             SessionCacheEvictService sessionCacheEvictService,
             RefreshTokenTombstoneRepository refreshTokenTombstoneRepository,
+            SessionAuditLogger sessionAuditLogger,
             @Value("${igrp.session.cleanup.interval-seconds:300}") long cleanupIntervalSeconds,
             @Value("${igrp.session.old-session.retention-days:30}") long oldSessionRetentionDays) {
         this.sessionRepository = sessionRepository;
         this.sessionCacheEvictService = sessionCacheEvictService;
         this.refreshTokenTombstoneRepository = refreshTokenTombstoneRepository;
+        this.sessionAuditLogger = sessionAuditLogger;
         this.cleanupIntervalSeconds = cleanupIntervalSeconds;
         this.oldSessionRetentionDays = oldSessionRetentionDays;
     }
@@ -58,11 +62,16 @@ public class SessionCleanupScheduler {
                 return;
             }
 
-            // Mark sessions as expired
+            // Mark sessions as expired and audit each transition (NFR-4).
             expiredSessions.forEach(session -> {
+                String reason = (session.getAbsoluteExpiresAt() != null
+                        && !now.isBefore(session.getAbsoluteExpiresAt()))
+                        ? "ABSOLUTE_TIMEOUT"
+                        : "IDLE_TIMEOUT";
                 session.expire();
-                log.debug("Marking session {} as expired for user: {}",
-                        session.getSessionId(), session.getUserId());
+                sessionAuditLogger.recordExpired(session.getSessionId(), session.getUserId(), reason);
+                log.debug("Marking session {} as expired for user: {} ({})",
+                        session.getSessionId(), session.getUserId(), reason);
             });
 
             // Save to database

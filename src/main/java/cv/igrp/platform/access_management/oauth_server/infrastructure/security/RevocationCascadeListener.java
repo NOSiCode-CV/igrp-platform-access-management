@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import cv.igrp.platform.access_management.session.domain.service.SessionHeartbeatService;
+import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.session.infrastructure.cache.SessionCacheEvictService;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
@@ -35,13 +36,16 @@ public class RevocationCascadeListener {
     private final SessionRepository sessionRepository;
     private final SessionCacheEvictService sessionCacheEvictService;
     private final SessionHeartbeatService heartbeatService;
+    private final SessionAuditLogger sessionAuditLogger;
 
     public RevocationCascadeListener(SessionRepository sessionRepository,
                                      SessionCacheEvictService sessionCacheEvictService,
-                                     SessionHeartbeatService heartbeatService) {
+                                     SessionHeartbeatService heartbeatService,
+                                     SessionAuditLogger sessionAuditLogger) {
         this.sessionRepository = sessionRepository;
         this.sessionCacheEvictService = sessionCacheEvictService;
         this.heartbeatService = heartbeatService;
+        this.sessionAuditLogger = sessionAuditLogger;
     }
 
     /**
@@ -74,6 +78,8 @@ public class RevocationCascadeListener {
         if (session.getUserId() != null) {
             sessionCacheEvictService.evictBySubject(session.getUserId());
         }
+        sessionAuditLogger.recordRevoked(session.getSessionId(), session.getUserId(),
+                "OAUTH_AUTHORIZATION_REMOVED", SessionAuditLogger.SYSTEM);
         LOGGER.info("Revoked session {} (user={}) following OAuth2 authorization removal {}",
                 sid, session.getUserId(), authorization.getId());
     }

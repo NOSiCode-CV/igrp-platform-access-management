@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import cv.igrp.platform.access_management.session.domain.event.SessionRevokedEvent;
 import cv.igrp.platform.access_management.session.domain.service.SessionHeartbeatService;
+import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.session.infrastructure.cache.SessionCacheEvictService;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
@@ -54,18 +55,21 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
     private final SessionHeartbeatService heartbeatService;
     private final OAuth2AuthorizationService authorizationService;
     private final ApplicationEventPublisher eventPublisher;
+    private final SessionAuditLogger sessionAuditLogger;
     private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
 
     public SessionLogoutHandler(SessionRepository sessionRepository,
                                 SessionCacheEvictService sessionCacheEvictService,
                                 SessionHeartbeatService heartbeatService,
                                 OAuth2AuthorizationService authorizationService,
-                                ApplicationEventPublisher eventPublisher) {
+                                ApplicationEventPublisher eventPublisher,
+                                SessionAuditLogger sessionAuditLogger) {
         this.sessionRepository = sessionRepository;
         this.sessionCacheEvictService = sessionCacheEvictService;
         this.heartbeatService = heartbeatService;
         this.authorizationService = authorizationService;
         this.eventPublisher = eventPublisher;
+        this.sessionAuditLogger = sessionAuditLogger;
     }
 
     @Override
@@ -110,6 +114,8 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         if (session.getUserId() != null) {
             sessionCacheEvictService.evictBySubject(session.getUserId());
         }
+        sessionAuditLogger.recordRevoked(session.getSessionId(), session.getUserId(),
+                "USER_LOGOUT", SessionAuditLogger.USER);
         eventPublisher.publishEvent(new SessionRevokedEvent(
                 session.getSessionId(),
                 session.getUserId(),

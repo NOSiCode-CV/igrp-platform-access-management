@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.session.application.listener;
 
 import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import cv.igrp.platform.access_management.session.domain.service.SessionInvalidationService;
+import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.shared.domain.events.DeletePermissionEvent;
 import cv.igrp.platform.access_management.shared.domain.events.DepartmentScopeChangedEvent;
 import cv.igrp.platform.access_management.shared.domain.events.UserRoleChangedEvent;
@@ -24,11 +25,14 @@ public class SessionInvalidationEventListener {
 
     private final SessionInvalidationService sessionInvalidationService;
     private final IGRPUserEntityRepository userRepository;
+    private final SessionAuditLogger sessionAuditLogger;
 
     public SessionInvalidationEventListener(SessionInvalidationService sessionInvalidationService,
-                                            IGRPUserEntityRepository userRepository) {
+                                            IGRPUserEntityRepository userRepository,
+                                            SessionAuditLogger sessionAuditLogger) {
         this.sessionInvalidationService = sessionInvalidationService;
         this.userRepository = userRepository;
+        this.sessionAuditLogger = sessionAuditLogger;
     }
 
     /**
@@ -44,6 +48,7 @@ public class SessionInvalidationEventListener {
         log.info("User role changed for userId={} ({}), invalidating sessions",
                 userId, event.getChangeType());
         sessionInvalidationService.invalidateUserSession(userId, "USER_ROLE_CHANGED");
+        sessionAuditLogger.recordRevoked(null, userId, "USER_ROLE_CHANGED", SessionAuditLogger.SYSTEM);
     }
 
     /**
@@ -56,6 +61,7 @@ public class SessionInvalidationEventListener {
         log.info("Role permissions changed for role={} dept={} ({}), invalidating sessions",
                 roleCode, departmentCode, event.getChangeType());
         sessionInvalidationService.invalidateSessionsByRole(departmentCode, roleCode, "ROLE_PERMISSIONS_CHANGED");
+        sessionAuditLogger.recordRevoked(null, null, "ROLE_PERMISSIONS_CHANGED", SessionAuditLogger.SYSTEM);
     }
 
     /**
@@ -71,6 +77,7 @@ public class SessionInvalidationEventListener {
         log.info("User status changed for userId={} ({} -> {}), invalidating sessions",
                 userId, event.getPreviousStatus(), event.getNewStatus());
         sessionInvalidationService.invalidateUserSession(userId, "USER_STATUS_CHANGED");
+        sessionAuditLogger.recordRevoked(null, userId, "USER_STATUS_CHANGED", SessionAuditLogger.SYSTEM);
     }
 
     /**
@@ -86,6 +93,7 @@ public class SessionInvalidationEventListener {
         log.info("Department scope changed for dept={} ({}), invalidating sessions",
                 departmentCode, event.getChangeType());
         sessionInvalidationService.invalidateSessionsByDepartment(departmentCode, "DEPARTMENT_SCOPE_CHANGED");
+        sessionAuditLogger.recordRevoked(null, null, "DEPARTMENT_SCOPE_CHANGED", SessionAuditLogger.SYSTEM);
     }
 
     /**
@@ -108,5 +116,7 @@ public class SessionInvalidationEventListener {
         log.info("Permission deleted: {} — invalidating sessions for {} affected user(s)",
                 permissionName, affectedUsers.size());
         sessionInvalidationService.invalidateUserSessions(affectedUsers, "PERMISSION_DELETED");
+        affectedUsers.forEach(uid ->
+                sessionAuditLogger.recordRevoked(null, uid, "PERMISSION_DELETED", SessionAuditLogger.SYSTEM));
     }
 }

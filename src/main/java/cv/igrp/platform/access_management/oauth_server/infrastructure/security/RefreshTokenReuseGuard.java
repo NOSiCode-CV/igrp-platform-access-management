@@ -4,6 +4,7 @@ import cv.igrp.platform.access_management.oauth_server.infrastructure.persistenc
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.RefreshTokenTombstoneRepository;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import cv.igrp.platform.access_management.session.domain.event.SessionRevokedEvent;
+import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.session.infrastructure.cache.SessionCacheEvictService;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
@@ -56,15 +57,18 @@ public class RefreshTokenReuseGuard {
     private final SessionRepository sessionRepository;
     private final SessionCacheEvictService sessionCacheEvictService;
     private final ApplicationEventPublisher eventPublisher;
+    private final SessionAuditLogger sessionAuditLogger;
 
     public RefreshTokenReuseGuard(RefreshTokenTombstoneRepository tombstoneRepository,
                                   SessionRepository sessionRepository,
                                   SessionCacheEvictService sessionCacheEvictService,
-                                  ApplicationEventPublisher eventPublisher) {
+                                  ApplicationEventPublisher eventPublisher,
+                                  SessionAuditLogger sessionAuditLogger) {
         this.tombstoneRepository = tombstoneRepository;
         this.sessionRepository = sessionRepository;
         this.sessionCacheEvictService = sessionCacheEvictService;
         this.eventPublisher = eventPublisher;
+        this.sessionAuditLogger = sessionAuditLogger;
     }
 
     /**
@@ -153,6 +157,7 @@ public class RefreshTokenReuseGuard {
                 if (userId != null) {
                     sessionCacheEvictService.evictBySubject(userId);
                 }
+                sessionAuditLogger.recordRevoked(sid, userId, REVOKE_REASON, SessionAuditLogger.SYSTEM);
                 eventPublisher.publishEvent(new SessionRevokedEvent(sid, userId, REVOKE_REASON, "SYSTEM"));
             } else {
                 LOGGER.debug("Replay tombstone hit without a sid — nothing to revoke");
