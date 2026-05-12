@@ -188,8 +188,10 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
             // Risk mitigation (plan §6): on data-store outage prefer 503 over a
             // 401 storm that would force every user to re-login.
             LOGGER.error("Session enforcement: data store unavailable for sid={}", sid, ex);
+            response.reset();
             response.setStatus(HttpServletResponse.SC_SERVICE_UNAVAILABLE);
             response.setHeader("Retry-After", "5");
+            response.flushBuffer();
             return;
         }
 
@@ -269,14 +271,32 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
         return null;
     }
 
+    /**
+     * Commit a 401 response immediately so downstream filters and entry points
+     * (notably {@code BearerTokenAuthenticationEntryPoint}) cannot rewrite the
+     * {@code WWW-Authenticate} header or replace the status. We deliberately
+     * avoid {@link HttpServletResponse#sendError(int)} because that re-enters
+     * the container error-page pipeline which clears headers; we set the
+     * status + header + a tiny RFC-7807-ish JSON body, then {@code flushBuffer()}
+     * to make the response immutable from this point forward.
+     */
     private static void unauthorized(HttpServletResponse response,
                                      String error,
                                      String description) throws IOException {
         if (response.isCommitted()) {
             return;
         }
+        response.reset();
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setHeader("WWW-Authenticate",
                 "Bearer error=\"" + error + "\", error_description=\"" + description + "\"");
+        response.setHeader("Cache-Control", "no-store");
+        response.setContentType("application/json;charset=UTF-8");
+        String body = "{\"error\":\"" + error
+                + "\",\"error_description\":\"" + description
+                + "\"}";
+        response.getWriter().write(body);
+        response.getWriter().flush();
+        response.flushBuffer();
     }
 }
