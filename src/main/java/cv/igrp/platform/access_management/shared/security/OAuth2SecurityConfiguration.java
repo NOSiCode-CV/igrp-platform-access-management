@@ -8,6 +8,7 @@ import org.jspecify.annotations.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -165,6 +166,25 @@ public class OAuth2SecurityConfiguration {
     @Bean
     public GrantedAuthorityDefaults grantedAuthorityDefaults() {
         return new GrantedAuthorityDefaults(""); // no prefix
+    }
+
+    /**
+     * Suppress Spring Boot's default auto-registration of the {@code @Component}
+     * filter as a global servlet filter. Without this, the same filter instance
+     * would also run at the embedded-container level (before the security chain
+     * has populated {@link org.springframework.security.core.context.SecurityContextHolder}),
+     * mark the request as already-filtered via {@link org.springframework.web.filter.OncePerRequestFilter},
+     * and cause the in-chain {@code .addFilterAfter(...)} registration to no-op —
+     * letting sid-less JWTs reach controllers. We register it only inside the
+     * OAuth2 chain (see {@link #oauth2SecurityFilterChain(HttpSecurity)}), where
+     * {@code BearerTokenAuthenticationFilter} has just authenticated the JWT.
+     */
+    @Bean
+    public FilterRegistrationBean<SessionEnforcementFilter> sessionEnforcementFilterRegistration() {
+        FilterRegistrationBean<SessionEnforcementFilter> registration =
+                new FilterRegistrationBean<>(sessionEnforcementFilter);
+        registration.setEnabled(false);
+        return registration;
     }
 
 }
