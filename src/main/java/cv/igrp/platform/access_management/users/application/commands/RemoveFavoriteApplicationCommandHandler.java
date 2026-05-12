@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 
 
 @Component
@@ -40,7 +41,7 @@ public class RemoveFavoriteApplicationCommandHandler implements CommandHandler<R
 
        LOGGER.info("Removing application <{}> as favorite to user: {}",  command.getApplicationCode(), currentUserSub);
 
-       var user = userEntityRepository.findByIdWithRolesAndPermissions(Integer.parseInt(currentUserSub)).orElseThrow(
+       var user = userEntityRepository.findByIdWithRolesAndPermissions(SubjectParser.parseUserSubjectOrThrow(currentUserSub)).orElseThrow(
                () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
        );
 

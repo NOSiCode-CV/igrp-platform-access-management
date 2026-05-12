@@ -5,6 +5,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import cv.igrp.platform.access_management.shared.security.RequestScopeCache;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -66,7 +67,7 @@ public class ScopeService {
                 LIMIT 1
                 """;
 
-        var results = jdbcTemplate.query(sql, (rs, rowNum) -> 1, Integer.parseInt(sub), SUPER_ADMIN_ROLE);
+        var results = jdbcTemplate.query(sql, (rs, rowNum) -> 1, SubjectParser.parseUserSubjectOrThrow(sub), SUPER_ADMIN_ROLE);
 
         return !results.isEmpty();
 
@@ -96,7 +97,7 @@ public class ScopeService {
         boolean isSuperAdmin = this.isSuperAdmin();
 
         return new ActorPrincipal(
-                Integer.parseInt(sub),
+                SubjectParser.parseUserSubjectOrThrow(sub),
                 roles,
                 isSuperAdmin,
                 auth.getPrincipal()

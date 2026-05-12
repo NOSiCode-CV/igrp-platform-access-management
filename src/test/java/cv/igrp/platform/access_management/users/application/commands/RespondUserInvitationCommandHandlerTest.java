@@ -253,12 +253,15 @@ class RespondUserInvitationCommandHandlerTest {
         );
         when(oidcUser.getUserProfile()).thenReturn(profile);
 
-        // Act & Assert
-        IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
-                () -> handler.handle(command));
-
-        assertEquals(HttpStatus.UNAUTHORIZED, ex.getStatusCode());
-        assertTrue(ex.getMessage().contains("Invalid Token sub: must be an integer ID"));
+        // Act & Assert — Phase G1 / FR-13: non-numeric JWT sub now raises a
+        // typed InvalidPrincipalException (AuthenticationException) which the
+        // global exception handler maps to HTTP 401. Replaces the previous
+        // IgrpResponseStatusException(401, "Invalid Token sub: must be an integer ID").
+        cv.igrp.platform.access_management.shared.security.InvalidPrincipalException ex =
+                assertThrows(
+                        cv.igrp.platform.access_management.shared.security.InvalidPrincipalException.class,
+                        () -> handler.handle(command));
+        assertEquals("non_numeric_sub", ex.getMessage());
     }
 
     @Test

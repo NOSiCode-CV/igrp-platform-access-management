@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 
 
 @Component
@@ -43,7 +44,7 @@ public class RegisterAccessHistoryCommandHandler implements CommandHandler<Regis
 
       LOGGER.info("Registering access history on application <{}> for user with external ID: {}", command.getApplicationCode(), currentUserSub);
 
-      var user = userEntityRepository.findByIdWithRolesAndPermissions(Integer.parseInt(currentUserSub)).orElseThrow(
+      var user = userEntityRepository.findByIdWithRolesAndPermissions(SubjectParser.parseUserSubjectOrThrow(currentUserSub)).orElseThrow(
               () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
       );
 

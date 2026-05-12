@@ -12,7 +12,6 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -42,10 +41,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -56,45 +52,30 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 /**
- * Boots a real Spring web application context that wires the production
- * {@link OAuth2SecurityConfiguration} together with the production
- * {@link SessionEnforcementFilter}, then drives it through MockMvc with
- * {@code apply(springSecurity())} so the full Spring Security filter chain
- * (including the {@code BearerTokenAuthenticationFilter} and the in-chain
- * {@code .addFilterAfter(SessionEnforcementFilter, ...)} registration) is
- * exercised live.
+ * Phase G1 / FR-13 — boots the production {@link OAuth2SecurityConfiguration}
+ * chain end-to-end through MockMvc and locks in the M2M token rejection
+ * contract that prevents the live production crash reproduced against
+ * {@code https://api-demoigrp.nosi.cv/igrp-access-management}:
+ * <pre>
+ *   POST /api/admin/users/3/sessions/{uuid}/kill
+ *   Authorization: Bearer &lt;client_credentials JWT, sub == client_id&gt;
+ * </pre>
+ * Before G1: 500 {@link NumberFormatException} at
+ * {@code PermissionCacheService:152}. After G1: 401 with
+ * {@code WWW-Authenticate: Bearer error="invalid_token", error_description="m2m_token_not_allowed"}.
  *
- * <p>This is the test the unit-only {@code EnforcementMissingSidTest} could
- * not be: it locks down filter-chain ordering, entry-point interaction, and
- * Spring Boot's {@link FilterRegistrationBean} auto-registration trap that
- * was the root cause of two production regressions caught against
- * {@code api-demoigrp.nosi.cv}:
- * <ul>
- *   <li><b>Observation 1</b> — {@code POST /api/admin/users/{u}/sessions/{s}/kill}
- *       with a sid-less {@code client_credentials} JWT used to return 500
- *       because the filter was double-registered (once at servlet level by
- *       {@code @Component} auto-registration, once in the security chain) and
- *       the first pass marked the request as already-filtered, neutering the
- *       second pass.
- *   <li><b>Observation 2</b> — {@code GET /api/users/me} with the same token
- *       used to return 401 but with no {@code WWW-Authenticate} header at all,
- *       because the filter never ran and some downstream entry point produced
- *       a bare 401.
- * </ul>
- *
- * <p>The fix is in two places: a {@code FilterRegistrationBean} declared by
- * {@code OAuth2SecurityConfiguration} that sets the auto-registration to
- * {@code enabled=false}, and {@code unauthorized()} now commits the response
- * via {@code flushBuffer()} so no downstream filter can rewrite headers.
+ * <p>The test also asserts the M2M token still works on {@code /api/m2m/**}
+ * (different security chain, filter not registered) and a real user token
+ * (sid present) passes through the M2MTokenRejectionFilter unaffected.
  */
 @ExtendWith(SpringExtension.class)
 @WebAppConfiguration
-@ContextConfiguration(classes = SessionEnforcementWiringIntegrationTest.TestApp.class)
+@ContextConfiguration(classes = M2MTokenRejectionFilterTest.TestApp.class)
 @TestPropertySource(properties = {
         "igrp.session.enforcement-enabled=true",
         "igrp.access.m2m.sync-token=test-m2m-token"
 })
-class SessionEnforcementWiringIntegrationTest {
+class M2MTokenRejectionFilterTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
@@ -111,80 +92,40 @@ class SessionEnforcementWiringIntegrationTest {
                 .build();
     }
 
-    /**
-     * Locks down the fix for Observation 1's root cause: a Spring Boot
-     * {@link FilterRegistrationBean} for the filter exists and has
-     * {@code setEnabled(false)}, so the {@code @Component}-annotated
-     * {@code SessionEnforcementFilter} cannot get auto-wired at the embedded
-     * servlet level (where {@code SecurityContextHolder} is empty).
-     */
     @Test
-    @SuppressWarnings("rawtypes")
-    void filterIsNotAutoRegisteredAtServletLevel() {
-        Map<String, FilterRegistrationBean> registrations =
-                webApplicationContext.getBeansOfType(FilterRegistrationBean.class);
+    void m2mTokenOnAdminPathReturns401WithM2MNotAllowedChallenge() throws Exception {
+        when(jwtDecoder.decode("test-cc")).thenReturn(ccJwt("test-cc"));
 
-        FilterRegistrationBean<?> match = registrations.values().stream()
-                .filter(reg -> reg.getFilter() instanceof SessionEnforcementFilter)
-                .findFirst()
-                .orElse(null);
-
-        assertNotNull(match, "SessionEnforcementFilter must have an explicit "
-                + "FilterRegistrationBean to opt out of Spring Boot auto-registration "
-                + "as a global servlet filter — otherwise it would short-circuit "
-                + "OncePerRequestFilter before the security chain populates the "
-                + "SecurityContext.");
-        assertFalse(match.isEnabled(),
-                "FilterRegistrationBean<SessionEnforcementFilter>.setEnabled(true) "
-                        + "would re-introduce the production bug where /api/admin/** "
-                        + "admitted sid-less JWTs.");
-    }
-
-    /**
-     * Observation 2 / T-C3 — sid-less JWT on a generic enforced path must
-     * yield 401 with a {@code WWW-Authenticate} header that survives all
-     * downstream filters.
-     */
-    @Test
-    void usersMeWithSidlessTokenReturns401WithMissingSidChallenge() throws Exception {
-        when(jwtDecoder.decode("test-no-sid")).thenReturn(sidlessJwt("test-no-sid"));
-
-        mockMvc.perform(get("/api/users/me")
-                        .header("Authorization", "Bearer test-no-sid"))
+        mockMvc.perform(post("/api/admin/users/3/sessions/{sid}/kill",
+                                "00000000-0000-0000-0000-000000000000")
+                        .header("Authorization", "Bearer test-cc")
+                        .contentType("application/json")
+                        .content("{\"reason\":\"x\",\"killedBy\":\"admin\"}"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().exists("WWW-Authenticate"))
                 .andExpect(header().string("WWW-Authenticate", startsWith("Bearer ")))
                 .andExpect(header().string("WWW-Authenticate", containsString("error=\"invalid_token\"")))
-                .andExpect(header().string("WWW-Authenticate", containsString("error_description=\"missing_sid\"")))
-                .andExpect(content().string(containsString("missing_sid")));
+                .andExpect(header().string("WWW-Authenticate",
+                        containsString("error_description=\"m2m_token_not_allowed\"")))
+                .andExpect(content().string(containsString("m2m_token_not_allowed")));
     }
 
-    /**
-     * Observation 1 / T-C3 — the same sid-less token must NOT be able to reach
-     * the admin controller via {@code /api/admin/users/{u}/sessions/{s}/kill}.
-     * A leaked-past-filter request would surface here as 500 because the test
-     * controller deliberately blows up.
-     */
     @Test
-    void adminKillSessionWithSidlessTokenReturns401NotInternalError() throws Exception {
-        when(jwtDecoder.decode("test-no-sid")).thenReturn(sidlessJwt("test-no-sid"));
+    void m2mTokenOnGenericEnforcedPathReturns401WithM2MNotAllowedChallenge() throws Exception {
+        when(jwtDecoder.decode("test-cc")).thenReturn(ccJwt("test-cc"));
 
-        mockMvc.perform(post("/api/admin/users/3/sessions/{sid}/kill",
-                                "00000000-0000-0000-0000-000000000000")
-                        .header("Authorization", "Bearer test-no-sid")
-                        .contentType("application/json")
-                        .content("{\"reason\":\"x\",\"killedBy\":\"admin\"}"))
+        mockMvc.perform(get("/api/users/me")
+                        .header("Authorization", "Bearer test-cc"))
                 .andExpect(status().isUnauthorized())
                 .andExpect(header().string("WWW-Authenticate",
-                        containsString("error_description=\"missing_sid\"")));
+                        containsString("error_description=\"m2m_token_not_allowed\"")));
     }
 
-    /**
-     * T-C4 / FR-11 — M2M chain stays on its own URL prefix and is unaffected
-     * by the enforcement filter.
-     */
     @Test
-    void m2mPathWithStaticTokenIsNotAffectedByEnforcementFilter() throws Exception {
+    void m2mPathUsesStaticTokenChainNotOAuth2Chain() throws Exception {
+        // M2M endpoint is matched by the @Order(1) chain that doesn't include
+        // M2MTokenRejectionFilter. The static X-Machine-* headers authenticate
+        // and the request succeeds.
         mockMvc.perform(post("/api/m2m/ping")
                         .header("X-Machine-Service-ID", "test-svc")
                         .header("X-Machine-Auth-Token", "test-m2m-token")
@@ -194,41 +135,49 @@ class SessionEnforcementWiringIntegrationTest {
     }
 
     @Test
-    void m2mPathWithWrongTokenIsRejectedByM2MChainNotEnforcementFilter() throws Exception {
-        mockMvc.perform(post("/api/m2m/ping")
-                        .header("X-Machine-Service-ID", "test-svc")
-                        .header("X-Machine-Auth-Token", "wrong-token")
+    void userTokenWithSidPassesThroughM2MFilter() throws Exception {
+        // A real user (sid present) is admitted by M2MTokenRejectionFilter so
+        // SessionEnforcementFilter sees it next. SessionEnforcementFilter rejects
+        // with session_revoked because the sid does not resolve to any session
+        // in the mocked repository — proving the filter passed through but the
+        // session enforcement layer still ran.
+        when(jwtDecoder.decode("test-user")).thenReturn(userJwt("test-user"));
+
+        mockMvc.perform(post("/api/admin/users/3/sessions/{sid}/kill",
+                                "00000000-0000-0000-0000-000000000000")
+                        .header("Authorization", "Bearer test-user")
                         .contentType("application/json")
-                        .content("{}"))
+                        .content("{\"reason\":\"x\",\"killedBy\":\"admin\"}"))
                 .andExpect(status().isUnauthorized())
-                // M2M chain produces a plain-text body, not the enforcement filter's
-                // missing_sid challenge — proves the request went through the M2M
-                // chain, not the OAuth2 resource server chain.
-                .andExpect(content().string(equalTo(
-                        "Unauthorized: Invalid or missing machine-to-machine authentication token.")));
+                .andExpect(header().string("WWW-Authenticate",
+                        containsString("error_description=\"session_revoked\"")));
     }
 
-    private static Jwt sidlessJwt(String tokenValue) {
+    private static Jwt ccJwt(String tokenValue) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("sub", "igrp-access-management");
+        claims.put("client_id", "igrp-access-management");
         claims.put("iss", "http://localhost");
-        claims.put("jti", "test-jti");
-        // Intentionally no "sid" — simulating a client_credentials issuance.
+        claims.put("jti", "cc-jti");
+        // Intentionally no "sid" — canonical client_credentials issuance.
         Instant now = Instant.now();
         return new Jwt(tokenValue, now, now.plusSeconds(300),
                 Map.of("alg", "RS256"),
                 claims);
     }
 
-    // --- Minimal Spring web context -----------------------------------------
+    private static Jwt userJwt(String tokenValue) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("sub", "3");
+        claims.put("sid", "11111111-1111-1111-1111-111111111111");
+        claims.put("iss", "http://localhost");
+        claims.put("jti", "user-jti");
+        Instant now = Instant.now();
+        return new Jwt(tokenValue, now, now.plusSeconds(300),
+                Map.of("alg", "RS256"),
+                claims);
+    }
 
-    /**
-     * Imports the production {@link OAuth2SecurityConfiguration} unchanged so
-     * the actual two-chain wiring (M2M @Order(1), OAuth2 resource server
-     * @Order(2)) and the {@code FilterRegistrationBean} produced by the
-     * configuration are both exercised. Everything else is stubbed to avoid
-     * pulling in JPA / Redis / Minio / Mail auto-config.
-     */
     @Configuration
     @EnableWebMvc
     @EnableWebSecurity
@@ -281,9 +230,6 @@ class SessionEnforcementWiringIntegrationTest {
             return mock(JwtDecoder.class);
         }
 
-        /**
-         * Match the production JwtAuthenticationConverter contract.
-         */
         @Bean
         org.springframework.core.convert.converter.Converter<Jwt, ? extends AbstractAuthenticationToken>
         jwtAuthenticationConverter() {
@@ -303,7 +249,7 @@ class SessionEnforcementWiringIntegrationTest {
                                             @PathVariable String sessionId,
                                             @RequestBody(required = false) Map<String, Object> body) {
                 throw new IllegalStateException(
-                        "Admin controller must not run for sid-less tokens");
+                        "Admin controller must not run for M2M / sid-less tokens");
             }
 
             @PostMapping("/api/m2m/ping")

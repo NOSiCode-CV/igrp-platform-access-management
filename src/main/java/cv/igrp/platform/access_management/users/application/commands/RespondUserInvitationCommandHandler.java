@@ -117,12 +117,10 @@ public class RespondUserInvitationCommandHandler
 
       String authMethod = profile.authMethod() != null ? profile.authMethod() : "pwd";
       String idStr = profile.id();
-      Integer userId;
-      try {
-          userId = Integer.parseInt(idStr);
-      } catch (NumberFormatException e) {
-          throw IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "Invalid Token sub: must be an integer ID");
-      }
+      // Phase G1 / FR-13: SubjectParser raises InvalidPrincipalException (→ 401)
+      // instead of NumberFormatException when sub is non-numeric (M2M shape).
+      Integer userId = cv.igrp.platform.access_management.shared.security.SubjectParser
+              .parseUserSubjectOrThrow(idStr);
       String phone = profile.phone();
       String email = profile.email();
 

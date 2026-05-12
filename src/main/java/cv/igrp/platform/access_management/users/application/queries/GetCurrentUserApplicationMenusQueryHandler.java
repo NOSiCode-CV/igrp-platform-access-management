@@ -20,6 +20,7 @@ import java.util.List;
 
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import org.springframework.transaction.annotation.Transactional;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 
 @Component
 public class GetCurrentUserApplicationMenusQueryHandler implements QueryHandler<GetCurrentUserApplicationMenusQuery, ResponseEntity<List<MenuEntryDTO>>> {
@@ -53,7 +54,7 @@ public class GetCurrentUserApplicationMenusQueryHandler implements QueryHandler<
     @Transactional(readOnly = true)
     public ResponseEntity<List<MenuEntryDTO>> handle(GetCurrentUserApplicationMenusQuery query) {
 
-        var user = userRepository.findByIdWithRolesAndPermissions(Integer.parseInt(authenticationHelper.getSub())).orElseThrow(
+        var user = userRepository.findByIdWithRolesAndPermissions(SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub())).orElseThrow(
                 () -> IgrpResponseStatusException.of(
                         HttpStatus.UNAUTHORIZED,
                         "User not found",

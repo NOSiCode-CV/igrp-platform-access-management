@@ -5,6 +5,7 @@ import cv.igrp.framework.auth.core.authorization.model.PermissionCheckRequest;
 import cv.igrp.platform.access_management.authorization.application.dto.PermissionCacheEntryDTO;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -148,8 +149,12 @@ public class PermissionCacheService {
         // getOrLoadPermission(...). By the time we reach here we are doing a
         // regular role/permission match.
 
-        // Verifies if the user exists or if it is deleted or disabled
-        var userOpt = userRepository.findByIdWithRolesAndPermissions(Integer.parseInt(subject));
+        // Verifies if the user exists or if it is deleted or disabled.
+        // Phase G1 / FR-13: use SubjectParser so an M2M-shaped sub never reaches
+        // Integer.parseInt and crashes with NumberFormatException; an
+        // InvalidPrincipalException propagates out and is mapped to 401 by the
+        // global exception handler.
+        var userOpt = userRepository.findByIdWithRolesAndPermissions(SubjectParser.parseUserSubjectOrThrow(subject));
         if (userOpt.isEmpty() || userOpt.get().getStatus() == Status.DELETED || userOpt.get().getStatus() == Status.INACTIVE) {
             LOGGER.info("User '{}' not found or not active for permission check '{}'", subject, permissionName);
             return false;

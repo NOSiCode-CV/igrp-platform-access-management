@@ -272,16 +272,18 @@ class ScopeServiceTest {
     }
 
     @Test
-    @DisplayName("Should handle Integer.parseInt failure gracefully")
+    @DisplayName("Should raise InvalidPrincipalException (→ HTTP 401) when sub is not numeric")
     void testGetActorParseFailure() {
-        // Arrange
+        // Arrange — simulate the M2M-shaped sub that crashed the live system.
         when(authenticationHelper.getSub()).thenReturn("invalid-number");
 
-        // Act & Assert
-        NumberFormatException exception = assertThrows(
-                NumberFormatException.class,
-                () -> scopeService.getActor()
-        );
+        // Act & Assert — Phase G1 / FR-13: SubjectParser raises a typed
+        // AuthenticationException instead of leaking NumberFormatException.
+        cv.igrp.platform.access_management.shared.security.InvalidPrincipalException exception =
+                assertThrows(
+                        cv.igrp.platform.access_management.shared.security.InvalidPrincipalException.class,
+                        () -> scopeService.getActor()
+                );
         assertNotNull(exception.getMessage());
     }
 }

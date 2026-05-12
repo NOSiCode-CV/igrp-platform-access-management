@@ -25,6 +25,7 @@ import cv.igrp.platform.access_management.shared.domain.events.UserRoleChangedEv
 
 import java.util.Optional;
 import java.util.Set;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 
 @Component
 public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<SetActiveCurrentUserRoleCommand, ResponseEntity<RoleDepartmentDTO>> {
@@ -68,7 +69,7 @@ public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<Se
 
         Integer userId;
         try {
-            userId = Integer.parseInt(authenticationHelper.getSub());
+            userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         } catch (NumberFormatException e) {
             logger.error("Invalid token sub: expected an integer ID but got '{}'", authenticationHelper.getSub());
             throw IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "Invalid Token", "Token sub must be an integer ID");

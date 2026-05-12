@@ -45,6 +45,12 @@ import java.util.UUID;
     name = "Admin User Session Management",
     description = "Per-user administrative session operations (Phase E4/E5)"
 )
+// Phase G1 / FR-13 — Layer 3 belt-and-suspenders: reject any principal without a
+// sid claim (i.e. M2M client_credentials tokens) before method execution. The
+// preceding M2MTokenRejectionFilter on the OAuth2 chain is the primary defense;
+// this @PreAuthorize is the static-analysis-visible guarantee for this admin
+// surface.
+@PreAuthorize("@subjectGuard.requiresUser(authentication)")
 public class AdminUserSessionController {
 
     private final CommandBus commandBus;

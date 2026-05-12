@@ -1,17 +1,23 @@
 package cv.igrp.platform.access_management.shared.domain.exceptions;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import cv.igrp.platform.access_management.shared.security.InvalidPrincipalException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import java.util.Arrays;
 import java.util.Optional;
@@ -109,6 +115,27 @@ public class GlobalExceptionHandler {
         problem.setDetail(ex.getMessage());
 
         return problem;
+    }
+
+    /**
+     * Phase G1 / FR-13 — map {@link InvalidPrincipalException} (thrown by
+     * {@code SubjectParser.parseUserSubjectOrThrow} when a JWT {@code sub}
+     * cannot be turned into a numeric user id) to a clean HTTP 401 with a
+     * standards-shaped {@code WWW-Authenticate} challenge. Replaces the
+     * historical 500 {@link NumberFormatException} from the permission cache.
+     */
+    @ExceptionHandler(InvalidPrincipalException.class)
+    public ResponseEntity<Map<String, String>> handleInvalidPrincipal(InvalidPrincipalException ex) {
+        LOGGER.warn("InvalidPrincipalException: {}", ex.getMessage());
+        Map<String, String> body = new LinkedHashMap<>();
+        body.put("error", "invalid_principal");
+        body.put("error_description", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header("WWW-Authenticate",
+                        "Bearer error=\"invalid_principal\", error_description=\"" + ex.getMessage() + "\"")
+                .header("Cache-Control", "no-store")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(body);
     }
 
     @ExceptionHandler(NoActionPerformedException.class)

@@ -23,6 +23,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 
 /**
  * Handler responsible for processing the {@link GetCurrentUserRolesQuery} and retrieving the list of roles assigned to the current authenticated user.
@@ -73,7 +74,7 @@ public class GetCurrentUserRolesQueryHandler implements QueryHandler<GetCurrentU
 
         Integer userId;
         try {
-            userId = Integer.parseInt(authenticationHelper.getSub());
+            userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         } catch (NumberFormatException e) {
             LOGGER.error("Invalid token sub: expected an integer ID but got '{}'", authenticationHelper.getSub());
             throw IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "Invalid Token", "Token sub must be an integer ID");
