@@ -44,6 +44,9 @@ class UpdateUserStatusCommandHandlerTest {
     @Mock
     private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
 
+    @Mock
+    private cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger sessionAuditLogger;
+
     @InjectMocks
     private UpdateUserStatusCommandHandler handler;
 
@@ -107,6 +110,35 @@ class UpdateUserStatusCommandHandlerTest {
         // Act & Assert
         assertThrows(cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException.class,
                 () -> handler.handle(command));
+    }
+
+    @Test
+    void handle_setStatusToTemporary_rejectedAsInvalid() {
+        // Phase G3: admins may not promote a user to TEMPORARY — that is only
+        // set by the invitation flow.
+        UpdateUserStatusCommand command = new UpdateUserStatusCommand(
+                Status.TEMPORARY.getCode(), Integer.parseInt(userEntity.getId()));
+        when(userRepository.findById(Integer.parseInt(userEntity.getId()))).thenReturn(Optional.of(userEntity));
+
+        cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException ex = assertThrows(
+                cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException.class,
+                () -> handler.handle(command));
+        assertTrue(ex.getMessage() == null || ex.getMessage().toLowerCase().contains("temporary")
+                || ex.getBody().getDetail() != null && ex.getBody().getDetail().toLowerCase().contains("temporary"));
+    }
+
+    @Test
+    void handle_admin_cannotChangeTemporaryUser() {
+        // Phase G3: admin attempt to transition a TEMPORARY user is rejected.
+        userEntity.setStatus(Status.TEMPORARY);
+        UpdateUserStatusCommand command = new UpdateUserStatusCommand(
+                Status.ACTIVE.getCode(), Integer.parseInt(userEntity.getId()));
+        when(userRepository.findById(Integer.parseInt(userEntity.getId()))).thenReturn(Optional.of(userEntity));
+
+        assertThrows(
+                cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException.class,
+                () -> handler.handle(command));
+        assertEquals(Status.TEMPORARY, userEntity.getStatus(), "user status must remain TEMPORARY after rejected admin attempt");
     }
 
     @Test

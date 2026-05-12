@@ -256,6 +256,7 @@ public class UserController {
 
   }
 
+   @PreAuthorize("@userStatusGuard.requiresActiveOrTemporary(authentication)")
    @PostMapping(
    value = "users/invite/response"
   )
@@ -317,6 +318,7 @@ public class UserController {
 
   }
 
+   @PreAuthorize("@userStatusGuard.requiresActiveOrTemporary(authentication)")
    @GetMapping(
    value = "users/me"
   )
@@ -420,6 +422,7 @@ public class UserController {
 
   }
 
+   @PreAuthorize("@userStatusGuard.requiresActiveOrTemporary(authentication)")
    @PostMapping(
    value = "users/invite/validate-email"
   )
@@ -445,6 +448,7 @@ public class UserController {
       return commandBus.send(validateInvitationEmailCommand);
   }
 
+   @PreAuthorize("@userStatusGuard.requiresActiveOrTemporary(authentication)")
    @PostMapping(
    value = "users/invite/validate-otp"
   )
@@ -1083,6 +1087,7 @@ public class UserController {
 
   }
 
+   @PreAuthorize("@userStatusGuard.requiresActiveOrTemporary(authentication)")
    @GetMapping(
    value = "users/invite/by-token/{token}"
   )

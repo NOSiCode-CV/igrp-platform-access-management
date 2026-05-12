@@ -86,7 +86,8 @@ public class PermissionCacheService {
         var userOpt = userRepository.findByIdWithRolesAndPermissions(userId);
         if (userOpt.isPresent()
                 && userOpt.get().getStatus() != Status.DELETED
-                && userOpt.get().getStatus() != Status.INACTIVE) {
+                && userOpt.get().getStatus() != Status.INACTIVE
+                && userOpt.get().getStatus() != Status.TEMPORARY) {
             var user = userOpt.get();
             boolean hasRole = user.getRoles().stream()
                     .map(r -> r != null ? r.getCode() : null)
@@ -105,7 +106,7 @@ public class PermissionCacheService {
                 JOIN t_role r ON r.id = ura.role_id
                 JOIN t_user u ON u.id = ura.user_id
                 WHERE ura.user_id = ? AND r.code = ?
-                  AND u.status NOT IN ('DELETED', 'INACTIVE')
+                  AND u.status NOT IN ('DELETED', 'INACTIVE', 'TEMPORARY')
                   AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                 LIMIT 1
                 """;
@@ -119,7 +120,7 @@ public class PermissionCacheService {
                 JOIN t_user_role_assignment ura ON ura.user_id = u.id
                 JOIN t_role r ON r.id = ura.role_id
                 WHERE u.username = ? AND r.code = ?
-                  AND u.status NOT IN ('DELETED', 'INACTIVE')
+                  AND u.status NOT IN ('DELETED', 'INACTIVE', 'TEMPORARY')
                   AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                 LIMIT 1
                 """;
@@ -155,7 +156,10 @@ public class PermissionCacheService {
         // InvalidPrincipalException propagates out and is mapped to 401 by the
         // global exception handler.
         var userOpt = userRepository.findByIdWithRolesAndPermissions(SubjectParser.parseUserSubjectOrThrow(subject));
-        if (userOpt.isEmpty() || userOpt.get().getStatus() == Status.DELETED || userOpt.get().getStatus() == Status.INACTIVE) {
+        if (userOpt.isEmpty()
+                || userOpt.get().getStatus() == Status.DELETED
+                || userOpt.get().getStatus() == Status.INACTIVE
+                || userOpt.get().getStatus() == Status.TEMPORARY) {
             LOGGER.info("User '{}' not found or not active for permission check '{}'", subject, permissionName);
             return false;
         }

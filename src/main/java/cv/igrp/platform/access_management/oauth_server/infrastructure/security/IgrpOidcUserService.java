@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.UserIdentityEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.UserIdentityJpaRepository;
+import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
@@ -33,11 +34,14 @@ public class IgrpOidcUserService extends OidcUserService {
 
     private final UserIdentityJpaRepository userIdentityRepository;
     private final IGRPUserEntityRepository userRepository;
+    private final SessionAuditLogger sessionAuditLogger;
 
     public IgrpOidcUserService(UserIdentityJpaRepository userIdentityRepository,
-                               IGRPUserEntityRepository userRepository) {
+                               IGRPUserEntityRepository userRepository,
+                               SessionAuditLogger sessionAuditLogger) {
         this.userIdentityRepository = userIdentityRepository;
         this.userRepository = userRepository;
+        this.sessionAuditLogger = sessionAuditLogger;
     }
 
     @Override
@@ -81,10 +85,23 @@ public class IgrpOidcUserService extends OidcUserService {
             user.setUsername(preferredUsername);
             user.setEmail(email);
             user.setName(name);
-            user.setStatus(Status.ACTIVE);
+            // Phase G3: first OIDC login provisions a TEMPORARY user; the
+            // invitation flow promotes to ACTIVE.
+            user.setStatus(Status.TEMPORARY);
             user.setEmailVerified(Boolean.TRUE.equals(attributes.get("email_verified")));
             user = userRepository.save(user);
             LOGGER.info("Provisioned new IGRP user from provider={} sub={}", provider, externalUserId);
+            // Phase G3: NFR-4 audit row for first-login provisioning.
+            try {
+                Integer auditUserId = null;
+                try { auditUserId = user.getId() != null ? Integer.parseInt(user.getId()) : null; }
+                catch (NumberFormatException ignored) { /* leave null */ }
+                sessionAuditLogger.recordUserStatusTransitioned(
+                        auditUserId, null, Status.TEMPORARY.getCode(),
+                        SessionAuditLogger.SYSTEM, "FIRST_LOGIN");
+            } catch (Exception auditEx) {
+                LOGGER.warn("[G3] first-login audit failed for sub={}: {}", externalUserId, auditEx.getMessage());
+            }
         }
 
         UserIdentityEntity identity = new UserIdentityEntity();

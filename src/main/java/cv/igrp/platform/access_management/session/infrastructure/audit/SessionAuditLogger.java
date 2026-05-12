@@ -82,6 +82,35 @@ public class SessionAuditLogger {
         emit(AuditEventType.SESSION_FORCED_REAUTH, "FORCED_REAUTH", actor, null, userId, null, null);
     }
 
+    /**
+     * Phase G3 — single audit row for every user-status transition
+     * (FIRST_LOGIN, INVITATION_ACCEPTED, INVITATION_REJECTED,
+     * ADMIN_DEACTIVATE, ADMIN_REACTIVATE). Logged under the closest existing
+     * event type ({@link AuditEventType#USER_UPDATED}) plus a structured
+     * context bag carrying {@code from}, {@code to}, {@code reason} and
+     * {@code actor}. Failure to write the audit row never breaks the
+     * transition — same fire-and-forget contract as the session emitters.
+     */
+    public void recordUserStatusTransitioned(Integer userId, String fromStatus, String toStatus,
+                                             String actor, String reason) {
+        try {
+            Map<String, Object> ctx = new LinkedHashMap<>();
+            ctx.put("reason", reason == null ? "USER_STATUS_TRANSITIONED" : reason);
+            ctx.put("actor", actor == null ? SYSTEM : actor);
+            ctx.put("from", fromStatus == null ? "<none>" : fromStatus);
+            ctx.put("to", toStatus == null ? "<none>" : toStatus);
+            if (userId != null) {
+                ctx.put("userId", userId.toString());
+                ctx.put("sub", userId.toString());
+            }
+            securityAuditService.logEvent(AuditEventType.USER_UPDATED,
+                    AuditCategory.USER_MANAGEMENT, ctx);
+        } catch (Exception ex) {
+            LOGGER.warn("[User audit] Failed to emit USER_STATUS_TRANSITIONED for user={} {}->{} reason={}: {}",
+                    userId, fromStatus, toStatus, reason, ex.getMessage());
+        }
+    }
+
     private void emit(AuditEventType type,
                       String reason,
                       String actor,

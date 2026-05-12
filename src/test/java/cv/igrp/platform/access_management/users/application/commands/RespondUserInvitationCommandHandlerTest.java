@@ -74,6 +74,9 @@ class RespondUserInvitationCommandHandlerTest {
     private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
 
     @Mock
+    private cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger sessionAuditLogger;
+
+    @Mock
     private SecurityContext securityContext;
 
     @Mock
@@ -152,6 +155,10 @@ class RespondUserInvitationCommandHandlerTest {
                 "123", "issuer", "Test User", "test@example.com", null, null, "pwd", java.util.List.of()
         );
         when(oidcUser.getUserProfile()).thenReturn(profile);
+        // Phase G3: reject path now looks up the authenticated user to flip
+        // TEMPORARY → DELETED. Returning empty exercises the no-op branch so
+        // the rest of the assertions remain valid.
+        when(userRepository.findById(123)).thenReturn(Optional.empty());
 
         // Act
         ResponseEntity<InvitationDTO> response = handler.handle(command);
@@ -162,7 +169,6 @@ class RespondUserInvitationCommandHandlerTest {
         assertEquals(InvitationStatus.REJECTED, invitation.getStatus());
         assertEquals("Rejected", invitation.getComments());
         verify(invitationRepository).save(invitation);
-        verifyNoInteractions(userRepository);
         verifyNoInteractions(notificationAdapter);
     }
 
@@ -262,6 +268,101 @@ class RespondUserInvitationCommandHandlerTest {
                         cv.igrp.platform.access_management.shared.security.InvalidPrincipalException.class,
                         () -> handler.handle(command));
         assertEquals("non_numeric_sub", ex.getMessage());
+    }
+
+    @Test
+    void handle_acceptInvitation_promotesTemporaryUserToActive() {
+        // Phase G3: existing TEMPORARY user accepting invitation must be promoted
+        // to ACTIVE and publish a UserStatusChangedEvent.
+        UserInvitationResponseDTO dto = new UserInvitationResponseDTO();
+        dto.setAccept(true);
+
+        RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto, token);
+
+        InvitationEntity invitation = new InvitationEntity();
+        invitation.setIdentifierType("EMAIL");
+        invitation.setIdentifierValue("temp@example.com");
+        invitation.setStatus(InvitationStatus.PENDING);
+        RoleEntity role = new RoleEntity();
+        role.setId(1);
+        invitation.setRoles(Set.of(role));
+
+        when(invitationRepository.findByTokenAndStatusPending(token)).thenReturn(invitation);
+        cv.igrp.platform.access_management.shared.security.UserProfile profile =
+                new cv.igrp.platform.access_management.shared.security.UserProfile(
+                        "111", "issuer", "Temp User", "temp@example.com",
+                        null, null, "pwd", java.util.List.of());
+        when(oidcUser.getUserProfile()).thenReturn(profile);
+
+        IGRPUserEntity tempUser = new IGRPUserEntity();
+        tempUser.setId(111);
+        tempUser.setEmail("temp@example.com");
+        tempUser.setStatus(cv.igrp.platform.access_management.shared.application.constants.Status.TEMPORARY);
+
+        when(invitationRepository.save(any())).thenReturn(invitation);
+        when(userRepository.findById(111)).thenReturn(Optional.of(tempUser));
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        when(roleRepository.findById(1)).thenReturn(Optional.of(role));
+        when(invitationMapper.toDto(any())).thenReturn(new InvitationDTO());
+
+        var otp = new cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity();
+        otp.setId(1L);
+        when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(token, "APPROVED"))
+                .thenReturn(Optional.of(otp));
+
+        ResponseEntity<InvitationDTO> response = handler.handle(command);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.OK, response.getStatusCode());
+        assertEquals(cv.igrp.platform.access_management.shared.application.constants.Status.ACTIVE, tempUser.getStatus());
+        verify(eventPublisher).publishUserStatusChanged(argThat(ev ->
+                "TEMPORARY".equals(ev.getPreviousStatus())
+                        && "ACTIVE".equals(ev.getNewStatus())
+                        && "INVITATION_ACCEPTED".equals(ev.getTriggeredBy())));
+        verify(sessionAuditLogger).recordUserStatusTransitioned(eq(111),
+                eq("TEMPORARY"), eq("ACTIVE"), anyString(), eq("INVITATION_ACCEPTED"));
+    }
+
+    @Test
+    void handle_rejectInvitation_flipsTemporaryUserToDeleted() {
+        // Phase G3: rejecting an invitation must terminally flip the user
+        // (TEMPORARY → DELETED) and publish a UserStatusChangedEvent.
+        UserInvitationResponseDTO dto = new UserInvitationResponseDTO();
+        dto.setAccept(false);
+        dto.setObservation("nope");
+
+        RespondUserInvitationCommand command = new RespondUserInvitationCommand(dto, token);
+
+        InvitationEntity invitation = new InvitationEntity();
+        invitation.setIdentifierType("EMAIL");
+        invitation.setIdentifierValue("temp2@example.com");
+        invitation.setStatus(InvitationStatus.PENDING);
+
+        when(invitationRepository.findByTokenAndStatusPending(token)).thenReturn(invitation);
+        cv.igrp.platform.access_management.shared.security.UserProfile profile =
+                new cv.igrp.platform.access_management.shared.security.UserProfile(
+                        "222", "issuer", "Temp Two", "temp2@example.com",
+                        null, null, "pwd", java.util.List.of());
+        when(oidcUser.getUserProfile()).thenReturn(profile);
+
+        IGRPUserEntity tempUser = new IGRPUserEntity();
+        tempUser.setId(222);
+        tempUser.setStatus(cv.igrp.platform.access_management.shared.application.constants.Status.TEMPORARY);
+        when(userRepository.findById(222)).thenReturn(Optional.of(tempUser));
+        when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        ResponseEntity<InvitationDTO> response = handler.handle(command);
+
+        assertNotNull(response);
+        assertEquals(HttpStatus.NO_CONTENT, response.getStatusCode());
+        assertEquals(InvitationStatus.REJECTED, invitation.getStatus());
+        assertEquals(cv.igrp.platform.access_management.shared.application.constants.Status.DELETED, tempUser.getStatus());
+        verify(eventPublisher).publishUserStatusChanged(argThat(ev ->
+                "TEMPORARY".equals(ev.getPreviousStatus())
+                        && "DELETED".equals(ev.getNewStatus())
+                        && "INVITATION_REJECTED".equals(ev.getTriggeredBy())));
+        verify(sessionAuditLogger).recordUserStatusTransitioned(eq(222),
+                eq("TEMPORARY"), eq("DELETED"), anyString(), eq("INVITATION_REJECTED"));
     }
 
     @Test
