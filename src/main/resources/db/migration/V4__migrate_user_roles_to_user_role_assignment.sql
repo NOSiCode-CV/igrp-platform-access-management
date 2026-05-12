@@ -1,5 +1,5 @@
 -- Step 1: Create the new table for tracking user role assignments with expiration dates
-CREATE TABLE t_user_role_assignment (
+CREATE TABLE IF NOT EXISTS t_user_role_assignment (
     user_id INT NOT NULL,
     role_id INT NOT NULL,
     assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -16,10 +16,18 @@ DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 't_role_users') THEN
         INSERT INTO t_user_role_assignment (user_id, role_id, assigned_at, expires_at)
-        SELECT users_id as user_id, roles_id as role_id, CURRENT_TIMESTAMP, NULL
-        FROM t_role_users;
+        SELECT ru.users_id as user_id, ru.roles_id as role_id, CURRENT_TIMESTAMP, NULL
+        FROM t_role_users ru
+        WHERE NOT EXISTS (
+            SELECT 1
+            FROM t_user_role_assignment ura
+            WHERE ura.user_id = ru.users_id
+              AND ura.role_id = ru.roles_id
+        );
         
         -- Step 3: Rename the old table as backup
-        ALTER TABLE t_role_users RENAME TO t_role_users_backup;
+        IF NOT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 't_role_users_backup') THEN
+            ALTER TABLE t_role_users RENAME TO t_role_users_backup;
+        END IF;
     END IF;
 END $$;

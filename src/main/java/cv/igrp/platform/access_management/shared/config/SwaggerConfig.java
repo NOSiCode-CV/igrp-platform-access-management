@@ -91,15 +91,6 @@ public class SwaggerConfig {
             if (info.getTitle() == null || info.getTitle().isBlank()) {
                 info.setTitle("iGRP Access Management API");
             }
-            String suffix = "Robust session management — every JWT is bound to a server-side "
-                    + "session row via the `sid` claim. See the `Session Management` and "
-                    + "`Admin Session Management` tags.";
-            String existing = info.getDescription();
-            if (existing == null || existing.isBlank()) {
-                info.setDescription(suffix);
-            } else if (!existing.contains("`sid`")) {
-                info.setDescription(existing + "\n\n" + suffix);
-            }
 
             mergeTag(openApi, "Session Management",
                     "User-facing session lifecycle endpoints (introspect current session, "
