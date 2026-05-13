@@ -16,25 +16,51 @@ import org.springframework.stereotype.Component;
  * <pre>{@code
  * @PreAuthorize("@subjectGuard.requiresUser(authentication)")
  * }</pre>
+ *
+ * <p>Two authentication shapes are accepted (mirroring
+ * {@link AuthenticationHelper#getSub()}):
+ * <ul>
+ *   <li>{@link OidcContextAuthenticationToken} (the production shape produced
+ *       by {@link IgrpJwtAuthenticationConverter} — principal is
+ *       {@link IgrpOidcUser}, credentials hold the raw {@link Jwt}).</li>
+ *   <li>A raw {@link Jwt} principal (the resource-server default shape used
+ *       by test fixtures and any path that hasn't been converted).</li>
+ * </ul>
+ * Anything else (null auth, M2M {@code UsernamePasswordAuthenticationToken},
+ * anonymous, etc.) is denied.
  */
 @Component("subjectGuard")
 public class SubjectGuard {
 
     /**
-     * @return {@code true} when the authentication principal is a JWT that
-     *         carries a non-blank {@code sid} claim (i.e. an interactive user
-     *         session). {@code false} for null authentication, non-JWT
-     *         principals, or sid-less JWTs (typical M2M shape).
+     * @return {@code true} when the authentication carries a JWT with a
+     *         non-blank {@code sid} claim (i.e. an interactive user session).
+     *         {@code false} for null authentication, non-JWT authentications,
+     *         or sid-less JWTs (typical M2M shape).
      */
     public boolean requiresUser(Authentication auth) {
-        if (auth == null) {
-            return false;
-        }
-        Object principal = auth.getPrincipal();
-        if (!(principal instanceof Jwt jwt)) {
+        Jwt jwt = extractJwt(auth);
+        if (jwt == null) {
             return false;
         }
         String sid = jwt.getClaimAsString("sid");
         return sid != null && !sid.isBlank();
+    }
+
+    /**
+     * Extract the underlying {@link Jwt} from either shape of authentication.
+     * Returns {@code null} when no JWT is present (null auth, M2M token, etc.).
+     */
+    private static Jwt extractJwt(Authentication auth) {
+        if (auth == null) {
+            return null;
+        }
+        if (auth instanceof OidcContextAuthenticationToken oidcToken) {
+            return oidcToken.getJwt();
+        }
+        if (auth.getPrincipal() instanceof Jwt jwt) {
+            return jwt;
+        }
+        return null;
     }
 }

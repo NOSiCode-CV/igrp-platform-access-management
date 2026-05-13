@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
@@ -95,6 +96,42 @@ class UserStatusGuardTest {
         Authentication auth = authForUserWithStatus(10, Status.DELETED);
         assertFalse(guard.requiresActive(auth));
         assertFalse(guard.requiresActiveOrTemporary(auth));
+    }
+
+    // ---- Regression: production traffic carries OidcContextAuthenticationToken
+    // (IgrpOidcUser principal, Jwt as credentials) — must be unwrapped.
+
+    @Test
+    void activeUserPermittedViaOidcContextToken() {
+        String uid = "0ab33988-489d-440a-b99d-5ff0aab21262";
+        Jwt jwt = jwt(Map.of("sub", uid));
+        IGRPUserEntity entity = new IGRPUserEntity();
+        entity.setId(uid);
+        entity.setStatus(Status.ACTIVE);
+        when(userRepository.findById(eq(uid))).thenReturn(Optional.of(entity));
+        Authentication auth = oidcAuth(jwt);
+        assertTrue(guard.requiresActive(auth));
+        assertTrue(guard.requiresActiveOrTemporary(auth));
+    }
+
+    @Test
+    void temporaryUserPermittedByLenientGuardViaOidcContextToken() {
+        String uid = "0ab33988-489d-440a-b99d-5ff0aab21263";
+        Jwt jwt = jwt(Map.of("sub", uid));
+        IGRPUserEntity entity = new IGRPUserEntity();
+        entity.setId(uid);
+        entity.setStatus(Status.TEMPORARY);
+        when(userRepository.findById(eq(uid))).thenReturn(Optional.of(entity));
+        Authentication auth = oidcAuth(jwt);
+        assertFalse(guard.requiresActive(auth));
+        assertTrue(guard.requiresActiveOrTemporary(auth));
+    }
+
+    private static OidcContextAuthenticationToken oidcAuth(Jwt jwt) {
+        OidcIdToken idToken = new OidcIdToken(jwt.getTokenValue(), jwt.getIssuedAt(),
+                jwt.getExpiresAt(), jwt.getClaims());
+        IgrpOidcUser oidcUser = new IgrpOidcUser(List.of(), idToken, null);
+        return new OidcContextAuthenticationToken(oidcUser, jwt, List.of());
     }
 
     private Authentication authForUserWithStatus(int id, Status status) {

@@ -14,6 +14,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authorization.AuthorizationDecision;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.core.GrantedAuthorityDefaults;
@@ -51,17 +52,39 @@ public class OAuth2SecurityConfiguration {
     private final Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter;
     private final SessionEnforcementFilter sessionEnforcementFilter;
     private final M2MTokenRejectionFilter m2mTokenRejectionFilter;
+    private final UserStatusGuard userStatusGuard;
 
     @Value("${igrp.access.m2m.sync-token:}")
     private String machineAuthToken;
 
     public OAuth2SecurityConfiguration(Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter,
                                        SessionEnforcementFilter sessionEnforcementFilter,
-                                       M2MTokenRejectionFilter m2mTokenRejectionFilter) {
+                                       M2MTokenRejectionFilter m2mTokenRejectionFilter,
+                                       UserStatusGuard userStatusGuard) {
         this.jwtAuthenticationConverter = jwtAuthenticationConverter;
         this.sessionEnforcementFilter = sessionEnforcementFilter;
         this.m2mTokenRejectionFilter = m2mTokenRejectionFilter;
+        this.userStatusGuard = userStatusGuard;
     }
+
+    /**
+     * Phase G3 — URL-pattern guard for the four endpoints that admit
+     * {@link cv.igrp.platform.access_management.shared.application.constants.Status#TEMPORARY}
+     * users so they can complete onboarding.
+     *
+     * <p>These endpoints live on the Studio-generated {@code UserController}.
+     * Studio's metadata model does not include a slot for SpEL-based
+     * authorization, so a {@code @PreAuthorize} annotation placed in the
+     * generated source would be wiped on the next Studio regeneration. The
+     * URL-pattern rule below survives because {@code OAuth2SecurityConfiguration}
+     * is hand-written.
+     */
+    private static final String[] TEMPORARY_ALLOWED_PATHS = {
+            "/api/users/me",
+            "/api/users/invite/response",
+            "/api/users/invite/validate-email",
+            "/api/users/invite/validate-otp"
+    };
 
     /**
      * Filter that authenticates M2M requests using a static token header.
@@ -146,6 +169,14 @@ public class OAuth2SecurityConfiguration {
                                 "/webjars/**",
                                 "/actuator/**"
                         ).permitAll()
+                        // Phase G3 — these four endpoints admit ACTIVE OR TEMPORARY
+                        // users so a freshly provisioned user can finish onboarding
+                        // through the invitation flow. Rule lives here (not as
+                        // @PreAuthorize) because UserController is Studio-generated
+                        // and the metadata format has no slot for SpEL guards.
+                        .requestMatchers(TEMPORARY_ALLOWED_PATHS).access((authSupplier, ctx) ->
+                                new AuthorizationDecision(userStatusGuard.requiresActiveOrTemporary(authSupplier.get()))
+                        )
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->

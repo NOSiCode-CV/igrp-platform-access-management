@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.shared.security;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 
@@ -53,6 +54,33 @@ class SubjectGuardTest {
     void jwtWithValidSidClaimIsAUser() {
         Jwt jwt = jwt(Map.of("sub", "3", "sid", "00000000-0000-0000-0000-000000000001"));
         assertTrue(guard.requiresUser(new JwtAuthenticationToken(jwt)));
+    }
+
+    // ---- Production shape: OidcContextAuthenticationToken (IgrpOidcUser principal,
+    // Jwt as credentials). Regression coverage for the principal-unwrapping bug
+    // that caused /api/users/me to return 403 for valid user tokens.
+
+    @Test
+    void oidcContextAuthenticationTokenWithSidIsAUser() {
+        Jwt jwt = jwt(Map.of(
+                "sub", "0ab33988-489d-440a-b99d-5ff0aab21262",
+                "sid", "3b78e389-063e-4f65-b1e7-e4ac9f49fec4"));
+        Authentication auth = oidcAuth(jwt);
+        assertTrue(guard.requiresUser(auth));
+    }
+
+    @Test
+    void oidcContextAuthenticationTokenWithoutSidIsNotAUser() {
+        Jwt jwt = jwt(Map.of("sub", "0ab33988-489d-440a-b99d-5ff0aab21262"));
+        Authentication auth = oidcAuth(jwt);
+        assertFalse(guard.requiresUser(auth));
+    }
+
+    private static OidcContextAuthenticationToken oidcAuth(Jwt jwt) {
+        OidcIdToken idToken = new OidcIdToken(jwt.getTokenValue(), jwt.getIssuedAt(),
+                jwt.getExpiresAt(), jwt.getClaims());
+        IgrpOidcUser oidcUser = new IgrpOidcUser(List.of(), idToken, null);
+        return new OidcContextAuthenticationToken(oidcUser, jwt, List.of());
     }
 
     private static Jwt jwt(Map<String, Object> claims) {

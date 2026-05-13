@@ -8,6 +8,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.security.M2MTokenRejectionFilter;
 import cv.igrp.platform.access_management.shared.security.OAuth2SecurityConfiguration;
 import cv.igrp.platform.access_management.shared.security.SessionEnforcementFilter;
+import cv.igrp.platform.access_management.shared.security.UserStatusGuard;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -249,6 +250,11 @@ class SessionEnforcementWiringIntegrationTest {
         @Bean
         M2MTokenRejectionFilter m2mTokenRejectionFilter() {
             return new M2MTokenRejectionFilter();
+        }
+
+        @Bean
+        UserStatusGuard userStatusGuard(IGRPUserEntityRepository userRepository) {
+            return new UserStatusGuard(userRepository);
         }
 
         @Bean
