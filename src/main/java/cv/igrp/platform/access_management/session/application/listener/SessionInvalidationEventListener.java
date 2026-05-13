@@ -40,7 +40,7 @@ public class SessionInvalidationEventListener {
      */
     @EventListener
     public void handleUserRoleChanged(UserRoleChangedEvent event) {
-        Integer userId = event.getUserId();
+        String userId = event.getUserId();
         if (userId == null) {
             log.warn("UserRoleChangedEvent received without userId; skipping invalidation");
             return;
@@ -69,7 +69,7 @@ public class SessionInvalidationEventListener {
      */
     @EventListener
     public void handleUserStatusChanged(UserStatusChangedEvent event) {
-        Integer userId = event.getUserId();
+        String userId = event.getUserId();
         if (userId == null) {
             log.warn("UserStatusChangedEvent received without userId; skipping invalidation");
             return;
@@ -108,7 +108,7 @@ public class SessionInvalidationEventListener {
             return;
         }
 
-        Set<Integer> affectedUsers = userRepository.findUserIdsByPermissionName(permissionName);
+        Set<String> affectedUsers = userRepository.findUserIdsByPermissionName(permissionName);
         if (affectedUsers.isEmpty()) {
             log.info("Permission deleted: {} — no active users held it", permissionName);
             return;

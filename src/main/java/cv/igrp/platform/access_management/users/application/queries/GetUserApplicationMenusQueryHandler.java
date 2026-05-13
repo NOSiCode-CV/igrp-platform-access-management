@@ -49,7 +49,7 @@ public class GetUserApplicationMenusQueryHandler implements QueryHandler<GetUser
 
         var application = applicationRepository.findByCodeAndStatusNotDeleted(query.getApplicationCode());
 
-        List<MenuEntryDTO> menuEntries = menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(Integer.valueOf(user.getId()), application.getId(), query.getMenuCode())
+        List<MenuEntryDTO> menuEntries = menuEntryRepository.findActiveByApplicationIdAndUserIdFiltered(user.getId(), application.getId(), query.getMenuCode())
                 .stream()
                 .map(menuEntryMapper::toDTO)
                 .toList();

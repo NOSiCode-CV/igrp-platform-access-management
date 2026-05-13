@@ -35,7 +35,7 @@ public class GetActiveUserRoleQueryHandler implements QueryHandler<GetActiveUser
     @IgrpQueryHandler
     public ResponseEntity<RoleDepartmentDTO> handle(GetActiveUserRoleQuery query) {
 
-        Integer userId = query.getId();
+        String userId = query.getId();
 
         logger.info("Fetching user active role with ID: {}", userId);
 

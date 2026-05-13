@@ -16,6 +16,6 @@ public class GetUserPermissionsQuery implements Query {
   @NotBlank(message = "The field <roleCode> is required")
   private String roleCode;
   @NotNull(message = "The field <id> is required")
-  private Integer id;
+  private String id;
 
 }

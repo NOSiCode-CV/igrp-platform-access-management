@@ -18,6 +18,6 @@ import java.util.Map;
 @AllArgsConstructor
 public class UserMetadataDTO {
 
-    private Integer userId;
+    private String userId;
     private Map<String, Object> metadata;
 }

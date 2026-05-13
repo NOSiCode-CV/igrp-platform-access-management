@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 
 
 @Component
@@ -40,17 +41,17 @@ public class RemoveFavoriteApplicationCommandHandler implements CommandHandler<R
 
        LOGGER.info("Removing application <{}> as favorite to user: {}",  command.getApplicationCode(), currentUserSub);
 
-       var user = userEntityRepository.findByIdWithRolesAndPermissions(Integer.parseInt(currentUserSub)).orElseThrow(
+       var user = userEntityRepository.findByIdWithRolesAndPermissions(SubjectParser.parseUserSubjectOrThrow(currentUserSub)).orElseThrow(
                () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
        );
 
        var application = applicationEntityRepository.findByCodeAndStatusNotDeleted(command.getApplicationCode());
 
-       if(!favoriteApplicationEntityRepository.existsByUserAndApplication(Integer.valueOf(user.getId()), application)) {
+       if(!favoriteApplicationEntityRepository.existsByUserAndApplication(user.getId(), application)) {
            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Application <" + command.getApplicationCode() + "> was never a favorite of user: " + authenticationHelper.getSub());
        }
 
-       var favoriteApplication = favoriteApplicationEntityRepository.findByUserId(Integer.valueOf(user.getId())).orElseThrow(
+       var favoriteApplication = favoriteApplicationEntityRepository.findByUserId(user.getId()).orElseThrow(
                () -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "No favorite applications found for user: " + user.getId())
        );
 

@@ -5,7 +5,10 @@ import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.model.Notification;
 import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.events.UserStatusChangedEvent;
 import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
@@ -63,6 +66,7 @@ public class RespondUserInvitationCommandHandler
    private final UserRoleAssignmentRepository userRoleAssignmentRepository;
    private final ExpireRoleService expireRoleService;
    private final EventPublisher eventPublisher;
+   private final SessionAuditLogger sessionAuditLogger;
 
    public RespondUserInvitationCommandHandler(
          NotificationAdapter<NotificationResult> notificationAdapter,
@@ -76,7 +80,8 @@ public class RespondUserInvitationCommandHandler
          OtpEntityRepository otpEntityRepository,
          UserRoleAssignmentRepository userRoleAssignmentRepository,
          ExpireRoleService expireRoleService,
-         EventPublisher eventPublisher) {
+         EventPublisher eventPublisher,
+         SessionAuditLogger sessionAuditLogger) {
       this.notificationAdapter = notificationAdapter;
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
@@ -89,6 +94,7 @@ public class RespondUserInvitationCommandHandler
       this.userRoleAssignmentRepository = userRoleAssignmentRepository;
       this.expireRoleService = expireRoleService;
       this.eventPublisher = eventPublisher;
+      this.sessionAuditLogger = sessionAuditLogger;
    }
 
    @IgrpCommandHandler
@@ -117,12 +123,10 @@ public class RespondUserInvitationCommandHandler
 
       String authMethod = profile.authMethod() != null ? profile.authMethod() : "pwd";
       String idStr = profile.id();
-      Integer userId;
-      try {
-          userId = Integer.parseInt(idStr);
-      } catch (NumberFormatException e) {
-          throw IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "Invalid Token sub: must be an integer ID");
-      }
+      // Phase G1 / FR-13: SubjectParser raises InvalidPrincipalException (→ 401)
+      // instead of NumberFormatException when sub is non-numeric (M2M shape).
+      String userId = cv.igrp.platform.access_management.shared.security.SubjectParser
+              .parseUserSubjectOrThrow(idStr);
       String phone = profile.phone();
       String email = profile.email();
 
@@ -177,8 +181,42 @@ public class RespondUserInvitationCommandHandler
             user.setActiveRole(roleRepository.findById(roleId).orElse(null));
          }
 
+         // Phase G3: invitation acceptance promotes TEMPORARY → ACTIVE.
+         // For pre-existing accounts the status must be TEMPORARY; otherwise
+         // we skip the transition (account already activated or in a terminal
+         // state) but the audit row records the no-op.
+         Status oldStatusForAudit;
+         boolean statusChangedToActive = false;
+         if (isNewUser) {
+            oldStatusForAudit = null;
+            user.setStatus(Status.ACTIVE);
+            statusChangedToActive = true;
+         } else if (user.getStatus() == Status.TEMPORARY) {
+            oldStatusForAudit = Status.TEMPORARY;
+            user.setStatus(Status.ACTIVE);
+            statusChangedToActive = true;
+         } else {
+            oldStatusForAudit = user.getStatus();
+            LOGGER.warn("Invitation accept on user id={} with non-TEMPORARY status={} — leaving status unchanged",
+                  user.getId(), user.getStatus());
+         }
+
          var savedUser = userRepository.save(user);
          auditService.logUserChange(savedUser.getId(), isNewUser ? "CREATE" : "UPDATE");
+
+         String auditUserId = savedUser.getId() != null ? savedUser.getId() : userId;
+         if (statusChangedToActive) {
+            String oldCode = oldStatusForAudit == null ? null : oldStatusForAudit.getCode();
+            eventPublisher.publishUserStatusChanged(new UserStatusChangedEvent(
+                  auditUserId, oldCode, Status.ACTIVE.getCode(), "INVITATION_ACCEPTED"));
+            try {
+               sessionAuditLogger.recordUserStatusTransitioned(
+                     auditUserId, oldCode, Status.ACTIVE.getCode(),
+                     SessionAuditLogger.USER, "INVITATION_ACCEPTED");
+            } catch (Exception ex) {
+               LOGGER.warn("[G3 audit] recordUserStatusTransitioned failed (accept): {}", ex.getMessage());
+            }
+         }
 
          for (var role : invitation.getRoles()) {
             var roleEntity = roleRepository.findById(role.getId()).orElseThrow(() -> IgrpResponseStatusException.of(
@@ -205,12 +243,7 @@ public class RespondUserInvitationCommandHandler
             String departmentCode = invitation.getRoles().iterator().next().getDepartment() != null
                     ? invitation.getRoles().iterator().next().getDepartment().getCode()
                     : null;
-            Integer savedUserId;
-            try {
-               savedUserId = Integer.parseInt(savedUser.getId());
-            } catch (NumberFormatException nfe) {
-               savedUserId = userId;
-            }
+            String savedUserId = savedUser.getId() != null ? savedUser.getId() : userId;
             eventPublisher.publishUserRoleChanged(new UserRoleChangedEvent(
                     savedUserId, grantedCodes, departmentCode,
                     UserRoleChangedEvent.CHANGE_ADDED, "INVITATION"));
@@ -264,6 +297,31 @@ public class RespondUserInvitationCommandHandler
          invitation.setStatus(InvitationStatus.REJECTED);
          invitation.setComments(dto.getObservation());
          invitationRepository.save(invitation);
+
+         // Phase G3: invitation rejection terminally flips TEMPORARY → DELETED
+         // for the authenticated principal. Missing-user / non-TEMPORARY cases
+         // are logged and skipped — the rejection itself still stands.
+         IGRPUserEntity rejectedUser = userRepository.findById(userId).orElse(null);
+         if (rejectedUser != null) {
+            Status currentStatus = rejectedUser.getStatus();
+            if (currentStatus == Status.TEMPORARY) {
+               rejectedUser.setStatus(Status.DELETED);
+               userRepository.save(rejectedUser);
+               eventPublisher.publishUserStatusChanged(new UserStatusChangedEvent(
+                     userId, Status.TEMPORARY.getCode(), Status.DELETED.getCode(),
+                     "INVITATION_REJECTED"));
+               try {
+                  sessionAuditLogger.recordUserStatusTransitioned(
+                        userId, Status.TEMPORARY.getCode(), Status.DELETED.getCode(),
+                        SessionAuditLogger.USER, "INVITATION_REJECTED");
+               } catch (Exception ex) {
+                  LOGGER.warn("[G3 audit] recordUserStatusTransitioned failed (reject): {}", ex.getMessage());
+               }
+            } else {
+               LOGGER.warn("Invitation reject on user id={} with non-TEMPORARY status={} — leaving status unchanged",
+                     rejectedUser.getId(), currentStatus);
+            }
+         }
          return ResponseEntity.noContent().build();
       }
    }

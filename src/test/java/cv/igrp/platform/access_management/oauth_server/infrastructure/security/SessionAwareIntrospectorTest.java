@@ -142,7 +142,7 @@ class SessionAwareIntrospectorTest {
     private SessionEntity session(SessionStatus status, Instant expiresAt) {
         SessionEntity entity = new SessionEntity();
         entity.setSessionId(UUID.randomUUID());
-        entity.setUserId(42);
+        entity.setUserId("00000000-0000-0000-0000-000000000042");
         entity.setStatus(status);
         entity.setStartedAt(Instant.now().minusSeconds(60));
         entity.setLastSeenAt(Instant.now());

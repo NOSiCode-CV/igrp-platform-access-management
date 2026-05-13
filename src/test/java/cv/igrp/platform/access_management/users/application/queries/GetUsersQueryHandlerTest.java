@@ -43,13 +43,13 @@ public class GetUsersQueryHandlerTest {
   @BeforeEach
   void setUp() {
     mockUser = new IGRPUserEntity();
-    mockUser.setId(1);
+    mockUser.setId("00000000-0000-0000-0000-000000000001");
     mockUser.setName("John Doe");
     mockUser.setUsername("jdoe");
     mockUser.setEmail("jdoe@example.com");
 
     mockUserDTO = new IGRPUserDTO();
-    mockUserDTO.setId(1);
+    mockUserDTO.setId("00000000-0000-0000-0000-000000000001");
     mockUserDTO.setName("John Doe");
     mockUserDTO.setUsername("jdoe");
     mockUserDTO.setEmail("jdoe@example.com");
@@ -64,7 +64,7 @@ public class GetUsersQueryHandlerTest {
             "APP",
             "DEPT",
             "John",
-            1,
+            "00000000-0000-0000-0000-000000000001",
             "jdoe@example.com"
     );
 

@@ -93,7 +93,7 @@ public interface DepartmentEntityRepository extends
                   AND d.status <> 'DELETED'
                   AND (:code IS NULL OR d.name ILIKE CONCAT('%', :code, '%'))
             """, nativeQuery = true)
-    List<DepartmentEntity> findByUserAndNotDeletedFiltered(Integer userId, @Param("code") String departmentCode);
+    List<DepartmentEntity> findByUserAndNotDeletedFiltered(String userId, @Param("code") String departmentCode);
 
     @Query(value = """
                 SELECT DISTINCT d.*
@@ -107,7 +107,7 @@ public interface DepartmentEntityRepository extends
                   AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                   AND (:code IS NULL OR d.name ILIKE CONCAT('%', :code, '%'))
             """, nativeQuery = true)
-    List<DepartmentEntity> findByCurrentUserAndNotDeletedFiltered(Integer userId, @Param("code") String departmentCode);
+    List<DepartmentEntity> findByCurrentUserAndNotDeletedFiltered(String userId, @Param("code") String departmentCode);
 
 
 }

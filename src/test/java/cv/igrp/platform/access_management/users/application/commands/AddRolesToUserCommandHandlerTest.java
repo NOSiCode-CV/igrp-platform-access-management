@@ -60,7 +60,7 @@ public class AddRolesToUserCommandHandlerTest {
     @InjectMocks
     private AddRolesToUserCommandHandler handler;
 
-    private final Integer USER_ID = 1;
+    private final String USER_ID = "00000000-0000-0000-0000-000000000001";
     private IGRPUserEntity user;
     private RoleEntity role1;
     private DepartmentEntity department;

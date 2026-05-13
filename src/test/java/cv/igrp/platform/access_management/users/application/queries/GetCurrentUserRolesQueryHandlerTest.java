@@ -49,7 +49,7 @@ class GetCurrentUserRolesQueryHandlerTest {
     @BeforeEach
     void setUp() {
         user = new IGRPUserEntity();
-        user.setId(1);
+        user.setId("00000000-0000-0000-0000-000000000001");
         
         activeRole = new RoleEntity();
         activeRole.setCode("ACTIVE");
@@ -72,8 +72,8 @@ class GetCurrentUserRolesQueryHandlerTest {
         
         user.setUserRoleAssignments(List.of(activeAssignment, expiredAssignment));
         
-        when(authenticationHelper.getSub()).thenReturn("1");
-        when(userRepository.findByIdWithRolesAndPermissions(1)).thenReturn(Optional.of(user));
+        when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000001");
+        when(userRepository.findByIdWithRolesAndPermissions("00000000-0000-0000-0000-000000000001")).thenReturn(Optional.of(user));
         
         RoleDTO dto = new RoleDTO();
         dto.setCode("ACTIVE");
@@ -94,8 +94,8 @@ class GetCurrentUserRolesQueryHandlerTest {
     void handle_ShouldReturnEmptyListWhenNoRoles() {
         // Arrange
         user.setUserRoleAssignments(Collections.emptyList());
-        when(authenticationHelper.getSub()).thenReturn("1");
-        when(userRepository.findByIdWithRolesAndPermissions(1)).thenReturn(Optional.of(user));
+        when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000001");
+        when(userRepository.findByIdWithRolesAndPermissions("00000000-0000-0000-0000-000000000001")).thenReturn(Optional.of(user));
 
         // Act
         ResponseEntity<List<RoleDTO>> response = handler.handle(new GetCurrentUserRolesQuery());

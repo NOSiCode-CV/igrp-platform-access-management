@@ -48,9 +48,8 @@ class GetUserApplicationMenusQueryHandlerTest {
     @BeforeEach
     void setUp() {
         user = new IGRPUserEntity();
-        user.setId(1);
+        user.setId("00000000-0000-0000-0000-000000000001");
         user.setEmail("user@igrp.cv");
-        user.setId(1);
 
         app = new ApplicationEntity();
         app.setId(1);
@@ -75,9 +74,9 @@ class GetUserApplicationMenusQueryHandlerTest {
     void handle_success_returnsMenus() {
 
         GetUserApplicationMenusQuery query =
-                new GetUserApplicationMenusQuery(null, 1, "APP1");
+                new GetUserApplicationMenusQuery(null, "00000000-0000-0000-0000-000000000001", "APP1");
 
-        when(userRepository.findById(1))
+        when(userRepository.findById("00000000-0000-0000-0000-000000000001"))
                 .thenReturn(Optional.of(user));
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);
@@ -98,7 +97,7 @@ class GetUserApplicationMenusQueryHandlerTest {
         assertNotNull(response);
         assertNotNull(response.getBody());
         assertEquals(2, response.getBody().size());
-        verify(menuEntryRepository).findActiveByApplicationIdAndCurrentUserIdFiltered(Integer.valueOf(user.getId()), app.getId(), null);
+        verify(menuEntryRepository).findActiveByApplicationIdAndCurrentUserIdFiltered(user.getId(), app.getId(), null);
     }
 
     // ------------------------------------------------------
@@ -108,9 +107,9 @@ class GetUserApplicationMenusQueryHandlerTest {
     void handle_success_filtersByMenuCode() {
 
         GetUserApplicationMenusQuery query =
-                new GetUserApplicationMenusQuery("A", 1, "APP1");
+                new GetUserApplicationMenusQuery("A", "00000000-0000-0000-0000-000000000001", "APP1");
 
-        when(userRepository.findById(1))
+        when(userRepository.findById("00000000-0000-0000-0000-000000000001"))
                 .thenReturn(Optional.of(user));
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);
@@ -138,11 +137,11 @@ class GetUserApplicationMenusQueryHandlerTest {
     @Test
     void handle_userNotFound_throwsUnauthorized() {
 
-        when(userRepository.findById(1))
+        when(userRepository.findById("00000000-0000-0000-0000-000000000001"))
                 .thenReturn(Optional.empty());
 
         GetUserApplicationMenusQuery query =
-                new GetUserApplicationMenusQuery(null, 1, "APP1");
+                new GetUserApplicationMenusQuery(null, "00000000-0000-0000-0000-000000000001", "APP1");
 
         assertThrows(IgrpResponseStatusException.class,
                 () -> handler.handle(query));
@@ -156,7 +155,7 @@ class GetUserApplicationMenusQueryHandlerTest {
     @Test
     void handle_success_returnsEmptyList() {
 
-        when(userRepository.findById(1))
+        when(userRepository.findById("00000000-0000-0000-0000-000000000001"))
                 .thenReturn(Optional.of(user));
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);
@@ -165,7 +164,7 @@ class GetUserApplicationMenusQueryHandlerTest {
                 .thenReturn(List.of());
 
         GetUserApplicationMenusQuery query =
-                new GetUserApplicationMenusQuery(null, 1, "APP1");
+                new GetUserApplicationMenusQuery(null, "00000000-0000-0000-0000-000000000001", "APP1");
 
         ResponseEntity<List<MenuEntryDTO>> response = handler.handle(query);
 

@@ -12,5 +12,5 @@ import lombok.NoArgsConstructor;
 public class GetUserMetadataQuery implements Query {
 
     @NotNull(message = "The field <id> is required")
-    private Integer id;
+    private String id;
 }

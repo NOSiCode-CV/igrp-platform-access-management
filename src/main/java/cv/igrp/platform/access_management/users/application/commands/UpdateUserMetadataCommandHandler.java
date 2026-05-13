@@ -30,7 +30,7 @@ public class UpdateUserMetadataCommandHandler implements CommandHandler<UpdateUs
     @Transactional
     @IgrpCommandHandler
     public ResponseEntity<UserMetadataDTO> handle(UpdateUserMetadataCommand command) {
-        Integer id = command.getId();
+        String id = command.getId();
         LOGGER.info("Updating metadata for user id={}", id);
 
         IGRPUserEntity user = userRepository.findById(id)

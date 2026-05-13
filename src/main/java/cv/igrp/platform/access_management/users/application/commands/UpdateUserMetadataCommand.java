@@ -14,7 +14,7 @@ import java.util.Map;
 public class UpdateUserMetadataCommand implements Command {
 
     @NotNull(message = "The field <id> is required")
-    private Integer id;
+    private String id;
 
     @NotNull(message = "The field <metadata> is required")
     private Map<String, Object> metadata;

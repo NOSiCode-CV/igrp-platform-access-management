@@ -28,7 +28,7 @@ public class FavoriteApplicationEntity extends AuditEntity {
 
   
     @Column(name="userid")
-    private Integer userId;
+    private String userId;
 
   
     @NotNull(message = "application is mandatory")

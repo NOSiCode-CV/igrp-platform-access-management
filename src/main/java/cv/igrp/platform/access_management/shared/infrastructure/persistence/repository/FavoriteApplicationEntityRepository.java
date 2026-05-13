@@ -31,9 +31,9 @@ public interface FavoriteApplicationEntityRepository extends
        WHERE f.userId = :user
          AND a = :application
        """)
-    boolean existsByUserAndApplication(@Param("user") Integer user,
+    boolean existsByUserAndApplication(@Param("user") String user,
                                        @Param("application") ApplicationEntity application);
 
-    Optional<FavoriteApplicationEntity> findByUserId(Integer user);
+    Optional<FavoriteApplicationEntity> findByUserId(String user);
 
 }

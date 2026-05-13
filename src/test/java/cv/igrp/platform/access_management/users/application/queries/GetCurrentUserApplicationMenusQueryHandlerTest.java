@@ -1,5 +1,5 @@
 package cv.igrp.platform.access_management.users.application.queries;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 
 import cv.igrp.platform.access_management.app.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -55,9 +55,8 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
     @BeforeEach
     void setUp() {
         user = new IGRPUserEntity();
-        user.setId(1);
+        user.setId("00000000-0000-0000-0000-000000000001");
         user.setEmail("user@igrp.cv");
-        user.setExternalId("1");
 
         app = new ApplicationEntity();
         app.setId(1);
@@ -84,8 +83,8 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
         GetCurrentUserApplicationMenusQuery query =
                 new GetCurrentUserApplicationMenusQuery(null, "APP1");
 
-        when(authenticationHelper.getSub()).thenReturn("1");
-        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
+        when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000001");
+        when(userRepository.findByIdWithRolesAndPermissions(anyString()))
                 .thenReturn(Optional.of(user));
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);
@@ -107,7 +106,7 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
 
         assertNotNull(response);
         assertEquals(2, response.getBody().size());
-        verify(menuEntryRepository).findActiveByApplicationIdAndCurrentUserIdFiltered(Integer.valueOf(user.getId()), app.getId(), null);
+        verify(menuEntryRepository).findActiveByApplicationIdAndCurrentUserIdFiltered(user.getId(), app.getId(), null);
     }
 
     // ------------------------------------------------------
@@ -119,8 +118,8 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
         GetCurrentUserApplicationMenusQuery query =
                 new GetCurrentUserApplicationMenusQuery("A", "APP1");
 
-        when(authenticationHelper.getSub()).thenReturn("1");
-        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
+        when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000001");
+        when(userRepository.findByIdWithRolesAndPermissions(anyString()))
                 .thenReturn(Optional.of(user));
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);
@@ -150,8 +149,8 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
     @Test
     void handle_userNotFound_throwsUnauthorized() {
 
-        when(authenticationHelper.getSub()).thenReturn("2");
-        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
+        when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000002");
+        when(userRepository.findByIdWithRolesAndPermissions(anyString()))
                 .thenReturn(Optional.empty());
 
         GetCurrentUserApplicationMenusQuery query =
@@ -169,8 +168,8 @@ class GetCurrentUserApplicationMenusQueryHandlerTest {
     @Test
     void handle_success_returnsEmptyList() {
 
-        when(authenticationHelper.getSub()).thenReturn("1");
-        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
+        when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000001");
+        when(userRepository.findByIdWithRolesAndPermissions(anyString()))
                 .thenReturn(Optional.of(user));
         when(applicationRepository.findByCodeAndStatusNotDeleted("APP1"))
                 .thenReturn(app);

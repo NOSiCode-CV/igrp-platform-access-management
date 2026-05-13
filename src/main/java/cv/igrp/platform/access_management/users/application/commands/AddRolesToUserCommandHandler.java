@@ -106,7 +106,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<List<RoleDTO>> handle(AddRolesToUserCommand command) {
-      Integer userId = command.getId();
+      String userId = command.getId();
       List<String> rolesToAdd = command.getAddRolesToUserRequest();
       String departmentCode = command.getDepartmentCode();
 

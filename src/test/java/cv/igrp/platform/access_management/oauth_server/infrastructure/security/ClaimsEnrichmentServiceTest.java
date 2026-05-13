@@ -45,7 +45,8 @@ class ClaimsEnrichmentServiceTest {
     @Test
     void mapSubjectReturnsInternalIdWhenIdentityExists() {
         IGRPUserEntity user = new IGRPUserEntity();
-        user.setId(42);
+        String uid = "00000000-0000-0000-0000-000000000042";
+        user.setId(uid);
 
         UserIdentityEntity identity = new UserIdentityEntity();
         identity.setId(UUID.randomUUID());
@@ -56,7 +57,7 @@ class ClaimsEnrichmentServiceTest {
         when(userIdentityRepository.findByProviderAndUserId("external-idp", "abc-123"))
                 .thenReturn(Optional.of(identity));
 
-        assertEquals("42", service.mapSubject("external-idp", "abc-123"));
+        assertEquals(uid, service.mapSubject("external-idp", "abc-123"));
     }
 
     @Test
@@ -77,7 +78,8 @@ class ClaimsEnrichmentServiceTest {
         role.setPermissions(new HashSet<>(Set.of(perm)));
 
         IGRPUserEntity user = new IGRPUserEntity();
-        user.setId(7);
+        String uid7 = "00000000-0000-0000-0000-000000000007";
+        user.setId(uid7);
         user.setUsername("demo");
         user.setActiveRole(role);
         Map<String, Object> md = new LinkedHashMap<>();
@@ -98,11 +100,11 @@ class ClaimsEnrichmentServiceTest {
         client.setScopes(new HashSet<>(Set.of("openid", "profile")));
         client.setApplication(app);
 
-        when(userRepository.findById(7)).thenReturn(Optional.of(user));
+        when(userRepository.findById(uid7)).thenReturn(Optional.of(user));
         when(oauthClientRepository.findByClientId("igrp-access-management")).thenReturn(Optional.of(client));
 
         Map<String, Object> claims = service.buildClaims(
-                "7",
+                uid7,
                 "igrp-access-management",
                 Set.of("openid", "profile")
         );

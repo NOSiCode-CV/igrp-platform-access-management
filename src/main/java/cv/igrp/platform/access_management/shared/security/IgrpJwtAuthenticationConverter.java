@@ -49,7 +49,7 @@ public class IgrpJwtAuthenticationConverter implements Converter<Jwt, AbstractAu
         String sub = req(c, "sub");
 
         // Map roles from database instead of WSO2 token (following PAT-002)
-        userRepository.findByExternalId(sub).ifPresent(user -> {
+        userRepository.findById(sub).ifPresent(user -> {
             List<UserRoleAssignment> assignments = userRoleAssignmentRepository.findActiveByUserId(user.getInternalId());
             for (UserRoleAssignment assignment : assignments) {
                 authorities.add(new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + assignment.getRole().getCode()));

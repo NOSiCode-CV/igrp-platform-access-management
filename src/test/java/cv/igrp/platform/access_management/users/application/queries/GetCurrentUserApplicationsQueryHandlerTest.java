@@ -1,5 +1,5 @@
 package cv.igrp.platform.access_management.users.application.queries;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
@@ -50,8 +50,7 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery("APP", null);
 
     IGRPUserEntity mockUser = new IGRPUserEntity();
-        mockUser.setId(1);
-    mockUser.setExternalId("123");
+        mockUser.setId("00000000-0000-0000-0000-000000000123");
 
     ApplicationEntity app1 = new ApplicationEntity();
     app1.setCode("APP_MAIN");
@@ -59,8 +58,8 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     ApplicationDTO dto1 = new ApplicationDTO();
     dto1.setCode("APP_MAIN");
 
-    when(authenticationHelper.getSub()).thenReturn("123");
-    when(userRepository.findByIdWithRolesAndPermissions(anyInt())).thenReturn(Optional.of(mockUser));
+    when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000123");
+    when(userRepository.findByIdWithRolesAndPermissions(anyString())).thenReturn(Optional.of(mockUser));
     when(applicationRepository.findByCurrentUserAndActiveFiltered(any(), any(), any()))
             .thenReturn(List.of(app1));
     when(applicationMapper.toDto(app1)).thenReturn(dto1);
@@ -81,8 +80,7 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery("IGRP", null);
 
     IGRPUserEntity user = new IGRPUserEntity();
-        user.setId(1);
-    user.setExternalId("1");
+        user.setId("00000000-0000-0000-0000-000000000001");
 
     ApplicationEntity app1 = new ApplicationEntity();
     app1.setCode("IGRP_PLATFORM");
@@ -93,8 +91,8 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     ApplicationDTO dto = new ApplicationDTO();
     dto.setCode("IGRP_PLATFORM");
 
-    when(authenticationHelper.getSub()).thenReturn("1");
-    when(userRepository.findByIdWithRolesAndPermissions(anyInt())).thenReturn(Optional.of(user));
+    when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000001");
+    when(userRepository.findByIdWithRolesAndPermissions(anyString())).thenReturn(Optional.of(user));
     when(applicationRepository.findByCurrentUserAndActiveFiltered(any(), any(), any()))
             .thenReturn(List.of(app1, app2));
 
@@ -118,11 +116,10 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery(null, null);
 
     IGRPUserEntity user = new IGRPUserEntity();
-        user.setId(1);
-    user.setExternalId("888");
+        user.setId("00000000-0000-0000-0000-000000000888");
 
-    when(authenticationHelper.getSub()).thenReturn("888");
-    when(userRepository.findByIdWithRolesAndPermissions(anyInt())).thenReturn(Optional.of(user));
+    when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000888");
+    when(userRepository.findByIdWithRolesAndPermissions(anyString())).thenReturn(Optional.of(user));
     when(applicationRepository.findByCurrentUserAndActiveFiltered(any(), any(), any()))
             .thenReturn(List.of());
 
@@ -139,8 +136,8 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
 
     GetCurrentUserApplicationsQuery query = new GetCurrentUserApplicationsQuery(null, null);
 
-    when(authenticationHelper.getSub()).thenReturn("2");
-    when(userRepository.findByIdWithRolesAndPermissions(anyInt())).thenReturn(Optional.empty());
+    when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000002");
+    when(userRepository.findByIdWithRolesAndPermissions(anyString())).thenReturn(Optional.empty());
 
     assertThrows(IgrpResponseStatusException.class, () -> handler.handle(query));
   }

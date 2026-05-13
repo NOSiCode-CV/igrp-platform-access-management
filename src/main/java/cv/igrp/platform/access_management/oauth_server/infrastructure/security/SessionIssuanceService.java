@@ -90,7 +90,7 @@ public class SessionIssuanceService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public IssuanceBinding bindAccessToken(JwtEncodingContext context,
-                                           Integer userId,
+                                           String userId,
                                            String clientId,
                                            String jti) {
         if (userId == null) {
@@ -119,7 +119,7 @@ public class SessionIssuanceService {
     }
 
     private Optional<SessionEntity> locateSessionForRefresh(JwtEncodingContext context,
-                                                            Integer userId,
+                                                            String userId,
                                                             String deviceId) {
         OAuth2Authorization authorization = context.getAuthorization();
         if (authorization != null && authorization.getAccessToken() != null) {
@@ -182,7 +182,7 @@ public class SessionIssuanceService {
         return saved;
     }
 
-    private SessionEntity openNewSession(Integer userId,
+    private SessionEntity openNewSession(String userId,
                                          String deviceId,
                                          String clientId,
                                          String jti,

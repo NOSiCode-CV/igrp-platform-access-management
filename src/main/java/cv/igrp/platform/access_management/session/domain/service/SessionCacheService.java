@@ -21,7 +21,7 @@ public class SessionCacheService {
      * Get session from cache or load from database
      */
     @Cacheable(value = CACHE_NAME, keyGenerator = "sessionCacheKeyGenerator")
-    public SessionResponseDTO getOrLoadSession(Integer userId) {
+    public SessionResponseDTO getOrLoadSession(String userId) {
         LOGGER.info("Cache MISS - Loading session for user: {}", userId);
         setFromCacheAsFalse();
         return null; // This will be handled by SessionManagementService
@@ -31,7 +31,7 @@ public class SessionCacheService {
      * Evict session from cache
      */
     @CacheEvict(value = CACHE_NAME, keyGenerator = "sessionCacheKeyGenerator")
-    public void evictSession(Integer userId) {
+    public void evictSession(String userId) {
         LOGGER.info("Evicting session from cache for user: {}", userId);
     }
 
@@ -46,7 +46,7 @@ public class SessionCacheService {
     /**
      * Put session in cache
      */
-    public void cacheSession(Integer userId, SessionResponseDTO sessionResponse) {
+    public void cacheSession(String userId, SessionResponseDTO sessionResponse) {
         LOGGER.debug("Caching session for user: {}", userId);
     }
 

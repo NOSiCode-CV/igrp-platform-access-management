@@ -58,7 +58,7 @@ public class RefreshTokenTombstoneEntity {
 
     /** Internal IGRP user id ({@code SessionEntity.userId}). May be null for M2M. */
     @Column(name = "user_id")
-    private Integer userId;
+    private String userId;
 
     /** When the token was rotated out. */
     @Column(name = "invalidated_at", nullable = false)

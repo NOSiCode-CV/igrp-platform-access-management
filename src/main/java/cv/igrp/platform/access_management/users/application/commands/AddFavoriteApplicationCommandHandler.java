@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.transaction.annotation.Transactional;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 
 
 @Component
@@ -42,21 +43,21 @@ public class AddFavoriteApplicationCommandHandler implements CommandHandler<AddF
 
         LOGGER.info("Adding application <{}> as favorite to user: {}",  command.getApplicationCode(), currentUserSub);
 
-        var user = userEntityRepository.findByIdWithRolesAndPermissions(Integer.parseInt(currentUserSub)).orElseThrow(
+        var user = userEntityRepository.findByIdWithRolesAndPermissions(SubjectParser.parseUserSubjectOrThrow(currentUserSub)).orElseThrow(
                 () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
         );
 
         var application = applicationEntityRepository.findByCodeAndStatusNotDeleted(command.getApplicationCode());
 
-        if(favoriteApplicationEntityRepository.existsByUserAndApplication(Integer.valueOf(user.getId()), application)) {
+        if(favoriteApplicationEntityRepository.existsByUserAndApplication(user.getId(), application)) {
             throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Application <" + command.getApplicationCode() + "> is already a favorite of user: " + authenticationHelper.getSub());
         }
 
-        var favoriteApplicationOpt = favoriteApplicationEntityRepository.findByUserId(Integer.valueOf(user.getId()));
+        var favoriteApplicationOpt = favoriteApplicationEntityRepository.findByUserId(user.getId());
 
         var favoriteApplication = favoriteApplicationOpt.orElseGet(FavoriteApplicationEntity::new);
 
-        if(favoriteApplicationOpt.isEmpty()) favoriteApplication.setUserId(Integer.valueOf(user.getId()));
+        if(favoriteApplicationOpt.isEmpty()) favoriteApplication.setUserId(user.getId());
 
         favoriteApplication.getApplications().add(application);
 

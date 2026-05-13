@@ -23,7 +23,7 @@ class IGRPUserMapperTest {
     void toDto_shouldMapAllFields() {
         // Arrange
         IGRPUserEntity user = new IGRPUserEntity();
-        user.setId(1);
+        user.setId("00000000-0000-0000-0000-000000000001");
         user.setName("Jane Doe");
         user.setUsername("janedoe");
         user.setEmail("jane@example.com");
@@ -34,7 +34,7 @@ class IGRPUserMapperTest {
 
         // Assert
         assertNotNull(dto);
-        assertEquals(1, dto.getId());
+        assertEquals("00000000-0000-0000-0000-000000000001", dto.getId());
         assertEquals("Jane Doe", dto.getName());
         assertEquals("janedoe", dto.getUsername());
         assertEquals("jane@example.com", dto.getEmail());
@@ -47,7 +47,7 @@ class IGRPUserMapperTest {
     void toEntity_shouldMapAllFields() {
         // Arrange
         IGRPUserDTO dto = new IGRPUserDTO();
-        dto.setId(2);
+        dto.setId("00000000-0000-0000-0000-000000000002");
         dto.setName("John Smith");
         dto.setUsername("jsmith");
         dto.setEmail("john@example.com");
@@ -58,7 +58,7 @@ class IGRPUserMapperTest {
 
         // Assert
         assertNotNull(user);
-        assertEquals("2", String.valueOf(user.getId()));
+        assertEquals("00000000-0000-0000-0000-000000000002", user.getId());
         assertEquals("John Smith", user.getName());
         assertEquals("jsmith", user.getUsername());
         assertEquals("john@example.com", user.getEmail());

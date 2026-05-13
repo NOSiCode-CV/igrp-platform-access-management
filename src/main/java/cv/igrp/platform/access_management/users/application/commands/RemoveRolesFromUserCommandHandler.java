@@ -75,7 +75,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
    @IgrpCommandHandler
    @Transactional
    public ResponseEntity<List<RoleDTO>> handle(RemoveRolesFromUserCommand command) {
-      Integer userId = command.getId();
+      String userId = command.getId();
       List<String> roleIdsToRemove = command.getRemoveRolesFromUserRequest();
 
       logger.info("Attempting to remove roles {} from id={}", roleIdsToRemove, userId);

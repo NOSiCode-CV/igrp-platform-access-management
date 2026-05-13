@@ -42,11 +42,10 @@ public class GetUserApplicationsQueryHandlerTest {
     @Test
     void handle_shouldReturnApplications_whenUserExists() {
 
-        GetUserApplicationsQuery query = new GetUserApplicationsQuery("APP", null, 10);
+        GetUserApplicationsQuery query = new GetUserApplicationsQuery("APP", null, "00000000-0000-0000-0000-000000000010");
 
         IGRPUserEntity user = new IGRPUserEntity();
-        user.setId(1);
-        user.setId(10);
+        user.setId("00000000-0000-0000-0000-000000000010");
 
         ApplicationEntity app = new ApplicationEntity();
         app.setCode("APP_MAIN");
@@ -54,7 +53,7 @@ public class GetUserApplicationsQueryHandlerTest {
         ApplicationDTO dto = new ApplicationDTO();
         dto.setCode("APP_MAIN");
 
-        when(userRepository.findById(10)).thenReturn(Optional.of(user));
+        when(userRepository.findById("00000000-0000-0000-0000-000000000010")).thenReturn(Optional.of(user));
         when(applicationRepository.findByUserAndActiveFiltered(any(), any(), any())).thenReturn(List.of(app));
         when(applicationMapper.toDto(app)).thenReturn(dto);
 
@@ -71,11 +70,10 @@ public class GetUserApplicationsQueryHandlerTest {
     @Test
     void handle_shouldFilterApplicationsByCode() {
 
-        GetUserApplicationsQuery query = new GetUserApplicationsQuery("CRM", null, 99);
+        GetUserApplicationsQuery query = new GetUserApplicationsQuery("CRM", null, "00000000-0000-0000-0000-000000000099");
 
         IGRPUserEntity user = new IGRPUserEntity();
-        user.setId(1);
-        user.setId(99);
+        user.setId("00000000-0000-0000-0000-000000000099");
 
         ApplicationEntity app1 = new ApplicationEntity();
         app1.setCode("CRM_PORTAL");
@@ -86,7 +84,7 @@ public class GetUserApplicationsQueryHandlerTest {
         ApplicationDTO dto = new ApplicationDTO();
         dto.setCode("CRM_PORTAL");
 
-        when(userRepository.findById(99)).thenReturn(Optional.of(user));
+        when(userRepository.findById("00000000-0000-0000-0000-000000000099")).thenReturn(Optional.of(user));
         when(applicationRepository.findByUserAndActiveFiltered(any(), any(), any())).thenReturn(List.of(app1, app2));
         when(applicationMapper.toDto(app1)).thenReturn(dto);
 
@@ -106,13 +104,12 @@ public class GetUserApplicationsQueryHandlerTest {
     @Test
     void handle_shouldReturnEmptyList_whenNoApplications() {
 
-        GetUserApplicationsQuery query = new GetUserApplicationsQuery(null, null, 5);
+        GetUserApplicationsQuery query = new GetUserApplicationsQuery(null, null, "00000000-0000-0000-0000-000000000005");
 
         IGRPUserEntity user = new IGRPUserEntity();
-        user.setId(1);
-        user.setId(5);
+        user.setId("00000000-0000-0000-0000-000000000005");
 
-        when(userRepository.findById(5)).thenReturn(Optional.of(user));
+        when(userRepository.findById("00000000-0000-0000-0000-000000000005")).thenReturn(Optional.of(user));
         when(applicationRepository.findByUserAndActiveFiltered(any(), any(), any())).thenReturn(List.of());
 
         ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);
@@ -127,9 +124,9 @@ public class GetUserApplicationsQueryHandlerTest {
     @Test
     void handle_shouldThrow_whenUserNotFound() {
 
-        GetUserApplicationsQuery query = new GetUserApplicationsQuery(null, null, 777);
+        GetUserApplicationsQuery query = new GetUserApplicationsQuery(null, null, "00000000-0000-0000-0000-000000000777");
 
-        when(userRepository.findById(777)).thenReturn(Optional.empty());
+        when(userRepository.findById("00000000-0000-0000-0000-000000000777")).thenReturn(Optional.empty());
 
         assertThrows(IgrpResponseStatusException.class, () -> handler.handle(query));
     }

@@ -18,6 +18,7 @@ import java.util.List;
 
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import org.springframework.transaction.annotation.Transactional;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 
 @Component
 public class GetFavoriteApplicationsQueryHandler implements QueryHandler<GetFavoriteApplicationsQuery, ResponseEntity<List<ApplicationDTO>>> {
@@ -47,11 +48,11 @@ public class GetFavoriteApplicationsQueryHandler implements QueryHandler<GetFavo
 
         LOGGER.info("Getting favorite applications for user: {}", currentUserSub);
 
-        var user = userEntityRepository.findByIdWithRolesAndPermissions(Integer.parseInt(currentUserSub)).orElseThrow(
+        var user = userEntityRepository.findByIdWithRolesAndPermissions(SubjectParser.parseUserSubjectOrThrow(currentUserSub)).orElseThrow(
                 () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
         );
 
-        var favoriteApps = favoriteApplicationEntityRepository.findByUserId(Integer.valueOf(user.getId())).orElse(null);
+        var favoriteApps = favoriteApplicationEntityRepository.findByUserId(user.getId()).orElse(null);
 
         if(favoriteApps == null) return ResponseEntity.ok(new ArrayList<>());
 

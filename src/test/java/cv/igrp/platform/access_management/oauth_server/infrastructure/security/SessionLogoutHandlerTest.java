@@ -72,7 +72,7 @@ class SessionLogoutHandlerTest {
     void revokesActiveSession_evictsCache_publishesEvent_andRedirects() throws Exception {
         UUID sid = UUID.randomUUID();
         OidcIdToken idToken = idTokenWithSid(sid);
-        SessionEntity session = activeSession(sid, 99);
+        SessionEntity session = activeSession(sid, "00000000-0000-0000-0000-000000000099");
         when(sessionRepository.findBySessionId(sid)).thenReturn(Optional.of(session));
         OAuth2Authorization authorization = stubAuthorization(idToken);
         when(authorizationService.findByToken(idToken.getTokenValue(), null)).thenReturn(authorization);
@@ -87,7 +87,7 @@ class SessionLogoutHandlerTest {
         assertEquals("USER", saved.getValue().getClosedBy());
 
         verify(heartbeatService).evict(sid);
-        verify(sessionCacheEvictService).evictBySubject(99);
+        verify(sessionCacheEvictService).evictBySubject("00000000-0000-0000-0000-000000000099");
         verify(eventPublisher).publishEvent(any(SessionRevokedEvent.class));
         verify(authorizationService).remove(authorization);
 
@@ -99,7 +99,7 @@ class SessionLogoutHandlerTest {
     void noPostLogoutRedirect_yields200() throws Exception {
         UUID sid = UUID.randomUUID();
         OidcIdToken idToken = idTokenWithSid(sid);
-        SessionEntity session = activeSession(sid, 99);
+        SessionEntity session = activeSession(sid, "00000000-0000-0000-0000-000000000099");
         when(sessionRepository.findBySessionId(sid)).thenReturn(Optional.of(session));
         when(authorizationService.findByToken(idToken.getTokenValue(), null)).thenReturn(null);
 
@@ -112,7 +112,7 @@ class SessionLogoutHandlerTest {
     void doesNotResaveAlreadyRevokedSession_butStillEvictsAndPublishes() throws Exception {
         UUID sid = UUID.randomUUID();
         OidcIdToken idToken = idTokenWithSid(sid);
-        SessionEntity session = activeSession(sid, 99);
+        SessionEntity session = activeSession(sid, "00000000-0000-0000-0000-000000000099");
         session.setStatus(SessionStatus.REVOKED);
         when(sessionRepository.findBySessionId(sid)).thenReturn(Optional.of(session));
 
@@ -120,7 +120,7 @@ class SessionLogoutHandlerTest {
 
         verify(sessionRepository, never()).save(any(SessionEntity.class));
         verify(heartbeatService).evict(sid);
-        verify(sessionCacheEvictService).evictBySubject(99);
+        verify(sessionCacheEvictService).evictBySubject("00000000-0000-0000-0000-000000000099");
         verify(eventPublisher).publishEvent(any(SessionRevokedEvent.class));
     }
 
@@ -147,10 +147,10 @@ class SessionLogoutHandlerTest {
 
         verify(sessionRepository, never()).save(any(SessionEntity.class));
         verify(heartbeatService).evict(sid);
-        verify(sessionCacheEvictService, never()).evictBySubject(eq(99));
+        verify(sessionCacheEvictService, never()).evictBySubject(eq("00000000-0000-0000-0000-000000000099"));
     }
 
-    private SessionEntity activeSession(UUID sid, Integer userId) {
+    private SessionEntity activeSession(UUID sid, String userId) {
         SessionEntity entity = new SessionEntity();
         entity.setSessionId(sid);
         entity.setUserId(userId);

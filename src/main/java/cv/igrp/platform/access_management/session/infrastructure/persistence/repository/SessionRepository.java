@@ -22,14 +22,14 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
     /**
      * Find active session for a specific user
      */
-    Optional<SessionEntity> findByUserIdAndStatus(Integer userId, SessionStatus status);
+    Optional<SessionEntity> findByUserIdAndStatus(String userId, SessionStatus status);
 
     /**
      * Find active session for a specific (user, device) pair. Used by the
      * token-issuance pipeline to atomically replace any previous session bound
      * to the same physical device before opening a new one.
      */
-    Optional<SessionEntity> findByUserIdAndDeviceIdAndStatus(Integer userId,
+    Optional<SessionEntity> findByUserIdAndDeviceIdAndStatus(String userId,
                                                              String deviceId,
                                                              SessionStatus status);
 
@@ -37,7 +37,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      * List active sessions of a user ordered oldest-first by {@code last_seen_at}.
      * Used by the LRU eviction step when the per-user concurrency cap is exceeded.
      */
-    List<SessionEntity> findByUserIdAndStatusOrderByLastSeenAtAsc(Integer userId,
+    List<SessionEntity> findByUserIdAndStatusOrderByLastSeenAtAsc(String userId,
                                                                   SessionStatus status);
 
     /**
@@ -59,7 +59,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
     /**
      * Find all sessions for a specific user
      */
-    List<SessionEntity> findByUserId(Integer userId);
+    List<SessionEntity> findByUserId(String userId);
 
     /**
      * Find expired active sessions
@@ -76,7 +76,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      * Find sessions by user IDs with pagination
      */
     @Query("SELECT s FROM SessionEntity s WHERE s.userId IN :userIds AND s.status = :status")
-    Page<SessionEntity> findByUserIdsAndStatus(@Param("userIds") Set<Integer> userIds,
+    Page<SessionEntity> findByUserIdsAndStatus(@Param("userIds") Set<String> userIds,
                                                 @Param("status") SessionStatus status,
                                                 Pageable pageable);
 
@@ -123,7 +123,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
            "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "JOIN r.department d " +
            "WHERE r.code = :roleCode AND d.code = :departmentCode")
-    Set<Integer> findUserIdsByRole(@Param("roleCode") String roleCode, @Param("departmentCode") String departmentCode);
+    Set<String> findUserIdsByRole(@Param("roleCode") String roleCode, @Param("departmentCode") String departmentCode);
 
     /**
      * Get user IDs for users with roles in a specific department
@@ -132,13 +132,13 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
            "JOIN u.userRoleAssignments ura JOIN ura.role r " +
            "JOIN r.department d " +
            "WHERE d.code = :departmentCode")
-    Set<Integer> findUserIdsByDepartment(@Param("departmentCode") String departmentCode);
+    Set<String> findUserIdsByDepartment(@Param("departmentCode") String departmentCode);
 
     /**
      * Count active sessions by user
      */
     @Query("SELECT COUNT(s) FROM SessionEntity s WHERE s.userId = :userId AND s.status = :status")
-    long countActiveSessionsByUser(@Param("userId") Integer userId, @Param("status") SessionStatus status);
+    long countActiveSessionsByUser(@Param("userId") String userId, @Param("status") SessionStatus status);
 
     /**
      * Mark sessions as expired for a set of users
@@ -147,7 +147,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
     @Query("UPDATE SessionEntity s SET s.status = :newStatus, s.endedAt = :endedAt, s.lastSeenAt = :lastSeenAt, " +
            "s.closedReason = :closedReason, s.closedBy = :closedBy " +
            "WHERE s.userId IN :userIds AND s.status = :oldStatus")
-    int invalidateUserSessions(@Param("userIds") Set<Integer> userIds,
+    int invalidateUserSessions(@Param("userIds") Set<String> userIds,
                            @Param("oldStatus") SessionStatus oldStatus,
                            @Param("newStatus") SessionStatus newStatus,
                            @Param("endedAt") Instant endedAt,

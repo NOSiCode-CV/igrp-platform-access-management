@@ -52,11 +52,12 @@ class IgrpJwtAuthenticationConverterTest {
                 .build();
     }
 
+    private static final String USER_ID = "00000000-0000-0000-0000-000000000001";
+
     @BeforeEach
     void setUp() {
         user = new IGRPUserEntity();
-        user.setId(1);
-        user.setExternalId("external-id");
+        user.setId(USER_ID);
 
         role = new RoleEntity();
         role.setCode("ADMIN");
@@ -67,11 +68,11 @@ class IgrpJwtAuthenticationConverterTest {
     @Test
     @DisplayName("should resolve and map active roles from database")
     void convert_ShouldMapRolesFromDatabase() {
-        Jwt jwt = createMockJwt(Map.of("sub", "external-id", "email", "test@example.com"));
+        Jwt jwt = createMockJwt(Map.of("sub", USER_ID, "email", "test@example.com"));
         UserRoleAssignment assignment = new UserRoleAssignment(user, role, null);
 
-        when(userRepository.findByExternalId("external-id")).thenReturn(Optional.of(user));
-        when(userRoleAssignmentRepository.findActiveByUserId(1)).thenReturn(List.of(assignment));
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRoleAssignmentRepository.findActiveByUserId(USER_ID)).thenReturn(List.of(assignment));
 
         AbstractAuthenticationToken token = converter.convert(jwt);
 
@@ -83,10 +84,10 @@ class IgrpJwtAuthenticationConverterTest {
     @Test
     @DisplayName("should work correctly when user has no roles in database")
     void convert_ShouldWorkWithNoRoles() {
-        Jwt jwt = createMockJwt(Map.of("sub", "external-id", "email", "test@example.com"));
+        Jwt jwt = createMockJwt(Map.of("sub", USER_ID, "email", "test@example.com"));
 
-        when(userRepository.findByExternalId("external-id")).thenReturn(Optional.of(user));
-        when(userRoleAssignmentRepository.findActiveByUserId(1)).thenReturn(List.of());
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
+        when(userRoleAssignmentRepository.findActiveByUserId(USER_ID)).thenReturn(List.of());
 
         AbstractAuthenticationToken token = converter.convert(jwt);
 
@@ -96,9 +97,9 @@ class IgrpJwtAuthenticationConverterTest {
     @Test
     @DisplayName("should work correctly when user is not in database")
     void convert_ShouldWorkWhenUserNotFound() {
-        Jwt jwt = createMockJwt(Map.of("sub", "external-id", "email", "test@example.com"));
+        Jwt jwt = createMockJwt(Map.of("sub", USER_ID, "email", "test@example.com"));
 
-        when(userRepository.findByExternalId("external-id")).thenReturn(Optional.empty());
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.empty());
 
         AbstractAuthenticationToken token = converter.convert(jwt);
 
@@ -118,7 +119,7 @@ class IgrpJwtAuthenticationConverterTest {
                 "acr", "pwd"
         );
 
-        when(userRepository.findByExternalId("user-123")).thenReturn(Optional.empty());
+        when(userRepository.findById("user-123")).thenReturn(Optional.empty());
 
         Jwt jwt = createMockJwt(claims);
         var authObj = converter.convert(jwt);
@@ -145,7 +146,7 @@ class IgrpJwtAuthenticationConverterTest {
                 "email", "test@example.com"
         );
 
-        when(userRepository.findByExternalId("user-cni")).thenReturn(Optional.empty());
+        when(userRepository.findById("user-cni")).thenReturn(Optional.empty());
 
         Jwt jwt = createMockJwt(claims);
         AbstractAuthenticationToken authObj = converter.convert(jwt);
@@ -164,7 +165,7 @@ class IgrpJwtAuthenticationConverterTest {
                 "email", "test@example.com"
         );
 
-        when(userRepository.findByExternalId("user-cni")).thenReturn(Optional.empty());
+        when(userRepository.findById("user-cni")).thenReturn(Optional.empty());
 
         Jwt jwt = createMockJwt(claims);
         var authObj = converter.convert(jwt);
@@ -203,7 +204,7 @@ class IgrpJwtAuthenticationConverterTest {
                 "nic", "   "
         );
 
-        when(userRepository.findByExternalId("user")).thenReturn(Optional.empty());
+        when(userRepository.findById("user")).thenReturn(Optional.empty());
 
         Jwt jwt = createMockJwt(claims);
         var authObj = converter.convert(jwt);

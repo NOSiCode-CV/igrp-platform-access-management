@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 public enum Status implements IgrpEnum<String> {
 
   ACTIVE("ACTIVE", "Active"),
+    TEMPORARY("TEMPORARY", "Temporary"),
     INACTIVE("INACTIVE", "Inactive"),
     DELETED("DELETED", "Deleted")
   ;

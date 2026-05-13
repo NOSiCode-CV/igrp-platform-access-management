@@ -78,7 +78,7 @@ public class SessionCleanupScheduler {
             sessionRepository.saveAll(expiredSessions);
 
             // Collect user IDs for cache eviction
-            Set<Integer> userIds = expiredSessions.stream()
+            Set<String> userIds = expiredSessions.stream()
                     .map(SessionEntity::getUserId)
                     .collect(java.util.stream.Collectors.toSet());
 

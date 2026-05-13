@@ -37,7 +37,7 @@ public class GetUserPermissionsQueryHandler implements QueryHandler<GetUserPermi
     @Transactional
     public ResponseEntity<List<PermissionDTO>> handle(GetUserPermissionsQuery query) {
 
-        Integer id = query.getId();
+        String id = query.getId();
         LOGGER.info("Fetching permissions for user ID={}", id);
 
         IGRPUserEntity user = userRepository.findById(id)

@@ -10,7 +10,7 @@ public class SessionCreatedEvent extends SessionEvent {
     private final String clientIp;
     private final String deviceId;
 
-    public SessionCreatedEvent(UUID sessionId, Integer userId, String clientIp, String deviceId) {
+    public SessionCreatedEvent(UUID sessionId, String userId, String clientIp, String deviceId) {
         super(sessionId, userId, "SESSION_MANAGEMENT");
         this.clientIp = clientIp;
         this.deviceId = deviceId;

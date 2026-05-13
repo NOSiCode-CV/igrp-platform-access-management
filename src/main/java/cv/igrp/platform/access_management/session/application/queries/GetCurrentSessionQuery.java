@@ -5,9 +5,9 @@ import lombok.Getter;
 
 @Getter
 public class GetCurrentSessionQuery implements Query {
-    private final Integer userId;
+    private final String userId;
 
-    public GetCurrentSessionQuery(Integer userId) {
+    public GetCurrentSessionQuery(String userId) {
         this.userId = userId;
     }
 }

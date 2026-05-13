@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDepartmentDTO;
 
 import java.util.Optional;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 
 @Component
 public class GetActiveCurrentUserRoleQueryHandler implements QueryHandler<GetActiveCurrentUserRoleQuery, ResponseEntity<RoleDepartmentDTO>> {
@@ -40,9 +41,9 @@ public class GetActiveCurrentUserRoleQueryHandler implements QueryHandler<GetAct
     @IgrpQueryHandler
     public ResponseEntity<RoleDepartmentDTO> handle(GetActiveCurrentUserRoleQuery query) {
 
-        Integer userId;
+        String userId;
         try {
-            userId = Integer.parseInt(authenticationHelper.getSub());
+            userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         } catch (NumberFormatException e) {
             logger.error("Invalid token sub: expected an integer ID but got '{}'", authenticationHelper.getSub());
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

@@ -15,7 +15,7 @@ import java.util.regex.Pattern;
 public class CacheEvictionInterceptor implements HandlerInterceptor {
 
     private final Logger LOGGER = LoggerFactory.getLogger(CacheEvictionInterceptor.class);
-    private static final Pattern USER_PATH_PATTERN = Pattern.compile("^/api/users/(\\d+)(?:/.*)?$");
+    private static final Pattern USER_PATH_PATTERN = Pattern.compile("^/api/users/([^/]+)(?:/.*)?$");
     private static final Pattern DEPARTMENT_PATH_PATTERN = Pattern.compile("^/api/departments/([^/]+)(?:/.*)?$");
     private final PermissionCacheEvictService evictService;
 
@@ -63,7 +63,7 @@ public class CacheEvictionInterceptor implements HandlerInterceptor {
 
         Matcher userMatcher = USER_PATH_PATTERN.matcher(uri);
         if (userMatcher.matches()) {
-            Integer userId = Integer.valueOf(userMatcher.group(1));
+            String userId = userMatcher.group(1);
             evictService.evictByUserId(userId);
             return;
         }

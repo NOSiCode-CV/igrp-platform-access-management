@@ -8,11 +8,11 @@ import java.util.UUID;
  */
 public abstract class SessionEvent {
     private final UUID sessionId;
-    private final Integer userId;
+    private final String userId;
     private final Instant timestamp;
     private final String source;
 
-    protected SessionEvent(UUID sessionId, Integer userId, String source) {
+    protected SessionEvent(UUID sessionId, String userId, String source) {
         this.sessionId = sessionId;
         this.userId = userId;
         this.timestamp = Instant.now();
@@ -23,7 +23,7 @@ public abstract class SessionEvent {
         return sessionId;
     }
 
-    public Integer getUserId() {
+    public String getUserId() {
         return userId;
     }
 

@@ -135,7 +135,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
       Map<String, Set<String>> userRolesBackup;
 
       for(var user : roleToUpdate.getUsers()) {
-         Integer userId = Integer.valueOf(user.getId());
+         String userId = user.getId();
          userRolesBackup = userUtils.getUserRolesFromDatabase(userId);
          log.info("Fetching roles for user {}: {}", userId, userRolesBackup);
 
@@ -167,7 +167,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
             Map<String, Set<String>> userRolesBackup;
 
             for(var user : child.getUsers()) {
-               Integer userId = Integer.valueOf(user.getId());
+               String userId = user.getId();
                userRolesBackup = userUtils.getUserRolesFromDatabase(userId);
                log.info("Fetching roles for user {}: {}", userId, userRolesBackup);
 

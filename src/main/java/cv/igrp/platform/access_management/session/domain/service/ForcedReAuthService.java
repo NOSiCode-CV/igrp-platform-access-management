@@ -48,7 +48,7 @@ public class ForcedReAuthService {
      *              for an admin-initiated force-reauth.
      */
     @Transactional
-    public void forceReAuthentication(Integer userId, String reason, String actor) {
+    public void forceReAuthentication(String userId, String reason, String actor) {
         if (userId == null) {
             return;
         }

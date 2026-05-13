@@ -41,7 +41,7 @@ public class PermissionCacheEvictService {
         evictMatchingKeys(key -> key.startsWith("%s%s:".formatted(CACHE_PREFIX, subject)));
     }
 
-    public void evictByUserId(Integer userId) {
+    public void evictByUserId(String userId) {
         if (userId == null) {
             return;
         }

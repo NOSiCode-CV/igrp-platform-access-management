@@ -16,7 +16,7 @@ public class GetUserApplicationMenusQuery implements Query {
   @NotBlank(message = "The field <menuCode> is required")
   private String menuCode;
   @NotNull(message = "The field <id> is required")
-  private Integer id;
+  private String id;
   @NotBlank(message = "The field <applicationCode> is required")
   private String applicationCode;
 

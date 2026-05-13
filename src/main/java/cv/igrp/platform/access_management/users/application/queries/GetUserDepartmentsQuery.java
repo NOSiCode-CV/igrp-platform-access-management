@@ -16,6 +16,6 @@ public class GetUserDepartmentsQuery implements Query {
   @NotBlank(message = "The field <departmentCode> is required")
   private String departmentCode;
   @NotNull(message = "The field <id> is required")
-  private Integer id;
+  private String id;
 
 }

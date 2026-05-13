@@ -1,5 +1,5 @@
 package cv.igrp.platform.access_management.users.application.queries;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
@@ -55,8 +55,7 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
     @BeforeEach
     void setUp() {
         user = new IGRPUserEntity();
-        user.setId(1);
-        user.setExternalId("1");
+        user.setId("00000000-0000-0000-0000-000000000001");
 
         department = new DepartmentEntity();
         department.setId(1);
@@ -83,8 +82,8 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
         GetCurrentUserDepartmentRolesQuery query =
                 new GetCurrentUserDepartmentRolesQuery(null, "DEPT1");
 
-        when(authenticationHelper.getSub()).thenReturn("1");
-        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
+        when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000001");
+        when(userRepository.findByIdWithRolesAndPermissions(anyString()))
                 .thenReturn(Optional.of(user));
         when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
                 .thenReturn(department);
@@ -119,8 +118,8 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
         GetCurrentUserDepartmentRolesQuery query =
                 new GetCurrentUserDepartmentRolesQuery(null, "DEPT1");
 
-        when(authenticationHelper.getSub()).thenReturn("1");
-        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
+        when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000001");
+        when(userRepository.findByIdWithRolesAndPermissions(anyString()))
                 .thenReturn(Optional.of(user));
         when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
                 .thenReturn(department);
@@ -140,8 +139,8 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
     @Test
     void handle_userNotFound_throwsUnauthorized() {
 
-        when(authenticationHelper.getSub()).thenReturn("2");
-        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
+        when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000002");
+        when(userRepository.findByIdWithRolesAndPermissions(anyString()))
                 .thenReturn(Optional.empty());
 
         GetCurrentUserDepartmentRolesQuery query =
@@ -162,8 +161,8 @@ class GetCurrentUserDepartmentRolesQueryHandlerTest {
         GetCurrentUserDepartmentRolesQuery query =
                 new GetCurrentUserDepartmentRolesQuery(null, "DEPT1");
 
-        when(authenticationHelper.getSub()).thenReturn("1");
-        when(userRepository.findByIdWithRolesAndPermissions(anyInt()))
+        when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000001");
+        when(userRepository.findByIdWithRolesAndPermissions(anyString()))
                 .thenReturn(Optional.of(user));
         when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
                 .thenReturn(department);

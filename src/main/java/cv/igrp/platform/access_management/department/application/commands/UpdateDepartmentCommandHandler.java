@@ -131,7 +131,7 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
            Map<String, Set<String>> userRolesBackup;
 
            for(var user : role.getUsers()) {
-               Integer userId = Integer.valueOf(user.getId());
+               String userId = user.getId();
                userRolesBackup = userUtils.getUserRolesFromDatabase(userId);
                logger.info("Fetching roles for user {}: {}", userId, userRolesBackup);
 
@@ -184,7 +184,7 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
                 Map<String, Set<String>> userRolesBackup;
 
                 for(var user : child.getUsers()) {
-                    Integer userId = Integer.valueOf(user.getId());
+                    String userId = user.getId();
                     userRolesBackup = userUtils.getUserRolesFromDatabase(userId);
                     logger.info("Fetching roles for user {}: {}", userId, userRolesBackup);
 

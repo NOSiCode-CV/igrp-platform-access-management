@@ -50,14 +50,17 @@ public class OAuth2SecurityConfiguration {
 
     private final Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter;
     private final SessionEnforcementFilter sessionEnforcementFilter;
+    private final M2MTokenRejectionFilter m2mTokenRejectionFilter;
 
     @Value("${igrp.access.m2m.sync-token:}")
     private String machineAuthToken;
 
     public OAuth2SecurityConfiguration(Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter,
-                                       SessionEnforcementFilter sessionEnforcementFilter) {
+                                       SessionEnforcementFilter sessionEnforcementFilter,
+                                       M2MTokenRejectionFilter m2mTokenRejectionFilter) {
         this.jwtAuthenticationConverter = jwtAuthenticationConverter;
         this.sessionEnforcementFilter = sessionEnforcementFilter;
+        this.m2mTokenRejectionFilter = m2mTokenRejectionFilter;
     }
 
     /**
@@ -148,9 +151,14 @@ public class OAuth2SecurityConfiguration {
                 .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
                         jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)
                 ))
+                // Phase G1 / FR-13 — reject M2M-shaped JWTs (sid-less, sub == client_id)
+                // immediately after authentication, BEFORE SessionEnforcementFilter,
+                // so that client_credentials tokens cannot reach the permission cache
+                // and trigger Integer.parseInt(sub) crashes.
+                .addFilterAfter(m2mTokenRejectionFilter, BearerTokenAuthenticationFilter.class)
                 // Phase C1 — enforce session state on every authenticated request,
                 // immediately after the bearer token is authenticated.
-                .addFilterAfter(sessionEnforcementFilter, BearerTokenAuthenticationFilter.class)
+                .addFilterAfter(sessionEnforcementFilter, M2MTokenRejectionFilter.class)
                 .cors(cors -> cors.configurationSource(request -> {
                     CorsConfiguration configuration = new CorsConfiguration();
                     configuration.addAllowedOriginPattern("*");
@@ -183,6 +191,24 @@ public class OAuth2SecurityConfiguration {
     public FilterRegistrationBean<SessionEnforcementFilter> sessionEnforcementFilterRegistration() {
         FilterRegistrationBean<SessionEnforcementFilter> registration =
                 new FilterRegistrationBean<>(sessionEnforcementFilter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    /**
+     * Phase G1 / FR-13 — suppress Spring Boot's default auto-registration of
+     * {@link M2MTokenRejectionFilter} as a global servlet filter. Same rationale
+     * as {@link #sessionEnforcementFilterRegistration()}: if the filter also
+     * ran at the embedded-container level (before the security chain has
+     * populated {@link SecurityContextHolder}) {@link OncePerRequestFilter}
+     * would no-op the in-chain registration and admit M2M tokens to user
+     * endpoints. The filter is registered only inside the OAuth2 chain via
+     * {@code addFilterAfter(BearerTokenAuthenticationFilter)}.
+     */
+    @Bean
+    public FilterRegistrationBean<M2MTokenRejectionFilter> m2mTokenRejectionFilterRegistration() {
+        FilterRegistrationBean<M2MTokenRejectionFilter> registration =
+                new FilterRegistrationBean<>(m2mTokenRejectionFilter);
         registration.setEnabled(false);
         return registration;
     }

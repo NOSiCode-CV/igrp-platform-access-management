@@ -31,7 +31,7 @@ public class AccessHistoryEntity extends AuditEntity {
 
   
     @Column(name="userid")
-    private Integer userId;
+    private String userId;
 
   
 

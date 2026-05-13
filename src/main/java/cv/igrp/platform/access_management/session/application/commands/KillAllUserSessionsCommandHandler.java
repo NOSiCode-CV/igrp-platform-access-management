@@ -33,12 +33,12 @@ public class KillAllUserSessionsCommandHandler
 
     @IgrpCommandHandler
     public Boolean handle(KillAllUserSessionsCommand command) {
-        Optional<IGRPUserEntity> user = userRepository.findByExternalId(command.getUserExternalId());
+        Optional<IGRPUserEntity> user = userRepository.findById(command.getUserExternalId());
         if (user.isEmpty()) {
             log.warn("Cannot logout-all — user not found for externalId={}", command.getUserExternalId());
             return false;
         }
-        Integer internalId = user.get().getInternalId();
+        String internalId = user.get().getInternalId();
         log.info("Admin logout-all for user externalId={} (internalId={}) reason={} by={}",
                 command.getUserExternalId(), internalId, command.getReason(), command.getKilledBy());
         sessionInvalidationService.invalidateUserSession(internalId, command.getReason());

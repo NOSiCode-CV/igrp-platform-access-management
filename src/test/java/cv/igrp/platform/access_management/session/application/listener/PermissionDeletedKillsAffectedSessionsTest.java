@@ -48,7 +48,10 @@ class PermissionDeletedKillsAffectedSessionsTest {
     @DisplayName("T-D6: kills sessions of every user that held the deleted permission")
     void handlePermissionDeleted_killsAllAffectedUsers() {
         // Given — three users (across different roles) hold "users.read"
-        Set<Integer> affected = Set.of(101, 202, 303);
+        String u1 = "00000000-0000-0000-0000-000000000101";
+        String u2 = "00000000-0000-0000-0000-000000000202";
+        String u3 = "00000000-0000-0000-0000-000000000303";
+        Set<String> affected = Set.of(u1, u2, u3);
         when(userRepository.findUserIdsByPermissionName("users.read")).thenReturn(affected);
 
         // When — listener receives the cascade event
@@ -57,10 +60,10 @@ class PermissionDeletedKillsAffectedSessionsTest {
         // Then — exactly those three users have their sessions revoked with the
         // PERMISSION_DELETED reason, in a single batch call (no overspray, no leaks).
         @SuppressWarnings("unchecked")
-        ArgumentCaptor<Set<Integer>> userIdsCaptor = ArgumentCaptor.forClass(Set.class);
+        ArgumentCaptor<Set<String>> userIdsCaptor = ArgumentCaptor.forClass(Set.class);
         verify(sessionInvalidationService)
                 .invalidateUserSessions(userIdsCaptor.capture(), eq("PERMISSION_DELETED"));
-        assertThat(userIdsCaptor.getValue()).containsExactlyInAnyOrder(101, 202, 303);
+        assertThat(userIdsCaptor.getValue()).containsExactlyInAnyOrder(u1, u2, u3);
     }
 
     @Test

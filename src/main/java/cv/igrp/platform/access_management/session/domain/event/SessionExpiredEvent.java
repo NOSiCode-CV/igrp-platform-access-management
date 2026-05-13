@@ -7,7 +7,7 @@ import java.util.UUID;
  */
 public class SessionExpiredEvent extends SessionEvent {
 
-    public SessionExpiredEvent(UUID sessionId, Integer userId) {
+    public SessionExpiredEvent(UUID sessionId, String userId) {
         super(sessionId, userId, "SESSION_TIMEOUT");
     }
 

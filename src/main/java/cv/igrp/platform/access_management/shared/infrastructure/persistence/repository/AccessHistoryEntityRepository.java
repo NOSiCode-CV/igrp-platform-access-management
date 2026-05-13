@@ -31,8 +31,8 @@ public interface AccessHistoryEntityRepository extends
      * @param application the application entity
      * @return the @link{AccessHistoryEntity} if found, otherwise empty
      */
-    Optional<AccessHistoryEntity> findByUserIdAndApplication(Integer user, ApplicationEntity application);
+    Optional<AccessHistoryEntity> findByUserIdAndApplication(String user, ApplicationEntity application);
 
-    List<AccessHistoryEntity> findByUserIdOrderByLastAccessDesc(Integer userId);
+    List<AccessHistoryEntity> findByUserIdOrderByLastAccessDesc(String userId);
 
 }

@@ -15,6 +15,6 @@ public class UpdateUserStatusCommand implements Command {
   @NotBlank(message = "The field <value> is required")
   private String value;
   @NotNull(message = "The field <id> is required")
-  private Integer id;
+  private String id;
 
 }

@@ -150,7 +150,7 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
 
         // F1 — reject any JWT issued before the user-wide validity floor
         // (set on password reset / forced re-auth).
-        Integer userIdFromToken = parseUserId(jwt.getSubject());
+        String userIdFromToken = parseUserId(jwt.getSubject());
         if (userIdFromToken != null) {
             Instant iat = jwt.getIssuedAt();
             Instant floor = userRepository.findTokensNotValidBeforeById(userIdFromToken).orElse(null);
@@ -216,13 +216,14 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-    private static Integer parseUserId(String sub) {
+    private static String parseUserId(String sub) {
         if (sub == null || sub.isBlank()) {
             return null;
         }
         try {
-            return Integer.parseInt(sub);
-        } catch (NumberFormatException ex) {
+            UUID.fromString(sub);
+            return sub;
+        } catch (IllegalArgumentException ex) {
             return null;
         }
     }

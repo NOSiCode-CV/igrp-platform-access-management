@@ -28,7 +28,7 @@ public class IGRPUserMapper {
     public IGRPUserDTO toDto(IGRPUserEntity user) {
         if (user == null) return null;
         IGRPUserDTO dto = new IGRPUserDTO();
-        dto.setId(Integer.parseInt(user.getId()));
+        dto.setId(user.getId());
         dto.setName(user.getName());
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
@@ -51,14 +51,14 @@ public class IGRPUserMapper {
 
         if (user == null) return null;
         IGRPBusinessUserDTO dto = new IGRPBusinessUserDTO();
-        dto.setId(Integer.parseInt(user.getId()));
+        dto.setId(user.getId());
         dto.setName(user.getName());
         dto.setUsername(user.getUsername());
         dto.setEmail(user.getEmail());
         dto.setStatus(user.getStatus());
         dto.setPicture(user.getPicture());
         dto.setSignature(user.getSignature());
-        dto.setExternalId(user.getExternalId());
+        dto.setExternalId(user.getId());
         dto.setNic(user.getNic());
         dto.setPhoneNumber(user.getPhoneNumber());
         return dto;

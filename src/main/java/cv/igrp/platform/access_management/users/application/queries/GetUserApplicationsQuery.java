@@ -18,6 +18,6 @@ public class GetUserApplicationsQuery implements Query {
   @NotBlank(message = "The field <applicationName> is required")
   private String applicationName;
   @NotNull(message = "The field <id> is required")
-  private Integer id;
+  private String id;
 
 }

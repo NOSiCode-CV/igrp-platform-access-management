@@ -76,7 +76,7 @@ public class GetUserRolesQueryHandler implements QueryHandler<GetUserRolesQuery,
    */
   @IgrpQueryHandler
   public ResponseEntity<List<RoleDTO>> handle(GetUserRolesQuery query) {
-    Integer id = query.getId();
+    String id = query.getId();
 
     logger.info("Fetching roles for user ID={}", id);
 

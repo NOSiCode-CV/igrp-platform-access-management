@@ -19,7 +19,7 @@ import java.io.Serializable;
 public class UserRoleId implements Serializable {
 
     @Column(name = "user_id")
-    private Integer userId;
+    private String userId;
 
     @Column(name = "role_id")
     private Integer roleId;

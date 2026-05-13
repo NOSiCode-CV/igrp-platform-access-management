@@ -44,7 +44,7 @@ public class GetUserApplicationsQueryHandler implements QueryHandler<GetUserAppl
 
         LOGGER.info("Getting applications for user: {}", user.getEmail());
 
-        List<ApplicationDTO> applications = applicationRepository.findByUserAndActiveFiltered(Integer.valueOf(user.getId()), query.getApplicationCode(), query.getApplicationName())
+        List<ApplicationDTO> applications = applicationRepository.findByUserAndActiveFiltered(user.getId(), query.getApplicationCode(), query.getApplicationName())
                 .stream()
                 .map(applicationMapper::toDto)
                 .toList();

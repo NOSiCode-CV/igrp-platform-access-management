@@ -17,6 +17,7 @@ import java.util.List;
 
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import org.springframework.transaction.annotation.Transactional;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 
 @Component
 public class GetRecentApplicationsQueryHandler implements QueryHandler<GetRecentApplicationsQuery, ResponseEntity<List<ApplicationDTO>>> {
@@ -43,11 +44,11 @@ public class GetRecentApplicationsQueryHandler implements QueryHandler<GetRecent
 
         LOGGER.info("Getting recent applications for user: {}", currentUserSub);
 
-        var user = userEntityRepository.findByIdWithRolesAndPermissions(Integer.parseInt(currentUserSub)).orElseThrow(
+        var user = userEntityRepository.findByIdWithRolesAndPermissions(SubjectParser.parseUserSubjectOrThrow(currentUserSub)).orElseThrow(
                 () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
         );
 
-        var accessHistory = accessHistoryRepository.findByUserIdOrderByLastAccessDesc(Integer.valueOf(user.getId()));
+        var accessHistory = accessHistoryRepository.findByUserIdOrderByLastAccessDesc(user.getId());
 
         var applicationDTOs = accessHistory.stream().map(it -> {
             var applicationDTO = applicationMapper.toDto(it.getApplication());

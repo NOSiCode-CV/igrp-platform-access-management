@@ -121,7 +121,7 @@ public interface MenuEntryEntityRepository extends
     FROM menu_tree
     ORDER BY position
     """, nativeQuery = true)
-    List<MenuEntryEntity> findByApplicationIdAndUserIdAndStatusNotDeleted(@Param("userId") Integer userId,
+    List<MenuEntryEntity> findByApplicationIdAndUserIdAndStatusNotDeleted(@Param("userId") String userId,
                                                                           @Param("applicationId") Integer applicationId);
 
     /**
@@ -157,7 +157,7 @@ public interface MenuEntryEntityRepository extends
     FROM menu_tree
     ORDER BY position
     """, nativeQuery = true)
-    List<MenuEntryEntity> findActiveByApplicationIdAndUserIdFiltered(@Param("userId") Integer userId,
+    List<MenuEntryEntity> findActiveByApplicationIdAndUserIdFiltered(@Param("userId") String userId,
                                                                      @Param("applicationId") Integer applicationId,
                                                                      @Param("menuCode") String menuCode
     );
@@ -197,7 +197,7 @@ public interface MenuEntryEntityRepository extends
     FROM menu_tree
     ORDER BY position
     """, nativeQuery = true)
-    List<MenuEntryEntity> findActiveByApplicationIdAndCurrentUserIdFiltered(@Param("userId") Integer userId,
+    List<MenuEntryEntity> findActiveByApplicationIdAndCurrentUserIdFiltered(@Param("userId") String userId,
                                                                      @Param("applicationId") Integer applicationId,
                                                                      @Param("menuCode") String menuCode
     );

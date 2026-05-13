@@ -45,6 +45,12 @@ import java.util.UUID;
     name = "Admin User Session Management",
     description = "Per-user administrative session operations (Phase E4/E5)"
 )
+// Phase G1 / FR-13 — Layer 3 belt-and-suspenders: reject any principal without a
+// sid claim (i.e. M2M client_credentials tokens) before method execution. The
+// preceding M2MTokenRejectionFilter on the OAuth2 chain is the primary defense;
+// this @PreAuthorize is the static-analysis-visible guarantee for this admin
+// surface.
+@PreAuthorize("@subjectGuard.requiresUser(authentication)")
 public class AdminUserSessionController {
 
     private final CommandBus commandBus;
@@ -80,7 +86,7 @@ public class AdminUserSessionController {
             @Parameter(description = "Session id (UUID)") @PathVariable UUID sessionId,
             @Valid @RequestBody SessionKillRequestDTO request) {
 
-        Optional<IGRPUserEntity> user = userRepository.findByExternalId(userExternalId);
+        Optional<IGRPUserEntity> user = userRepository.findById(userExternalId);
         if (user.isEmpty()) {
             log.warn("Admin kill-session refused: user externalId={} not found", userExternalId);
             return ResponseEntity.notFound().build();
@@ -124,7 +130,7 @@ public class AdminUserSessionController {
                 request.getKilledBy() != null ? request.getKilledBy() : "ADMIN");
         Boolean ok = commandBus.send(command);
         if (Boolean.TRUE.equals(ok)) {
-            Integer internalId = userRepository.findByExternalId(userExternalId)
+            String internalId = userRepository.findById(userExternalId)
                     .map(u -> u.getInternalId()).orElse(null);
             sessionAuditLogger.recordRevoked(null, internalId,
                     reason, SessionAuditLogger.adminActor(userExternalId));
@@ -149,7 +155,7 @@ public class AdminUserSessionController {
             @Parameter(description = "User external id") @PathVariable String userExternalId,
             @Valid @RequestBody SessionKillRequestDTO request) {
 
-        Optional<IGRPUserEntity> user = userRepository.findByExternalId(userExternalId);
+        Optional<IGRPUserEntity> user = userRepository.findById(userExternalId);
         if (user.isEmpty()) {
             log.warn("Admin force-reauth refused: user externalId={} not found", userExternalId);
             return ResponseEntity.notFound().build();
