@@ -45,7 +45,7 @@ public class SessionEntity extends AuditEntity {
 
     @NotNull(message = "User id is mandatory")
     @Column(name = "user_id", nullable = false)
-    private Integer userId;
+    private String userId;
 
     @NotNull(message = "Session status is mandatory")
     @Enumerated(EnumType.STRING)

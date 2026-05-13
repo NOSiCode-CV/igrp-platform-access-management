@@ -136,11 +136,7 @@ public class ClaimsEnrichmentService {
         if (subject == null) {
             return Optional.empty();
         }
-        try {
-            return userRepository.findById(Integer.parseInt(subject));
-        } catch (NumberFormatException ex) {
-            return userRepository.findByExternalId(subject);
-        }
+        return userRepository.findById(subject);
     }
 
     private String selectedRole(Optional<IGRPUserEntity> user) {

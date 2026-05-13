@@ -47,11 +47,11 @@ public class RemoveFavoriteApplicationCommandHandler implements CommandHandler<R
 
        var application = applicationEntityRepository.findByCodeAndStatusNotDeleted(command.getApplicationCode());
 
-       if(!favoriteApplicationEntityRepository.existsByUserAndApplication(Integer.valueOf(user.getId()), application)) {
+       if(!favoriteApplicationEntityRepository.existsByUserAndApplication(user.getId(), application)) {
            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Application <" + command.getApplicationCode() + "> was never a favorite of user: " + authenticationHelper.getSub());
        }
 
-       var favoriteApplication = favoriteApplicationEntityRepository.findByUserId(Integer.valueOf(user.getId())).orElseThrow(
+       var favoriteApplication = favoriteApplicationEntityRepository.findByUserId(user.getId()).orElseThrow(
                () -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "No favorite applications found for user: " + user.getId())
        );
 

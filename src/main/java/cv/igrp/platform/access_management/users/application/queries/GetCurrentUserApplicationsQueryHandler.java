@@ -69,7 +69,7 @@ public class GetCurrentUserApplicationsQueryHandler implements QueryHandler<GetC
                         .toList()
                         : applicationRepository
                         .findByCurrentUserAndActiveFiltered(
-                                Integer.valueOf(user.getId()),
+                                user.getId(),
                                 query.getApplicationCode(),
                                 query.getApplicationName()
                         )

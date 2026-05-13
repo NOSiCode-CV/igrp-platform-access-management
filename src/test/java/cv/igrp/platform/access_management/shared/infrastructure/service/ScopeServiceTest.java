@@ -72,13 +72,14 @@ class ScopeServiceTest {
     @DisplayName("Should return ActorPrincipal with Integer ID from String subject")
     void testGetActorReturnIntegerId() {
         // Arrange
-        when(authenticationHelper.getSub()).thenReturn("456"); // String from JWT
+        String uid = "00000000-0000-0000-0000-000000000456";
+        when(authenticationHelper.getSub()).thenReturn(uid);
         Collection<GrantedAuthority> authorities = List.of(
                 new SimpleGrantedAuthority("ADMIN"),
                 new SimpleGrantedAuthority("USER")
         );
         doReturn(authorities).when(authentication).getAuthorities();
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(456), anyString()))
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
                 .thenReturn(List.of(1)); // Mock superadmin check
 
         // Act
@@ -86,7 +87,7 @@ class ScopeServiceTest {
 
         // Assert
         assertNotNull(actor);
-        assertEquals(456, actor.id()); // Verify Integer ID
+        assertEquals(uid, actor.id());
         assertTrue(actor.roles().contains("ADMIN"));
         assertTrue(actor.roles().contains("USER"));
     }
@@ -106,22 +107,23 @@ class ScopeServiceTest {
     }
 
     @Test
-    @DisplayName("Should parse Integer subject from different users")
+    @DisplayName("Should parse UUID subject from different users")
     void testGetActorWithDifferentIntegerIds() {
-        // Arrange - Test with different Integer IDs
-        String[] subjectIds = {"123", "789", "999"};
+        String[] subjectIds = {
+                "00000000-0000-0000-0000-000000000123",
+                "00000000-0000-0000-0000-000000000789",
+                "00000000-0000-0000-0000-000000000999"
+        };
 
         for (String subject : subjectIds) {
             when(authenticationHelper.getSub()).thenReturn(subject);
             when(authentication.getAuthorities()).thenReturn(List.of());
-            when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(Integer.parseInt(subject)), anyString()))
+            when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(subject), anyString()))
                     .thenReturn(List.of());
 
-            // Act
             ScopeService.ActorPrincipal actor = scopeService.getActor();
 
-            // Assert
-            assertEquals(Integer.parseInt(subject), actor.id());
+            assertEquals(subject, actor.id());
         }
     }
 
@@ -129,9 +131,9 @@ class ScopeServiceTest {
     @DisplayName("Should identify superadmin user with Integer ID query")
     void testIsSuperAdminUsesIntegerId() {
         // Arrange
-        when(authenticationHelper.getSub()).thenReturn("100");
-        // Mock JDBC query to return a result for superadmin check
-        when(jdbcTemplate.query(contains("t_role_users"), any(RowMapper.class), eq(100), anyString()))
+        String uid = "00000000-0000-0000-0000-000000000100";
+        when(authenticationHelper.getSub()).thenReturn(uid);
+        when(jdbcTemplate.query(contains("t_role_users"), any(RowMapper.class), eq(uid), anyString()))
                 .thenReturn(List.of(1)); // Non-empty = superadmin
 
         // Act
@@ -139,16 +141,16 @@ class ScopeServiceTest {
 
         // Assert
         assertTrue(isSuperAdmin);
-        // Verify that query was called with Integer 100
-        verify(jdbcTemplate).query(anyString(), any(RowMapper.class), eq(100), eq(cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE));
+        verify(jdbcTemplate).query(anyString(), any(RowMapper.class), eq(uid), eq(cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE));
     }
 
     @Test
     @DisplayName("Should identify non-superadmin user")
     void testIsNotSuperAdmin() {
         // Arrange
-        when(authenticationHelper.getSub()).thenReturn("200");
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(200), anyString()))
+        String uid = "00000000-0000-0000-0000-000000000200";
+        when(authenticationHelper.getSub()).thenReturn(uid);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
                 .thenReturn(List.of()); // Empty = not superadmin
 
         // Act
@@ -175,8 +177,9 @@ class ScopeServiceTest {
     @DisplayName("Should return all departments for superadmin")
     void testGetVisibleDepartmentIdsForSuperAdmin() {
         // Arrange
-        when(authenticationHelper.getSub()).thenReturn("300");
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(300), anyString()))
+        String uid = "00000000-0000-0000-0000-000000000300";
+        when(authenticationHelper.getSub()).thenReturn(uid);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
                 .thenReturn(List.of(1)); // superadmin
         when(cache.getVisibleDepartments()).thenReturn(null);
 
@@ -212,8 +215,9 @@ class ScopeServiceTest {
     @DisplayName("Should return all roles for superadmin")
     void testGetVisibleRoleIdsForSuperAdmin() {
         // Arrange
-        when(authenticationHelper.getSub()).thenReturn("400");
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(400), anyString()))
+        String uid = "00000000-0000-0000-0000-000000000400";
+        when(authenticationHelper.getSub()).thenReturn(uid);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
                 .thenReturn(List.of(1)); // superadmin
         when(cache.getVisibleRoles()).thenReturn(null);
 
@@ -257,15 +261,16 @@ class ScopeServiceTest {
         Object principal = new Object();
 
         // Act
+        String uid = "00000000-0000-0000-0000-000000000555";
         ScopeService.ActorPrincipal actor = new ScopeService.ActorPrincipal(
-                555, // Integer ID
+                uid,
                 roles,
                 true,
                 principal
         );
 
         // Assert
-        assertEquals(555, actor.id());
+        assertEquals(uid, actor.id());
         assertEquals(roles, actor.roles());
         assertTrue(actor.superAdmin());
         assertEquals(principal, actor.rawPrincipal());

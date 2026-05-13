@@ -78,10 +78,9 @@ public class IgrpOidcUserService extends OidcUserService {
         String email = (String) attributes.get("email");
         String name = (String) attributes.getOrDefault("name", preferredUsername);
 
-        IGRPUserEntity user = userRepository.findByExternalId(externalUserId)
+        IGRPUserEntity user = userRepository.findByUsername(externalUserId)
                 .orElseGet(IGRPUserEntity::new);
         if (user.getId() == null) {
-            user.setExternalId(externalUserId);
             user.setUsername(preferredUsername);
             user.setEmail(email);
             user.setName(name);
@@ -93,11 +92,8 @@ public class IgrpOidcUserService extends OidcUserService {
             LOGGER.info("Provisioned new IGRP user from provider={} sub={}", provider, externalUserId);
             // Phase G3: NFR-4 audit row for first-login provisioning.
             try {
-                Integer auditUserId = null;
-                try { auditUserId = user.getId() != null ? Integer.parseInt(user.getId()) : null; }
-                catch (NumberFormatException ignored) { /* leave null */ }
                 sessionAuditLogger.recordUserStatusTransitioned(
-                        auditUserId, null, Status.TEMPORARY.getCode(),
+                        user.getId(), null, Status.TEMPORARY.getCode(),
                         SessionAuditLogger.SYSTEM, "FIRST_LOGIN");
             } catch (Exception auditEx) {
                 LOGGER.warn("[G3] first-login audit failed for sub={}: {}", externalUserId, auditEx.getMessage());

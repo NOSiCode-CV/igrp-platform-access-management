@@ -86,7 +86,7 @@ public class AdminUserSessionController {
             @Parameter(description = "Session id (UUID)") @PathVariable UUID sessionId,
             @Valid @RequestBody SessionKillRequestDTO request) {
 
-        Optional<IGRPUserEntity> user = userRepository.findByExternalId(userExternalId);
+        Optional<IGRPUserEntity> user = userRepository.findById(userExternalId);
         if (user.isEmpty()) {
             log.warn("Admin kill-session refused: user externalId={} not found", userExternalId);
             return ResponseEntity.notFound().build();
@@ -130,7 +130,7 @@ public class AdminUserSessionController {
                 request.getKilledBy() != null ? request.getKilledBy() : "ADMIN");
         Boolean ok = commandBus.send(command);
         if (Boolean.TRUE.equals(ok)) {
-            Integer internalId = userRepository.findByExternalId(userExternalId)
+            String internalId = userRepository.findById(userExternalId)
                     .map(u -> u.getInternalId()).orElse(null);
             sessionAuditLogger.recordRevoked(null, internalId,
                     reason, SessionAuditLogger.adminActor(userExternalId));
@@ -155,7 +155,7 @@ public class AdminUserSessionController {
             @Parameter(description = "User external id") @PathVariable String userExternalId,
             @Valid @RequestBody SessionKillRequestDTO request) {
 
-        Optional<IGRPUserEntity> user = userRepository.findByExternalId(userExternalId);
+        Optional<IGRPUserEntity> user = userRepository.findById(userExternalId);
         if (user.isEmpty()) {
             log.warn("Admin force-reauth refused: user externalId={} not found", userExternalId);
             return ResponseEntity.notFound().build();

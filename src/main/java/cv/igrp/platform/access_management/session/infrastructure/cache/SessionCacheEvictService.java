@@ -37,7 +37,7 @@ public class SessionCacheEvictService {
     /**
      * Evict session for a specific user
      */
-    public void evictBySubject(Integer userId) {
+    public void evictBySubject(String userId) {
         evictMatchingKeys(key -> key.equals("%s%d".formatted(CACHE_PREFIX, userId)));
         LOGGER.info("Evicted session from cache for user: {}", userId);
     }
@@ -45,13 +45,13 @@ public class SessionCacheEvictService {
     /**
      * Evict sessions for multiple users
      */
-    public void evictBySubjects(Set<Integer> userIds) {
+    public void evictBySubjects(Set<String> userIds) {
         if (userIds.isEmpty()) {
             return;
         }
 
         Set<String> keysToDelete = new HashSet<>();
-        for (Integer userId : userIds) {
+        for (String userId : userIds) {
             keysToDelete.add("%s%d".formatted(CACHE_PREFIX, userId));
         }
 

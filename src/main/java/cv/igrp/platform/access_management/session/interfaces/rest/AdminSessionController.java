@@ -106,7 +106,7 @@ public class AdminSessionController {
     @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<SessionResponseDTO> getUserSession(
             @Parameter(description = "User id")
-            @PathVariable Integer userId) {
+            @PathVariable String userId) {
 
         log.debug("Admin getting session for user: {}", userId);
 

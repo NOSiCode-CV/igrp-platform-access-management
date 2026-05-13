@@ -67,7 +67,7 @@ public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<Se
     @IgrpCommandHandler
     public ResponseEntity<RoleDepartmentDTO> handle(SetActiveCurrentUserRoleCommand command) {
 
-        Integer userId;
+        String userId;
         try {
             userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         } catch (NumberFormatException e) {

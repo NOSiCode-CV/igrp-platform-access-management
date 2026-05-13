@@ -55,18 +55,17 @@ class UpdateUserStatusCommandHandlerTest {
     @BeforeEach
     void setUp() {
         userEntity = new IGRPUserEntity();
-        userEntity.setId(1);
+        userEntity.setId("00000000-0000-0000-0000-000000000001");
         userEntity.setEmail("test@example.com");
         userEntity.setStatus(Status.ACTIVE);
-        userEntity.setExternalId("external-1");
     }
 
     @Test
     void handle_deactivateUser_removesRolesAndUpdatesStatus() {
         // Arrange
-        UpdateUserStatusCommand command = new UpdateUserStatusCommand(Status.INACTIVE.getCode(), Integer.parseInt(userEntity.getId()));
+        UpdateUserStatusCommand command = new UpdateUserStatusCommand(Status.INACTIVE.getCode(), userEntity.getId());
 
-        when(userRepository.findById(Integer.parseInt(userEntity.getId()))).thenReturn(Optional.of(userEntity));
+        when(userRepository.findById(userEntity.getId())).thenReturn(Optional.of(userEntity));
         when(userRepository.save(any())).thenReturn(userEntity);
         when(userMapper.toDto(userEntity)).thenReturn(new IGRPUserDTO());
 
@@ -83,14 +82,14 @@ class UpdateUserStatusCommandHandlerTest {
         // Arrange
         userEntity.setStatus(Status.INACTIVE);
         Map<String, Set<String>> backupRoles = Map.of("DEPT1", Set.of("DEPT1.ROLE1"));
-        UpdateUserStatusCommand command = new UpdateUserStatusCommand(Status.ACTIVE.getCode(), Integer.parseInt(userEntity.getId()));
+        UpdateUserStatusCommand command = new UpdateUserStatusCommand(Status.ACTIVE.getCode(), userEntity.getId());
 
-        when(userRepository.findById(Integer.parseInt(userEntity.getId()))).thenReturn(Optional.of(userEntity));
+        when(userRepository.findById(userEntity.getId())).thenReturn(Optional.of(userEntity));
         when(userRepository.save(any())).thenReturn(userEntity);
         when(userMapper.toDto(userEntity)).thenReturn(new IGRPUserDTO());
 
         // Mock backup roles
-        when(userUtils.getUserRolesFromDatabase(Integer.parseInt(userEntity.getId()))).thenReturn(backupRoles);
+        when(userUtils.getUserRolesFromDatabase(userEntity.getId())).thenReturn(backupRoles);
 
         // Act
         ResponseEntity<?> response = handler.handle(command);
@@ -103,9 +102,9 @@ class UpdateUserStatusCommandHandlerTest {
     @Test
     void handle_userNotFound_throwsException() {
         // Arrange
-        UpdateUserStatusCommand command = new UpdateUserStatusCommand(Status.ACTIVE.getCode(), 999);
+        UpdateUserStatusCommand command = new UpdateUserStatusCommand(Status.ACTIVE.getCode(), "00000000-0000-0000-0000-000000000999");
 
-        when(userRepository.findById(999)).thenReturn(Optional.empty());
+        when(userRepository.findById("00000000-0000-0000-0000-000000000999")).thenReturn(Optional.empty());
 
         // Act & Assert
         assertThrows(cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException.class,
@@ -117,8 +116,8 @@ class UpdateUserStatusCommandHandlerTest {
         // Phase G3: admins may not promote a user to TEMPORARY — that is only
         // set by the invitation flow.
         UpdateUserStatusCommand command = new UpdateUserStatusCommand(
-                Status.TEMPORARY.getCode(), Integer.parseInt(userEntity.getId()));
-        when(userRepository.findById(Integer.parseInt(userEntity.getId()))).thenReturn(Optional.of(userEntity));
+                Status.TEMPORARY.getCode(), userEntity.getId());
+        when(userRepository.findById(userEntity.getId())).thenReturn(Optional.of(userEntity));
 
         cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException ex = assertThrows(
                 cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException.class,
@@ -132,8 +131,8 @@ class UpdateUserStatusCommandHandlerTest {
         // Phase G3: admin attempt to transition a TEMPORARY user is rejected.
         userEntity.setStatus(Status.TEMPORARY);
         UpdateUserStatusCommand command = new UpdateUserStatusCommand(
-                Status.ACTIVE.getCode(), Integer.parseInt(userEntity.getId()));
-        when(userRepository.findById(Integer.parseInt(userEntity.getId()))).thenReturn(Optional.of(userEntity));
+                Status.ACTIVE.getCode(), userEntity.getId());
+        when(userRepository.findById(userEntity.getId())).thenReturn(Optional.of(userEntity));
 
         assertThrows(
                 cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException.class,
@@ -144,9 +143,9 @@ class UpdateUserStatusCommandHandlerTest {
     @Test
     void handle_statusUnchanged_noRoleChange() {
         // Arrange
-        UpdateUserStatusCommand command = new UpdateUserStatusCommand(Status.ACTIVE.getCode(), Integer.parseInt(userEntity.getId()));
+        UpdateUserStatusCommand command = new UpdateUserStatusCommand(Status.ACTIVE.getCode(), userEntity.getId());
 
-        when(userRepository.findById(Integer.parseInt(userEntity.getId()))).thenReturn(Optional.of(userEntity));
+        when(userRepository.findById(userEntity.getId())).thenReturn(Optional.of(userEntity));
         when(userRepository.save(any())).thenReturn(userEntity);
         when(userMapper.toDto(userEntity)).thenReturn(new IGRPUserDTO());
 

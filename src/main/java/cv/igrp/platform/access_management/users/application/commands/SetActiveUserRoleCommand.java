@@ -15,6 +15,6 @@ public class SetActiveUserRoleCommand implements Command {
   
   private RoleDepartmentDTO roledepartmentdto;
   @NotNull(message = "The field <id> is required")
-  private Integer id;
+  private String id;
 
 }

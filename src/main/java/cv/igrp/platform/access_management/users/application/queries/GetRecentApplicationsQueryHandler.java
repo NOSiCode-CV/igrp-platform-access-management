@@ -48,7 +48,7 @@ public class GetRecentApplicationsQueryHandler implements QueryHandler<GetRecent
                 () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
         );
 
-        var accessHistory = accessHistoryRepository.findByUserIdOrderByLastAccessDesc(Integer.valueOf(user.getId()));
+        var accessHistory = accessHistoryRepository.findByUserIdOrderByLastAccessDesc(user.getId());
 
         var applicationDTOs = accessHistory.stream().map(it -> {
             var applicationDTO = applicationMapper.toDto(it.getApplication());

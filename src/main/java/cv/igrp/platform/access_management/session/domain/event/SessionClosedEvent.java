@@ -10,7 +10,7 @@ public class SessionClosedEvent extends SessionEvent {
     private final String reason;
     private final String closedBy;
 
-    public SessionClosedEvent(UUID sessionId, Integer userId, String reason, String closedBy) {
+    public SessionClosedEvent(UUID sessionId, String userId, String reason, String closedBy) {
         super(sessionId, userId, "SESSION_MANAGEMENT");
         this.reason = reason;
         this.closedBy = closedBy;

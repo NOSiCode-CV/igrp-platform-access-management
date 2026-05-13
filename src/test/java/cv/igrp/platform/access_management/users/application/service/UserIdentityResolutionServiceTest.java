@@ -35,12 +35,12 @@ class UserIdentityResolutionServiceTest {
 
     @Test
     void firstLoginCreatesTemporaryUser() {
-        when(userRepository.findByExternalId("ext-1")).thenReturn(Optional.empty());
+        String uid = "00000000-0000-0000-0000-000000000042";
         when(userRepository.findByUsername("ext-1")).thenReturn(Optional.empty());
         when(userRepository.findByEmailIgnoreCase(any())).thenReturn(Optional.empty());
         when(userRepository.save(any(IGRPUserEntity.class))).thenAnswer(inv -> {
             IGRPUserEntity u = inv.getArgument(0);
-            u.setId(42);
+            u.setId(uid);
             return u;
         });
 
@@ -52,7 +52,7 @@ class UserIdentityResolutionServiceTest {
         assertEquals(Status.TEMPORARY, captor.getValue().getStatus());
         assertEquals(Status.TEMPORARY, created.getStatus());
         verify(sessionAuditLogger).recordUserStatusTransitioned(
-                org.mockito.ArgumentMatchers.eq(42),
+                org.mockito.ArgumentMatchers.eq(uid),
                 org.mockito.ArgumentMatchers.isNull(),
                 org.mockito.ArgumentMatchers.eq("TEMPORARY"),
                 org.mockito.ArgumentMatchers.eq(SessionAuditLogger.SYSTEM),

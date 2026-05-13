@@ -13,7 +13,7 @@ import java.util.List;
 public interface UserRoleAssignmentRepository extends JpaRepository<UserRoleAssignment, UserRoleId> {
 
     @Query("SELECT ura FROM UserRoleAssignment ura WHERE ura.user.id = :userId AND (ura.expiresAt IS NULL OR ura.expiresAt > CURRENT_TIMESTAMP)")
-    List<UserRoleAssignment> findActiveByUserId(@Param("userId") Integer userId);
+    List<UserRoleAssignment> findActiveByUserId(@Param("userId") String userId);
 
     @Query("SELECT ura FROM UserRoleAssignment ura WHERE ura.expiresAt IS NOT NULL AND ura.expiresAt <= CURRENT_TIMESTAMP")
     List<UserRoleAssignment> findExpiredRoles();

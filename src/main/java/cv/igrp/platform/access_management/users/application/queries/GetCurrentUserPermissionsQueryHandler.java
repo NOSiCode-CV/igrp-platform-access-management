@@ -45,7 +45,7 @@ public class GetCurrentUserPermissionsQueryHandler implements QueryHandler<GetCu
     @Transactional
     public ResponseEntity<List<PermissionDTO>> handle(GetCurrentUserPermissionsQuery query) {
 
-        Integer userId;
+        String userId;
         try {
             userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         } catch (NumberFormatException e) {

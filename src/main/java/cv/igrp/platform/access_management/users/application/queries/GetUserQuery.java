@@ -14,6 +14,6 @@ import lombok.AllArgsConstructor;
 public class GetUserQuery implements Query {
 
   @NotNull(message = "The field <id> is required")
-  private Integer id;
+  private String id;
 
 }

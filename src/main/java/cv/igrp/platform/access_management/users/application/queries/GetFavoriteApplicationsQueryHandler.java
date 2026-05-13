@@ -52,7 +52,7 @@ public class GetFavoriteApplicationsQueryHandler implements QueryHandler<GetFavo
                 () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
         );
 
-        var favoriteApps = favoriteApplicationEntityRepository.findByUserId(Integer.valueOf(user.getId())).orElse(null);
+        var favoriteApps = favoriteApplicationEntityRepository.findByUserId(user.getId()).orElse(null);
 
         if(favoriteApps == null) return ResponseEntity.ok(new ArrayList<>());
 

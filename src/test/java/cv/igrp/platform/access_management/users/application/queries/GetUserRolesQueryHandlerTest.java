@@ -40,7 +40,7 @@ public class GetUserRolesQueryHandlerTest {
     @InjectMocks
     private GetUserRolesQueryHandler getUserRolesQueryHandler;
 
-    private GetUserRolesQuery getUserRolesQuery(Integer id){
+    private GetUserRolesQuery getUserRolesQuery(String id){
      return new GetUserRolesQuery(id);
     }
 
@@ -49,7 +49,7 @@ public class GetUserRolesQueryHandlerTest {
     private RoleEntity role1, role2;
     private RoleDTO roleDto1, roleDto2;
 
-    private final Integer USER_ID = 1;
+    private final String USER_ID = "00000000-0000-0000-0000-000000000001";
 
     @BeforeEach
     void setUp() {

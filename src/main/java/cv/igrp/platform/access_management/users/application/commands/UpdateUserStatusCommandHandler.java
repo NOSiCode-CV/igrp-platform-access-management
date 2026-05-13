@@ -67,7 +67,7 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
    @IgrpCommandHandler
    public ResponseEntity<IGRPUserDTO> handle(UpdateUserStatusCommand command) {
 
-      Integer userId = command.getId();
+      String userId = command.getId();
 
       LOGGER.info("Updating user with ID={}", userId);
 

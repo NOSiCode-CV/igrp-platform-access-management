@@ -125,7 +125,7 @@ public class RespondUserInvitationCommandHandler
       String idStr = profile.id();
       // Phase G1 / FR-13: SubjectParser raises InvalidPrincipalException (→ 401)
       // instead of NumberFormatException when sub is non-numeric (M2M shape).
-      Integer userId = cv.igrp.platform.access_management.shared.security.SubjectParser
+      String userId = cv.igrp.platform.access_management.shared.security.SubjectParser
               .parseUserSubjectOrThrow(idStr);
       String phone = profile.phone();
       String email = profile.email();
@@ -204,12 +204,7 @@ public class RespondUserInvitationCommandHandler
          var savedUser = userRepository.save(user);
          auditService.logUserChange(savedUser.getId(), isNewUser ? "CREATE" : "UPDATE");
 
-         Integer auditUserId;
-         try {
-            auditUserId = Integer.parseInt(savedUser.getId());
-         } catch (NumberFormatException nfe) {
-            auditUserId = userId;
-         }
+         String auditUserId = savedUser.getId() != null ? savedUser.getId() : userId;
          if (statusChangedToActive) {
             String oldCode = oldStatusForAudit == null ? null : oldStatusForAudit.getCode();
             eventPublisher.publishUserStatusChanged(new UserStatusChangedEvent(
@@ -248,12 +243,7 @@ public class RespondUserInvitationCommandHandler
             String departmentCode = invitation.getRoles().iterator().next().getDepartment() != null
                     ? invitation.getRoles().iterator().next().getDepartment().getCode()
                     : null;
-            Integer savedUserId;
-            try {
-               savedUserId = Integer.parseInt(savedUser.getId());
-            } catch (NumberFormatException nfe) {
-               savedUserId = userId;
-            }
+            String savedUserId = savedUser.getId() != null ? savedUser.getId() : userId;
             eventPublisher.publishUserRoleChanged(new UserRoleChangedEvent(
                     savedUserId, grantedCodes, departmentCode,
                     UserRoleChangedEvent.CHANGE_ADDED, "INVITATION"));

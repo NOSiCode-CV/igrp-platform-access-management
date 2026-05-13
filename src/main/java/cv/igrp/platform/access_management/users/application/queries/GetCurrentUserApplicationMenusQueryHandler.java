@@ -71,7 +71,7 @@ public class GetCurrentUserApplicationMenusQueryHandler implements QueryHandler<
                         .stream()
                         .map(menuEntryMapper::toDTO)
                         .toList()
-                : menuEntryRepository.findActiveByApplicationIdAndCurrentUserIdFiltered(Integer.valueOf(user.getId()), application.getId(), query.getMenuCode())
+                : menuEntryRepository.findActiveByApplicationIdAndCurrentUserIdFiltered(user.getId(), application.getId(), query.getMenuCode())
                 .stream()
                 .map(menuEntryMapper::toDTO)
                 .toList();

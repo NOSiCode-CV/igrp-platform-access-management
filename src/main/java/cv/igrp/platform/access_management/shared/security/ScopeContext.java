@@ -9,7 +9,7 @@ import java.util.Set;
 @Setter
 public class ScopeContext {
     private boolean isSuperAdmin;
-    private Integer userId;
+    private String userId;
     private Set<Integer> departmentIds;
     private Set<Integer> applicationIds;
     private Set<Integer> roleIds;

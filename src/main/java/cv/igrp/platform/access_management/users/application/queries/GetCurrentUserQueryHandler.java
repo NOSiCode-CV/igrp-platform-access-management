@@ -59,7 +59,7 @@ public class GetCurrentUserQueryHandler implements QueryHandler<GetCurrentUserQu
    */
   @IgrpQueryHandler
   public ResponseEntity<IGRPUserDTO> handle(GetCurrentUserQuery query) {
-    Integer userId;
+    String userId;
     try {
         userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
     } catch (NumberFormatException e) {

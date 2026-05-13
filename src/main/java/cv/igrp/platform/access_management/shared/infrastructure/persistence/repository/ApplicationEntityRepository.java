@@ -185,7 +185,7 @@ public interface ApplicationEntityRepository extends
       AND (:name IS NULL OR a.name ILIKE CONCAT('%', :name, '%'))
 """, nativeQuery = true)
     List<ApplicationEntity> findByUserAndActiveFiltered(
-            @Param("userId") Integer userId,
+            @Param("userId") String userId,
             @Param("code") String applicationCode,
             @Param("name") String applicationName
     );
@@ -204,7 +204,7 @@ public interface ApplicationEntityRepository extends
       AND (:name IS NULL OR a.name ILIKE CONCAT('%', :name, '%'))
 """, nativeQuery = true)
     List<ApplicationEntity> findByCurrentUserAndActiveFiltered(
-            @Param("userId") Integer userId,
+            @Param("userId") String userId,
             @Param("code") String applicationCode,
             @Param("name") String applicationName
     );

@@ -39,7 +39,7 @@ public class UserSpecificationBuilder {
             spec = spec.and((root, criteriaQuery, cb) -> cb.like(cb.lower(root.get("name")), "%" + query.getName().toLowerCase() + "%"));
         }
 
-        if (query.getId() != null && query.getId() != 0) {
+        if (query.getId() != null && !query.getId().isBlank()) {
             spec = spec.and((root, criteriaQuery, cb) -> cb.equal(root.get("id"), query.getId()));
         }
 

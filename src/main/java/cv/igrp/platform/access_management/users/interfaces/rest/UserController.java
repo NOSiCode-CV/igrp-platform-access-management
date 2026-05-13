@@ -78,7 +78,7 @@ public class UserController {
   )
   
   public ResponseEntity<IGRPUserDTO> getUser(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "id") String id)
   {
 
       final var query = new GetUserQuery(id);
@@ -119,7 +119,7 @@ public class UserController {
   )
   
   public ResponseEntity<?> addRolesToUser(@Valid @RequestBody AddRolesToUserRequestDTO addRolesToUserRequest
-    , @PathVariable(value = "id") Integer id,@PathVariable(value = "departmentCode") String departmentCode)
+    , @PathVariable(value = "id") String id,@PathVariable(value = "departmentCode") String departmentCode)
   {
 
       final var command = new AddRolesToUserCommand(addRolesToUserRequest.getRoles(), id, departmentCode, addRolesToUserRequest.getExpiresAt());
@@ -150,7 +150,7 @@ public class UserController {
   )
   
   public ResponseEntity<List<RoleDTO>> removeRolesFromUser(@RequestBody List<String> removeRolesFromUserRequest
-    , @PathVariable(value = "id") Integer id,@PathVariable(value = "departmentCode") String departmentCode)
+    , @PathVariable(value = "id") String id,@PathVariable(value = "departmentCode") String departmentCode)
   {
 
       final var command = new RemoveRolesFromUserCommand(removeRolesFromUserRequest, id, departmentCode);
@@ -181,7 +181,7 @@ public class UserController {
   )
   
   public ResponseEntity<List<RoleDTO>> getUserRoles(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "id") String id)
   {
 
       final var query = new GetUserRolesQuery(id);
@@ -212,7 +212,7 @@ public class UserController {
   )
   
   public ResponseEntity<List<PermissionDTO>> getUserPermissions(
-    @RequestParam(value = "roleCode", required = false) String roleCode, @PathVariable(value = "id") Integer id)
+    @RequestParam(value = "roleCode", required = false) String roleCode, @PathVariable(value = "id") String id)
   {
 
       final var query = new GetUserPermissionsQuery(roleCode, id);
@@ -246,7 +246,7 @@ public class UserController {
     @RequestParam(value = "applicationCode", required = false) String applicationCode,
     @RequestParam(value = "departmentCode", required = false) String departmentCode,
     @RequestParam(value = "name", required = false) String name,
-    @RequestParam(value = "id", required = false) Integer id,
+    @RequestParam(value = "id", required = false) String id,
     @RequestParam(value = "email", required = false) String email)
   {
 
@@ -383,10 +383,10 @@ public class UserController {
           return ResponseEntity.notFound().build();
       }
       
-      Integer currentUserId = currentUserResponse.getBody().getId();
-      
+      String currentUserId = currentUserResponse.getBody().getId();
+
       // Create update command with current user's ID
-      final var command = new UpdateUserCommand(updateUserRequest, currentUserId != null ? currentUserId.toString() : null);
+      final var command = new UpdateUserCommand(updateUserRequest, currentUserId);
       
       return commandBus.send(command);
   }
@@ -558,7 +558,7 @@ public class UserController {
   )
   
   public ResponseEntity<IGRPUserDTO> updateUserStatus(
-    @RequestParam(value = "value") String value, @PathVariable(value = "id") Integer id)
+    @RequestParam(value = "value") String value, @PathVariable(value = "id") String id)
   {
 
       final var command = new UpdateUserStatusCommand(value, id);
@@ -771,7 +771,7 @@ public class UserController {
   
   public ResponseEntity<List<ApplicationDTO>> getUserApplications(
     @RequestParam(value = "applicationCode", required = false) String applicationCode,
-    @RequestParam(value = "applicationName", required = false) String applicationName, @PathVariable(value = "id") Integer id)
+    @RequestParam(value = "applicationName", required = false) String applicationName, @PathVariable(value = "id") String id)
   {
 
       final var query = new GetUserApplicationsQuery(applicationCode, applicationName, id);
@@ -802,7 +802,7 @@ public class UserController {
   )
   
   public ResponseEntity<List<MenuEntryDTO>> getUserApplicationMenus(
-    @RequestParam(value = "menuCode", required = false) String menuCode, @PathVariable(value = "id") Integer id,@PathVariable(value = "applicationCode") String applicationCode)
+    @RequestParam(value = "menuCode", required = false) String menuCode, @PathVariable(value = "id") String id,@PathVariable(value = "applicationCode") String applicationCode)
   {
 
       final var query = new GetUserApplicationMenusQuery(menuCode, id, applicationCode);
@@ -833,7 +833,7 @@ public class UserController {
   )
   
   public ResponseEntity<List<DepartmentDTO>> getUserDepartments(
-    @RequestParam(value = "departmentCode", required = false) String departmentCode, @PathVariable(value = "id") Integer id)
+    @RequestParam(value = "departmentCode", required = false) String departmentCode, @PathVariable(value = "id") String id)
   {
 
       final var query = new GetUserDepartmentsQuery(departmentCode, id);
@@ -864,7 +864,7 @@ public class UserController {
   )
   
   public ResponseEntity<List<RoleDTO>> getUserDepartmentRoles(
-    @RequestParam(value = "roleCode", required = false) String roleCode, @PathVariable(value = "id") Integer id,@PathVariable(value = "departmentCode") String departmentCode)
+    @RequestParam(value = "roleCode", required = false) String roleCode, @PathVariable(value = "id") String id,@PathVariable(value = "departmentCode") String departmentCode)
   {
 
       final var query = new GetUserDepartmentRolesQuery(roleCode, id, departmentCode);
@@ -1170,7 +1170,7 @@ public class UserController {
   )
   
   public ResponseEntity<RoleDepartmentDTO> getActiveUserRole(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "id") String id)
   {
 
       final var query = new GetActiveUserRoleQuery(id);
@@ -1231,7 +1231,7 @@ public class UserController {
   )
 
   public ResponseEntity<RoleDepartmentDTO> setActiveUserRole(@Valid @RequestBody RoleDepartmentDTO setActiveUserRoleRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "id") String id)
   {
 
       final var command = new SetActiveUserRoleCommand(setActiveUserRoleRequest, id);
@@ -1260,7 +1260,7 @@ public class UserController {
     }
   )
   public ResponseEntity<UserMetadataDTO> getUserMetadata(
-    @PathVariable(value = "id") Integer id)
+    @PathVariable(value = "id") String id)
   {
       final var query = new GetUserMetadataQuery(id);
       return queryBus.handle(query);
@@ -1286,7 +1286,7 @@ public class UserController {
     }
   )
   public ResponseEntity<UserMetadataDTO> updateUserMetadata(@Valid @RequestBody UpdateUserMetadataRequestDTO updateUserMetadataRequest
-    , @PathVariable(value = "id") Integer id)
+    , @PathVariable(value = "id") String id)
   {
       final var command = new UpdateUserMetadataCommand(id, updateUserMetadataRequest.getMetadata());
       return commandBus.send(command);

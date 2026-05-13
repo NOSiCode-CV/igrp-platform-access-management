@@ -62,7 +62,7 @@ public class UserStatusGuard {
         if (!(principal instanceof Jwt jwt)) {
             return Optional.empty();
         }
-        Integer userId;
+        String userId;
         try {
             userId = SubjectParser.parseUserSubjectOrThrow(jwt.getSubject());
         } catch (InvalidPrincipalException ex) {

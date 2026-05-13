@@ -133,7 +133,7 @@ class GetSessionCheckQueryHandlerTest {
                                      Instant lastSeenAt) {
         SessionEntity entity = new SessionEntity();
         entity.setSessionId(sid);
-        entity.setUserId(42);
+        entity.setUserId("00000000-0000-0000-0000-000000000042");
         entity.setStatus(status);
         entity.setStartedAt(Instant.now().minusSeconds(600));
         entity.setLastSeenAt(lastSeenAt);

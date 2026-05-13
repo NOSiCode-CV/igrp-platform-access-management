@@ -73,12 +73,13 @@ public class PermissionCacheService {
         if (subject == null || subject.isBlank()) {
             return false;
         }
-        // The new identity model uses the internal user id as the JWT sub.
-        Integer userId;
+        // The new identity model uses the internal user id (UUID) as the JWT sub.
+        String userId;
         try {
-            userId = Integer.parseInt(subject);
-        } catch (NumberFormatException ex) {
-            // Fallback path for non-numeric subjects (legacy tokens / test stubs).
+            java.util.UUID.fromString(subject);
+            userId = subject;
+        } catch (IllegalArgumentException ex) {
+            // Fallback path for non-UUID subjects (legacy tokens / test stubs).
             return isSuperAdminByUsername(subject);
         }
 

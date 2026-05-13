@@ -215,7 +215,7 @@ public class ScopeService {
     }
 
     public record ActorPrincipal(
-            Integer id,
+            String id,
             Set<String> roles,
             boolean superAdmin,
             Object rawPrincipal

@@ -11,13 +11,13 @@ import java.time.Instant;
 @Data
 public class UserStatusChangedEvent {
 
-    private final Integer userId;
+    private final String userId;
     private final String previousStatus;
     private final String newStatus;
     private final String triggeredBy;
     private final Instant timestamp;
 
-    public UserStatusChangedEvent(Integer userId,
+    public UserStatusChangedEvent(String userId,
                                   String previousStatus,
                                   String newStatus,
                                   String triggeredBy) {

@@ -52,15 +52,16 @@ class PermissionCacheServiceTest {
 
     private void assertCheckDenied(Status status) {
         IGRPUserEntity user = new IGRPUserEntity();
-        user.setId(11);
+        String uid = "00000000-0000-0000-0000-000000000011";
+        user.setId(uid);
         user.setStatus(status);
-        when(userRepository.findByIdWithRolesAndPermissions(eq(11))).thenReturn(Optional.of(user));
+        when(userRepository.findByIdWithRolesAndPermissions(eq(uid))).thenReturn(Optional.of(user));
         // Defensive: ensure SQL fallback is never consulted for these tests
         when(jdbcTemplate.query(any(String.class), any(org.springframework.jdbc.core.RowMapper.class),
                 any(), any())).thenReturn(Collections.emptyList());
 
         PermissionCheckRequest req = new PermissionCheckRequest();
-        req.setSubject("11");
+        req.setSubject(uid);
         req.setAction("igrp.users.view");
 
         PermissionCacheEntryDTO dto = service.checkInternal(req);

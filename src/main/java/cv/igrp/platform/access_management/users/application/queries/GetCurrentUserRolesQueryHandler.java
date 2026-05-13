@@ -72,7 +72,7 @@ public class GetCurrentUserRolesQueryHandler implements QueryHandler<GetCurrentU
     @IgrpQueryHandler
     public ResponseEntity<List<RoleDTO>> handle(GetCurrentUserRolesQuery query) {
 
-        Integer userId;
+        String userId;
         try {
             userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         } catch (NumberFormatException e) {

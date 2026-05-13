@@ -49,15 +49,15 @@ public class AddFavoriteApplicationCommandHandler implements CommandHandler<AddF
 
         var application = applicationEntityRepository.findByCodeAndStatusNotDeleted(command.getApplicationCode());
 
-        if(favoriteApplicationEntityRepository.existsByUserAndApplication(Integer.valueOf(user.getId()), application)) {
+        if(favoriteApplicationEntityRepository.existsByUserAndApplication(user.getId(), application)) {
             throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Application <" + command.getApplicationCode() + "> is already a favorite of user: " + authenticationHelper.getSub());
         }
 
-        var favoriteApplicationOpt = favoriteApplicationEntityRepository.findByUserId(Integer.valueOf(user.getId()));
+        var favoriteApplicationOpt = favoriteApplicationEntityRepository.findByUserId(user.getId());
 
         var favoriteApplication = favoriteApplicationOpt.orElseGet(FavoriteApplicationEntity::new);
 
-        if(favoriteApplicationOpt.isEmpty()) favoriteApplication.setUserId(Integer.valueOf(user.getId()));
+        if(favoriteApplicationOpt.isEmpty()) favoriteApplication.setUserId(user.getId());
 
         favoriteApplication.getApplications().add(application);
 

@@ -52,7 +52,7 @@ public class SessionHeartbeatService {
      * enforcement filter needs to make a decision without round-tripping JPA.
      */
     public record Snapshot(UUID sessionId,
-                           Integer userId,
+                           String userId,
                            SessionStatus status,
                            Instant lastSeenAt,
                            Instant expiresAt,

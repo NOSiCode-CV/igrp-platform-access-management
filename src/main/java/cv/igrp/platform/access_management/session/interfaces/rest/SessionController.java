@@ -68,7 +68,7 @@ public class SessionController {
     )
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SessionResponseDTO> getCurrentSession() {
-        Integer userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
+        String userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         log.debug("Getting current session for user: {}", userId);
 
         var query = new GetCurrentSessionQuery(userId);
@@ -128,7 +128,7 @@ public class SessionController {
     public ResponseEntity<SessionResponseDTO> refreshSession(
             @Valid @RequestBody(required = false) SessionRefreshRequestDTO request) {
 
-        Integer userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
+        String userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         log.debug("Refreshing session for user: {}", userId);
 
         Integer extensionSeconds = request != null ? request.getExtensionSeconds() : null;
@@ -155,7 +155,7 @@ public class SessionController {
             @Valid @RequestBody SessionInitRequestDTO request,
             HttpServletRequest httpRequest) {
 
-        Integer userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
+        String userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         log.info("Rotating session for user: {}", userId);
 
         String clientIp = getClientIp(httpRequest);

@@ -62,50 +62,50 @@ class AuditTrailCoverageTest {
 
     @Test
     void sessionCreated_emitsOneRow_userActor() {
-        logger.recordCreated(UUID.randomUUID(), 42, "device-1", "web", SessionAuditLogger.USER);
+        logger.recordCreated(UUID.randomUUID(), "00000000-0000-0000-0000-000000000042", "device-1", "web", SessionAuditLogger.USER);
         assertSingleRow(AuditEventType.SESSION_CREATED, "NEW_LOGIN", "USER");
     }
 
     @Test
     void sessionReplaced_emitsOneRow_userActor() {
-        logger.recordReplaced(UUID.randomUUID(), 42, "device-1", "web", SessionAuditLogger.USER);
+        logger.recordReplaced(UUID.randomUUID(), "00000000-0000-0000-0000-000000000042", "device-1", "web", SessionAuditLogger.USER);
         assertSingleRow(AuditEventType.SESSION_REPLACED, "SESSION_REPLACED", "USER");
     }
 
     @Test
     void sessionLimitExceeded_emitsOneRow_systemActor() {
-        logger.recordLimitExceeded(UUID.randomUUID(), 42, "device-1", "web");
+        logger.recordLimitExceeded(UUID.randomUUID(), "00000000-0000-0000-0000-000000000042", "device-1", "web");
         assertSingleRow(AuditEventType.SESSION_LIMIT_EXCEEDED, "SESSION_LIMIT_EXCEEDED", "SYSTEM");
     }
 
     @Test
     void sessionRefreshed_emitsOneRow_userActor() {
-        logger.recordRefreshed(UUID.randomUUID(), 42, "device-1", "web", SessionAuditLogger.USER);
+        logger.recordRefreshed(UUID.randomUUID(), "00000000-0000-0000-0000-000000000042", "device-1", "web", SessionAuditLogger.USER);
         assertSingleRow(AuditEventType.SESSION_REFRESHED, "TOKEN_REFRESH", "USER");
     }
 
     @Test
     void sessionRevoked_refreshReuse_emitsOneRow_systemActor() {
-        logger.recordRevoked(UUID.randomUUID(), 42, "REFRESH_TOKEN_REUSE", SessionAuditLogger.SYSTEM);
+        logger.recordRevoked(UUID.randomUUID(), "00000000-0000-0000-0000-000000000042", "REFRESH_TOKEN_REUSE", SessionAuditLogger.SYSTEM);
         assertSingleRow(AuditEventType.SESSION_REVOKED, "REFRESH_TOKEN_REUSE", "SYSTEM");
     }
 
     @Test
     void sessionRevoked_userLogout_emitsOneRow_userActor() {
-        logger.recordRevoked(UUID.randomUUID(), 42, "USER_LOGOUT", SessionAuditLogger.USER);
+        logger.recordRevoked(UUID.randomUUID(), "00000000-0000-0000-0000-000000000042", "USER_LOGOUT", SessionAuditLogger.USER);
         assertSingleRow(AuditEventType.SESSION_REVOKED, "USER_LOGOUT", "USER");
     }
 
     @Test
     void sessionRevoked_oauthAuthorizationRemoved_emitsOneRow_systemActor() {
-        logger.recordRevoked(UUID.randomUUID(), 42, "OAUTH_AUTHORIZATION_REMOVED",
+        logger.recordRevoked(UUID.randomUUID(), "00000000-0000-0000-0000-000000000042", "OAUTH_AUTHORIZATION_REMOVED",
                 SessionAuditLogger.SYSTEM);
         assertSingleRow(AuditEventType.SESSION_REVOKED, "OAUTH_AUTHORIZATION_REMOVED", "SYSTEM");
     }
 
     @Test
     void sessionRevoked_userRoleChanged_emitsOneRow_systemActor() {
-        logger.recordRevoked(null, 42, "USER_ROLE_CHANGED", SessionAuditLogger.SYSTEM);
+        logger.recordRevoked(null, "00000000-0000-0000-0000-000000000042", "USER_ROLE_CHANGED", SessionAuditLogger.SYSTEM);
         assertSingleRow(AuditEventType.SESSION_REVOKED, "USER_ROLE_CHANGED", "SYSTEM");
     }
 
@@ -117,7 +117,7 @@ class AuditTrailCoverageTest {
 
     @Test
     void sessionRevoked_userStatusChanged_emitsOneRow_systemActor() {
-        logger.recordRevoked(null, 42, "USER_STATUS_CHANGED", SessionAuditLogger.SYSTEM);
+        logger.recordRevoked(null, "00000000-0000-0000-0000-000000000042", "USER_STATUS_CHANGED", SessionAuditLogger.SYSTEM);
         assertSingleRow(AuditEventType.SESSION_REVOKED, "USER_STATUS_CHANGED", "SYSTEM");
     }
 
@@ -129,46 +129,46 @@ class AuditTrailCoverageTest {
 
     @Test
     void sessionRevoked_permissionDeleted_emitsOneRow_systemActor() {
-        logger.recordRevoked(null, 42, "PERMISSION_DELETED", SessionAuditLogger.SYSTEM);
+        logger.recordRevoked(null, "00000000-0000-0000-0000-000000000042", "PERMISSION_DELETED", SessionAuditLogger.SYSTEM);
         assertSingleRow(AuditEventType.SESSION_REVOKED, "PERMISSION_DELETED", "SYSTEM");
     }
 
     @Test
     void sessionRevoked_adminKill_emitsOneRow_adminActorPattern() {
-        logger.recordRevoked(UUID.randomUUID(), 42, "ADMIN_KILL",
+        logger.recordRevoked(UUID.randomUUID(), "00000000-0000-0000-0000-000000000042", "ADMIN_KILL",
                 SessionAuditLogger.adminActor("admin-ext-7"));
         assertSingleRow(AuditEventType.SESSION_REVOKED, "ADMIN_KILL", "ADMIN:.+");
     }
 
     @Test
     void sessionRevoked_adminLogoutAll_emitsOneRow_adminActorPattern() {
-        logger.recordRevoked(null, 42, "ADMIN_LOGOUT_ALL",
+        logger.recordRevoked(null, "00000000-0000-0000-0000-000000000042", "ADMIN_LOGOUT_ALL",
                 SessionAuditLogger.adminActor("admin-ext-9"));
         assertSingleRow(AuditEventType.SESSION_REVOKED, "ADMIN_LOGOUT_ALL", "ADMIN:.+");
     }
 
     @Test
     void sessionExpired_idleTimeout_emitsOneRow_systemActor() {
-        logger.recordExpired(UUID.randomUUID(), 42, "IDLE_TIMEOUT");
+        logger.recordExpired(UUID.randomUUID(), "00000000-0000-0000-0000-000000000042", "IDLE_TIMEOUT");
         assertSingleRow(AuditEventType.SESSION_EXPIRED, "IDLE_TIMEOUT", "SYSTEM");
     }
 
     @Test
     void sessionExpired_absoluteTimeout_emitsOneRow_systemActor() {
-        logger.recordExpired(UUID.randomUUID(), 42, "ABSOLUTE_TIMEOUT");
+        logger.recordExpired(UUID.randomUUID(), "00000000-0000-0000-0000-000000000042", "ABSOLUTE_TIMEOUT");
         assertSingleRow(AuditEventType.SESSION_EXPIRED, "ABSOLUTE_TIMEOUT", "SYSTEM");
     }
 
     @Test
     void sessionForcedReauth_emitsOneRow_adminActorPattern() {
-        logger.recordForcedReauth(42, SessionAuditLogger.adminActor("admin-ext-3"));
+        logger.recordForcedReauth("00000000-0000-0000-0000-000000000042", SessionAuditLogger.adminActor("admin-ext-3"));
         assertSingleRow(AuditEventType.SESSION_FORCED_REAUTH, "FORCED_REAUTH", "ADMIN:.+");
     }
 
     @Test
     void contextCarriesSidSubDeviceClient() {
         UUID sid = UUID.randomUUID();
-        logger.recordCreated(sid, 99, "dev-X", "web-client", SessionAuditLogger.USER);
+        logger.recordCreated(sid, "00000000-0000-0000-0000-000000000099", "dev-X", "web-client", SessionAuditLogger.USER);
 
         ArgumentCaptor<Map<String, Object>> captor = ctxCaptor();
         verify(securityAuditService)
@@ -177,8 +177,8 @@ class AuditTrailCoverageTest {
         Map<String, Object> ctx = captor.getValue();
         assertThat(ctx).containsEntry("sid", sid.toString());
         assertThat(ctx).containsEntry("sessionId", sid.toString());
-        assertThat(ctx).containsEntry("sub", "99");
-        assertThat(ctx).containsEntry("userId", "99");
+        assertThat(ctx).containsEntry("sub", "00000000-0000-0000-0000-000000000099");
+        assertThat(ctx).containsEntry("userId", "00000000-0000-0000-0000-000000000099");
         assertThat(ctx).containsEntry("deviceId", "dev-X");
         assertThat(ctx).containsEntry("clientId", "web-client");
     }
@@ -188,6 +188,6 @@ class AuditTrailCoverageTest {
         org.mockito.Mockito.doThrow(new RuntimeException("audit DB down"))
                 .when(securityAuditService).logEvent(any(), any(), any());
         // Must not propagate — the transition must continue.
-        logger.recordCreated(UUID.randomUUID(), 1, "d", "c", SessionAuditLogger.USER);
+        logger.recordCreated(UUID.randomUUID(), "00000000-0000-0000-0000-000000000001", "d", "c", SessionAuditLogger.USER);
     }
 }

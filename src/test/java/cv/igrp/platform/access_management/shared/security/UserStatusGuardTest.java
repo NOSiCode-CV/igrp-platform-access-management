@@ -61,8 +61,9 @@ class UserStatusGuardTest {
 
     @Test
     void missingUserDenied() {
-        Jwt jwt = jwt(Map.of("sub", "7"));
-        when(userRepository.findById(eq(7))).thenReturn(Optional.empty());
+        String uid = "00000000-0000-0000-0000-000000000007";
+        Jwt jwt = jwt(Map.of("sub", uid));
+        when(userRepository.findById(eq(uid))).thenReturn(Optional.empty());
         Authentication auth = new JwtAuthenticationToken(jwt);
         assertFalse(guard.requiresActive(auth));
         assertFalse(guard.requiresActiveOrTemporary(auth));
@@ -97,11 +98,12 @@ class UserStatusGuardTest {
     }
 
     private Authentication authForUserWithStatus(int id, Status status) {
-        Jwt jwt = jwt(Map.of("sub", String.valueOf(id)));
+        String uid = String.format("00000000-0000-0000-0000-%012d", id);
+        Jwt jwt = jwt(Map.of("sub", uid));
         IGRPUserEntity entity = new IGRPUserEntity();
-        entity.setId(id);
+        entity.setId(uid);
         entity.setStatus(status);
-        when(userRepository.findById(eq(id))).thenReturn(Optional.of(entity));
+        when(userRepository.findById(eq(uid))).thenReturn(Optional.of(entity));
         return new JwtAuthenticationToken(jwt);
     }
 

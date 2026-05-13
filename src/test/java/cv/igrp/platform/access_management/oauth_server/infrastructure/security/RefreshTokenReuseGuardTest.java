@@ -65,8 +65,8 @@ class RefreshTokenReuseGuardTest {
     @Test
     void recordRotation_tombstonesOldTokenWithSidAndUserId() {
         UUID sid = UUID.randomUUID();
-        OAuth2Authorization previous = authorizationWith("old-refresh", "access-1", sid, "42");
-        OAuth2Authorization next = authorizationWith("new-refresh", "access-2", sid, "42");
+        OAuth2Authorization previous = authorizationWith("old-refresh", "access-1", sid, "00000000-0000-0000-0000-000000000042");
+        OAuth2Authorization next = authorizationWith("new-refresh", "access-2", sid, "00000000-0000-0000-0000-000000000042");
         when(tombstoneRepository.findByTokenHash(RefreshTokenReuseGuard.sha256("old-refresh")))
                 .thenReturn(Optional.empty());
 
@@ -78,7 +78,7 @@ class RefreshTokenReuseGuardTest {
         RefreshTokenTombstoneEntity saved = captor.getValue();
         assertThat(saved.getTokenHash()).isEqualTo(RefreshTokenReuseGuard.sha256("old-refresh"));
         assertThat(saved.getSessionId()).isEqualTo(sid);
-        assertThat(saved.getUserId()).isEqualTo(42);
+        assertThat(saved.getUserId()).isEqualTo("00000000-0000-0000-0000-000000000042");
         assertThat(saved.getInvalidatedAt()).isNotNull();
         assertThat(saved.getExpiresAt()).isNotNull();
     }
@@ -86,8 +86,8 @@ class RefreshTokenReuseGuardTest {
     @Test
     void recordRotation_noOpWhenTokenValueUnchanged() {
         UUID sid = UUID.randomUUID();
-        OAuth2Authorization previous = authorizationWith("same", "access-1", sid, "42");
-        OAuth2Authorization next = authorizationWith("same", "access-2", sid, "42");
+        OAuth2Authorization previous = authorizationWith("same", "access-1", sid, "00000000-0000-0000-0000-000000000042");
+        OAuth2Authorization next = authorizationWith("same", "access-2", sid, "00000000-0000-0000-0000-000000000042");
 
         guard.recordRotation(previous, next);
 
@@ -97,8 +97,8 @@ class RefreshTokenReuseGuardTest {
     @Test
     void recordRotation_noOpWhenPreviousHasNoRefreshToken() {
         UUID sid = UUID.randomUUID();
-        OAuth2Authorization previous = authorizationAccessOnly("access-1", sid, "42");
-        OAuth2Authorization next = authorizationWith("new-refresh", "access-2", sid, "42");
+        OAuth2Authorization previous = authorizationAccessOnly("access-1", sid, "00000000-0000-0000-0000-000000000042");
+        OAuth2Authorization next = authorizationWith("new-refresh", "access-2", sid, "00000000-0000-0000-0000-000000000042");
 
         guard.recordRotation(previous, next);
 
@@ -121,13 +121,13 @@ class RefreshTokenReuseGuardTest {
     void detectReplay_revokesActiveSessionAndPublishesEvent() {
         UUID sid = UUID.randomUUID();
         RefreshTokenTombstoneEntity tombstone = new RefreshTokenTombstoneEntity(
-                RefreshTokenReuseGuard.sha256("replayed"), sid, 99,
+                RefreshTokenReuseGuard.sha256("replayed"), sid, "00000000-0000-0000-0000-000000000099",
                 Instant.now().minusSeconds(10), Instant.now().plusSeconds(3600));
         when(tombstoneRepository.findByTokenHash(RefreshTokenReuseGuard.sha256("replayed")))
                 .thenReturn(Optional.of(tombstone));
         SessionEntity session = new SessionEntity();
         session.setSessionId(sid);
-        session.setUserId(99);
+        session.setUserId("00000000-0000-0000-0000-000000000099");
         session.setStatus(SessionStatus.ACTIVE);
         session.setStartedAt(Instant.now().minusSeconds(60));
         session.setLastSeenAt(Instant.now());
@@ -142,11 +142,11 @@ class RefreshTokenReuseGuardTest {
         assertThat(saved.getValue().getStatus()).isEqualTo(SessionStatus.REVOKED);
         assertThat(saved.getValue().getClosedReason()).isEqualTo("REFRESH_TOKEN_REUSE");
         assertThat(saved.getValue().getClosedBy()).isEqualTo("SYSTEM");
-        verify(sessionCacheEvictService).evictBySubject(99);
+        verify(sessionCacheEvictService).evictBySubject("00000000-0000-0000-0000-000000000099");
         ArgumentCaptor<SessionRevokedEvent> event = ArgumentCaptor.forClass(SessionRevokedEvent.class);
         verify(eventPublisher).publishEvent(event.capture());
         assertThat(event.getValue().getSessionId()).isEqualTo(sid);
-        assertThat(event.getValue().getUserId()).isEqualTo(99);
+        assertThat(event.getValue().getUserId()).isEqualTo("00000000-0000-0000-0000-000000000099");
         assertThat(event.getValue().getReason()).isEqualTo("REFRESH_TOKEN_REUSE");
     }
 
@@ -154,13 +154,13 @@ class RefreshTokenReuseGuardTest {
     void detectReplay_doesNotResaveAlreadyRevokedSessionButStillPublishes() {
         UUID sid = UUID.randomUUID();
         RefreshTokenTombstoneEntity tombstone = new RefreshTokenTombstoneEntity(
-                RefreshTokenReuseGuard.sha256("replayed"), sid, 99,
+                RefreshTokenReuseGuard.sha256("replayed"), sid, "00000000-0000-0000-0000-000000000099",
                 Instant.now().minusSeconds(10), Instant.now().plusSeconds(3600));
         when(tombstoneRepository.findByTokenHash(RefreshTokenReuseGuard.sha256("replayed")))
                 .thenReturn(Optional.of(tombstone));
         SessionEntity session = new SessionEntity();
         session.setSessionId(sid);
-        session.setUserId(99);
+        session.setUserId("00000000-0000-0000-0000-000000000099");
         session.setStatus(SessionStatus.REVOKED);
         session.setStartedAt(Instant.now().minusSeconds(60));
         session.setLastSeenAt(Instant.now());
@@ -170,7 +170,7 @@ class RefreshTokenReuseGuardTest {
         guard.detectReplay("replayed");
 
         verify(sessionRepository, never()).save(any(SessionEntity.class));
-        verify(sessionCacheEvictService).evictBySubject(99);
+        verify(sessionCacheEvictService).evictBySubject("00000000-0000-0000-0000-000000000099");
         verify(eventPublisher).publishEvent(any(SessionRevokedEvent.class));
     }
 
@@ -178,7 +178,7 @@ class RefreshTokenReuseGuardTest {
     void detectReplay_missingSessionRowStillPublishesEventAndEvicts() {
         UUID sid = UUID.randomUUID();
         RefreshTokenTombstoneEntity tombstone = new RefreshTokenTombstoneEntity(
-                RefreshTokenReuseGuard.sha256("replayed"), sid, 99,
+                RefreshTokenReuseGuard.sha256("replayed"), sid, "00000000-0000-0000-0000-000000000099",
                 Instant.now().minusSeconds(10), Instant.now().plusSeconds(3600));
         when(tombstoneRepository.findByTokenHash(RefreshTokenReuseGuard.sha256("replayed")))
                 .thenReturn(Optional.of(tombstone));
@@ -188,7 +188,7 @@ class RefreshTokenReuseGuardTest {
 
         assertThat(detected).isTrue();
         verify(sessionRepository, never()).save(any(SessionEntity.class));
-        verify(sessionCacheEvictService).evictBySubject(99);
+        verify(sessionCacheEvictService).evictBySubject("00000000-0000-0000-0000-000000000099");
         verify(eventPublisher).publishEvent(any(SessionRevokedEvent.class));
     }
 

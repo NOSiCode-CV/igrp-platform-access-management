@@ -53,32 +53,32 @@ public class SessionAuditLogger {
         this.securityAuditService = securityAuditService;
     }
 
-    public void recordCreated(UUID sid, Integer userId, String deviceId, String clientId, String actor) {
+    public void recordCreated(UUID sid, String userId, String deviceId, String clientId, String actor) {
         emit(AuditEventType.SESSION_CREATED, "NEW_LOGIN", actor, sid, userId, deviceId, clientId);
     }
 
-    public void recordReplaced(UUID sid, Integer userId, String deviceId, String clientId, String actor) {
+    public void recordReplaced(UUID sid, String userId, String deviceId, String clientId, String actor) {
         emit(AuditEventType.SESSION_REPLACED, "SESSION_REPLACED", actor, sid, userId, deviceId, clientId);
     }
 
-    public void recordLimitExceeded(UUID sid, Integer userId, String deviceId, String clientId) {
+    public void recordLimitExceeded(UUID sid, String userId, String deviceId, String clientId) {
         emit(AuditEventType.SESSION_LIMIT_EXCEEDED, "SESSION_LIMIT_EXCEEDED",
                 SYSTEM, sid, userId, deviceId, clientId);
     }
 
-    public void recordRefreshed(UUID sid, Integer userId, String deviceId, String clientId, String actor) {
+    public void recordRefreshed(UUID sid, String userId, String deviceId, String clientId, String actor) {
         emit(AuditEventType.SESSION_REFRESHED, "TOKEN_REFRESH", actor, sid, userId, deviceId, clientId);
     }
 
-    public void recordRevoked(UUID sid, Integer userId, String reason, String actor) {
+    public void recordRevoked(UUID sid, String userId, String reason, String actor) {
         emit(AuditEventType.SESSION_REVOKED, reason, actor, sid, userId, null, null);
     }
 
-    public void recordExpired(UUID sid, Integer userId, String reason) {
+    public void recordExpired(UUID sid, String userId, String reason) {
         emit(AuditEventType.SESSION_EXPIRED, reason, SYSTEM, sid, userId, null, null);
     }
 
-    public void recordForcedReauth(Integer userId, String actor) {
+    public void recordForcedReauth(String userId, String actor) {
         emit(AuditEventType.SESSION_FORCED_REAUTH, "FORCED_REAUTH", actor, null, userId, null, null);
     }
 
@@ -91,7 +91,7 @@ public class SessionAuditLogger {
      * {@code actor}. Failure to write the audit row never breaks the
      * transition — same fire-and-forget contract as the session emitters.
      */
-    public void recordUserStatusTransitioned(Integer userId, String fromStatus, String toStatus,
+    public void recordUserStatusTransitioned(String userId, String fromStatus, String toStatus,
                                              String actor, String reason) {
         try {
             Map<String, Object> ctx = new LinkedHashMap<>();
@@ -115,7 +115,7 @@ public class SessionAuditLogger {
                       String reason,
                       String actor,
                       UUID sid,
-                      Integer userId,
+                      String userId,
                       String deviceId,
                       String clientId) {
         try {

@@ -50,14 +50,14 @@ public class RegisterAccessHistoryCommandHandler implements CommandHandler<Regis
 
       var application = applicationEntityRepository.findByCodeAndStatusNotDeleted(command.getApplicationCode());
 
-      var accessHistoryOpt = accessHistoryRepository.findByUserIdAndApplication(Integer.valueOf(user.getId()), application);
+      var accessHistoryOpt = accessHistoryRepository.findByUserIdAndApplication(user.getId(), application);
 
       if(accessHistoryOpt.isEmpty()) {
 
          var newAccessHistory = new AccessHistoryEntity();
 
          newAccessHistory.setLastAccess(LocalDateTime.now());
-         newAccessHistory.setUserId(Integer.valueOf(user.getId()));
+         newAccessHistory.setUserId(user.getId());
          newAccessHistory.setApplication(application);
 
          accessHistoryRepository.save(newAccessHistory);

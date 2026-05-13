@@ -51,7 +51,7 @@ class ExpireRoleServiceTest {
     @BeforeEach
     void setUp() {
         user = new IGRPUserEntity();
-        user.setId(1);
+        user.setId("00000000-0000-0000-0000-000000000001");
         
         role = new RoleEntity();
         role.setCode("TEST_ROLE");
@@ -102,7 +102,7 @@ class ExpireRoleServiceTest {
         );
         
         Map<String, Object> auditContext = contextCaptor.getValue();
-        assertThat(auditContext.get("userId")).isEqualTo("1");
+        assertThat(auditContext.get("userId")).isEqualTo("00000000-0000-0000-0000-000000000001");
         assertThat(auditContext.get("roleCode")).isEqualTo("TEST_ROLE");
     }
 

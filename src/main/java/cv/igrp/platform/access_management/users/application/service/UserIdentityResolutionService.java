@@ -62,7 +62,7 @@ public class UserIdentityResolutionService {
         // the invitation flow promotes to ACTIVE (Phase G3).
         IGRPUserEntity newUser = new IGRPUserEntity();
         newUser.setUsername(bestUsername(normExtId, normEmail));
-        newUser.setExternalId(normExtId);
+        // externalId field removed in G2 — username retains the canonical sub mapping
         newUser.setEmail(normEmail);
         newUser.setNic(normNic);
         newUser.setPhoneNumber(normPhone);
@@ -74,11 +74,8 @@ public class UserIdentityResolutionService {
             IGRPUserEntity saved = userRepository.save(newUser);
             // Phase G3: NFR-4 audit row for first-login provisioning.
             try {
-                Integer auditUserId = null;
-                try { auditUserId = saved.getId() != null ? Integer.parseInt(saved.getId()) : null; }
-                catch (NumberFormatException ignored) { /* leave null */ }
                 sessionAuditLogger.recordUserStatusTransitioned(
-                        auditUserId, null, Status.TEMPORARY.getCode(),
+                        saved.getId(), null, Status.TEMPORARY.getCode(),
                         SessionAuditLogger.SYSTEM, "FIRST_LOGIN");
             } catch (Exception auditEx) {
                 log.warn("[IDENTITY] first-login audit failed: {}", auditEx.getMessage());
@@ -162,10 +159,7 @@ public class UserIdentityResolutionService {
             String normNic, String normPhone, String name) {
         boolean changed = false;
 
-        if (user.getExternalId() == null && normExtId != null) {
-            user.setExternalId(normExtId);
-            changed = true;
-        }
+        // externalId field removed in G2 — no-op
         if (user.getEmail() == null && normEmail != null) {
             user.setEmail(normEmail);
             changed = true;
@@ -211,11 +205,7 @@ public class UserIdentityResolutionService {
 
     private Optional<IGRPUserEntity> findByAnyIdentifier(String email, String externalId, String nic, String phoneNumber) {
         if (externalId != null) {
-            Optional<IGRPUserEntity> byExternalId = userRepository.findByExternalId(externalId);
-            if (byExternalId.isPresent()) {
-                return byExternalId;
-            }
-
+            // externalId field removed in G2 — only check by username (the canonical sub)
             Optional<IGRPUserEntity> byUsername = userRepository.findByUsername(externalId);
             if (byUsername.isPresent()) {
                 return byUsername;
