@@ -1,5 +1,7 @@
 package cv.igrp.platform.access_management.users.application.queries;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
@@ -85,16 +87,14 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     ApplicationEntity app1 = new ApplicationEntity();
     app1.setCode("IGRP_PLATFORM");
 
-    ApplicationEntity app2 = new ApplicationEntity();
-    app2.setCode("OTHER_APP");
-
     ApplicationDTO dto = new ApplicationDTO();
     dto.setCode("IGRP_PLATFORM");
 
     when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000001");
     when(userRepository.findByIdWithRolesAndPermissions(anyString())).thenReturn(Optional.of(user));
-    when(applicationRepository.findByCurrentUserAndActiveFiltered(any(), any(), any()))
-            .thenReturn(List.of(app1, app2));
+    // Filtering is delegated to the repository — it returns only the matching rows.
+    when(applicationRepository.findByCurrentUserAndActiveFiltered(any(), eq("IGRP"), any()))
+            .thenReturn(List.of(app1));
 
     when(applicationMapper.toDto(app1)).thenReturn(dto);
 
@@ -104,7 +104,8 @@ public class GetCurrentUserApplicationsQueryHandlerTest {
     assertEquals("IGRP_PLATFORM", response.getBody().get(0).getCode());
 
     verify(applicationMapper, times(1)).toDto(app1);
-    verify(applicationMapper, never()).toDto(app2);
+    // The repository was invoked with the user's code filter pushed down.
+    verify(applicationRepository).findByCurrentUserAndActiveFiltered(any(), eq("IGRP"), any());
   }
 
   // -------------------------------------------------------------------------

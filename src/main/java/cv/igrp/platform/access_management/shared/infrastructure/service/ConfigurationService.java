@@ -81,7 +81,7 @@ public class ConfigurationService {
             Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE code='%s'".formatted(SUPER_ADMIN_ROLE)) :
                     createDefaultRoleInDB(departmentId, permissionId, appId);
 
-            Long userId = superAdminExists ? getId("SELECT id FROM t_user WHERE username='%s'".formatted(SUPER_ADMIN_EXTERNAL_ID)) :
+            String userId = superAdminExists ? getUserId("SELECT id FROM t_user WHERE username='%s'".formatted(SUPER_ADMIN_EXTERNAL_ID)) :
                     createSuperAdminUserInDB();
 
             // 3. Assign role to superadmin user in DB and force the active role
@@ -267,7 +267,7 @@ public class ConfigurationService {
         return roleId;
     }
 
-    private Long createSuperAdminUserInDB() {
+    String createSuperAdminUserInDB() {
         String sql = """
                     INSERT INTO t_user
                     (name, username, email, status,
@@ -277,12 +277,12 @@ public class ConfigurationService {
                 """;
         LOGGER.info("[Startup Config] Super admin user created in DB");
         return jdbcTemplate.queryForObject(sql,
-                Long.class,
+                String.class,
                 "iGRP Super Admin", SUPER_ADMIN_EXTERNAL_ID, SUPER_ADMIN_EMAIL, "ACTIVE",
                 SYSTEM_USER, SYSTEM_USER);
     }
 
-    void assignRoleToSuperAdminUserInDB(Long roleId, Long userId) {
+    void assignRoleToSuperAdminUserInDB(Long roleId, String userId) {
         // Assign role in database via the canonical t_user_role_assignment table.
         // The legacy t_role_users many-to-many table was deprecated when role
         // assignments gained an expiry / audit lifecycle — see migration V4.
@@ -328,7 +328,7 @@ public class ConfigurationService {
      * pre-existing {@code active_role_id} value on the superadmin user — if
      * something else changed it the user would be locked out.
      */
-    void ensureSuperAdminActiveRole(Long roleId, Long userId) {
+    void ensureSuperAdminActiveRole(Long roleId, String userId) {
         String sql = """
                     UPDATE t_user
                        SET active_role_id = ?,
@@ -488,5 +488,9 @@ public class ConfigurationService {
 
     Long getId(String sql) {
         return jdbcTemplate.query(sql, rs -> rs.next() ? rs.getLong(1) : null);
+    }
+
+    String getUserId(String sql) {
+        return jdbcTemplate.query(sql, rs -> rs.next() ? rs.getString(1) : null);
     }
 }
