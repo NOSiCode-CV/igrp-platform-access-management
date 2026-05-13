@@ -128,20 +128,20 @@ class ScopeServiceTest {
     }
 
     @Test
-    @DisplayName("Should identify superadmin user with Integer ID query")
+    @DisplayName("Should identify superadmin user via t_user_role_assignment query (UUID id)")
     void testIsSuperAdminUsesIntegerId() {
-        // Arrange
+        // After Phase G2 the user PK is a UUID String and the superadmin lookup
+        // joins t_user_role_assignment / t_role / t_user — no more t_role_users.
         String uid = "00000000-0000-0000-0000-000000000100";
         when(authenticationHelper.getSub()).thenReturn(uid);
-        when(jdbcTemplate.query(contains("t_role_users"), any(RowMapper.class), eq(uid), anyString()))
+        when(jdbcTemplate.query(contains("t_user_role_assignment"), any(RowMapper.class), eq(uid), anyString()))
                 .thenReturn(List.of(1)); // Non-empty = superadmin
 
-        // Act
         boolean isSuperAdmin = scopeService.isSuperAdmin();
 
-        // Assert
         assertTrue(isSuperAdmin);
-        verify(jdbcTemplate).query(anyString(), any(RowMapper.class), eq(uid), eq(cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE));
+        verify(jdbcTemplate).query(anyString(), any(RowMapper.class), eq(uid),
+                eq(cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE));
     }
 
     @Test

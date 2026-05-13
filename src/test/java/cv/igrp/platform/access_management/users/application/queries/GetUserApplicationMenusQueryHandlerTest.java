@@ -97,7 +97,7 @@ class GetUserApplicationMenusQueryHandlerTest {
         assertNotNull(response);
         assertNotNull(response.getBody());
         assertEquals(2, response.getBody().size());
-        verify(menuEntryRepository).findActiveByApplicationIdAndCurrentUserIdFiltered(user.getId(), app.getId(), null);
+        verify(menuEntryRepository).findActiveByApplicationIdAndUserIdFiltered(user.getId(), app.getId(), null);
     }
 
     // ------------------------------------------------------

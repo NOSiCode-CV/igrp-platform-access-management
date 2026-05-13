@@ -84,15 +84,13 @@ public class GetUserDepartmentsQueryHandlerTest {
     DepartmentEntity dep1 = new DepartmentEntity();
     dep1.setCode("FIN_DEPT");
 
-    DepartmentEntity dep2 = new DepartmentEntity();
-    dep2.setCode("HR_DEPT");
-
     DepartmentDTO dto1 = new DepartmentDTO();
     dto1.setCode("FIN_DEPT");
 
     when(userRepository.findById("00000000-0000-0000-0000-000000000001")).thenReturn(Optional.of(mockUser));
-    when(departmentRepository.findByUserAndNotDeletedFiltered(any(), any()))
-            .thenReturn(List.of(dep1, dep2)); // Only dep1 should pass the filter
+    // Filter is pushed down to the repository — it returns only matching rows.
+    when(departmentRepository.findByUserAndNotDeletedFiltered(any(), org.mockito.ArgumentMatchers.eq("FIN")))
+            .thenReturn(List.of(dep1));
 
     when(departmentMapper.toDto(dep1)).thenReturn(dto1);
 
@@ -104,7 +102,7 @@ public class GetUserDepartmentsQueryHandlerTest {
     assertEquals("FIN_DEPT", response.getBody().get(0).getCode());
 
     verify(departmentMapper, times(1)).toDto(dep1);
-    verify(departmentMapper, never()).toDto(dep2);
+    verify(departmentRepository).findByUserAndNotDeletedFiltered(any(), org.mockito.ArgumentMatchers.eq("FIN"));
   }
 
   // -------------------------------------------------------------------------

@@ -125,6 +125,12 @@ class RespondUserInvitationCommandHandlerTest {
         when(roleRepository.findById(1)).thenReturn(Optional.of(role));
         when(invitationMapper.toDto(any())).thenReturn(new InvitationDTO());
 
+        // Phase G3: accept now requires an APPROVED OTP record for the token.
+        var otp = new cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity();
+        otp.setId(1L);
+        when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(token, "APPROVED"))
+                .thenReturn(Optional.of(otp));
+
         // Act
         ResponseEntity<InvitationDTO> response = handler.handle(command);
 
@@ -173,8 +179,11 @@ class RespondUserInvitationCommandHandlerTest {
     }
 
     @Test
-    void handle_emailMismatch_throwsException() {
-        // Arrange
+    void handle_acceptWithoutApprovedOtp_throwsBadRequest() {
+        // Phase G3: accepting an invitation now requires an APPROVED OTP record
+        // for the token. Without one, the request must be rejected with 400.
+        // (Previously a separate email-vs-token mismatch check guarded this; the
+        // OTP gate has subsumed that role.)
         UserInvitationResponseDTO dto = new UserInvitationResponseDTO();
         dto.setAccept(true);
 
@@ -190,13 +199,16 @@ class RespondUserInvitationCommandHandlerTest {
                 "00000000-0000-0000-0000-000000000123", "issuer", "Test User", "mismatch@example.com", null, null, "pwd", java.util.List.of()
         );
         when(oidcUser.getUserProfile()).thenReturn(profile);
+        // No APPROVED OTP for this token
+        when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(token, "APPROVED"))
+                .thenReturn(Optional.empty());
 
-        // Act & Assert
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> handler.handle(command));
 
         assertEquals(HttpStatus.BAD_REQUEST.value(), ex.getBody().getStatus());
-        assertTrue(ex.getMessage().contains("Authenticated identifier does not match"));
+        assertTrue(ex.getBody().getTitle() != null
+                && ex.getBody().getTitle().toLowerCase().contains("otp"));
     }
 
     @Test
@@ -228,6 +240,12 @@ class RespondUserInvitationCommandHandlerTest {
         when(userRepository.save(any())).thenReturn(savedUser);
         when(roleRepository.findById(1)).thenReturn(Optional.of(role));
         when(invitationMapper.toDto(any())).thenReturn(new InvitationDTO());
+
+        // Phase G3: accept requires an APPROVED OTP record.
+        var otp = new cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity();
+        otp.setId(2L);
+        when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(token, "APPROVED"))
+                .thenReturn(Optional.of(otp));
 
         // Act
         ResponseEntity<InvitationDTO> response = handler.handle(command);
@@ -396,6 +414,12 @@ class RespondUserInvitationCommandHandlerTest {
         when(userRepository.save(any())).thenReturn(existingUser);
         when(roleRepository.findById(1)).thenReturn(Optional.of(role));
         when(invitationMapper.toDto(any())).thenReturn(new InvitationDTO());
+
+        // Phase G3: accept requires an APPROVED OTP record.
+        var otp = new cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity();
+        otp.setId(3L);
+        when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(token, "APPROVED"))
+                .thenReturn(Optional.of(otp));
 
         // Act
         ResponseEntity<InvitationDTO> response = handler.handle(command);
