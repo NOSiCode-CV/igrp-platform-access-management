@@ -78,14 +78,13 @@ public class GetUserApplicationsQueryHandlerTest {
         ApplicationEntity app1 = new ApplicationEntity();
         app1.setCode("CRM_PORTAL");
 
-        ApplicationEntity app2 = new ApplicationEntity();
-        app2.setCode("OTHER");
-
         ApplicationDTO dto = new ApplicationDTO();
         dto.setCode("CRM_PORTAL");
 
         when(userRepository.findById("00000000-0000-0000-0000-000000000099")).thenReturn(Optional.of(user));
-        when(applicationRepository.findByUserAndActiveFiltered(any(), any(), any())).thenReturn(List.of(app1, app2));
+        // Repository filters server-side by the code parameter.
+        when(applicationRepository.findByUserAndActiveFiltered(any(), org.mockito.ArgumentMatchers.eq("CRM"), any()))
+                .thenReturn(List.of(app1));
         when(applicationMapper.toDto(app1)).thenReturn(dto);
 
         ResponseEntity<List<ApplicationDTO>> response = handler.handle(query);
@@ -95,7 +94,7 @@ public class GetUserApplicationsQueryHandlerTest {
         assertEquals("CRM_PORTAL", response.getBody().get(0).getCode());
 
         verify(applicationMapper).toDto(app1);
-        verify(applicationMapper, never()).toDto(app2);
+        verify(applicationRepository).findByUserAndActiveFiltered(any(), org.mockito.ArgumentMatchers.eq("CRM"), any());
     }
 
     // -------------------------------------------------------------------------

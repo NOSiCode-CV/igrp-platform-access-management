@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.session.application.listener;
 
 import cv.igrp.platform.access_management.session.domain.service.SessionInvalidationService;
+import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.shared.domain.events.DeletePermissionEvent;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import org.junit.jupiter.api.DisplayName;
@@ -41,6 +42,9 @@ class PermissionDeletedKillsAffectedSessionsTest {
     @Mock
     private IGRPUserEntityRepository userRepository;
 
+    @Mock
+    private SessionAuditLogger sessionAuditLogger;
+
     @InjectMocks
     private SessionInvalidationEventListener listener;
 
@@ -64,6 +68,11 @@ class PermissionDeletedKillsAffectedSessionsTest {
         verify(sessionInvalidationService)
                 .invalidateUserSessions(userIdsCaptor.capture(), eq("PERMISSION_DELETED"));
         assertThat(userIdsCaptor.getValue()).containsExactlyInAnyOrder(u1, u2, u3);
+
+        // And each affected user gets an audit record for the revocation.
+        verify(sessionAuditLogger).recordRevoked(eq(null), eq(u1), eq("PERMISSION_DELETED"), eq(SessionAuditLogger.SYSTEM));
+        verify(sessionAuditLogger).recordRevoked(eq(null), eq(u2), eq("PERMISSION_DELETED"), eq(SessionAuditLogger.SYSTEM));
+        verify(sessionAuditLogger).recordRevoked(eq(null), eq(u3), eq("PERMISSION_DELETED"), eq(SessionAuditLogger.SYSTEM));
     }
 
     @Test
