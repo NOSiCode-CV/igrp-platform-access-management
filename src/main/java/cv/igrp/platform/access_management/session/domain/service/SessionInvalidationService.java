@@ -28,7 +28,7 @@ public class SessionInvalidationService {
     /**
      * Invalidate sessions for specific users
      */
-    public void invalidateUserSessions(Set<Integer> userIds, String reason) {
+    public void invalidateUserSessions(Set<String> userIds, String reason) {
         if (userIds.isEmpty()) {
             log.debug("No users to invalidate sessions for");
             return;
@@ -62,7 +62,7 @@ public class SessionInvalidationService {
                 roleCode, departmentCode, reason);
 
         // Get user IDs for users with this role
-        Set<Integer> userIds = sessionRepository.findUserIdsByRole(roleCode, departmentCode);
+        Set<String> userIds = sessionRepository.findUserIdsByRole(roleCode, departmentCode);
 
         if (userIds.isEmpty()) {
             log.debug("No users found with role: {} in department: {}", roleCode, departmentCode);
@@ -95,7 +95,7 @@ public class SessionInvalidationService {
         log.info("Invalidating sessions for department: {} with reason: {}", departmentCode, reason);
 
         // Get user IDs for users in this department
-        Set<Integer> userIds = sessionRepository.findUserIdsByDepartment(departmentCode);
+        Set<String> userIds = sessionRepository.findUserIdsByDepartment(departmentCode);
 
         if (userIds.isEmpty()) {
             log.debug("No users found in department: {}", departmentCode);
@@ -137,7 +137,7 @@ public class SessionInvalidationService {
     /**
      * Invalidate session for a single user
      */
-    public void invalidateUserSession(Integer userId, String reason) {
+    public void invalidateUserSession(String userId, String reason) {
         log.info("Invalidating session for user: {} with reason: {}", userId, reason);
         invalidateUserSessions(Set.of(userId), reason);
     }

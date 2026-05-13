@@ -5,6 +5,7 @@ import cv.igrp.platform.access_management.session.domain.service.SessionHeartbea
 import cv.igrp.platform.access_management.session.infrastructure.metrics.SessionMetrics;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.security.M2MTokenRejectionFilter;
 import cv.igrp.platform.access_management.shared.security.OAuth2SecurityConfiguration;
 import cv.igrp.platform.access_management.shared.security.SessionEnforcementFilter;
 import org.junit.jupiter.api.BeforeEach;
@@ -243,6 +244,11 @@ class SessionEnforcementWiringIntegrationTest {
                                                           SessionMetrics sessionMetrics) {
             return new SessionEnforcementFilter(sessionRepository, heartbeatService,
                     sessionProperties, userRepository, sessionMetrics, true);
+        }
+
+        @Bean
+        M2MTokenRejectionFilter m2mTokenRejectionFilter() {
+            return new M2MTokenRejectionFilter();
         }
 
         @Bean

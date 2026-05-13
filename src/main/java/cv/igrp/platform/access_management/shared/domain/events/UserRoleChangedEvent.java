@@ -19,14 +19,14 @@ public class UserRoleChangedEvent {
     public static final String CHANGE_REMOVED = "REMOVED";
     public static final String CHANGE_ACTIVE_ROLE_CHANGED = "ACTIVE_ROLE_CHANGED";
 
-    private final Integer userId;
+    private final String userId;
     private final Set<String> affectedRoleCodes;
     private final String departmentCode;
     private final String changeType;
     private final String triggeredBy;
     private final Instant timestamp;
 
-    public UserRoleChangedEvent(Integer userId,
+    public UserRoleChangedEvent(String userId,
                                 Set<String> affectedRoleCodes,
                                 String departmentCode,
                                 String changeType,

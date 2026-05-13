@@ -40,7 +40,7 @@ class ScopeAspectTest {
         roles.add("DEPARTMENT.ROLE1");
 
         actorPrincipal = new ScopeService.ActorPrincipal(
-                123, // Integer userId instead of String externalId
+                "00000000-0000-0000-0000-000000000123",
                 roles,
                 false,
                 new Object()
@@ -68,7 +68,7 @@ class ScopeAspectTest {
         scopeAspect.applyScope(joinPoint);
 
         // Assert
-        assertEquals(123, scopeContext.getUserId()); // Verify Integer userId is set
+        assertEquals("00000000-0000-0000-0000-000000000123", scopeContext.getUserId()); // Verify Integer userId is set
         assertEquals(deptIds, scopeContext.getDepartmentIds());
         assertEquals(appIds, scopeContext.getApplicationIds());
         assertEquals(roleIds, scopeContext.getRoleIds());
@@ -81,7 +81,7 @@ class ScopeAspectTest {
     void testInjectDifferentUserId() throws Throwable {
         // Arrange
         ScopeService.ActorPrincipal anotherActor = new ScopeService.ActorPrincipal(
-                999, // Different Integer userId
+                "00000000-0000-0000-0000-000000000999",
                 Set.of("USER"),
                 false,
                 new Object()
@@ -98,7 +98,7 @@ class ScopeAspectTest {
         scopeAspect.applyScope(joinPoint);
 
         // Assert
-        assertEquals(999, scopeContext.getUserId()); // Verify different userId
+        assertEquals("00000000-0000-0000-0000-000000000999", scopeContext.getUserId());
         verify(scopeService).getActor();
     }
 
@@ -107,7 +107,7 @@ class ScopeAspectTest {
     void testInjectSuperAdminFlag() throws Throwable {
         // Arrange
         ScopeService.ActorPrincipal superAdminActor = new ScopeService.ActorPrincipal(
-                777,
+                "00000000-0000-0000-0000-000000000777",
                 Set.of("SUPER_ADMIN_ROLE"),
                 true, // superAdmin flag
                 new Object()
@@ -126,7 +126,7 @@ class ScopeAspectTest {
 
         // Assert
         assertTrue(scopeContext.isSuperAdmin());
-        assertEquals(777, scopeContext.getUserId());
+        assertEquals("00000000-0000-0000-0000-000000000777", scopeContext.getUserId());
     }
 
     @Test
@@ -147,7 +147,7 @@ class ScopeAspectTest {
         scopeAspect.applyScope(joinPoint);
 
         // Assert
-        assertEquals(123, scopeContext.getUserId());
+        assertEquals("00000000-0000-0000-0000-000000000123", scopeContext.getUserId());
         verify(joinPoint).proceed(any());
     }
 
@@ -166,7 +166,7 @@ class ScopeAspectTest {
         scopeAspect.applyScope(joinPoint);
 
         // Assert
-        assertEquals(123, scopeContext.getUserId());
+        assertEquals("00000000-0000-0000-0000-000000000123", scopeContext.getUserId());
         assertTrue(scopeContext.getDepartmentIds().isEmpty());
         assertTrue(scopeContext.getApplicationIds().isEmpty());
         assertTrue(scopeContext.getRoleIds().isEmpty());
@@ -192,7 +192,7 @@ class ScopeAspectTest {
         verify(joinPoint).proceed(argThat(args ->
             args.length > 0 &&
             args[0] instanceof ScopeContext &&
-            ((ScopeContext) args[0]).getUserId() == 123
+            "00000000-0000-0000-0000-000000000123".equals(((ScopeContext) args[0]).getUserId())
         ));
     }
 }

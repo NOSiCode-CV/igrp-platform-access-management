@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 
 @Component
 public class GetCurrentUserPermissionsQueryHandler implements QueryHandler<GetCurrentUserPermissionsQuery, ResponseEntity<List<PermissionDTO>>> {
@@ -44,9 +45,9 @@ public class GetCurrentUserPermissionsQueryHandler implements QueryHandler<GetCu
     @Transactional
     public ResponseEntity<List<PermissionDTO>> handle(GetCurrentUserPermissionsQuery query) {
 
-        Integer userId;
+        String userId;
         try {
-            userId = Integer.parseInt(authenticationHelper.getSub());
+            userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         } catch (NumberFormatException e) {
             LOGGER.error("Invalid token sub: expected an integer ID but got '{}'", authenticationHelper.getSub());
             throw IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "Invalid Token", "Token sub must be an integer ID");

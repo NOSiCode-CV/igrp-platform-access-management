@@ -10,7 +10,7 @@ public class SessionRevokedEvent extends SessionEvent {
     private final String reason;
     private final String revokedBy;
 
-    public SessionRevokedEvent(UUID sessionId, Integer userId, String reason, String revokedBy) {
+    public SessionRevokedEvent(UUID sessionId, String userId, String reason, String revokedBy) {
         super(sessionId, userId, "SESSION_SECURITY");
         this.reason = reason;
         this.revokedBy = revokedBy;

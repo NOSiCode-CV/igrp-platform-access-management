@@ -59,7 +59,7 @@ public class GetUserQueryHandler implements QueryHandler<GetUserQuery, ResponseE
    */
   @IgrpQueryHandler
   public ResponseEntity<IGRPUserDTO> handle(GetUserQuery query) {
-    Integer id = query.getId();
+    String id = query.getId();
 
     if(id == null) {
       logger.warn("GetUserQuery received with null ID");

@@ -63,7 +63,7 @@ public class SessionManagementService {
      * Get current session for user
      */
     @Transactional(readOnly = true)
-    public Optional<SessionResponseDTO> getCurrentSession(Integer userId) {
+    public Optional<SessionResponseDTO> getCurrentSession(String userId) {
         log.debug("Getting current session for user: {}", userId);
 
         // First check cache
@@ -99,7 +99,7 @@ public class SessionManagementService {
     /**
      * Initialize a new session for user
      */
-    public SessionResponseDTO initializeSession(Integer userId, String clientIp,
+    public SessionResponseDTO initializeSession(String userId, String clientIp,
                                            String userAgent, String deviceId) {
         log.info("Initializing session for user: {}", userId);
 
@@ -146,7 +146,7 @@ public class SessionManagementService {
     /**
      * Refresh existing session
      */
-    public Optional<SessionResponseDTO> refreshSession(Integer userId, Integer extensionSeconds) {
+    public Optional<SessionResponseDTO> refreshSession(String userId, Integer extensionSeconds) {
         log.debug("Refreshing session for user: {}", userId);
 
         Optional<SessionEntity> sessionOpt = sessionRepository
@@ -183,7 +183,7 @@ public class SessionManagementService {
     /**
      * Close current session
      */
-    public boolean closeSession(Integer userId, String reason) {
+    public boolean closeSession(String userId, String reason) {
         log.info("Closing session for user: {} with reason: {}", userId, reason);
 
         Optional<SessionEntity> sessionOpt = sessionRepository
@@ -207,7 +207,7 @@ public class SessionManagementService {
     /**
      * Rotate session (close current and create new one)
      */
-    public Optional<SessionResponseDTO> rotateSession(Integer userId, String clientIp,
+    public Optional<SessionResponseDTO> rotateSession(String userId, String clientIp,
                                                  String userAgent, String deviceId) {
         log.info("Rotating session for user: {}", userId);
 
@@ -263,7 +263,7 @@ public class SessionManagementService {
     /**
      * Build session response DTO from entity
      */
-    private SessionResponseDTO buildSessionResponse(SessionEntity session, Integer userId) {
+    private SessionResponseDTO buildSessionResponse(SessionEntity session, String userId) {
         IGRPUserEntity user = userId != null ? userRepository.findById(userId).orElse(null) : null;
 
         IGRPUserDTO userProfile = null;
@@ -357,7 +357,7 @@ public class SessionManagementService {
     public int killSessionsByRole(String roleCode, String departmentCode, String reason, String killedBy) {
         log.info("Killing sessions for role: {} in department: {} by: {}", roleCode, departmentCode, killedBy);
 
-        Set<Integer> userIds = userRepository.findUserIdsByRoleAndDepartment(roleCode, departmentCode);
+        Set<String> userIds = userRepository.findUserIdsByRoleAndDepartment(roleCode, departmentCode);
 
         if (userIds.isEmpty()) {
             log.info("No users found with role: {} in department: {}", roleCode, departmentCode);

@@ -20,6 +20,8 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class KillAllUserSessionsCommandHandlerTest {
 
+    private static final String USER_ID = "00000000-0000-0000-0000-000000000077";
+
     @Mock
     private SessionInvalidationService sessionInvalidationService;
     @Mock
@@ -31,27 +33,26 @@ class KillAllUserSessionsCommandHandlerTest {
     @Test
     void delegatesToInvalidationServiceWithInternalId_whenUserExists() {
         IGRPUserEntity user = new IGRPUserEntity();
-        user.setId(77);
-        user.setExternalId("ext-77");
-        when(userRepository.findByExternalId("ext-77")).thenReturn(Optional.of(user));
+        user.setId(USER_ID);
+        when(userRepository.findById(USER_ID)).thenReturn(Optional.of(user));
 
         Boolean result = handler.handle(
-                new KillAllUserSessionsCommand("ext-77", "ADMIN_LOGOUT_ALL", "admin"));
+                new KillAllUserSessionsCommand(USER_ID, "ADMIN_LOGOUT_ALL", "admin"));
 
         assertTrue(result);
-        verify(sessionInvalidationService).invalidateUserSession(77, "ADMIN_LOGOUT_ALL");
+        verify(sessionInvalidationService).invalidateUserSession(USER_ID, "ADMIN_LOGOUT_ALL");
     }
 
     @Test
     void returnsFalse_whenUserMissing() {
-        when(userRepository.findByExternalId("missing")).thenReturn(Optional.empty());
+        when(userRepository.findById("missing")).thenReturn(Optional.empty());
 
         Boolean result = handler.handle(
                 new KillAllUserSessionsCommand("missing", "ADMIN_LOGOUT_ALL", "admin"));
 
         assertFalse(result);
         verify(sessionInvalidationService, never()).invalidateUserSession(
-                org.mockito.ArgumentMatchers.anyInt(),
+                org.mockito.ArgumentMatchers.anyString(),
                 org.mockito.ArgumentMatchers.anyString());
     }
 }

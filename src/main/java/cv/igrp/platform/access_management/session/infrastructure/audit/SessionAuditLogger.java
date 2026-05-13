@@ -53,40 +53,69 @@ public class SessionAuditLogger {
         this.securityAuditService = securityAuditService;
     }
 
-    public void recordCreated(UUID sid, Integer userId, String deviceId, String clientId, String actor) {
+    public void recordCreated(UUID sid, String userId, String deviceId, String clientId, String actor) {
         emit(AuditEventType.SESSION_CREATED, "NEW_LOGIN", actor, sid, userId, deviceId, clientId);
     }
 
-    public void recordReplaced(UUID sid, Integer userId, String deviceId, String clientId, String actor) {
+    public void recordReplaced(UUID sid, String userId, String deviceId, String clientId, String actor) {
         emit(AuditEventType.SESSION_REPLACED, "SESSION_REPLACED", actor, sid, userId, deviceId, clientId);
     }
 
-    public void recordLimitExceeded(UUID sid, Integer userId, String deviceId, String clientId) {
+    public void recordLimitExceeded(UUID sid, String userId, String deviceId, String clientId) {
         emit(AuditEventType.SESSION_LIMIT_EXCEEDED, "SESSION_LIMIT_EXCEEDED",
                 SYSTEM, sid, userId, deviceId, clientId);
     }
 
-    public void recordRefreshed(UUID sid, Integer userId, String deviceId, String clientId, String actor) {
+    public void recordRefreshed(UUID sid, String userId, String deviceId, String clientId, String actor) {
         emit(AuditEventType.SESSION_REFRESHED, "TOKEN_REFRESH", actor, sid, userId, deviceId, clientId);
     }
 
-    public void recordRevoked(UUID sid, Integer userId, String reason, String actor) {
+    public void recordRevoked(UUID sid, String userId, String reason, String actor) {
         emit(AuditEventType.SESSION_REVOKED, reason, actor, sid, userId, null, null);
     }
 
-    public void recordExpired(UUID sid, Integer userId, String reason) {
+    public void recordExpired(UUID sid, String userId, String reason) {
         emit(AuditEventType.SESSION_EXPIRED, reason, SYSTEM, sid, userId, null, null);
     }
 
-    public void recordForcedReauth(Integer userId, String actor) {
+    public void recordForcedReauth(String userId, String actor) {
         emit(AuditEventType.SESSION_FORCED_REAUTH, "FORCED_REAUTH", actor, null, userId, null, null);
+    }
+
+    /**
+     * Phase G3 — single audit row for every user-status transition
+     * (FIRST_LOGIN, INVITATION_ACCEPTED, INVITATION_REJECTED,
+     * ADMIN_DEACTIVATE, ADMIN_REACTIVATE). Logged under the closest existing
+     * event type ({@link AuditEventType#USER_UPDATED}) plus a structured
+     * context bag carrying {@code from}, {@code to}, {@code reason} and
+     * {@code actor}. Failure to write the audit row never breaks the
+     * transition — same fire-and-forget contract as the session emitters.
+     */
+    public void recordUserStatusTransitioned(String userId, String fromStatus, String toStatus,
+                                             String actor, String reason) {
+        try {
+            Map<String, Object> ctx = new LinkedHashMap<>();
+            ctx.put("reason", reason == null ? "USER_STATUS_TRANSITIONED" : reason);
+            ctx.put("actor", actor == null ? SYSTEM : actor);
+            ctx.put("from", fromStatus == null ? "<none>" : fromStatus);
+            ctx.put("to", toStatus == null ? "<none>" : toStatus);
+            if (userId != null) {
+                ctx.put("userId", userId.toString());
+                ctx.put("sub", userId.toString());
+            }
+            securityAuditService.logEvent(AuditEventType.USER_UPDATED,
+                    AuditCategory.USER_MANAGEMENT, ctx);
+        } catch (Exception ex) {
+            LOGGER.warn("[User audit] Failed to emit USER_STATUS_TRANSITIONED for user={} {}->{} reason={}: {}",
+                    userId, fromStatus, toStatus, reason, ex.getMessage());
+        }
     }
 
     private void emit(AuditEventType type,
                       String reason,
                       String actor,
                       UUID sid,
-                      Integer userId,
+                      String userId,
                       String deviceId,
                       String clientId) {
         try {

@@ -42,7 +42,7 @@ public class UserUtils {
     /**
      * Get user roles from database for backup purposes
      */
-    public Map<String, Set<String>> getUserRolesFromDatabase(Integer userId) {
+    public Map<String, Set<String>> getUserRolesFromDatabase(String userId) {
         // This should match the logic in SynchronizationService but for a single user
         // You might want to extract this to a shared service to avoid duplication
 

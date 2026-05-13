@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.users.application.service;
 
+import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
@@ -30,6 +31,7 @@ import java.util.Optional;
 public class UserIdentityResolutionService {
 
     private final IGRPUserEntityRepository userRepository;
+    private final SessionAuditLogger sessionAuditLogger;
 
     // -------------------------------------------------------------------------
     // INVITE-ACCEPT FLOW — may create user
@@ -56,19 +58,29 @@ public class UserIdentityResolutionService {
             return enrich(userOpt.get(), normExtId, normEmail, normNic, normPhone, name);
         }
 
-        // Not found — create. Authorised because the user accepted an invitation.
+        // Not found — create. Provision a TEMPORARY user on first OIDC login;
+        // the invitation flow promotes to ACTIVE (Phase G3).
         IGRPUserEntity newUser = new IGRPUserEntity();
         newUser.setUsername(bestUsername(normExtId, normEmail));
-        newUser.setExternalId(normExtId);
+        // externalId field removed in G2 — username retains the canonical sub mapping
         newUser.setEmail(normEmail);
         newUser.setNic(normNic);
         newUser.setPhoneNumber(normPhone);
         newUser.setName(name);
-        newUser.setStatus(Status.ACTIVE);
+        newUser.setStatus(Status.TEMPORARY);
 
         try {
             log.info("[IDENTITY] Creating user via invite-accept: extId={}, email={}", normExtId, normEmail);
-            return userRepository.save(newUser);
+            IGRPUserEntity saved = userRepository.save(newUser);
+            // Phase G3: NFR-4 audit row for first-login provisioning.
+            try {
+                sessionAuditLogger.recordUserStatusTransitioned(
+                        saved.getId(), null, Status.TEMPORARY.getCode(),
+                        SessionAuditLogger.SYSTEM, "FIRST_LOGIN");
+            } catch (Exception auditEx) {
+                log.warn("[IDENTITY] first-login audit failed: {}", auditEx.getMessage());
+            }
+            return saved;
         } catch (DataIntegrityViolationException e) {
             log.warn("[IDENTITY] Race condition on creation, retrying lookup...");
             return findByAnyIdentifier(normEmail, normExtId, normNic, normPhone)
@@ -147,10 +159,7 @@ public class UserIdentityResolutionService {
             String normNic, String normPhone, String name) {
         boolean changed = false;
 
-        if (user.getExternalId() == null && normExtId != null) {
-            user.setExternalId(normExtId);
-            changed = true;
-        }
+        // externalId field removed in G2 — no-op
         if (user.getEmail() == null && normEmail != null) {
             user.setEmail(normEmail);
             changed = true;
@@ -196,11 +205,7 @@ public class UserIdentityResolutionService {
 
     private Optional<IGRPUserEntity> findByAnyIdentifier(String email, String externalId, String nic, String phoneNumber) {
         if (externalId != null) {
-            Optional<IGRPUserEntity> byExternalId = userRepository.findByExternalId(externalId);
-            if (byExternalId.isPresent()) {
-                return byExternalId;
-            }
-
+            // externalId field removed in G2 — only check by username (the canonical sub)
             Optional<IGRPUserEntity> byUsername = userRepository.findByUsername(externalId);
             if (byUsername.isPresent()) {
                 return byUsername;

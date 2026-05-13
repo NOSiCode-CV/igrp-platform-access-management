@@ -18,6 +18,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 
 @Component
 public class GetCurrentUserDepartmentRolesQueryHandler implements QueryHandler<GetCurrentUserDepartmentRolesQuery, ResponseEntity<List<RoleDTO>>> {
@@ -44,7 +45,7 @@ public class GetCurrentUserDepartmentRolesQueryHandler implements QueryHandler<G
     @IgrpQueryHandler
     public ResponseEntity<List<RoleDTO>> handle(GetCurrentUserDepartmentRolesQuery query) {
 
-        var user = userRepository.findByIdWithRolesAndPermissions(Integer.parseInt(authenticationHelper.getSub())).orElseThrow(
+        var user = userRepository.findByIdWithRolesAndPermissions(SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub())).orElseThrow(
                 () -> IgrpResponseStatusException.of(
                         HttpStatus.UNAUTHORIZED,
                         "User not found",

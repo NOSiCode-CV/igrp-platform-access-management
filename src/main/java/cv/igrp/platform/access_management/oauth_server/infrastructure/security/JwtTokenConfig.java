@@ -130,7 +130,7 @@ public class JwtTokenConfig {
             // Skipped for client_credentials (M2M) where there is no end-user subject.
             boolean isClientCredentials = AuthorizationGrantType.CLIENT_CREDENTIALS
                     .equals(context.getAuthorizationGrantType());
-            Integer issuanceUserId = parseUserId(internalSub);
+            String issuanceUserId = parseUserId(internalSub);
             if (!isClientCredentials && issuanceUserId != null) {
                 String jti = context.getClaims().build().getId();
                 try {
@@ -168,13 +168,14 @@ public class JwtTokenConfig {
         };
     }
 
-    private static Integer parseUserId(String sub) {
+    private static String parseUserId(String sub) {
         if (sub == null || sub.isBlank()) {
             return null;
         }
         try {
-            return Integer.parseInt(sub);
-        } catch (NumberFormatException ex) {
+            java.util.UUID.fromString(sub);
+            return sub;
+        } catch (IllegalArgumentException ex) {
             return null;
         }
     }

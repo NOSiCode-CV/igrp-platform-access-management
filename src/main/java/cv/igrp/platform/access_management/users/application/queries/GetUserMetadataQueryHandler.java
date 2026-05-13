@@ -31,7 +31,7 @@ public class GetUserMetadataQueryHandler implements QueryHandler<GetUserMetadata
     @Transactional(readOnly = true)
     @IgrpQueryHandler
     public ResponseEntity<UserMetadataDTO> handle(GetUserMetadataQuery query) {
-        Integer id = query.getId();
+        String id = query.getId();
         LOGGER.debug("Fetching metadata for user id={}", id);
 
         IGRPUserEntity user = userRepository.findById(id)

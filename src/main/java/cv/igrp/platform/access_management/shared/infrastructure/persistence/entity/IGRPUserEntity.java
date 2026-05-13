@@ -26,9 +26,10 @@ import java.util.*;
 public class IGRPUserEntity extends AuditEntity implements UserIdentity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "id", unique = true, nullable = false)
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @org.hibernate.annotations.UuidGenerator
+    @Column(name = "id", length = 36, unique = true, nullable = false, updatable = false)
+    private String id;
 
     @Column(name="name")
     private String name;
@@ -47,9 +48,6 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
 
     @Column(name="email")
     private String email;
-
-    @Column(name = "external_id", unique = true)
-    private String externalId;
 
     @Column(name = "picture")
     private String picture;
@@ -115,13 +113,13 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
 
     // Implementação da interface UserIdentity
 
-    public Integer getInternalId() {
+    public String getInternalId() {
         return this.id;
     }
 
     @Override
     public String getId() {
-        return id != null ? id.toString() : null;
+        return this.id;
     }
 
     @Override
@@ -151,7 +149,7 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
 
     @Override
     public String getExternalId() {
-        return this.id != null ? this.id.toString() : null;
+        return this.id;
     }
 
     @Override

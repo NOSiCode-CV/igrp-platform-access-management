@@ -37,10 +37,10 @@ public class UpdateUserCommandHandlerTest {
     private IGRPUserDTO dto;
     private UpdateUserCommand command;
 
-    private final Integer USER_ID = 1;
+    private final String USER_ID = "00000000-0000-0000-0000-000000000001";
 
-    private UpdateUserCommand updateUserCommand(IGRPUserDTO igrpuserdto, Integer userId){
-        return new UpdateUserCommand(igrpuserdto, userId != null ? userId.toString() : null);
+    private UpdateUserCommand updateUserCommand(IGRPUserDTO igrpuserdto, String userId){
+        return new UpdateUserCommand(igrpuserdto, userId);
     }
 
     @BeforeEach

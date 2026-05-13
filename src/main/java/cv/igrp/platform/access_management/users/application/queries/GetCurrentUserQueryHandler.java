@@ -14,6 +14,7 @@ import org.springframework.stereotype.Component;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 
 import java.util.Optional;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 
 /**
  * Handles the {@link GetCurrentUserQuery} by retrieving the currently authenticated user's information.
@@ -58,9 +59,9 @@ public class GetCurrentUserQueryHandler implements QueryHandler<GetCurrentUserQu
    */
   @IgrpQueryHandler
   public ResponseEntity<IGRPUserDTO> handle(GetCurrentUserQuery query) {
-    Integer userId;
+    String userId;
     try {
-        userId = Integer.parseInt(authenticationHelper.getSub());
+        userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
     } catch (NumberFormatException e) {
         logger.error("Invalid token sub: expected an integer ID but got '{}'", authenticationHelper.getSub());
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();

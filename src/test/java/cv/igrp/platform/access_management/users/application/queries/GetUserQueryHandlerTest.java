@@ -32,7 +32,7 @@ public class GetUserQueryHandlerTest {
     @InjectMocks
     private GetUserQueryHandler queryUserHandler;
 
-    private GetUserQuery getUserQuery(Integer id){
+    private GetUserQuery getUserQuery(String id){
         return new GetUserQuery(id);
     }
 
@@ -40,7 +40,7 @@ public class GetUserQueryHandlerTest {
     private IGRPUserDTO userDTO;
     private GetUserQuery query;
 
-    private final Integer USER_ID = 1;
+    private final String USER_ID = "00000000-0000-0000-0000-000000000001";
 
     @BeforeEach
     void setUp() {

@@ -5,12 +5,12 @@ import lombok.Getter;
 
 @Getter
 public class RotateSessionCommand implements Command {
-    private final Integer userId;
+    private final String userId;
     private final String clientIp;
     private final String userAgent;
     private final String deviceId;
 
-    public RotateSessionCommand(Integer userId, String clientIp, String userAgent, String deviceId) {
+    public RotateSessionCommand(String userId, String clientIp, String userAgent, String deviceId) {
         this.userId = userId;
         this.clientIp = clientIp;
         this.userAgent = userAgent;

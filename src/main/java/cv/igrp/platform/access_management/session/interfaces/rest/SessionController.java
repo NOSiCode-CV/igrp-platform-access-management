@@ -6,6 +6,7 @@ import cv.igrp.platform.access_management.session.application.dto.SessionInitReq
 import cv.igrp.platform.access_management.session.application.dto.SessionRefreshRequestDTO;
 import cv.igrp.platform.access_management.session.application.dto.SessionResponseDTO;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.platform.access_management.session.application.queries.GetCurrentSessionQuery;
@@ -67,7 +68,7 @@ public class SessionController {
     )
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SessionResponseDTO> getCurrentSession() {
-        Integer userId = Integer.parseInt(authenticationHelper.getSub());
+        String userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         log.debug("Getting current session for user: {}", userId);
 
         var query = new GetCurrentSessionQuery(userId);
@@ -127,7 +128,7 @@ public class SessionController {
     public ResponseEntity<SessionResponseDTO> refreshSession(
             @Valid @RequestBody(required = false) SessionRefreshRequestDTO request) {
 
-        Integer userId = Integer.parseInt(authenticationHelper.getSub());
+        String userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         log.debug("Refreshing session for user: {}", userId);
 
         Integer extensionSeconds = request != null ? request.getExtensionSeconds() : null;
@@ -154,7 +155,7 @@ public class SessionController {
             @Valid @RequestBody SessionInitRequestDTO request,
             HttpServletRequest httpRequest) {
 
-        Integer userId = Integer.parseInt(authenticationHelper.getSub());
+        String userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         log.info("Rotating session for user: {}", userId);
 
         String clientIp = getClientIp(httpRequest);

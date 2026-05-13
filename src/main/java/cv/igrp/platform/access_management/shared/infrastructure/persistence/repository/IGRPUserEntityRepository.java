@@ -13,9 +13,9 @@ import org.springframework.data.repository.history.RevisionRepository;
 
 @Repository
 public interface IGRPUserEntityRepository extends
-        JpaRepository<IGRPUserEntity, Integer>,
+        JpaRepository<IGRPUserEntity, String>,
         JpaSpecificationExecutor<IGRPUserEntity>,
-        RevisionRepository<IGRPUserEntity, Integer, Integer> {
+        RevisionRepository<IGRPUserEntity, String, Integer> {
 
     @Query("""
                 select u from IGRPUserEntity u
@@ -24,19 +24,7 @@ public interface IGRPUserEntityRepository extends
                 left join fetch r.permissions p
                 where u.id = :id and u.status != 'DELETED'
             """)
-    Optional<IGRPUserEntity> findByIdWithRolesAndPermissions(@Param("id") Integer id);
-
-    /**
-     * Lookup by the persisted external_id column. Used by OIDC federation
-     * flows that need to map an external OpenID subject to an internal user
-     * record. The column itself remains on the entity even though most lookup
-     * paths have switched to the internal id.
-     */
-    @Query("""
-                select u from IGRPUserEntity u
-                where u.externalId = :externalId and u.status != 'DELETED'
-            """)
-    Optional<IGRPUserEntity> findByExternalId(@Param("externalId") String externalId);
+    Optional<IGRPUserEntity> findByIdWithRolesAndPermissions(@Param("id") String id);
 
 
     @Query("""
@@ -81,7 +69,7 @@ public interface IGRPUserEntityRepository extends
            "WHERE r.code = :roleCode " +
            "AND (:departmentCode IS NULL OR r.department.code = :departmentCode) " +
            "AND u.status != 'DELETED'")
-    Set<Integer> findUserIdsByRoleAndDepartment(@Param("roleCode") String roleCode,
+    Set<String> findUserIdsByRoleAndDepartment(@Param("roleCode") String roleCode,
                                                       @Param("departmentCode") String departmentCode);
 
     /**
@@ -93,7 +81,7 @@ public interface IGRPUserEntityRepository extends
            "JOIN r.department d " +
            "WHERE d.code = :departmentCode " +
            "AND u.status != 'DELETED'")
-    Set<Integer> findUserIdsByDepartment(@Param("departmentCode") String departmentCode);
+    Set<String> findUserIdsByDepartment(@Param("departmentCode") String departmentCode);
 
     /**
      * Find user IDs holding a permission (by name) through any of their assigned roles.
@@ -105,7 +93,7 @@ public interface IGRPUserEntityRepository extends
            "JOIN r.permissions p " +
            "WHERE p.name = :permissionName " +
            "AND u.status != 'DELETED'")
-    Set<Integer> findUserIdsByPermissionName(@Param("permissionName") String permissionName);
+    Set<String> findUserIdsByPermissionName(@Param("permissionName") String permissionName);
 
     /**
      * Phase F1 — read just the {@code tokens_not_valid_before} floor for a user
@@ -113,7 +101,7 @@ public interface IGRPUserEntityRepository extends
      * lookup from {@code SessionEnforcementFilter}.
      */
     @Query("SELECT u.tokensNotValidBefore FROM IGRPUserEntity u WHERE u.id = :id")
-    Optional<java.time.Instant> findTokensNotValidBeforeById(@Param("id") Integer id);
+    Optional<java.time.Instant> findTokensNotValidBeforeById(@Param("id") String id);
 
     /**
      * Phase F1 — bump the user-wide token validity floor to {@code now}, used by
@@ -122,13 +110,12 @@ public interface IGRPUserEntityRepository extends
      */
     @org.springframework.data.jpa.repository.Modifying
     @Query("UPDATE IGRPUserEntity u SET u.tokensNotValidBefore = :now WHERE u.id = :id")
-    int updateTokensNotValidBefore(@Param("id") Integer id, @Param("now") java.time.Instant now);
+    int updateTokensNotValidBefore(@Param("id") String id, @Param("now") java.time.Instant now);
 
     @Query("""
         SELECT u FROM IGRPUserEntity u WHERE u.status != 'DELETED'
         AND (
-            (:externalId IS NOT NULL AND u.externalId = :externalId)
-            OR (:email IS NOT NULL AND lower(u.email) = lower(:email))
+            (:email IS NOT NULL AND lower(u.email) = lower(:email))
             OR (:nic IS NOT NULL AND upper(cast(u.nic as string)) = upper(cast(:nic as string)))
             OR (:phoneNumber IS NOT NULL AND u.phoneNumber = :phoneNumber)
             OR (:externalId IS NOT NULL AND u.username = :externalId)

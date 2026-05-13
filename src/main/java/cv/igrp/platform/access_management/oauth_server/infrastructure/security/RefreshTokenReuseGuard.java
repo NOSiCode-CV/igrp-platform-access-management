@@ -99,7 +99,7 @@ public class RefreshTokenReuseGuard {
         }
 
         UUID sid = extractSid(next, previous);
-        Integer userId = extractUserId(next, previous);
+        String userId = extractUserId(next, previous);
         Instant expiresAt = Optional.ofNullable(previousRefresh.getToken().getExpiresAt())
                 .orElseGet(() -> Instant.now().plusSeconds(86_400));
 
@@ -142,7 +142,7 @@ public class RefreshTokenReuseGuard {
         }
         RefreshTokenTombstoneEntity tombstone = hit.get();
         UUID sid = tombstone.getSessionId();
-        Integer userId = tombstone.getUserId();
+        String userId = tombstone.getUserId();
         LOGGER.warn("Detected refresh-token replay (sid={} user={}); revoking session", sid, userId);
 
         try {
@@ -174,8 +174,8 @@ public class RefreshTokenReuseGuard {
         return sid != null ? sid : sidFromAccessToken(previous);
     }
 
-    private static Integer extractUserId(OAuth2Authorization next, OAuth2Authorization previous) {
-        Integer userId = userIdFrom(next);
+    private static String extractUserId(OAuth2Authorization next, OAuth2Authorization previous) {
+        String userId = userIdFrom(next);
         return userId != null ? userId : userIdFrom(previous);
     }
 
@@ -198,17 +198,18 @@ public class RefreshTokenReuseGuard {
         }
     }
 
-    private static Integer userIdFrom(OAuth2Authorization authorization) {
+    private static String userIdFrom(OAuth2Authorization authorization) {
         if (authorization == null) {
             return null;
         }
         String principalName = authorization.getPrincipalName();
-        if (principalName == null) {
+        if (principalName == null || principalName.isBlank()) {
             return null;
         }
         try {
-            return Integer.parseInt(principalName);
-        } catch (NumberFormatException ex) {
+            UUID.fromString(principalName);
+            return principalName;
+        } catch (IllegalArgumentException ex) {
             return null;
         }
     }

@@ -5,6 +5,7 @@ import cv.igrp.framework.auth.core.authorization.model.PermissionCheckRequest;
 import cv.igrp.platform.access_management.authorization.application.dto.PermissionCacheEntryDTO;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.security.SubjectParser;
 import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -72,12 +73,13 @@ public class PermissionCacheService {
         if (subject == null || subject.isBlank()) {
             return false;
         }
-        // The new identity model uses the internal user id as the JWT sub.
-        Integer userId;
+        // The new identity model uses the internal user id (UUID) as the JWT sub.
+        String userId;
         try {
-            userId = Integer.parseInt(subject);
-        } catch (NumberFormatException ex) {
-            // Fallback path for non-numeric subjects (legacy tokens / test stubs).
+            java.util.UUID.fromString(subject);
+            userId = subject;
+        } catch (IllegalArgumentException ex) {
+            // Fallback path for non-UUID subjects (legacy tokens / test stubs).
             return isSuperAdminByUsername(subject);
         }
 
@@ -85,7 +87,8 @@ public class PermissionCacheService {
         var userOpt = userRepository.findByIdWithRolesAndPermissions(userId);
         if (userOpt.isPresent()
                 && userOpt.get().getStatus() != Status.DELETED
-                && userOpt.get().getStatus() != Status.INACTIVE) {
+                && userOpt.get().getStatus() != Status.INACTIVE
+                && userOpt.get().getStatus() != Status.TEMPORARY) {
             var user = userOpt.get();
             boolean hasRole = user.getRoles().stream()
                     .map(r -> r != null ? r.getCode() : null)
@@ -104,7 +107,7 @@ public class PermissionCacheService {
                 JOIN t_role r ON r.id = ura.role_id
                 JOIN t_user u ON u.id = ura.user_id
                 WHERE ura.user_id = ? AND r.code = ?
-                  AND u.status NOT IN ('DELETED', 'INACTIVE')
+                  AND u.status NOT IN ('DELETED', 'INACTIVE', 'TEMPORARY')
                   AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                 LIMIT 1
                 """;
@@ -118,7 +121,7 @@ public class PermissionCacheService {
                 JOIN t_user_role_assignment ura ON ura.user_id = u.id
                 JOIN t_role r ON r.id = ura.role_id
                 WHERE u.username = ? AND r.code = ?
-                  AND u.status NOT IN ('DELETED', 'INACTIVE')
+                  AND u.status NOT IN ('DELETED', 'INACTIVE', 'TEMPORARY')
                   AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                 LIMIT 1
                 """;
@@ -148,9 +151,16 @@ public class PermissionCacheService {
         // getOrLoadPermission(...). By the time we reach here we are doing a
         // regular role/permission match.
 
-        // Verifies if the user exists or if it is deleted or disabled
-        var userOpt = userRepository.findByIdWithRolesAndPermissions(Integer.parseInt(subject));
-        if (userOpt.isEmpty() || userOpt.get().getStatus() == Status.DELETED || userOpt.get().getStatus() == Status.INACTIVE) {
+        // Verifies if the user exists or if it is deleted or disabled.
+        // Phase G1 / FR-13: use SubjectParser so an M2M-shaped sub never reaches
+        // Integer.parseInt and crashes with NumberFormatException; an
+        // InvalidPrincipalException propagates out and is mapped to 401 by the
+        // global exception handler.
+        var userOpt = userRepository.findByIdWithRolesAndPermissions(SubjectParser.parseUserSubjectOrThrow(subject));
+        if (userOpt.isEmpty()
+                || userOpt.get().getStatus() == Status.DELETED
+                || userOpt.get().getStatus() == Status.INACTIVE
+                || userOpt.get().getStatus() == Status.TEMPORARY) {
             LOGGER.info("User '{}' not found or not active for permission check '{}'", subject, permissionName);
             return false;
         }

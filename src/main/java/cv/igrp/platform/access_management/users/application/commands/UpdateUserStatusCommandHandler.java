@@ -16,9 +16,12 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.shared.domain.events.UserStatusChangedEvent;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
@@ -34,6 +37,7 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
    private final UserUtils utils;
    private final SecurityAuditService auditService;
    private final EventPublisher eventPublisher;
+   private final SessionAuditLogger sessionAuditLogger;
 
 
    public UpdateUserStatusCommandHandler(
@@ -41,13 +45,15 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
            IGRPUserMapper userMapper,
            UserUtils utils,
            SecurityAuditService auditService,
-           EventPublisher eventPublisher
+           EventPublisher eventPublisher,
+           SessionAuditLogger sessionAuditLogger
    ) {
        this.userRepository = userRepository;
        this.userMapper = userMapper;
        this.utils = utils;
        this.auditService = auditService;
        this.eventPublisher = eventPublisher;
+       this.sessionAuditLogger = sessionAuditLogger;
    }
 
    /**
@@ -61,7 +67,7 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
    @IgrpCommandHandler
    public ResponseEntity<IGRPUserDTO> handle(UpdateUserStatusCommand command) {
 
-      Integer userId = command.getId();
+      String userId = command.getId();
 
       LOGGER.info("Updating user with ID={}", userId);
 
@@ -75,6 +81,17 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
               });
 
       Status status = Status.fromCodeOrThrow(command.getValue());
+
+      // Phase G3: TEMPORARY is only set by the invitation flow. Admins MUST NOT
+      // promote to TEMPORARY or transition a TEMPORARY user themselves.
+      if (status == Status.TEMPORARY || user.getStatus() == Status.TEMPORARY) {
+         LOGGER.warn("Rejected admin status change involving TEMPORARY for user id={} (current={}, requested={})",
+                 userId, user.getStatus(), status);
+         throw IgrpResponseStatusException.of(
+                 HttpStatus.BAD_REQUEST,
+                 "Invalid status transition",
+                 "TEMPORARY status is only set by the invitation flow.");
+      }
 
       String oldStatus = user.getStatus().getCode();
       String newStatus = status.getCode();
@@ -94,8 +111,23 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
       auditService.logUserChange(updatedUser.getId(), newStatus);
 
       if (!oldStatus.equals(newStatus)) {
+         String reason;
+         if (Status.INACTIVE.getCode().equals(newStatus)) {
+            reason = "ADMIN_DEACTIVATE";
+         } else if (Status.ACTIVE.getCode().equals(newStatus)) {
+            reason = "ADMIN_REACTIVATE";
+         } else {
+            reason = "ADMIN_STATUS_CHANGE";
+         }
          eventPublisher.publishUserStatusChanged(new UserStatusChangedEvent(
-                 userId, oldStatus, newStatus, null));
+                 userId, oldStatus, newStatus, reason));
+         try {
+            String actor = SessionAuditLogger.adminActor(resolveAdminExternalId());
+            sessionAuditLogger.recordUserStatusTransitioned(
+                    userId, oldStatus, newStatus, actor, reason);
+         } catch (Exception ex) {
+            LOGGER.warn("[G3 audit] recordUserStatusTransitioned failed (admin): {}", ex.getMessage());
+         }
       }
 
       LOGGER.info("User status updated successfully: id={}, email={}", updatedUser.getId(), updatedUser.getEmail());
@@ -103,5 +135,19 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
       return ResponseEntity.ok(userMapper.toDto(updatedUser));
 
    }
-   
+
+   private static String resolveAdminExternalId() {
+      try {
+         var auth = SecurityContextHolder.getContext().getAuthentication();
+         if (auth == null) return null;
+         Object principal = auth.getPrincipal();
+         if (principal instanceof Jwt jwt) {
+            return jwt.getSubject();
+         }
+         return auth.getName();
+      } catch (Exception ex) {
+         return null;
+      }
+   }
+
 }

@@ -1,5 +1,5 @@
 package cv.igrp.platform.access_management.users.application.queries;
-import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
@@ -51,8 +51,7 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         GetCurrentUserDepartmentsQuery query = new GetCurrentUserDepartmentsQuery("DEP");
 
         IGRPUserEntity mockUser = new IGRPUserEntity();
-        mockUser.setId(1);
-        mockUser.setExternalId("123");
+        mockUser.setId("00000000-0000-0000-0000-000000000123");
 
         DepartmentEntity dep1 = new DepartmentEntity();
         dep1.setCode("DEP_A");
@@ -60,8 +59,8 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         DepartmentDTO dto1 = new DepartmentDTO();
         dto1.setCode("DEP_A");
 
-        when(authenticationHelper.getSub()).thenReturn("123");
-        when(userRepository.findByIdWithRolesAndPermissions(anyInt())).thenReturn(Optional.of(mockUser));
+        when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000123");
+        when(userRepository.findByIdWithRolesAndPermissions(anyString())).thenReturn(Optional.of(mockUser));
         when(departmentRepository.findByCurrentUserAndNotDeletedFiltered(any(), any()))
                 .thenReturn(List.of(dep1));
         when(departmentMapper.toDto(dep1)).thenReturn(dto1);
@@ -73,8 +72,8 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         assertEquals(1, response.getBody().size());
         assertEquals("DEP_A", response.getBody().get(0).getCode());
 
-        verify(userRepository).findByIdWithRolesAndPermissions(anyInt());
-        verify(departmentRepository).findByCurrentUserAndNotDeletedFiltered(Integer.valueOf(mockUser.getId()), query.getDepartmentCode());
+        verify(userRepository).findByIdWithRolesAndPermissions(anyString());
+        verify(departmentRepository).findByCurrentUserAndNotDeletedFiltered(mockUser.getId(), query.getDepartmentCode());
         verify(departmentMapper).toDto(dep1);
     }
 
@@ -87,8 +86,7 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         GetCurrentUserDepartmentsQuery query = new GetCurrentUserDepartmentsQuery("FIN");
 
         IGRPUserEntity mockUser = new IGRPUserEntity();
-        mockUser.setId(1);
-        mockUser.setExternalId("999");
+        mockUser.setId("00000000-0000-0000-0000-000000000999");
 
         DepartmentEntity dep1 = new DepartmentEntity();
         dep1.setCode("FIN_DEPT");
@@ -99,8 +97,8 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         DepartmentDTO dto1 = new DepartmentDTO();
         dto1.setCode("FIN_DEPT");
 
-        when(authenticationHelper.getSub()).thenReturn("999");
-        when(userRepository.findByIdWithRolesAndPermissions(anyInt())).thenReturn(Optional.of(mockUser));
+        when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000999");
+        when(userRepository.findByIdWithRolesAndPermissions(anyString())).thenReturn(Optional.of(mockUser));
         when(departmentRepository.findByCurrentUserAndNotDeletedFiltered(any(), any()))
                 .thenReturn(List.of(dep1, dep2)); // Only dep1 should pass the filter
 
@@ -126,11 +124,10 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
         GetCurrentUserDepartmentsQuery query = new GetCurrentUserDepartmentsQuery(null);
 
         IGRPUserEntity mockUser = new IGRPUserEntity();
-        mockUser.setId(1);
-        mockUser.setExternalId("111");
+        mockUser.setId("00000000-0000-0000-0000-000000000111");
 
-        when(authenticationHelper.getSub()).thenReturn("111");
-        when(userRepository.findByIdWithRolesAndPermissions(anyInt())).thenReturn(Optional.of(mockUser));
+        when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000000111");
+        when(userRepository.findByIdWithRolesAndPermissions(anyString())).thenReturn(Optional.of(mockUser));
         when(departmentRepository.findByCurrentUserAndNotDeletedFiltered(any(), any()))
                 .thenReturn(List.of());
 
@@ -149,8 +146,8 @@ public class GetCurrentUserDepartmentsQueryHandlerTest {
 
         GetCurrentUserDepartmentsQuery query = new GetCurrentUserDepartmentsQuery(null);
 
-        when(authenticationHelper.getSub()).thenReturn("1122");
-        when(userRepository.findByIdWithRolesAndPermissions(anyInt())).thenReturn(Optional.empty());
+        when(authenticationHelper.getSub()).thenReturn("00000000-0000-0000-0000-000000001122");
+        when(userRepository.findByIdWithRolesAndPermissions(anyString())).thenReturn(Optional.empty());
 
         IgrpResponseStatusException ex = assertThrows(
                 IgrpResponseStatusException.class,

@@ -33,17 +33,18 @@ class UpdateUserMetadataCommandHandlerTest {
 
     @Test
     void replacesMetadata() {
+        String uid = "00000000-0000-0000-0000-000000000003";
         IGRPUserEntity user = new IGRPUserEntity();
-        user.setId(3);
+        user.setId(uid);
         user.setMetadata(new LinkedHashMap<>(Map.of("old", "value")));
-        when(userRepository.findById(3)).thenReturn(Optional.of(user));
+        when(userRepository.findById(uid)).thenReturn(Optional.of(user));
         when(userRepository.save(any(IGRPUserEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 
         Map<String, Object> incoming = new LinkedHashMap<>();
         incoming.put("locale", "en-US");
         incoming.put("favorite", 42);
 
-        ResponseEntity<UserMetadataDTO> resp = handler.handle(new UpdateUserMetadataCommand(3, incoming));
+        ResponseEntity<UserMetadataDTO> resp = handler.handle(new UpdateUserMetadataCommand(uid, incoming));
 
         assertEquals(HttpStatus.OK, resp.getStatusCode());
         assertEquals("en-US", resp.getBody().getMetadata().get("locale"));
@@ -53,8 +54,9 @@ class UpdateUserMetadataCommandHandlerTest {
 
     @Test
     void throwsWhenUserMissing() {
-        when(userRepository.findById(99)).thenReturn(Optional.empty());
+        String uid = "00000000-0000-0000-0000-000000000099";
+        when(userRepository.findById(uid)).thenReturn(Optional.empty());
         assertThrows(IgrpResponseStatusException.class,
-                () -> handler.handle(new UpdateUserMetadataCommand(99, Map.of("x", "y"))));
+                () -> handler.handle(new UpdateUserMetadataCommand(uid, Map.of("x", "y"))));
     }
 }

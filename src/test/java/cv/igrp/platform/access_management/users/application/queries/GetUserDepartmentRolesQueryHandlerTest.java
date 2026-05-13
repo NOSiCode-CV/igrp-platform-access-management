@@ -49,8 +49,7 @@ class GetUserDepartmentRolesQueryHandlerTest {
   @BeforeEach
   void setUp() {
     user = new IGRPUserEntity();
-    user.setId(1);
-    user.setId(1);
+    user.setId("00000000-0000-0000-0000-000000000001");
 
     department = new DepartmentEntity();
     department.setId(1);
@@ -75,9 +74,9 @@ class GetUserDepartmentRolesQueryHandlerTest {
   void handle_success_returnsRoles() {
 
     GetUserDepartmentRolesQuery query =
-            new GetUserDepartmentRolesQuery(null, 1, "DEPT1");
+            new GetUserDepartmentRolesQuery(null, "00000000-0000-0000-0000-000000000001", "DEPT1");
 
-    when(userRepository.findById(1))
+    when(userRepository.findById("00000000-0000-0000-0000-000000000001"))
             .thenReturn(Optional.of(user));
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
             .thenReturn(department);
@@ -110,9 +109,9 @@ class GetUserDepartmentRolesQueryHandlerTest {
   void handle_success_returnsEmptyList() {
 
     GetUserDepartmentRolesQuery query =
-            new GetUserDepartmentRolesQuery(null, 1, "DEPT1");
+            new GetUserDepartmentRolesQuery(null, "00000000-0000-0000-0000-000000000001", "DEPT1");
 
-    when(userRepository.findById(1))
+    when(userRepository.findById("00000000-0000-0000-0000-000000000001"))
             .thenReturn(Optional.of(user));
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
             .thenReturn(department);
@@ -132,11 +131,11 @@ class GetUserDepartmentRolesQueryHandlerTest {
   @Test
   void handle_userNotFound_throwsUnauthorized() {
 
-    when(userRepository.findById(1))
+    when(userRepository.findById("00000000-0000-0000-0000-000000000001"))
             .thenReturn(Optional.empty());
 
     GetUserDepartmentRolesQuery query =
-            new GetUserDepartmentRolesQuery(null, 1, "DEPT1");
+            new GetUserDepartmentRolesQuery(null, "00000000-0000-0000-0000-000000000001", "DEPT1");
 
     assertThrows(IgrpResponseStatusException.class,
             () -> handler.handle(query));
@@ -151,9 +150,9 @@ class GetUserDepartmentRolesQueryHandlerTest {
   void handle_success_departmentFoundButNoRoles() {
 
     GetUserDepartmentRolesQuery query =
-            new GetUserDepartmentRolesQuery(null, 1, "DEPT1");
+            new GetUserDepartmentRolesQuery(null, "00000000-0000-0000-0000-000000000001", "DEPT1");
 
-    when(userRepository.findById(1))
+    when(userRepository.findById("00000000-0000-0000-0000-000000000001"))
             .thenReturn(Optional.of(user));
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT1"))
             .thenReturn(department);

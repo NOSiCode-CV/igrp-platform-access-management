@@ -44,7 +44,7 @@ public class SetActiveUserRoleCommandHandler implements CommandHandler<SetActive
     @IgrpCommandHandler
     public ResponseEntity<RoleDepartmentDTO> handle(SetActiveUserRoleCommand command) {
 
-        Integer userId = command.getId();
+        String userId = command.getId();
 
         logger.info("Setting current user active role with ID: {}", userId);
 

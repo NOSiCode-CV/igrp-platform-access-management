@@ -20,7 +20,7 @@ public class GetUsersQuery implements Query {
   @NotBlank(message = "The field <name> is required")
   private String name;
   @NotNull(message = "The field <id> is required")
-  private Integer id;
+  private String id;
   @NotBlank(message = "The field <email> is required")
   private String email;
 
