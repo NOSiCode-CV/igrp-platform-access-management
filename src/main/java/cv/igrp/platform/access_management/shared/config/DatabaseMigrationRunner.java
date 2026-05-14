@@ -73,15 +73,11 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
                     "    ALTER TABLE t_user_session RENAME COLUMN user_external_id TO user_id; " +
                     "  END IF; " +
                     "END $$;");
-            // Retype to integer if still varchar (no-op if already integer).
-            jdbcTemplate.execute(
-                    "DO $$ BEGIN " +
-                    "  IF EXISTS (SELECT 1 FROM information_schema.columns " +
-                    "             WHERE table_name='t_user_session' AND column_name='user_id' " +
-                    "             AND data_type IN ('character varying','text')) THEN " +
-                    "    ALTER TABLE t_user_session ALTER COLUMN user_id TYPE INTEGER USING user_id::integer; " +
-                    "  END IF; " +
-                    "END $$;");
+            // Phase G2 superseded the Phase B "retype to INTEGER" step: t_user.id
+            // and t_user_session.user_id are now VARCHAR(36) UUID. Flyway V8 does
+            // the actual type migration. Keeping a retype-to-INTEGER block here
+            // would crash on every boot post-G2 (cast UUID strings to integer
+            // fails). Block intentionally removed.
             jdbcTemplate.execute(
                     "CREATE UNIQUE INDEX IF NOT EXISTS ux_session_user_device_active " +
                     "ON t_user_session (user_id, device_id) " +

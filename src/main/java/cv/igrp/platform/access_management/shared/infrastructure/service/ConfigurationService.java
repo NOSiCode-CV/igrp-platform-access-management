@@ -268,16 +268,22 @@ public class ConfigurationService {
     }
 
     String createSuperAdminUserInDB() {
+        // Phase G2: t_user.id is VARCHAR(36) NOT NULL with no DB-side default —
+        // Hibernate's @UuidGenerator only fires through JPA, not raw JdbcTemplate.
+        // Generate the UUID here and pass it explicitly so the INSERT satisfies
+        // the NOT NULL constraint.
+        String newUserId = UUID.randomUUID().toString();
         String sql = """
                     INSERT INTO t_user
-                    (name, username, email, status,
+                    (id, name, username, email, status,
                      created_by, created_date, last_modified_by, last_modified_date)
-                    VALUES (?, ?, ?, ?, ?, now(), ?, now())
+                    VALUES (?, ?, ?, ?, ?, ?, now(), ?, now())
                     RETURNING id
                 """;
-        LOGGER.info("[Startup Config] Super admin user created in DB");
+        LOGGER.info("[Startup Config] Super admin user created in DB with id={}", newUserId);
         return jdbcTemplate.queryForObject(sql,
                 String.class,
+                newUserId,
                 "iGRP Super Admin", SUPER_ADMIN_EXTERNAL_ID, SUPER_ADMIN_EMAIL, "ACTIVE",
                 SYSTEM_USER, SYSTEM_USER);
     }
