@@ -131,6 +131,55 @@ class EnforcementMissingSidTest {
     }
 
     @Test
+    void rejectsRevokedSessionForUserTokenWrappedInOidcContextAuthenticationToken() throws ServletException, IOException {
+        // Regression: live FR-20 cascade test showed /api/users/me kept returning
+        // 200 after /connect/logout because extractJwt() didn't recognise the
+        // OidcContextAuthenticationToken shape (principal = IgrpOidcUser, jwt held
+        // as credentials) produced by IgrpJwtAuthenticationConverter. The filter
+        // took the "no JWT — let downstream rules decide" branch and bypassed
+        // enforcement entirely for every user token issued via authorization_code.
+        java.util.UUID sid = java.util.UUID.fromString("de45113b-cf30-4349-876e-4e93c685a373");
+        Jwt jwt = jwtWithRawSid("0ab33988-489d-440a-b99d-5ff0aab21262", sid.toString());
+
+        // Wrap exactly as IgrpJwtAuthenticationConverter would.
+        org.springframework.security.oauth2.core.oidc.OidcIdToken idToken =
+                new org.springframework.security.oauth2.core.oidc.OidcIdToken(
+                        jwt.getTokenValue(),
+                        jwt.getIssuedAt(),
+                        jwt.getExpiresAt(),
+                        jwt.getClaims());
+        IgrpOidcUser oidcUser = new IgrpOidcUser(java.util.List.of(), idToken, null);
+        OidcContextAuthenticationToken auth = new OidcContextAuthenticationToken(
+                oidcUser, jwt, java.util.List.of());
+        SecurityContext ctx = SecurityContextHolder.createEmptyContext();
+        ctx.setAuthentication(auth);
+        SecurityContextHolder.setContext(ctx);
+
+        // Simulate a REVOKED session in the DB (cache miss → DB fallback).
+        org.mockito.Mockito.when(heartbeatService.findCached(sid))
+                .thenReturn(java.util.Optional.empty());
+        cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity revoked =
+                new cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity();
+        revoked.setSessionId(sid);
+        revoked.setStatus(cv.igrp.platform.access_management.session.domain.constants.SessionStatus.REVOKED);
+        org.mockito.Mockito.when(sessionRepository.findBySessionId(sid))
+                .thenReturn(java.util.Optional.of(revoked));
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/users/me");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, filterChain);
+
+        // Must reject — NOT pass through silently as it did before the fix.
+        assertEquals(401, response.getStatus(), "Revoked session must yield 401 for user-token shape too");
+        String challenge = response.getHeader("WWW-Authenticate");
+        assertNotNull(challenge);
+        assertTrue(challenge.contains("session_revoked") || challenge.contains("session_expired"),
+                () -> "Expected revoked/expired challenge, got: " + challenge);
+        verifyNoInteractions(filterChain);
+    }
+
+    @Test
     void anonymousRequestIsNotConsideredSidlessAndLetsChainHandleIt() throws ServletException, IOException {
         // No JWT on the security context → filter delegates downstream rather
         // than rejecting with missing_sid (which is reserved for authenticated
