@@ -262,11 +262,36 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
         return null;
     }
 
+    /**
+     * Pull the underlying {@link Jwt} from any of the three authentication
+     * shapes produced by this resource-server chain:
+     * <ul>
+     *   <li>{@link OidcContextAuthenticationToken} — produced by
+     *       {@link IgrpJwtAuthenticationConverter} for user tokens from the
+     *       authorization_code flow. The principal is an {@link IgrpOidcUser}
+     *       and the {@link Jwt} is held as credentials. <b>Missing this branch
+     *       silently bypassed session enforcement on every user token</b> —
+     *       see commit log for the FR-10/FR-20 regression.</li>
+     *   <li>{@link JwtAuthenticationToken} — the raw resource-server shape for
+     *       client_credentials tokens that never get wrapped.</li>
+     *   <li>{@code Authentication} with a {@link Jwt} principal — the
+     *       default Spring Security Bearer auth shape (test fixtures, edge
+     *       cases).</li>
+     * </ul>
+     * Returns {@code null} only for genuinely non-JWT authentications
+     * (anonymous, M2M static-token chain, etc.).
+     */
     private static Jwt extractJwt(Authentication authentication) {
+        if (authentication == null) {
+            return null;
+        }
+        if (authentication instanceof OidcContextAuthenticationToken oidcToken) {
+            return oidcToken.getJwt();
+        }
         if (authentication instanceof JwtAuthenticationToken jwtAuth) {
             return jwtAuth.getToken();
         }
-        if (authentication != null && authentication.getPrincipal() instanceof Jwt jwt) {
+        if (authentication.getPrincipal() instanceof Jwt jwt) {
             return jwt;
         }
         return null;
