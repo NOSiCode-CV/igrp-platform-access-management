@@ -47,8 +47,8 @@ public class PermissionCacheEvictService {
         }
 
         List<String> subjects = jdbcTemplate.query(
-                "SELECT external_id FROM t_user WHERE id = ? AND status <> 'DELETED'",
-                (rs, rowNum) -> rs.getString("external_id"),
+                "SELECT id FROM t_user WHERE id = ? AND status <> 'DELETED'",
+                (rs, rowNum) -> rs.getString("id"),
                 userId
         );
         evictBySubjects(subjects);
@@ -61,7 +61,7 @@ public class PermissionCacheEvictService {
 
         List<String> subjects = jdbcTemplate.query(
                 """
-                SELECT DISTINCT u.external_id
+                SELECT DISTINCT u.id
                 FROM t_user u
                 JOIN t_user_role_assignment ura ON ura.user_id = u.id
                 JOIN t_role r ON r.id = ura.role_id
@@ -69,7 +69,7 @@ public class PermissionCacheEvictService {
                   AND u.status <> 'DELETED'
                   AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                 """,
-                (rs, rowNum) -> rs.getString("external_id"),
+                (rs, rowNum) -> rs.getString("id"),
                 roleCode
         );
         evictBySubjects(subjects);
@@ -82,7 +82,7 @@ public class PermissionCacheEvictService {
 
         List<String> subjects = jdbcTemplate.query(
                 """
-                SELECT DISTINCT u.external_id
+                SELECT DISTINCT u.id
                 FROM t_user u
                 JOIN t_user_role_assignment ura ON ura.user_id = u.id
                 JOIN t_role r ON r.id = ura.role_id
@@ -91,7 +91,7 @@ public class PermissionCacheEvictService {
                   AND u.status <> 'DELETED'
                   AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                 """,
-                (rs, rowNum) -> rs.getString("external_id"),
+                (rs, rowNum) -> rs.getString("id"),
                 departmentCode
         );
         evictBySubjects(subjects);
