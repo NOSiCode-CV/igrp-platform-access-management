@@ -72,8 +72,38 @@ public class AuthorizationServerConfig {
                 .requestCache(cache -> cache.requestCache(new HttpSessionRequestCache()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-				.exceptionHandling(ex -> ex.authenticationEntryPoint(
-                        new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp")))
+				.exceptionHandling(ex -> ex
+                        // FR-20 — /connect/logout (OIDC RP-initiated logout) MUST behave
+                        // consistently with every other path in this chain when called
+                        // unauthenticated: a 302 to the upstream IdP, not a bare
+                        // `401 WWW-Authenticate: Bearer`.
+                        //
+                        // Root cause: Spring Authorization Server's OidcConfigurer
+                        // constructor (spring-security-oauth2-authorization-server
+                        // 1.5.2, line 58) always registers OidcUserInfoEndpointConfigurer
+                        // by default, even when we never call `.userInfoEndpoint(...)`.
+                        // That triggers OAuth2AuthorizationServerConfigurer.init()
+                        // (lines 395-403) to auto-install `oauth2ResourceServer(jwt())`,
+                        // which in turn registers `BearerTokenAuthenticationEntryPoint`
+                        // via `defaultAuthenticationEntryPointFor(..., preferredMatcher)`
+                        // where preferredMatcher includes the `MediaType.ALL` matcher
+                        // (OAuth2ResourceServerConfigurer#registerDefaultEntryPoint,
+                        // line 333). A curl with no Accept header sends `*/*` → matches
+                        // → Bearer entry point wins on `/connect/logout` for
+                        // unauthenticated callers.
+                        //
+                        // Fix: register an explicit path-specific entry point for the
+                        // OIDC logout endpoint AFTER Spring AS has installed its own,
+                        // so the DelegatingAuthenticationEntryPoint sees ours first.
+                        // This restores LoginUrl-style 302 behavior to /connect/logout
+                        // without disturbing /oauth2/introspect or /oauth2/revoke (those
+                        // are correctly bound to HttpStatusEntryPoint(401) by the AS
+                        // configurer itself and never reach the Bearer matcher).
+                        .defaultAuthenticationEntryPointFor(
+                                new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp"),
+                                AntPathRequestMatcher.antMatcher("/connect/logout"))
+                        .authenticationEntryPoint(
+                                new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp")))
 				.oauth2Login(oauth2 -> oauth2.userInfoEndpoint(userInfo ->
                         userInfo.oidcUserService(igrpOidcUserService)));
 
