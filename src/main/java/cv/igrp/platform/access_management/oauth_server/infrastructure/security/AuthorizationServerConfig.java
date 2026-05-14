@@ -1,4 +1,9 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
+import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import cv.igrp.platform.access_management.shared.security.IgrpOidcUser;
+import cv.igrp.platform.access_management.shared.security.OidcContextAuthenticationToken;
+import cv.igrp.platform.access_management.shared.security.UserProfile;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -7,10 +12,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.jackson2.SecurityJackson2Modules;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
+import org.springframework.security.oauth2.server.authorization.jackson2.OAuth2AuthorizationServerJackson2Module;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +27,9 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
+
+import java.util.Collections;
+import java.util.List;
 
 @Configuration
 @Profile("!basic-auth")
@@ -89,6 +99,17 @@ public class AuthorizationServerConfig {
      * rotations survive restarts and can be joined to {@code SessionEntity} rows.
      * The accompanying schema is provisioned by {@code DatabaseMigrationRunner}
      * before any authorization is written.
+     *
+     * <p>The default {@link JdbcOAuth2AuthorizationService} uses Spring Security's
+     * {@code SecurityJackson2Modules}-driven {@code ObjectMapper}, whose allowlist
+     * rejects classes it does not recognise — including the empty JDK collection
+     * sentinels (e.g. {@code java.util.Collections$EmptySet}) that
+     * {@link IgrpOidcUser} stores when its authorities/profile fields are empty.
+     * We therefore install a row mapper + parameters mapper backed by an
+     * {@link ObjectMapper} that registers the same modules <i>plus</i> a Mixin
+     * for the empty-collection sentinels and the iGRP principal types, so a
+     * superadmin-with-no-explicit-authorities token can be persisted and
+     * reloaded without tripping the allowlist guard.
      */
     @Bean
     public OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate,
@@ -97,6 +118,19 @@ public class AuthorizationServerConfig {
                                                            RefreshTokenReuseGuard refreshTokenReuseGuard) {
         JdbcOAuth2AuthorizationService delegate =
                 new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
+
+        ObjectMapper objectMapper = authorizationStoreObjectMapper();
+
+        JdbcOAuth2AuthorizationService.OAuth2AuthorizationRowMapper rowMapper =
+                new JdbcOAuth2AuthorizationService.OAuth2AuthorizationRowMapper(registeredClientRepository);
+        rowMapper.setObjectMapper(objectMapper);
+        delegate.setAuthorizationRowMapper(rowMapper);
+
+        JdbcOAuth2AuthorizationService.OAuth2AuthorizationParametersMapper parametersMapper =
+                new JdbcOAuth2AuthorizationService.OAuth2AuthorizationParametersMapper();
+        parametersMapper.setObjectMapper(objectMapper);
+        delegate.setAuthorizationParametersMapper(parametersMapper);
+
         // Phase C3 — every remove() (revoke / logout / one-shot consume) cascades
         // into a SessionEntity revocation so the enforcement filter (Phase C1)
         // denies the next request carrying the same sid.
@@ -104,5 +138,59 @@ public class AuthorizationServerConfig {
         // those tombstones on a miss so replays revoke the session and publish
         // SessionRevokedEvent before Spring AS returns invalid_grant.
         return new CascadingAuthorizationService(delegate, revocationCascadeListener, refreshTokenReuseGuard);
+    }
+
+    /**
+     * Build an {@link ObjectMapper} aligned with Spring Authorization Server's
+     * defaults (security modules + oauth2 authorization-server module) and
+     * extended with Mixins for:
+     * <ul>
+     *   <li>{@link IgrpOidcUser}, {@link OidcContextAuthenticationToken},
+     *       {@link UserProfile} — the iGRP-specific principal types stored on
+     *       the {@code OAuth2Authorization} attributes map.</li>
+     *   <li>{@code Collections.emptySet/emptyList/emptyMap} — JDK sentinel
+     *       singletons that pop up whenever the principal's authorities, scopes,
+     *       or claim maps are empty. Without these on the allowlist the
+     *       deserializer fails with {@code IllegalArgumentException: ... is not
+     *       in the allowlist}.</li>
+     * </ul>
+     */
+    private ObjectMapper authorizationStoreObjectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        ClassLoader classLoader = AuthorizationServerConfig.class.getClassLoader();
+        List<Module> securityModules = SecurityJackson2Modules.getModules(classLoader);
+        mapper.registerModules(securityModules);
+        mapper.registerModule(new OAuth2AuthorizationServerJackson2Module());
+
+        // Allowlist the empty JDK collection sentinels via Jackson Mixin so the
+        // SecurityJackson2Modules allowlist resolver admits them.
+        mapper.addMixIn(Collections.emptySet().getClass(), AllowlistedClassMixin.class);
+        mapper.addMixIn(Collections.emptyList().getClass(), AllowlistedClassMixin.class);
+        mapper.addMixIn(Collections.emptyMap().getClass(), AllowlistedClassMixin.class);
+        mapper.addMixIn(Collections.emptySortedSet().getClass(), AllowlistedClassMixin.class);
+        mapper.addMixIn(Collections.emptySortedMap().getClass(), AllowlistedClassMixin.class);
+
+        // Allowlist the iGRP custom principal types.
+        mapper.addMixIn(IgrpOidcUser.class, AllowlistedClassMixin.class);
+        mapper.addMixIn(OidcContextAuthenticationToken.class, AllowlistedClassMixin.class);
+        mapper.addMixIn(UserProfile.class, AllowlistedClassMixin.class);
+
+        return mapper;
+    }
+
+    /**
+     * Marker Mixin used to widen the {@link SecurityJackson2Modules} allowlist
+     * for empty JDK collection sentinels and the iGRP principal types. The
+     * {@code @JsonTypeInfo}/{@code @JsonAutoDetect} annotations mirror those
+     * applied to {@link IgrpOidcUser} so default-typing round-trips work.
+     */
+    @com.fasterxml.jackson.annotation.JsonTypeInfo(use = com.fasterxml.jackson.annotation.JsonTypeInfo.Id.CLASS)
+    @com.fasterxml.jackson.annotation.JsonAutoDetect(
+            fieldVisibility = com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY,
+            getterVisibility = com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE,
+            isGetterVisibility = com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE,
+            creatorVisibility = com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY)
+    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
+    private abstract static class AllowlistedClassMixin {
     }
 }
