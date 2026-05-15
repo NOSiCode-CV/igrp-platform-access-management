@@ -488,13 +488,15 @@ class RespondUserInvitationCommandHandlerTest {
 
     /**
      * Regression: accept-flow must be idempotent when a UserRoleAssignment
-     * with the same composite PK (userId, roleId) already exists — the
-     * handler should refresh the existing row (clear expiresAt, bump
-     * assignedAt) instead of constructing a new entity that Hibernate would
-     * reject with NonUniqueObjectException.
+     * with the same composite PK (userId, roleId) already lives in
+     * {@code user.userRoleAssignments}. The handler must mutate THAT
+     * already-managed instance instead of constructing a new entity. A new
+     * instance would carry the same composite PK as the one Hibernate has
+     * already attached via the @OneToMany collection, and Hibernate would
+     * reject the flush with NonUniqueObjectException.
      */
     @Test
-    void handle_acceptWhenRoleAssignmentAlreadyExists_updatesExistingNotCreatesNew() {
+    void handle_acceptWhenRoleAssignmentAlreadyExists_mutatesInPlaceNoNewInstance() {
         // Arrange
         String token = "accept-with-existing-role";
         cv.igrp.platform.access_management.shared.application.dto.UserInvitationResponseDTO dto =
@@ -521,6 +523,18 @@ class RespondUserInvitationCommandHandlerTest {
         IGRPUserEntity existingUser = new IGRPUserEntity();
         existingUser.setId(existingUserId);
         existingUser.setStatus(cv.igrp.platform.access_management.shared.application.constants.Status.TEMPORARY);
+        // Pre-existing UserRoleAssignment for the same role, already attached to
+        // the user's managed collection (simulating the post-userRepository.save
+        // state where cascade-merge has materialised the collection).
+        cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment existingUra =
+                new cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment(
+                        existingUser, role, null);
+        existingUra.setAssignedAt(java.time.LocalDateTime.of(2020, 1, 1, 0, 0));
+        // The UserRoleAssignment constructor is bytecode-enhanced and already
+        // appended `existingUra` to `existingUser.userRoleAssignments` via
+        // bidirectional management. Calling .add() here would duplicate the
+        // entry — exactly the double-add antipattern this test guards against.
+
         when(userRepository.findById(existingUserId)).thenReturn(Optional.of(existingUser));
         when(userRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
         when(roleRepository.findById(1)).thenReturn(Optional.of(role));
@@ -532,29 +546,34 @@ class RespondUserInvitationCommandHandlerTest {
         when(otpEntityRepository.findFirstByReferenceIdAndStatusOrderByCreatedAtDesc(token, "APPROVED"))
                 .thenReturn(Optional.of(otp));
 
-        // Existing assignment in the DB for the same (userId, roleId).
-        cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleId existingId =
-                new cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleId(
-                        existingUserId, 1);
-        cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment existingUra =
-                new cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment(
-                        existingUser, role, null);
-        when(userRoleAssignmentRepository.findById(existingId)).thenReturn(Optional.of(existingUra));
-        when(userRoleAssignmentRepository.save(any())).thenAnswer(inv -> inv.getArgument(0));
+        // Sanity: the bytecode-enhanced constructor has already wired the URA
+        // into the user's collection, so we start with exactly one entry.
+        assertEquals(1, existingUser.getUserRoleAssignments().size(),
+                "Pre-condition: constructor auto-adds via bidirectional management");
 
         // Act
         ResponseEntity<InvitationDTO> response = handler.handle(command);
 
-        // Assert: the existing entity instance is the one saved (not a freshly-constructed one)
+        // Assert: response OK, the existing managed instance was mutated in
+        // place (assignedAt refreshed, expiresAt cleared), and the user's
+        // collection still contains exactly one assignment for this role —
+        // no second instance smuggled in via userRoleAssignmentRepository.save.
         assertEquals(HttpStatus.OK, response.getStatusCode());
-        org.mockito.ArgumentCaptor<cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment> captor =
-                org.mockito.ArgumentCaptor.forClass(
-                        cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment.class);
-        verify(userRoleAssignmentRepository).save(captor.capture());
-        org.junit.jupiter.api.Assertions.assertSame(existingUra, captor.getValue(),
-                "Expected the existing UserRoleAssignment instance to be reused, not a fresh one");
-        org.junit.jupiter.api.Assertions.assertNotNull(captor.getValue().getAssignedAt(),
-                "assignedAt must be refreshed on idempotent re-assignment");
+        java.util.List<cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment> uras =
+                existingUser.getUserRoleAssignments();
+        assertEquals(1, uras.size(), "Expected exactly one UserRoleAssignment in the user's collection");
+        org.junit.jupiter.api.Assertions.assertSame(existingUra, uras.get(0),
+                "Expected the existing managed instance to be retained, not a freshly-constructed one");
+        org.junit.jupiter.api.Assertions.assertNull(existingUra.getExpiresAt(),
+                "expiresAt must be cleared on re-assignment");
+        org.junit.jupiter.api.Assertions.assertTrue(existingUra.getAssignedAt().isAfter(
+                java.time.LocalDateTime.of(2020, 6, 1, 0, 0)),
+                "assignedAt must be bumped to ~now on re-assignment");
+        // And — critically — the handler must NOT have called
+        // userRoleAssignmentRepository.save: cascade=ALL on the user's
+        // @OneToMany handles persistence. Direct .save() is the antipattern
+        // that loaded a second managed instance with the same PK.
+        org.mockito.Mockito.verifyNoInteractions(userRoleAssignmentRepository);
     }
 }
 
