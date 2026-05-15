@@ -17,6 +17,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleId;
 import cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService;
 import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
 import org.springframework.beans.factory.annotation.Value;
@@ -105,8 +106,22 @@ public class RespondUserInvitationCommandHandler
 
       LOGGER.info("Responding to user invitation: token={}", command.getToken());
 
-      // Find invitation
-      var invitation = invitationRepository.findByTokenAndStatusPending(command.getToken());
+      // Find invitation — explicit status check so a repeat-acceptance returns
+      // a clean 409 instead of a misleading 404 from the PENDING-only finder.
+      var invitation = invitationRepository.findByTokenOrThrow(command.getToken());
+      if (invitation.getStatus() == InvitationStatus.ACCEPTED) {
+         throw IgrpResponseStatusException.of(HttpStatus.CONFLICT,
+               "This invitation has already been accepted.");
+      }
+      if (invitation.getStatus() == InvitationStatus.REJECTED) {
+         throw IgrpResponseStatusException.of(HttpStatus.CONFLICT,
+               "This invitation has already been rejected.");
+      }
+      if (invitation.getStatus() != InvitationStatus.PENDING) {
+         throw IgrpResponseStatusException.of(HttpStatus.CONFLICT,
+               "This invitation is not in a state that allows a response (status=%s)."
+                     .formatted(invitation.getStatus()));
+      }
 
       // Get authenticated user's OIDC Context
       var authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -223,7 +238,21 @@ public class RespondUserInvitationCommandHandler
                   HttpStatus.NOT_FOUND,
                   "Role with ID <%s> was not found".formatted(role.getId())));
 
-            UserRoleAssignment ura = new UserRoleAssignment(savedUser, roleEntity, null);
+            // Idempotency: a UserRoleAssignment with composite PK (userId, roleId)
+            // may already exist — e.g. a prior invitation, an expired assignment
+            // still in the DB, or a previously-failed-then-retried accept that
+            // left the row in place. Saving a freshly-constructed entity with
+            // the same UserRoleId would throw NonUniqueObjectException because
+            // Hibernate's first-level session already has the existing row
+            // attached (loaded eagerly with the user). Upsert via findById +
+            // mutate-or-insert instead.
+            UserRoleId uraId = new UserRoleId(savedUser.getId(), roleEntity.getId());
+            UserRoleAssignment ura = userRoleAssignmentRepository.findById(uraId).orElse(null);
+            if (ura == null) {
+               ura = new UserRoleAssignment(savedUser, roleEntity, null);
+            } else {
+               ura.setExpiresAt(null);
+            }
             ura.setAssignedAt(java.time.LocalDateTime.now());
             userRoleAssignmentRepository.save(ura);
 
