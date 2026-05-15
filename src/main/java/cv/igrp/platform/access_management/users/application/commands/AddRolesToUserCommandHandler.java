@@ -148,10 +148,13 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
              ura.setAssignedAt(java.time.LocalDateTime.now());
              ura.setExpiresAt(command.getExpiresAt());
          } else {
-             // 3. Create only if truly new
+             // 3. Create only if truly new. The constructor is bytecode-enhanced
+             //    by Hibernate — setting `this.user = user` auto-appends the new
+             //    URA to user.userRoleAssignments via bidirectional management.
+             //    Calling .add() here would duplicate the entry in the List and
+             //    surface as NonUniqueObjectException at flush.
              ura = new UserRoleAssignment(user, roleEntity, command.getExpiresAt());
              ura.setAssignedAt(java.time.LocalDateTime.now());
-             user.getUserRoleAssignments().add(ura);
          }
 
          // Let Hibernate's CascadeType.ALL handle the persistence automatically

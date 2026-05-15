@@ -238,23 +238,39 @@ public class RespondUserInvitationCommandHandler
                   HttpStatus.NOT_FOUND,
                   "Role with ID <%s> was not found".formatted(role.getId())));
 
-            // Idempotency: a UserRoleAssignment with composite PK (userId, roleId)
-            // may already exist — e.g. a prior invitation, an expired assignment
-            // still in the DB, or a previously-failed-then-retried accept that
-            // left the row in place. Saving a freshly-constructed entity with
-            // the same UserRoleId would throw NonUniqueObjectException because
-            // Hibernate's first-level session already has the existing row
-            // attached (loaded eagerly with the user). Upsert via findById +
-            // mutate-or-insert instead.
-            UserRoleId uraId = new UserRoleId(savedUser.getId(), roleEntity.getId());
-            UserRoleAssignment ura = userRoleAssignmentRepository.findById(uraId).orElse(null);
-            if (ura == null) {
-               ura = new UserRoleAssignment(savedUser, roleEntity, null);
-            } else {
+            // Idempotency without NonUniqueObjectException: search the user's
+            // already-managed userRoleAssignments collection first. Using
+            // userRoleAssignmentRepository.findById(uraId) would issue a SEPARATE
+            // SELECT and return a fresh managed instance — distinct from whatever
+            // instance the user.userRoleAssignments collection already holds in
+            // the Hibernate session (e.g. lazy-loaded by an earlier touch or by
+            // cascade-merge during userRepository.save(user)). At flush time
+            // Hibernate would then see two managed entities with the same
+            // composite PK UserRoleId(userId, roleId) and throw
+            // NonUniqueObjectException. Mirror the pattern already used by
+            // AddRolesToUserCommandHandler: mutate-in-place when present,
+            // otherwise add a fresh entity to the collection and let
+            // @OneToMany(cascade=ALL) on IGRPUserEntity.userRoleAssignments
+            // persist it on flush.
+            java.util.Optional<UserRoleAssignment> existingUra = savedUser.getUserRoleAssignments().stream()
+                    .filter(assignment -> assignment.getRole() != null
+                            && assignment.getRole().getId() != null
+                            && assignment.getRole().getId().equals(roleEntity.getId()))
+                    .findFirst();
+            if (existingUra.isPresent()) {
+               UserRoleAssignment ura = existingUra.get();
                ura.setExpiresAt(null);
+               ura.setAssignedAt(java.time.LocalDateTime.now());
+            } else {
+               // The UserRoleAssignment(user, role, ...) constructor is
+               // bytecode-enhanced by Hibernate: setting `this.user = user`
+               // triggers bidirectional management and auto-appends the new
+               // URA to `user.userRoleAssignments`. Calling .add() here would
+               // duplicate the entry in the collection and produce the
+               // NonUniqueObjectException at flush time. Construct only.
+               UserRoleAssignment ura = new UserRoleAssignment(savedUser, roleEntity, null);
+               ura.setAssignedAt(java.time.LocalDateTime.now());
             }
-            ura.setAssignedAt(java.time.LocalDateTime.now());
-            userRoleAssignmentRepository.save(ura);
 
             // Log role assignment
             java.util.Map<String, Object> auditContext = new java.util.HashMap<>();
