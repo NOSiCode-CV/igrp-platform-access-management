@@ -112,6 +112,17 @@ public interface RoleEntityRepository extends
     )
     List<RoleEntity> findByDepartmentIdAndCurrentUserIdAndStatusNotDeleted(IGRPUserEntity user, DepartmentEntity department);
 
+    /**
+     * Returns the ids of all non-deleted roles whose department falls in the
+     * given set. Used by scope resolution to derive the user's visible roles
+     * from their visible departments.
+     */
+    @Query("""
+        select r.id from RoleEntity r
+        where r.department.id in :departmentIds and r.status <> 'DELETED'
+    """)
+    Set<Integer> findIdsByDepartmentIdIn(@Param("departmentIds") Set<Integer> departmentIds);
+
     List<RoleEntity> findByDepartmentAndStatusNot(DepartmentEntity  department, Status status);
 
     default List<RoleEntity> findAllByDepartmentAndStatusNotDeleted(DepartmentEntity department) {
