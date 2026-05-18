@@ -23,6 +23,12 @@
             }
           }
         }
+      },
+      "permission": {
+        "items": [
+          "igrp.client.list"
+        ],
+        "operator": "OR"
       }
     },
     {
@@ -46,7 +52,13 @@
       },
       "pathVariables": [
         {"name": "id", "type": "uuid", "isRequired": true}
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.client.view"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "createOAuthClient",
@@ -79,6 +91,12 @@
             }
           }
         }
+      },
+      "permission": {
+        "items": [
+          "igrp.client.create"
+        ],
+        "operator": "OR"
       }
     },
     {
@@ -115,7 +133,13 @@
       },
       "pathVariables": [
         {"name": "id", "type": "uuid", "isRequired": true}
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.client.update"
+        ],
+        "operator": "OR"
+      }
     },
     {
       "actionName": "deleteOAuthClient",
@@ -128,7 +152,13 @@
       },
       "pathVariables": [
         {"name": "id", "type": "uuid", "isRequired": true}
-      ]
+      ],
+      "permission": {
+        "items": [
+          "igrp.client.delete"
+        ],
+        "operator": "OR"
+      }
     }
   ],
   "id": "oauth-server-controller-clients"
