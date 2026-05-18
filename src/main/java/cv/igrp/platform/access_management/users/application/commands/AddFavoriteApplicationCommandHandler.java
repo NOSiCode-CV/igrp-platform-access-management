@@ -2,13 +2,13 @@ package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.FavoriteApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.FavoriteApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
@@ -43,13 +43,13 @@ public class AddFavoriteApplicationCommandHandler implements CommandHandler<AddF
         LOGGER.info("Adding application <{}> as favorite to user: {}",  command.getApplicationCode(), currentUserSub);
 
         var user = userEntityRepository.findByExternalIdWithRolesAndPermissions(currentUserSub).orElseThrow(
-                () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
+                () -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_USER_NOT_FOUND_BY_EXTERNAL_ID, currentUserSub)
         );
 
         var application = applicationEntityRepository.findByCodeAndStatusNotDeleted(command.getApplicationCode());
 
         if(favoriteApplicationEntityRepository.existsByUserAndApplication(Integer.valueOf(user.getId()), application)) {
-            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Application <" + command.getApplicationCode() + "> is already a favorite of user: " + authenticationHelper.getSub());
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_FAVORITE_APPLICATION_ALREADY_EXISTS, command.getApplicationCode(), authenticationHelper.getSub());
         }
 
         var favoriteApplicationOpt = favoriteApplicationEntityRepository.findByUserId(Integer.valueOf(user.getId()));

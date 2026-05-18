@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
@@ -45,7 +46,7 @@ public interface PermissionEntityRepository extends
 
     default PermissionEntity findByNameAndStatusNotDeleted(String name) {
         return findByNameAndStatusNot(name, Status.DELETED)
-                .orElseThrow(() -> IgrpResponseStatusException.badRequest("Permission not found with name: " + name));
+                .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_PERMISSION_NOT_FOUND_BY_NAME, name));
     }
 
     List<PermissionEntity> findAllByNameIn(List<String> name);

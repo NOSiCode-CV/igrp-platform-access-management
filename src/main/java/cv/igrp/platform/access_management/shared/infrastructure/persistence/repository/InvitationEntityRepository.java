@@ -2,13 +2,13 @@ package cv.igrp.platform.access_management.shared.infrastructure.persistence.rep
 
 import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.InvitationEntity;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +21,7 @@ public interface InvitationEntityRepository extends
 
     default InvitationEntity findByIdOrThrow(Integer id) {
         return this.findById(id)
-                .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "InvitationEntity not found for id: " + id));
+                .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_NOT_FOUND_BY_ID, id));
     }
 
     Optional<InvitationEntity> findByTokenAndStatus(String token, InvitationStatus status);
@@ -30,12 +30,12 @@ public interface InvitationEntityRepository extends
 
     default InvitationEntity findByTokenOrThrow(String token) {
         return this.findByToken(token)
-                .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "InvitationEntity not found for token: " + token));
+                .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_NOT_FOUND_BY_TOKEN, token));
     }
 
     default InvitationEntity findByTokenAndStatusPending(String token) {
         return this.findByTokenAndStatus(token, InvitationStatus.PENDING)
-                .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "InvitationEntity not found for token: " + token));
+                .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_NOT_FOUND_BY_TOKEN, token));
     }
     /**
      * Find all invitations ordered by last modified date in descending order.

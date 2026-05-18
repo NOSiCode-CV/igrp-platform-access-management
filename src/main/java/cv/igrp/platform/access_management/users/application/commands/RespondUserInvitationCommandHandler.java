@@ -7,6 +7,7 @@ import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
 import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
@@ -17,7 +18,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService;
 import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -105,9 +105,7 @@ public class RespondUserInvitationCommandHandler
             .getPrincipal() instanceof cv.igrp.platform.access_management.shared.security.IgrpOidcUser oidcUser) {
          profile = oidcUser.getUserProfile();
       } else {
-         throw IgrpResponseStatusException.of(
-               HttpStatus.UNAUTHORIZED,
-               "Native OIDC User Context required to accept invitation");
+         throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_RESPONSE_UNAUTHORIZED);
       }
 
       String authMethod = profile.authMethod() != null ? profile.authMethod() : "pwd";
@@ -125,8 +123,7 @@ public class RespondUserInvitationCommandHandler
          if (otpEntityOpt.isPresent()) {
              invitation.setOtpId(otpEntityOpt.get().getId());
          } else {
-             throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
-                    "O código OTP não foi validado. Por favor, valide o seu código OTP antes de aceitar o convite.");
+             throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_OTP_NOT_VALIDATED);
          }
 
          invitation.setStatus(InvitationStatus.ACCEPTED);
@@ -153,9 +150,7 @@ public class RespondUserInvitationCommandHandler
          auditService.logUserChange(savedUser.getId(), isNewUser ? "CREATE" : "UPDATE");
 
          for (var role : invitation.getRoles()) {
-            var roleEntity = roleRepository.findById(role.getId()).orElseThrow(() -> IgrpResponseStatusException.of(
-                  HttpStatus.NOT_FOUND,
-                  "Role with ID <%s> was not found".formatted(role.getId())));
+            var roleEntity = roleRepository.findById(role.getId()).orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_ROLE_NOT_FOUND_BY_ID, role.getId()));
 
             UserRoleAssignment ura = new UserRoleAssignment(savedUser, roleEntity, null);
             ura.setAssignedAt(java.time.LocalDateTime.now());

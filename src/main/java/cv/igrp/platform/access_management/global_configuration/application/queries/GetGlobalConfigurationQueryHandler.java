@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.global_configuration.application.quer
 import cv.igrp.platform.access_management.global_configuration.application.constants.GlobalConfigurationType;
 import cv.igrp.platform.access_management.global_configuration.infrastructure.persistence.repository.GlobalConfigurationEntityRepository;
 import cv.igrp.platform.access_management.global_configuration.mapper.GlobalConfigurationMapper;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import jakarta.transaction.Transactional;
 import org.slf4j.Logger;
@@ -34,12 +35,12 @@ public class GetGlobalConfigurationQueryHandler implements QueryHandler<GetGloba
     var globalConfigurationType = GlobalConfigurationType.fromCode(query.getType());
 
     if(globalConfigurationType.isEmpty())
-      throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Type not found","Global Configuration type: " +  query.getType() + " not found" );
+      throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_GLOBAL_CONFIGURATION_TYPE_NOT_FOUND, query.getType());
 
     var configurations = repository.findByTypeOrderByLastModifiedDateDesc(GlobalConfigurationType.valueOf(query.getType()));
 
     if(configurations.isEmpty())
-      throw IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Global Configuration not found","Global Configuration with type: " +  query.getType() + " not found" );
+      throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_GLOBAL_CONFIGURATION_NOT_FOUND, query.getType());
 
     var configuration = configurations.getFirst();
 

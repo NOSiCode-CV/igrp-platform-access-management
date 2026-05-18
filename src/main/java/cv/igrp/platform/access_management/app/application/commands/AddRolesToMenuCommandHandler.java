@@ -7,6 +7,7 @@ import cv.igrp.platform.access_management.role.domain.service.PermissionMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
@@ -102,7 +103,7 @@ public class AddRolesToMenuCommandHandler implements CommandHandler<AddRolesToMe
 
       if (roleList.isEmpty()) {
          log.warn("No role available from given set: {} ", command.getAddRolesToMenuRequest().stream().toList());
-         throw IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Roles not found", roleIdList);
+         throw IgrpResponseStatusException.ofWithDetails(IgrpErrorCode.IGRP_AUTH_ROLES_NOT_FOUND, roleIdList, roleIdList);
       }
 
       ApplicationEntity application = applicationRepository.findByCodeAndStatusNotDeleted(command.getApplicationCode());
@@ -110,9 +111,7 @@ public class AddRolesToMenuCommandHandler implements CommandHandler<AddRolesToMe
       MenuEntryEntity foundMenu = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, command.getMenuCode(), Status.DELETED)
               .orElseThrow(() -> {
                  log.warn("Menu Entry with code: {} not found.", command.getMenuCode());
-                 return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND, "Add Role", "Menu Entry with code: " + command.getMenuCode() + " not found."
-                 );
+                 return IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_MENU_ENTRY_NOT_FOUND, command.getMenuCode());
               });
 
       foundMenu.getRoles().addAll(roleList);

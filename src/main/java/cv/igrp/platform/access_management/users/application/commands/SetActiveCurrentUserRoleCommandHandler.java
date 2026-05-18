@@ -4,6 +4,7 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
@@ -77,14 +78,14 @@ public class SetActiveCurrentUserRoleCommandHandler implements CommandHandler<Se
 
         if (department.getStatus() != DepartmentStatus.ACTIVE) {
             logger.warn("Could not set active role for user with sub: {} because the department is inactive", externalId);
-            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Department Inactive", "Could not set active role for user with sub <%s> because the department is inactive".formatted(externalId));
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_DEPARTMENT_INACTIVE, department.getCode());
         }
 
         RoleEntity role = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, command.getRoledepartmentdto().roleCode());
 
         if (role.getStatus() != Status.ACTIVE) {
             logger.warn("Could not set active role for user with sub: {} because the role is inactive", externalId);
-            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Department Inactive", "Could not set active role for user with sub <%s> because the role is inactive".formatted(externalId));
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_ROLE_INACTIVE, externalId);
         }
 
         user.setActiveRole(role);

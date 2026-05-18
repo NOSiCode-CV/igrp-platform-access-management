@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -25,7 +26,7 @@ public interface ResourceEntityRepository extends
 
     default ResourceEntity findByNameNotDeleted(String name) {
         return findByNameAndStatusNot(name, Status.DELETED)
-                .orElseThrow(() -> IgrpResponseStatusException.badRequest("Resource not found with name: " + name));
+                .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_RESOURCE_NOT_FOUND_BY_NAME, name));
     }
 
     @Query("""

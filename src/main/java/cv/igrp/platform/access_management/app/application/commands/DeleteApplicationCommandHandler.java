@@ -3,12 +3,12 @@ package cv.igrp.platform.access_management.app.application.commands;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -64,7 +64,7 @@ public class DeleteApplicationCommandHandler implements CommandHandler<DeleteApp
    @IgrpCommandHandler
    public ResponseEntity<String> handle(DeleteApplicationCommand command) {
       ApplicationEntity application = applicationRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
-              .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found with code: " + command.getCode()));
+              .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_APPLICATION_NOT_FOUND_BY_CODE, command.getCode()));
 
       deleteApplicationMenus(application);
 
@@ -81,10 +81,7 @@ public class DeleteApplicationCommandHandler implements CommandHandler<DeleteApp
 
             if(menu.getStatus().equals(Status.DELETED)) continue;
 
-            var menuEntry = menuRepository.findByApplicationIdAndCodeAndStatusNot(application, menu.getCode(), Status.DELETED).orElseThrow(() -> IgrpResponseStatusException.of(
-                    HttpStatus.NOT_FOUND,
-                    "Menu Entry not found",
-                    "Menu Entry not found with code: " + menu.getCode()));
+            var menuEntry = menuRepository.findByApplicationIdAndCodeAndStatusNot(application, menu.getCode(), Status.DELETED).orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_MENU_ENTRY_NOT_FOUND, menu.getCode()));
 
             menuEntry.setStatus(Status.DELETED);
 

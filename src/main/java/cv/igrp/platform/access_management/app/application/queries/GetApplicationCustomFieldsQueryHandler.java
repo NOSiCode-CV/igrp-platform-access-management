@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.app.application.queries;
 
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
@@ -59,11 +60,11 @@ public class GetApplicationCustomFieldsQueryHandler implements QueryHandler<GetA
   @IgrpQueryHandler
   public ResponseEntity<Map<String, ?>> handle(GetApplicationCustomFieldsQuery query) {
     ApplicationEntity application = applicationRepository.findByCodeAndStatusNot(query.getCode(), Status.DELETED)
-            .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found for code: " + query.getCode()));
+            .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_APPLICATION_NOT_FOUND_BY_CODE, query.getCode()));
 
     CustomFieldEntity customField = customFieldRepository
             .findByTableNameAndRecordId(CustomFieldTableName.APPLICATION.getName(), application.getId())
-            .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "CustomFieldEntity not found", "CustomFieldEntity not found for Application ID: " + application.getId()));
+            .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_CUSTOM_FIELD_NOT_FOUND_FOR_APPLICATION, application.getId()));
     return ResponseEntity.ok(customField.getFields());
   }
 

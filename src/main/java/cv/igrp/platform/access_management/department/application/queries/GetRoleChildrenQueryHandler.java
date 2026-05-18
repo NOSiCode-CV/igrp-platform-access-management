@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.department.application.queries;
 
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
@@ -10,7 +11,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -38,7 +38,7 @@ public class GetRoleChildrenQueryHandler implements QueryHandler<GetRoleChildren
 
         if (department.getStatus() != DepartmentStatus.ACTIVE) {
             logger.warn("The department is inactive: {}", query.getDepartmentCode());
-            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Department Inactive", "Could not get role <%s> child hierarchy because the department is inactive".formatted(query.getDepartmentCode()));
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_DEPARTMENT_INACTIVE, query.getDepartmentCode());
         }
 
         RoleEntity root = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, query.getRoleCode());

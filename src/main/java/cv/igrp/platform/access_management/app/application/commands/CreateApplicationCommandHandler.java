@@ -7,6 +7,7 @@ import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.domain.service.ApplicationValidator;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
@@ -75,9 +76,7 @@ public class CreateApplicationCommandHandler implements CommandHandler<CreateApp
     public ResponseEntity<ApplicationDTO> handle(CreateApplicationCommand command) {
         var validation = applicationValidator.validateApplicationCode(command.getApplicationdto());
         if (!validation.isValid()) {
-            throw IgrpResponseStatusException.of(
-                    HttpStatus.CONFLICT, "Create Application", validation.getFailureMessage()
-            );
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_APPLICATION_VALIDATION_FAILED, validation.getFailureMessage());
         }
         ApplicationEntity application = applicationMapper.toEntity(command.getApplicationdto());
         application.setId(null);
@@ -87,7 +86,7 @@ public class CreateApplicationCommandHandler implements CommandHandler<CreateApp
             for (var dept : command.getApplicationdto().getDepartments()) {
 
                 var department = departmentEntityRepository.findByCodeAndStatusNot(dept, DepartmentStatus.DELETED)
-                        .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + dept));
+                        .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_DEPARTMENT_NOT_FOUND_BY_CODE, dept));
 
                 department.getApplications().add(savedApplication);
 
@@ -96,9 +95,7 @@ public class CreateApplicationCommandHandler implements CommandHandler<CreateApp
             }
         }
 
-        ApplicationEntity currentApplication = applicationRepository.findById(savedApplication.getId()).orElseThrow(() -> IgrpResponseStatusException.of(
-                HttpStatus.INTERNAL_SERVER_ERROR, "Create Application", "Failed to retrieve the created application."
-        ));
+        ApplicationEntity currentApplication = applicationRepository.findById(savedApplication.getId()).orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_APPLICATION_CREATION_FAILED));
 
         ApplicationDTO applicationDTO = applicationMapper.toDto(currentApplication);
         return ResponseEntity.status(HttpStatus.CREATED).body(applicationDTO);

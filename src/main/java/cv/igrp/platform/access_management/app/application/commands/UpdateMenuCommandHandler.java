@@ -6,12 +6,12 @@ import cv.igrp.platform.access_management.app.domain.service.MenuEntryValidator;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.app.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
@@ -61,10 +61,7 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
       MenuEntryEntity menuEntry = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(app, command.getMenuCode(), Status.DELETED)
               .orElseThrow(() -> {
                  logger.warn("Menu not found with code: {}", command.getMenuCode());
-                 return IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND,
-                         "Menu not found",
-                         "Menu not found with code: " + command.getMenuCode());
+                 return IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_MENU_ENTRY_NOT_FOUND, command.getMenuCode());
               });
 
       if(command.getMenuentrydto().getStatus() != null &&
@@ -88,10 +85,7 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
          menuEntry.setParentId(menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(app, menuDto.getParentCode(), Status.DELETED)
                  .orElseThrow(() -> {
                     logger.warn("Parent Menu not found with code: {}", menuDto.getParentCode());
-                    return IgrpResponseStatusException.of(
-                            HttpStatus.NOT_FOUND,
-                            "Parent Menu Entry not found",
-                            "Parent Menu Entry not found with code: " + menuDto.getParentCode());
+                    return IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_MENU_PARENT_NOT_FOUND, menuDto.getParentCode());
                  }));
       }
 
@@ -99,10 +93,7 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
          menuEntry.setApplicationId(applicationRepository.findByCodeAndStatusNot(menuDto.getApplicationCode(), Status.DELETED)
                  .orElseThrow(() -> {
                     logger.warn("Application not found with code: {}", menuDto.getApplicationCode());
-                    return IgrpResponseStatusException.of(
-                            HttpStatus.NOT_FOUND,
-                            "Application not found",
-                            "Application not found with code: " + menuDto.getApplicationCode());
+                    return IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_APPLICATION_NOT_FOUND_BY_CODE, menuDto.getApplicationCode());
                  }));
       }
 
@@ -129,7 +120,7 @@ public class UpdateMenuCommandHandler implements CommandHandler<UpdateMenuComman
            if(status != Status.ACTIVE) {
 
                var childMenu = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(app, child.getCode(), Status.DELETED).orElseThrow(
-                       () -> IgrpResponseStatusException.notFound("Menu Entry <" + child.getCode() + "> for app <" + app.getCode() + "> was not found!")
+                       () -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_MENU_ENTRY_NOT_FOUND_FOR_APPLICATION, child.getCode(), app.getCode())
                );
 
                childMenu.setStatus(status);
