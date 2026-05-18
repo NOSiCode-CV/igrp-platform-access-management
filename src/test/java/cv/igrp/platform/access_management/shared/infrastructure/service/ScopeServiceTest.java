@@ -234,6 +234,100 @@ class ScopeServiceTest {
     }
 
     @Test
+    @DisplayName("Should resolve visible departments from active role (DB) and expand descendants for non-superadmin")
+    void testGetVisibleDepartmentIdsForRegularUser() {
+        // Arrange — not a superadmin, has an active role pinned to department 10,
+        // which has descendants 11 and 12.
+        String uid = "00000000-0000-0000-0000-000000000700";
+        when(authenticationHelper.getSub()).thenReturn(uid);
+        doReturn(List.<GrantedAuthority>of()).when(authentication).getAuthorities();
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
+                .thenReturn(List.of()); // not superadmin
+        when(cache.getVisibleDepartments()).thenReturn(null);
+        when(departmentRepository.findActiveRoleDepartmentId(uid)).thenReturn(10);
+        when(departmentRepository.findDirectChildren(10)).thenReturn(Set.of(11, 12));
+        when(departmentRepository.findDirectChildren(11)).thenReturn(Set.of());
+        when(departmentRepository.findDirectChildren(12)).thenReturn(Set.of());
+
+        // Act
+        Set<Integer> visibleDepts = scopeService.getVisibleDepartmentIds();
+
+        // Assert — root + descendants, sourced from the DB rather than JWT claims.
+        assertEquals(Set.of(10, 11, 12), visibleDepts);
+        verify(departmentRepository).findActiveRoleDepartmentId(uid);
+        verify(cache).setVisibleDepartments(Set.of(10, 11, 12));
+        verify(departmentRepository, never()).findAll();
+    }
+
+    @Test
+    @DisplayName("Should return empty visible departments when user has no active role department")
+    void testGetVisibleDepartmentIdsRegularUserNoActiveRoleDept() {
+        // Arrange — regular user, but the DB lookup finds no active-role department
+        // (e.g. active_role_id is null or the role has no department).
+        String uid = "00000000-0000-0000-0000-000000000701";
+        when(authenticationHelper.getSub()).thenReturn(uid);
+        doReturn(List.<GrantedAuthority>of()).when(authentication).getAuthorities();
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
+                .thenReturn(List.of()); // not superadmin
+        when(cache.getVisibleDepartments()).thenReturn(null);
+        when(departmentRepository.findActiveRoleDepartmentId(uid)).thenReturn(null);
+
+        // Act
+        Set<Integer> visibleDepts = scopeService.getVisibleDepartmentIds();
+
+        // Assert — empty set is the safe default (no data leakage).
+        assertTrue(visibleDepts.isEmpty());
+        verify(departmentRepository, never()).findDirectChildren(anyInt());
+        verify(cache).setVisibleDepartments(visibleDepts);
+    }
+
+    @Test
+    @DisplayName("Should resolve visible roles from visible departments for non-superadmin")
+    void testGetVisibleRoleIdsForRegularUser() {
+        // Arrange — non-superadmin, visible departments come from cache to keep
+        // the test focused on the role-resolution path.
+        String uid = "00000000-0000-0000-0000-000000000702";
+        when(authenticationHelper.getSub()).thenReturn(uid);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
+                .thenReturn(List.of()); // not superadmin
+        when(cache.getVisibleRoles()).thenReturn(null);
+        Set<Integer> visibleDepts = Set.of(10, 11);
+        when(cache.getVisibleDepartments()).thenReturn(visibleDepts);
+        Set<Integer> expectedRoleIds = Set.of(100, 101, 102);
+        when(roleRepository.findIdsByDepartmentIdIn(visibleDepts)).thenReturn(expectedRoleIds);
+
+        // Act
+        Set<Integer> visibleRoles = scopeService.getVisibleRoleIds();
+
+        // Assert
+        assertEquals(expectedRoleIds, visibleRoles);
+        verify(roleRepository).findIdsByDepartmentIdIn(visibleDepts);
+        verify(cache).setVisibleRoles(expectedRoleIds);
+        verify(roleRepository, never()).findAll();
+    }
+
+    @Test
+    @DisplayName("Should short-circuit visible roles when visible departments are empty (no DB call)")
+    void testGetVisibleRoleIdsEmptyDepartmentsSkipsQuery() {
+        // Arrange — non-superadmin with no visible departments; we must not hit
+        // the DB with an empty IN clause and must still return an empty set.
+        String uid = "00000000-0000-0000-0000-000000000703";
+        when(authenticationHelper.getSub()).thenReturn(uid);
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
+                .thenReturn(List.of()); // not superadmin
+        when(cache.getVisibleRoles()).thenReturn(null);
+        when(cache.getVisibleDepartments()).thenReturn(Set.of());
+
+        // Act
+        Set<Integer> visibleRoles = scopeService.getVisibleRoleIds();
+
+        // Assert
+        assertTrue(visibleRoles.isEmpty());
+        verify(roleRepository, never()).findIdsByDepartmentIdIn(anySet());
+        verify(cache).setVisibleRoles(visibleRoles);
+    }
+
+    @Test
     @DisplayName("Should get visible applications for departments")
     void testGetVisibleApplicationIds() {
         // Arrange

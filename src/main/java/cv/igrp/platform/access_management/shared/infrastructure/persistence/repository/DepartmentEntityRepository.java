@@ -108,5 +108,26 @@ public interface DepartmentEntityRepository extends
             """, nativeQuery = true)
     List<DepartmentEntity> findByCurrentUserAndNotDeletedFiltered(String userId, @Param("code") String departmentCode);
 
+    /**
+     * Returns the id of the department that owns the user's currently active role,
+     * provided the assignment is not expired and the department is not deleted.
+     * Used by scope resolution to seed the visible-department set from the DB
+     * rather than from JWT claims.
+     */
+    @Query(value = """
+                SELECT r.department
+                FROM t_user u
+                JOIN t_role r ON r.id = u.active_role_id
+                JOIN t_user_role_assignment ura
+                     ON ura.role_id = r.id AND ura.user_id = u.id
+                JOIN t_department d ON d.id = r.department
+                WHERE u.id = :userId
+                  AND r.department IS NOT NULL
+                  AND d.status <> 'DELETED'
+                  AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
+                LIMIT 1
+            """, nativeQuery = true)
+    Integer findActiveRoleDepartmentId(@Param("userId") String userId);
+
 
 }

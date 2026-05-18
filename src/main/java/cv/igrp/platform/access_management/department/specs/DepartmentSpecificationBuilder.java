@@ -98,8 +98,6 @@ public class DepartmentSpecificationBuilder {
             predicates.add(deptIdPath.in(context.getDepartmentIds()));
         }
 
-        System.out.println("[[DEBUG]] Department IDs in Scope: " + context.getDepartmentIds());
-
     }
 
     private DepartmentStatus resolveDepartmentStatus(String status) {

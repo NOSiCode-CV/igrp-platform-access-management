@@ -106,6 +106,14 @@ public class ScopeService {
 
     /**
      * DEPARTMENT ACCESS SCOPE LOGIC
+     *
+     * <p>For a non-super-admin, the visible-departments set is rooted at the
+     * department owning the user's <strong>currently active role</strong> in
+     * {@code t_user.active_role_id}, expanded with all descendant departments.
+     * The previous implementation parsed JWT authority strings of the form
+     * {@code DEPT_CODE.ROLE_CODE}, which silently produced an empty set when
+     * the IdP did not emit that exact format — leaving users with a role in
+     * a department unable to see that department.
      */
     public Set<Integer> getVisibleDepartmentIds() {
         if (cache.getVisibleDepartments() != null)
@@ -118,21 +126,13 @@ public class ScopeService {
             return all;
         }
 
-        // regular user — pull from JWT claim "departments"
-        var actor = this.getActor();
-        Set<String> deptCodes = actor.roles().stream()
-                .filter(r -> r.contains("."))
-                .map(r -> r.substring(0, r.indexOf(".")))
-                .collect(HashSet::new, HashSet::add, HashSet::addAll);
-
         Set<Integer> ids = new HashSet<>();
-        deptCodes.forEach(code -> {
-            Integer id = departmentRepository.findIdByCode(code);
-            if (id != null) {
-                ids.add(id);
-                ids.addAll(resolveDescendants(id));
-            }
-        });
+        Integer activeDeptId = departmentRepository.findActiveRoleDepartmentId(this.getActor().id());
+        if (activeDeptId != null) {
+            ids.add(activeDeptId);
+            ids.addAll(resolveDescendants(activeDeptId));
+        }
+
         cache.setVisibleDepartments(ids);
         return ids;
     }
@@ -167,7 +167,12 @@ public class ScopeService {
     }
 
     /**
-     * DEPARTMENT ACCESS SCOPE LOGIC
+     * ROLE ACCESS SCOPE LOGIC
+     *
+     * <p>Visible roles are all non-deleted roles that belong to any visible
+     * department (which, for non-super-admins, is the active role's department
+     * subtree). Derived from {@link #getVisibleDepartmentIds()} so any future
+     * adjustment to how departments are scoped flows through automatically.
      */
     public Set<Integer> getVisibleRoleIds() {
         if (cache.getVisibleRoles() != null)
@@ -180,38 +185,13 @@ public class ScopeService {
             return all;
         }
 
-        // regular user — pull from JWT claim "departments"
-        var actor = this.getActor();
-        Set<String> roleCodes = actor.roles().stream()
-                .filter(r -> r.contains("."))
-                .map(r -> r.substring(r.indexOf("."), r.length() - 1))
-                .collect(HashSet::new, HashSet::add, HashSet::addAll);
-
-        Set<Integer> ids = new HashSet<>();
-        roleCodes.forEach(code -> {
-            Integer id = roleRepository.findIdByCode(code);
-            if (id != null) {
-                ids.add(id);
-                ids.addAll(resolveRoleDescendants(id));
-            }
-        });
+        Set<Integer> deptIds = getVisibleDepartmentIds();
+        Set<Integer> ids = deptIds.isEmpty()
+                ? new HashSet<>()
+                : roleRepository.findIdsByDepartmentIdIn(deptIds);
 
         cache.setVisibleRoles(ids);
         return ids;
-    }
-
-    /**
-     * Recursively resolves children roles
-     */
-    private Set<Integer> resolveRoleDescendants(Integer parentId) {
-        Set<Integer> result = new HashSet<>();
-        Set<Integer> children = roleRepository.findDirectChildren(parentId);
-
-        for (Integer c : children) {
-            result.add(c);
-            result.addAll(resolveRoleDescendants(c));
-        }
-        return result;
     }
 
     public record ActorPrincipal(
