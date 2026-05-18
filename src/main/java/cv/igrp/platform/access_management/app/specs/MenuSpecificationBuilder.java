@@ -53,10 +53,25 @@ public class MenuSpecificationBuilder {
 
                 if(query != null) query.distinct(true);
 
+                // MenuEntryEntity.roles is a real @ManyToMany attribute, so
+                // root.join("roles") is valid. RoleEntity, however, has no
+                // "users" association — the link to users is via
+                // userRoleAssignments (the @OneToMany owning the composite-key
+                // join entity). Traverse through it, then filter expired
+                // assignments to mirror IGRPUserEntity.getRoles()/RoleEntity.getUsers()
+                // semantics.
                 var roleJoin = root.join("roles");
-                var userJoin = roleJoin.join("users");
+                var uraJoin = roleJoin.join("userRoleAssignments");
+                var userJoin = uraJoin.join("user");
 
-                return cb.equal(userJoin.get("id"), context.getUserId());
+                return cb.and(
+                        cb.equal(userJoin.get("id"), context.getUserId()),
+                        cb.or(
+                                cb.isNull(uraJoin.get("expiresAt")),
+                                cb.greaterThan(uraJoin.get("expiresAt"),
+                                        cb.literal(java.time.LocalDateTime.now()))
+                        )
+                );
             });
         }
 
