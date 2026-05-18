@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.files.application.queries;
 
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.filemanager.StorageService;
 import lombok.Setter;
@@ -8,7 +9,6 @@ import lombok.Setter;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -41,11 +41,7 @@ public class GetPrivateFileUrlQueryHandler implements QueryHandler<GetPrivateFil
         var filePath = query.getFilePath();
 
         if (filePath == null || filePath.isBlank()) {
-            throw IgrpResponseStatusException.of(
-                    HttpStatus.BAD_REQUEST,
-                    "No path provided",
-                    "There's no path provided. Please check and try again."
-            );
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_FILE_PATH_REQUIRED);
         }
 
         var fileUrlDto = new FileUrlDTO();
@@ -67,11 +63,7 @@ public class GetPrivateFileUrlQueryHandler implements QueryHandler<GetPrivateFil
             fileUrlDto.setUrl(url);
             fileUrlDto.setExpiration(null); // no expiration
         } else {
-            throw IgrpResponseStatusException.of(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid path type",
-                    "Path must start with 'private' or 'public'."
-            );
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_FILE_PRIVATE_URL_GENERATION_FAILED, filePath);
         }
 
         return ResponseEntity.ok(fileUrlDto);

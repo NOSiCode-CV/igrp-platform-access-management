@@ -5,6 +5,7 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.events.DeletePermissionEvent;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
@@ -14,7 +15,6 @@ import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -76,16 +76,12 @@ public class PermissionSyncService {
                 .collect(Collectors.toList());
 
         if (validPermissions.isEmpty()) {
-            throw IgrpResponseStatusException.of(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid data",
-                    "Permission list cannot be empty or contain null names"
-            );
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_PERMISSION_VALID_LIST_EMPTY);
         }
 
         // Get all existing permissions for the current resource
         ResourceEntity resource = resourceEntityRepository.findByNameAndStatusNot(isSystem ? "igrp-access-management" : authenticationHelper.getSub() , Status.DELETED)
-                .orElseThrow(() -> IgrpResponseStatusException.notFound("Resource not found", "Resource with name: " + authenticationHelper.getSub() + " not found."));
+                .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_RESOURCE_NOT_FOUND_BY_NAME, authenticationHelper.getSub()));
 
         Set<ResourceEntity> resourceEntities = new HashSet<>();
         resourceEntities.add(resource);

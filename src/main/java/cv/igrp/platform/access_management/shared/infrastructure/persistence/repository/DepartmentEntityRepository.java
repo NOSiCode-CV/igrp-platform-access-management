@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
@@ -25,9 +26,7 @@ public interface DepartmentEntityRepository extends
 
     default DepartmentEntity findByCodeAndStatusNotDeleted(String code) {
         return findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
-                .orElseThrow(() -> IgrpResponseStatusException.notFound(
-                        "Department not found",
-                        "No department found with code: " + code));
+                .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_DEPARTMENT_NOT_FOUND_BY_CODE, code));
     }
 
     boolean existsByCode(String code);

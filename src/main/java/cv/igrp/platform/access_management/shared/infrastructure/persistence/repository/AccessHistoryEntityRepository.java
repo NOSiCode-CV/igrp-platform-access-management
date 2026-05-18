@@ -1,12 +1,12 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.AccessHistoryEntity;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
-import org.springframework.http.HttpStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -21,7 +21,7 @@ public interface AccessHistoryEntityRepository extends
 
     default AccessHistoryEntity findByIdOrThrow(Integer id) {
         return this.findById(id)
-                .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "AccessHistoryEntity not found for id: " + id));
+                .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_ACCESS_HISTORY_NOT_FOUND_BY_ID, id));
     }
 
     /**

@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.users.application.queries;
 
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
@@ -77,13 +78,13 @@ public class GetCurrentUserRolesQueryHandler implements QueryHandler<GetCurrentU
             userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         } catch (NumberFormatException e) {
             LOGGER.error("Invalid token sub: expected an integer ID but got '{}'", authenticationHelper.getSub());
-            throw IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "Invalid Token", "Token sub must be an integer ID");
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVALID_TOKEN_SUBJECT);
         }
 
         LOGGER.info("Fetching roles for user ID={}", userId);
 
         IGRPUserEntity user = userRepository.findByIdWithRolesAndPermissions(userId)
-                .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Invalid User", "User not found with id: " + userId));
+                .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_USER_NOT_FOUND_BY_ID, userId));
 
         List<RoleDTO> result = user.getUserRoleAssignments().stream()
                 .filter(ura -> ura.getExpiresAt() == null || ura.getExpiresAt().isAfter(java.time.LocalDateTime.now()))

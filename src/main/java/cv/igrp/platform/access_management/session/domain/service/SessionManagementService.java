@@ -9,6 +9,7 @@ import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
@@ -21,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -104,17 +104,10 @@ public class SessionManagementService {
         log.info("Initializing session for user: {}", userId);
 
         IGRPUserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> IgrpResponseStatusException.of(
-                        HttpStatus.NOT_FOUND,
-                        "USER_NOT_FOUND",
-                        "User not found with id: " + userId
-                ));
+                .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_USER_NOT_FOUND_BY_ID, userId));
         if (!Status.ACTIVE.equals(user.getStatus())) {
             log.warn("Inactive user attempting to create session: {}", userId);
-            throw IgrpResponseStatusException.of(
-                    HttpStatus.FORBIDDEN,
-                    "Inactive User",
-                    "User account is not active");
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_SESSION_USER_INACTIVE, userId);
         }
 
         sessionRepository.findByUserIdAndStatus(userId, SessionStatus.ACTIVE)

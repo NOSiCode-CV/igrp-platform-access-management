@@ -5,6 +5,7 @@ import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import cv.igrp.platform.access_management.role.domain.service.PermissionMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
@@ -50,7 +51,7 @@ public class GetCurrentUserPermissionsQueryHandler implements QueryHandler<GetCu
             userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         } catch (NumberFormatException e) {
             LOGGER.error("Invalid token sub: expected an integer ID but got '{}'", authenticationHelper.getSub());
-            throw IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "Invalid Token", "Token sub must be an integer ID");
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVALID_TOKEN_SUBJECT);
         }
 
         LOGGER.info("Fetching permissions for user id={}", userId);

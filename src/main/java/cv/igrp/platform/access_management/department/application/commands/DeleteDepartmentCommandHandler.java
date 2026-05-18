@@ -4,12 +4,12 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
@@ -66,16 +66,14 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
 
       if (!departmentRepository.existsByCode(code)) {
          logger.warn("Department with code={} not found", code);
-         throw IgrpResponseStatusException.of(HttpStatus.NOT_FOUND,
-                 "Invalid Department Code", "Department not found with code: " + code);
+         throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_DEPARTMENT_NOT_FOUND_BY_CODE, code);
       }
 
       // Verify if the department doesn't have children. If it has, prevent deletion.
       var department = departmentRepository.findByCodeAndStatusNot(code, DepartmentStatus.DELETED)
                       .orElseThrow(() -> {
                          logger.warn("Department with code={} not found", code);
-                         return IgrpResponseStatusException.of(HttpStatus.NOT_FOUND,
-                                 "Invalid Department Code", "Department not found with code: " + code);
+                         return IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_DEPARTMENT_NOT_FOUND_BY_CODE, code);
                       });
 
       deleteDepartmentRoles(department);

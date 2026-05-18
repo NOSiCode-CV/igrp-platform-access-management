@@ -6,6 +6,7 @@ import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
@@ -69,7 +70,7 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
         ApplicationDTO appDto = command.getApplicationdto();
 
         ApplicationEntity application = applicationRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
-                .orElseThrow(() -> IgrpResponseStatusException.notFound("Application not found", "Application not found with code: " + command.getCode()));
+                .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_APPLICATION_NOT_FOUND_BY_CODE, command.getCode()));
 
         application.setName(appDto.getName());
         application.setDescription(appDto.getDescription());
@@ -83,7 +84,7 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
         for (var dept : appDto.getDepartments()) {
 
             var department = departmentEntityRepository.findByCodeAndStatusNot(dept, DepartmentStatus.DELETED)
-                    .orElseThrow(() -> IgrpResponseStatusException.notFound("Department not found", "Department not found for code: " + dept));
+                    .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_DEPARTMENT_NOT_FOUND_BY_CODE, dept));
 
             var parent = department.getParentId();
 
@@ -91,11 +92,7 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
                 var parentApplications = parent.getApplications();
                 if (parentApplications != null) {
                     if (parentApplications.stream().noneMatch(app -> app.getId().equals(application.getId())))
-                        throw IgrpResponseStatusException.badRequest(
-                                "Department access denied",
-                                "Department with code %s cannot be granted access to application %s because its parent department does not have access."
-                                        .formatted(dept, application.getCode())
-                        );
+                        throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_DEPARTMENT_ACCESS_DENIED, "Department with code %s cannot be granted access to application %s because its parent department does not have access.".formatted(dept, application.getCode()));
                 }
             }
 

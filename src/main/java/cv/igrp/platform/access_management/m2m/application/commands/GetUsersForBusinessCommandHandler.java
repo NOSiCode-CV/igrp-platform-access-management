@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.m2m.application.commands;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPBusinessUserDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
@@ -41,7 +42,7 @@ public class GetUsersForBusinessCommandHandler implements CommandHandler<GetUser
                && command.getDepartmentCode() == null
                && command.getRoleCode() == null
                && command.getPermissionName() == null && command.getGetUsersForBusinessRequest().isEmpty()) {
-           throw IgrpResponseStatusException.badRequest("At least one filter must be provided: applicationCode, departmentCode, roleCode or permissionName");
+           throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_M2M_FILTER_REQUIRED);
        }
 
        var specification = userSpecificationBuilder.buildSpecification(command);
