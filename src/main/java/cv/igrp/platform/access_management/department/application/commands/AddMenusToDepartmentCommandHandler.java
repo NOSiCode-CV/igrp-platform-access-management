@@ -4,13 +4,13 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
@@ -40,19 +40,13 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
       var departmentOpt = departmentRepository.findByCodeAndStatusNot(command.getDepartmentCode(), DepartmentStatus.DELETED);
       if (departmentOpt.isEmpty()) {
          LOGGER.warn("Department not found with code: {}", command.getDepartmentCode());
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.NOT_FOUND,
-                 "Department not found",
-                 "Department not found with code: " + command.getDepartmentCode());
+         throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_DEPARTMENT_NOT_FOUND_BY_CODE, command.getDepartmentCode());
       }
 
       var applicationOpt = applicationRepository.findByCodeAndStatusNot(command.getApplicationCode(), Status.DELETED);
       if (applicationOpt.isEmpty()) {
          LOGGER.warn("Application not found with code: {}", command.getApplicationCode());
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.NOT_FOUND,
-                 "Application not found",
-                 "Application not found with code: " + command.getApplicationCode());
+         throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_APPLICATION_NOT_FOUND_BY_CODE, command.getApplicationCode());
       }
 
       var department = departmentOpt.get();
@@ -61,10 +55,7 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
          var menuEntryOpt = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, menuCode, Status.DELETED);
          if (menuEntryOpt.isEmpty()) {
             LOGGER.warn("Menu Entry not found with code: {}", menuCode);
-            throw IgrpResponseStatusException.of(
-                    HttpStatus.NOT_FOUND,
-                    "Menu Entry not found",
-                    "Menu Entry not found with code: " + menuCode);
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_MENU_ENTRY_NOT_FOUND, menuCode);
          }
          var menuEntry = menuEntryOpt.get();
          if (!menuEntry.getDepartments().contains(department)) {
@@ -72,7 +63,7 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
             if(optParentDepartment != null) {
 
                var parentDepartment = departmentRepository.findById(optParentDepartment.getId()).orElseThrow(
-                       () -> IgrpResponseStatusException.notFound("Parent Department was not found: " + optParentDepartment.getCode())
+                       () -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_DEPARTMENT_PARENT_NOT_FOUND, optParentDepartment.getCode())
                );
 
                if(parentDepartment.getMenuentries().stream().map(MenuEntryEntity::getCode).toList().contains(menuCode)) {
@@ -80,10 +71,7 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
                   //attributeDepartmentToParents(menuEntry, department);
                } else {
                   LOGGER.warn("Cannot add menu <{}> to department <{}> because its parent department <{}> is not associated with the menu", menuCode, command.getDepartmentCode(), department.getParentId().getCode());
-                  throw IgrpResponseStatusException.of(
-                          HttpStatus.BAD_REQUEST,
-                          "Invalid Department Association",
-                          "Cannot add menu " + menuCode + " to department " + command.getDepartmentCode() + " because its parent department " + department.getParentId().getCode() + " is not associated with the menu");
+                  throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_MENU_NOT_ASSOCIATED_TO_PARENT_DEPARTMENT, menuCode, command.getDepartmentCode(), department.getParentId().getCode());
                }
             } else {
                menuEntry.getDepartments().add(department);
@@ -103,10 +91,7 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
 
       if(menuEntry.getParentId() != null) {
          var parentMenuEntry = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(menuEntry.getApplicationId(), menuEntry.getParentId().getCode(), Status.DELETED).orElseThrow(
-                 () -> IgrpResponseStatusException.of(
-                         HttpStatus.NOT_FOUND,
-                         "Parent Menu Entry not found",
-                         "Parent Menu Entry not found with code: " + menuEntry.getParentId().getCode())
+                 () -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_MENU_PARENT_NOT_FOUND, menuEntry.getParentId().getCode())
          );
          parentMenuEntry.getDepartments().add(department);
 

@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.department.specs;
 import cv.igrp.platform.access_management.department.application.queries.GetDepartmentsQuery;
 import cv.igrp.platform.access_management.m2m.application.commands.GetDepartmentForBusinessCommand;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.spring.Scoped;
@@ -11,7 +12,6 @@ import jakarta.persistence.criteria.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
@@ -107,11 +107,7 @@ public class DepartmentSpecificationBuilder {
             return DepartmentStatus.valueOf(status);
         } catch (IllegalArgumentException ex) {
             logger.warn("Invalid status provided: '{}'", status);
-            throw IgrpResponseStatusException.of(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid department status",
-                    "No department status found with name: " + status
-            );
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_DEPARTMENT_INVALID_STATUS, status);
         }
     }
 

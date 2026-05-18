@@ -3,8 +3,8 @@ package cv.igrp.platform.access_management.files.application.commands.handler;
 import cv.igrp.platform.access_management.files.application.constants.UploadType;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import cv.igrp.platform.filemanager.StorageService;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,11 +24,7 @@ public class UploadFileCommandHandler {
 
    public String uploadFile(MultipartFile file, String folder, UploadType uploadType) {
       if (file == null || file.isEmpty()) {
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.BAD_REQUEST,
-                 "No file uploaded",
-                 "There's no file uploaded. Please check and try again."
-         );
+         throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_FILE_REQUIRED);
       }
 
       try {

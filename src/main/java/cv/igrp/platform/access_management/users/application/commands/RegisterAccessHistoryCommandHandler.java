@@ -2,13 +2,13 @@ package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.AccessHistoryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.AccessHistoryEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
@@ -45,7 +45,7 @@ public class RegisterAccessHistoryCommandHandler implements CommandHandler<Regis
       LOGGER.info("Registering access history on application <{}> for user with external ID: {}", command.getApplicationCode(), currentUserSub);
 
       var user = userEntityRepository.findByIdWithRolesAndPermissions(SubjectParser.parseUserSubjectOrThrow(currentUserSub)).orElseThrow(
-              () -> IgrpResponseStatusException.of(HttpStatus.UNAUTHORIZED, "User with external ID " + currentUserSub + " not found")
+              () -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_USER_NOT_FOUND_BY_EXTERNAL_ID, currentUserSub)
       );
 
       var application = applicationEntityRepository.findByCodeAndStatusNotDeleted(command.getApplicationCode());

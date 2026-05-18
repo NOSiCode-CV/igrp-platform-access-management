@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import org.springframework.http.HttpStatus;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 
 
@@ -61,7 +61,7 @@ public enum InvitationStatus implements IgrpEnum<String> {
   * @throws IllegalArgumentException if no enum value exists for the given code
   */
   public static InvitationStatus fromCodeOrThrow(String code) {
-    return fromCode(code).orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "Invalid InvitationStatus for this code: " + code));
+    return fromCode(code).orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_STATUS_INVALID, code));
   }
 
   /**

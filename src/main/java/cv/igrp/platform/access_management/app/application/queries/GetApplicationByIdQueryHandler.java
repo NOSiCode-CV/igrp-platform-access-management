@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.app.application.queries;
 
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
 import cv.igrp.platform.access_management.app.mapper.ApplicationMapper;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
@@ -56,7 +57,7 @@ public class GetApplicationByIdQueryHandler implements QueryHandler<GetApplicati
   @IgrpQueryHandler
   public ResponseEntity<ApplicationDTO> handle(GetApplicationByIdQuery query) {
     ApplicationEntity application = applicationRepository.findById(query.getId())
-            .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found with id: " + query.getId()));
+            .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_APPLICATION_NOT_FOUND_BY_ID, query.getId()));
     return ResponseEntity.ok(applicationMapper.toDto(application));
   }
 

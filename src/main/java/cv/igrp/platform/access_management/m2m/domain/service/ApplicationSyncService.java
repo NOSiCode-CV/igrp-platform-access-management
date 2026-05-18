@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.m2m.domain.service;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.ApplicationDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
@@ -36,7 +37,7 @@ public class ApplicationSyncService {
     public void synchronizeApplication(ApplicationDTO applicationDTO) {
 
         if (applicationDTO == null || applicationDTO.getCode() == null || applicationDTO.getCode().isBlank()) {
-            throw IgrpResponseStatusException.badRequest("Application code is required");
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_APPLICATION_CODE_REQUIRED);
         }
 
         if (applicationDTO.getCode().equals(IGRP_APP)) {
@@ -80,7 +81,7 @@ public class ApplicationSyncService {
 
         } catch (Exception e) {
             LOGGER.error("[ApplicationSync] Failed to synchronize application '{}': {}", applicationDTO != null ? applicationDTO.getCode() : "null", e.getMessage());
-            throw IgrpResponseStatusException.internalServerError(e.getMessage());
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_APPLICATION_SYNC_FAILED, e.getMessage());
         }
     }
 }

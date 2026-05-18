@@ -7,6 +7,7 @@ import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
@@ -103,9 +104,7 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
          foundRole = roleRepository.findByDepartmentAndCodeAndStatusNot(department, command.getRoleCode(), Status.DELETED)
                  .orElseThrow(() -> {
                     log.warn("Role with code: {} not found for department: {}.", command.getRoleCode(), departmentCode);
-                    return IgrpResponseStatusException.of(
-                            HttpStatus.NOT_FOUND, "Add Permission", "Role with code: " + command.getRoleCode() + " not found."
-                    );
+                    return IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_ROLE_NOT_FOUND_BY_CODE, command.getRoleCode());
                  });
       } else {
          foundRole = null;
@@ -121,14 +120,12 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
 
       if (permissionList.isEmpty()) {
          log.warn("No permission available from given set: {} ", command.getAddPermissionsRequest().stream().toList());
-         throw IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Permissions not found", permissionIdList);
+         throw IgrpResponseStatusException.ofWithDetails(IgrpErrorCode.IGRP_AUTH_PERMISSIONS_NOT_FOUND, permissionIdList, permissionIdList);
       }
 
       if (foundRole == null) {
          // Ensure role exists before proceeding, maintaining previous behavior
-         throw IgrpResponseStatusException.of(
-                 HttpStatus.NOT_FOUND, "Add Permission", "Role with code: " + command.getRoleCode() + " not found."
-         );
+         throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_ROLE_NOT_FOUND_BY_CODE, command.getRoleCode());
       }
 
       foundRole.getPermissions().addAll(permissionList);

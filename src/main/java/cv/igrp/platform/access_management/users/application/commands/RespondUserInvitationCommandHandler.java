@@ -10,6 +10,7 @@ import cv.igrp.platform.access_management.shared.application.constants.Invitatio
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.events.UserStatusChangedEvent;
 import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
@@ -21,7 +22,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService;
 import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -110,17 +110,13 @@ public class RespondUserInvitationCommandHandler
       // a clean 409 instead of a misleading 404 from the PENDING-only finder.
       var invitation = invitationRepository.findByTokenOrThrow(command.getToken());
       if (invitation.getStatus() == InvitationStatus.ACCEPTED) {
-         throw IgrpResponseStatusException.of(HttpStatus.CONFLICT,
-               "This invitation has already been accepted.");
+         throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_ALREADY_ACCEPTED);
       }
       if (invitation.getStatus() == InvitationStatus.REJECTED) {
-         throw IgrpResponseStatusException.of(HttpStatus.CONFLICT,
-               "This invitation has already been rejected.");
+         throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_ALREADY_REJECTED);
       }
       if (invitation.getStatus() != InvitationStatus.PENDING) {
-         throw IgrpResponseStatusException.of(HttpStatus.CONFLICT,
-               "This invitation is not in a state that allows a response (status=%s)."
-                     .formatted(invitation.getStatus()));
+         throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_NOT_PENDING, invitation.getStatus());
       }
 
       // Get authenticated user's OIDC Context
@@ -131,9 +127,7 @@ public class RespondUserInvitationCommandHandler
             .getPrincipal() instanceof cv.igrp.platform.access_management.shared.security.IgrpOidcUser oidcUser) {
          profile = oidcUser.getUserProfile();
       } else {
-         throw IgrpResponseStatusException.of(
-               HttpStatus.UNAUTHORIZED,
-               "Native OIDC User Context required to accept invitation");
+         throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_RESPONSE_UNAUTHORIZED);
       }
 
       String authMethod = profile.authMethod() != null ? profile.authMethod() : "pwd";
@@ -161,8 +155,7 @@ public class RespondUserInvitationCommandHandler
          if (otpEntityOpt.isPresent()) {
              invitation.setOtpId(otpEntityOpt.get().getId());
          } else {
-             throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST,
-                    "O código OTP não foi validado. Por favor, valide o seu código OTP antes de aceitar o convite.");
+             throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_OTP_NOT_VALIDATED);
          }
 
          invitation.setStatus(InvitationStatus.ACCEPTED);
@@ -234,9 +227,7 @@ public class RespondUserInvitationCommandHandler
          }
 
          for (var role : invitation.getRoles()) {
-            var roleEntity = roleRepository.findById(role.getId()).orElseThrow(() -> IgrpResponseStatusException.of(
-                  HttpStatus.NOT_FOUND,
-                  "Role with ID <%s> was not found".formatted(role.getId())));
+            var roleEntity = roleRepository.findById(role.getId()).orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_ROLE_NOT_FOUND_BY_ID, role.getId()));
 
             // Idempotency without NonUniqueObjectException: search the user's
             // already-managed userRoleAssignments collection first. Using

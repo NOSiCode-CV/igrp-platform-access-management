@@ -6,6 +6,7 @@ import cv.igrp.framework.notifications.core.model.Notification;
 import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.dto.OtpResponseDTO;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
@@ -13,7 +14,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,7 +52,7 @@ public class ValidateInvitationEmailCommandHandler implements CommandHandler<Val
 
         if (!command.getEmail().equalsIgnoreCase(invitation.getIdentifierValue())) {
             LOGGER.warn("Email validation failed. Provided: {}, Expected: {}", command.getEmail(), invitation.getIdentifierValue());
-            throw IgrpResponseStatusException.of(HttpStatus.BAD_REQUEST, "The provided email does not match the invitation");
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_EMAIL_MISMATCH);
         }
 
         // Generate 6-digit OTP
@@ -77,7 +77,7 @@ public class ValidateInvitationEmailCommandHandler implements CommandHandler<Val
             LOGGER.info("OTP sent to email: {}", invitation.getIdentifierValue());
         } catch (Exception e) {
             LOGGER.error("Failed to send OTP via email", e);
-            throw IgrpResponseStatusException.of(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to send OTP email");
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_OTP_SEND_FAILED);
         }
 
         OtpResponseDTO response = new OtpResponseDTO();

@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -94,7 +95,7 @@ public interface ApplicationEntityRepository extends
 
     default ApplicationEntity findByCodeAndStatusNotDeleted(String code) {
         return findByCodeAndStatusNot(code, Status.DELETED)
-                .orElseThrow(() -> IgrpResponseStatusException.notFound("Application not found with code: " + code));
+                .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_APPLICATION_NOT_FOUND_BY_CODE, code));
     }
 
     List<ApplicationEntity> findByIdInAndStatusNot(Collection<Integer> ids, Status status);

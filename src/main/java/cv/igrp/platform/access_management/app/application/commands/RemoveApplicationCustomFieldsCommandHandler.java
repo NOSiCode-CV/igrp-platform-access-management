@@ -4,12 +4,12 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.application.constants.CustomFieldTableName;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.CustomFieldEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.CustomFieldEntityRepository;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
@@ -64,10 +64,10 @@ public class RemoveApplicationCustomFieldsCommandHandler implements CommandHandl
    @IgrpCommandHandler
    public ResponseEntity<String> handle(RemoveApplicationCustomFieldsCommand command) {
       ApplicationEntity application = applicationRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
-              .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "Application not found", "Application not found with code: " + command.getCode()));
+              .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_APPLICATION_NOT_FOUND_BY_CODE, command.getCode()));
       CustomFieldEntity customField = customFieldRepository
               .findByTableNameAndRecordId(CustomFieldTableName.APPLICATION.getName(), application.getId())
-              .orElseThrow(() -> IgrpResponseStatusException.of(HttpStatus.NOT_FOUND, "CustomFieldEntity not found", "CustomFieldEntity not found for Application ID: " + application.getId()));
+              .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_CUSTOM_FIELD_NOT_FOUND_FOR_APPLICATION, application.getId()));
       Map<String, Object> fields = customField.getFields();
       if (fields != null)
          command.getRemoveApplicationCustomFieldsRequest().forEach(fields::remove);

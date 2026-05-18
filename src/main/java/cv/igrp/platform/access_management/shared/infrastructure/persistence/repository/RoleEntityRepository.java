@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
@@ -74,7 +75,7 @@ public interface RoleEntityRepository extends
 
     default RoleEntity findByDepartmentAndCodeAndStatusNotDeleted(DepartmentEntity department, String code) {
         return findByDepartmentAndCodeAndStatusNot(department, code, Status.DELETED)
-                .orElseThrow(() -> IgrpResponseStatusException.notFound("Role with code: <" + code + "> was not found"));
+                .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_ROLE_NOT_FOUND_BY_CODE, code));
     }
 
     @Query("""
