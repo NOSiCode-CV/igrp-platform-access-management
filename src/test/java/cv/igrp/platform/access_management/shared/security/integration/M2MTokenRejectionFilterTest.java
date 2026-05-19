@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.shared.security.integration;
 
+import cv.igrp.platform.access_management.authorization.domain.service.PermissionCacheService;
 import cv.igrp.platform.access_management.session.config.SessionProperties;
 import cv.igrp.platform.access_management.session.domain.service.SessionHeartbeatService;
 import cv.igrp.platform.access_management.session.infrastructure.metrics.SessionMetrics;
@@ -7,6 +8,7 @@ import cv.igrp.platform.access_management.session.infrastructure.persistence.rep
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.security.M2MTokenRejectionFilter;
 import cv.igrp.platform.access_management.shared.security.OAuth2SecurityConfiguration;
+import cv.igrp.platform.access_management.shared.security.ServiceAccountM2MAuthorizationFilter;
 import cv.igrp.platform.access_management.shared.security.SessionEnforcementFilter;
 import cv.igrp.platform.access_management.shared.security.UserStatusGuard;
 import org.junit.jupiter.api.BeforeEach;
@@ -199,6 +201,17 @@ class M2MTokenRejectionFilterTest {
         @Bean
         M2MTokenRejectionFilter m2mTokenRejectionFilter() {
             return new M2MTokenRejectionFilter();
+        }
+
+        @Bean
+        ServiceAccountM2MAuthorizationFilter serviceAccountM2MAuthorizationFilter(
+                PermissionCacheService permissionCacheService) {
+            return new ServiceAccountM2MAuthorizationFilter(permissionCacheService);
+        }
+
+        @Bean
+        PermissionCacheService permissionCacheService() {
+            return mock(PermissionCacheService.class);
         }
 
         @Bean

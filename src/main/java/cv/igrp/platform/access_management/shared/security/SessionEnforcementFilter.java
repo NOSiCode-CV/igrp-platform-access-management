@@ -45,12 +45,9 @@ import java.util.UUID;
  * {@code /api/session/check} bypass the filter entirely.
  *
  * <p>FR-13: tokens that reach an enforced path WITHOUT a {@code sid} claim are
- * rejected with 401 ({@code error_description="missing_sid"}). There is no
- * legacy fallback — Phase B made {@code sid} mandatory at issuance for every
- * non-{@code client_credentials} grant in {@code JwtTokenConfig.igrpTokenCustomizer},
- * and M2M {@code client_credentials} tokens only travel over {@code /api/m2m/**}
- * which is skipped above. Any sid-less JWT seen here is either misissued or
- * forged.
+ * rejected with 401 ({@code error_description="missing_sid"}), except linked
+ * service-account tokens where {@code client_credentials} is intentionally
+ * stateless and authorization is role/permission based.
  *
  * <p>Behind a feature flag {@code igrp.session.enforcement-enabled}
  * (default {@code true}) so the chain can be disabled in an emergency.
@@ -129,10 +126,12 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
 
         String sidClaim = jwt.getClaimAsString(CLAIM_SID);
         if (sidClaim == null || sidClaim.isBlank()) {
-            // FR-13: no legacy fallback. M2M tokens (the only legitimate sid-less
-            // issuance branch in JwtTokenConfig) only travel over /api/m2m/** and
-            // are already filtered out by shouldNotFilter() above. A sid-less JWT
-            // reaching this point is either misissued or forged — reject.
+            if (isServiceAccountToken(jwt)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
+            // FR-13: no legacy fallback for user tokens. Service-account tokens
+            // are explicitly stateless and were passed through above.
             sessionMetrics.recordRejectedRevoked("missing_sid");
             unauthorized(response, "invalid_token", "missing_sid");
             return;
@@ -226,6 +225,11 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
         } catch (IllegalArgumentException ex) {
             return null;
         }
+    }
+
+    private static boolean isServiceAccountToken(Jwt jwt) {
+        return ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT.equals(
+                jwt.getClaimAsString(ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE));
     }
 
     private boolean heartbeatRequired(Instant lastSeenAt, Instant now) {

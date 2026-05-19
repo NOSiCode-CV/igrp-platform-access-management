@@ -52,6 +52,7 @@ public class OAuth2SecurityConfiguration {
     private final Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter;
     private final SessionEnforcementFilter sessionEnforcementFilter;
     private final M2MTokenRejectionFilter m2mTokenRejectionFilter;
+    private final ServiceAccountM2MAuthorizationFilter serviceAccountM2MAuthorizationFilter;
     private final UserStatusGuard userStatusGuard;
 
     @Value("${igrp.access.m2m.sync-token:}")
@@ -60,10 +61,12 @@ public class OAuth2SecurityConfiguration {
     public OAuth2SecurityConfiguration(Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter,
                                        SessionEnforcementFilter sessionEnforcementFilter,
                                        M2MTokenRejectionFilter m2mTokenRejectionFilter,
+                                       ServiceAccountM2MAuthorizationFilter serviceAccountM2MAuthorizationFilter,
                                        UserStatusGuard userStatusGuard) {
         this.jwtAuthenticationConverter = jwtAuthenticationConverter;
         this.sessionEnforcementFilter = sessionEnforcementFilter;
         this.m2mTokenRejectionFilter = m2mTokenRejectionFilter;
+        this.serviceAccountM2MAuthorizationFilter = serviceAccountM2MAuthorizationFilter;
         this.userStatusGuard = userStatusGuard;
     }
 
@@ -101,6 +104,12 @@ public class OAuth2SecurityConfiguration {
 
             String client = request.getHeader("X-Machine-Service-ID");
             String header = request.getHeader("X-Machine-Auth-Token");
+            String authorization = request.getHeader("Authorization");
+
+            if (authorization != null && authorization.regionMatches(true, 0, "Bearer ", 0, 7)) {
+                filterChain.doFilter(request, response);
+                return;
+            }
 
             System.out.println("X-Machine-Service-ID: " + client);
             System.out.println("X-Machine-Auth-Token: " + header);
@@ -147,7 +156,11 @@ public class OAuth2SecurityConfiguration {
                 )
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
-                .addFilterBefore(new MachineAuthFilter(), UsernamePasswordAuthenticationFilter.class);
+                .oauth2ResourceServer(oauth2 -> oauth2.jwt(jwt ->
+                        jwt.jwtAuthenticationConverter(jwtAuthenticationConverter)
+                ))
+                .addFilterBefore(new MachineAuthFilter(), UsernamePasswordAuthenticationFilter.class)
+                .addFilterAfter(serviceAccountM2MAuthorizationFilter, BearerTokenAuthenticationFilter.class);
 
         return http.build();
     }

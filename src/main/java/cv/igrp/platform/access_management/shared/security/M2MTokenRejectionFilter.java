@@ -19,7 +19,8 @@ import java.util.List;
 
 /**
  * Phase G1 / FR-13 — first line of defense against M2M
- * ({@code client_credentials}) JWTs reaching user-scoped endpoints.
+ * ({@code client_credentials}) JWTs reaching user-scoped endpoints without a
+ * linked service-account principal.
  *
  * <p>A live production crash was reproduced against
  * {@code https://api-demoigrp.nosi.cv/igrp-access-management} where a
@@ -29,9 +30,11 @@ import java.util.List;
  * inside the permission cache. This filter is positioned on the OAuth2
  * resource-server chain immediately after the {@code BearerTokenAuthenticationFilter}
  * and <b>before</b> {@link SessionEnforcementFilter}: it inspects the
- * authenticated JWT, recognizes the M2M shape (absent {@code sid} claim AND
- * {@code client_id == sub}), and rejects with HTTP 401 plus a standards-shaped
- * {@code WWW-Authenticate} challenge.
+ * authenticated JWT, recognizes the legacy M2M shape (absent {@code sid}
+ * claim AND {@code client_id == sub}), and rejects with HTTP 401 plus a
+ * standards-shaped {@code WWW-Authenticate} challenge. Linked service-account
+ * tokens use the service-account UUID as {@code sub} and carry
+ * {@code principal_type=SERVICE_ACCOUNT}.
  *
  * <p>Path-based skip mirrors {@link SessionEnforcementFilter}: anything that is
  * legitimately served to non-user principals (M2M endpoints, swagger/actuator,

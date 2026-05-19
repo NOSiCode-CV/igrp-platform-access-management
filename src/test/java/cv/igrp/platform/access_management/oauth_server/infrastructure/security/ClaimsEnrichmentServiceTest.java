@@ -1,15 +1,20 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.OAuthClientEntity;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.ServiceAccountEntity;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.ServiceAccountRoleAssignment;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.UserIdentityEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.ServiceAccountJpaRepository;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.UserIdentityJpaRepository;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.security.ServiceAccountTokenClaims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -32,6 +37,7 @@ import static org.mockito.Mockito.when;
 class ClaimsEnrichmentServiceTest {
 
     @Mock private OAuthClientJpaRepository oauthClientRepository;
+    @Mock private ServiceAccountJpaRepository serviceAccountRepository;
     @Mock private UserIdentityJpaRepository userIdentityRepository;
     @Mock private IGRPUserEntityRepository userRepository;
 
@@ -39,7 +45,8 @@ class ClaimsEnrichmentServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new ClaimsEnrichmentService(oauthClientRepository, userIdentityRepository, userRepository);
+        service = new ClaimsEnrichmentService(oauthClientRepository, serviceAccountRepository,
+                userIdentityRepository, userRepository);
     }
 
     @Test
@@ -131,5 +138,50 @@ class ClaimsEnrichmentServiceTest {
         assertEquals("", claims.get("org"));
         assertNotNull(claims.get("permissions"));
         assertNotNull(claims.get("resource_access"));
+    }
+
+    @Test
+    void buildClaimsEnrichesServiceAccountRolesAndPermissions() {
+        UUID serviceAccountId = UUID.fromString("00000000-0000-0000-0000-000000000123");
+
+        PermissionEntity permission = new PermissionEntity();
+        permission.setName("igrp.m2m.sync");
+        permission.setStatus(Status.ACTIVE);
+
+        RoleEntity role = new RoleEntity();
+        role.setId(7);
+        role.setCode("M2M_SYNC");
+        role.setStatus(Status.ACTIVE);
+        role.setPermissions(new HashSet<>(Set.of(permission)));
+
+        OAuthClientEntity client = new OAuthClientEntity();
+        client.setId(UUID.randomUUID());
+        client.setClientId("client-a");
+        client.setActive(true);
+
+        ServiceAccountEntity serviceAccount = new ServiceAccountEntity();
+        serviceAccount.setId(serviceAccountId);
+        serviceAccount.setName("Client A");
+        serviceAccount.setActive(true);
+        serviceAccount.setOauthClient(client);
+        serviceAccount.setRoleAssignments(new HashSet<>());
+        serviceAccount.getRoleAssignments().add(new ServiceAccountRoleAssignment(serviceAccount, role, null));
+
+        when(userRepository.findById(serviceAccountId.toString())).thenReturn(Optional.empty());
+        when(oauthClientRepository.findByClientId("client-a")).thenReturn(Optional.of(client));
+        when(serviceAccountRepository.findByIdWithRolesAndPermissions(serviceAccountId))
+                .thenReturn(Optional.of(serviceAccount));
+
+        Map<String, Object> claims = service.buildClaims(serviceAccountId.toString(), "client-a", Set.of());
+
+        assertEquals(ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT,
+                claims.get(ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE));
+        assertEquals(serviceAccountId.toString(), claims.get(ServiceAccountTokenClaims.CLAIM_SERVICE_ACCOUNT_ID));
+        @SuppressWarnings("unchecked")
+        Set<String> permissions = (Set<String>) claims.get("permissions");
+        assertTrue(permissions.contains("igrp.m2m.sync"));
+        @SuppressWarnings("unchecked")
+        Map<String, Object> resourceAccess = (Map<String, Object>) claims.get("resource_access");
+        assertTrue(resourceAccess.containsKey("client-a"));
     }
 }

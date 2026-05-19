@@ -1,9 +1,12 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.OAuthClientEntity;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.ServiceAccountEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.UserIdentityEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.ServiceAccountJpaRepository;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.UserIdentityJpaRepository;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.audit.AuthAuditContext;
 import cv.igrp.platform.access_management.shared.domain.audit.IdentifierType;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
@@ -11,6 +14,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
+import cv.igrp.platform.access_management.shared.security.ServiceAccountTokenClaims;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -23,6 +27,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -61,13 +66,16 @@ public class ClaimsEnrichmentService {
     );
 
     private final OAuthClientJpaRepository oauthClientRepository;
+    private final ServiceAccountJpaRepository serviceAccountRepository;
     private final UserIdentityJpaRepository userIdentityRepository;
     private final IGRPUserEntityRepository userRepository;
 
     public ClaimsEnrichmentService(OAuthClientJpaRepository oauthClientRepository,
+                                   ServiceAccountJpaRepository serviceAccountRepository,
                                    UserIdentityJpaRepository userIdentityRepository,
                                    IGRPUserEntityRepository userRepository) {
         this.oauthClientRepository = oauthClientRepository;
+        this.serviceAccountRepository = serviceAccountRepository;
         this.userIdentityRepository = userIdentityRepository;
         this.userRepository = userRepository;
     }
@@ -100,6 +108,17 @@ public class ClaimsEnrichmentService {
                 .orElseGet(Collections::emptySet);
     }
 
+    @Transactional(readOnly = true)
+    public Optional<String> resolveServiceAccountSubject(String clientId) {
+        if (clientId == null || clientId.isBlank()) {
+            return Optional.empty();
+        }
+        return serviceAccountRepository.findByOauthClient_ClientId(clientId)
+                .filter(this::isUsableServiceAccount)
+                .map(ServiceAccountEntity::getId)
+                .map(UUID::toString);
+    }
+
     /**
      * Build the custom claim map for the given subject / client id pair.
      * Missing data is rendered as empty values rather than thrown exceptions
@@ -115,12 +134,22 @@ public class ClaimsEnrichmentService {
                 : oauthClientRepository.findByClientId(clientId);
 
         Optional<IGRPUserEntity> user = resolveUser(subject);
+        Optional<ServiceAccountEntity> serviceAccount = user.isPresent()
+                ? Optional.empty()
+                : resolveServiceAccount(subject);
 
         claims.put("selectedRole", selectedRole(user));
-        claims.put("org", selectedOrg(client));
-        claims.put("permissions", permissions(user));
-        claims.put("resource_access", resourceAccess(clientId, user));
+        claims.put("org", selectedOrg(client, serviceAccount));
+        claims.put("permissions", permissions(user, serviceAccount));
+        claims.put("resource_access", resourceAccess(clientId, user, serviceAccount));
         claims.putAll(standardIdentityClaims(user, scopes));
+
+        serviceAccount.ifPresent(account -> {
+            claims.put(ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE,
+                    ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT);
+            claims.put(ServiceAccountTokenClaims.CLAIM_SERVICE_ACCOUNT_ID, account.getId().toString());
+            claims.put(ServiceAccountTokenClaims.CLAIM_CLIENT_ID, clientId);
+        });
 
         Map<String, Object> metadata = filteredMetadata(user);
         if (!metadata.isEmpty()) {
@@ -139,14 +168,38 @@ public class ClaimsEnrichmentService {
         return userRepository.findById(subject);
     }
 
+    private Optional<ServiceAccountEntity> resolveServiceAccount(String subject) {
+        if (subject == null || subject.isBlank()) {
+            return Optional.empty();
+        }
+        try {
+            UUID id = UUID.fromString(subject);
+            return serviceAccountRepository.findByIdWithRolesAndPermissions(id)
+                    .filter(this::isUsableServiceAccount);
+        } catch (IllegalArgumentException ex) {
+            return Optional.empty();
+        }
+    }
+
+    private boolean isUsableServiceAccount(ServiceAccountEntity serviceAccount) {
+        return serviceAccount != null
+                && serviceAccount.isActive()
+                && serviceAccount.getOauthClient() != null
+                && serviceAccount.getOauthClient().isActive();
+    }
+
     private String selectedRole(Optional<IGRPUserEntity> user) {
         return user.map(IGRPUserEntity::getActiveRole)
                 .map(RoleEntity::getCode)
                 .orElse("");
     }
 
-    private String selectedOrg(Optional<OAuthClientEntity> client) {
-        return client.map(OAuthClientEntity::getApplication)
+    private String selectedOrg(Optional<OAuthClientEntity> client,
+                               Optional<ServiceAccountEntity> serviceAccount) {
+        Optional<ApplicationEntity> application = serviceAccount
+                .map(ServiceAccountEntity::getApplication)
+                .or(() -> client.map(OAuthClientEntity::getApplication));
+        return application
                 .map(ApplicationEntity::getCode)
                 .orElse("");
     }
@@ -246,6 +299,9 @@ public class ClaimsEnrichmentService {
                 : oauthClientRepository.findByClientId(clientId);
 
         Optional<IGRPUserEntity> user = resolveUser(subject);
+        Optional<ServiceAccountEntity> serviceAccount = user.isPresent()
+                ? Optional.empty()
+                : resolveServiceAccount(subject);
         IdentifierType identifierType = IdentifierType.UNKNOWN;
         String identifierValue = null;
 
@@ -263,7 +319,10 @@ public class ClaimsEnrichmentService {
             }
         }
 
-        String applicationCode = client.map(OAuthClientEntity::getApplication)
+        Optional<ApplicationEntity> auditApplication = serviceAccount
+                .map(ServiceAccountEntity::getApplication)
+                .or(() -> client.map(OAuthClientEntity::getApplication));
+        String applicationCode = auditApplication
                 .map(ApplicationEntity::getCode)
                 .filter(code -> code != null && !code.isBlank())
                 .orElse(clientId);
@@ -278,7 +337,15 @@ public class ClaimsEnrichmentService {
         );
     }
 
-    private Set<String> permissions(Optional<IGRPUserEntity> user) {
+    private Set<String> permissions(Optional<IGRPUserEntity> user,
+                                    Optional<ServiceAccountEntity> serviceAccount) {
+        if (user.isPresent()) {
+            return userPermissions(user);
+        }
+        return serviceAccountPermissions(serviceAccount);
+    }
+
+    private Set<String> userPermissions(Optional<IGRPUserEntity> user) {
         if (user.isEmpty() || user.get().getActiveRole() == null) {
             return Collections.emptySet();
         }
@@ -293,11 +360,37 @@ public class ClaimsEnrichmentService {
                 .collect(Collectors.toSet());
     }
 
-    private Map<String, Object> resourceAccess(String clientId, Optional<IGRPUserEntity> user) {
-        if (clientId == null || user.isEmpty()) {
+    private Set<String> serviceAccountPermissions(Optional<ServiceAccountEntity> serviceAccount) {
+        if (serviceAccount.isEmpty()) {
+            return Collections.emptySet();
+        }
+        return serviceAccount.get().getRoles().stream()
+                .filter(this::isActiveRole)
+                .flatMap(role -> role.getPermissions() != null
+                        ? role.getPermissions().stream()
+                        : Set.<PermissionEntity>of().stream())
+                .filter(this::isActivePermission)
+                .map(PermissionEntity::getName)
+                .filter(code -> code != null && !code.isBlank())
+                .collect(Collectors.toSet());
+    }
+
+    private Map<String, Object> resourceAccess(String clientId,
+                                               Optional<IGRPUserEntity> user,
+                                               Optional<ServiceAccountEntity> serviceAccount) {
+        if (clientId == null) {
             return Collections.emptyMap();
         }
-        Set<String> roles = user.get().getRoles().stream()
+        Set<RoleEntity> subjectRoles;
+        if (user.isPresent()) {
+            subjectRoles = new HashSet<>(user.get().getRoles());
+        } else {
+            subjectRoles = serviceAccount
+                    .map(ServiceAccountEntity::getRoles)
+                    .orElseGet(Collections::emptySet);
+        }
+        Set<String> roles = subjectRoles.stream()
+                .filter(this::isActiveRole)
                 .map(RoleEntity::getCode)
                 .filter(code -> code != null && !code.isBlank())
                 .collect(Collectors.toSet());
@@ -309,6 +402,15 @@ public class ClaimsEnrichmentService {
         Map<String, Object> out = new LinkedHashMap<>();
         out.put(clientId, perClient);
         return out;
+    }
+
+    private boolean isActiveRole(RoleEntity role) {
+        return role != null && (role.getStatus() == null || Status.ACTIVE.equals(role.getStatus()));
+    }
+
+    private boolean isActivePermission(PermissionEntity permission) {
+        return permission != null
+                && (permission.getStatus() == null || Status.ACTIVE.equals(permission.getStatus()));
     }
 
     private void putIfPresent(Map<String, Object> claims, String key, String value) {
