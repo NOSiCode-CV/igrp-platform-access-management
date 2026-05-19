@@ -89,7 +89,7 @@ Commands are dispatched via `CommandBus`. Handlers are annotated with `@IgrpComm
 1. Hibernate Envers (`@Audited`) on all entities for schema-level history
 2. `SecurityAuditLogEntity` for security-semantic events (LOGIN_SUCCESS, ROLE_EXPIRED, ACCESS_DENIED, etc.). Duplicate login events are suppressed via a 1-hour Caffeine cache keyed on JWT token ID.
 
-**M2M Authentication** — Separate `@Order(1)` security filter chain for `/api/m2m/**` using `X-Machine-Service-ID` + `X-Machine-Auth-Token` headers. The standard JWT OAuth2 chain is `@Order(2)`.
+**M2M Authentication** — `/api/m2m/**` is served by the same OAuth2 resource-server chain as user endpoints. M2M clients obtain a JWT via the `client_credentials` grant at `/oauth2/token`; both `M2MTokenRejectionFilter` and `SessionEnforcementFilter` skip the `/api/m2m/` prefix so sid-less client_credentials tokens are admitted.
 
 **Superadmin Bypass** — Any user with the `SUPER_ADMIN_ROLE` constant role skips permission checks entirely in `PermissionCacheService`.
 

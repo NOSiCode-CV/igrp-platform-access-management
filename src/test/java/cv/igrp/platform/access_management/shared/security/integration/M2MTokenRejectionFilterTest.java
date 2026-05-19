@@ -75,8 +75,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebAppConfiguration
 @ContextConfiguration(classes = M2MTokenRejectionFilterTest.TestApp.class)
 @TestPropertySource(properties = {
-        "igrp.session.enforcement-enabled=true",
-        "igrp.access.m2m.sync-token=test-m2m-token"
+        "igrp.session.enforcement-enabled=true"
 })
 class M2MTokenRejectionFilterTest {
 
@@ -125,13 +124,15 @@ class M2MTokenRejectionFilterTest {
     }
 
     @Test
-    void m2mPathUsesStaticTokenChainNotOAuth2Chain() throws Exception {
-        // M2M endpoint is matched by the @Order(1) chain that doesn't include
-        // M2MTokenRejectionFilter. The static X-Machine-* headers authenticate
-        // and the request succeeds.
+    void m2mPathAcceptsClientCredentialsJwtAndBypassesRejectionFilter() throws Exception {
+        // /api/m2m/** is now served by the same OAuth2 resource-server chain as
+        // user endpoints. M2MTokenRejectionFilter is included in that chain but
+        // skips the /api/m2m/ prefix internally, so a canonical M2M JWT must
+        // authenticate and reach the controller.
+        when(jwtDecoder.decode("test-cc")).thenReturn(ccJwt("test-cc"));
+
         mockMvc.perform(post("/api/m2m/ping")
-                        .header("X-Machine-Service-ID", "test-svc")
-                        .header("X-Machine-Auth-Token", "test-m2m-token")
+                        .header("Authorization", "Bearer test-cc")
                         .contentType("application/json")
                         .content("{}"))
                 .andExpect(status().isOk());

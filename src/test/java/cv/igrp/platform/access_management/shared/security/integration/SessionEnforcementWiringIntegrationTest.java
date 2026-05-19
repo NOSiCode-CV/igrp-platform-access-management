@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -94,8 +93,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebAppConfiguration
 @ContextConfiguration(classes = SessionEnforcementWiringIntegrationTest.TestApp.class)
 @TestPropertySource(properties = {
-        "igrp.session.enforcement-enabled=true",
-        "igrp.access.m2m.sync-token=test-m2m-token"
+        "igrp.session.enforcement-enabled=true"
 })
 class SessionEnforcementWiringIntegrationTest {
 
@@ -183,32 +181,21 @@ class SessionEnforcementWiringIntegrationTest {
     }
 
     /**
-     * T-C4 / FR-11 — M2M chain stays on its own URL prefix and is unaffected
-     * by the enforcement filter.
+     * FR-11 — {@code /api/m2m/**} is now served by the single OAuth2 resource
+     * server chain (the static-token chain has been removed). The
+     * {@link SessionEnforcementFilter} explicitly skips the prefix, so a
+     * sid-less {@code client_credentials} JWT must reach the controller and
+     * succeed.
      */
     @Test
-    void m2mPathWithStaticTokenIsNotAffectedByEnforcementFilter() throws Exception {
+    void m2mPathWithCcJwtIsNotAffectedByEnforcementFilter() throws Exception {
+        when(jwtDecoder.decode("test-cc")).thenReturn(sidlessJwt("test-cc"));
+
         mockMvc.perform(post("/api/m2m/ping")
-                        .header("X-Machine-Service-ID", "test-svc")
-                        .header("X-Machine-Auth-Token", "test-m2m-token")
+                        .header("Authorization", "Bearer test-cc")
                         .contentType("application/json")
                         .content("{}"))
                 .andExpect(status().isOk());
-    }
-
-    @Test
-    void m2mPathWithWrongTokenIsRejectedByM2MChainNotEnforcementFilter() throws Exception {
-        mockMvc.perform(post("/api/m2m/ping")
-                        .header("X-Machine-Service-ID", "test-svc")
-                        .header("X-Machine-Auth-Token", "wrong-token")
-                        .contentType("application/json")
-                        .content("{}"))
-                .andExpect(status().isUnauthorized())
-                // M2M chain produces a plain-text body, not the enforcement filter's
-                // missing_sid challenge — proves the request went through the M2M
-                // chain, not the OAuth2 resource server chain.
-                .andExpect(content().string(equalTo(
-                        "Unauthorized: Invalid or missing machine-to-machine authentication token.")));
     }
 
     private static Jwt sidlessJwt(String tokenValue) {
@@ -227,10 +214,10 @@ class SessionEnforcementWiringIntegrationTest {
 
     /**
      * Imports the production {@link OAuth2SecurityConfiguration} unchanged so
-     * the actual two-chain wiring (M2M @Order(1), OAuth2 resource server
-     * @Order(2)) and the {@code FilterRegistrationBean} produced by the
-     * configuration are both exercised. Everything else is stubbed to avoid
-     * pulling in JPA / Redis / Minio / Mail auto-config.
+     * the actual single OAuth2 resource-server chain and the
+     * {@code FilterRegistrationBean} produced by the configuration are both
+     * exercised. Everything else is stubbed to avoid pulling in JPA / Redis /
+     * Minio / Mail auto-config.
      */
     @Configuration
     @EnableWebMvc
