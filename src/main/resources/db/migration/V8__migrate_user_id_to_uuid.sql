@@ -14,8 +14,7 @@
 --   4. Swap the PK on t_user: drop FKs, drop old PK, drop id, rename
 --      id_uuid -> id, add PRIMARY KEY (id), then re-add FKs against
 --      the new VARCHAR(36) parent column.
---   5. Drop the deprecated external_id column + its Hibernate-managed
---      unique index.
+--   5. Drop the deprecated external_id column.
 --   6. Recreate the unique partial index on t_user_session
 --      (ux_session_user_device_active) since it depends on user_id.
 --
@@ -208,22 +207,8 @@ BEGIN
     END IF;
 END $$;
 
--- Drop the deprecated external_id column + its Hibernate-managed unique index.
-DO $$
-DECLARE
-    iname text;
-BEGIN
-    SELECT indexname INTO iname
-      FROM pg_indexes
-     WHERE tablename = 't_user'
-       AND indexdef ILIKE '%(external_id)%'
-       AND indexname <> 't_user_pkey'
-     LIMIT 1;
-    IF iname IS NOT NULL THEN
-        EXECUTE format('DROP INDEX IF EXISTS %I', iname);
-    END IF;
-END $$;
-
+-- Drop the deprecated external_id column. PostgreSQL automatically removes
+-- any table constraints and indexes that depend on the column.
 ALTER TABLE t_user DROP COLUMN IF EXISTS external_id;
 
 -- t_user_aud may carry a mirrored external_id column from Envers; drop it too.

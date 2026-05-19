@@ -9,6 +9,7 @@ import cv.igrp.platform.access_management.oauth_server.infrastructure.persistenc
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.UserIdentityJpaRepository;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
@@ -84,6 +85,10 @@ class ClaimsEnrichmentServiceTest {
         role.setCode("ROLE_ADMIN");
         role.setPermissions(new HashSet<>(Set.of(perm)));
 
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("IGRP_ORG");
+        role.setDepartment(department);
+
         IGRPUserEntity user = new IGRPUserEntity();
         String uid7 = "00000000-0000-0000-0000-000000000007";
         user.setId(uid7);
@@ -117,7 +122,7 @@ class ClaimsEnrichmentServiceTest {
         );
 
         assertEquals("ROLE_ADMIN", claims.get("selectedRole"));
-        assertEquals("IGRP_APP", claims.get("org"));
+        assertEquals("IGRP_ORG", claims.get("org"));
         @SuppressWarnings("unchecked")
         Set<String> permissions = (Set<String>) claims.get("permissions");
         assertTrue(permissions.contains("IGRP_USERS_VIEW"));
@@ -158,12 +163,16 @@ class ClaimsEnrichmentServiceTest {
         client.setId(UUID.randomUUID());
         client.setClientId("client-a");
         client.setActive(true);
+        ApplicationEntity app = new ApplicationEntity();
+        app.setCode("M2M_APP");
+        client.setApplication(app);
 
         ServiceAccountEntity serviceAccount = new ServiceAccountEntity();
         serviceAccount.setId(serviceAccountId);
         serviceAccount.setName("Client A");
         serviceAccount.setActive(true);
         serviceAccount.setOauthClient(client);
+        serviceAccount.setApplication(app);
         serviceAccount.setRoleAssignments(new HashSet<>());
         serviceAccount.getRoleAssignments().add(new ServiceAccountRoleAssignment(serviceAccount, role, null));
 
@@ -177,6 +186,7 @@ class ClaimsEnrichmentServiceTest {
         assertEquals(ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT,
                 claims.get(ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE));
         assertEquals(serviceAccountId.toString(), claims.get(ServiceAccountTokenClaims.CLAIM_SERVICE_ACCOUNT_ID));
+        assertEquals("", claims.get("org"));
         @SuppressWarnings("unchecked")
         Set<String> permissions = (Set<String>) claims.get("permissions");
         assertTrue(permissions.contains("igrp.m2m.sync"));

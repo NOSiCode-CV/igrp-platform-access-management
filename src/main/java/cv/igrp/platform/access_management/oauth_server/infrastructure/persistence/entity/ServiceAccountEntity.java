@@ -20,6 +20,7 @@ import lombok.Setter;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.envers.Audited;
+import org.hibernate.envers.RelationTargetAuditMode;
 
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -57,6 +58,7 @@ public class ServiceAccountEntity {
     private boolean active = true;
 
     @OneToOne(fetch = FetchType.LAZY, optional = false)
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     @JoinColumn(name = "oauth_client_id", nullable = false, unique = true)
     private OAuthClientEntity oauthClient;
 

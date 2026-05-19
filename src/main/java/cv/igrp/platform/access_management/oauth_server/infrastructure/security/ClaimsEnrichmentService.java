@@ -10,6 +10,7 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.audit.AuthAuditContext;
 import cv.igrp.platform.access_management.shared.domain.audit.IdentifierType;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
@@ -38,7 +39,7 @@ import java.util.stream.Collectors;
  *     <li>{@code sub} — mapped to the internal {@link IGRPUserEntity} id
  *         when the caller authenticated through a federated provider.</li>
  *     <li>{@code selectedRole} — the user's active role code.</li>
- *     <li>{@code org} — the user's owning application/resource (via client).</li>
+ *     <li>{@code org} — the interactive user's active role department.</li>
  *     <li>{@code permissions} — flattened permission codes for the active role.</li>
  *     <li>{@code resource_access} — Keycloak-compatible per-client role map.</li>
  *     <li>Standard identity claims — {@code name}, {@code given_name},
@@ -139,7 +140,7 @@ public class ClaimsEnrichmentService {
                 : resolveServiceAccount(subject);
 
         claims.put("selectedRole", selectedRole(user));
-        claims.put("org", selectedOrg(client, serviceAccount));
+        claims.put("org", selectedOrg(user));
         claims.put("permissions", permissions(user, serviceAccount));
         claims.put("resource_access", resourceAccess(clientId, user, serviceAccount));
         claims.putAll(standardIdentityClaims(user, scopes));
@@ -194,13 +195,11 @@ public class ClaimsEnrichmentService {
                 .orElse("");
     }
 
-    private String selectedOrg(Optional<OAuthClientEntity> client,
-                               Optional<ServiceAccountEntity> serviceAccount) {
-        Optional<ApplicationEntity> application = serviceAccount
-                .map(ServiceAccountEntity::getApplication)
-                .or(() -> client.map(OAuthClientEntity::getApplication));
-        return application
-                .map(ApplicationEntity::getCode)
+    private String selectedOrg(Optional<IGRPUserEntity> user) {
+        return user.map(IGRPUserEntity::getActiveRole)
+                .map(RoleEntity::getDepartment)
+                .map(DepartmentEntity::getCode)
+                .filter(code -> !code.isBlank())
                 .orElse("");
     }
 
