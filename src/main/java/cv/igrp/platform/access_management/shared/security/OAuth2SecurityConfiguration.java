@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.shared.security;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,7 +17,12 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import java.util.Arrays;
+import java.util.List;
 
 /**
  * Single OAuth2 resource-server chain. All authenticated traffic — including
@@ -33,6 +39,18 @@ public class OAuth2SecurityConfiguration {
     private final SessionEnforcementFilter sessionEnforcementFilter;
     private final M2MTokenRejectionFilter m2mTokenRejectionFilter;
     private final UserStatusGuard userStatusGuard;
+
+    /**
+     * OWASP A01/A05 — explicit CORS origin allowlist.
+     *
+     * <p>Configured via {@code igrp.security.cors.allowed-origins} (comma-separated).
+     * The wildcard {@code *} is NOT accepted because the application sets
+     * {@code allowCredentials=true}; browsers reject {@code Origin: *} with
+     * credentials. Provide the exact front-end origin(s) through the environment
+     * variable {@code IGRP_CORS_ALLOWED_ORIGINS}.
+     */
+    @Value("${igrp.security.cors.allowed-origins:http://localhost:3000,http://localhost:8080}")
+    private String corsAllowedOriginsRaw;
 
     public OAuth2SecurityConfiguration(Converter<Jwt, ? extends AbstractAuthenticationToken> jwtAuthenticationConverter,
                                        SessionEnforcementFilter sessionEnforcementFilter,
@@ -101,14 +119,10 @@ public class OAuth2SecurityConfiguration {
                 // immediately after the bearer token is authenticated. Also skips
                 // /api/m2m/** internally.
                 .addFilterAfter(sessionEnforcementFilter, M2MTokenRejectionFilter.class)
-                .cors(cors -> cors.configurationSource(request -> {
-                    CorsConfiguration configuration = new CorsConfiguration();
-                    configuration.addAllowedOriginPattern("*");
-                    configuration.addAllowedMethod("*");
-                    configuration.addAllowedHeader("*");
-                    configuration.setAllowCredentials(true);
-                    return configuration;
-                }));
+                // OWASP A01/A05 — CORS allowlist sourced from configuration.
+                // Wildcard '*' is forbidden here; only origins listed in
+                // igrp.security.cors.allowed-origins are accepted.
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()));
 
         return http.build();
     }
@@ -153,6 +167,37 @@ public class OAuth2SecurityConfiguration {
                 new FilterRegistrationBean<>(m2mTokenRejectionFilter);
         registration.setEnabled(false);
         return registration;
+    }
+
+    /**
+     * OWASP A01/A05 — CORS policy with an explicit origin allowlist.
+     *
+     * <p>Origins are read from {@code igrp.security.cors.allowed-origins}
+     * (comma-separated, env {@code IGRP_CORS_ALLOWED_ORIGINS}). Wildcards are
+     * not accepted — every origin must be an exact scheme+host+port value.
+     * {@code allowCredentials} is kept {@code true} so the browser sends
+     * cookies / Authorization headers across origins, but only to the listed
+     * origins.
+     */
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        List<String> allowedOrigins = Arrays.stream(corsAllowedOriginsRaw.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isBlank())
+                .toList();
+
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOrigins(allowedOrigins);
+        configuration.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(List.of("Authorization", "Content-Type", "X-Requested-With",
+                "Accept", "Origin", "Cache-Control"));
+        configuration.setExposedHeaders(List.of("Authorization", "Content-Disposition"));
+        configuration.setAllowCredentials(true);
+        configuration.setMaxAge(3600L);
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 
 }

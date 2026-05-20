@@ -49,6 +49,18 @@ public class OAuthClientEntity {
     @Column(name = "active", nullable = false)
     private boolean active = true;
 
+    /**
+     * When {@code true}, the authorization server requires a PKCE
+     * {@code code_challenge} / {@code code_verifier} pair on every
+     * {@code authorization_code} flow for this client (RFC 7636).
+     *
+     * <p>Defaults to {@code true} so newly created clients are secure
+     * by default. Set to {@code false} only for legacy confidential
+     * server-side clients that cannot be updated to send PKCE yet.
+     */
+    @Column(name = "require_pkce", nullable = false)
+    private boolean requirePkce = true;
+
     @Column(name = "access_token_ttl", nullable = false)
     private int accessTokenTtl;
 

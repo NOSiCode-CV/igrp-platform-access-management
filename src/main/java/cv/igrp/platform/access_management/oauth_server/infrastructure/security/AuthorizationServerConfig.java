@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -67,7 +68,24 @@ public class AuthorizationServerConfig {
                                 // SessionEntity revoke + OAuth2Authorization remove.
                                 .logoutEndpoint(logout ->
                                         logout.logoutResponseHandler(sessionLogoutHandler))))
-                .csrf(AbstractHttpConfigurer::disable)
+                // OWASP A05 — CSRF is re-enabled for browser-driven endpoints
+                // (login form POST, /oauth2/authorize, /connect/logout). API-style
+                // endpoints that use client authentication or Bearer tokens are
+                // explicitly excluded. The OAuth authorization endpoint additionally
+                // uses the 'state' parameter (RFC 6749 §10.12) as a CSRF token,
+                // providing defence-in-depth.
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers(
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth2/token"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth2/revoke"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth2/introspect"),
+                                AntPathRequestMatcher.antMatcher("/oauth2/jwks"),
+                                AntPathRequestMatcher.antMatcher("/.well-known/**"),
+                                AntPathRequestMatcher.antMatcher("/userinfo")
+                        )
+                )
+                // Session-backed security context is required so that CSRF tokens
+                // (stored in the HTTP session) survive across the login redirect.
                 .securityContext(ctx -> ctx.securityContextRepository(new HttpSessionSecurityContextRepository()))
                 .requestCache(cache -> cache.requestCache(new HttpSessionRequestCache()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
