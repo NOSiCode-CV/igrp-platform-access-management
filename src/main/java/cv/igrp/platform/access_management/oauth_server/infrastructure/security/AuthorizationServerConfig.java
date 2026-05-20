@@ -10,9 +10,12 @@ import org.springframework.core.io.Resource;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.init.ResourceDatabasePopulator;
 import org.springframework.jdbc.datasource.init.ScriptException;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
@@ -59,7 +62,27 @@ public class AuthorizationServerConfig {
                                 // SessionEntity revoke + OAuth2Authorization remove.
                                 .logoutEndpoint(logout ->
                                         logout.logoutResponseHandler(sessionLogoutHandler))))
-                .csrf(AbstractHttpConfigurer::disable)
+                // OWASP A05 — CSRF is re-enabled for browser-driven endpoints
+                // (login form POST, /oauth2/authorize, /connect/logout). API-style
+                // endpoints that use client authentication or Bearer tokens — and
+                // therefore are never called from a form submit — are explicitly
+                // excluded from CSRF validation. The OAuth authorization endpoint
+                // additionally uses the 'state' parameter (RFC 6749 §10.12) as a
+                // CSRF token, providing defence-in-depth.
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers(
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth2/token"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth2/revoke"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth2/introspect"),
+                                AntPathRequestMatcher.antMatcher("/oauth2/jwks"),
+                                AntPathRequestMatcher.antMatcher("/.well-known/**"),
+                                AntPathRequestMatcher.antMatcher("/userinfo")
+                        )
+                )
+                // Session-backed security context is required so that CSRF tokens
+                // (stored in the HTTP session) survive across the login redirect.
+                .securityContext(ctx -> ctx.securityContextRepository(new HttpSessionSecurityContextRepository()))
+                .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
                 .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
                 /*
 				.exceptionHandling(ex -> ex.authenticationEntryPoint(

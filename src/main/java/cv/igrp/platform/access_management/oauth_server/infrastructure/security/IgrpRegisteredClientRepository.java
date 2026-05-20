@@ -69,8 +69,13 @@ public class IgrpRegisteredClientRepository implements RegisteredClientRepositor
                         .authorizationCodeTimeToLive(Duration.ofSeconds(client.getAuthorizationCodeTtl()))
                         .reuseRefreshTokens(false)
                         .build())
+                // OWASP A01 — PKCE is required by default (requirePkce=true on
+                // every new OAuthClientEntity). It may be relaxed only for legacy
+                // confidential server-side clients that predate PKCE support; that
+                // decision must be explicit on the OAuthClientEntity.requirePkce
+                // column and documented in the client's management record.
                 .clientSettings(ClientSettings.builder()
-                        .requireProofKey(false)
+                        .requireProofKey(client.isRequirePkce())
                         .requireAuthorizationConsent(false)
                         .build());
 
