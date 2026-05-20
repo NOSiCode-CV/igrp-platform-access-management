@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.OAuthClientEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.ServiceAccountEntity;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.ServiceAccountPermissionGrant;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.ServiceAccountRoleAssignment;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.UserIdentityEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
@@ -193,5 +194,55 @@ class ClaimsEnrichmentServiceTest {
         @SuppressWarnings("unchecked")
         Map<String, Object> resourceAccess = (Map<String, Object>) claims.get("resource_access");
         assertTrue(resourceAccess.containsKey("client-a"));
+    }
+
+    @Test
+    void buildClaimsUnionsDirectPermissionGrantsWithRoleDerived() {
+        UUID serviceAccountId = UUID.fromString("00000000-0000-0000-0000-000000000124");
+
+        // Role-derived permission
+        PermissionEntity rolePerm = new PermissionEntity();
+        rolePerm.setName("igrp.m2m.sync");
+        rolePerm.setStatus(Status.ACTIVE);
+
+        RoleEntity role = new RoleEntity();
+        role.setId(7);
+        role.setCode("M2M_SYNC");
+        role.setStatus(Status.ACTIVE);
+        role.setPermissions(new HashSet<>(Set.of(rolePerm)));
+
+        // Direct grant — bypasses the role layer
+        PermissionEntity directPerm = new PermissionEntity();
+        directPerm.setName("igrp.client.view");
+        directPerm.setStatus(Status.ACTIVE);
+
+        OAuthClientEntity client = new OAuthClientEntity();
+        client.setId(UUID.randomUUID());
+        client.setClientId("client-b");
+        client.setActive(true);
+
+        ServiceAccountEntity serviceAccount = new ServiceAccountEntity();
+        serviceAccount.setId(serviceAccountId);
+        serviceAccount.setName("Client B");
+        serviceAccount.setActive(true);
+        serviceAccount.setOauthClient(client);
+        serviceAccount.setRoleAssignments(new HashSet<>());
+        serviceAccount.getRoleAssignments().add(new ServiceAccountRoleAssignment(serviceAccount, role, null));
+        serviceAccount.setPermissionGrants(new HashSet<>());
+        serviceAccount.getPermissionGrants().add(new ServiceAccountPermissionGrant(serviceAccount, directPerm));
+
+        when(userRepository.findById(serviceAccountId.toString())).thenReturn(Optional.empty());
+        when(oauthClientRepository.findByClientId("client-b")).thenReturn(Optional.of(client));
+        when(serviceAccountRepository.findByIdWithRolesAndPermissions(serviceAccountId))
+                .thenReturn(Optional.of(serviceAccount));
+
+        Map<String, Object> claims = service.buildClaims(serviceAccountId.toString(), "client-b", Set.of());
+
+        @SuppressWarnings("unchecked")
+        Set<String> permissions = (Set<String>) claims.get("permissions");
+        assertTrue(permissions.contains("igrp.m2m.sync"),
+                "Role-derived permission should still appear in claims");
+        assertTrue(permissions.contains("igrp.client.view"),
+                "Direct grant should be included in the union, bypassing the role layer");
     }
 }

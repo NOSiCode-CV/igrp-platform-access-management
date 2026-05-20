@@ -7,8 +7,10 @@ import cv.igrp.platform.access_management.oauth_server.infrastructure.persistenc
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.ServiceAccountJpaRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.stereotype.Service;
@@ -28,15 +30,18 @@ public class ServiceAccountService {
     private final OAuthClientJpaRepository oauthClientRepository;
     private final ApplicationEntityRepository applicationRepository;
     private final RoleEntityRepository roleRepository;
+    private final PermissionEntityRepository permissionRepository;
 
     public ServiceAccountService(ServiceAccountJpaRepository repository,
                                  OAuthClientJpaRepository oauthClientRepository,
                                  ApplicationEntityRepository applicationRepository,
-                                 RoleEntityRepository roleRepository) {
+                                 RoleEntityRepository roleRepository,
+                                 PermissionEntityRepository permissionRepository) {
         this.repository = repository;
         this.oauthClientRepository = oauthClientRepository;
         this.applicationRepository = applicationRepository;
         this.roleRepository = roleRepository;
+        this.permissionRepository = permissionRepository;
     }
 
     @Transactional(readOnly = true)
@@ -98,6 +103,7 @@ public class ServiceAccountService {
         entity.setOauthClient(oauthClient);
         entity.setApplication(resolveApplication(request.getApplicationId(), oauthClient));
         entity.replaceRoleAssignments(resolveRoles(request.getRoleIds()));
+        entity.replacePermissionGrants(resolvePermissions(request.getPermissionIds()));
     }
 
     private ApplicationEntity resolveApplication(Integer applicationId, OAuthClientEntity oauthClient) {
@@ -124,8 +130,26 @@ public class ServiceAccountService {
         return new HashSet<>(roles);
     }
 
+    private Set<PermissionEntity> resolvePermissions(Set<Integer> permissionIds) {
+        if (permissionIds == null || permissionIds.isEmpty()) {
+            return new HashSet<>();
+        }
+        List<PermissionEntity> permissions = permissionRepository.findAllById(permissionIds);
+        Set<Integer> found = permissions.stream().map(PermissionEntity::getId).collect(Collectors.toSet());
+        Set<Integer> missing = permissionIds.stream()
+                .filter(id -> !found.contains(id))
+                .collect(Collectors.toSet());
+        if (!missing.isEmpty()) {
+            throw new EntityNotFoundException("Permission not found: " + missing);
+        }
+        return new HashSet<>(permissions);
+    }
+
     public static ServiceAccountDTO toDto(ServiceAccountEntity entity) {
         Set<RoleEntity> roles = entity.getRoles() != null ? entity.getRoles() : Collections.emptySet();
+        Set<PermissionEntity> directPermissions = entity.getDirectPermissions() != null
+                ? entity.getDirectPermissions()
+                : Collections.emptySet();
         return ServiceAccountDTO.builder()
                 .id(entity.getId())
                 .name(entity.getName())
@@ -137,6 +161,8 @@ public class ServiceAccountService {
                 .applicationCode(entity.getApplication() != null ? entity.getApplication().getCode() : null)
                 .roleIds(roles.stream().map(RoleEntity::getId).collect(Collectors.toSet()))
                 .roleCodes(roles.stream().map(RoleEntity::getCode).collect(Collectors.toSet()))
+                .permissionIds(directPermissions.stream().map(PermissionEntity::getId).collect(Collectors.toSet()))
+                .permissionNames(directPermissions.stream().map(PermissionEntity::getName).collect(Collectors.toSet()))
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();

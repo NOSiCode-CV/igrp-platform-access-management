@@ -29,4 +29,12 @@ public class ServiceAccountRequestDTO {
     private Integer applicationId;
 
     private Set<Integer> roleIds;
+
+    /**
+     * Permission ids granted directly to this service account, bypassing the
+     * role layer. The effective permission set at token-issue time is the
+     * union of these direct grants and the permissions inherited from
+     * {@link #roleIds}.
+     */
+    private Set<Integer> permissionIds;
 }

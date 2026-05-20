@@ -89,8 +89,11 @@ class PermissionCacheServiceTest {
                 .thenReturn(Optional.empty());
         when(serviceAccountRepository.findByIdWithRolesAndPermissions(eq(serviceAccountId)))
                 .thenReturn(Optional.of(serviceAccount));
+        // checkServiceAccountPermission binds the permission name twice (once
+        // for the direct-grant branch and once for the role-derived branch).
         when(jdbcTemplate.query(any(String.class), any(org.springframework.jdbc.core.RowMapper.class),
-                eq(serviceAccountId), eq("igrp.m2m.sync"))).thenReturn(java.util.List.of(1));
+                eq(serviceAccountId), eq("igrp.m2m.sync"), eq("igrp.m2m.sync")))
+                .thenReturn(java.util.List.of(1));
 
         PermissionCheckRequest req = new PermissionCheckRequest();
         req.setSubject(serviceAccountId.toString());

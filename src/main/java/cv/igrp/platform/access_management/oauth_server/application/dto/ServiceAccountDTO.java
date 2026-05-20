@@ -25,6 +25,10 @@ public class ServiceAccountDTO {
     private String applicationCode;
     private Set<Integer> roleIds;
     private Set<String> roleCodes;
+    /** Permission ids granted directly on the service account, bypassing the role layer. */
+    private Set<Integer> permissionIds;
+    /** Permission names corresponding to {@link #permissionIds}. */
+    private Set<String> permissionNames;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

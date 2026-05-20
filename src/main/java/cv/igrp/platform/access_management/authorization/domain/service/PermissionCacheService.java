@@ -248,26 +248,43 @@ public class PermissionCacheService {
                         ? serviceAccount.getOauthClient().getClientId()
                         : "<none>");
 
+        // Match either a direct permission grant OR a permission inherited
+        // through one of the service account's role assignments.
         String sql = """
                 SELECT 1 AS result
                 FROM t_service_account sa
                 JOIN t_oauth_client oc ON oc.id = sa.oauth_client_id
-                JOIN t_service_account_role_assignment sara ON sara.service_account_id = sa.id
-                JOIN t_role_permission rp ON rp.role_id = sara.role_id
-                JOIN t_role r ON r.id = sara.role_id
-                JOIN t_permission p ON p.id = rp.permission
                 WHERE sa.id = ?
-                  AND p.name = ?
                   AND sa.active = TRUE
                   AND oc.active = TRUE
-                  AND p.status = 'ACTIVE'
-                  AND r.status = 'ACTIVE'
-                  AND (sara.expires_at IS NULL OR sara.expires_at > NOW())
+                  AND (
+                    EXISTS (
+                        SELECT 1
+                        FROM t_service_account_permission_grant sapg
+                        JOIN t_permission p ON p.id = sapg.permission_id
+                        WHERE sapg.service_account_id = sa.id
+                          AND p.name = ?
+                          AND p.status = 'ACTIVE'
+                    )
+                    OR EXISTS (
+                        SELECT 1
+                        FROM t_service_account_role_assignment sara
+                        JOIN t_role r ON r.id = sara.role_id
+                        JOIN t_role_permission rp ON rp.role_id = r.id
+                        JOIN t_permission p ON p.id = rp.permission
+                        WHERE sara.service_account_id = sa.id
+                          AND r.status = 'ACTIVE'
+                          AND p.name = ?
+                          AND p.status = 'ACTIVE'
+                          AND (sara.expires_at IS NULL OR sara.expires_at > NOW())
+                    )
+                  )
                 LIMIT 1;
                 """;
 
         List<Integer> results = jdbcTemplate.query(sql, (rs, rowNum) -> 1,
                 serviceAccount.getId(),
+                permissionName,
                 permissionName);
 
         return !results.isEmpty();

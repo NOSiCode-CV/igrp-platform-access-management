@@ -21,6 +21,8 @@ public interface ServiceAccountJpaRepository extends JpaRepository<ServiceAccoun
             left join fetch sa.roleAssignments assignment
             left join fetch assignment.role role
             left join fetch role.permissions permission
+            left join fetch sa.permissionGrants grant
+            left join fetch grant.permission directPermission
             left join fetch sa.oauthClient client
             left join fetch sa.application app
             where sa.id = :id
@@ -32,6 +34,8 @@ public interface ServiceAccountJpaRepository extends JpaRepository<ServiceAccoun
             left join fetch sa.roleAssignments assignment
             left join fetch assignment.role role
             left join fetch role.permissions permission
+            left join fetch sa.permissionGrants grant
+            left join fetch grant.permission directPermission
             left join fetch sa.oauthClient client
             left join fetch sa.application app
             where client.clientId = :clientId

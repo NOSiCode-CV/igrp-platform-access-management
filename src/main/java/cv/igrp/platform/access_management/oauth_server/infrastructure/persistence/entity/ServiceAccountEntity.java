@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity;
 
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Column;
@@ -70,6 +71,10 @@ public class ServiceAccountEntity {
             cascade = CascadeType.ALL, orphanRemoval = true)
     private Set<ServiceAccountRoleAssignment> roleAssignments = new HashSet<>();
 
+    @OneToMany(mappedBy = "serviceAccount", fetch = FetchType.LAZY,
+            cascade = CascadeType.ALL, orphanRemoval = true)
+    private Set<ServiceAccountPermissionGrant> permissionGrants = new HashSet<>();
+
     @CreationTimestamp
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
@@ -93,5 +98,24 @@ public class ServiceAccountEntity {
             return;
         }
         roles.forEach(role -> roleAssignments.add(new ServiceAccountRoleAssignment(this, role, null)));
+    }
+
+    /**
+     * Permissions directly granted to this service account, bypassing the role
+     * layer.
+     */
+    public Set<PermissionEntity> getDirectPermissions() {
+        return permissionGrants.stream()
+                .map(ServiceAccountPermissionGrant::getPermission)
+                .collect(Collectors.toSet());
+    }
+
+    public void replacePermissionGrants(Set<PermissionEntity> permissions) {
+        permissionGrants.clear();
+        if (permissions == null) {
+            return;
+        }
+        permissions.forEach(permission ->
+                permissionGrants.add(new ServiceAccountPermissionGrant(this, permission)));
     }
 }

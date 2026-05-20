@@ -363,7 +363,10 @@ public class ClaimsEnrichmentService {
         if (serviceAccount.isEmpty()) {
             return Collections.emptySet();
         }
-        return serviceAccount.get().getRoles().stream()
+        ServiceAccountEntity account = serviceAccount.get();
+
+        // Role-derived permissions.
+        Set<String> result = account.getRoles().stream()
                 .filter(this::isActiveRole)
                 .flatMap(role -> role.getPermissions() != null
                         ? role.getPermissions().stream()
@@ -371,7 +374,19 @@ public class ClaimsEnrichmentService {
                 .filter(this::isActivePermission)
                 .map(PermissionEntity::getName)
                 .filter(code -> code != null && !code.isBlank())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toCollection(HashSet::new));
+
+        // Direct grants — narrower scopes attached to the service account
+        // without standing up a dedicated role.
+        Set<PermissionEntity> directGrants = account.getDirectPermissions();
+        if (directGrants != null) {
+            directGrants.stream()
+                    .filter(this::isActivePermission)
+                    .map(PermissionEntity::getName)
+                    .filter(code -> code != null && !code.isBlank())
+                    .forEach(result::add);
+        }
+        return result;
     }
 
     private Map<String, Object> resourceAccess(String clientId,
