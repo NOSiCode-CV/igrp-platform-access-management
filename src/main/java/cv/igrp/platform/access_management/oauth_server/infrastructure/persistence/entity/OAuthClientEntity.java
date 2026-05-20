@@ -89,6 +89,11 @@ public class OAuthClientEntity {
     private Set<String> redirectUris = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "t_oauth_client_post_logout_redirect_uri", joinColumns = @JoinColumn(name = "client_id"))
+    @Column(name = "post_logout_redirect_uri")
+    private Set<String> postLogoutRedirectUris = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "t_oauth_client_grant_type", joinColumns = @JoinColumn(name = "client_id"))
     @Column(name = "grant_type")
     private Set<String> grantTypes = new HashSet<>();

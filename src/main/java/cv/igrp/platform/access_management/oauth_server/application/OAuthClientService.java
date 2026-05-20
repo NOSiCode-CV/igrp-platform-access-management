@@ -96,6 +96,7 @@ public class OAuthClientService {
         entity.setAuthorizationCodeTtl(request.getAuthorizationCodeTtl());
         entity.setScopes(request.getScopes() == null ? new HashSet<>() : new HashSet<>(request.getScopes()));
         entity.setRedirectUris(request.getRedirectUris() == null ? new HashSet<>() : new HashSet<>(request.getRedirectUris()));
+        entity.setPostLogoutRedirectUris(request.getPostLogoutRedirectUris() == null ? new HashSet<>() : new HashSet<>(request.getPostLogoutRedirectUris()));
         entity.setGrantTypes(normalizeGrantTypes(request.getGrantTypes()));
         if (request.getApplicationId() != null) {
             ApplicationEntity app = applicationRepository.findById(request.getApplicationId())
@@ -141,6 +142,7 @@ public class OAuthClientService {
                 .authorizationCodeTtl(e.getAuthorizationCodeTtl())
                 .scopes(e.getScopes())
                 .redirectUris(e.getRedirectUris())
+                .postLogoutRedirectUris(e.getPostLogoutRedirectUris())
                 .grantTypes(e.getGrantTypes())
                 .createdAt(e.getCreatedAt())
                 .updatedAt(e.getUpdatedAt())

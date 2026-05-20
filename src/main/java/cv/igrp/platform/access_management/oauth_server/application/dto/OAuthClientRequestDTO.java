@@ -46,6 +46,8 @@ public class OAuthClientRequestDTO {
 
     private Set<String> redirectUris;
 
+    private Set<String> postLogoutRedirectUris;
+
     @NotEmpty(message = "grantTypes must not be empty")
     private Set<String> grantTypes;
 }

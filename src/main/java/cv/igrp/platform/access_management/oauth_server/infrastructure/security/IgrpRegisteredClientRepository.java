@@ -85,6 +85,9 @@ public class IgrpRegisteredClientRepository implements RegisteredClientRepositor
         if (client.getRedirectUris() != null) {
             client.getRedirectUris().forEach(builder::redirectUri);
         }
+        if (client.getPostLogoutRedirectUris() != null) {
+            client.getPostLogoutRedirectUris().forEach(builder::postLogoutRedirectUri);
+        }
         if (client.getGrantTypes() != null) {
             client.getGrantTypes().forEach(grant -> builder.authorizationGrantType(resolveGrantType(grant)));
         }

@@ -32,6 +32,7 @@ public class OAuthClientDTO {
     private int authorizationCodeTtl;
     private Set<String> scopes;
     private Set<String> redirectUris;
+    private Set<String> postLogoutRedirectUris;
     private Set<String> grantTypes;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
