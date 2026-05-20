@@ -37,8 +37,19 @@ public class KeyUtils {
         this.privateKeyLocation = privateKeyLocation;
     }
 
+    /** Loads the configured primary public key. */
     public RSAPublicKey loadPublicKey() throws Exception {
-        String key = readResource(publicKeyLocation)
+        return loadPublicKey(publicKeyLocation);
+    }
+
+    /**
+     * OWASP A02 — loads an RSA public key from an arbitrary resource path.
+     * Used by {@link JwtTokenConfig} to load secondary keys for key rotation.
+     *
+     * @param location Spring resource location (classpath:, file:, or absolute path)
+     */
+    public RSAPublicKey loadPublicKey(String location) throws Exception {
+        String key = readResource(location)
                 .replace("-----BEGIN PUBLIC KEY-----", "")
                 .replace("-----END PUBLIC KEY-----", "")
                 .replaceAll("\\s", "");
@@ -47,8 +58,19 @@ public class KeyUtils {
         return (RSAPublicKey) KeyFactory.getInstance("RSA").generatePublic(spec);
     }
 
+    /** Loads the configured primary private key. */
     public RSAPrivateKey loadPrivateKey() throws Exception {
-        String key = readResource(privateKeyLocation)
+        return loadPrivateKey(privateKeyLocation);
+    }
+
+    /**
+     * OWASP A02 — loads an RSA private key from an arbitrary resource path.
+     * Used by {@link JwtTokenConfig} to load secondary keys for key rotation.
+     *
+     * @param location Spring resource location (classpath:, file:, or absolute path)
+     */
+    public RSAPrivateKey loadPrivateKey(String location) throws Exception {
+        String key = readResource(location)
                 .replaceAll("-----BEGIN (.*)-----", "")
                 .replaceAll("-----END (.*)-----", "")
                 .replaceAll("\\s", "");

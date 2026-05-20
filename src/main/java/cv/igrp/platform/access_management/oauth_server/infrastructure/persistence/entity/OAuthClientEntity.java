@@ -49,6 +49,18 @@ public class OAuthClientEntity {
     @Column(name = "active", nullable = false)
     private boolean active = true;
 
+    /**
+     * When {@code true}, the authorization server requires a PKCE
+     * {@code code_challenge} / {@code code_verifier} pair on every
+     * {@code authorization_code} flow for this client (RFC 7636).
+     *
+     * <p>Defaults to {@code true} so newly created clients are secure
+     * by default. Set to {@code false} only for legacy confidential
+     * server-side clients that cannot be updated to send PKCE yet.
+     */
+    @Column(name = "require_pkce", nullable = false)
+    private boolean requirePkce = true;
+
     @Column(name = "access_token_ttl", nullable = false)
     private int accessTokenTtl;
 
@@ -75,6 +87,11 @@ public class OAuthClientEntity {
     @CollectionTable(name = "t_oauth_client_redirect_uri", joinColumns = @JoinColumn(name = "client_id"))
     @Column(name = "redirect_uri")
     private Set<String> redirectUris = new HashSet<>();
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "t_oauth_client_post_logout_redirect_uri", joinColumns = @JoinColumn(name = "client_id"))
+    @Column(name = "post_logout_redirect_uri")
+    private Set<String> postLogoutRedirectUris = new HashSet<>();
 
     @ElementCollection(fetch = FetchType.EAGER)
     @CollectionTable(name = "t_oauth_client_grant_type", joinColumns = @JoinColumn(name = "client_id"))

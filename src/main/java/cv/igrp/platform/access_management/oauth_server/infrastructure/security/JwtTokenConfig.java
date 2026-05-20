@@ -1,8 +1,6 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
-import com.nimbusds.jose.jwk.JWKSet;
 import com.nimbusds.jose.jwk.RSAKey;
-import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
@@ -29,8 +27,6 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
-import java.security.interfaces.RSAPrivateKey;
-import java.security.interfaces.RSAPublicKey;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,12 +41,29 @@ public class JwtTokenConfig {
     private final String issuer;
     private final String keyId;
 
+    /**
+     * OWASP A02 — optional secondary RSA key for zero-downtime key rotation.
+     * When all three secondary properties are set, the secondary key is
+     * advertised in the JWKS endpoint alongside the primary key so resource
+     * servers can verify tokens signed by either key during the rotation window.
+     * See {@link RotatingJWKSource} for the rotation procedure.
+     */
+    private final String secondaryKeyId;
+    private final String secondaryPublicKeyLocation;
+    private final String secondaryPrivateKeyLocation;
+
     public JwtTokenConfig(KeyUtils keyUtils,
                           @Value("${igrp.oauth.issuer:http://localhost:8080}") String issuer,
-                          @Value("${igrp.oauth.keys.kid:igrp-oauth-key}") String keyId) {
+                          @Value("${igrp.oauth.keys.kid:igrp-oauth-key}") String keyId,
+                          @Value("${igrp.oauth.keys.secondary.kid:}") String secondaryKeyId,
+                          @Value("${igrp.oauth.keys.secondary.public:}") String secondaryPublicKeyLocation,
+                          @Value("${igrp.oauth.keys.secondary.private:}") String secondaryPrivateKeyLocation) {
         this.keyUtils = keyUtils;
         this.issuer = issuer;
         this.keyId = keyId;
+        this.secondaryKeyId = secondaryKeyId;
+        this.secondaryPublicKeyLocation = secondaryPublicKeyLocation;
+        this.secondaryPrivateKeyLocation = secondaryPrivateKeyLocation;
     }
 
     @Bean
@@ -58,15 +71,35 @@ public class JwtTokenConfig {
         return new IgrpRegisteredClientRepository(repository);
     }
 
+    /**
+     * OWASP A02 — multi-key {@link JWKSource} that supports zero-downtime key
+     * rotation. The primary key signs all new tokens; when a secondary key is
+     * configured, both keys are published in the JWKS endpoint so resource
+     * servers can validate tokens signed before the rotation.
+     *
+     * @see RotatingJWKSource
+     */
     @Bean
     public JWKSource<SecurityContext> jwkSource() throws Exception {
-        RSAPublicKey publicKey = keyUtils.loadPublicKey();
-        RSAPrivateKey privateKey = keyUtils.loadPrivateKey();
-        RSAKey rsaKey = new RSAKey.Builder(publicKey)
-                .privateKey(privateKey)
+        RSAKey primaryKey = new RSAKey.Builder(keyUtils.loadPublicKey())
+                .privateKey(keyUtils.loadPrivateKey())
                 .keyID(keyId)
                 .build();
-        return new ImmutableJWKSet<>(new JWKSet(rsaKey));
+
+        boolean hasSecondary = !secondaryKeyId.isBlank()
+                && !secondaryPublicKeyLocation.isBlank()
+                && !secondaryPrivateKeyLocation.isBlank();
+
+        if (hasSecondary) {
+            RSAKey secondaryKey = new RSAKey.Builder(
+                    keyUtils.loadPublicKey(secondaryPublicKeyLocation))
+                    .privateKey(keyUtils.loadPrivateKey(secondaryPrivateKeyLocation))
+                    .keyID(secondaryKeyId)
+                    .build();
+            return new RotatingJWKSource(primaryKey, secondaryKey);
+        }
+
+        return new RotatingJWKSource(primaryKey);
     }
 
     @Bean
@@ -75,7 +108,7 @@ public class JwtTokenConfig {
     }
 
     /**
-     * JWT decoder configured against the same JWK set used for signing.
+     * JWT decoder configured against the primary public key used for signing.
      * Provided so other components (e.g. custom token-validation utilities)
      * can resolve tokens issued by this authorization server.
      */
