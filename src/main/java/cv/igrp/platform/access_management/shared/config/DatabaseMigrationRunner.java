@@ -23,6 +23,8 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
         ensureAuthAuditLogIndexes();
         ensureUserSessionSchema();
         ensureUserTokensFloor();
+        ensureUserStatusCheckConstraint();
+        ensureAuthAuditLogIdentifierTypeConstraint();
     }
 
     /**
@@ -114,6 +116,63 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
      * with {@code CREATE INDEX IF NOT EXISTS} keeps the production schema
      * identical and silences the boot logs.
      */
+    /**
+     * Replaces the formerly-Flyway-managed V7 patch: ensure {@code t_user.status}
+     * accepts the {@code TEMPORARY} enum value (added in Phase G3) alongside
+     * {@code ACTIVE}, {@code INACTIVE}, {@code DELETED}. Hibernate doesn't
+     * generate {@code CHECK} constraints out of {@code @Enumerated(EnumType.STRING)}
+     * fields, so we own this constraint here. Runs after Hibernate has created
+     * {@code t_user}, so it works under both {@code ddl-auto=update} (dev) and
+     * {@code validate} (prod, assuming the table was created some other way).
+     */
+    private void ensureUserStatusCheckConstraint() {
+        try {
+            jdbcTemplate.execute(
+                    "DO $$ DECLARE cname text; BEGIN " +
+                    "  SELECT conname INTO cname FROM pg_constraint " +
+                    "    WHERE conrelid = 't_user'::regclass AND contype = 'c' " +
+                    "      AND pg_get_constraintdef(oid) ILIKE '%status%'; " +
+                    "  IF cname IS NOT NULL THEN " +
+                    "    EXECUTE format('ALTER TABLE t_user DROP CONSTRAINT %I', cname); " +
+                    "  END IF; " +
+                    "END $$;");
+            jdbcTemplate.execute(
+                    "ALTER TABLE t_user " +
+                    "  ADD CONSTRAINT t_user_status_check " +
+                    "  CHECK (status IN ('TEMPORARY', 'ACTIVE', 'INACTIVE', 'DELETED'))");
+            LOGGER.debug("t_user.status CHECK constraint ensured.");
+        } catch (Exception e) {
+            LOGGER.warn("Could not ensure t_user.status CHECK constraint (table may not exist yet): {}",
+                    e.getMessage());
+        }
+    }
+
+    /**
+     * Replaces the formerly-Flyway-managed V2 patch: ensure the
+     * {@code identifier_type} CHECK on {@code t_auth_audit_log} accepts the
+     * current enum set ({@code CNI}, {@code CMDCV}, {@code EMAIL}, {@code UNKNOWN}).
+     * Drops any prior auto-generated or hand-rolled constraint first so the
+     * step is idempotent across versions.
+     */
+    private void ensureAuthAuditLogIdentifierTypeConstraint() {
+        try {
+            jdbcTemplate.execute(
+                    "ALTER TABLE t_auth_audit_log " +
+                    "  DROP CONSTRAINT IF EXISTS auth_audit_log_identifier_type_check");
+            jdbcTemplate.execute(
+                    "ALTER TABLE t_auth_audit_log " +
+                    "  DROP CONSTRAINT IF EXISTS t_auth_audit_log_identifier_type_check");
+            jdbcTemplate.execute(
+                    "ALTER TABLE t_auth_audit_log " +
+                    "  ADD CONSTRAINT t_auth_audit_log_identifier_type_check " +
+                    "  CHECK (identifier_type IN ('CNI', 'CMDCV', 'EMAIL', 'UNKNOWN'))");
+            LOGGER.debug("t_auth_audit_log.identifier_type CHECK constraint ensured.");
+        } catch (Exception e) {
+            LOGGER.warn("Could not ensure t_auth_audit_log.identifier_type CHECK constraint "
+                    + "(table may not exist yet): {}", e.getMessage());
+        }
+    }
+
     private void ensureAuthAuditLogIndexes() {
         try {
             jdbcTemplate.execute(
