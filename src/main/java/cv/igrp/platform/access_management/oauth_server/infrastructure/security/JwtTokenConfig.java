@@ -119,6 +119,15 @@ public class JwtTokenConfig {
             }
 
             String clientId = context.getRegisteredClient().getClientId();
+            boolean isClientCredentials = AuthorizationGrantType.CLIENT_CREDENTIALS
+                    .equals(context.getAuthorizationGrantType());
+            if (isClientCredentials) {
+                internalSub = claimsService.resolveServiceAccountSubject(clientId)
+                        .orElse(internalSub);
+                if (internalSub != null) {
+                    context.getClaims().subject(internalSub);
+                }
+            }
             Map<String, Object> claims = claimsService.buildClaims(
                     internalSub,
                     clientId,
@@ -128,8 +137,6 @@ public class JwtTokenConfig {
 
             // Phase B — bind the JWT to a server-side session and add sid/device_id claims.
             // Skipped for client_credentials (M2M) where there is no end-user subject.
-            boolean isClientCredentials = AuthorizationGrantType.CLIENT_CREDENTIALS
-                    .equals(context.getAuthorizationGrantType());
             String issuanceUserId = parseUserId(internalSub);
             if (!isClientCredentials && issuanceUserId != null) {
                 String jti = context.getClaims().build().getId();

@@ -110,6 +110,30 @@ class EnforcementMissingSidTest {
     }
 
     @Test
+    void serviceAccountTokenDoesNotRequireUserSessionSid() throws ServletException, IOException {
+        Map<String, Object> headers = Map.of("alg", "RS256", "kid", "igrp-oauth-key");
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("sub", "00000000-0000-0000-0000-000000000123");
+        claims.put("iss", "http://localhost:8080");
+        claims.put("jti", "service-account-jti");
+        claims.put(ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE,
+                ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT);
+        Jwt jwt = new Jwt("service.account.token", Instant.now(), Instant.now().plusSeconds(300),
+                headers, claims);
+        authenticate(jwt);
+
+        MockHttpServletRequest request = new MockHttpServletRequest("GET", "/api/users");
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        filter.doFilter(request, response, filterChain);
+
+        assertEquals(200, response.getStatus());
+        verify(filterChain).doFilter(request, response);
+        verifyNoInteractions(sessionMetrics);
+        verifyNoInteractions(sessionRepository);
+    }
+
+    @Test
     void m2mPathStillBypassesEnforcementEvenForSidlessTokens() throws ServletException, IOException {
         // Belt-and-suspenders: even if M2M traffic somehow carried a sid-less JWT,
         // the URL allow-list MUST keep skipping it (FR-11) — we only tightened the

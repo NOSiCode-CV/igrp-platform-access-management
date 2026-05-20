@@ -7,11 +7,13 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /**
  * Service responsible for resolving user identity across multiple identifiers.
@@ -206,31 +208,54 @@ public class UserIdentityResolutionService {
     private Optional<IGRPUserEntity> findByAnyIdentifier(String email, String externalId, String nic, String phoneNumber) {
         if (externalId != null) {
             // externalId field removed in G2 — only check by username (the canonical sub)
-            Optional<IGRPUserEntity> byUsername = userRepository.findByUsername(externalId);
+            Optional<IGRPUserEntity> byUsername =
+                    findOneSafely("username", externalId, () -> userRepository.findByUsername(externalId));
             if (byUsername.isPresent()) {
                 return byUsername;
             }
         }
 
         if (nic != null) {
-            Optional<IGRPUserEntity> byNic = userRepository.findByNicIgnoreCase(nic);
+            Optional<IGRPUserEntity> byNic =
+                    findOneSafely("nic", nic, () -> userRepository.findByNicIgnoreCase(nic));
             if (byNic.isPresent()) {
                 return byNic;
             }
         }
 
         if (phoneNumber != null) {
-            Optional<IGRPUserEntity> byPhone = userRepository.findByPhoneNumber(phoneNumber);
+            Optional<IGRPUserEntity> byPhone =
+                    findOneSafely("phone", phoneNumber, () -> userRepository.findByPhoneNumber(phoneNumber));
             if (byPhone.isPresent()) {
                 return byPhone;
             }
         }
 
         if (email != null) {
-            return userRepository.findByEmailIgnoreCase(email);
+            return findOneSafely("email", email, () -> userRepository.findByEmailIgnoreCase(email));
         }
 
         return Optional.empty();
+    }
+
+    /**
+     * Wraps a {@code findByXxx} call that returns {@code Optional<IGRPUserEntity>}
+     * so that when bad data leaves two rows behind the lookup logs a warning
+     * and yields {@link Optional#empty()} instead of letting
+     * {@link IncorrectResultSizeDataAccessException} bubble up and abort
+     * async enrichment for the entire request. Enrichment is best-effort —
+     * a duplicate row should never block authentication.
+     */
+    private Optional<IGRPUserEntity> findOneSafely(String identifierKind,
+                                                   String identifierValue,
+                                                   Supplier<Optional<IGRPUserEntity>> lookup) {
+        try {
+            return lookup.get();
+        } catch (IncorrectResultSizeDataAccessException ex) {
+            log.warn("[IDENTITY] Duplicate match for {}='{}' ({} rows) — skipping this identifier",
+                    identifierKind, identifierValue, ex.getActualSize());
+            return Optional.empty();
+        }
     }
 
     private static void guardAllNull(String... values) {
