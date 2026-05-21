@@ -32,6 +32,7 @@ public class DefaultOAuthClientBootstrap {
     private final int refreshTokenTtl;
     private final int authorizationCodeTtl;
     private final String redirectUri;
+    private final String postLogoutRedirectUri;
 
     public DefaultOAuthClientBootstrap(
             OAuthClientJpaRepository repository,
@@ -41,7 +42,8 @@ public class DefaultOAuthClientBootstrap {
             @Value("${igrp.oauth.default-client.access-token-ttl:3600}") int accessTokenTtl,
             @Value("${igrp.oauth.default-client.refresh-token-ttl:86400}") int refreshTokenTtl,
             @Value("${igrp.oauth.default-client.authorization-code-ttl:300}") int authorizationCodeTtl,
-            @Value("${igrp.oauth.default-client.redirect-uri:}") String redirectUri) {
+            @Value("${igrp.oauth.default-client.redirect-uri:}") String redirectUri,
+            @Value("${igrp.oauth.default-client.post-logout-redirect-uri:}") String postLogoutRedirectUri) {
         this.repository = repository;
         this.passwordEncoder = passwordEncoder;
         this.defaultClientId = defaultClientId;
@@ -50,6 +52,7 @@ public class DefaultOAuthClientBootstrap {
         this.refreshTokenTtl = refreshTokenTtl;
         this.authorizationCodeTtl = authorizationCodeTtl;
         this.redirectUri = redirectUri;
+        this.postLogoutRedirectUri = postLogoutRedirectUri;
     }
 
     @org.springframework.context.annotation.Bean
@@ -77,6 +80,9 @@ public class DefaultOAuthClientBootstrap {
             client.setScopes(new HashSet<>(Set.of("openid", "profile", "email")));
             client.setRedirectUris(redirectUri != null && !redirectUri.isBlank()
                     ? new HashSet<>(Set.of(redirectUri))
+                    : new HashSet<>());
+            client.setPostLogoutRedirectUris(postLogoutRedirectUri != null && !postLogoutRedirectUri.isBlank()
+                    ? new HashSet<>(Set.of(postLogoutRedirectUri))
                     : new HashSet<>());
             client.setGrantTypes(new HashSet<>(Set.of("authorization_code", "refresh_token", "client_credentials")));
             repository.save(client);

@@ -120,6 +120,21 @@ public class AuthorizationServerConfig {
                         .defaultAuthenticationEntryPointFor(
                                 new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp"),
                                 AntPathRequestMatcher.antMatcher("/connect/logout"))
+                        // Same root cause as /connect/logout above (see FR-20 block):
+                        // Spring AS auto-installs oauth2ResourceServer(jwt()) which
+                        // wires BearerTokenAuthenticationEntryPoint with a MediaType.ALL
+                        // matcher, so a browser / Postman GET to /oauth2/authorize
+                        // (Accept: */*) is met with a bare 401 WWW-Authenticate: Bearer
+                        // instead of the expected 302 to /oauth2/authorization/external-idp.
+                        // Register the LoginUrl entry point ahead of the Bearer matcher
+                        // for the browser-facing authorization endpoints so unauthenticated
+                        // callers are redirected to the upstream IdP login flow.
+                        .defaultAuthenticationEntryPointFor(
+                                new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp"),
+                                new OrRequestMatcher(
+                                        AntPathRequestMatcher.antMatcher("/oauth2/authorize"),
+                                        AntPathRequestMatcher.antMatcher("/oauth2/authorization/**")
+                                ))
                         .authenticationEntryPoint(
                                 new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp")))
 				.oauth2Login(oauth2 -> oauth2.userInfoEndpoint(userInfo ->
