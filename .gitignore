@@ -39,3 +39,13 @@ app.log*
 compile_errors*
 
 implementation_plan.md
+
+# Local dev / debug scratch files we never want committed
+*.log
+boot_log*.txt
+compile_log.txt
+compile_out.txt
+mvn_output.txt
+docker_ps.txt
+diff.txt
+fix_*.py
