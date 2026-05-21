@@ -13,9 +13,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -27,6 +31,7 @@ import org.springframework.security.web.RedirectStrategy;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
 import java.util.Map;
@@ -70,18 +75,46 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
     private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
     private final SecurityContextLogoutHandler springLogoutHandler = new SecurityContextLogoutHandler();
 
+    /**
+     * Holds the optional upstream-IdP ClientRegistrationRepository (only
+     * present when {@code igrp.oauth.external-idp.enabled=true}). We resolve
+     * it lazily so logout still works when federation is disabled.
+     */
+    private final ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider;
+
+    /**
+     * Registration id of the upstream IdP we should chain logout through.
+     * Defaults to {@code external-idp} to match the
+     * {@code spring.security.oauth2.client.registration.external-idp.*}
+     * keys in application.properties.
+     */
+    private final String upstreamRegistrationId;
+
+    /**
+     * Toggle to opt out of upstream-IdP logout chaining (e.g. when the IdP
+     * advertises an {@code end_session_endpoint} but does not actually honor
+     * RP-initiated logout, or when local-only logout is the desired UX).
+     */
+    private final boolean cascadeLogoutToIdp;
+
     public SessionLogoutHandler(SessionRepository sessionRepository,
                                 SessionCacheEvictService sessionCacheEvictService,
                                 SessionHeartbeatService heartbeatService,
                                 OAuth2AuthorizationService authorizationService,
                                 ApplicationEventPublisher eventPublisher,
-                                SessionAuditLogger sessionAuditLogger) {
+                                SessionAuditLogger sessionAuditLogger,
+                                ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider,
+                                @Value("${igrp.oauth.external-idp.registration-id:external-idp}") String upstreamRegistrationId,
+                                @Value("${igrp.oauth.external-idp.logout-cascade:true}") boolean cascadeLogoutToIdp) {
         this.sessionRepository = sessionRepository;
         this.sessionCacheEvictService = sessionCacheEvictService;
         this.heartbeatService = heartbeatService;
         this.authorizationService = authorizationService;
         this.eventPublisher = eventPublisher;
         this.sessionAuditLogger = sessionAuditLogger;
+        this.clientRegistrationRepositoryProvider = clientRegistrationRepositoryProvider;
+        this.upstreamRegistrationId = upstreamRegistrationId;
+        this.cascadeLogoutToIdp = cascadeLogoutToIdp;
     }
 
     @Override
@@ -117,8 +150,24 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         clearAuthCookies(request, response);
 
         String postLogoutRedirectUri = token.getPostLogoutRedirectUri();
+        String state = token.getState();
+
+        // 5. Cascade to the upstream IdP's end_session_endpoint so the user's
+        //    SSO session at the IdP is invalidated too. Without this hop,
+        //    /oauth2/authorize will silently re-authenticate the user against
+        //    the IdP's still-active SSO cookie and Spring AS will hand back
+        //    a fresh authorization code without prompting — the symptom the
+        //    front-end team reported once the iGRP-side cleanup was working.
+        //    The IdP, after killing its own session, redirects back to the
+        //    caller's original post_logout_redirect_uri (plus state if any).
+        String upstreamLogoutUrl = resolveUpstreamLogoutUrl(postLogoutRedirectUri, state);
+        if (upstreamLogoutUrl != null) {
+            LOGGER.debug("OIDC logout: cascading to upstream IdP end_session_endpoint");
+            redirectStrategy.sendRedirect(request, response, upstreamLogoutUrl);
+            return;
+        }
+
         if (StringUtils.hasText(postLogoutRedirectUri)) {
-            String state = token.getState();
             String location = StringUtils.hasText(state)
                     ? appendQueryParam(postLogoutRedirectUri, "state", state)
                     : postLogoutRedirectUri;
@@ -126,6 +175,57 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
             return;
         }
         response.setStatus(HttpServletResponse.SC_OK);
+    }
+
+    /**
+     * Build the redirect URL to the upstream IdP's RP-initiated logout
+     * endpoint, or {@code null} when chaining is disabled, the IdP isn't
+     * configured, or its OIDC discovery doc didn't expose
+     * {@code end_session_endpoint}.
+     *
+     * <p>We pass {@code client_id} (our registration at the IdP) and
+     * {@code post_logout_redirect_uri} (the caller's final destination) so
+     * the IdP knows which session to kill and where to send the user
+     * afterward. {@code id_token_hint} is omitted because at this layer we
+     * hold only the iGRP-issued id_token, not the IdP's original — modern
+     * Keycloak / Authelia / Auth0 accept the request with
+     * client_id+post_logout_redirect_uri alone.
+     */
+    private String resolveUpstreamLogoutUrl(String finalRedirectUri, String state) {
+        if (!cascadeLogoutToIdp) {
+            return null;
+        }
+        ClientRegistrationRepository repo = clientRegistrationRepositoryProvider.getIfAvailable();
+        if (repo == null) {
+            return null;
+        }
+        ClientRegistration registration = repo.findByRegistrationId(upstreamRegistrationId);
+        if (registration == null) {
+            LOGGER.debug("OIDC logout: upstream registrationId '{}' not found, skipping IdP cascade",
+                    upstreamRegistrationId);
+            return null;
+        }
+        Object endSessionEndpoint = registration.getProviderDetails()
+                .getConfigurationMetadata()
+                .get("end_session_endpoint");
+        if (endSessionEndpoint == null
+                || !StringUtils.hasText(endSessionEndpoint.toString())) {
+            LOGGER.debug("OIDC logout: upstream IdP {} did not advertise end_session_endpoint, "
+                    + "skipping IdP cascade", upstreamRegistrationId);
+            return null;
+        }
+
+        UriComponentsBuilder url = UriComponentsBuilder.fromUriString(endSessionEndpoint.toString());
+        url.queryParam("client_id", registration.getClientId());
+        if (StringUtils.hasText(finalRedirectUri)) {
+            url.queryParam("post_logout_redirect_uri", finalRedirectUri);
+        }
+        if (StringUtils.hasText(state)) {
+            url.queryParam("state", state);
+        }
+        // encode() before build() so : and / in post_logout_redirect_uri are
+        // percent-escaped exactly once.
+        return url.encode().build().toUriString();
     }
 
     private void invalidateSpringSession(HttpServletRequest request,
