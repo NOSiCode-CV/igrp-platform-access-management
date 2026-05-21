@@ -58,8 +58,19 @@ public class OAuthClientEntity {
      * by default. Set to {@code false} only for legacy confidential
      * server-side clients that cannot be updated to send PKCE yet.
      */
-    @Column(name = "require_pkce", nullable = false)
-    private boolean requirePkce = true;
+    /*
+     * Declared as java.lang.Boolean (object) rather than primitive boolean so
+     * Hibernate can hydrate the entity from rows where the column is NULL
+     * (e.g. legacy rows from before V8 backfilled `require_pkce`). The
+     * isRequirePkce() accessor below normalizes null -> true so callers still
+     * see the entity-level default.
+     */
+    @Column(name = "require_pkce", nullable = false, columnDefinition = "BOOLEAN DEFAULT TRUE")
+    private Boolean requirePkce = Boolean.TRUE;
+
+    public boolean isRequirePkce() {
+        return requirePkce == null || requirePkce;
+    }
 
     @Column(name = "access_token_ttl", nullable = false)
     private int accessTokenTtl;
