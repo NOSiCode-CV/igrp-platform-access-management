@@ -160,18 +160,50 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         if (cookies == null) {
             return;
         }
+        // Render the Set-Cookie header manually rather than going through
+        // jakarta.servlet.http.Cookie: the standard Servlet API does NOT
+        // expose SameSite, and OWASP-hardened session cookies are emitted
+        // with SameSite=Lax. A deletion cookie that omits SameSite is
+        // treated by modern browsers as a *different* cookie and the
+        // original survives — so /oauth2/authorize keeps seeing a live
+        // session even though we set Max-Age=0 on a same-named cookie.
+        //
+        // The Path / Domain / Secure / HttpOnly / SameSite combination
+        // below mirrors the attributes Spring Boot sets via
+        // server.servlet.session.cookie.* in application.properties.
+        boolean secure = isHttps(request);
         for (Cookie cookie : cookies) {
             for (String name : CLEARABLE_COOKIES) {
                 if (name.equalsIgnoreCase(cookie.getName())) {
-                    Cookie expired = new Cookie(cookie.getName(), "");
-                    expired.setPath("/");
-                    expired.setMaxAge(0);
-                    expired.setHttpOnly(true);
-                    expired.setSecure(request.isSecure());
-                    response.addCookie(expired);
+                    StringBuilder header = new StringBuilder(96)
+                            .append(cookie.getName()).append("=")
+                            .append("; Path=/")
+                            .append("; Max-Age=0")
+                            .append("; HttpOnly")
+                            .append("; SameSite=Lax");
+                    if (secure) {
+                        header.append("; Secure");
+                    }
+                    response.addHeader("Set-Cookie", header.toString());
                 }
             }
         }
+    }
+
+    /**
+     * The request is HTTPS either directly or behind a TLS-terminating
+     * reverse proxy. The proxy case is the normal one in production —
+     * `server.forward-headers-strategy=framework` (set by the OWASP
+     * commit) makes Spring trust X-Forwarded-Proto, but at this layer
+     * we read it ourselves so the Secure attribute is emitted whenever
+     * the user-agent's hop is over TLS.
+     */
+    private static boolean isHttps(HttpServletRequest request) {
+        if (request.isSecure()) {
+            return true;
+        }
+        String proto = request.getHeader("X-Forwarded-Proto");
+        return proto != null && proto.equalsIgnoreCase("https");
     }
 
     private void revokeBoundSession(UUID sid) {
