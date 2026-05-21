@@ -12,7 +12,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
@@ -62,10 +64,23 @@ class SessionLogoutHandlerTest {
 
     @BeforeEach
     void setUp() {
+        // Federation isn't configured in this unit test, so the IdP-cascade
+        // resolver gets an ObjectProvider that yields null — the handler
+        // falls back to the direct redirect path the existing assertions
+        // were written against.
+        ObjectProvider<ClientRegistrationRepository> noClientRegistration = emptyProvider();
         handler = new SessionLogoutHandler(sessionRepository, sessionCacheEvictService,
-                heartbeatService, authorizationService, eventPublisher, sessionAuditLogger);
+                heartbeatService, authorizationService, eventPublisher, sessionAuditLogger,
+                noClientRegistration, "external-idp", true);
         request = new MockHttpServletRequest("POST", "/connect/logout");
         response = new MockHttpServletResponse();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> ObjectProvider<T> emptyProvider() {
+        ObjectProvider<T> provider = org.mockito.Mockito.mock(ObjectProvider.class);
+        org.mockito.Mockito.when(provider.getIfAvailable()).thenReturn(null);
+        return provider;
     }
 
     @Test
