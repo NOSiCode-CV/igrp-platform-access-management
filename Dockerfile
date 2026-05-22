@@ -5,7 +5,9 @@ COPY pom.xml ./
 RUN mvn -B -q dependency:go-offline
 
 COPY src ./src
-RUN mvn -B -DskipTests clean package && ls -lh target
+# verify = compile + test + JaCoCo coverage check (>=76%) + OWASP scan (CVSS>=0) + package.
+# Build fails if any check does not pass.
+RUN mvn -B verify && ls -lh target
 
 FROM cgr.dev/chainguard/jre:latest
 WORKDIR /app

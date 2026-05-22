@@ -115,6 +115,6 @@ public class AddApplicationCustomFieldsCommandHandlerTest {
         // When & Then
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> addApplicationCustomFieldsCommandHandler.handle(command));
 
-        assertEquals("Application not found", ex.getBody().getTitle());
+        assertEquals("Application not found with code: APP", ex.getBody().getTitle());
     }
 }

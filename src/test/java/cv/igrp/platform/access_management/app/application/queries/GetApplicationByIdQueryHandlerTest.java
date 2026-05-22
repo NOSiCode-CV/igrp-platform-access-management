@@ -88,6 +88,6 @@ public class GetApplicationByIdQueryHandlerTest {
         );
 
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
-        assertEquals("Application not found", exception.getBody().getTitle());
+        assertEquals("Application not found with id: 999", exception.getBody().getTitle());
     }
 }

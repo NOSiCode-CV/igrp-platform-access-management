@@ -41,8 +41,7 @@ public class GetPrivateFileUrlQueryHandlerTest {
             () -> getPrivateFileUrlQueryHandler.handle(query)
     );
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
-    assertEquals("No path provided", exception.getBody().getTitle());
-    assertEquals("There's no path provided. Please check and try again.", exception.getBody().getProperties().get("details"));
+    assertEquals("File path is required and cannot be blank", exception.getBody().getTitle());
   }
 
   @Test
@@ -89,7 +88,7 @@ public class GetPrivateFileUrlQueryHandlerTest {
     );
 
     assertEquals(HttpStatus.BAD_REQUEST, exception.getStatusCode());
-    assertEquals("No path provided", exception.getBody().getTitle());
+    assertEquals("File path is required and cannot be blank", exception.getBody().getTitle());
   }
 
   @Test

@@ -1,40 +1,83 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
-import static org.mockito.Mockito.*;
-import static org.junit.jupiter.api.Assertions.*;
-
+import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
+import cv.igrp.framework.notifications.core.model.Notification;
+import cv.igrp.framework.notifications.core.model.NotificationResult;
+import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
+import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.InvitationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
+import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
+import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import cv.igrp.platform.access_management.users.application.commands.*;
-import cv.igrp.platform.access_management.users.application.commands.*;
+
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-public class CancelUserInvitationCommandHandlerTest {
+class CancelUserInvitationCommandHandlerTest {
 
-    @InjectMocks
-    private CancelUserInvitationCommandHandler cancelUserInvitationCommandHandler;
+    @Mock private InvitationEntityRepository invitationRepository;
+    @Mock private InvitationMapper invitationMapper;
+    @Mock private NotificationAdapter<NotificationResult> notificationAdapter;
+
+    private CancelUserInvitationCommandHandler handler;
+    private InvitationEntity invitation;
+    private CancelUserInvitationCommand command;
 
     @BeforeEach
     void setUp() {
-      // TODO: initialize mock dependencies if needed
+        handler = new CancelUserInvitationCommandHandler(invitationRepository, invitationMapper, notificationAdapter);
+        invitation = new InvitationEntity();
+        invitation.setId(10);
+        invitation.setToken("tok");
+        invitation.setIdentifierType("EMAIL");
+        invitation.setIdentifierValue("a@b.cv");
+        command = new CancelUserInvitationCommand();
+        command.setId(10);
     }
 
     @Test
-    void testHandle() {
-        // TODO: Implement unit test for handle method
-        // Example:
-        // Given
-        // CancelUserInvitationCommand command = new CancelUserInvitationCommand(...);
-        //
-        // When
-        // ResponseEntity<InvitationDTO> response = cancelUserInvitationCommandHandler.handle(command);
-        //
-        // Then
-        // assertNotNull(response);
-        // assertEquals(..., response.getBody());
+    void handle_CancelsAndNotifies() throws Exception {
+        when(invitationRepository.findByIdOrThrow(10)).thenReturn(invitation);
+        when(invitationRepository.save(invitation)).thenReturn(invitation);
+        when(invitationMapper.toDto(invitation)).thenReturn(new InvitationDTO());
+
+        ResponseEntity<InvitationDTO> resp = handler.handle(command);
+
+        assertEquals(HttpStatus.OK, resp.getStatusCode());
+        assertEquals(InvitationStatus.CANCELED, invitation.getStatus());
+        verify(notificationAdapter).send(any(Notification.class));
+    }
+
+    @Test
+    void handle_NonEmailIdentifier_SkipsNotification() {
+        invitation.setIdentifierType("PHONE");
+        when(invitationRepository.findByIdOrThrow(10)).thenReturn(invitation);
+        when(invitationRepository.save(invitation)).thenReturn(invitation);
+        when(invitationMapper.toDto(invitation)).thenReturn(new InvitationDTO());
+
+        handler.handle(command);
+
+        verifyNoInteractions(notificationAdapter);
+    }
+
+    @Test
+    void handle_NotificationFails_StillCancels() throws Exception {
+        when(invitationRepository.findByIdOrThrow(10)).thenReturn(invitation);
+        when(invitationRepository.save(invitation)).thenReturn(invitation);
+        when(invitationMapper.toDto(invitation)).thenReturn(new InvitationDTO());
+        doThrow(new RuntimeException("smtp down")).when(notificationAdapter).send(any(Notification.class));
+
+        ResponseEntity<InvitationDTO> resp = handler.handle(command);
+
+        assertEquals(HttpStatus.OK, resp.getStatusCode());
+        assertEquals(InvitationStatus.CANCELED, invitation.getStatus());
     }
 }

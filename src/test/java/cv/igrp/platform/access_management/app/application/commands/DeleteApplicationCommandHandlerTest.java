@@ -60,7 +60,6 @@ public class DeleteApplicationCommandHandlerTest {
         // Then
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> deleteApplicationCommandHandler.handle(command));
         assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
-        assertNotNull(exception.getBody().getProperties());
-        assertEquals("Application not found with code: APP", exception.getBody().getProperties().get("details"));
+        assertEquals("Application not found with code: APP", exception.getBody().getTitle());
     }
 }

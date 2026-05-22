@@ -104,7 +104,7 @@ public class RemoveApplicationCustomFieldsCommandHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
         assertNotNull(ex.getBody().getTitle());
         System.out.println(ex.getBody().getTitle());
-        assertTrue(ex.getBody().getTitle().contains("CustomFieldEntity not found"));
+        assertTrue(ex.getBody().getTitle().contains("Custom field not found for application"));
 
         verify(customFieldRepository, never()).save(any());
     }

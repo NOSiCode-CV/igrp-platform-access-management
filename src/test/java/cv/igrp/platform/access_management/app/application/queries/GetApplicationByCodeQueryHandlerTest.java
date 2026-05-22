@@ -87,7 +87,7 @@ public class GetApplicationByCodeQueryHandlerTest {
     );
 
     assertEquals(HttpStatus.NOT_FOUND.value(), exception.getBody().getStatus());
-    assertEquals("Application not found", exception.getBody().getTitle());
+    assertEquals("Application not found with code: APP", exception.getBody().getTitle());
   }
 
 }

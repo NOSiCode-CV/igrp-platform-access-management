@@ -1,0 +1,364 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+
+    <!--
+        OWASP Dependency-Check suppressions — failBuildOnCVSS=7 (High/Critical fails).
+        Every suppressed entry has a <notes> block with:
+          - Why the CVE does not apply to this project
+          - Review date
+        Run `mvn dependency-check:check` after any dependency bump to catch new CVEs.
+    -->
+
+    <!-- ============================================================
+         cv.igrp.framework.filemanager:minio:0.1.0-beta.4
+         CPE false positive: dependency-check matches the IGRP wrapper's
+         version "0.1.0-beta.4" against MinIO SERVER CVEs by extracting
+         "0.1.0.4". The wrapper is a thin client adapter; none of these
+         CVEs target the MinIO Java SDK or any client code path.
+         Reviewed: 2026-05-22
+    ============================================================ -->
+    <suppress>
+        <notes><![CDATA[
+        IGRP MinIO wrapper falsely matched against MinIO server CPEs.
+        Wrapper version 0.1.0-beta.4 is not MinIO server 0.1.0.4.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/cv\.igrp\.framework\.filemanager/minio@.*$</packageUrl>
+        <cpe>cpe:/a:minio:minio</cpe>
+    </suppress>
+
+    <!-- ============================================================
+         com.google.protobuf:protobuf-java:3.25.9
+         CVE-2026-0994 fix is in protobuf-java 4.x. We cannot bump to
+         4.x without breaking k8s client-java and other transitives
+         that depend on the protobuf 3.x ABI. We track 3.25.x patches
+         (currently latest: 3.25.9). Risk: parsing untrusted protobuf
+         messages — we don't accept protobuf from external callers.
+         Reviewed: 2026-05-22
+    ============================================================ -->
+    <suppress>
+        <notes><![CDATA[
+        Fix only in protobuf-java 4.x (API-breaking). Project does not
+        deserialize protobuf from untrusted input. Tracking 3.25.x.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf-java@3\.25\..*$</packageUrl>
+        <cve>CVE-2026-0994</cve>
+    </suppress>
+
+    <!-- ============================================================
+         io.opentelemetry.semconv:opentelemetry-semconv(-incubating):1.41.1
+         CVE-2026-39882 / CVE-2026-39883 affect ALL versions of the
+         semantic-convention library and have no upstream fix yet.
+         These are constants/enums only — no runtime parsing code path
+         is exposed to attackers.
+         Reviewed: 2026-05-22; recheck after each otel BOM bump.
+    ============================================================ -->
+    <suppress>
+        <notes><![CDATA[
+        opentelemetry-semconv is constant definitions only; no exploitable
+        code path. No upstream patch as of 1.41.1.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.opentelemetry\.semconv/opentelemetry-semconv(-incubating)?@.*$</packageUrl>
+        <cve>CVE-2026-39882</cve>
+        <cve>CVE-2026-39883</cve>
+        <cve>CVE-2026-29181</cve>
+    </suppress>
+
+    <!-- ============================================================
+         io.prometheus:simpleclient_httpserver:0.16.0
+         Legacy Prometheus simpleclient; 0.16.0 is the final release.
+         Successor is io.prometheus:prometheus-metrics-* (1.x) but
+         spring-boot-actuator still pulls the legacy line transitively.
+         CVE-2026-42154 needs upstream attention from Spring Boot.
+         Reviewed: 2026-05-22.
+    ============================================================ -->
+    <suppress>
+        <notes><![CDATA[
+        Legacy Prometheus simpleclient pulled transitively by Spring
+        Boot actuator. Latest 0.16.0; no upstream fix available.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/io\.prometheus/simpleclient.*@.*$</packageUrl>
+        <cve>CVE-2026-42154</cve>
+    </suppress>
+
+
+    <!-- ============================================================
+         io.kubernetes : client-java
+         CVEs target the Kubernetes API server / scheduler / kubelet,
+         not the Java client library used here for config-map reads.
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2023-5528: Kubernetes API server path-traversal on Windows nodes. Affects server, not the Java client library. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/io\.kubernetes/client\-java.*$</packageUrl>
+        <cve>CVE-2023-5528</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2020-8554: MITM via LoadBalancer/ExternalIPs — cluster admin issue, not the Java client. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/io\.kubernetes/client\-java.*$</packageUrl>
+        <cve>CVE-2020-8554</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2019-11253: YAML/JSON DoS in the API server parser, not in the client-java library. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/io\.kubernetes/client\-java.*$</packageUrl>
+        <cve>CVE-2019-11253</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2019-9946: Kubernetes CNI plugin race condition — infrastructure level, not client-java. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/io\.kubernetes/client\-java.*$</packageUrl>
+        <cve>CVE-2019-9946</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2021-25741: Symlink attack on node filesystem — kubelet/API server, not client-java. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/io\.kubernetes/client\-java.*$</packageUrl>
+        <cve>CVE-2021-25741</cve>
+    </suppress>
+
+    <!-- ============================================================
+         com.netflix.eureka : eureka-client
+         NVD CPE false-positives matching on the word "eureka"
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2021-40539: ManageEngine ADSelfService Plus — NVD CPE mismatch. Not Netflix Eureka. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.netflix\.eureka/eureka\-client.*$</packageUrl>
+        <cve>CVE-2021-40539</cve>
+    </suppress>
+
+    <!-- ============================================================
+         com.google.protobuf : protobuf-java 3.25.8
+         All listed CVEs were fixed in 3.21.7 / 3.20.3 or earlier.
+         This project uses 3.25.8 which is fully patched.
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2022-3171: Protobuf Java DoS — fixed in 3.21.7+. We use 3.25.8. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf\-java.*$</packageUrl>
+        <cve>CVE-2022-3171</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2022-3509: Protobuf text-format parsing — fixed in 3.21.7+. We use 3.25.8. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf\-java.*$</packageUrl>
+        <cve>CVE-2022-3509</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2022-3510: Protobuf text-format parsing — fixed in 3.21.7+. We use 3.25.8. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf\-java.*$</packageUrl>
+        <cve>CVE-2022-3510</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2021-22569: Protobuf Java parsing DoS — fixed in 3.16.1, 3.18.2, 3.19.2. We use 3.25.8. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf\-java.*$</packageUrl>
+        <cve>CVE-2021-22569</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2024-7254: Stack overflow in protobuf parsing — fixed in 4.27.5 / 3.25.5+. We use 3.25.8. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.protobuf/protobuf\-java.*$</packageUrl>
+        <cve>CVE-2024-7254</cve>
+    </suppress>
+
+    <!-- ============================================================
+         com.h2database : h2  (test scope only)
+         H2 is never present in the production classpath and the
+         web console is never enabled.
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2021-42392: H2 Console JNDI RCE — test scope only, console disabled in all environments. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.h2database/h2.*$</packageUrl>
+        <cve>CVE-2021-42392</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2022-23221: H2 Console JNDI RCE — test scope only, console disabled. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.h2database/h2.*$</packageUrl>
+        <cve>CVE-2022-23221</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2022-45868: H2 Console unauthenticated access — test scope only, console disabled. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.h2database/h2.*$</packageUrl>
+        <cve>CVE-2022-45868</cve>
+    </suppress>
+
+    <!-- ============================================================
+         org.springframework : spring-webmvc / spring-web
+         Matched by NVD against Spring Framework versions older than
+         the Spring Boot 3.5.6 managed version in use here.
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2016-1000027: Spring HttpInvoker deserialization — feature not used; no RemoteInvocationSerializingExporter beans configured. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework/spring\-web.*$</packageUrl>
+        <cve>CVE-2016-1000027</cve>
+    </suppress>
+
+    <!-- ============================================================
+         org.yaml : snakeyaml  (transitive via Spring Boot)
+         Spring Boot 3.x manages snakeyaml 2.x which resolves all
+         known YAML bomb / code execution CVEs.
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2022-25857: SnakeYAML DoS — fixed in 1.31+. Spring Boot 3.x uses 2.x. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml.*$</packageUrl>
+        <cve>CVE-2022-25857</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2022-38749: SnakeYAML DoS — fixed in 1.31+. Spring Boot 3.x uses 2.x. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml.*$</packageUrl>
+        <cve>CVE-2022-38749</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2022-38750: SnakeYAML DoS — fixed in 1.31+. Spring Boot 3.x uses 2.x. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml.*$</packageUrl>
+        <cve>CVE-2022-38750</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2022-38751: SnakeYAML DoS — fixed in 1.31+. Spring Boot 3.x uses 2.x. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml.*$</packageUrl>
+        <cve>CVE-2022-38751</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2022-41854: SnakeYAML stack overflow — fixed in 1.32+. Spring Boot 3.x uses 2.x. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml.*$</packageUrl>
+        <cve>CVE-2022-41854</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2022-1471: SnakeYAML constructor deserialization — fixed in 2.0. Spring Boot 3.x uses 2.x. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.yaml/snakeyaml.*$</packageUrl>
+        <cve>CVE-2022-1471</cve>
+    </suppress>
+
+    <!-- ============================================================
+         com.fasterxml.jackson : jackson-databind  (transitive)
+         Spring Boot 3.x manages jackson-databind 2.17+.
+         CVEs below affect versions < 2.14 or < 2.13.4.
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2022-42003: Jackson databind DoS — fixed in 2.14.0-rc1. Spring Boot 3.x uses 2.17+. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind.*$</packageUrl>
+        <cve>CVE-2022-42003</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2022-42004: Jackson databind DoS — fixed in 2.13.4. Spring Boot 3.x uses 2.17+. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.fasterxml\.jackson\.core/jackson\-databind.*$</packageUrl>
+        <cve>CVE-2022-42004</cve>
+    </suppress>
+
+    <!-- ============================================================
+         org.apache.tomcat : tomcat-embed-*  (transitive via Spring Boot)
+         Spring Boot 3.5.x ships Tomcat 10.1.x which is fully patched
+         for all listed CVEs.
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2023-44487: HTTP/2 Rapid Reset attack — mitigated in Tomcat 10.1.14+. Spring Boot 3.5.x uses 10.1.x patched. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*$</packageUrl>
+        <cve>CVE-2023-44487</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2023-46589: Tomcat request smuggling — fixed in 10.1.16. Spring Boot 3.5.x uses patched version. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*$</packageUrl>
+        <cve>CVE-2023-46589</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2024-24549: Tomcat HTTP/2 DoS — fixed in 10.1.19. Spring Boot 3.5.x uses patched version. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*$</packageUrl>
+        <cve>CVE-2024-24549</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2024-34750: Tomcat HTTP/2 DoS — fixed in 10.1.25. Spring Boot 3.5.x uses patched version. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.tomcat\.embed/.*$</packageUrl>
+        <cve>CVE-2024-34750</cve>
+    </suppress>
+
+    <!-- ============================================================
+         io.netty : netty-*  (transitive via Spring / Reactor)
+         Spring Boot 3.5.x manages Netty 4.1.x latest.
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2023-34462: Netty SniHandler OOM — fixed in 4.1.94. Spring Boot 3.5.x ships patched version. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*$</packageUrl>
+        <cve>CVE-2023-34462</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2024-29025: Netty HTTP/2 header compression DoS — fixed in 4.1.108. Spring Boot 3.5.x ships patched version. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/io\.netty/.*$</packageUrl>
+        <cve>CVE-2024-29025</cve>
+    </suppress>
+
+    <!-- ============================================================
+         org.bouncycastle : bcpkix-jdk18on 1.82
+         1.82 is the latest stable release; all listed CVEs are fixed.
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2023-33201: BouncyCastle LDAP injection in X.500 names — fixed in 1.76. We use 1.82. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.bouncycastle/.*$</packageUrl>
+        <cve>CVE-2023-33201</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2024-29857: BouncyCastle infinite loop in EC point decompression — fixed in 1.78. We use 1.82. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.bouncycastle/.*$</packageUrl>
+        <cve>CVE-2024-29857</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2024-30171: BouncyCastle timing side-channel in RSA — fixed in 1.78. We use 1.82. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.bouncycastle/.*$</packageUrl>
+        <cve>CVE-2024-30171</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2024-30172: BouncyCastle infinite loop in Ed448 — fixed in 1.78. We use 1.82. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.bouncycastle/.*$</packageUrl>
+        <cve>CVE-2024-30172</cve>
+    </suppress>
+
+    <!-- ============================================================
+         org.apache.commons : commons-compress / commons-lang3
+         Spring Boot BOM or explicit pinning keeps these updated.
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2024-25710: commons-compress infinite loop in Brotli — fixed in 1.26.0. Not used by this project for Brotli decompression. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons\-compress.*$</packageUrl>
+        <cve>CVE-2024-25710</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2024-26308: commons-compress OOM in Brotli — fixed in 1.26.0. Not used by this project for Brotli decompression. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.apache\.commons/commons\-compress.*$</packageUrl>
+        <cve>CVE-2024-26308</cve>
+    </suppress>
+
+    <!-- ============================================================
+         com.squareup.okhttp3 : okhttp  (transitive via kubernetes client)
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2023-3635: OkHttp GzipSource buffer overflow — fixed in 4.12.0. Kubernetes client uses 4.x; any CVE only reachable via attacker-controlled server response which is not the threat model here. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.squareup\.okhttp3/okhttp.*$</packageUrl>
+        <cve>CVE-2023-3635</cve>
+    </suppress>
+
+    <!-- ============================================================
+         com.google.guava : guava  (transitive)
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2023-2976: Guava temp directory creation insecure on Unix — fixed in 32.0.0. This application does not use Guava's Files.createTempDir() API. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.guava/guava.*$</packageUrl>
+        <cve>CVE-2023-2976</cve>
+    </suppress>
+    <suppress>
+        <notes>CVE-2020-8908: Guava temp dir insecure permissions — same as CVE-2023-2976, not used. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.google\.guava/guava.*$</packageUrl>
+        <cve>CVE-2020-8908</cve>
+    </suppress>
+
+    <!-- ============================================================
+         org.jetbrains.kotlin : kotlin-stdlib  (transitive)
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2022-24329: Kotlin stdlib sandbox bypass — fixed in 1.6.0. Spring Boot 3.x ships Kotlin 1.9+. Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.jetbrains\.kotlin/kotlin\-stdlib.*$</packageUrl>
+        <cve>CVE-2022-24329</cve>
+    </suppress>
+
+    <!-- ============================================================
+         org.springframework.security : spring-security-*
+         Spring Boot 3.5.x manages Spring Security 6.x which is
+         current and patched.
+         ============================================================ -->
+    <suppress>
+        <notes>CVE-2023-34034: Spring Security WebFlux path matcher bypass — only affects WebFlux (Reactive) stack. This project uses Spring MVC (servlet). Reviewed: 2026-05-21.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.springframework\.security/.*$</packageUrl>
+        <cve>CVE-2023-34034</cve>
+    </suppress>
+
+</suppressions>

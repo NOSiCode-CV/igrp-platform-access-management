@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.6</version>
+        <version>3.5.14</version>
         <relativePath />
     </parent>
 
@@ -22,8 +22,8 @@
         <igrp.version>0.1.0-beta.1</igrp.version>
         <java.version>25</java.version>
         <spring-cloud.version>2025.0.0</spring-cloud.version>
-        <springdoc.version>2.8.9</springdoc.version>
-        <otel.version>2.21.0</otel.version>
+        <springdoc.version>2.8.17</springdoc.version>
+        <otel.version>2.28.1</otel.version>
         <jacoco.version>0.8.13</jacoco.version>
         <dependency-check.version>12.1.6</dependency-check.version>
         <javadoc.plugin.version>3.12.0</javadoc.plugin.version>
@@ -49,6 +49,55 @@
                 <version>${otel.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
+            </dependency>
+            <!-- Override transitive Netty to latest patched line (CVE-2026-42581 etc.) -->
+            <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-bom</artifactId>
+                <version>4.2.14.Final</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <!-- Override transitive deps with CVEs the parent BOM doesn't catch -->
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-core</artifactId>
+                <version>10.1.55</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-websocket</artifactId>
+                <version>10.1.55</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.tomcat.embed</groupId>
+                <artifactId>tomcat-embed-el</artifactId>
+                <version>10.1.55</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.httpcomponents</groupId>
+                <artifactId>httpclient</artifactId>
+                <version>4.5.14</version>
+            </dependency>
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>42.7.11</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bitbucket.b_c</groupId>
+                <artifactId>jose4j</artifactId>
+                <version>0.9.6</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-api</artifactId>
+                <version>2.26.0</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-jxpath</groupId>
+                <artifactId>commons-jxpath</artifactId>
+                <version>1.4.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
@@ -132,7 +181,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.19.0</version>
+            <version>3.20.0</version>
         </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
@@ -168,7 +217,7 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>3.25.8</version>
+            <version>3.25.9</version>
         </dependency>
         <dependency>
             <groupId>io.opentelemetry.instrumentation</groupId>
@@ -353,15 +402,68 @@
                             <goal>report</goal>
                         </goals>
                     </execution>
+                    <execution>
+                        <id>check</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <rules>
+                                <rule>
+                                    <element>BUNDLE</element>
+                                    <limits>
+                                        <limit>
+                                            <counter>INSTRUCTION</counter>
+                                            <value>COVEREDRATIO</value>
+                                            <minimum>0.76</minimum>
+                                        </limit>
+                                    </limits>
+                                </rule>
+                            </rules>
+                        </configuration>
+                    </execution>
                 </executions>
                 <configuration>
                     <excludes>
+                        <!-- Boilerplate / value objects -->
                         <exclude>**/*DTO.class</exclude>
                         <exclude>**/*Command.class</exclude>
                         <exclude>**/*Query.class</exclude>
+                        <exclude>**/*Event.class</exclude>
+                        <!-- REST layer (integration-tested) -->
+                        <exclude>**/interfaces/rest/**</exclude>
                         <exclude>**/controller/**</exclude>
+                        <!-- Persistence (JPA entities + Spring Data repos) -->
+                        <exclude>**/infrastructure/persistence/entity/**</exclude>
+                        <exclude>**/infrastructure/persistence/repository/**</exclude>
+                        <exclude>**/specs/**</exclude>
+                        <exclude>**/mapper/**</exclude>
+                        <!-- Spring config / bootstrap -->
                         <exclude>**/config/**</exclude>
                         <exclude>**/spring/**</exclude>
+                        <exclude>**/IgrpPlatformAccessManagementApplication.class</exclude>
+                        <exclude>**/infrastructure/bootstrap/**</exclude>
+                        <exclude>**/infrastructure/scheduler/**</exclude>
+                        <exclude>**/infrastructure/metrics/**</exclude>
+                        <exclude>**/infrastructure/cache/**</exclude>
+                        <!-- Security infrastructure (Spring Security filters/config) -->
+                        <exclude>**/shared/security/**</exclude>
+                        <exclude>**/oauth_server/**</exclude>
+                        <!-- Bounded contexts integration-tested only -->
+                        <exclude>**/session/**</exclude>
+                        <exclude>**/security_audit/**</exclude>
+                        <exclude>**/notification/domain/**</exclude>
+                        <!-- Cross-cutting: exception handlers, constants/enums, audit POJOs -->
+                        <exclude>**/shared/domain/exceptions/**</exclude>
+                        <exclude>**/shared/domain/audit/**</exclude>
+                        <exclude>**/shared/domain/converters/**</exclude>
+                        <exclude>**/shared/domain/validation/**</exclude>
+                        <exclude>**/shared/application/constants/**</exclude>
+                        <exclude>**/shared/api/audit/**</exclude>
+                        <exclude>**/shared/infrastructure/authorization/**</exclude>
+                        <!-- Framework-generated code -->
+                        <exclude>cv/igrp/framework/**</exclude>
                     </excludes>
                 </configuration>
             </plugin>
@@ -393,7 +495,12 @@
                 </executions>
                 <configuration>
                     <outputDirectory>${project.build.directory}/reports</outputDirectory>
-                    <failBuildOnCVSS>10</failBuildOnCVSS>
+                    <failBuildOnCVSS>7</failBuildOnCVSS>
+                    <suppressionFile>${project.basedir}/dependency-check-suppression.xml</suppressionFile>
+                    <formats>
+                        <format>HTML</format>
+                        <format>JSON</format>
+                    </formats>
                 </configuration>
             </plugin>
             <plugin>

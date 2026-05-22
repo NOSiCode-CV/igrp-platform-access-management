@@ -84,7 +84,7 @@ public class GetApplicationCustomFieldsQueryHandlerTest {
 
         assertEquals(HttpStatus.NOT_FOUND.value(), thrown.getBody().getStatus());
         assertNotNull(thrown.getBody().getTitle());
-        assertTrue(thrown.getBody().getTitle().contains("CustomFieldEntity not found"));
+        assertTrue(thrown.getBody().getTitle().contains("Custom field not found for application"));
     }
 
 }
