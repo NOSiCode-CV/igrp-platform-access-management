@@ -25,6 +25,11 @@ public class OAuthClientDTO {
     private String clientName;
     private String description;
     private boolean active;
+    /**
+     * Whether the authorization_code flow on this client requires a PKCE
+     * code_challenge. OWASP A01 default: true.
+     */
+    private boolean requirePkce;
     private Integer applicationId;
     private String applicationCode;
     private int accessTokenTtl;
