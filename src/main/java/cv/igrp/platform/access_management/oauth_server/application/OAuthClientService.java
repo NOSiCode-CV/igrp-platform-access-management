@@ -91,6 +91,12 @@ public class OAuthClientService {
         entity.setClientName(request.getClientName());
         entity.setDescription(request.getDescription());
         entity.setActive(request.isActive());
+        // PKCE toggle — only override the entity when the caller sent a
+        // value, so partial PUTs that omit requirePkce keep the existing
+        // setting (OWASP A01 default: true).
+        if (request.getRequirePkce() != null) {
+            entity.setRequirePkce(request.getRequirePkce());
+        }
         entity.setAccessTokenTtl(request.getAccessTokenTtl());
         entity.setRefreshTokenTtl(request.getRefreshTokenTtl());
         entity.setAuthorizationCodeTtl(request.getAuthorizationCodeTtl());
@@ -135,6 +141,7 @@ public class OAuthClientService {
                 .clientName(e.getClientName())
                 .description(e.getDescription())
                 .active(e.isActive())
+                .requirePkce(e.isRequirePkce())
                 .applicationId(e.getApplication() != null ? e.getApplication().getId() : null)
                 .applicationCode(e.getApplication() != null ? e.getApplication().getCode() : null)
                 .accessTokenTtl(e.getAccessTokenTtl())

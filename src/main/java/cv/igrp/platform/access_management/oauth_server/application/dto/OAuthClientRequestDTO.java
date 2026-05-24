@@ -27,6 +27,14 @@ public class OAuthClientRequestDTO {
     private boolean active = true;
 
     /**
+     * OWASP A01 — PKCE is required by default on every authorization_code
+     * flow. Use {@code false} only for legacy confidential clients that
+     * cannot send {@code code_challenge}. Boxed Boolean so absence on a
+     * partial PUT leaves the existing value untouched.
+     */
+    private Boolean requirePkce;
+
+    /**
      * Owning application id. Optional — a client without an owning application
      * is treated as a platform-wide client (e.g. the seeded default client).
      */

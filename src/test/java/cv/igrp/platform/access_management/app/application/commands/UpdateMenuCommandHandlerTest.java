@@ -127,7 +127,7 @@ public class UpdateMenuCommandHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
 
         assertNotNull(ex.getBody().getProperties());
-        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Menu not found"));
+        assertTrue(ex.getBody().getTitle().contains("Menu entry not found"));
 
         // Verify
         verify(menuEntryRepository, times(1)).findByApplicationIdAndCodeAndStatusNot(application, "MENU1", Status.DELETED);
@@ -150,7 +150,7 @@ public class UpdateMenuCommandHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
 
         assertNotNull(ex.getBody().getProperties());
-        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Parent Menu Entry not found"));
+        assertTrue(ex.getBody().getTitle().contains("Parent menu not found"));
 
         // Verify
         verify(menuEntryRepository, times(1)).findByApplicationIdAndCodeAndStatusNot(application, "MENU1", Status.DELETED);
@@ -174,7 +174,7 @@ public class UpdateMenuCommandHandlerTest {
         assertEquals(HttpStatus.NOT_FOUND.value(), ex.getBody().getStatus());
 
         assertNotNull(ex.getBody().getProperties());
-        assertTrue(ex.getBody().getProperties().getOrDefault("details", "").toString().contains("Application not found"));
+        assertTrue(ex.getBody().getTitle().contains("Application not found"));
 
         // Verify
         verify(menuEntryRepository, times(1)).findByApplicationIdAndCodeAndStatusNot(application, "MENU1", Status.DELETED);

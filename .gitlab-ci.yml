@@ -17,8 +17,50 @@ variables:
   IMAGE_TAG: latest
 
 stages:
+  - validate
   - build
   - manifest
+
+# ============================================
+# Validate: tests + JaCoCo coverage + OWASP
+# Must pass on every branch before any Docker
+# image is built.
+# ============================================
+
+validate:
+  stage: validate
+  image: cgr.dev/chainguard/maven:latest-dev
+  variables:
+    # Keep Maven local repo and OWASP NVD data inside the project dir so
+    # GitLab cache can persist them across pipeline runs.
+    MAVEN_OPTS: >-
+      -Dmaven.repo.local=${CI_PROJECT_DIR}/.m2/repository
+      -Ddependency-check.dataDirectory=${CI_PROJECT_DIR}/.owasp-data
+  cache:
+    key: "validate-${CI_COMMIT_REF_SLUG}"
+    paths:
+      - .m2/repository
+      - .owasp-data
+    policy: pull-push
+  script:
+    # Full verify: unit tests → JaCoCo check (>=76%) → OWASP scan (CVSS>=0).
+    # NVD_API_KEY should be set as a masked CI/CD variable for faster NVD syncs.
+    - |
+      OWASP_OPTS=""
+      [ -n "${NVD_API_KEY}" ] && OWASP_OPTS="-Dnvd.api.key=${NVD_API_KEY}"
+      mvn -B --no-transfer-progress verify ${OWASP_OPTS}
+  artifacts:
+    when: always
+    paths:
+      - target/site/jacoco/
+      - target/reports/
+    expire_in: 7 days
+  only:
+    - deploy/base-jvm
+    - deploy/base-native
+    - deploy/pre-release
+    - azure
+    - azure-jvm
 
 # ============================================
 # NOSi Registry

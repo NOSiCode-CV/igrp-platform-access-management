@@ -90,7 +90,7 @@ class AddMenusToDepartmentCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> handler.handle(command));
 
-        assertEquals("Department not found", ex.getBody().getTitle());
+        assertEquals("Department not found with code: DEPT", ex.getBody().getTitle());
         assertEquals(404, ex.getStatusCode().value());
         verifyNoInteractions(menuEntryRepository);
     }
@@ -108,7 +108,7 @@ class AddMenusToDepartmentCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> handler.handle(command));
 
-        assertEquals("Application not found", ex.getBody().getTitle());
+        assertEquals("Application not found with code: APPLICATION", ex.getBody().getTitle());
         assertEquals(404, ex.getStatusCode().value());
         verifyNoInteractions(menuEntryRepository);
     }
@@ -127,7 +127,7 @@ class AddMenusToDepartmentCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> handler.handle(command));
 
-        assertEquals("Menu Entry not found", ex.getBody().getTitle());
+        assertEquals("Menu entry not found with code: MENU1", ex.getBody().getTitle());
         assertEquals(404, ex.getStatusCode().value());
         verify(menuEntryRepository, never()).save(any());
     }
@@ -152,7 +152,7 @@ class AddMenusToDepartmentCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class,
                 () -> handler.handle(command));
 
-        assertEquals("Invalid Department Association", ex.getBody().getTitle());
+        assertEquals("Cannot add menu 'MENU1' to department 'DEPT' because its parent department 'PARENT' is not associated with the menu", ex.getBody().getTitle());
         assertEquals(400, ex.getStatusCode().value());
         verify(menuEntryRepository, never()).save(any());
     }

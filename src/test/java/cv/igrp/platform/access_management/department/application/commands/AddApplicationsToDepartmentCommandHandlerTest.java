@@ -88,7 +88,7 @@ class AddApplicationsToDepartmentCommandHandlerTest {
         IgrpResponseStatusException ex = assertThrows(IgrpResponseStatusException.class, () -> handler.handle(command));
 
         assertNotNull(ex.getBody().getTitle());
-        assertEquals("Parent Department was not found: PARENT", ex.getBody().getTitle());
+        assertEquals("Parent department not found with code: PARENT", ex.getBody().getTitle());
         assertEquals(404, ex.getStatusCode().value());
         verify(departmentRepository, never()).save(any());
     }
