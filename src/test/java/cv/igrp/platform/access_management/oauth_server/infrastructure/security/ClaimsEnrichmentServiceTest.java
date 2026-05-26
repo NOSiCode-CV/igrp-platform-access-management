@@ -78,6 +78,26 @@ class ClaimsEnrichmentServiceTest {
     }
 
     @Test
+    void mapEmailReturnsInternalIdWhenUserExists() {
+        IGRPUserEntity user = new IGRPUserEntity();
+        String uid = "00000000-0000-0000-0000-000000000043";
+        user.setId(uid);
+
+        when(userRepository.findByEmailIgnoreCase("demo@nosi.cv")).thenReturn(Optional.of(user));
+
+        assertEquals(uid, service.mapEmail("external-idp", "demo@nosi.cv"));
+    }
+
+    @Test
+    void mapEmailReturnsNullWhenUserAbsent() {
+        when(userRepository.findByEmailIgnoreCase("missing@nosi.cv")).thenReturn(Optional.empty());
+
+        assertNull(service.mapEmail("external-idp", "missing@nosi.cv"));
+        assertNull(service.mapEmail(null, "missing@nosi.cv"));
+        assertNull(service.mapEmail("external-idp", null));
+    }
+
+    @Test
     void buildClaimsEnrichesRolePermissionsAndMetadata() {
         PermissionEntity perm = new PermissionEntity();
         perm.setName("IGRP_USERS_VIEW");
