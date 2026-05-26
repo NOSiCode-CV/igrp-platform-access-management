@@ -99,6 +99,22 @@ public class ClaimsEnrichmentService {
     }
 
     /**
+     * Resolve the internal IGRP user id given a federated provider and email.
+     * Returns {@code null} if no matching local user is found.
+     */
+    @Transactional(readOnly = true)
+    public String mapEmail(String provider, String email) {
+        if (provider == null || email == null) {
+            return null;
+        }
+        return userRepository
+                .findByEmailIgnoreCase(email)
+                .map(IGRPUserEntity::getId)
+                .map(String::valueOf)
+                .orElse(null);
+    }
+
+    /**
      * Scopes configured on the given client. Empty set if the client is not
      * persisted (should not occur inside the authorization server pipeline).
      */

@@ -138,10 +138,14 @@ public class JwtTokenConfig {
             if (context.getPrincipal() instanceof OAuth2AuthenticationToken oauth2Token) {
                 Map<String, Object> attributes = oauth2Token.getPrincipal().getAttributes();
                 String provider = oauth2Token.getAuthorizedClientRegistrationId();
+
                 String externalUserId = (String) attributes.get("sub");
                 internalSub = claimsService.mapSubject(provider, externalUserId);
-                if (internalSub != null) {
-                    context.getClaims().subject(internalSub);
+                if (internalSub == null) {
+                    String userEmail = (String) attributes.get("email");
+                    if (userEmail != null) {
+                        internalSub = claimsService.mapEmail(provider, userEmail);
+                    }
                 }
             } else if (context.getPrincipal() != null
                     && !(context.getPrincipal() instanceof OAuth2ClientAuthenticationToken)) {
@@ -157,9 +161,9 @@ public class JwtTokenConfig {
             if (isClientCredentials) {
                 internalSub = claimsService.resolveServiceAccountSubject(clientId)
                         .orElse(internalSub);
-                if (internalSub != null) {
-                    context.getClaims().subject(internalSub);
-                }
+            }
+            if (internalSub != null) {
+                context.getClaims().subject(internalSub);
             }
             Map<String, Object> claims = claimsService.buildClaims(
                     internalSub,
