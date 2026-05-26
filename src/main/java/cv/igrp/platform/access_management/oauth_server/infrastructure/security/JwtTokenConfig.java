@@ -139,13 +139,13 @@ public class JwtTokenConfig {
                 Map<String, Object> attributes = oauth2Token.getPrincipal().getAttributes();
                 String provider = oauth2Token.getAuthorizedClientRegistrationId();
 
-                String externalUserId = (String) attributes.get("sub");
-                internalSub = claimsService.mapSubject(provider, externalUserId);
+                String userEmail = (String) attributes.get("email");
+                if (userEmail != null) {
+                    internalSub = claimsService.mapEmail(provider, userEmail);
+                }
                 if (internalSub == null) {
-                    String userEmail = (String) attributes.get("email");
-                    if (userEmail != null) {
-                        internalSub = claimsService.mapEmail(provider, userEmail);
-                    }
+                    String externalUserId = (String) attributes.get("sub");
+                    internalSub = claimsService.mapSubject(provider, externalUserId);
                 }
             } else if (context.getPrincipal() != null
                     && !(context.getPrincipal() instanceof OAuth2ClientAuthenticationToken)) {
