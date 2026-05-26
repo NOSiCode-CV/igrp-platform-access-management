@@ -169,6 +169,15 @@ public class UserSpecificationBuilder {
             spec = spec.and((root, criteriaQuery, cb) -> cb.equal(root.get("status"), Status.ACTIVE));
         }
 
+        // Same restriction as the GetUsersQuery path: TEMPORARY accounts are
+        // mid-onboarding and DELETED ones are soft-deleted, neither should
+        // surface in M2M business lookups. The /{id} repo lookup is exempt by
+        // design — direct id resolution can return any status (callers may
+        // need to detect a deleted/temporary user explicitly).
+        spec = spec.and((root, criteriaQuery, cb) ->
+                root.get("status").in(Status.ACTIVE, Status.INACTIVE)
+        );
+
         return spec;
     }
 
