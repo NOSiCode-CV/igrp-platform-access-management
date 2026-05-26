@@ -76,6 +76,14 @@ public class UserSpecificationBuilder {
             spec = spec.and((root, criteriaQuery, cb) -> cb.like(cb.lower(root.get("email")), "%" + query.getEmail().toLowerCase() + "%"));
         }
 
+        // Restrict the listing to fully provisioned accounts. TEMPORARY users
+        // are mid-onboarding (Phase G3 invite flow) and shouldn't appear in
+        // admin UIs until they accept the invitation; DELETED users are
+        // soft-deletes that must never resurface in normal listings.
+        spec = spec.and((root, criteriaQuery, cb) ->
+                root.get("status").in(Status.ACTIVE, Status.INACTIVE)
+        );
+
         // Apply scope
         spec = applyScope(spec, context);
 
