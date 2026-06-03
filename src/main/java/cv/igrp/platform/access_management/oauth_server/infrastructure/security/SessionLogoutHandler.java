@@ -126,9 +126,16 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
 
         OidcIdToken idToken = token.getIdToken();
 
-        // 1. iGRP-side cleanup — mark the bound SessionEntity REVOKED, evict
-        //    caches, audit, publish SessionRevokedEvent.
+        // 1. iGRP-side cleanup — load the bound SessionEntity ONCE so we can
+        //    extract the upstream id_token (needed for the cascade hint
+        //    below) before the revoke step writes back. WSO2 IS refuses to
+        //    honor post_logout_redirect_uri without id_token_hint, and that
+        //    hint is the IdP's original id_token stashed at issuance time.
         UUID sid = extractSid(idToken);
+        Optional<SessionEntity> sessionOpt = sid != null
+                ? sessionRepository.findBySessionId(sid)
+                : Optional.empty();
+        String upstreamIdToken = sessionOpt.map(SessionEntity::getUpstreamIdToken).orElse(null);
         revokeBoundSession(sid);
 
         // 2. Spring AS-side cleanup — remove the OAuth2Authorization so any
@@ -160,7 +167,7 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         //    front-end team reported once the iGRP-side cleanup was working.
         //    The IdP, after killing its own session, redirects back to the
         //    caller's original post_logout_redirect_uri (plus state if any).
-        String upstreamLogoutUrl = resolveUpstreamLogoutUrl(postLogoutRedirectUri, state);
+        String upstreamLogoutUrl = resolveUpstreamLogoutUrl(postLogoutRedirectUri, state, upstreamIdToken);
         if (upstreamLogoutUrl != null) {
             LOGGER.debug("OIDC logout: cascading to upstream IdP end_session_endpoint");
             redirectStrategy.sendRedirect(request, response, upstreamLogoutUrl);
@@ -183,15 +190,17 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
      * configured, or its OIDC discovery doc didn't expose
      * {@code end_session_endpoint}.
      *
-     * <p>We pass {@code client_id} (our registration at the IdP) and
-     * {@code post_logout_redirect_uri} (the caller's final destination) so
-     * the IdP knows which session to kill and where to send the user
-     * afterward. {@code id_token_hint} is omitted because at this layer we
-     * hold only the iGRP-issued id_token, not the IdP's original — modern
-     * Keycloak / Authelia / Auth0 accept the request with
-     * client_id+post_logout_redirect_uri alone.
+     * <p>We pass {@code client_id} (our registration at the IdP),
+     * {@code post_logout_redirect_uri} (the caller's final destination), and
+     * {@code id_token_hint} (the upstream IdP's original id_token, captured
+     * at federated-login time and stashed on the SessionEntity). The hint is
+     * critical for strict IdPs like WSO2 Identity Server which refuse to
+     * honor post_logout_redirect_uri when it's missing, falling back to a
+     * built-in "logged out" page instead of redirecting back to the caller.
+     * Lenient IdPs (Keycloak ≥18, Authelia, Auth0) also accept it; never
+     * harmful to include.
      */
-    private String resolveUpstreamLogoutUrl(String finalRedirectUri, String state) {
+    private String resolveUpstreamLogoutUrl(String finalRedirectUri, String state, String upstreamIdToken) {
         if (!cascadeLogoutToIdp) {
             return null;
         }
@@ -217,6 +226,12 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
 
         UriComponentsBuilder url = UriComponentsBuilder.fromUriString(endSessionEndpoint.toString());
         url.queryParam("client_id", registration.getClientId());
+        if (StringUtils.hasText(upstreamIdToken)) {
+            url.queryParam("id_token_hint", upstreamIdToken);
+        } else {
+            LOGGER.debug("OIDC logout: no upstream id_token captured for this session — IdP may "
+                    + "refuse to honor post_logout_redirect_uri (e.g. WSO2 IS requires the hint).");
+        }
         if (StringUtils.hasText(finalRedirectUri)) {
             url.queryParam("post_logout_redirect_uri", finalRedirectUri);
         }
