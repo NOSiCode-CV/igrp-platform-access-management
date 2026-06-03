@@ -8,6 +8,8 @@ import cv.igrp.platform.access_management.shared.domain.audit.AuthEventType;
 import cv.igrp.platform.access_management.shared.infrastructure.service.AuthAuditService;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -37,6 +39,8 @@ import java.util.Map;
  */
 @Configuration
 public class JwtTokenConfig {
+
+    private static final Logger LOG = LoggerFactory.getLogger(JwtTokenConfig.class);
 
     private final KeyUtils keyUtils;
     private final String issuer;
@@ -158,6 +162,15 @@ public class JwtTokenConfig {
                 if (oauth2Token.getPrincipal() instanceof OidcUser oidcUser
                         && oidcUser.getIdToken() != null) {
                     upstreamIdToken = oidcUser.getIdToken().getTokenValue();
+                    LOG.debug("Captured upstream id_token ({} chars) for provider={} sub={} to stash on the session row",
+                            upstreamIdToken.length(), provider, internalSub);
+                } else {
+                    LOG.warn("No upstream id_token to capture at issuance: principal type={}, "
+                            + "OidcUser idToken null? = {}. RP-initiated logout cascade will "
+                            + "be missing id_token_hint and strict IdPs (Autentika, WSO2 IS) "
+                            + "will refuse to honor post_logout_redirect_uri.",
+                            oauth2Token.getPrincipal().getClass().getName(),
+                            !(oauth2Token.getPrincipal() instanceof OidcUser));
                 }
             } else if (context.getPrincipal() != null
                     && !(context.getPrincipal() instanceof OAuth2ClientAuthenticationToken)) {
