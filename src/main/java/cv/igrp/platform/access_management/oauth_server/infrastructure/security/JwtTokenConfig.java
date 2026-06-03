@@ -22,6 +22,7 @@ import org.springframework.security.oauth2.server.authorization.authentication.O
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
@@ -135,6 +136,31 @@ public class JwtTokenConfig {
                                                                          SecurityAuditService auditService,
                                                                          SessionIssuanceService sessionIssuanceService) {
         return context -> {
+            // ID_TOKEN branch — copy sid + device_id from the already-issued
+            // access token onto the id_token. RP-initiated logout
+            // (/connect/logout) carries the id_token as id_token_hint, and
+            // SessionLogoutHandler reads `sid` off that id_token to identify
+            // which SessionEntity to revoke and which row to read the upstream
+            // id_token from for the IdP cascade. Without sid on the id_token
+            // the handler can't look up the session and falls back to a
+            // best-effort logout with no id_token_hint to the IdP — which
+            // strict IdPs (Autentika, WSO2 IS) reject with "logged out" page.
+            if ("id_token".equals(context.getTokenType().getValue())) {
+                OAuth2Authorization auth = context.getAuthorization();
+                if (auth != null && auth.getAccessToken() != null
+                        && auth.getAccessToken().getClaims() != null) {
+                    Map<String, Object> accessClaims = auth.getAccessToken().getClaims();
+                    Object sidClaim = accessClaims.get("sid");
+                    if (sidClaim != null) {
+                        context.getClaims().claim("sid", sidClaim);
+                    }
+                    Object deviceClaim = accessClaims.get("device_id");
+                    if (deviceClaim != null) {
+                        context.getClaims().claim("device_id", deviceClaim);
+                    }
+                }
+                return;
+            }
             if (!OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
                 return;
             }
