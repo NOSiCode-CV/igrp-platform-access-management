@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
@@ -135,6 +136,7 @@ public class JwtTokenConfig {
             }
 
             String internalSub = null;
+            String upstreamIdToken = null;
             if (context.getPrincipal() instanceof OAuth2AuthenticationToken oauth2Token) {
                 Map<String, Object> attributes = oauth2Token.getPrincipal().getAttributes();
                 String provider = oauth2Token.getAuthorizedClientRegistrationId();
@@ -146,6 +148,16 @@ public class JwtTokenConfig {
                 if (internalSub == null) {
                     String externalUserId = (String) attributes.get("sub");
                     internalSub = claimsService.mapSubject(provider, externalUserId);
+                }
+                // Capture the upstream IdP's original id_token so we can replay
+                // it as id_token_hint on the RP-initiated logout cascade. WSO2 IS
+                // (and other strict IdPs) ignore post_logout_redirect_uri when
+                // id_token_hint is missing; capturing it here is the only point
+                // in the flow where the upstream OidcUser principal is still
+                // attached to the token-issuance context.
+                if (oauth2Token.getPrincipal() instanceof OidcUser oidcUser
+                        && oidcUser.getIdToken() != null) {
+                    upstreamIdToken = oidcUser.getIdToken().getTokenValue();
                 }
             } else if (context.getPrincipal() != null
                     && !(context.getPrincipal() instanceof OAuth2ClientAuthenticationToken)) {
@@ -179,7 +191,7 @@ public class JwtTokenConfig {
                 String jti = context.getClaims().build().getId();
                 try {
                     SessionIssuanceService.IssuanceBinding binding =
-                            sessionIssuanceService.bindAccessToken(context, issuanceUserId, clientId, jti);
+                            sessionIssuanceService.bindAccessToken(context, issuanceUserId, clientId, jti, upstreamIdToken);
                     context.getClaims().claim("sid", binding.sid().toString());
                     context.getClaims().claim("device_id", binding.deviceId());
                 } catch (SessionIssuanceService.SessionRefreshRejectedException ex) {

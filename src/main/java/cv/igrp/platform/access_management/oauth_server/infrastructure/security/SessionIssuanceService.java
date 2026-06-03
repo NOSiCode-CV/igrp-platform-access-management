@@ -93,6 +93,23 @@ public class SessionIssuanceService {
                                            String userId,
                                            String clientId,
                                            String jti) {
+        return bindAccessToken(context, userId, clientId, jti, null);
+    }
+
+    /**
+     * Variant that also captures the upstream IdP's original id_token so it
+     * can be replayed as {@code id_token_hint} during RP-initiated logout
+     * cascade. Pass {@code null} when no upstream id_token is available
+     * (e.g. when the issuance isn't on top of a fresh federated login).
+     * On the refresh path the existing stored value is preserved when this
+     * argument is {@code null}, so a refresh-token call doesn't wipe it.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public IssuanceBinding bindAccessToken(JwtEncodingContext context,
+                                           String userId,
+                                           String clientId,
+                                           String jti,
+                                           String upstreamIdToken) {
         if (userId == null) {
             throw new IllegalStateException("Cannot bind a JWT to a session without a resolved user id");
         }
@@ -106,7 +123,7 @@ public class SessionIssuanceService {
         if (grantType != null && AuthorizationGrantType.REFRESH_TOKEN.equals(grantType)) {
             Optional<SessionEntity> existing = locateSessionForRefresh(context, userId, deviceId);
             if (existing.isPresent()) {
-                SessionEntity refreshed = applyRefresh(existing.get(), jti, clientId, now, ttlSeconds);
+                SessionEntity refreshed = applyRefresh(existing.get(), jti, clientId, now, ttlSeconds, upstreamIdToken);
                 return new IssuanceBinding(refreshed.getSessionId(), refreshed.getDeviceId());
             }
             // Fall through: refresh path lost its anchor — issue a brand-new session.
@@ -114,7 +131,7 @@ public class SessionIssuanceService {
                     userId, deviceId);
         }
 
-        SessionEntity created = openNewSession(userId, deviceId, clientId, jti, request, now, ttlSeconds);
+        SessionEntity created = openNewSession(userId, deviceId, clientId, jti, request, now, ttlSeconds, upstreamIdToken);
         return new IssuanceBinding(created.getSessionId(), created.getDeviceId());
     }
 
@@ -146,7 +163,8 @@ public class SessionIssuanceService {
                                        String jti,
                                        String clientId,
                                        Instant now,
-                                       long ttlSeconds) {
+                                       long ttlSeconds,
+                                       String upstreamIdToken) {
         if (!SessionStatus.ACTIVE.equals(session.getStatus())) {
             sessionMetrics.recordRefreshRejected("session_not_active");
             throw new SessionRefreshRejectedException(
@@ -173,6 +191,14 @@ public class SessionIssuanceService {
         if (clientId != null) {
             session.setClientId(clientId);
         }
+        // Preserve the existing upstream id_token when the refresh path
+        // doesn't supply a fresh one — refresh_token grants don't go through
+        // the upstream IdP again so a non-null value here is unusual; not
+        // overwriting on null keeps the original login-time hint intact for
+        // the eventual logout cascade.
+        if (upstreamIdToken != null && !upstreamIdToken.isBlank()) {
+            session.setUpstreamIdToken(upstreamIdToken);
+        }
         SessionEntity saved = sessionRepository.save(session);
         sessionCacheEvictService.evictBySubject(saved.getUserId());
         sessionAuditLogger.recordRefreshed(saved.getSessionId(), saved.getUserId(),
@@ -188,7 +214,8 @@ public class SessionIssuanceService {
                                          String jti,
                                          HttpServletRequest request,
                                          Instant now,
-                                         long ttlSeconds) {
+                                         long ttlSeconds,
+                                         String upstreamIdToken) {
         // FR-1: atomically replace any existing (user, device_id) ACTIVE row.
         sessionRepository
                 .findByUserIdAndDeviceIdAndStatus(userId, deviceId, SessionStatus.ACTIVE)
@@ -226,6 +253,9 @@ public class SessionIssuanceService {
         entity.setDeviceId(deviceId);
         entity.setClientId(clientId);
         entity.setJti(jti);
+        if (upstreamIdToken != null && !upstreamIdToken.isBlank()) {
+            entity.setUpstreamIdToken(upstreamIdToken);
+        }
         if (request != null) {
             entity.setClientIp(request.getRemoteAddr());
             entity.setUserAgentHash(hashUserAgent(request.getHeader("User-Agent")));

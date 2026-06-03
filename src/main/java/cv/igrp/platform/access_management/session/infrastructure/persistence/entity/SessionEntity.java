@@ -91,6 +91,22 @@ public class SessionEntity extends AuditEntity {
     @Column(name = "closed_by")
     private String closedBy;
 
+    /**
+     * Raw id_token issued by the upstream IdP at federated-login time. Stored
+     * verbatim so we can replay it as {@code id_token_hint} when cascading
+     * RP-initiated logout to the IdP's {@code end_session_endpoint}. WSO2 IS
+     * (and stricter implementations) refuse to honor
+     * {@code post_logout_redirect_uri} without this hint, falling back to a
+     * built-in "logged out" page instead of redirecting the user back to the
+     * caller.
+     *
+     * <p>Nullable because not every login flow goes through an upstream IdP
+     * (e.g. M2M client_credentials sessions never have one) and pre-V9 rows
+     * naturally won't have it backfilled.
+     */
+    @Column(name = "upstream_id_token", columnDefinition = "text")
+    private String upstreamIdToken;
+
     @PrePersist
     protected void onCreate() {
         if (startedAt == null) {
