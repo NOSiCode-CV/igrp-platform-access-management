@@ -136,6 +136,20 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
                 ? sessionRepository.findBySessionId(sid)
                 : Optional.empty();
         String upstreamIdToken = sessionOpt.map(SessionEntity::getUpstreamIdToken).orElse(null);
+        // Surface every step of the lookup so when id_token_hint comes out
+        // OMITTED we know exactly which step failed (sid missing, sid present
+        // but session row absent, or row present with the column unpopulated).
+        if (sid == null) {
+            LOGGER.warn("External IDP Logout: cannot capture upstream id_token — sid claim "
+                    + "missing on the iGRP id_token presented at /connect/logout");
+        } else if (sessionOpt.isEmpty()) {
+            LOGGER.warn("External IDP Logout: cannot capture upstream id_token — no t_user_session "
+                    + "row found for sid={}", sid);
+        } else {
+            int len = upstreamIdToken == null ? 0 : upstreamIdToken.length();
+            LOGGER.info("External IDP Logout: session sid={} loaded; upstream_id_token length = {} chars",
+                    sid, len);
+        }
         revokeBoundSession(sid);
 
         // 2. Spring AS-side cleanup — remove the OAuth2Authorization so any
