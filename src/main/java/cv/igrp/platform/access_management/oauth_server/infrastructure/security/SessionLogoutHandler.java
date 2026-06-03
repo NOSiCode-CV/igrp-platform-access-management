@@ -236,8 +236,20 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         if (StringUtils.hasText(upstreamIdToken)) {
             url.queryParam("id_token_hint", upstreamIdToken);
         } else {
-            LOGGER.debug("OIDC logout: no upstream id_token captured for this session — IdP may "
-                    + "refuse to honor post_logout_redirect_uri (e.g. WSO2 IS requires the hint).");
+            // WARN, not DEBUG — strict IdPs (WSO2 IS, Autentika, older Keycloak)
+            // refuse to honor post_logout_redirect_uri without id_token_hint
+            // and fall back to their built-in "logged out" page. The most
+            // common cause is a session created BEFORE the V9 deploy that
+            // added t_user_session.upstream_id_token + the JwtTokenConfig
+            // capture: pre-V9 sessions can never have the column populated
+            // because we don't have a copy of the IdP's id_token to backfill
+            // with. The fix is to re-login (the new session captures it) and
+            // the symptom self-resolves as the pre-V9 cohort cycles out.
+            LOGGER.warn("External IDP Logout: no upstream id_token on file for this session — "
+                    + "id_token_hint will be OMITTED. Strict IdPs (Autentika, WSO2 IS) will "
+                    + "ignore post_logout_redirect_uri and show their built-in 'logged out' "
+                    + "page. Most likely cause: this session was issued before the upstream-"
+                    + "id-token capture was deployed (re-login to fix).");
         }
         if (StringUtils.hasText(finalRedirectUri)) {
             url.queryParam("post_logout_redirect_uri", finalRedirectUri);
