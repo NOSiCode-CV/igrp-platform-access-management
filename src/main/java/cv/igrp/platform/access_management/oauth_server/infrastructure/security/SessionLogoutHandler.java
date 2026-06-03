@@ -169,7 +169,14 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         //    caller's original post_logout_redirect_uri (plus state if any).
         String upstreamLogoutUrl = resolveUpstreamLogoutUrl(postLogoutRedirectUri, state, upstreamIdToken);
         if (upstreamLogoutUrl != null) {
-            LOGGER.debug("OIDC logout: cascading to upstream IdP end_session_endpoint");
+            // Surface the actual redirect target at INFO so it shows up in
+            // production logs by default — this is the single most useful
+            // datapoint when an IdP refuses to honor post_logout_redirect_uri
+            // (you can paste the URL straight into a browser to reproduce).
+            // id_token_hint is masked because it's a multi-kB JWT containing
+            // user PII; the full unmasked URL is still emitted at DEBUG.
+            LOGGER.info("External IDP Logout: redirect URL = {}", maskIdTokenHint(upstreamLogoutUrl));
+            LOGGER.debug("External IDP Logout: redirect URL (full) = {}", upstreamLogoutUrl);
             redirectStrategy.sendRedirect(request, response, upstreamLogoutUrl);
             return;
         }
@@ -384,5 +391,30 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
     private static String appendQueryParam(String url, String name, String value) {
         char separator = url.contains("?") ? '&' : '?';
         return url + separator + name + "=" + value;
+    }
+
+    /**
+     * Mask the {@code id_token_hint} query-parameter value before logging so
+     * the user's IdP-issued JWT (which contains PII) isn't dumped into log
+     * aggregation. Replaces the value with {@code <jwt-XX-chars>} so size
+     * is still visible for triage. Everything else in the URL is preserved.
+     */
+    private static String maskIdTokenHint(String url) {
+        if (url == null) {
+            return null;
+        }
+        int start = url.indexOf("id_token_hint=");
+        if (start < 0) {
+            return url;
+        }
+        int valueStart = start + "id_token_hint=".length();
+        int valueEnd = url.indexOf('&', valueStart);
+        if (valueEnd < 0) {
+            valueEnd = url.length();
+        }
+        int valueLen = valueEnd - valueStart;
+        return url.substring(0, valueStart)
+                + "<jwt-" + valueLen + "-chars>"
+                + url.substring(valueEnd);
     }
 }
