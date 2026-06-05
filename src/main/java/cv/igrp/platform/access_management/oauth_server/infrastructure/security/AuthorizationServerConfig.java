@@ -89,7 +89,23 @@ public class AuthorizationServerConfig {
                 .securityContext(ctx -> ctx.securityContextRepository(new HttpSessionSecurityContextRepository()))
                 .requestCache(cache -> cache.requestCache(new HttpSessionRequestCache()))
                 .sessionManagement(s -> s.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
-                .authorizeHttpRequests(auth -> auth.anyRequest().authenticated())
+                .authorizeHttpRequests(auth -> auth
+                        // OIDC RP-initiated logout authenticates via the
+                        // id_token_hint query parameter (validated inside
+                        // OidcLogoutEndpointFilter), not via a session cookie
+                        // or Bearer token. Permitting the path here stops the
+                        // auto-installed BearerTokenAuthenticationEntryPoint
+                        // from intercepting unauthenticated callers with a
+                        // bare 401 WWW-Authenticate: Bearer when the request's
+                        // Accept header is `*/*` (curl, SPA fetch without
+                        // explicit Accept) — which made the endpoint behaviour
+                        // depend on whether the JSESSIONID happened to be
+                        // valid at the moment of logout. The endpoint filter
+                        // still runs and enforces id_token_hint validation
+                        // before our SessionLogoutHandler is invoked, so this
+                        // doesn't widen the auth surface.
+                        .requestMatchers(AntPathRequestMatcher.antMatcher("/connect/logout")).permitAll()
+                        .anyRequest().authenticated())
 				.exceptionHandling(ex -> ex
                         // FR-20 — /connect/logout (OIDC RP-initiated logout) MUST behave
                         // consistently with every other path in this chain when called
