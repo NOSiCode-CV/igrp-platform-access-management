@@ -142,6 +142,9 @@ public enum IgrpErrorCode {
             "This invitation has already been rejected"),
     IGRP_AUTH_INVITATION_NOT_PENDING(HttpStatus.CONFLICT,
             "This invitation is not in a state that allows a response (status={0})"),
+    IGRP_AUTH_INVITATION_USER_ALREADY_EXISTS(HttpStatus.CONFLICT,
+            "A user already exists with email {0} (status={1}). Use the role-management "
+                    + "endpoints to grant additional roles, or reactivate the account first."),
 
     // ─── Token / Subject ────────────────────────────────────────────────────
     IGRP_AUTH_INVALID_TOKEN_SUBJECT(HttpStatus.UNAUTHORIZED,

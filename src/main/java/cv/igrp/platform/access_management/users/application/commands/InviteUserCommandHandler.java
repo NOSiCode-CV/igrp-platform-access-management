@@ -11,7 +11,10 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.InvitationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils;
@@ -51,13 +54,15 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
     private final InvitationEntityRepository invitationRepository;
     private final InvitationMapper invitationMapper;
     private final UserUtils userUtils;
+    private final IGRPUserEntityRepository userRepository;
 
     public InviteUserCommandHandler(NotificationAdapter<NotificationResult> notificationAdapter,
                                     RoleEntityRepository roleRepository,
                                     DepartmentEntityRepository departmentRepository,
                                     InvitationEntityRepository invitationRepository,
                                     InvitationMapper invitationMapper,
-                                    UserUtils userUtils
+                                    UserUtils userUtils,
+                                    IGRPUserEntityRepository userRepository
     ) {
         this.notificationAdapter = notificationAdapter;
         this.roleRepository = roleRepository;
@@ -65,6 +70,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
         this.invitationRepository = invitationRepository;
         this.invitationMapper = invitationMapper;
         this.userUtils = userUtils;
+        this.userRepository = userRepository;
     }
 
     @IgrpCommandHandler
@@ -79,6 +85,25 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         String normalizedValue = dto.getEmail().trim().toLowerCase();
         dto.setEmail(normalizedValue);
+
+        // Block re-invites for accounts that already exist as ACTIVE or
+        // INACTIVE. The case-insensitive lookup runs against the same
+        // lowercased value stored on t_user.email, so John.Doe@Email.com
+        // resolves the same row as john.doe@email.com. DELETED accounts are
+        // intentionally permitted to be re-invited (the soft-delete is the
+        // signal that a new identity for that email can be onboarded);
+        // TEMPORARY accounts are also permitted (it's a resend semantically
+        // — their first acceptance flow may have stalled).
+        userRepository.findByEmailIgnoreCase(normalizedValue).ifPresent(existing -> {
+            if (existing.getStatus() == Status.ACTIVE || existing.getStatus() == Status.INACTIVE) {
+                LOGGER.warn("Rejecting invitation for {} — user already exists with status={}",
+                        normalizedValue, existing.getStatus());
+                throw IgrpResponseStatusException.of(
+                        IgrpErrorCode.IGRP_AUTH_INVITATION_USER_ALREADY_EXISTS,
+                        normalizedValue,
+                        existing.getStatus().name());
+            }
+        });
 
         LOGGER.info("Inviting new user: type=EMAIL, value={}", dto.getEmail());
 
