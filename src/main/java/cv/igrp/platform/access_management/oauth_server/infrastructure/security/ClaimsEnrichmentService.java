@@ -100,7 +100,17 @@ public class ClaimsEnrichmentService {
 
     /**
      * Resolve the internal IGRP user id given a federated provider and email.
-     * Returns {@code null} if no matching local user is found.
+     * Returns {@code null} if no matching local user is found, OR if the
+     * matching user is administratively suspended (INACTIVE) / soft-deleted
+     * (DELETED). Only {@code ACTIVE} and {@code TEMPORARY} users are admitted
+     * to the platform via the federated-login path — INACTIVE accounts must
+     * not be silently re-activated by a successful upstream login.
+     *
+     * <p>Uses the List-returning repository variant so a duplicate-email row
+     * (data corruption, an ACTIVE/TEMPORARY pair, etc.) doesn't throw
+     * {@code IncorrectResultSizeDataAccessException} mid-login; the
+     * repository orders the candidates so ACTIVE wins over TEMPORARY and
+     * the oldest id breaks remaining ties.
      */
     @Transactional(readOnly = true)
     public String mapEmail(String provider, String email) {
@@ -108,7 +118,9 @@ public class ClaimsEnrichmentService {
             return null;
         }
         return userRepository
-                .findByEmailIgnoreCase(email)
+                .findActiveOrTemporaryByEmailIgnoreCase(email)
+                .stream()
+                .findFirst()
                 .map(IGRPUserEntity::getId)
                 .map(String::valueOf)
                 .orElse(null);

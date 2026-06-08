@@ -126,6 +126,19 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
 
         OidcIdToken idToken = token.getIdToken();
 
+        // Debug-aid: emit the incoming request's redirect target and the FULL
+        // (un-redacted) id_token_hint exactly as the caller sent it, before
+        // any of our side-effects (revoke, OAuth2Authorization remove, cookie
+        // expiry) run. Lets us reproduce IdP-cascade failures by pasting the
+        // hint into jwt.io for offline inspection (claims, exp, signature)
+        // and confirm the SPA actually sent the post_logout_redirect_uri it
+        // claims it did. Logged at INFO so it shows up by default; switch the
+        // logger to DEBUG to silence in production once integration stabilises.
+        LOGGER.info("Incoming /connect/logout: post_logout_redirect_uri={}, state={}, id_token_hint={}",
+                token.getPostLogoutRedirectUri(),
+                token.getState(),
+                idToken == null ? null : idToken.getTokenValue());
+
         // 1. iGRP-side cleanup — load the bound SessionEntity ONCE so we can
         //    extract the upstream id_token (needed for the cascade hint
         //    below) before the revoke step writes back. WSO2 IS refuses to
