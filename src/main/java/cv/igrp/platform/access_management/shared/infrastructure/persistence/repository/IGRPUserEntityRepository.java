@@ -6,6 +6,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -47,6 +48,25 @@ public interface IGRPUserEntityRepository extends
         where lower(cast(u.email as string)) = lower(:email) and u.status != 'DELETED'
     """)
     Optional<IGRPUserEntity> findByEmailIgnoreCase(@Param("email") String email);
+
+    /**
+     * Auth-path email lookup. Returns only users in {@code ACTIVE} or
+     * {@code TEMPORARY} status — {@code INACTIVE} accounts are administratively
+     * suspended and must not be admitted by the federated-login subject
+     * resolver. Returns a {@link List} (not {@link Optional}) so a duplicate
+     * data row (two ACTIVE users with the same email, an ACTIVE/TEMPORARY
+     * pair, etc.) doesn't throw {@code IncorrectResultSizeDataAccessException}
+     * mid-login — the caller picks a deterministic winner (ACTIVE before
+     * TEMPORARY, oldest id wins ties).
+     */
+    @Query("""
+        select u from IGRPUserEntity u
+        where lower(cast(u.email as string)) = lower(:email)
+          and u.status in ('ACTIVE', 'TEMPORARY')
+        order by case u.status when 'ACTIVE' then 0 when 'TEMPORARY' then 1 else 2 end,
+                 u.id
+    """)
+    List<IGRPUserEntity> findActiveOrTemporaryByEmailIgnoreCase(@Param("email") String email);
 
     @Query("""
         select u from IGRPUserEntity u

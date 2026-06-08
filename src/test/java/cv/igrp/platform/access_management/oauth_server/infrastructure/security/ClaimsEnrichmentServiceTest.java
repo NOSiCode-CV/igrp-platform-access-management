@@ -83,18 +83,36 @@ class ClaimsEnrichmentServiceTest {
         String uid = "00000000-0000-0000-0000-000000000043";
         user.setId(uid);
 
-        when(userRepository.findByEmailIgnoreCase("demo@nosi.cv")).thenReturn(Optional.of(user));
+        when(userRepository.findActiveOrTemporaryByEmailIgnoreCase("demo@nosi.cv"))
+                .thenReturn(java.util.List.of(user));
 
         assertEquals(uid, service.mapEmail("external-idp", "demo@nosi.cv"));
     }
 
     @Test
     void mapEmailReturnsNullWhenUserAbsent() {
-        when(userRepository.findByEmailIgnoreCase("missing@nosi.cv")).thenReturn(Optional.empty());
+        when(userRepository.findActiveOrTemporaryByEmailIgnoreCase("missing@nosi.cv"))
+                .thenReturn(java.util.List.of());
 
         assertNull(service.mapEmail("external-idp", "missing@nosi.cv"));
         assertNull(service.mapEmail(null, "missing@nosi.cv"));
         assertNull(service.mapEmail("external-idp", null));
+    }
+
+    @Test
+    void mapEmailPicksActiveOverTemporaryWhenBothExist() {
+        // Repository orders ACTIVE before TEMPORARY; mapEmail picks first.
+        // Data-corruption fallback: duplicate-email rows don't crash the flow.
+        IGRPUserEntity active = new IGRPUserEntity();
+        active.setId("00000000-0000-0000-0000-0000000000a1");
+        IGRPUserEntity temporary = new IGRPUserEntity();
+        temporary.setId("00000000-0000-0000-0000-0000000000a2");
+
+        when(userRepository.findActiveOrTemporaryByEmailIgnoreCase("dup@nosi.cv"))
+                .thenReturn(java.util.List.of(active, temporary));
+
+        assertEquals("00000000-0000-0000-0000-0000000000a1",
+                service.mapEmail("external-idp", "dup@nosi.cv"));
     }
 
     @Test
