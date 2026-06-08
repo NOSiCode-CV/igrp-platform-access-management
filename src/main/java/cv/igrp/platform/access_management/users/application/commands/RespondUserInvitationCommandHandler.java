@@ -139,6 +139,34 @@ public class RespondUserInvitationCommandHandler
       String phone = profile.phone();
       String email = profile.email();
 
+      // Fallback for the invitation-acceptance path: the OIDC id_token issued
+      // by the upstream IdP doesn't always carry an `email` claim (varies by
+      // IdP / scope / per-user attribute release). Without this fallback the
+      // user transitions TEMPORARY -> ACTIVE with email=null, even though the
+      // invitation row knows the email (the admin literally invited them by
+      // email). Lean on invitation.identifierValue when:
+      //   - the OIDC profile didn't surface an email, AND
+      //   - the invitation's identifier type IS email (the admin invited by
+      //     email, not by phone/CNI), AND
+      //   - the invitation actually has a value to use.
+      // Same fallback applied for phone when the invitation is PHONE-typed.
+      if ((email == null || email.isBlank())
+              && "EMAIL".equalsIgnoreCase(invitation.getIdentifierType())
+              && invitation.getIdentifierValue() != null
+              && !invitation.getIdentifierValue().isBlank()) {
+         email = invitation.getIdentifierValue();
+         LOGGER.info("OIDC profile carried no email claim — falling back to invitation identifier value (token={})",
+               command.getToken());
+      }
+      if ((phone == null || phone.isBlank())
+              && "PHONE".equalsIgnoreCase(invitation.getIdentifierType())
+              && invitation.getIdentifierValue() != null
+              && !invitation.getIdentifierValue().isBlank()) {
+         phone = invitation.getIdentifierValue();
+         LOGGER.info("OIDC profile carried no phone claim — falling back to invitation identifier value (token={})",
+               command.getToken());
+      }
+
       String primaryIdentifierValue = null;
       if ("cmdcv".equalsIgnoreCase(authMethod)) {
          primaryIdentifierValue = phone;
