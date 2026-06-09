@@ -416,7 +416,19 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         if (claims == null) {
             return null;
         }
-        Object raw = claims.get("sid");
+        // Read the iGRP-specific session binding from `igrp_session_id`, NOT
+        // the OIDC-standard `sid` claim. JwtTokenConfig deliberately routes the
+        // SessionEntity UUID to a custom claim so it doesn't collide with
+        // Spring AS's OidcLogoutAuthenticationProvider, which interprets the
+        // `sid` claim as base64url(SHA-256(JSESSIONID)) and rejects logout
+        // requests whose id_token sid disagrees with the live servlet session.
+        // See the long-form comment in JwtTokenConfig#igrpTokenCustomizer for
+        // the full failure-mode write-up. Falling back to the legacy `sid`
+        // name keeps tokens issued before this rename usable until they expire.
+        Object raw = claims.get("igrp_session_id");
+        if (raw == null) {
+            raw = claims.get("sid");
+        }
         if (raw == null) {
             return null;
         }
