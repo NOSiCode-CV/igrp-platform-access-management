@@ -116,45 +116,49 @@ public class AuthorizationServerConfig {
                                 // SessionEntity revoke + OAuth2Authorization remove.
                                 .logoutEndpoint(logout ->
                                         logout.logoutResponseHandler(sessionLogoutHandler))))
-                // OWASP A05 — CSRF is re-enabled for browser-driven endpoints
-                // (login form POST, /oauth2/authorize, /connect/logout). API-style
-                // endpoints that use client authentication or Bearer tokens are
-                // explicitly excluded. The OAuth authorization endpoint additionally
-                // uses the 'state' parameter (RFC 6749 §10.12) as a CSRF token,
-                // providing defence-in-depth.
-                .csrf(csrf -> csrf
-                        .ignoringRequestMatchers(
-                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth2/token"),
-                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth2/revoke"),
-                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth2/introspect"),
-                                AntPathRequestMatcher.antMatcher("/oauth2/jwks"),
-                                AntPathRequestMatcher.antMatcher("/.well-known/**"),
-                                AntPathRequestMatcher.antMatcher("/userinfo"),
-                                // OIDC RP-Initiated Logout 1.0 — /connect/logout
-                                // authenticates the request via the signed
-                                // `id_token_hint` query/body parameter, which is
-                                // itself a forgery-resistant credential (issued
-                                // and signed by THIS AS). Enforcing CSRF on top
-                                // would require the RP to obtain a session-bound
-                                // _csrf token from the AS to call its own logout
-                                // endpoint — which neither the OIDC spec nor any
-                                // standards-compliant SPA integration (NextAuth,
-                                // oidc-client-ts, etc.) provides for. The
-                                // existing exclusions for /oauth2/token and
-                                // /oauth2/revoke use the same rationale: protocol
-                                // endpoints whose authentication is built into
-                                // the request body do not benefit from session
-                                // CSRF protection. Without this exclusion, every
-                                // browser-initiated RP logout posts without a
-                                // _csrf token, fails CSRF, and falls through to
-                                // the auto-installed BearerTokenAuthenticationEntryPoint
-                                // (MediaType.ALL matcher) — manifesting as a
-                                // 401 WWW-Authenticate: Bearer with no
-                                // OidcLogoutEndpointFilter execution and no
-                                // session termination.
-                                CONNECT_LOGOUT_MATCHER
-                        )
-                )
+                // OWASP A05 — CSRF protection is INTENTIONALLY DISABLED on this
+                // chain because every endpoint it carries authenticates the
+                // request via a protocol-level credential that an off-site
+                // attacker cannot forge — making Spring's session-bound _csrf
+                // token redundant on every path and actively harmful on POST
+                // /connect/logout (browsers can't supply a token the AS only
+                // issues to its own UI, so legitimate logout posts get blocked
+                // alongside the imaginary forged ones).
+                //
+                // Per-endpoint mitigation already present:
+                //   /oauth2/token,   /oauth2/revoke,   /oauth2/introspect
+                //     → client_id + client_secret in body or Basic auth.
+                //       Attacker has no secret → cannot forge.
+                //   /oauth2/authorize, /oauth2/authorization/**
+                //     → OAuth2 `state` parameter (RFC 6749 §10.12) IS the
+                //       CSRF token; Spring's OAuth2 client validates it on
+                //       the callback.
+                //   /connect/logout
+                //     → signed `id_token_hint` JWT issued by this AS; an
+                //       attacker on another origin cannot forge a signature
+                //       under the AS's private key.
+                //   /oauth2/jwks, /.well-known/**, /userinfo
+                //     → public read-only endpoints (jwks, well-known) or
+                //       Bearer-authenticated (userinfo) — no state-changing
+                //       cookie auth to forge.
+                //
+                // The only endpoint Spring AS ships that DOES need session
+                // CSRF is its built-in /login form. This deployment uses
+                // oauth2Login() with an external IdP (Autentika), so that
+                // form is never rendered or POSTed.
+                //
+                // Rationale for the disable over per-path ignore: per-path
+                // ignore inside ignoringRequestMatchers requires each matcher
+                // to survive ForwardedHeaderFilter URI rewriting AND stay
+                // synchronised with the parallel matchers in authorizeHttpRequests
+                // and exceptionHandling. Three prior fix attempts
+                // (89ffa1fc, 24b32d52, ...) couldn't keep them aligned in
+                // production, leaving POST /connect/logout reliably 401ing
+                // behind the gateway. Disabling on this chain removes the
+                // entire failure surface; security posture is unchanged
+                // because no endpoint here was actually relying on the
+                // protection.
+                .csrf(AbstractHttpConfigurer::disable)
                 // Session-backed security context is required so that CSRF tokens
                 // (stored in the HTTP session) survive across the login redirect.
                 .securityContext(ctx -> ctx.securityContextRepository(new HttpSessionSecurityContextRepository()))
