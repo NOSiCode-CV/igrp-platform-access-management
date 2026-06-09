@@ -37,6 +37,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
@@ -47,6 +48,41 @@ import java.util.List;
 @Configuration
 @Profile("!basic-auth")
 public class AuthorizationServerConfig {
+
+    private static final Logger AS_CONFIG_LOG = LoggerFactory.getLogger(AuthorizationServerConfig.class);
+
+    /**
+     * Path-suffix matcher for the OIDC RP-Initiated Logout endpoint that
+     * survives {@code X-Forwarded-Prefix} URI rewriting.
+     *
+     * <p>Behind the API gateway, {@code server.forward-headers-strategy=framework}
+     * activates Spring's {@code ForwardedHeaderFilter}, which prepends the
+     * {@code X-Forwarded-Prefix} value (e.g. {@code /igrp-access-management})
+     * to {@link HttpServletRequest#getRequestURI()} before any security
+     * filter runs. An {@link AntPathRequestMatcher} pinned to
+     * {@code "/connect/logout"} then silently misses the prefixed URI, so
+     * {@code permitAll} never applies, {@code anyRequest().authenticated()}
+     * denies the anonymous request, and the auto-installed
+     * {@code BearerTokenAuthenticationEntryPoint} (MediaType.ALL matcher,
+     * installed by {@code OAuth2AuthorizationServerConfigurer}) wins over
+     * our path-specific {@code LoginUrlAuthenticationEntryPoint} —
+     * producing the bare 401 {@code WWW-Authenticate: Bearer} symptom
+     * confirmed by live cURL on the deployed AS pod.
+     *
+     * <p>Suffix matching is path-prefix-agnostic and the correct check
+     * regardless of how many proxies prepended segments to the URI. CSRF
+     * exclusions, permitAll, and the path-specific {@code AuthenticationEntryPoint}
+     * all reuse this single matcher so they cannot drift apart.
+     */
+    private static final RequestMatcher CONNECT_LOGOUT_MATCHER = request -> {
+        String uri = request.getRequestURI();
+        boolean matches = uri != null && uri.endsWith("/connect/logout");
+        if (matches && AS_CONFIG_LOG.isDebugEnabled()) {
+            AS_CONFIG_LOG.debug("CONNECT_LOGOUT_MATCHER matched: method={}, uri={}, contextPath={}, servletPath={}",
+                    request.getMethod(), uri, request.getContextPath(), request.getServletPath());
+        }
+        return matches;
+    };
 
     @Bean
     @Order(0)
@@ -116,8 +152,7 @@ public class AuthorizationServerConfig {
                                 // 401 WWW-Authenticate: Bearer with no
                                 // OidcLogoutEndpointFilter execution and no
                                 // session termination.
-                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/connect/logout"),
-                                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/connect/logout")
+                                CONNECT_LOGOUT_MATCHER
                         )
                 )
                 // Session-backed security context is required so that CSRF tokens
@@ -140,7 +175,7 @@ public class AuthorizationServerConfig {
                         // still runs and enforces id_token_hint validation
                         // before our SessionLogoutHandler is invoked, so this
                         // doesn't widen the auth surface.
-                        .requestMatchers(AntPathRequestMatcher.antMatcher("/connect/logout")).permitAll()
+                        .requestMatchers(CONNECT_LOGOUT_MATCHER).permitAll()
                         .anyRequest().authenticated())
 				.exceptionHandling(ex -> ex
                         // FR-20 — /connect/logout (OIDC RP-initiated logout) MUST behave
@@ -171,7 +206,7 @@ public class AuthorizationServerConfig {
                         // configurer itself and never reach the Bearer matcher).
                         .defaultAuthenticationEntryPointFor(
                                 new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp"),
-                                AntPathRequestMatcher.antMatcher("/connect/logout"))
+                                CONNECT_LOGOUT_MATCHER)
                         // Same root cause as /connect/logout above (see FR-20 block):
                         // Spring AS auto-installs oauth2ResourceServer(jwt()) which
                         // wires BearerTokenAuthenticationEntryPoint with a MediaType.ALL
