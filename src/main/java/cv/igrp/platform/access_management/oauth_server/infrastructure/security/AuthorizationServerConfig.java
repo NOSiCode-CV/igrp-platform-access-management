@@ -93,7 +93,31 @@ public class AuthorizationServerConfig {
                                 AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/oauth2/introspect"),
                                 AntPathRequestMatcher.antMatcher("/oauth2/jwks"),
                                 AntPathRequestMatcher.antMatcher("/.well-known/**"),
-                                AntPathRequestMatcher.antMatcher("/userinfo")
+                                AntPathRequestMatcher.antMatcher("/userinfo"),
+                                // OIDC RP-Initiated Logout 1.0 — /connect/logout
+                                // authenticates the request via the signed
+                                // `id_token_hint` query/body parameter, which is
+                                // itself a forgery-resistant credential (issued
+                                // and signed by THIS AS). Enforcing CSRF on top
+                                // would require the RP to obtain a session-bound
+                                // _csrf token from the AS to call its own logout
+                                // endpoint — which neither the OIDC spec nor any
+                                // standards-compliant SPA integration (NextAuth,
+                                // oidc-client-ts, etc.) provides for. The
+                                // existing exclusions for /oauth2/token and
+                                // /oauth2/revoke use the same rationale: protocol
+                                // endpoints whose authentication is built into
+                                // the request body do not benefit from session
+                                // CSRF protection. Without this exclusion, every
+                                // browser-initiated RP logout posts without a
+                                // _csrf token, fails CSRF, and falls through to
+                                // the auto-installed BearerTokenAuthenticationEntryPoint
+                                // (MediaType.ALL matcher) — manifesting as a
+                                // 401 WWW-Authenticate: Bearer with no
+                                // OidcLogoutEndpointFilter execution and no
+                                // session termination.
+                                AntPathRequestMatcher.antMatcher(HttpMethod.POST, "/connect/logout"),
+                                AntPathRequestMatcher.antMatcher(HttpMethod.GET, "/connect/logout")
                         )
                 )
                 // Session-backed security context is required so that CSRF tokens
