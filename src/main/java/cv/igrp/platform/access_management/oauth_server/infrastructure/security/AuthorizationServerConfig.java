@@ -4,6 +4,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cv.igrp.platform.access_management.shared.security.IgrpOidcUser;
 import cv.igrp.platform.access_management.shared.security.OidcContextAuthenticationToken;
 import cv.igrp.platform.access_management.shared.security.UserProfile;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpServletResponse;
+import org.jspecify.annotations.NonNull;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -22,14 +28,18 @@ import org.springframework.security.oauth2.server.authorization.jackson2.OAuth2A
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
+import org.springframework.web.filter.OncePerRequestFilter;
 
+import java.io.IOException;
 import java.util.Collections;
+import java.util.Enumeration;
 import java.util.List;
 
 @Configuration
@@ -154,9 +164,105 @@ public class AuthorizationServerConfig {
                         .authenticationEntryPoint(
                                 new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp")))
 				.oauth2Login(oauth2 -> oauth2.userInfoEndpoint(userInfo ->
-                        userInfo.oidcUserService(igrpOidcUserService)));
+                        userInfo.oidcUserService(igrpOidcUserService)))
+                // Defence-in-depth: strip Authorization: Bearer from
+                // /connect/logout before BearerTokenAuthenticationFilter
+                // (auto-installed by OAuth2AuthorizationServerConfigurer) can
+                // see it. RP-initiated logout authenticates via id_token_hint,
+                // not via OAuth2 access tokens — but several SPA integrations
+                // (NextAuth + fetch interceptors most commonly) auto-attach
+                // the user's current access_token to every API call. By the
+                // time the user clicks "log out" that access_token has often
+                // expired or been revoked by a parallel logout attempt, the
+                // Bearer filter validates and rejects with bare 401
+                // WWW-Authenticate: Bearer, and the OidcLogoutEndpointFilter
+                // never runs. Stripping the header here makes the endpoint
+                // immune to that whole class of integration bug.
+                .addFilterBefore(new StripAuthorizationHeaderForLogoutFilter(),
+                        BearerTokenAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    /**
+     * Wraps each {@code /connect/logout} request so the {@code Authorization}
+     * header is hidden from downstream filters. See the
+     * {@code addFilterBefore(...)} site above for full rationale.
+     */
+    private static final class StripAuthorizationHeaderForLogoutFilter extends OncePerRequestFilter {
+
+        private static final AntPathRequestMatcher MATCHER =
+                AntPathRequestMatcher.antMatcher("/connect/logout");
+
+        @Override
+        protected void doFilterInternal(@NonNull HttpServletRequest request,
+                                        @NonNull HttpServletResponse response,
+                                        @NonNull FilterChain filterChain)
+                throws ServletException, IOException {
+            if (MATCHER.matches(request) && request.getHeader("Authorization") != null) {
+                filterChain.doFilter(new AuthorizationStrippingRequestWrapper(request), response);
+                return;
+            }
+            filterChain.doFilter(request, response);
+        }
+
+        /**
+         * Hides the {@code Authorization} header from downstream filters
+         * without mutating the underlying request — the original
+         * {@link HttpServletRequest} is read-only at the servlet contract
+         * level, so we layer a wrapper that lies on the relevant getters.
+         */
+        private static final class AuthorizationStrippingRequestWrapper extends HttpServletRequestWrapper {
+            AuthorizationStrippingRequestWrapper(HttpServletRequest request) {
+                super(request);
+            }
+
+            @Override
+            public String getHeader(String name) {
+                if ("authorization".equalsIgnoreCase(name)) {
+                    return null;
+                }
+                return super.getHeader(name);
+            }
+
+            @Override
+            public Enumeration<String> getHeaders(String name) {
+                if ("authorization".equalsIgnoreCase(name)) {
+                    return Collections.emptyEnumeration();
+                }
+                return super.getHeaders(name);
+            }
+
+            @Override
+            public Enumeration<String> getHeaderNames() {
+                Enumeration<String> original = super.getHeaderNames();
+                return new Enumeration<>() {
+                    private String next = advance();
+
+                    private String advance() {
+                        while (original.hasMoreElements()) {
+                            String candidate = original.nextElement();
+                            if (!"authorization".equalsIgnoreCase(candidate)) {
+                                return candidate;
+                            }
+                        }
+                        return null;
+                    }
+
+                    @Override
+                    public boolean hasMoreElements() {
+                        return next != null;
+                    }
+
+                    @Override
+                    public String nextElement() {
+                        String result = next;
+                        next = advance();
+                        return result;
+                    }
+                };
+            }
+        }
     }
 
     /**
