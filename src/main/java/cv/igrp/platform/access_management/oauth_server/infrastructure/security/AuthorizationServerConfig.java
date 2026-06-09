@@ -33,6 +33,8 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -191,15 +193,31 @@ public class AuthorizationServerConfig {
      */
     private static final class StripAuthorizationHeaderForLogoutFilter extends OncePerRequestFilter {
 
-        private static final AntPathRequestMatcher MATCHER =
-                AntPathRequestMatcher.antMatcher("/connect/logout");
+        private static final Logger LOG =
+                LoggerFactory.getLogger(StripAuthorizationHeaderForLogoutFilter.class);
 
+        /**
+         * Path-suffix match instead of {@link org.springframework.security.web.util.matcher.AntPathRequestMatcher}
+         * because behind the API gateway, Spring's {@code ForwardedHeaderFilter}
+         * (driven by {@code X-Forwarded-Prefix: /igrp-access-management}) rewrites
+         * the request URI to include the prefix before this filter runs. An ant
+         * matcher pinned to {@code "/connect/logout"} would miss
+         * {@code "/igrp-access-management/connect/logout"} and the strip would
+         * silently no-op — which is exactly the production symptom we saw
+         * (audit log: {@code requestPath:"/igrp-access-management/error"}).
+         * Endpoint-suffix matching is correct regardless of how many proxies
+         * prepended path segments.
+         */
         @Override
         protected void doFilterInternal(@NonNull HttpServletRequest request,
                                         @NonNull HttpServletResponse response,
                                         @NonNull FilterChain filterChain)
                 throws ServletException, IOException {
-            if (MATCHER.matches(request) && request.getHeader("Authorization") != null) {
+            String uri = request.getRequestURI();
+            if (uri != null && uri.endsWith("/connect/logout")
+                    && request.getHeader("Authorization") != null) {
+                LOG.debug("Stripping Authorization header from logout request: uri={}, method={}",
+                        uri, request.getMethod());
                 filterChain.doFilter(new AuthorizationStrippingRequestWrapper(request), response);
                 return;
             }
