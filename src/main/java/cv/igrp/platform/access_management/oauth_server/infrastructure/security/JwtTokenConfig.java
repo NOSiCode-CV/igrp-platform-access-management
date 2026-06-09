@@ -136,15 +136,41 @@ public class JwtTokenConfig {
                                                                          SecurityAuditService auditService,
                                                                          SessionIssuanceService sessionIssuanceService) {
         return context -> {
-            // ID_TOKEN branch — copy sid + device_id from the already-issued
-            // access token onto the id_token. RP-initiated logout
-            // (/connect/logout) carries the id_token as id_token_hint, and
-            // SessionLogoutHandler reads `sid` off that id_token to identify
-            // which SessionEntity to revoke and which row to read the upstream
-            // id_token from for the IdP cascade. Without sid on the id_token
-            // the handler can't look up the session and falls back to a
-            // best-effort logout with no id_token_hint to the IdP — which
-            // strict IdPs (Autentika, WSO2 IS) reject with "logged out" page.
+            // ID_TOKEN branch — copy our SessionEntity binding id and device id
+            // from the already-issued access token onto the id_token under
+            // {@code igrp_session_id}, NOT under the OIDC-standard {@code sid}
+            // claim.
+            //
+            // Why a custom claim instead of the standard `sid`:
+            //
+            // Spring AS's {@code OidcLogoutAuthenticationProvider} (in
+            // spring-security-oauth2-authorization-server 1.5.x) compares the
+            // id_token's `sid` claim against {@code base64url(SHA-256(JSESSIONID))}
+            // — its own representation of "the current servlet session". When
+            // the values disagree it throws OAuth2AuthenticationException
+            // ("OpenID Connect 1.0 Logout Request Parameter: sid"), which
+            // ExceptionTranslationFilter resolves to a bare 401 Bearer because
+            // the auto-installed BearerTokenAuthenticationEntryPoint (MediaType.ALL
+            // matcher) wins the entry-point race. The browser-initiated POST
+            // /connect/logout then 401s on every logged-in user, while
+            // unauthenticated cURL (no JSESSIONID) succeeds because the
+            // provider's null-sessionId guard skips the check.
+            //
+            // Our `binding.sid()` is the SessionEntity UUID — never equal to
+            // Spring's hashed JSESSIONID by construction. Setting `sid` to it
+            // breaks RP-initiated logout 100% of the time for browsers and
+            // hides the failure on cURL.
+            //
+            // Resolution: keep our binding id in a separate claim
+            // ({@code igrp_session_id}). Spring AS sees no `sid` on the id_token,
+            // skips its check, and the logout request flows through to our
+            // SessionLogoutHandler — which now reads {@code igrp_session_id}
+            // to find the SessionEntity (see SessionLogoutHandler.extractSid).
+            //
+            // Note: we still record `sid` on the ACCESS token via the binding
+            // path below (line 234), because SessionEnforcementFilter resolves
+            // it from the access token JWT and never trips Spring AS's logout
+            // provider check (the provider only reads the id_token).
             if ("id_token".equals(context.getTokenType().getValue())) {
                 OAuth2Authorization auth = context.getAuthorization();
                 if (auth != null && auth.getAccessToken() != null
@@ -152,7 +178,7 @@ public class JwtTokenConfig {
                     Map<String, Object> accessClaims = auth.getAccessToken().getClaims();
                     Object sidClaim = accessClaims.get("sid");
                     if (sidClaim != null) {
-                        context.getClaims().claim("sid", sidClaim);
+                        context.getClaims().claim("igrp_session_id", sidClaim);
                     }
                     Object deviceClaim = accessClaims.get("device_id");
                     if (deviceClaim != null) {
