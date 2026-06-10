@@ -14,6 +14,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.security.ServiceAccountTokenClaims;
 import org.slf4j.Logger;
@@ -21,6 +22,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,6 +32,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
+
+import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE;
 
 /**
  * Builds the iGRP-specific claims injected into issued JWTs.
@@ -63,7 +67,8 @@ public class ClaimsEnrichmentService {
             "picture",
             "phone_number",
             "locale",
-            "nic"
+            "nic",
+            "is_super_admin"
     );
 
     private final OAuthClientJpaRepository oauthClientRepository;
@@ -158,10 +163,6 @@ public class ClaimsEnrichmentService {
         Map<String, Object> claims = new LinkedHashMap<>();
         Set<String> scopes = grantedScopes != null ? new HashSet<>(grantedScopes) : Collections.emptySet();
 
-        Optional<OAuthClientEntity> client = clientId == null
-                ? Optional.empty()
-                : oauthClientRepository.findByClientId(clientId);
-
         Optional<IGRPUserEntity> user = resolveUser(subject);
         Optional<ServiceAccountEntity> serviceAccount = user.isPresent()
                 ? Optional.empty()
@@ -169,6 +170,7 @@ public class ClaimsEnrichmentService {
 
         claims.put("selectedRole", selectedRole(user));
         claims.put("org", selectedOrg(user));
+        claims.put("is_super_admin", isSuperAdmin(user));
         claims.put("permissions", permissions(user, serviceAccount));
         claims.put("resource_access", resourceAccess(clientId, user, serviceAccount));
         claims.putAll(standardIdentityClaims(user, scopes));
@@ -229,6 +231,22 @@ public class ClaimsEnrichmentService {
                 .map(DepartmentEntity::getCode)
                 .filter(code -> !code.isBlank())
                 .orElse("");
+    }
+
+    private boolean isSuperAdmin(Optional<IGRPUserEntity> user) {
+        if (user.isEmpty() || user.get().getUserRoleAssignments() == null) {
+            return false;
+        }
+        LocalDateTime now = LocalDateTime.now();
+        return user.get().getUserRoleAssignments().stream()
+                .anyMatch(assignment -> isActiveSuperAdminAssignment(assignment, now));
+    }
+
+    private boolean isActiveSuperAdminAssignment(UserRoleAssignment assignment, LocalDateTime now) {
+        return assignment != null
+                && assignment.getRole() != null
+                && SUPER_ADMIN_ROLE.equals(assignment.getRole().getCode())
+                && (assignment.getExpiresAt() == null || assignment.getExpiresAt().isAfter(now));
     }
 
     private Map<String, Object> standardIdentityClaims(Optional<IGRPUserEntity> user, Set<String> scopes) {
