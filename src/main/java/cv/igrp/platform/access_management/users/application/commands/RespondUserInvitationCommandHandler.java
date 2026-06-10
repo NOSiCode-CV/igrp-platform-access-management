@@ -15,6 +15,7 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserRoleAssignmentRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
@@ -212,10 +213,10 @@ public class RespondUserInvitationCommandHandler
              user.setName(profile.fullName());
          }
 
-         if (invitation.getRoles() != null && !invitation.getRoles().isEmpty()) {
-            Integer roleId = invitation.getRoles().iterator().next().getId();
-            user.setActiveRole(roleRepository.findById(roleId).orElse(null));
-         }
+         // NOTE: active role is now set AFTER the UserRoleAssignment rows are
+         // created, further down. Setting it here (before save, before the URA
+         // loop) was order-fragile and silently picked a non-deterministic role
+         // off Set.iterator() — both fixed in the post-loop block below.
 
          // Phase G3: invitation acceptance promotes TEMPORARY → ACTIVE.
          // For pre-existing accounts the status must be TEMPORARY; otherwise
@@ -311,6 +312,76 @@ public class RespondUserInvitationCommandHandler
             eventPublisher.publishUserRoleChanged(new UserRoleChangedEvent(
                     savedUserId, grantedCodes, departmentCode,
                     UserRoleChangedEvent.CHANGE_ADDED, "INVITATION"));
+
+            // Bootstrap the user's active role from the invitation so the very
+            // first session after acceptance lands with a usable role context
+            // and the SPA doesn't have to walk the user through a
+            // SetActiveRole call before any /api/** request can succeed.
+            //
+            // Ordering matters: this block runs AFTER both
+            //   (a) `userRepository.save(user)` (so the user row exists with its
+            //       generated id and ACTIVE status committed in the persistence
+            //       context), and
+            //   (b) the URA loop above (so the role we mark as "active" is one
+            //       the user actually has an assignment for — the auth layer's
+            //       checkpoint that the active role is among the user's
+            //       assignments cannot fail).
+            //
+            // Selection is deterministic — sort the invitation roles by code and
+            // pick the lowest — so re-invitations / replays land on the same
+            // active role instead of bouncing around via Set.iterator()'s
+            // unspecified order. If the user already has an active role and it
+            // is among the newly-granted set, we keep it (re-acceptance scenarios
+            // shouldn't surprise the user by switching their context).
+            RoleEntity priorActiveRole = savedUser.getActiveRole();
+            boolean priorIsAmongGranted = priorActiveRole != null
+                    && priorActiveRole.getCode() != null
+                    && grantedCodes.contains(priorActiveRole.getCode());
+
+            if (!priorIsAmongGranted) {
+               RoleEntity chosenActiveRole = invitation.getRoles().stream()
+                       .filter(r -> r != null && r.getId() != null)
+                       .sorted(java.util.Comparator.comparing(r -> r.getCode() == null ? "" : r.getCode()))
+                       .findFirst()
+                       .flatMap(r -> roleRepository.findById(r.getId()))
+                       .orElse(null);
+
+               if (chosenActiveRole != null) {
+                  Integer oldActiveRoleId = priorActiveRole != null ? priorActiveRole.getId() : null;
+                  savedUser.setActiveRole(chosenActiveRole);
+                  savedUser = userRepository.save(savedUser);
+                  LOGGER.info("Invitation accept set active role for user id={} role={} (department={})",
+                          savedUserId, chosenActiveRole.getCode(),
+                          chosenActiveRole.getDepartment() != null ? chosenActiveRole.getDepartment().getCode() : null);
+
+                  // Audit the role activation alongside the existing assignment
+                  // audit so a downstream observer can distinguish "got this
+                  // role" from "got this role AND it's now the active one".
+                  auditService.logProfileSwitch(oldActiveRoleId, chosenActiveRole.getId());
+
+                  // Fire the same CHANGE_ACTIVE_ROLE_CHANGED event that
+                  // SetActiveCurrentUserRoleCommandHandler fires, so any
+                  // listeners that evict permission caches or refresh JWT
+                  // claim caches off the active-role channel receive the
+                  // notification. Without this, listeners that ignore the
+                  // CHANGE_ADDED event (the existing publish above) would
+                  // continue serving stale permissions until the user
+                  // manually triggered a SetActiveRole call — exactly the
+                  // workaround we are trying to remove.
+                  eventPublisher.publishUserRoleChanged(new UserRoleChangedEvent(
+                          savedUserId,
+                          java.util.Set.of(chosenActiveRole.getCode()),
+                          chosenActiveRole.getDepartment() != null ? chosenActiveRole.getDepartment().getCode() : null,
+                          UserRoleChangedEvent.CHANGE_ACTIVE_ROLE_CHANGED,
+                          "INVITATION_ACCEPTED"));
+               } else {
+                  LOGGER.warn("Invitation {} has roles but none could be resolved to a RoleEntity — leaving active role unchanged for user id={}",
+                          command.getToken(), savedUserId);
+               }
+            } else {
+               LOGGER.info("Invitation accept on user id={} preserved existing active role={} (among newly-granted set)",
+                       savedUserId, priorActiveRole.getCode());
+            }
          }
 
          // Upsert secondary identifiers
