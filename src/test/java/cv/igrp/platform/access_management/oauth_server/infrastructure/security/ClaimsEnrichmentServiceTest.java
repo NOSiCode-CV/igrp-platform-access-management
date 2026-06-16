@@ -23,6 +23,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -33,6 +34,7 @@ import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -135,6 +137,7 @@ class ClaimsEnrichmentServiceTest {
         user.setActiveRole(role);
         Map<String, Object> md = new LinkedHashMap<>();
         md.put("locale", "pt-CV");
+        md.put("is_super_admin", true);
         user.setMetadata(md);
 
         UserRoleAssignment assignment = new UserRoleAssignment();
@@ -143,16 +146,7 @@ class ClaimsEnrichmentServiceTest {
         assignments.add(assignment);
         user.setUserRoleAssignments(assignments);
 
-        ApplicationEntity app = new ApplicationEntity();
-        app.setCode("IGRP_APP");
-
-        OAuthClientEntity client = new OAuthClientEntity();
-        client.setClientId("igrp-access-management");
-        client.setScopes(new HashSet<>(Set.of("openid", "profile")));
-        client.setApplication(app);
-
         when(userRepository.findById(uid7)).thenReturn(Optional.of(user));
-        when(oauthClientRepository.findByClientId("igrp-access-management")).thenReturn(Optional.of(client));
 
         Map<String, Object> claims = service.buildClaims(
                 uid7,
@@ -169,17 +163,41 @@ class ClaimsEnrichmentServiceTest {
         Map<String, Object> resourceAccess = (Map<String, Object>) claims.get("resource_access");
         assertNotNull(resourceAccess.get("igrp-access-management"));
         assertEquals("pt-CV", claims.get("locale"));
+        assertEquals(false, claims.get("is_super_admin"));
         assertFalse(claims.containsKey("metadata"));
     }
 
     @Test
-    void buildClaimsToleratesMissingUserOrClient() {
-        when(oauthClientRepository.findByClientId("no-such")).thenReturn(Optional.empty());
+    void buildClaimsMarksSuperAdminWhenActiveAssignmentExists() {
+        RoleEntity superAdminRole = new RoleEntity();
+        superAdminRole.setId(1);
+        superAdminRole.setCode(SUPER_ADMIN_ROLE);
 
+        IGRPUserEntity user = new IGRPUserEntity();
+        String userId = "00000000-0000-0000-0000-0000000000ad";
+        user.setId(userId);
+        user.setActiveRole(superAdminRole);
+
+        UserRoleAssignment assignment = new UserRoleAssignment();
+        assignment.setUser(user);
+        assignment.setRole(superAdminRole);
+        assignment.setExpiresAt(LocalDateTime.now().plusDays(1));
+        user.setUserRoleAssignments(List.of(assignment));
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(user));
+
+        Map<String, Object> claims = service.buildClaims(userId, "client-a", Set.of("openid"));
+
+        assertEquals(true, claims.get("is_super_admin"));
+    }
+
+    @Test
+    void buildClaimsToleratesMissingUserOrClient() {
         Map<String, Object> claims = service.buildClaims(null, "no-such", Set.of("openid"));
 
         assertEquals("", claims.get("selectedRole"));
         assertEquals("", claims.get("org"));
+        assertEquals(false, claims.get("is_super_admin"));
         assertNotNull(claims.get("permissions"));
         assertNotNull(claims.get("resource_access"));
     }
@@ -216,7 +234,6 @@ class ClaimsEnrichmentServiceTest {
         serviceAccount.getRoleAssignments().add(new ServiceAccountRoleAssignment(serviceAccount, role, null));
 
         when(userRepository.findById(serviceAccountId.toString())).thenReturn(Optional.empty());
-        when(oauthClientRepository.findByClientId("client-a")).thenReturn(Optional.of(client));
         when(serviceAccountRepository.findByIdWithRolesAndPermissions(serviceAccountId))
                 .thenReturn(Optional.of(serviceAccount));
 
@@ -226,6 +243,7 @@ class ClaimsEnrichmentServiceTest {
                 claims.get(ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE));
         assertEquals(serviceAccountId.toString(), claims.get(ServiceAccountTokenClaims.CLAIM_SERVICE_ACCOUNT_ID));
         assertEquals("", claims.get("org"));
+        assertEquals(false, claims.get("is_super_admin"));
         @SuppressWarnings("unchecked")
         Set<String> permissions = (Set<String>) claims.get("permissions");
         assertTrue(permissions.contains("igrp.m2m.sync"));
@@ -270,7 +288,6 @@ class ClaimsEnrichmentServiceTest {
         serviceAccount.getPermissionGrants().add(new ServiceAccountPermissionGrant(serviceAccount, directPerm));
 
         when(userRepository.findById(serviceAccountId.toString())).thenReturn(Optional.empty());
-        when(oauthClientRepository.findByClientId("client-b")).thenReturn(Optional.of(client));
         when(serviceAccountRepository.findByIdWithRolesAndPermissions(serviceAccountId))
                 .thenReturn(Optional.of(serviceAccount));
 

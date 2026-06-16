@@ -184,6 +184,10 @@ public class JwtTokenConfig {
                     if (deviceClaim != null) {
                         context.getClaims().claim("device_id", deviceClaim);
                     }
+                    Object superAdminClaim = accessClaims.get("is_super_admin");
+                    if (superAdminClaim != null) {
+                        context.getClaims().claim("is_super_admin", superAdminClaim);
+                    }
                 }
                 return;
             }

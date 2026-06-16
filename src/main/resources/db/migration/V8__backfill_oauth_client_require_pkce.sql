@@ -19,15 +19,20 @@
 --      bypass the entity (manual SQL, ad-hoc tooling) still produce valid
 --      rows.
 
-ALTER TABLE t_oauth_client
-    ADD COLUMN IF NOT EXISTS require_pkce BOOLEAN;
+DO $$
+BEGIN
+    IF to_regclass('public.t_oauth_client') IS NOT NULL THEN
+        ALTER TABLE t_oauth_client
+            ADD COLUMN IF NOT EXISTS require_pkce BOOLEAN;
 
-UPDATE t_oauth_client
-    SET require_pkce = TRUE
-    WHERE require_pkce IS NULL;
+        UPDATE t_oauth_client
+            SET require_pkce = TRUE
+            WHERE require_pkce IS NULL;
 
-ALTER TABLE t_oauth_client
-    ALTER COLUMN require_pkce SET DEFAULT TRUE;
+        ALTER TABLE t_oauth_client
+            ALTER COLUMN require_pkce SET DEFAULT TRUE;
 
-ALTER TABLE t_oauth_client
-    ALTER COLUMN require_pkce SET NOT NULL;
+        ALTER TABLE t_oauth_client
+            ALTER COLUMN require_pkce SET NOT NULL;
+    END IF;
+END $$;
