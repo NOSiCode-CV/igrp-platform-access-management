@@ -35,8 +35,15 @@ public class IGRPUserMapper {
         dto.setStatus(user.getStatus());
         dto.setPicture(user.getPicture());
         dto.setSignature(user.getSignature());
-        // NIC falls back to username when no explicit NIC is recorded.
-        dto.setNic(user.getNic() != null ? user.getNic() : user.getUsername());
+        // Expose NIC as stored, including null. The previous
+        // `user.getNic() != null ? user.getNic() : user.getUsername()` fallback
+        // surfaced the user's username (often the JWT sub UUID, sometimes the
+        // email) as if it were the NIC, leaking incorrect identity data on every
+        // GET response and confusing clients that decided NIC presence based on
+        // the response. NIC is only populated by authoritative IdP claims (CMDCV
+        // / CNI) or explicit user updates; absence is meaningful and should be
+        // represented as null.
+        dto.setNic(user.getNic());
         dto.setPhoneNumber(user.getPhoneNumber());
         return dto;
     }
@@ -82,8 +89,18 @@ public class IGRPUserMapper {
         user.setStatus(Objects.nonNull(dto.getStatus()) ? dto.getStatus() : Status.ACTIVE);
         user.setPicture(dto.getPicture());
         user.setSignature(dto.getSignature());
-        // NIC defaults to the username when the DTO does not carry one.
-        user.setNic(dto.getNic() != null ? dto.getNic() : dto.getUsername());
+        // Persist NIC only when the DTO actually carries a value. The previous
+        // `dto.getNic() != null ? dto.getNic() : dto.getUsername()` substitution
+        // wrote the username (typically the JWT sub UUID or, for password-auth
+        // users, the email) into the NIC column whenever the request body
+        // omitted nic — corrupting storage and making NIC-based lookups
+        // (findByNicIgnoreCase, findByAnyIdentifier) match users by their
+        // username instead. NIC is optional and may legitimately be null:
+        // either the IdP supplied it (CMDCV / CNI) or the user supplied it
+        // through the request body; otherwise it stays null.
+        if (dto.getNic() != null && !dto.getNic().isBlank()) {
+            user.setNic(dto.getNic());
+        }
         user.setPhoneNumber(dto.getPhoneNumber());
         return user;
     }

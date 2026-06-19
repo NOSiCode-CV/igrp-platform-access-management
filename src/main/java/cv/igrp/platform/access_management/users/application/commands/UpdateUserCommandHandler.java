@@ -70,17 +70,22 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
     @IgrpCommandHandler
     @Transactional
     public ResponseEntity<IGRPUserDTO> handle(UpdateUserCommand command) {
-        String username = command.getId();
+        // PUT /api/users/{id} — the path variable is the user UUID, not the
+        // username. Looking up by username here used to mis-route every update
+        // attempt for OIDC-provisioned users (whose username is their email
+        // address, not their UUID) into a spurious 404. Now we resolve by id,
+        // which is what the route advertises and what the client sends.
+        String id = command.getId();
 
-        logger.info("Updating user with username={}", username);
+        logger.info("Updating user with id={}", id);
 
-        IGRPUserEntity user = userRepository.findByUsername(username)
+        IGRPUserEntity user = userRepository.findById(id)
                 .orElseThrow(() -> {
-                    logger.warn("User with username={} not found", username);
+                    logger.warn("User with id={} not found", id);
                     return IgrpResponseStatusException.of(
                             HttpStatus.NOT_FOUND,
                             "Invalid User",
-                            "User not found with username: " + username);
+                            "User not found with id: " + id);
                 });
 
         IGRPUserDTO dto = command.getIgrpuserdto();

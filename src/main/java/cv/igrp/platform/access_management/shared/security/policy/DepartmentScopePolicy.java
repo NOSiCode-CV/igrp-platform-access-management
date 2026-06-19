@@ -29,8 +29,16 @@ public class DepartmentScopePolicy implements Policy {
             return PolicyDecision.allow(); // No department constraint
         }
 
+        // authHelper.getSub() returns this AS's `sub` claim, which is the user's
+        // UUID (the `id` field) — populated either from `IgrpOidcUser.getUserProfile().id()`
+        // for the native OIDC flow or from `jwt.getClaimAsString("sub")` for the
+        // Bearer flow, both of which JwtTokenConfig populates with the user's id
+        // via `context.getClaims().subject(internalSub)`. The `username` column
+        // stores the UPSTREAM IdP's sub (Autentika / Keycloak / etc.), not our
+        // own id, so `findByUsername(subject)` 404'd every authorization check
+        // for OIDC-provisioned users. Switch to id-based lookup.
         String subject = authHelper.getSub();
-        IGRPUserEntity user = userRepository.findByUsername(subject)
+        IGRPUserEntity user = userRepository.findById(subject)
                 .orElseThrow(() -> new RuntimeException("User not found: " + subject));
 
         boolean hasRoleInDepartment = user.getRoles().stream()
