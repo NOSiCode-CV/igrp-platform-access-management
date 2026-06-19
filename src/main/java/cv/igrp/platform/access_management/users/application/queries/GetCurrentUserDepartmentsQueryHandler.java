@@ -9,15 +9,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Objects;
 
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.security.SubjectParser;
+
+import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE;
 
 @Component
 public class GetCurrentUserDepartmentsQueryHandler implements QueryHandler<GetCurrentUserDepartmentsQuery, ResponseEntity<List<DepartmentDTO>>> {
@@ -28,9 +30,6 @@ public class GetCurrentUserDepartmentsQueryHandler implements QueryHandler<GetCu
     private final IGRPUserEntityRepository userRepository;
     private final DepartmentMapper departmentMapper;
     private final AuthenticationHelper authenticationHelper;
-
-    @Value("${igrp.superadmin.user-external-id}")
-    public String SUPER_ADMIN_EXTERNAL_ID = "";
 
     public GetCurrentUserDepartmentsQueryHandler(
             DepartmentEntityRepository departmentRepository,
@@ -57,7 +56,16 @@ public class GetCurrentUserDepartmentsQueryHandler implements QueryHandler<GetCu
 
         LOGGER.info("Getting departments for user: {}", user.getExternalId());
 
-        List<DepartmentDTO> departments = SUPER_ADMIN_EXTERNAL_ID.equals(user.getUsername()) ?
+        // Role-based superadmin check — see GetCurrentUserApplicationsQueryHandler
+        // for full rationale. Same pattern as PermissionCacheService.isSuperAdmin:
+        // user is superadmin iff any of their assigned roles has the canonical
+        // code ConfigurationService.SUPER_ADMIN_ROLE ("DEPT_IGRP.superadmin").
+        boolean isSuperAdmin = user.getRoles() != null && user.getRoles().stream()
+                .map(r -> r != null ? r.getCode() : null)
+                .filter(Objects::nonNull)
+                .anyMatch(SUPER_ADMIN_ROLE::equals);
+
+        List<DepartmentDTO> departments = isSuperAdmin ?
                 departmentRepository.findAllActiveFiltered(query.getDepartmentCode())
                         .stream()
                         .map(departmentMapper::toDto)

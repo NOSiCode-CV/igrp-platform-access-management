@@ -11,16 +11,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Objects;
 
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import org.springframework.transaction.annotation.Transactional;
 import cv.igrp.platform.access_management.shared.security.SubjectParser;
+
+import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE;
 
 @Component
 public class GetCurrentUserApplicationMenusQueryHandler implements QueryHandler<GetCurrentUserApplicationMenusQuery, ResponseEntity<List<MenuEntryDTO>>> {
@@ -32,9 +34,6 @@ public class GetCurrentUserApplicationMenusQueryHandler implements QueryHandler<
     private final ApplicationEntityRepository applicationRepository;
     private final MenuEntryMapper menuEntryMapper;
     private final AuthenticationHelper authenticationHelper;
-
-    @Value("${igrp.superadmin.user-external-id}")
-    public String SUPER_ADMIN_EXTERNAL_ID = "";
 
     public GetCurrentUserApplicationMenusQueryHandler(
             MenuEntryEntityRepository menuEntryRepository,
@@ -66,7 +65,14 @@ public class GetCurrentUserApplicationMenusQueryHandler implements QueryHandler<
 
         var application = applicationRepository.findByCodeAndStatusNotDeleted(query.getApplicationCode());
 
-        List<MenuEntryDTO> menuEntries = SUPER_ADMIN_EXTERNAL_ID.equals(user.getUsername()) ?
+        // Role-based superadmin check — see GetCurrentUserApplicationsQueryHandler
+        // for full rationale. Same pattern as PermissionCacheService.isSuperAdmin.
+        boolean isSuperAdmin = user.getRoles() != null && user.getRoles().stream()
+                .map(r -> r != null ? r.getCode() : null)
+                .filter(Objects::nonNull)
+                .anyMatch(SUPER_ADMIN_ROLE::equals);
+
+        List<MenuEntryDTO> menuEntries = isSuperAdmin ?
                 menuEntryRepository.findByApplicationAndStatusAndMenuName(application.getId(), List.of(Status.ACTIVE.getCode()), query.getMenuCode())
                         .stream()
                         .map(menuEntryMapper::toDTO)
