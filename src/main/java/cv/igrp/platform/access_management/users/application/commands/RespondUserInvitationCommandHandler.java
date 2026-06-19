@@ -195,13 +195,20 @@ public class RespondUserInvitationCommandHandler
          if (user == null) {
              user = new IGRPUserEntity();
              isNewUser = true;
-             // If we're creating a new user, we must ensure it gets the ID from the token if possible, 
-             // but ID is auto-generated usually. If the IdP knows the ID, we might need to set it,
-             // but JPA @GeneratedValue might ignore it. Let's just set the NIC.
-             if (profile.nic() != null) {
+
+             // NIC is populated ONLY when the upstream IdP claim carries it
+             // (CMDCV / CNI authentication contexts in Cape Verde populate
+             // `profile.nic()`; password and other auth methods do not).
+             // Outside those contexts we deliberately leave NIC null so the
+             // user can supply it later through a regular update request
+             // (PATCH /api/users/me carrying nic in the body). The previous
+             // `else { user.setNic(idStr) }` fallback stamped the JWT sub
+             // (the user's UUID) into the NIC column, which corrupted the
+             // field and caused downstream NIC-based lookups
+             // (findByNicIgnoreCase, findByAnyIdentifier) to silently
+             // match users by UUID — never the intended behaviour.
+             if (profile.nic() != null && !profile.nic().isBlank()) {
                  user.setNic(profile.nic());
-             } else {
-                 user.setNic(idStr); // fallback for username/nic requirement
              }
          }
          
