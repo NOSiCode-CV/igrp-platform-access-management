@@ -95,8 +95,14 @@ public class ClaimsEnrichmentService {
         if (provider == null || externalUserId == null) {
             return null;
         }
+        // Mirror mapEmail's status filter: only ACTIVE / TEMPORARY users are
+        // admitted to the platform via the federated-login path. DELETED and
+        // INACTIVE users must not be silently re-activated by a successful
+        // upstream login. Without this, a DELETED user's UUID would land in
+        // the JWT `sub` and every authorization check would deny — a token
+        // that authenticates but never authorizes.
         return userIdentityRepository
-                .findByProviderAndUserId(provider, externalUserId)
+                .findActiveByProviderAndUserId(provider, externalUserId)
                 .map(UserIdentityEntity::getUser)
                 .map(IGRPUserEntity::getId)
                 .map(String::valueOf)

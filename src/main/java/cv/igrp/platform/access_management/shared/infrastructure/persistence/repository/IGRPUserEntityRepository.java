@@ -33,6 +33,18 @@ public interface IGRPUserEntityRepository extends
             """)
     Optional<IGRPUserEntity> findByUsername(String username);
 
+    /**
+     * Raw lookup including DELETED rows. Use ONLY from code that needs to
+     * inspect or anonymise a soft-deleted record (e.g. the provisioning path
+     * that has to free up the username UNIQUE constraint before INSERTing a
+     * fresh account on a previously-deleted identifier). Most call sites
+     * want {@link #findByUsername(String)} which hides DELETED users.
+     */
+    @Query("""
+                select u from IGRPUserEntity u where u.username = :username
+            """)
+    Optional<IGRPUserEntity> findByUsernameIncludingDeleted(@Param("username") String username);
+
     @Query("""
         select case when count(u) > 0 then true else false end from IGRPUserEntity u where u.username = :username and u.status != 'DELETED'
     """)
