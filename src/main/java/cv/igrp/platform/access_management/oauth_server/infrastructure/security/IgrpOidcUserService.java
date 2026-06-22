@@ -116,8 +116,16 @@ public class IgrpOidcUserService extends OidcUserService {
         // --- Security gate 3: minimum ACR (OWASP A07) ---
         enforceAcr(oidcUser, externalUserId);
 
+        // Resolve the linked internal user, but ONLY when that user is still
+        // login-able (ACTIVE / TEMPORARY). A previously-DELETED user logging
+        // back in via the same upstream IdP would otherwise silently resurrect
+        // the soft-deleted row as the JWT subject — the SPA then hits
+        // /api/users/me, UserStatusGuard sees DELETED, and every request 403s
+        // with no path to recovery (provisioning was never re-attempted).
+        // Falling through to provisionUser here treats the re-login as a fresh
+        // account; the old DELETED row is preserved for audit.
         Optional<UserIdentityEntity> existing = userIdentityRepository
-                .findByProviderAndUserId(provider, externalUserId);
+                .findActiveByProviderAndUserId(provider, externalUserId);
 
         IGRPUserEntity user = existing
                 .map(UserIdentityEntity::getUser)
@@ -254,6 +262,16 @@ public class IgrpOidcUserService extends OidcUserService {
         String email = (String) attributes.get("email");
         String name = (String) attributes.getOrDefault("name", preferredUsername);
 
+        // Re-provisioning after a soft-delete: a previously-DELETED row may
+        // still hold the canonical username (t_user.username UNIQUE) and the
+        // canonical upstream identity (t_user_identity UNIQUE(provider,
+        // user_id)). The policy decided for this codepath is "treat the
+        // re-login as a brand-new user", so we free up both constraints by
+        // anonymising the DELETED rows before the new INSERTs. The DELETED
+        // rows are preserved for audit with a `__deleted_<epoch-ms>__` suffix
+        // that makes their provenance unmistakable.
+        anonymiseConflictingDeletedRecords(provider, externalUserId, preferredUsername);
+
         IGRPUserEntity user = userRepository.findByUsername(externalUserId)
                 .orElseGet(IGRPUserEntity::new);
         if (user.getId() == null) {
@@ -286,6 +304,70 @@ public class IgrpOidcUserService extends OidcUserService {
         userIdentityRepository.save(identity);
 
         return user;
+    }
+
+    /**
+     * Anonymise any DELETED-status rows that would collide with the about-to-
+     * be-created user on a UNIQUE constraint, so that the INSERTs further down
+     * in {@link #provisionUser} succeed. Two collisions are possible:
+     *
+     * <ul>
+     *   <li>{@code t_user.username} UNIQUE — covered by suffixing the DELETED
+     *       row's {@code username} (and {@code email} for symmetry; email is
+     *       not unique-constrained but leaving the original email on a row
+     *       whose username has been suffixed produces a confusing audit
+     *       view).</li>
+     *   <li>{@code t_user_identity (provider, user_id)} UNIQUE — covered by
+     *       suffixing the colliding identity row's {@code user_id}. We use
+     *       the unfiltered {@link UserIdentityJpaRepository#findByProviderAndUserId}
+     *       here because the filtered variant added in the same change set
+     *       would already hide the DELETED-linked row, leaving us blind to
+     *       the constraint that's about to fire on the new INSERT.</li>
+     * </ul>
+     *
+     * <p>Anonymisation only fires when the colliding row's user is in DELETED
+     * status — ACTIVE / TEMPORARY / INACTIVE collisions are NOT silently
+     * rewritten; those represent a real conflict (e.g. two users trying to
+     * claim the same upstream identity) and the original UNIQUE-constraint
+     * failure is the correct surface for them.
+     */
+    private void anonymiseConflictingDeletedRecords(String provider,
+                                                    String externalUserId,
+                                                    String preferredUsername) {
+        long ts = System.currentTimeMillis();
+        String suffix = "__deleted_" + ts + "__";
+
+        if (preferredUsername != null && !preferredUsername.isBlank()) {
+            userRepository.findByUsernameIncludingDeleted(preferredUsername)
+                    .filter(existing -> existing.getStatus() == Status.DELETED)
+                    .ifPresent(deleted -> {
+                        String oldUsername = deleted.getUsername();
+                        String oldEmail = deleted.getEmail();
+                        deleted.setUsername(oldUsername + suffix);
+                        if (oldEmail != null && !oldEmail.isBlank()) {
+                            deleted.setEmail(oldEmail + suffix);
+                        }
+                        userRepository.save(deleted);
+                        LOGGER.info("[provisionUser] freed up username for re-provisioning: "
+                                        + "anonymised DELETED user id={} (old username={}, old email={})",
+                                deleted.getId(), oldUsername, oldEmail);
+                    });
+        }
+
+        if (provider != null && externalUserId != null) {
+            userIdentityRepository.findByProviderAndUserId(provider, externalUserId)
+                    .filter(existing -> existing.getUser() != null
+                            && existing.getUser().getStatus() == Status.DELETED)
+                    .ifPresent(deletedIdentity -> {
+                        String oldUserId = deletedIdentity.getUserId();
+                        deletedIdentity.setUserId(oldUserId + suffix);
+                        userIdentityRepository.save(deletedIdentity);
+                        LOGGER.info("[provisionUser] freed up t_user_identity for re-provisioning: "
+                                        + "anonymised DELETED identity provider={}, old user_id={}, linked igrp_user_id={}",
+                                provider, oldUserId,
+                                deletedIdentity.getUser() != null ? deletedIdentity.getUser().getId() : null);
+                    });
+        }
     }
 
     // -------------------------------------------------------------------------
