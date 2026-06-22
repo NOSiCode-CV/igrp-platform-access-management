@@ -29,7 +29,11 @@ import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
+import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
@@ -228,8 +232,26 @@ public class AuthorizationServerConfig {
                                 ))
                         .authenticationEntryPoint(
                                 new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp")))
-				.oauth2Login(oauth2 -> oauth2.userInfoEndpoint(userInfo ->
-                        userInfo.oidcUserService(igrpOidcUserService)))
+				.oauth2Login(oauth2 -> oauth2
+                        .userInfoEndpoint(userInfo -> userInfo.oidcUserService(igrpOidcUserService))
+                        // Break the production redirect-loop pattern at its source.
+                        //
+                        // Default Spring Security behaviour on an OAuth2-login failure is
+                        // to redirect to /login?error (or a configured failureUrl); in this
+                        // codebase the only path that handles /login is the OIDC client
+                        // entry point (LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp")),
+                        // so a failed callback bounces straight back into a fresh /oauth2/authorize.
+                        // Autentika still has the user's SSO cookie and instantly returns a new
+                        // `code`, the callback fails identically, …  ~20 hops → ERR_TOO_MANY_REDIRECTS.
+                        //
+                        // Per the infra analysis (ANALISE-E-TASKS Task B), the correct fix is
+                        // to render a TERMINAL error page instead of a redirect — the browser
+                        // sees a 4xx, stops following redirects, and the underlying failure
+                        // (issuer mismatch, upstream 500, missing internal mapping, etc.)
+                        // becomes visible instead of hiding behind the loop. The user can
+                        // retry via an explicit click on the rendered page; the loop cannot
+                        // be triggered by the browser auto-following a Location header.
+                        .failureHandler(new OidcLoginFailureHandler()))
                 // Defence-in-depth: strip Authorization: Bearer from
                 // /connect/logout before BearerTokenAuthenticationFilter
                 // (auto-installed by OAuth2AuthorizationServerConfigurer) can
@@ -254,6 +276,115 @@ public class AuthorizationServerConfig {
      * header is hidden from downstream filters. See the
      * {@code addFilterBefore(...)} site above for full rationale.
      */
+    /**
+     * Terminal failure handler for the OIDC client (oauth2Login) callback.
+     *
+     * <p>The default Spring Security failure handler redirects to a login URL,
+     * which in this deployment is itself an OIDC-client initiator
+     * ({@code /oauth2/authorization/external-idp}). Combined with the upstream
+     * IdP still holding an SSO session, that produces the
+     * {@code ERR_TOO_MANY_REDIRECTS} loop documented in the infra analysis:
+     * every "session creation failed" outcome (issuer mismatch, upstream 500,
+     * missing internal mapping, user soft-deleted, …) bounces straight back
+     * into a new {@code /oauth2/authorize} and the same failure repeats.
+     *
+     * <p>This handler instead writes a self-contained HTML error page with an
+     * HTTP 401 status and no {@code Location} header. The browser stops
+     * following redirects, the user sees what failed, and the same failure
+     * doesn't recur unless the user explicitly clicks "Try again". Every
+     * outcome is logged at WARN with the OAuth2 error code so operators can
+     * triage from logs alone.
+     *
+     * <p>For programmatic consumers (NextAuth's signin POST, integration
+     * tests) the response also carries {@code X-IGRP-Login-Failure-Reason}
+     * with the OAuth2 error code so callers don't have to scrape the HTML.
+     */
+    private static final class OidcLoginFailureHandler implements AuthenticationFailureHandler {
+
+        private static final Logger LOG = LoggerFactory.getLogger(OidcLoginFailureHandler.class);
+
+        @Override
+        public void onAuthenticationFailure(HttpServletRequest request,
+                                            HttpServletResponse response,
+                                            AuthenticationException exception) throws IOException {
+            String errorCode = "login_failed";
+            String errorDescription = null;
+            if (exception instanceof OAuth2AuthenticationException oauthEx) {
+                OAuth2Error error = oauthEx.getError();
+                if (error != null) {
+                    if (error.getErrorCode() != null) {
+                        errorCode = error.getErrorCode();
+                    }
+                    errorDescription = error.getDescription();
+                }
+            }
+
+            // Log loud and structured — this is the failure that *used* to be
+            // invisible behind the redirect loop. Operators triaging "site is
+            // down" reports should land directly on this line.
+            LOG.warn("[OIDC LOGIN FAILURE] OAuth2-login callback failed — terminating with 401 instead of looping. "
+                            + "errorCode={}, description={}, exceptionClass={}, requestUri={}, queryString={}",
+                    errorCode,
+                    errorDescription != null ? errorDescription : "(none)",
+                    exception.getClass().getName(),
+                    request.getRequestURI(),
+                    request.getQueryString(),
+                    exception);
+
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            response.setHeader("X-IGRP-Login-Failure-Reason", errorCode);
+            response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+            response.setHeader("Pragma", "no-cache");
+            response.setContentType("text/html; charset=UTF-8");
+
+            String safeErrorCode = escapeHtml(errorCode);
+            String safeDescription = escapeHtml(errorDescription != null ? errorDescription
+                    : "Authentication completed at the identity provider but the session could not be created on this server.");
+
+            // Retry is an EXPLICIT user action (a link the user clicks) — never
+            // an auto-redirect, never a meta-refresh. That is the property that
+            // distinguishes "user can recover" from "loop".
+            String html = "<!DOCTYPE html><html lang=\"en\"><head>"
+                    + "<meta charset=\"utf-8\">"
+                    + "<title>Login failed — iGRP Access Management</title>"
+                    + "<style>"
+                    + "body{font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:560px;"
+                    + "margin:4rem auto;padding:0 1.25rem;color:#111;line-height:1.55}"
+                    + "h1{color:#b91c1c;margin-bottom:.5rem;font-size:1.4rem}"
+                    + "code{background:#f3f4f6;padding:.1em .4em;border-radius:.25em;font-size:.92em}"
+                    + ".meta{color:#555;font-size:.92em;margin-top:1.5rem}"
+                    + "a.retry{display:inline-block;margin-top:1.5rem;padding:.6rem 1rem;"
+                    + "background:#111;color:#fff;border-radius:.4em;text-decoration:none}"
+                    + "a.retry:hover{background:#000}"
+                    + "</style></head><body>"
+                    + "<h1>Login could not be completed</h1>"
+                    + "<p>" + safeDescription + "</p>"
+                    + "<p class=\"meta\">Error code: <code>" + safeErrorCode + "</code></p>"
+                    + "<p class=\"meta\">If this keeps happening, share the error code above with the platform team.</p>"
+                    + "<a class=\"retry\" href=\"/oauth2/authorization/external-idp\">Try again</a>"
+                    + "</body></html>";
+            response.getWriter().write(html);
+            response.getWriter().flush();
+        }
+
+        private static String escapeHtml(String s) {
+            if (s == null) return "";
+            StringBuilder b = new StringBuilder(s.length() + 16);
+            for (int i = 0; i < s.length(); i++) {
+                char c = s.charAt(i);
+                switch (c) {
+                    case '&' -> b.append("&amp;");
+                    case '<' -> b.append("&lt;");
+                    case '>' -> b.append("&gt;");
+                    case '"' -> b.append("&quot;");
+                    case '\'' -> b.append("&#x27;");
+                    default -> b.append(c);
+                }
+            }
+            return b.toString();
+        }
+    }
+
     private static final class StripAuthorizationHeaderForLogoutFilter extends OncePerRequestFilter {
 
         private static final Logger LOG =
