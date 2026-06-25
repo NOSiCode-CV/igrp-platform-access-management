@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.List;
@@ -144,6 +145,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      * Mark sessions as expired for a set of users
      */
     @Modifying
+    @Transactional
     @Query("UPDATE SessionEntity s SET s.status = :newStatus, s.endedAt = :endedAt, s.lastSeenAt = :lastSeenAt, " +
            "s.closedReason = :closedReason, s.closedBy = :closedBy " +
            "WHERE s.userId IN :userIds AND s.status = :oldStatus")
@@ -159,6 +161,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      * Mark sessions as expired by role
      */
     @Modifying
+    @Transactional
     @Query("UPDATE SessionEntity s SET s.status = :newStatus, s.endedAt = :endedAt, s.lastSeenAt = :lastSeenAt, " +
            "s.closedReason = :closedReason, s.closedBy = :closedBy " +
            "WHERE s.userId IN (SELECT DISTINCT u.id FROM IGRPUserEntity u " +
@@ -177,6 +180,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      * Mark sessions as expired by department
      */
     @Modifying
+    @Transactional
     @Query("UPDATE SessionEntity s SET s.status = :newStatus, s.endedAt = :endedAt, s.lastSeenAt = :lastSeenAt, " +
            "s.closedReason = :closedReason, s.closedBy = :closedBy " +
            "WHERE s.userId IN (SELECT DISTINCT u.id FROM IGRPUserEntity u " +
@@ -194,6 +198,7 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      * Delete old sessions that have been closed/expired/revoked for a long time
      */
     @Modifying
+    @Transactional
     @Query("DELETE FROM SessionEntity s WHERE s.status IN :statuses AND s.endedAt < :cutoffDate")
     int deleteOldSessions(@Param("statuses") List<SessionStatus> statuses, @Param("cutoffDate") Instant cutoffDate);
 
