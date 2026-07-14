@@ -1,0 +1,162 @@
+# Requirements — Unified Audit & Reports
+
+**Feature:** consolidate audit logging into a single tamper-evident trail and expose 3 report endpoints (Audit, Access, Settings) with export.
+**Target branch:** `version/0.2.0-beta`.
+**Source spec:** `~/Downloads/audit-reports-requirements.md` (2026-07-14).
+**Reference implementation** (audit-only subset to be extracted): `feature/audit-logging-implementation` (MR !362).
+
+---
+
+## 1. Functional requirements
+
+### 1.1 Unified audit log
+
+- **R1.1** There must be **one** audit table and one write-side service. `AuthAuditLog` (and its supporting classes) must be deleted. The consolidated table remains `t_security_audit_log`, and the consolidated domain class remains `SecurityAuditLog`.
+- **R1.2** Every audit event — including authentication events (login/logout/token issuing/token invalid), session events, authorization decisions, and administrative configuration changes — must be recorded in the unified log.
+- **R1.3** The unified controller is `AuthAuditController` at `/api/auth/audit` (name preserved for SDK/client compatibility).
+
+### 1.2 Tamper evidence
+
+- **R2.1** Each row must carry a cryptographic hash chain (`previous_hash`, `current_hash`, `sequence_number`). `current_hash = HMAC-SHA256(chain_secret, previous_hash || row_serialized_fields)`.
+- **R2.2** All fields persisted on the row participate in the hash input.
+- **R2.3** Writes must be serialized cluster-wide via a Postgres advisory lock to prevent chain forks under concurrent writers.
+- **R2.4** An append-only Postgres trigger must block `UPDATE` and `DELETE` on the table outside a dedicated `PURGE` privilege.
+- **R2.5** A validator service must detect broken chains on demand (endpoint or scheduled job — TBD in Phase 1).
+- **R2.6** For dev/staging only, a startup flag `igrp.audit.chain.rehash-on-boot=true` rewalks the entire table and rewrites `current_hash` values (used after schema changes that extend the hash input). Production must never rehash.
+
+### 1.3 IP handling
+
+- **R3.1** The audit log stores both `ip_address` (raw, VARCHAR 45) and `ip_hash` (HMAC-SHA256 of the raw IP with `AUDIT_CHAIN_SECRET`).
+- **R3.2** The raw IP is used in report responses. The hash participates in the chain input so that editing the raw IP breaks the chain.
+
+### 1.4 Authorization
+
+- **R4.1** A single permission, `igrp.audit.view`, gates the raw audit log endpoints AND all report endpoints AND all export endpoints.
+- **R4.2** A separate permission, `igrp.audit.purge`, gates the purge endpoint.
+- **R4.3** Both permissions are seeded via Flyway migration and granted to `DEPT_IGRP.Administrator` on installation.
+
+### 1.5 Report endpoints
+
+Three paginated JSON endpoints under `/api/auth/reports`.
+
+#### 1.5.1 Audit Report — `GET /api/auth/reports/audit`
+
+Required query params: `startDate`, `endDate`.
+Optional filters: `username`, `module`, `accessRole`, `operationState`, `authorizedBy`, `status`, `page`, `size`, `sort`.
+Response is `Page<AuditReportRowDTO>` with fields:
+
+| Field | Type | Origin |
+|---|---|---|
+| `id` | UUID (string) | existing PK — converted from Long to UUID in Phase 1 |
+| `startDate` | Instant | new column `period_start` |
+| `endDate` | Instant | new column `period_end` |
+| `username` | string | existing `username` |
+| `module` | string | new column `application_module` |
+| `accessRole` | string | new column `access_role` |
+| `operationState` | string | new column `operation_state` |
+| `ipAddress` | string | existing raw `ip_address` |
+| `device` | string | derived at read time from existing `user_agent` (Chrome/Firefox/Edge/Safari × Windows/macOS/Linux/Android/iOS lookup table; no external lib) |
+| `authorizedBy` | string | new column `authorized_by` |
+| `status` | enum `SUCCESS | ACCESS_DENIED | UNUSUAL_IP | PENDING` | new column `status` |
+
+#### 1.5.2 Access Report — `GET /api/auth/reports/access`
+
+Required: `startDate`, `endDate`.
+Optional: `username`, `role`, `module`, `action`, `status`, `page`, `size`, `sort`.
+Response is `Page<AccessReportRowDTO>` with fields:
+
+| Field | Type | Origin |
+|---|---|---|
+| `timestamp` | Instant | existing `timestamp` |
+| `username` | string | existing |
+| `role` | string | new column `access_role` (shared with Audit Report) |
+| `module` | string | new column `application_module` (shared) |
+| `action` | string | new column `action` |
+| `ipAddress` | string | existing |
+| `status` | enum `SUCCESS | UNUSUAL_IP | ACCESS_DENIED` | new column `status` |
+
+#### 1.5.3 Settings Report — `GET /api/auth/reports/settings`
+
+Required: `startDate`, `endDate`.
+Optional: `performedBy`, `area`, `entityType`, `operation`, `entityName`, `page`, `size`, `sort`.
+Response is `Page<SettingsReportRowDTO>` with fields:
+
+| Field | Type | Origin |
+|---|---|---|
+| `timestamp` | Instant | existing |
+| `performedBy` | string | existing `username` |
+| `area` | enum `APPLICATIONS | USERS | ACCESS` | new column `settings_area` |
+| `entityType` | enum `APPLICATION | USER | DEPARTMENT | ROLE | PERMISSION | MENU` | new column `settings_entity_type` |
+| `operation` | enum (see §1.6 catalog) | new column `settings_operation` |
+| `entityName` | string | new column `entity_name` |
+| `relatedEntity` | string, nullable | new column `related_entity` |
+| `previousValue` | string, nullable | new column `previous_value` |
+| `newValue` | string, nullable | new column `new_value` |
+| `ipAddress` | string | existing |
+| `status` | enum `SUCCESS | ERROR` | new column `status` |
+
+### 1.6 Settings event catalog (Phase 3 scope)
+
+Every listed platform action must publish a strongly-typed Spring `ApplicationEvent`; a single `SettingsAuditEventListener` catches them all and writes to `SecurityAuditService`. Full mapping is in `plan.md` §Phase 3.
+
+**Symmetry rule:** every action listed as `CREATE` / `ACTIVATE` / `ASSOCIATE` / `ASSIGN` has its inverse (`DELETE` / `DEACTIVATE` / `DISASSOCIATE` / `UNASSIGN`). User invitation uses `INVITE ↔ CANCEL_INVITE`. `RESEND_INVITE` is repeatable with no inverse.
+
+**Catalog gap:** any listed action without a handler today (`activate`/`deactivate`/`invite`/`cancel-invite`/`resend-invite` are candidates) is skipped in Phase 3 with a `TODO(catalog-gap)` comment in the event mapping. Creating those handlers is a separate deferred effort in `roadmap.md`.
+
+### 1.7 Export
+
+- **R7.1** Each of the 3 report endpoints has PDF and Excel variants:
+  - `GET /api/auth/reports/audit.pdf`, `.xlsx`
+  - `GET /api/auth/reports/access.pdf`, `.xlsx`
+  - `GET /api/auth/reports/settings.pdf`, `.xlsx`
+- **R7.2** Export endpoints accept the same filter contracts as their JSON counterparts, minus pagination — export streams all rows matching the filter.
+- **R7.3** Exports are generated in-request (no async job queue). Rows stream via Apache POI `SXSSFWorkbook` for Excel and OpenPDF direct render for PDF. Memory stays flat for reports up to 100k rows.
+- **R7.4** PDF header reads "Audit Report generated on YYYY-MM-DD" (or the corresponding title for the other two reports); localized via `MessageSource`.
+
+### 1.8 SDK contract
+
+- **R8.1** Java client SDK adds `AuditReportsApi` with 3 JSON methods and 6 export methods (returning `InputStream`). Bumps to `0.2.0-beta.11`. Republishes to Nexus.
+- **R8.2** TypeScript client mirrors: `AuditReportsClient` with matching method signatures + all new DTOs and enums. Bumps to `0.2.0-beta.13`. Republishes via `pnpm publish`.
+- **R8.3** The pre-existing `AuthAuditLog*` types in the client SDKs are renamed / consolidated onto the SecurityAudit types (matches R1.1 on the backend).
+
+## 2. Non-functional requirements
+
+### 2.1 Performance
+
+- **N1** Report list endpoints must return first page (default size 20) in < 500ms p95 against a 1M-row audit table with all filters applied. Indexed on `(settings_area, timestamp DESC)`, `(application_module, timestamp DESC)`, `(user_id, timestamp DESC)`, `(timestamp DESC)`.
+- **N2** Excel export of 100k rows must complete in < 30s and consume < 256MB of heap.
+- **N3** PDF export of 10k rows must complete in < 20s.
+
+### 2.2 Reliability
+
+- **N4** Audit write failure never breaks the calling user-facing action. All emitters catch and log; nothing rethrows.
+- **N5** Chain-lock contention under peak load (~100 concurrent writes) must not exceed 1s p99 wait time. Postgres advisory lock is cheap; verify in load test.
+
+### 2.3 Backwards compatibility
+
+- **N6** The current 3 endpoints (`GET /api/auth/audit`, `GET /api/auth/audit/{id}`, `GET /api/auth/audit/user/{userId}`) collapse to one paginated `GET /api/auth/audit` with filters. **This is a breaking SDK change** — mandated by R1.3 unification. The spec's "keep the 3 current endpoints unchanged" line is explicitly overridden.
+- **N7** Existing rows in `t_security_audit_log` keep their `contextData` JSON blob. New rows write only the typed columns (`settings_area`, `entity_name`, `previous_value`, `new_value`); `contextData` is written as `NULL` for new rows and marked deprecated in the entity. Migration to drop the column is deferred to a `0.3.0` cleanup pass (see roadmap).
+
+### 2.4 Security
+
+- **N8** Chain secret (`AUDIT_CHAIN_SECRET`) is a required environment variable in production. Missing → refuse to start.
+- **N9** Rehash-on-boot flag (`igrp.audit.chain.rehash-on-boot=true`) is refused when Spring profile `prod` is active — logged as an error, ignored.
+- **N10** Neither raw IP nor identifier value is written to application logs (only to the audit table). Tamper-detection error logs from MR 362 already scrub hash values from log lines.
+
+## 3. Design decisions (locked)
+
+| Decision | Choice | Reason |
+|---|---|---|
+| IP storage | Raw + hashed (both columns) | User confirmed raw is fine; hash retained to keep tamper detection intact even if raw IP is edited. |
+| Unification target | Keep `SecurityAuditLog` names + `t_security_audit_log` table; delete `AuthAuditLog` | Less disruption; `SecurityAuditLog` already has 34 event types and 6 categories covering everything MR 362 does. |
+| Endpoint contract for 3 legacy GETs | Collapse to one filtered list | Explicit user directive; spec's "keep unchanged" line overridden. |
+| Hash chain rewrite on schema change | Rehash-on-boot flag (dev/staging only) | Preserves tamper evidence for new columns; production never rehashes. |
+| Permission granularity | Single `igrp.audit.view` for reads + reports + exports | Reports are aggregations over the raw log; splitting the permission adds no security value. |
+| Admin action instrumentation | Domain events + `SettingsAuditEventListener` | Cleaner and more testable than AOP annotations; each handler publishes its own strongly-typed event. |
+| `SecurityAuditLog` PK type | UUID (converted from Long in Phase 1) | Aligns with MR 362's tamper-evidence design; sequence_number becomes the ordering key. Avoids Long-vs-UUID inconsistency across the audit surface. |
+| `contextData` JSON column | Kept on existing rows; new rows write `NULL` and use typed columns only | See N7. Drop deferred to `0.3.0`. |
+| Async ordering | Sync writes with `@Transactional(REQUIRES_NEW)` + Postgres advisory lock | Preserves "audit committed before caller sees success" guarantee. Advisory lock serializes chain writes cluster-wide. |
+| `SessionAuditLogger` | Unchanged | Already calls `SecurityAuditService`; inherits the hash chain automatically. |
+| Catalog-gap handlers | Skip with `TODO`, don't create in this feature | Extracting activate/deactivate/invite handlers is its own design task. |
+| PDF library | OpenPDF 2.0.3 (LGPL) | Apache POI covers Excel; OpenPDF is the LGPL-safe fork of iText 4. AGPL iText is off the table. |
+| TS SDK publish | `pnpm publish` | Existing workflow. |
