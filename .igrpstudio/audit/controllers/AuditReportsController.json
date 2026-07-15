@@ -1,0 +1,72 @@
+{
+  "type": "controller",
+  "name": "AuditReports",
+  "module": "audit",
+  "description": "Audit Reports Controller (Audit / Access / Settings)",
+  "basePath": "api",
+  "actions": [
+    {
+      "actionName": "auditReport",
+      "path": "auth/reports/audit",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "AuditReportRow",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "audit"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "accessReport",
+      "path": "auth/reports/access",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "AccessReportRow",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "audit"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "settingsReport",
+      "path": "auth/reports/settings",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "SettingsReportRow",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "audit"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

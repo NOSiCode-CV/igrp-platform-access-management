@@ -2,6 +2,10 @@ package cv.igrp.platform.access_management.security_audit.application.service;
 
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
+import cv.igrp.platform.access_management.security_audit.domain.enums.AuditStatus;
+import cv.igrp.platform.access_management.security_audit.domain.enums.SettingsArea;
+import cv.igrp.platform.access_management.security_audit.domain.enums.SettingsEntityType;
+import cv.igrp.platform.access_management.security_audit.domain.enums.SettingsOperation;
 import java.util.Map;
 
 /**
@@ -61,4 +65,28 @@ public interface SecurityAuditService {
      * @param operation    The operation performed on the user account (e.g., "CREATE", "UPDATE", "DELETE").
      */
     void logUserChange(String targetUserId, String operation);
+
+    /**
+     * Logs an administrative configuration (settings) event onto the unified
+     * audit log with its typed report columns populated (Settings Report,
+     * requirements.md §1.5.3). Fail-safe: never rethrows. Status defaults to
+     * {@link AuditStatus#SUCCESS}.
+     *
+     * @param area          administrative area.
+     * @param entityType    type of the target entity.
+     * @param operation     operation performed.
+     * @param entityName    name of the target entity.
+     * @param relatedEntity related entity for associations/assignments (nullable).
+     * @param previousValue previous value on EDIT (nullable).
+     * @param newValue      new value on EDIT (nullable).
+     */
+    void logSettingsEvent(SettingsArea area, SettingsEntityType entityType, SettingsOperation operation,
+                          String entityName, String relatedEntity, String previousValue, String newValue);
+
+    /**
+     * Settings event variant with an explicit outcome status.
+     */
+    void logSettingsEvent(SettingsArea area, SettingsEntityType entityType, SettingsOperation operation,
+                          String entityName, String relatedEntity, String previousValue, String newValue,
+                          AuditStatus status);
 }

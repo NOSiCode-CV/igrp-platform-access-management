@@ -4,6 +4,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import cv.igrp.platform.access_management.security_audit.domain.entities.SecurityAuditLogEntity;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
+import cv.igrp.platform.access_management.security_audit.domain.enums.AuditStatus;
+import cv.igrp.platform.access_management.security_audit.domain.enums.SettingsArea;
+import cv.igrp.platform.access_management.security_audit.domain.enums.SettingsEntityType;
+import cv.igrp.platform.access_management.security_audit.domain.enums.SettingsOperation;
 import cv.igrp.platform.access_management.security_audit.infrastructure.persistence.SecurityAuditLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -44,29 +48,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logEvent(AuditEventType type, AuditCategory category, Map<String, Object> context) {
         try {
-            Map<String, Object> fullContext = new HashMap<>(contextProvider.getContext());
-            fullContext.putAll(context);
-
-            SecurityAuditLogEntity logEntity = new SecurityAuditLogEntity();
-            logEntity.setEventType(type);
-            logEntity.setCategory(category);
-            logEntity.setTimestamp(LocalDateTime.now());
-
-            logEntity.setUserId(asString(fullContext.get("userId")));
-            logEntity.setUsername(asString(fullContext.get("username")));
-            logEntity.setSessionId(asString(fullContext.get("sessionId")));
-            logEntity.setIpAddress(asString(fullContext.get("ipAddress")));
-            logEntity.setUserAgent(asString(fullContext.get("userAgent")));
-            logEntity.setCorrelationId(asString(fullContext.get("correlationId")));
-            logEntity.setRequestPath(asString(fullContext.get("requestPath")));
-            logEntity.setDecisionReason(resolveDecisionReason(category, fullContext));
-
-            try {
-                logEntity.setContextData(objectMapper.writeValueAsString(fullContext));
-            } catch (Exception e) {
-                logger.error("[Security audit] Failed to serialize audit context to JSON", e);
-                logEntity.setContextData("{\"error\":\"Failed to serialize context\"}");
-            }
+            SecurityAuditLogEntity logEntity = buildBaseEntity(type, category, context);
 
             // Append through the hash chain (advisory-locked, tamper-evident)
             // rather than a bare save, so previous_hash/current_hash/sequence
@@ -80,6 +62,39 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
             logger.error("[Security audit] Failed to save security audit log. Event: {}, Category: {}", type, category, e);
             // Fail-safe: Do not rethrow the exception
         }
+    }
+
+    /**
+     * Builds and populates a {@link SecurityAuditLogEntity} from the ambient
+     * request context merged with the caller-supplied {@code context}. Does not
+     * persist — callers append it through the chain service.
+     */
+    private SecurityAuditLogEntity buildBaseEntity(AuditEventType type, AuditCategory category,
+                                                   Map<String, Object> context) {
+        Map<String, Object> fullContext = new HashMap<>(contextProvider.getContext());
+        fullContext.putAll(context);
+
+        SecurityAuditLogEntity logEntity = new SecurityAuditLogEntity();
+        logEntity.setEventType(type);
+        logEntity.setCategory(category);
+        logEntity.setTimestamp(LocalDateTime.now());
+
+        logEntity.setUserId(asString(fullContext.get("userId")));
+        logEntity.setUsername(asString(fullContext.get("username")));
+        logEntity.setSessionId(asString(fullContext.get("sessionId")));
+        logEntity.setIpAddress(asString(fullContext.get("ipAddress")));
+        logEntity.setUserAgent(asString(fullContext.get("userAgent")));
+        logEntity.setCorrelationId(asString(fullContext.get("correlationId")));
+        logEntity.setRequestPath(asString(fullContext.get("requestPath")));
+        logEntity.setDecisionReason(resolveDecisionReason(category, fullContext));
+
+        try {
+            logEntity.setContextData(objectMapper.writeValueAsString(fullContext));
+        } catch (Exception e) {
+            logger.error("[Security audit] Failed to serialize audit context to JSON", e);
+            logEntity.setContextData("{\"error\":\"Failed to serialize context\"}");
+        }
+        return logEntity;
     }
 
     @Override
@@ -124,6 +139,45 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
             default -> throw new IllegalArgumentException("Invalid user operation for auditing: " + operation);
         };
         logEvent(eventType, AuditCategory.USER_MANAGEMENT, Map.of("targetUserId", targetUserId));
+    }
+
+    @Override
+    public void logSettingsEvent(SettingsArea area, SettingsEntityType entityType, SettingsOperation operation,
+                                 String entityName, String relatedEntity, String previousValue, String newValue) {
+        logSettingsEvent(area, entityType, operation, entityName, relatedEntity, previousValue, newValue,
+                AuditStatus.SUCCESS);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logSettingsEvent(SettingsArea area, SettingsEntityType entityType, SettingsOperation operation,
+                                 String entityName, String relatedEntity, String previousValue, String newValue,
+                                 AuditStatus status) {
+        try {
+            SecurityAuditLogEntity logEntity = buildBaseEntity(
+                    AuditEventType.SYSTEM_CONFIGURATION_CHANGED, AuditCategory.SYSTEM, Map.of());
+            // N7: new settings rows carry their data in the typed columns below,
+            // not the deprecated contextData JSON blob.
+            logEntity.setContextData(null);
+            logEntity.setSettingsArea(area);
+            logEntity.setSettingsEntityType(entityType);
+            logEntity.setSettingsOperation(operation);
+            logEntity.setEntityName(entityName);
+            logEntity.setRelatedEntity(relatedEntity);
+            logEntity.setPreviousValue(previousValue);
+            logEntity.setNewValue(newValue);
+            logEntity.setStatus(status != null ? status : AuditStatus.SUCCESS);
+
+            chainService.append(logEntity);
+
+            logger.info("[Security audit] Settings event: area={}, entityType={}, operation={}, entity={}, related={}, status={}",
+                    area, entityType, operation, entityName, relatedEntity, logEntity.getStatus());
+
+        } catch (Exception e) {
+            logger.error("[Security audit] Failed to save settings audit log. Area: {}, Operation: {}, Entity: {}",
+                    area, operation, entityName, e);
+            // Fail-safe: Do not rethrow the exception (N4)
+        }
     }
 
     private String resolveDecisionReason(AuditCategory category, Map<String, Object> context) {

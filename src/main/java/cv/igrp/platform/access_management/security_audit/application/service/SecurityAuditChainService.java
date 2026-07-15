@@ -182,7 +182,25 @@ public class SecurityAuditChainService {
                 nullSafe(e.getDecisionReason()),
                 nullSafe(e.getContextData()),
                 nullSafe(e.getEpochMs()),
-                nullSafe(e.getTimestamp()));
+                nullSafe(e.getTimestamp()),
+                // Phase 2 report columns (all persisted fields participate — R2.2).
+                // `device` is intentionally excluded: it is never persisted, only
+                // derived at read time from user_agent.
+                nullSafe(e.getApplicationModule()),
+                nullSafe(e.getAccessRole()),
+                nullSafe(e.getOperationState()),
+                nullSafe(e.getAuthorizedBy()),
+                nullSafe(e.getStatus()),
+                nullSafe(e.getAction()),
+                nullSafe(e.getSettingsArea()),
+                nullSafe(e.getSettingsEntityType()),
+                nullSafe(e.getSettingsOperation()),
+                nullSafe(e.getEntityName()),
+                nullSafe(e.getRelatedEntity()),
+                nullSafe(e.getPreviousValue()),
+                nullSafe(e.getNewValue()),
+                nullSafe(e.getPeriodStart()),
+                nullSafe(e.getPeriodEnd()));
     }
 
     private String hmac(String input) {
