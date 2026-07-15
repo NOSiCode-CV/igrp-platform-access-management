@@ -13,6 +13,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.shared.domain.events.UserRoleChangedEvent;
+import cv.igrp.platform.access_management.security_audit.domain.events.RoleUnassignedFromUserEvent;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
@@ -113,6 +114,9 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
                auditContext.put("userId", userId);
                auditContext.put("roleCode", assignment.getRole().getCode());
                securityAuditService.logEvent(AuditEventType.ROLE_REMOVED, AuditCategory.PRIVILEGE, auditContext);
+
+               eventPublisher.publishSettingsAudit(
+                       new RoleUnassignedFromUserEvent(assignment.getRole().getCode(), userId));
             }
 
             List<RoleEntity> rolesToRemove = assignmentsToRemove.stream().map(UserRoleAssignment::getRole).toList();

@@ -11,6 +11,8 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.security_audit.domain.events.MenuAssociatedToRoleEvent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
@@ -27,11 +29,13 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
    private final MenuEntryEntityRepository menuEntryRepository;
    private final DepartmentEntityRepository departmentRepository;
    private final ApplicationEntityRepository applicationRepository;
-   
-   public AddMenusToDepartmentCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentRepository, ApplicationEntityRepository applicationRepository) {
+   private final EventPublisher eventPublisher;
+
+   public AddMenusToDepartmentCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentRepository, ApplicationEntityRepository applicationRepository, EventPublisher eventPublisher) {
       this.menuEntryRepository = menuEntryRepository;
       this.departmentRepository = departmentRepository;
       this.applicationRepository = applicationRepository;
+      this.eventPublisher = eventPublisher;
    }
 
    @IgrpCommandHandler
@@ -78,6 +82,8 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
                //attributeDepartmentToParents(menuEntry, department);
             }
             menuEntryRepository.save(menuEntry);
+            eventPublisher.publishSettingsAudit(
+                    new MenuAssociatedToRoleEvent(menuCode, department.getCode()));
             LOGGER.info("Added menu <{}> to department <{}>", menuCode, command.getDepartmentCode());
          } else {
             LOGGER.info("Menu <{}> is already associated with department <{}>", menuCode, command.getDepartmentCode());

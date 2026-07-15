@@ -15,6 +15,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
+import cv.igrp.platform.access_management.security_audit.domain.events.PermissionDisassociatedFromRoleEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -101,6 +102,10 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
       var response = roleMapper.mapToDto(roleRepository.save(foundRole));
       eventPublisher.publishRolePermissionChanged(new RolePermissionChangedEvent(
               foundRole.getCode(), command.getDepartmentCode(), "PERMISSIONS_REMOVED", null));
+      for (String permissionName : command.getRemovePermissionsRequest()) {
+         eventPublisher.publishSettingsAudit(
+                 new PermissionDisassociatedFromRoleEvent(permissionName, foundRole.getCode()));
+      }
       return new ResponseEntity<>(response, HttpStatus.OK);
    }
 

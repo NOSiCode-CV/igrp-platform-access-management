@@ -36,6 +36,9 @@ class RemoveMenusFromDepartmentCommandHandlerTest {
     @Mock
     private ApplicationEntityRepository applicationEntityRepository;
 
+    @Mock
+    private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
+
     @InjectMocks
     private RemoveMenusFromDepartmentCommandHandler handler;
 

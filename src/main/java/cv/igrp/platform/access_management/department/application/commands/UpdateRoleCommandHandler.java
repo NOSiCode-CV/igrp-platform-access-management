@@ -11,6 +11,9 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.security_audit.domain.events.RoleEditedEvent;
+import cv.igrp.platform.access_management.security_audit.application.support.SettingsDiff;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -57,6 +60,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
    private final DepartmentEntityRepository departmentRepository;
    private final RoleMapper roleMapper;
    private final UserUtils userUtils;
+   private final EventPublisher eventPublisher;
 
    /**
     * Constructs an {@code UpdateRoleCommandHandler} with the required dependencies.
@@ -65,12 +69,14 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
     * @param departmentRepository the repository used to fetch and persist departments
     * @param roleMapper     the mapper used to convert {@link RoleEntity} to {@link RoleDTO}
     * @param userUtils      the utility class used to handle user-related operations
+    * @param eventPublisher publishes the settings-audit event
     */
-   public UpdateRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper, UserUtils userUtils) {
+   public UpdateRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper, UserUtils userUtils, EventPublisher eventPublisher) {
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
       this.roleMapper = roleMapper;
       this.userUtils = userUtils;
+      this.eventPublisher = eventPublisher;
    }
 
    /**
@@ -103,6 +109,15 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
                  );
               });
 
+      // Capture the pre-update field values for the EDIT audit diff before the setters overwrite them.
+      SettingsDiff diff = new SettingsDiff()
+              .compare("name", roleToUpdate.getName(), newData.getName())
+              .compare("description", roleToUpdate.getDescription(), newData.getDescription())
+              .compare("status", roleToUpdate.getStatus(), newData.getStatus());
+
+      // TODO(catalog-gap): role activate/deactivate is folded into this status change.
+      // The catalog marks it a gap with no dedicated event class; the transition is
+      // currently covered by the generic RoleEditedEvent diff above. See roadmap.md.
       if(command.getRoledto().getStatus() != null &&
               !Objects.equals(command.getRoledto().getStatus(), roleToUpdate.getStatus())
       ) {
@@ -146,6 +161,10 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
 
       roleToUpdate.setIcon(newData.getIcon());
       RoleEntity updatedRole = roleRepository.save(roleToUpdate);
+
+      eventPublisher.publishSettingsAudit(new RoleEditedEvent(
+              updatedRole.getName(), diff.previousValue(), diff.newValue()));
+
       log.info("Role with code: {} updated successfully.", command.getRoledto().getCode());
       return new ResponseEntity<>(roleMapper.mapToDto(updatedRole), HttpStatus.OK);
    }

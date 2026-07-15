@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.shared.domain.events;
 
 import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
+import cv.igrp.platform.access_management.security_audit.domain.events.SettingsAuditEvent;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Component;
 
@@ -58,6 +59,18 @@ public class EventPublisher {
     }
 
     public void publishDepartmentScopeChanged(DepartmentScopeChangedEvent event) {
+        applicationEventPublisher.publishEvent(event);
+    }
+
+    /**
+     * Publishes a strongly-typed administrative "settings" event (Phase 3 of the
+     * Unified Audit &amp; Reports feature). Consumed asynchronously by
+     * {@code SettingsAuditEventListener}, which writes one row to the unified audit
+     * log for the Settings Report. Call after the command's DB write succeeds,
+     * before returning. Publishing is fire-and-forget and must never affect the
+     * caller's outcome.
+     */
+    public void publishSettingsAudit(SettingsAuditEvent event) {
         applicationEventPublisher.publishEvent(event);
     }
 }

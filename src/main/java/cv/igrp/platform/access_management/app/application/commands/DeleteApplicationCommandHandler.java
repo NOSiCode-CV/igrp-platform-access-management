@@ -9,6 +9,8 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.security_audit.domain.events.ApplicationDeletedEvent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -36,6 +38,7 @@ public class DeleteApplicationCommandHandler implements CommandHandler<DeleteApp
 
    private final ApplicationEntityRepository applicationRepository;
    private final MenuEntryEntityRepository menuRepository;
+   private final EventPublisher eventPublisher;
 
 
    /**
@@ -43,10 +46,12 @@ public class DeleteApplicationCommandHandler implements CommandHandler<DeleteApp
     *
     * @param applicationRepository the repository used to fetch and persist {@link ApplicationEntity} entities
     * @param menuRepository the repository used to fetch and persist {@link MenuEntryEntity} entities
+    * @param eventPublisher publishes the settings-audit event
     */
-   public DeleteApplicationCommandHandler(ApplicationEntityRepository applicationRepository, MenuEntryEntityRepository menuRepository) {
+   public DeleteApplicationCommandHandler(ApplicationEntityRepository applicationRepository, MenuEntryEntityRepository menuRepository, EventPublisher eventPublisher) {
       this.applicationRepository = applicationRepository;
       this.menuRepository = menuRepository;
+      this.eventPublisher = eventPublisher;
    }
 
    /**
@@ -70,6 +75,9 @@ public class DeleteApplicationCommandHandler implements CommandHandler<DeleteApp
 
       application.setStatus(Status.DELETED);
       applicationRepository.save(application);
+
+      eventPublisher.publishSettingsAudit(new ApplicationDeletedEvent(application.getName()));
+
       return ResponseEntity.noContent().build();
    }
 

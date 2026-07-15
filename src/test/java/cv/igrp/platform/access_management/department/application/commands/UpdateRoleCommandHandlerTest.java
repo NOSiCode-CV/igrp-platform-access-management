@@ -30,6 +30,8 @@ public class UpdateRoleCommandHandlerTest {
     @InjectMocks
     private UpdateRoleCommandHandler underTest;
     @Mock
+    private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
+    @Mock
     private RoleEntityRepository roleRepository;
     @Mock
     private DepartmentEntityRepository departmentRepository;

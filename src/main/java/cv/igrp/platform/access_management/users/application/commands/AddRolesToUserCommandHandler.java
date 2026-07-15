@@ -20,6 +20,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleId;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.shared.domain.events.UserRoleChangedEvent;
+import cv.igrp.platform.access_management.security_audit.domain.events.RoleAssignedToUserEvent;
 import cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
@@ -166,6 +167,9 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
          auditContext.put("roleCode", roleEntity.getCode());
          auditContext.put("expiresAt", command.getExpiresAt());
          securityAuditService.logEvent(AuditEventType.ROLE_ASSIGNED, AuditCategory.PRIVILEGE, auditContext);
+
+         eventPublisher.publishSettingsAudit(
+                 new RoleAssignedToUserEvent(roleEntity.getCode(), user.getExternalId()));
       }
 
       if (!successfullyAssignedRoles.isEmpty()) {

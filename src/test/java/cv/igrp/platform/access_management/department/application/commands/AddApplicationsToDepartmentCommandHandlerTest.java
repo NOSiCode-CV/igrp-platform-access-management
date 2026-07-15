@@ -36,6 +36,9 @@ class AddApplicationsToDepartmentCommandHandlerTest {
     @Mock
     private DepartmentEntityRepository departmentRepository;
 
+    @Mock
+    private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
+
     @InjectMocks
     private AddApplicationsToDepartmentCommandHandler handler;
 

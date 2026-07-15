@@ -76,6 +76,10 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
     @IgrpCommandHandler
     @Transactional
     public ResponseEntity<InvitationDTO> handle(InviteUserCommand command) {
+        // TODO(catalog-gap): publish UserInvitedEvent (SettingsOperation.INVITE) here once
+        // the settings-audit wiring for USERS-area actions is finalised. The event class
+        // exists so the Settings Report enum surface is complete. See roadmap.md
+        // "Activate / Deactivate / Invite command handlers".
 
         var dto = command.getInviteuserdto();
 

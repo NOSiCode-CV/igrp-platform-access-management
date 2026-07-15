@@ -24,6 +24,9 @@ public class DeleteApplicationCommandHandlerTest {
     private DeleteApplicationCommandHandler deleteApplicationCommandHandler;
 
     @Mock
+    private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
+
+    @Mock
     private ApplicationEntityRepository applicationRepository;
 
     @Test

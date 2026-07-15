@@ -17,6 +17,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
+import cv.igrp.platform.access_management.security_audit.domain.events.PermissionAssociatedToRoleEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -133,6 +134,11 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
 
       eventPublisher.publishRolePermissionChanged(new RolePermissionChangedEvent(
               savedRole.getCode(), departmentCode, "PERMISSIONS_ADDED", null));
+
+      for (PermissionEntity permission : permissionList) {
+         eventPublisher.publishSettingsAudit(
+                 new PermissionAssociatedToRoleEvent(permission.getName(), savedRole.getCode()));
+      }
 
       Set<Integer> addedPermissionIds = permissionList.stream()
               .map(PermissionEntity::getId)

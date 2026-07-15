@@ -11,6 +11,8 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.security_audit.domain.events.MenuDisassociatedFromRoleEvent;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -29,11 +31,13 @@ public class RemoveMenusFromDepartmentCommandHandler implements CommandHandler<R
    private final MenuEntryEntityRepository menuEntryRepository;
    private final DepartmentEntityRepository departmentEntityRepository;
    private final ApplicationEntityRepository applicationEntityRepository;
+   private final EventPublisher eventPublisher;
 
-   public RemoveMenusFromDepartmentCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentEntityRepository, ApplicationEntityRepository applicationEntityRepository) {
+   public RemoveMenusFromDepartmentCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentEntityRepository, ApplicationEntityRepository applicationEntityRepository, EventPublisher eventPublisher) {
       this.menuEntryRepository = menuEntryRepository;
       this.departmentEntityRepository = departmentEntityRepository;
       this.applicationEntityRepository = applicationEntityRepository;
+      this.eventPublisher = eventPublisher;
    }
 
    @IgrpCommandHandler
@@ -71,6 +75,8 @@ public class RemoveMenusFromDepartmentCommandHandler implements CommandHandler<R
             //removeDepartmentFromParents(menuEntry, department);
             LOGGER.info("Menu entry with code: {} removed from department with code: {}.", menuCode, command.getDepartmentCode());
             menuEntryRepository.save(menuEntry);
+            eventPublisher.publishSettingsAudit(
+                    new MenuDisassociatedFromRoleEvent(menuCode, department.getCode()));
          } else {
             LOGGER.info("Menu entry with code: {} not associated with department with code: {}.", menuCode, command.getDepartmentCode());
          }

@@ -15,6 +15,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.security_audit.domain.events.DepartmentCreatedEvent;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -46,18 +48,22 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
 
    private final DepartmentEntityRepository departmentRepository;
    private final DepartmentMapper departmentMapper;
+   private final EventPublisher eventPublisher;
 
    /**
     * Constructs the command handler with required dependencies.
     *
     * @param departmentRepository the repository used to persist departments
     * @param departmentMapper the mapper used to convert between DTOs and domain entities
+    * @param eventPublisher publishes the settings-audit event
     */
    public PostDepartmentCommandHandler(
            DepartmentEntityRepository departmentRepository,
-           DepartmentMapper departmentMapper) {
+           DepartmentMapper departmentMapper,
+           EventPublisher eventPublisher) {
       this.departmentRepository = departmentRepository;
       this.departmentMapper = departmentMapper;
+      this.eventPublisher = eventPublisher;
    }
 
    /**
@@ -104,6 +110,8 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
       DepartmentEntity saved = departmentRepository.save(department);
 
       logger.info("Department created successfully: code={}", saved.getCode());
+
+      eventPublisher.publishSettingsAudit(new DepartmentCreatedEvent(saved.getName()));
 
       DepartmentDTO result = departmentMapper.toDto(saved);
       return ResponseEntity.status(HttpStatus.CREATED).body(result);

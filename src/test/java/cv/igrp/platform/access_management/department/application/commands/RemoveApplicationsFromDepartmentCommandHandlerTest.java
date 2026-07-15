@@ -28,6 +28,9 @@ class RemoveApplicationsFromDepartmentCommandHandlerTest {
     @Mock
     private DepartmentEntityRepository departmentRepository;
 
+    @Mock
+    private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
+
     @InjectMocks
     private RemoveApplicationsFromDepartmentCommandHandler handler;
 

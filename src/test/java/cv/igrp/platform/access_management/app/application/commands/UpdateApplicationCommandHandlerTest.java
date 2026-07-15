@@ -27,6 +27,8 @@ public class UpdateApplicationCommandHandlerTest {
     @InjectMocks
     private UpdateApplicationCommandHandler underTest;
     @Mock
+    private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
+    @Mock
     private ApplicationEntityRepository applicationRepository;
     @Mock
     private ApplicationMapper applicationMapper;
