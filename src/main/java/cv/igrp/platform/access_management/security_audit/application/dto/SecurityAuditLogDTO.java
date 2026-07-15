@@ -15,7 +15,10 @@ import lombok.AllArgsConstructor;
 @IgrpDTO
 public class SecurityAuditLogDTO {
 
-    private Long id;
+    private String id;
+    private Long sequenceNumber;
+    private String previousHash;
+    private String currentHash;
     private String userId;
     private String username;
     private String sessionId;

@@ -16,4 +16,7 @@ public final class AuditPermissions {
     @IgrpPermission(name = "igrp.audit.list", description = "Permission to list audit logs")
     public static final String IGRP_AUDIT_LIST = "igrp.audit.list";
 
+    @IgrpPermission(name = "igrp.audit.purge", description = "Permission to purge the audit log")
+    public static final String IGRP_AUDIT_PURGE = "igrp.audit.purge";
+
 }

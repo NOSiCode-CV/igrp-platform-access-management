@@ -4,6 +4,7 @@ import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCateg
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 /**
  * Represents a security audit log entry in the database.
@@ -19,8 +20,32 @@ import java.time.LocalDateTime;
 public class SecurityAuditLogEntity {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+    @GeneratedValue(strategy = GenerationType.UUID)
+    @Column(columnDefinition = "uuid")
+    private UUID id;
+
+    /**
+     * Contiguous chain position. Assigned by {@code SecurityAuditChainService}
+     * inside the advisory-lock critical section (0 is the GENESIS anchor).
+     */
+    @Column(name = "sequence_number", unique = true)
+    private Long sequenceNumber;
+
+    /** {@code current_hash} of the preceding chain row (GENESIS anchor for the first real row). */
+    @Column(name = "previous_hash", length = 64)
+    private String previousHash;
+
+    /** HMAC-SHA256(secret, previous_hash || serialized row fields). */
+    @Column(name = "current_hash", length = 64)
+    private String currentHash;
+
+    /** Wall-clock at append time, epoch millis — part of the hash input. */
+    @Column(name = "epoch_ms")
+    private Long epochMs;
+
+    /** HMAC-SHA256 of the raw IP; participates in the hash so editing ip_address breaks the chain. */
+    @Column(name = "ip_hash", length = 64)
+    private String ipHash;
 
     private String userId;
     private String username;
@@ -47,12 +72,52 @@ public class SecurityAuditLogEntity {
 
     // Getters and Setters
 
-    public Long getId() {
+    public UUID getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(UUID id) {
         this.id = id;
+    }
+
+    public Long getSequenceNumber() {
+        return sequenceNumber;
+    }
+
+    public void setSequenceNumber(Long sequenceNumber) {
+        this.sequenceNumber = sequenceNumber;
+    }
+
+    public String getPreviousHash() {
+        return previousHash;
+    }
+
+    public void setPreviousHash(String previousHash) {
+        this.previousHash = previousHash;
+    }
+
+    public String getCurrentHash() {
+        return currentHash;
+    }
+
+    public void setCurrentHash(String currentHash) {
+        this.currentHash = currentHash;
+    }
+
+    public Long getEpochMs() {
+        return epochMs;
+    }
+
+    public void setEpochMs(Long epochMs) {
+        this.epochMs = epochMs;
+    }
+
+    public String getIpHash() {
+        return ipHash;
+    }
+
+    public void setIpHash(String ipHash) {
+        this.ipHash = ipHash;
     }
 
     public String getUserId() {

@@ -21,7 +21,7 @@ import org.springframework.stereotype.Component;
  * This listener NEVER creates users — that is exclusively the responsibility
  * of RespondUserInvitationCommandHandler (invite-accept flow).
  *
- * Coexists with AuthAuditEventListener — both listen to the same event
+ * Coexists with SecurityAuditEventListener — both listen to the same event
  * as independent Spring beans.
  */
 @Slf4j

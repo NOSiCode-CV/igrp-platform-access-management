@@ -27,13 +27,16 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
 
     private final SecurityAuditLogRepository auditLogRepository;
     private final SecurityAuditContextProvider contextProvider;
+    private final SecurityAuditChainService chainService;
     private final ObjectMapper objectMapper;
 
     public SecurityAuditServiceImpl(SecurityAuditLogRepository auditLogRepository,
                                     SecurityAuditContextProvider contextProvider,
+                                    SecurityAuditChainService chainService,
                                     ObjectMapper objectMapper) {
         this.auditLogRepository = auditLogRepository;
         this.contextProvider = contextProvider;
+        this.chainService = chainService;
         this.objectMapper = objectMapper;
     }
 
@@ -65,7 +68,10 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
                 logEntity.setContextData("{\"error\":\"Failed to serialize context\"}");
             }
 
-            auditLogRepository.save(logEntity);
+            // Append through the hash chain (advisory-locked, tamper-evident)
+            // rather than a bare save, so previous_hash/current_hash/sequence
+            // are set atomically in this REQUIRES_NEW transaction.
+            chainService.append(logEntity);
 
             logger.info("[Security audit] Event: {}, Category: {}, User: {}, Session: {}, Context: {}",
                     type, category, logEntity.getUserId(), logEntity.getSessionId(), logEntity.getContextData());

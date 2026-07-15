@@ -7,8 +7,6 @@ import cv.igrp.platform.access_management.oauth_server.infrastructure.persistenc
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.ServiceAccountJpaRepository;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.UserIdentityJpaRepository;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
-import cv.igrp.platform.access_management.shared.domain.audit.AuthAuditContext;
-import cv.igrp.platform.access_management.shared.domain.audit.IdentifierType;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
@@ -335,57 +333,6 @@ public class ClaimsEnrichmentService {
                         (left, right) -> right,
                         LinkedHashMap::new
                 ));
-    }
-
-    /**
-     * Build a shared auth-audit context for tokens issued by the local
-     * authorization server. Uses the resolved internal user plus the owning
-     * application/client metadata instead of relying on transient browser
-     * request state.
-     */
-    @Transactional(readOnly = true)
-    public AuthAuditContext buildTokenIssuedAuditContext(String subject, String clientId, String sessionId) {
-        Optional<OAuthClientEntity> client = clientId == null
-                ? Optional.empty()
-                : oauthClientRepository.findByClientId(clientId);
-
-        Optional<IGRPUserEntity> user = resolveUser(subject);
-        Optional<ServiceAccountEntity> serviceAccount = user.isPresent()
-                ? Optional.empty()
-                : resolveServiceAccount(subject);
-        IdentifierType identifierType = IdentifierType.UNKNOWN;
-        String identifierValue = null;
-
-        if (user.isPresent()) {
-            IGRPUserEntity igrpUser = user.get();
-            if (igrpUser.getPhoneNumber() != null && !igrpUser.getPhoneNumber().isBlank()) {
-                identifierType = IdentifierType.CMDCV;
-                identifierValue = igrpUser.getPhoneNumber();
-            } else if (igrpUser.getEmail() != null && !igrpUser.getEmail().isBlank()) {
-                identifierType = IdentifierType.EMAIL;
-                identifierValue = igrpUser.getEmail();
-            } else if (igrpUser.getNic() != null && !igrpUser.getNic().isBlank()) {
-                identifierType = IdentifierType.CNI;
-                identifierValue = igrpUser.getNic();
-            }
-        }
-
-        Optional<ApplicationEntity> auditApplication = serviceAccount
-                .map(ServiceAccountEntity::getApplication)
-                .or(() -> client.map(OAuthClientEntity::getApplication));
-        String applicationCode = auditApplication
-                .map(ApplicationEntity::getCode)
-                .filter(code -> code != null && !code.isBlank())
-                .orElse(clientId);
-
-        return new AuthAuditContext(
-                identifierType,
-                identifierValue,
-                subject,
-                applicationCode,
-                sessionId,
-                null
-        );
     }
 
     private Set<String> permissions(Optional<IGRPUserEntity> user,
