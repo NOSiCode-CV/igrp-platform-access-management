@@ -1,0 +1,38 @@
+{
+  "type": "enum",
+  "module": "audit",
+  "name": "ReportType",
+  "values": [
+    {
+      "name": "AUDIT",
+      "attributes": [
+        "AUDIT",
+        "Audit Report"
+      ]
+    },
+    {
+      "name": "ACCESS",
+      "attributes": [
+        "ACCESS",
+        "Access Report"
+      ]
+    },
+    {
+      "name": "SETTINGS",
+      "attributes": [
+        "SETTINGS",
+        "Settings Report"
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "type": "string",
+      "name": "Code"
+    },
+    {
+      "type": "string",
+      "name": "Description"
+    }
+  ]
+}

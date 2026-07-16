@@ -9,6 +9,8 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.List;
 import java.util.stream.IntStream;
@@ -19,10 +21,22 @@ import static org.assertj.core.api.Assertions.assertThat;
  * Golden-file test for {@link ExcelReportExporter}: generate a workbook from a
  * fixed 5-row dataset, reopen it with POI and assert the header and cell values
  * row-by-row (validation.md §Phase 4 golden-file).
+ *
+ * <p>Runs the assertions against both generation paths — SXSSF streaming and the
+ * in-memory XSSF fallback used when no writable temp directory exists — since a
+ * read-only filesystem must still produce a byte-identical-in-content workbook.
  */
 class ExcelReportExporterTest {
 
-    private final ExcelReportExporter exporter = new ExcelReportExporter();
+    private static final Path TMP = Paths.get(System.getProperty("java.io.tmpdir"));
+
+    /** Temp dir writable: streams via SXSSF. */
+    private final ExcelReportExporter exporter =
+            new ExcelReportExporter(new ExcelTempDirStatus(true, TMP));
+
+    /** Temp dir unusable: falls back to in-memory XSSF. */
+    private final ExcelReportExporter fallbackExporter =
+            new ExcelReportExporter(new ExcelTempDirStatus(false, Paths.get("Z:/definitely/not/creatable")));
 
     private static AuditReportRowDTO row(int i) {
         AuditReportRowDTO dto = new AuditReportRowDTO();
@@ -42,6 +56,17 @@ class ExcelReportExporterTest {
 
     @Test
     void writesHeaderAndFiveDataRows() throws Exception {
+        assertWorkbookContent(exporter);
+    }
+
+    @Test
+    void fallsBackToInMemoryGenerationWhenTempDirUnusable() throws Exception {
+        // The deployed .xlsx 500 was SXSSF failing to create its temp file on a
+        // read-only filesystem; the fallback must still produce a valid workbook.
+        assertWorkbookContent(fallbackExporter);
+    }
+
+    private static void assertWorkbookContent(ExcelReportExporter exporter) throws Exception {
         List<AuditReportRowDTO> rows = IntStream.range(0, 5).mapToObj(ExcelReportExporterTest::row).toList();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();

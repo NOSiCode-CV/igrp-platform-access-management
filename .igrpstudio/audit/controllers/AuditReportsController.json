@@ -2,7 +2,7 @@
   "type": "controller",
   "name": "AuditReports",
   "module": "audit",
-  "description": "Audit Reports Controller (Audit / Access / Settings) with JSON, PDF and Excel export",
+  "description": "Audit Reports Controller (Audit / Access / Settings) with JSON, PDF, Excel and CSV export",
   "basePath": "api",
   "actions": [
     {
@@ -177,6 +177,66 @@
           "name": "OK",
           "content": {
             "application/pdf": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "auditReportCsv",
+      "path": "auth/reports/audit.csv",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "text/csv": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "accessReportCsv",
+      "path": "auth/reports/access.csv",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "text/csv": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "settingsReportCsv",
+      "path": "auth/reports/settings.csv",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "text/csv": {
               "schema": {
                 "type": "string",
                 "format": "binary",

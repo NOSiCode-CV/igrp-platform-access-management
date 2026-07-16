@@ -1,0 +1,185 @@
+{
+  "type": "controller",
+  "name": "AuditReportArchive",
+  "module": "audit",
+  "description": "Archives generated report exports to storage and lists them. The returned filePath resolves to a download link via GET api/files/url",
+  "basePath": "api",
+  "actions": [
+    {
+      "actionName": "archiveAuditReport",
+      "path": "auth/reports/audit/archive",
+      "method": "POST",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "AuditReportFile",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "audit"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "format",
+          "isRequired": true
+        },
+        {
+          "type": "string",
+          "name": "startDate",
+          "isRequired": true
+        },
+        {
+          "type": "string",
+          "name": "endDate",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.audit.view"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "archiveAccessReport",
+      "path": "auth/reports/access/archive",
+      "method": "POST",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "AuditReportFile",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "audit"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "format",
+          "isRequired": true
+        },
+        {
+          "type": "string",
+          "name": "startDate",
+          "isRequired": true
+        },
+        {
+          "type": "string",
+          "name": "endDate",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.audit.view"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "archiveSettingsReport",
+      "path": "auth/reports/settings/archive",
+      "method": "POST",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "AuditReportFile",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "none",
+                "module": "audit"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "format",
+          "isRequired": true
+        },
+        {
+          "type": "string",
+          "name": "startDate",
+          "isRequired": true
+        },
+        {
+          "type": "string",
+          "name": "endDate",
+          "isRequired": true
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.audit.view"
+        ],
+        "operator": "OR"
+      }
+    },
+    {
+      "actionName": "listArchives",
+      "path": "auth/reports/archives",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "AuditReportFile",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "audit"
+              }
+            }
+          }
+        }
+      },
+      "requestParams": [
+        {
+          "type": "string",
+          "name": "reportType",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "format",
+          "isRequired": false
+        },
+        {
+          "type": "string",
+          "name": "generatedBy",
+          "isRequired": false
+        }
+      ],
+      "permission": {
+        "items": [
+          "igrp.audit.view"
+        ],
+        "operator": "OR"
+      }
+    }
+  ]
+}

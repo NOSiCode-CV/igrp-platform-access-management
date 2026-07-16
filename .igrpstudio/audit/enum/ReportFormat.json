@@ -1,0 +1,38 @@
+{
+  "type": "enum",
+  "module": "audit",
+  "name": "ReportFormat",
+  "values": [
+    {
+      "name": "PDF",
+      "attributes": [
+        "pdf",
+        "application/pdf"
+      ]
+    },
+    {
+      "name": "XLSX",
+      "attributes": [
+        "xlsx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+      ]
+    },
+    {
+      "name": "CSV",
+      "attributes": [
+        "csv",
+        "text/csv"
+      ]
+    }
+  ],
+  "attributes": [
+    {
+      "type": "string",
+      "name": "Extension"
+    },
+    {
+      "type": "string",
+      "name": "ContentType"
+    }
+  ]
+}
