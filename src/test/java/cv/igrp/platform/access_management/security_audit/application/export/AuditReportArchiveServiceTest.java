@@ -87,7 +87,10 @@ class AuditReportArchiveServiceTest {
 
         service.archive(ReportType.SETTINGS, ReportFormat.CSV, "settings-report.csv",
                 content, 1L, "{}", null, null);
-        verify(storageService).uploadFile(any(), anyString(), org.mockito.ArgumentMatchers.eq("text/csv"));
+        // Stored with the charset — CSV has no in-band encoding declaration, so a
+        // presigned GET needs the header to decode the UTF-8 payload correctly.
+        verify(storageService).uploadFile(any(), anyString(),
+                org.mockito.ArgumentMatchers.eq("text/csv;charset=UTF-8"));
 
         service.archive(ReportType.ACCESS, ReportFormat.PDF, "access-report.pdf",
                 content, 1L, "{}", null, null);

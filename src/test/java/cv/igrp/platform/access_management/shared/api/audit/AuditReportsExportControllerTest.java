@@ -96,8 +96,10 @@ class AuditReportsExportControllerTest {
         ResponseEntity<StreamingResponseBody> response = controller.auditReportCsv(
                 start, end, null, null, null, null, null, null);
 
-        assertThat(response.getHeaders().getContentType().isCompatibleWith(MediaType.parseMediaType("text/csv")))
-                .isTrue();
+        // Charset must be on the wire: the payload is UTF-8 and CSV declares no
+        // encoding in-band, so a bare text/csv leaves clients guessing.
+        assertThat(response.getHeaders().getContentType())
+                .isEqualTo(MediaType.parseMediaType("text/csv;charset=UTF-8"));
         assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION)).endsWith(".csv\"");
 
         response.getBody().writeTo(new ByteArrayOutputStream());

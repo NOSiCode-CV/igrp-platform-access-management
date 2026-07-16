@@ -417,7 +417,9 @@ for r in audit access settings; do
     echo "--- $r.$f ---"
     curl -sSI "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/$r.$f?$Q" \
       | grep -iE "content-type|content-disposition"
-    # EXPECT: Content-Type starts with ${CT[$f]}   (csv also carries ;charset=UTF-8)
+    # EXPECT: Content-Type starts with ${CT[$f]}
+    #         csv MUST be exactly "text/csv;charset=UTF-8" — CSV declares no
+    #         encoding in-band, so a bare text/csv leaves clients guessing.
     # EXPECT: Content-Disposition: attachment; filename="<r>-report-YYYY-MM-DD.$f"
   done
 done
@@ -512,6 +514,52 @@ curl -sS -o /dev/null -w "tiny xlsx -> %{http_code}\n" "${A_ADMIN[@]}" \
 #    then repeat 4.2 for .xlsx — EXPECT: still 200, still a valid workbook,
 #    plus the fallback warning in the log.
 ```
+
+### 4.6.1 Storage reachability — run this BEFORE the archive tests
+
+Archive is the only part of this feature that touches object storage, so a
+storage misconfiguration looks like an archive bug. Isolate it first — these
+three probes take seconds and tell you whether 4.7–4.9 are even testable.
+
+```bash
+# 1. Does the PRE-EXISTING upload path work? It shares nothing with the archive
+#    code except StorageService. If this hangs, the archive will too, and the
+#    archive code is not the cause.
+curl -sS -o /dev/null -w "files/private -> %{http_code} in %{time_total}s\n" --max-time 20 \
+  -X POST "${A_ADMIN[@]}" -F "file=@/etc/hostname" -F "folder=probe" \
+  "$BASE_URL/api/files/private"
+# EXPECT: 200. HTTP=000 (timeout) => storage is unreachable from the pod; stop here.
+
+# 2. Is the archive TABLE fine, independent of storage?
+curl -sS -o /dev/null -w "archives -> %{http_code} in %{time_total}s\n" \
+  "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/archives"
+# EXPECT: 200 fast. Proves controller + V13_1 + DB are healthy.
+
+# 3. Does validation still precede the upload?
+curl -sS -o /dev/null -w "bad format -> %{http_code}\n" -X POST "${A_ADMIN[@]}" \
+  "$BASE_URL/api/auth/reports/audit/archive?format=DOCX&$Q"
+# EXPECT: 400 fast.
+```
+
+**If uploads hang**, check these in order — the fix is config, not code:
+
+```bash
+# The pod's view of storage. Note IGRP_S3_AWS_ENDPOINT must carry the SCHEME:
+# the fallback hardcodes http://, and IGRP_STORAGE_SECURITY does not change it,
+# so an HTTPS endpoint is unreachable unless this is set explicitly.
+kubectl set env deploy/access-management --list | grep -E "IGRP_STORAGE|IGRP_S3"
+
+# Reachability FROM THE POD (a health check from your laptop proves nothing —
+# the pod may resolve a different host, or none).
+kubectl exec deploy/access-management -- sh -c \
+  'curl -sS -o /dev/null -w "%{http_code}\n" --max-time 5 "$IGRP_S3_AWS_ENDPOINT/minio/health/live"'
+
+# Timeouts are bounded (R7.12) — confirm the boot log, else a hang costs 5 min/request.
+kubectl logs deploy/access-management | grep -i "MinIO client timeouts bounded"
+```
+
+A hang is not an exception, so the archive service's "Failed to upload…" log will
+**not** appear — absence of that line does not mean the upload succeeded.
 
 ### 4.7 Archive → storage + DB record (R7.7–R7.9)
 

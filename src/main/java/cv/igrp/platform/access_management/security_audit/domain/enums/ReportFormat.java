@@ -5,7 +5,8 @@ public enum ReportFormat {
 
     PDF("pdf", "application/pdf"),
     XLSX("xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"),
-    CSV("csv", "text/csv");
+    /** Charset is explicit: the payload is UTF-8 (with BOM), and CSV has no in-band encoding declaration. */
+    CSV("csv", "text/csv;charset=UTF-8");
 
     private final String extension;
     private final String contentType;
