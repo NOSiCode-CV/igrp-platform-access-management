@@ -1,0 +1,192 @@
+{
+  "type": "controller",
+  "name": "AuditReports",
+  "module": "audit",
+  "description": "Audit Reports Controller (Audit / Access / Settings) with JSON, PDF and Excel export",
+  "basePath": "api",
+  "actions": [
+    {
+      "actionName": "auditReport",
+      "path": "auth/reports/audit",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "AuditReportRow",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "audit"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "accessReport",
+      "path": "auth/reports/access",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "AccessReportRow",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "audit"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "settingsReport",
+      "path": "auth/reports/settings",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "SettingsReportRow",
+                "objectType": "dto",
+                "name": "data",
+                "collectionType": "list",
+                "module": "audit"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "auditReportXlsx",
+      "path": "auth/reports/audit.xlsx",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "auditReportPdf",
+      "path": "auth/reports/audit.pdf",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/pdf": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "accessReportXlsx",
+      "path": "auth/reports/access.xlsx",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "accessReportPdf",
+      "path": "auth/reports/access.pdf",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/pdf": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "settingsReportXlsx",
+      "path": "auth/reports/settings.xlsx",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "actionName": "settingsReportPdf",
+      "path": "auth/reports/settings.pdf",
+      "method": "GET",
+      "responses": {
+        "200": {
+          "name": "OK",
+          "content": {
+            "application/pdf": {
+              "schema": {
+                "type": "string",
+                "format": "binary",
+                "name": "data",
+                "collectionType": "none"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}

@@ -6,6 +6,8 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.security_audit.domain.events.ApplicationDisassociatedFromRoleEvent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
@@ -22,10 +24,12 @@ public class RemoveApplicationsFromDepartmentCommandHandler implements CommandHa
 
    private final ApplicationEntityRepository applicationRepository;
    private final DepartmentEntityRepository departmentRepository;
+   private final EventPublisher eventPublisher;
 
-   public RemoveApplicationsFromDepartmentCommandHandler(ApplicationEntityRepository applicationRepository, DepartmentEntityRepository departmentRepository) {
+   public RemoveApplicationsFromDepartmentCommandHandler(ApplicationEntityRepository applicationRepository, DepartmentEntityRepository departmentRepository, EventPublisher eventPublisher) {
       this.applicationRepository = applicationRepository;
       this.departmentRepository = departmentRepository;
+      this.eventPublisher = eventPublisher;
    }
 
    @Transactional
@@ -45,6 +49,9 @@ public class RemoveApplicationsFromDepartmentCommandHandler implements CommandHa
          departmentRepository.save(department);
 
          applicationRepository.save(app);
+
+         eventPublisher.publishSettingsAudit(
+                 new ApplicationDisassociatedFromRoleEvent(app.getName(), department.getCode()));
 
          removeApplicationsForChildren(department, command.getRemoveApplicationsFromDepartmentRequest());
 

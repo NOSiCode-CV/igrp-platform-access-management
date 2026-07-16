@@ -10,6 +10,8 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.security_audit.domain.events.DepartmentDeletedEvent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
@@ -34,16 +36,19 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
 
    private final DepartmentEntityRepository departmentRepository;
    private final RoleEntityRepository roleRepository;
+   private final EventPublisher eventPublisher;
 
    /**
     * Constructs a new instance of {@code DeleteDepartmentCommandHandler} with the given repository.
     *
     * @param departmentRepository the repository used to access and delete departments
     * @param roleRepository the repository used to access and delete roles
+    * @param eventPublisher publishes the settings-audit event
     */
-   public DeleteDepartmentCommandHandler(DepartmentEntityRepository departmentRepository, RoleEntityRepository roleRepository) {
+   public DeleteDepartmentCommandHandler(DepartmentEntityRepository departmentRepository, RoleEntityRepository roleRepository, EventPublisher eventPublisher) {
       this.departmentRepository = departmentRepository;
       this.roleRepository = roleRepository;
+      this.eventPublisher = eventPublisher;
    }
 
    /**
@@ -85,6 +90,8 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
       department.setStatus(DepartmentStatus.DELETED);
 
       departmentRepository.save(department);
+
+      eventPublisher.publishSettingsAudit(new DepartmentDeletedEvent(department.getName()));
 
       logger.info("Successfully deleted department with code={}", code);
       return ResponseEntity.noContent().build();

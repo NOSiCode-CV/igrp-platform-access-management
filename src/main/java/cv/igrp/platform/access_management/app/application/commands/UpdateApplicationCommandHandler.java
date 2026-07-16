@@ -11,6 +11,9 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.security_audit.domain.events.ApplicationEditedEvent;
+import cv.igrp.platform.access_management.security_audit.application.support.SettingsDiff;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -39,17 +42,20 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
     private final ApplicationEntityRepository applicationRepository;
     private final ApplicationMapper applicationMapper;
     private final DepartmentEntityRepository departmentEntityRepository;
+    private final EventPublisher eventPublisher;
 
     /**
      * Constructs a new {@code UpdateApplicationCommandHandler} with the required dependencies.
      *
      * @param applicationRepository the repository used to retrieve and persist {@link ApplicationEntity} entities
      * @param applicationMapper     the mapper used to convert between {@link ApplicationEntity} and {@link ApplicationDTO}
+     * @param eventPublisher        publishes the settings-audit event
      */
-    public UpdateApplicationCommandHandler(ApplicationEntityRepository applicationRepository, ApplicationMapper applicationMapper, DepartmentEntityRepository departmentEntityRepository) {
+    public UpdateApplicationCommandHandler(ApplicationEntityRepository applicationRepository, ApplicationMapper applicationMapper, DepartmentEntityRepository departmentEntityRepository, EventPublisher eventPublisher) {
         this.applicationRepository = applicationRepository;
         this.applicationMapper = applicationMapper;
         this.departmentEntityRepository = departmentEntityRepository;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -72,8 +78,18 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
         ApplicationEntity application = applicationRepository.findByCodeAndStatusNot(command.getCode(), Status.DELETED)
                 .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_APPLICATION_NOT_FOUND_BY_CODE, command.getCode()));
 
+        // Capture the pre-update field values for the EDIT audit diff before the setters overwrite them.
+        SettingsDiff diff = new SettingsDiff()
+                .compare("name", application.getName(), appDto.getName())
+                .compare("description", application.getDescription(), appDto.getDescription())
+                .compare("status", application.getStatus(), appDto.getStatus());
+
         application.setName(appDto.getName());
         application.setDescription(appDto.getDescription());
+        // TODO(catalog-gap): application activate/deactivate is folded into this status
+        // update. When first-class Activate/Deactivate command handlers are extracted
+        // (see roadmap.md), publish ApplicationActivatedEvent / ApplicationDeactivatedEvent
+        // from there instead of covering the transition under the generic EDIT event.
         application.setStatus(appDto.getStatus());
         application.setType(appDto.getType());
         application.setOwner(appDto.getOwner());
@@ -100,6 +116,9 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
         }
 
         ApplicationEntity updatedApplication = applicationRepository.save(application);
+
+        eventPublisher.publishSettingsAudit(new ApplicationEditedEvent(
+                updatedApplication.getName(), diff.previousValue(), diff.newValue()));
 
         return ResponseEntity.ok(applicationMapper.toDto(updatedApplication));
     }

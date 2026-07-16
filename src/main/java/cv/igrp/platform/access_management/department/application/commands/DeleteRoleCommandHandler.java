@@ -11,6 +11,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
+import cv.igrp.platform.access_management.security_audit.domain.events.RoleDeletedEvent;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -93,6 +94,8 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
 
       eventPublisher.publishRolePermissionChanged(new RolePermissionChangedEvent(
               role.getCode(), departmentCode, "ROLE_DELETED", null));
+
+      eventPublisher.publishSettingsAudit(new RoleDeletedEvent(role.getName()));
 
       log.info("Role with code: {} deleted successfully.", command.getRoleCode());
       return new ResponseEntity<>(true, HttpStatus.NO_CONTENT);

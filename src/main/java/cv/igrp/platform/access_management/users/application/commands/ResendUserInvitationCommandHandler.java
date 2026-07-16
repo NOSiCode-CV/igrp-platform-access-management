@@ -62,6 +62,8 @@ public class ResendUserInvitationCommandHandler implements CommandHandler<Resend
 
     @IgrpCommandHandler
     public ResponseEntity<InvitationDTO> handle(ResendUserInvitationCommand command) {
+        // TODO(catalog-gap): publish UserInviteResentEvent (SettingsOperation.RESEND_INVITE)
+        // here once the settings-audit wiring for USERS-area actions is finalised. See roadmap.md.
 
         var invitation = invitationRepository.findByIdOrThrow(command.getId());
 

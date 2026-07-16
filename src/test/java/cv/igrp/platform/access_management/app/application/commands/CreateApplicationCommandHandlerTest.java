@@ -45,13 +45,16 @@ public class CreateApplicationCommandHandlerTest {
     @Mock
     private ApplicationValidator applicationValidator;
 
+    @Mock
+    private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
+
     private CreateApplicationCommandHandler createApplicationCommandHandler;
 
     private ResourceValidationResponse resourceValidationResponse;
 
     @BeforeEach
     void setUp() {
-        createApplicationCommandHandler = new CreateApplicationCommandHandler(applicationRepository, departmentRepository, applicationMapper, applicationValidator);
+        createApplicationCommandHandler = new CreateApplicationCommandHandler(applicationRepository, departmentRepository, applicationMapper, applicationValidator, eventPublisher);
         resourceValidationResponse = new ResourceValidationResponse();
         resourceValidationResponse.setValid(true);
         resourceValidationResponse.setFailureMessage(new ArrayList<>());

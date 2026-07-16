@@ -18,6 +18,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.security_audit.domain.events.RoleCreatedEvent;
 import org.springframework.transaction.annotation.Transactional;
 
 /**
@@ -44,6 +46,7 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
    private final DepartmentEntityRepository departmentRepository;
    private final RoleEntityRepository roleRepository;
    private final RoleMapper roleMapper;
+   private final EventPublisher eventPublisher;
 
    /**
     * Constructs the role creation handler with required dependencies.
@@ -51,11 +54,13 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
     * @param departmentRepository repository to access department data
     * @param roleRepository repository to manage roles
     * @param roleMapper mapper to convert between entity and DTO
+    * @param eventPublisher publishes the settings-audit event
     */
-   public CreateRoleCommandHandler(DepartmentEntityRepository departmentRepository, RoleEntityRepository roleRepository, RoleMapper roleMapper) {
+   public CreateRoleCommandHandler(DepartmentEntityRepository departmentRepository, RoleEntityRepository roleRepository, RoleMapper roleMapper, EventPublisher eventPublisher) {
       this.departmentRepository = departmentRepository;
       this.roleRepository = roleRepository;
       this.roleMapper = roleMapper;
+      this.eventPublisher = eventPublisher;
    }
 
    /**
@@ -114,6 +119,9 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
       RoleEntity savedRole = roleRepository.save(newRole);
 
       RoleDTO roleDTO = roleMapper.mapToDto(savedRole);
+
+      eventPublisher.publishSettingsAudit(new RoleCreatedEvent(savedRole.getName()));
+
       log.info("Role with code: {} created successfully.", command.getRoledto().getCode());
       return new ResponseEntity<>(roleDTO, HttpStatus.CREATED);
    }

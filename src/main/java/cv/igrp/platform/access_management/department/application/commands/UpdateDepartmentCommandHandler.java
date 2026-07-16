@@ -20,6 +20,8 @@ import org.slf4j.LoggerFactory;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.domain.events.DepartmentScopeChangedEvent;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.security_audit.domain.events.DepartmentEditedEvent;
+import cv.igrp.platform.access_management.security_audit.application.support.SettingsDiff;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
@@ -98,6 +100,15 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
       boolean statusChanged = command.getDepartmentdto().getStatus() != null &&
               !Objects.equals(command.getDepartmentdto().getStatus(), department.getStatus());
 
+      // Capture the pre-update field values for the EDIT audit diff before the mapper overwrites them.
+      SettingsDiff diff = new SettingsDiff()
+              .compare("name", department.getName(), command.getDepartmentdto().getName())
+              .compare("description", department.getDescription(), command.getDepartmentdto().getDescription())
+              .compare("status", department.getStatus(), command.getDepartmentdto().getStatus());
+
+      // TODO(catalog-gap): department activate/deactivate is folded into this status
+      // change. The catalog marks it a gap with no dedicated event class; the transition
+      // is currently covered by the generic DepartmentEditedEvent diff above. See roadmap.md.
       if(statusChanged) {
           updateRelatedEntitiesStatus(department, command.getDepartmentdto().getStatus());
       }
@@ -110,6 +121,9 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
          eventPublisher.publishDepartmentScopeChanged(new DepartmentScopeChangedEvent(
                  updated.getCode(), DepartmentScopeChangedEvent.CHANGE_STATUS, null));
       }
+
+      eventPublisher.publishSettingsAudit(new DepartmentEditedEvent(
+              updated.getName(), diff.previousValue(), diff.newValue()));
 
       logger.info("Successfully updated department with code={}", updated.getCode());
 

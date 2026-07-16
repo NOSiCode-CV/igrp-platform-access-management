@@ -1,9 +1,6 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
-import cv.igrp.platform.access_management.shared.domain.audit.AuthAuditContext;
-import cv.igrp.platform.access_management.shared.domain.audit.IdentifierType;
-import cv.igrp.platform.access_management.shared.infrastructure.service.AuthAuditService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -33,7 +30,6 @@ import static org.mockito.Mockito.when;
 class JwtTokenConfigTest {
 
     @Mock private ClaimsEnrichmentService claimsService;
-    @Mock private AuthAuditService authAuditService;
     @Mock private SecurityAuditService auditService;
     @Mock private SessionIssuanceService sessionIssuanceService;
     @Mock private JwtEncodingContext context;
@@ -49,7 +45,7 @@ class JwtTokenConfigTest {
                 "",
                 "",
                 "");
-        customizer = config.igrpTokenCustomizer(claimsService, authAuditService, auditService, sessionIssuanceService);
+        customizer = config.igrpTokenCustomizer(claimsService, auditService, sessionIssuanceService);
         claims = JwtClaimsSet.builder().id("jti-1");
     }
 
@@ -61,8 +57,6 @@ class JwtTokenConfigTest {
         ));
         when(claimsService.mapEmail("autentika", "demo@nosi.cv")).thenReturn("email-user");
         when(claimsService.buildClaims("email-user", "client-a", Set.of("openid"))).thenReturn(Map.of());
-        when(claimsService.buildTokenIssuedAuditContext("email-user", "client-a", null))
-                .thenReturn(auditContext("email-user"));
 
         customizer.customize(context);
 
@@ -80,8 +74,6 @@ class JwtTokenConfigTest {
         when(claimsService.mapEmail("autentika", "missing@nosi.cv")).thenReturn(null);
         when(claimsService.mapSubject("autentika", "external-sub")).thenReturn("subject-user");
         when(claimsService.buildClaims("subject-user", "client-a", Set.of("openid"))).thenReturn(Map.of());
-        when(claimsService.buildTokenIssuedAuditContext("subject-user", "client-a", null))
-                .thenReturn(auditContext("subject-user"));
 
         customizer.customize(context);
 
@@ -113,16 +105,5 @@ class JwtTokenConfigTest {
         when(context.getAuthorizationGrantType()).thenReturn(AuthorizationGrantType.AUTHORIZATION_CODE);
         when(context.getClaims()).thenReturn(claims);
         when(context.getAuthorizedScopes()).thenReturn(Set.of("openid"));
-    }
-
-    private AuthAuditContext auditContext(String userId) {
-        return new AuthAuditContext(
-                IdentifierType.UNKNOWN,
-                null,
-                userId,
-                "client-a",
-                null,
-                null
-        );
     }
 }

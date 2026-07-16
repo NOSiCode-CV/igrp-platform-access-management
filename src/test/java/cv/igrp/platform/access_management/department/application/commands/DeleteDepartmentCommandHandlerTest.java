@@ -26,6 +26,9 @@ public class DeleteDepartmentCommandHandlerTest {
     @Mock
     private DepartmentEntityRepository departmentRepository;
 
+    @Mock
+    private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
+
     @InjectMocks
     private DeleteDepartmentCommandHandler deleteDepartmentCommandHandler;
 

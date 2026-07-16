@@ -66,6 +66,9 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
    @Transactional
    @IgrpCommandHandler
    public ResponseEntity<IGRPUserDTO> handle(UpdateUserStatusCommand command) {
+      // TODO(catalog-gap): user activate/deactivate is folded into this status update.
+      // Publish UserActivatedEvent / UserDeactivatedEvent (SettingsOperation.ACTIVATE /
+      // DEACTIVATE) once first-class command handlers are extracted. See roadmap.md.
 
       String userId = command.getId();
 

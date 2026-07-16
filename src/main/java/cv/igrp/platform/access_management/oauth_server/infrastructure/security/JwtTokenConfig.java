@@ -4,8 +4,6 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
-import cv.igrp.platform.access_management.shared.domain.audit.AuthEventType;
-import cv.igrp.platform.access_management.shared.infrastructure.service.AuthAuditService;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
 import org.slf4j.Logger;
@@ -132,7 +130,6 @@ public class JwtTokenConfig {
 
     @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> igrpTokenCustomizer(ClaimsEnrichmentService claimsService,
-                                                                         AuthAuditService authAuditService,
                                                                          SecurityAuditService auditService,
                                                                          SessionIssuanceService sessionIssuanceService) {
         return context -> {
@@ -272,13 +269,9 @@ public class JwtTokenConfig {
                 }
             }
 
-            String auditSessionId = context.getAuthorization() != null ? context.getAuthorization().getId() : null;
-            authAuditService.logEvent(
-                    AuthEventType.TOKEN_ISSUED,
-                    claimsService.buildTokenIssuedAuditContext(internalSub, clientId, auditSessionId)
-            );
-
-            // Record token issuance into the platform security audit trail
+            // Record token issuance into the unified security audit trail. (The
+            // former parallel AuthAuditLog write was removed in Phase 1 of the
+            // Unified Audit feature — this is now the single source of truth.)
             Map<String, Object> auditContext = new HashMap<>();
             auditContext.put("clientId", clientId);
             auditContext.put("grantType", context.getAuthorizationGrantType().getValue());

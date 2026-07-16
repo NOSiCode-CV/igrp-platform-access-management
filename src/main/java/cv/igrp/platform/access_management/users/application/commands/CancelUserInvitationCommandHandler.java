@@ -44,6 +44,8 @@ public class CancelUserInvitationCommandHandler implements CommandHandler<Cancel
 
    @IgrpCommandHandler
    public ResponseEntity<InvitationDTO> handle(CancelUserInvitationCommand command) {
+      // TODO(catalog-gap): publish UserInviteCancelledEvent (SettingsOperation.CANCEL_INVITE)
+      // here once the settings-audit wiring for USERS-area actions is finalised. See roadmap.md.
 
       LOGGER.info("Cancelling invitation with id: {}", command.getId());
 

@@ -12,6 +12,8 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.security_audit.domain.events.ApplicationCreatedEvent;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -43,6 +45,7 @@ public class CreateApplicationCommandHandler implements CommandHandler<CreateApp
     private final DepartmentEntityRepository departmentEntityRepository;
     private final ApplicationMapper applicationMapper;
     private final ApplicationValidator applicationValidator;
+    private final EventPublisher eventPublisher;
 
     /**
      * Constructs the handler with the required dependencies.
@@ -51,12 +54,14 @@ public class CreateApplicationCommandHandler implements CommandHandler<CreateApp
      * @param departmentEntityRepository the repository used to access department entities
      * @param applicationMapper          the mapper used to convert between {@link ApplicationEntity} and {@link ApplicationDTO}
      * @param applicationValidator       the validator used to validate application data
+     * @param eventPublisher             publishes the settings-audit event
      */
-    public CreateApplicationCommandHandler(ApplicationEntityRepository applicationRepository, DepartmentEntityRepository departmentEntityRepository, ApplicationMapper applicationMapper, ApplicationValidator applicationValidator) {
+    public CreateApplicationCommandHandler(ApplicationEntityRepository applicationRepository, DepartmentEntityRepository departmentEntityRepository, ApplicationMapper applicationMapper, ApplicationValidator applicationValidator, EventPublisher eventPublisher) {
         this.applicationRepository = applicationRepository;
         this.departmentEntityRepository = departmentEntityRepository;
         this.applicationMapper = applicationMapper;
         this.applicationValidator = applicationValidator;
+        this.eventPublisher = eventPublisher;
     }
 
     /**
@@ -98,6 +103,9 @@ public class CreateApplicationCommandHandler implements CommandHandler<CreateApp
         ApplicationEntity currentApplication = applicationRepository.findById(savedApplication.getId()).orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_APPLICATION_CREATION_FAILED));
 
         ApplicationDTO applicationDTO = applicationMapper.toDto(currentApplication);
+
+        eventPublisher.publishSettingsAudit(new ApplicationCreatedEvent(currentApplication.getName()));
+
         return ResponseEntity.status(HttpStatus.CREATED).body(applicationDTO);
     }
 

@@ -7,6 +7,8 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.security_audit.domain.events.ApplicationAssociatedToRoleEvent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
@@ -21,10 +23,12 @@ public class AddApplicationsToDepartmentCommandHandler implements CommandHandler
 
    private final ApplicationEntityRepository applicationRepository;
    private final DepartmentEntityRepository departmentRepository;
+   private final EventPublisher eventPublisher;
 
-   public AddApplicationsToDepartmentCommandHandler(ApplicationEntityRepository applicationRepository, DepartmentEntityRepository departmentRepository) {
+   public AddApplicationsToDepartmentCommandHandler(ApplicationEntityRepository applicationRepository, DepartmentEntityRepository departmentRepository, EventPublisher eventPublisher) {
       this.applicationRepository = applicationRepository;
       this.departmentRepository = departmentRepository;
+      this.eventPublisher = eventPublisher;
    }
 
    @IgrpCommandHandler
@@ -51,6 +55,9 @@ public class AddApplicationsToDepartmentCommandHandler implements CommandHandler
          department.getApplications().add(application);
 
          departmentRepository.save(department);
+
+         eventPublisher.publishSettingsAudit(
+                 new ApplicationAssociatedToRoleEvent(application.getName(), department.getCode()));
 
       }
 

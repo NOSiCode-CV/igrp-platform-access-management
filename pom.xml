@@ -183,6 +183,13 @@
             <artifactId>commons-lang3</artifactId>
             <version>3.20.0</version>
         </dependency>
+        <!-- POI 5.3.0 requires commons-io >= 2.16 (BoundedInputStream.builder());
+             pin it so an older transitive 2.14.0 does not win. -->
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.16.1</version>
+        </dependency>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
@@ -257,6 +264,18 @@
             <groupId>cv.igrp.framework</groupId>
             <artifactId>notifications-core</artifactId>
             <version>${igrp.framework.notification.core.version}</version>
+        </dependency>
+        <!-- Report export (Phase 4 — Unified Audit & Reports). POI streams Excel
+             (SXSSFWorkbook); OpenPDF (LGPL fork of iText 4) renders PDF. -->
+        <dependency>
+            <groupId>org.apache.poi</groupId>
+            <artifactId>poi-ooxml</artifactId>
+            <version>5.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.librepdf</groupId>
+            <artifactId>openpdf</artifactId>
+            <version>2.0.3</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
