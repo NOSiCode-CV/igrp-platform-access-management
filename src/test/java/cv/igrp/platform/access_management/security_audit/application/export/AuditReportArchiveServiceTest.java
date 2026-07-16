@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.http.HttpStatus;
 
 import java.time.Instant;
 
@@ -107,7 +108,11 @@ class AuditReportArchiveServiceTest {
         assertThatThrownBy(() -> service.archive(
                 ReportType.AUDIT, ReportFormat.XLSX, "audit-report.xlsx",
                 content, 1L, "{}", null, null))
-                .isInstanceOf(IgrpResponseStatusException.class);
+                .isInstanceOf(IgrpResponseStatusException.class)
+                // 503, not 400: the request was fine, our storage was not. Also
+                // keeps a storage outage visible to 5xx alerting.
+                .satisfies(e -> assertThat(((IgrpResponseStatusException) e).getStatusCode())
+                        .isEqualTo(HttpStatus.SERVICE_UNAVAILABLE));
 
         // No dangling row pointing at a file that was never stored.
         verify(repository, never()).save(any());

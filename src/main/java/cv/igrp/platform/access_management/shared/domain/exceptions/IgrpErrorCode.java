@@ -181,7 +181,13 @@ public enum IgrpErrorCode {
             "File path is required and cannot be blank"),
     IGRP_AUTH_FILE_PRIVATE_URL_GENERATION_FAILED(HttpStatus.BAD_REQUEST,
             "Failed to generate private file URL for path: {0}"),
-    IGRP_AUTH_FILE_UPLOAD_FAILED(HttpStatus.BAD_REQUEST,
+    /**
+     * Object storage rejected or could not accept the upload. 503, not 400: the
+     * caller's request was well-formed — our storage backend is unavailable — so
+     * this is retryable, and it must show up in 5xx alerting rather than hide
+     * among client errors.
+     */
+    IGRP_AUTH_FILE_UPLOAD_FAILED(HttpStatus.SERVICE_UNAVAILABLE,
             "Failed to upload file: {0}"),
 
     // ─── Session ─────────────────────────────────────────────────────────────
