@@ -67,6 +67,30 @@ class SecurityAuditChainServiceTest {
         verify(repository).save(row);
     }
 
+    /**
+     * On a database upgraded through V10_1 the tip is a legacy row whose
+     * current_hash is the '' column default, not null. Blank must be treated as
+     * "no hash" so the first chained row anchors on GENESIS rather than
+     * inheriting an empty previous_hash.
+     */
+    @Test
+    void appendOnABlankHashedLegacyTipAnchorsToGenesis() {
+        SecurityAuditLogEntity legacyTip = sampleRow();
+        legacyTip.setSequenceNumber(4717L);
+        legacyTip.setPreviousHash("");
+        legacyTip.setCurrentHash("");
+        when(entityManager.unwrap(Session.class)).thenReturn(session);
+        when(repository.findTopByOrderBySequenceNumberDesc()).thenReturn(Optional.of(legacyTip));
+
+        SecurityAuditLogEntity row = sampleRow();
+        chainService.append(row);
+
+        assertThat(row.getSequenceNumber()).isEqualTo(4718L);
+        assertThat(row.getPreviousHash()).isEqualTo(SecurityAuditChainService.GENESIS_HASH);
+        assertThat(row.getCurrentHash())
+                .isEqualTo(chainService.computeHash(SecurityAuditChainService.GENESIS_HASH, row));
+    }
+
     @Test
     void appendLinksToTheExistingChainTip() {
         SecurityAuditLogEntity tip = sampleRow();

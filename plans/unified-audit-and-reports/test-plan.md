@@ -120,7 +120,11 @@ curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/audit?size=2&sort=timestamp,desc" \
 
 ```bash
 curl -sS "${A_ADMIN[@]}" -X POST "$BASE_URL/api/auth/audit/validate" | jq
-# EXPECT: {"valid": true, "rowsChecked": <N>}
+# EXPECT: {"valid": true, "rows_checked": <N>, "broken_at": null, "unverifiable_legacy_rows": <M>}
+# NOTE: the response is snake_case (matches validation.md). On a database upgraded
+#       through V10_1, rows written before the chain existed are unhashed and cannot
+#       be verified (prod never rehashes, R2.6); they are skipped and counted in
+#       unverifiable_legacy_rows. valid=true means every hashed row checked out.
 
 # Normal user must be forbidden
 gate_check POST /api/auth/audit/validate
@@ -497,7 +501,7 @@ UPDATE t_security_audit_log SET user_id = 'TAMPERED' WHERE sequence_number = 1;
 
 ```bash
 curl -sS "${A_ADMIN[@]}" -X POST "$BASE_URL/api/auth/audit/validate" | jq
-# EXPECT: {"valid": false, "brokenAt": 1}
+# EXPECT: {"valid": false, "broken_at": <seq of the tampered row>}
 ```
 
 Then restore from a backup or re-run `V10_1` migration on a fresh DB.

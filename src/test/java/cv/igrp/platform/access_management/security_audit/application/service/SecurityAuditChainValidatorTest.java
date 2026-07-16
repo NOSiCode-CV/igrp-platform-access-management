@@ -111,5 +111,72 @@ class SecurityAuditChainValidatorTest {
 
         assertThat(result.valid()).isTrue();
         assertThat(result.rowsChecked()).isZero();
+        assertThat(result.unverifiableLegacyRows()).isZero();
+    }
+
+    /** A row written before V10_1: sequence backfilled, hashes left at the '' default. */
+    private SecurityAuditLogEntity legacyRow(long seq, String user) {
+        SecurityAuditLogEntity e = new SecurityAuditLogEntity();
+        e.setSequenceNumber(seq);
+        e.setEventType(AuditEventType.LOGIN_SUCCESS);
+        e.setCategory(AuditCategory.AUTHENTICATION);
+        e.setUserId(user);
+        e.setTimestamp(LocalDateTime.of(2026, 5, 14, 9, (int) seq, 0));
+        e.setPreviousHash("");
+        e.setCurrentHash("");
+        return e;
+    }
+
+    /**
+     * The upgraded-database shape from the demo env: an unhashed legacy prefix,
+     * then the first chained row whose previous_hash is still the '' default.
+     * The prefix is unverifiable by construction (prod never rehashes, R2.6), so
+     * it must be reported — not called tampering.
+     */
+    @Test
+    void unhashedLegacyPrefixIsSkippedAndTheChainAnchorsOnTheFirstHashedRow() {
+        SecurityAuditLogEntity g = genesis();
+        SecurityAuditLogEntity l1 = legacyRow(1, "old-1");
+        SecurityAuditLogEntity l2 = legacyRow(2, "old-2");
+        SecurityAuditLogEntity anchor = chainedRow(3, "", "alice");
+        SecurityAuditLogEntity r4 = chainedRow(4, anchor.getCurrentHash(), "bob");
+        when(repository.findAll(any(Sort.class))).thenReturn(List.of(g, l1, l2, anchor, r4));
+
+        SecurityAuditChainValidator.Result result = validator.validate();
+
+        assertThat(result.valid()).isTrue();
+        assertThat(result.brokenAt()).isNull();
+        assertThat(result.rowsChecked()).isEqualTo(2);
+        assertThat(result.unverifiableLegacyRows()).isEqualTo(2);
+    }
+
+    /** The prefix allowance is positional — it must not become an evasion route. */
+    @Test
+    void blankedHashAfterTheChainStartedIsTampering() {
+        SecurityAuditLogEntity g = genesis();
+        SecurityAuditLogEntity r1 = chainedRow(1, g.getCurrentHash(), "alice");
+        SecurityAuditLogEntity blanked = legacyRow(2, "mallory");
+        when(repository.findAll(any(Sort.class))).thenReturn(List.of(g, r1, blanked));
+
+        SecurityAuditChainValidator.Result result = validator.validate();
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.brokenAt()).isEqualTo(2L);
+    }
+
+    /** The anchor row itself is still content-verified, even though its linkage is not. */
+    @Test
+    void tamperedAnchorRowAfterALegacyPrefixIsDetected() {
+        SecurityAuditLogEntity g = genesis();
+        SecurityAuditLogEntity l1 = legacyRow(1, "old-1");
+        SecurityAuditLogEntity anchor = chainedRow(2, "", "alice");
+        anchor.setUserId("mallory");
+        when(repository.findAll(any(Sort.class))).thenReturn(List.of(g, l1, anchor));
+
+        SecurityAuditChainValidator.Result result = validator.validate();
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.brokenAt()).isEqualTo(2L);
+        assertThat(result.unverifiableLegacyRows()).isEqualTo(1);
     }
 }

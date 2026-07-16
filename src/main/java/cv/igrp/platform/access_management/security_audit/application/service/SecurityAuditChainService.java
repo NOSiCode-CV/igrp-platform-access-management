@@ -78,7 +78,11 @@ public class SecurityAuditChainService {
 
         SecurityAuditLogEntity tip = repository.findTopByOrderBySequenceNumberDesc().orElse(null);
         long nextSequence = tip != null && tip.getSequenceNumber() != null ? tip.getSequenceNumber() + 1 : 1L;
-        String previousHash = tip != null && tip.getCurrentHash() != null ? tip.getCurrentHash() : GENESIS_HASH;
+        // A legacy tip (rows predating V10_1) has current_hash = '' — the column
+        // default — not null. Treat blank as "no hash" so the first chained row
+        // anchors on GENESIS instead of inheriting an empty previous_hash.
+        String tipHash = tip != null ? tip.getCurrentHash() : null;
+        String previousHash = isBlank(tipHash) ? GENESIS_HASH : tipHash;
 
         entity.setSequenceNumber(nextSequence);
         entity.setPreviousHash(previousHash);
@@ -234,5 +238,10 @@ public class SecurityAuditChainService {
 
     private static String nullSafe(Object value) {
         return value == null ? "" : value.toString();
+    }
+
+    /** A hash column is "absent" when it is null or the '' column default. */
+    static boolean isBlank(String value) {
+        return value == null || value.isBlank();
     }
 }

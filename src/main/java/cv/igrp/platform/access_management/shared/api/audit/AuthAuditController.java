@@ -56,6 +56,7 @@ public class AuthAuditController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
             Pageable pageable) {
+        AuditDateRange.require(startDate, endDate);
         return queryBus.handle(new GetSecurityAuditLogsQuery(
                 userId, username, eventType, category, ipAddress, startDate, endDate, pageable));
     }
@@ -72,6 +73,9 @@ public class AuthAuditController {
         body.put("valid", result.valid());
         body.put("rows_checked", result.rowsChecked());
         body.put("broken_at", result.brokenAt());
+        // Rows that predate the hash chain (V10_1 left them unhashed; prod never
+        // rehashes). Skipped by the walk, reported here so the count stays honest.
+        body.put("unverifiable_legacy_rows", result.unverifiableLegacyRows());
         return ResponseEntity.ok(body);
     }
 

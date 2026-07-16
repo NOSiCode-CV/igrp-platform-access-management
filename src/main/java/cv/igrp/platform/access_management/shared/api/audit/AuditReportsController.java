@@ -87,6 +87,7 @@ public class AuditReportsController {
             @RequestParam(required = false) String authorizedBy,
             @RequestParam(required = false) String status,
             Pageable pageable) {
+        AuditDateRange.require(startDate, endDate);
         return queryBus.handle(new GetAuditReportQuery(
                 toLocal(startDate), toLocal(endDate),
                 username, module, accessRole, operationState, authorizedBy, status, pageable));
@@ -103,6 +104,7 @@ public class AuditReportsController {
             @RequestParam(required = false) String action,
             @RequestParam(required = false) String status,
             Pageable pageable) {
+        AuditDateRange.require(startDate, endDate);
         return queryBus.handle(new GetAccessReportQuery(
                 toLocal(startDate), toLocal(endDate),
                 username, role, module, action, status, pageable));
@@ -119,6 +121,7 @@ public class AuditReportsController {
             @RequestParam(required = false) String operation,
             @RequestParam(required = false) String entityName,
             Pageable pageable) {
+        AuditDateRange.require(startDate, endDate);
         return queryBus.handle(new GetSettingsReportQuery(
                 toLocal(startDate), toLocal(endDate),
                 performedBy, area, entityType, operation, entityName, pageable));
@@ -137,6 +140,7 @@ public class AuditReportsController {
             @RequestParam(required = false) String operationState,
             @RequestParam(required = false) String authorizedBy,
             @RequestParam(required = false) String status) {
+        AuditDateRange.require(startDate, endDate);
         return excel(ReportColumns.AUDIT, () -> exportService.streamAuditRows(
                 toLocal(startDate), toLocal(endDate),
                 username, module, accessRole, operationState, authorizedBy, status));
@@ -153,6 +157,7 @@ public class AuditReportsController {
             @RequestParam(required = false) String operationState,
             @RequestParam(required = false) String authorizedBy,
             @RequestParam(required = false) String status) {
+        AuditDateRange.require(startDate, endDate);
         return pdf(ReportColumns.AUDIT, () -> exportService.streamAuditRows(
                 toLocal(startDate), toLocal(endDate),
                 username, module, accessRole, operationState, authorizedBy, status));
@@ -168,6 +173,7 @@ public class AuditReportsController {
             @RequestParam(required = false) String module,
             @RequestParam(required = false) String action,
             @RequestParam(required = false) String status) {
+        AuditDateRange.require(startDate, endDate);
         return excel(ReportColumns.ACCESS, () -> exportService.streamAccessRows(
                 toLocal(startDate), toLocal(endDate), username, role, module, action, status));
     }
@@ -182,6 +188,7 @@ public class AuditReportsController {
             @RequestParam(required = false) String module,
             @RequestParam(required = false) String action,
             @RequestParam(required = false) String status) {
+        AuditDateRange.require(startDate, endDate);
         return pdf(ReportColumns.ACCESS, () -> exportService.streamAccessRows(
                 toLocal(startDate), toLocal(endDate), username, role, module, action, status));
     }
@@ -196,6 +203,7 @@ public class AuditReportsController {
             @RequestParam(required = false) String entityType,
             @RequestParam(required = false) String operation,
             @RequestParam(required = false) String entityName) {
+        AuditDateRange.require(startDate, endDate);
         return excel(ReportColumns.SETTINGS, () -> exportService.streamSettingsRows(
                 toLocal(startDate), toLocal(endDate), performedBy, area, entityType, operation, entityName));
     }
@@ -210,6 +218,7 @@ public class AuditReportsController {
             @RequestParam(required = false) String entityType,
             @RequestParam(required = false) String operation,
             @RequestParam(required = false) String entityName) {
+        AuditDateRange.require(startDate, endDate);
         return pdf(ReportColumns.SETTINGS, () -> exportService.streamSettingsRows(
                 toLocal(startDate), toLocal(endDate), performedBy, area, entityType, operation, entityName));
     }
