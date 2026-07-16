@@ -57,8 +57,15 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logEvent(AuditEventType type, AuditCategory category, Map<String, Object> context) {
+        logEvent(type, category, context, AuditReportContext.empty());
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void logEvent(AuditEventType type, AuditCategory category, Map<String, Object> context,
+                         AuditReportContext report) {
         try {
-            SecurityAuditLogEntity logEntity = buildBaseEntity(type, category, context);
+            SecurityAuditLogEntity logEntity = buildBaseEntity(type, category, context, report);
 
             // Append through the hash chain (advisory-locked, tamper-evident)
             // rather than a bare save, so previous_hash/current_hash/sequence
@@ -80,7 +87,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
      * persist — callers append it through the chain service.
      */
     private SecurityAuditLogEntity buildBaseEntity(AuditEventType type, AuditCategory category,
-                                                   Map<String, Object> context) {
+                                                   Map<String, Object> context, AuditReportContext report) {
         Map<String, Object> fullContext = new HashMap<>(contextProvider.getContext());
         fullContext.putAll(context);
 
@@ -104,7 +111,89 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
             logger.error("[Security audit] Failed to serialize audit context to JSON", e);
             logEntity.setContextData("{\"error\":\"Failed to serialize context\"}");
         }
+
+        applyReportColumns(logEntity, type, fullContext, report);
         return logEntity;
+    }
+
+    /**
+     * Populates the typed columns behind the Audit and Access reports.
+     *
+     * <p>Caller-supplied values on {@code report} always win. Anything left unset
+     * is derived from the event and the ambient request context, because these
+     * columns are read by human-facing reports: leaving them null (as every
+     * auth/authorization row did before) makes the reports structurally hollow and
+     * their filters unable to match anything (R1.5.1 / R1.5.2).
+     *
+     * <p>{@code operationState}, {@code authorizedBy} and the period bounds have no
+     * honest derivation from an authentication event, so they stay null unless a
+     * caller supplies them through {@link AuditReportContext}.
+     */
+    private void applyReportColumns(SecurityAuditLogEntity entity, AuditEventType type,
+                                    Map<String, Object> context, AuditReportContext report) {
+        entity.setStatus(report.status() != null ? report.status() : deriveStatus(type));
+        entity.setAction(hasText(report.action()) ? report.action() : deriveAction(type));
+        entity.setAccessRole(hasText(report.accessRole())
+                ? report.accessRole() : asString(context.get("accessRole")));
+        entity.setApplicationModule(hasText(report.module())
+                ? report.module() : deriveModule(asString(context.get("requestPath"))));
+        entity.setOperationState(report.operationState());
+        entity.setAuthorizedBy(report.authorizedBy());
+        entity.setPeriodStart(report.periodStart());
+        entity.setPeriodEnd(report.periodEnd());
+    }
+
+    /**
+     * Outcome implied by the event type. Only the two states an event can be
+     * classified into on its own are derived here; {@code UNUSUAL_IP} and
+     * {@code PENDING} require knowledge the event does not carry, so a caller must
+     * pass those explicitly.
+     */
+    private static AuditStatus deriveStatus(AuditEventType type) {
+        return switch (type) {
+            case ACCESS_DENIED, LOGIN_FAILURE, TOKEN_REJECTED, TOKEN_EXPIRED,
+                 SESSION_LIMIT_EXCEEDED, ACCOUNT_LOCKED -> AuditStatus.ACCESS_DENIED;
+            default -> AuditStatus.SUCCESS;
+        };
+    }
+
+    /** Human-readable action label for the report, e.g. LOGIN_SUCCESS → "Login Success". */
+    private static String deriveAction(AuditEventType type) {
+        String[] words = type.name().split("_");
+        StringBuilder label = new StringBuilder(type.name().length());
+        for (String word : words) {
+            if (word.isEmpty()) {
+                continue;
+            }
+            if (!label.isEmpty()) {
+                label.append(' ');
+            }
+            label.append(word.charAt(0)).append(word.substring(1).toLowerCase());
+        }
+        return label.toString();
+    }
+
+    /**
+     * The API area the request touched, taken as the segment after {@code /api}
+     * (e.g. {@code /igrp-access-management/api/auth/audit} → {@code auth}). Tolerates
+     * a deployment context path. Null when there is no request or no {@code /api}
+     * segment — for example an audit write from a scheduler.
+     */
+    private static String deriveModule(String requestPath) {
+        if (!hasText(requestPath)) {
+            return null;
+        }
+        String[] segments = requestPath.split("/");
+        for (int i = 0; i < segments.length - 1; i++) {
+            if ("api".equals(segments[i]) && hasText(segments[i + 1])) {
+                return segments[i + 1];
+            }
+        }
+        return null;
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.isBlank();
     }
 
     @Override
@@ -172,7 +261,8 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
                                  AuditStatus status) {
         try {
             SecurityAuditLogEntity logEntity = buildBaseEntity(
-                    AuditEventType.SYSTEM_CONFIGURATION_CHANGED, AuditCategory.SYSTEM, Map.of());
+                    AuditEventType.SYSTEM_CONFIGURATION_CHANGED, AuditCategory.SYSTEM, Map.of(),
+                    AuditReportContext.builder().status(status).build());
             // N7: new settings rows carry their data in the typed columns below,
             // not the deprecated contextData JSON blob.
             logEntity.setContextData(null);

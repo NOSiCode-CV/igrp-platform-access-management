@@ -16,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,7 +46,15 @@ class SecurityAuditServiceImplTest {
         ctx.put("username", "alice");
         ctx.put("ipAddress", "203.0.113.7");
         ctx.put("userAgent", "JUnit");
+        ctx.put("requestPath", "/igrp-access-management/api/auth/audit");
+        ctx.put("accessRole", "DEPT_IGRP.Administrator");
         return ctx;
+    }
+
+    private SecurityAuditLogEntity captureAppended() {
+        ArgumentCaptor<SecurityAuditLogEntity> captor = ArgumentCaptor.forClass(SecurityAuditLogEntity.class);
+        verify(chainService).append(captor.capture());
+        return captor.getValue();
     }
 
     @Test
@@ -90,6 +99,107 @@ class SecurityAuditServiceImplTest {
         assertThat(saved.getEventType()).isEqualTo(AuditEventType.ACCESS_DENIED);
         assertThat(saved.getCategory()).isEqualTo(AuditCategory.AUTHORIZATION);
         assertThat(saved.getDecisionReason()).isEqualTo("no grant");
+    }
+
+    // --- Report columns on auth/authorization rows (Finding E) -------------
+    // Before this, every report-specific column was null on every Audit/Access
+    // row, so both reports were structurally hollow and their filters could not
+    // match anything (R1.5.1 / R1.5.2).
+
+    @Test
+    void accessDeniedEventIsRecordedWithAccessDeniedStatus() {
+        when(contextProvider.getContext()).thenReturn(baseContext());
+
+        service.logAccessDenied("igrp.audit.view", "no grant");
+
+        // The headline symptom: an ACCESS_DENIED row used to carry status=null,
+        // so ?status=ACCESS_DENIED matched none of the real denials.
+        assertThat(captureAppended().getStatus()).isEqualTo(AuditStatus.ACCESS_DENIED);
+    }
+
+    @Test
+    void successfulEventIsRecordedWithSuccessStatusAndAReadableAction() {
+        when(contextProvider.getContext()).thenReturn(baseContext());
+
+        service.logAuthenticationSuccess();
+
+        SecurityAuditLogEntity saved = captureAppended();
+        assertThat(saved.getStatus()).isEqualTo(AuditStatus.SUCCESS);
+        assertThat(saved.getAction()).isEqualTo("Login Success");
+    }
+
+    @Test
+    void failedLoginIsRecordedAsDenied() {
+        when(contextProvider.getContext()).thenReturn(baseContext());
+
+        service.logAuthenticationFailure("bad credentials");
+
+        assertThat(captureAppended().getStatus()).isEqualTo(AuditStatus.ACCESS_DENIED);
+    }
+
+    @Test
+    void moduleAndAccessRoleAreDerivedFromTheRequestContext() {
+        when(contextProvider.getContext()).thenReturn(baseContext());
+
+        service.logAuthenticationSuccess();
+
+        SecurityAuditLogEntity saved = captureAppended();
+        // Segment after /api, tolerating the deployment context path.
+        assertThat(saved.getApplicationModule()).isEqualTo("auth");
+        assertThat(saved.getAccessRole()).isEqualTo("DEPT_IGRP.Administrator");
+    }
+
+    @Test
+    void moduleIsNullWhenThereIsNoRequestPath() {
+        Map<String, Object> ctx = baseContext();
+        ctx.remove("requestPath");
+        when(contextProvider.getContext()).thenReturn(ctx);
+
+        service.logAuthenticationSuccess();
+
+        assertThat(captureAppended().getApplicationModule()).isNull();
+    }
+
+    @Test
+    void callerSuppliedReportContextWinsOverDerivedValues() {
+        when(contextProvider.getContext()).thenReturn(baseContext());
+        Instant start = Instant.parse("2025-06-01T08:14:00Z");
+        Instant end = Instant.parse("2025-06-08T09:12:00Z");
+
+        service.logEvent(AuditEventType.LOGIN_SUCCESS, AuditCategory.AUTHENTICATION, Map.of(),
+                AuditReportContext.builder()
+                        .module("Transfers")
+                        .accessRole("DGT Technician")
+                        .action("New Account Creation")
+                        .operationState("Completed")
+                        .authorizedBy("ana.ferreira")
+                        .status(AuditStatus.UNUSUAL_IP)
+                        .period(start, end)
+                        .build());
+
+        SecurityAuditLogEntity saved = captureAppended();
+        assertThat(saved.getApplicationModule()).isEqualTo("Transfers");
+        assertThat(saved.getAccessRole()).isEqualTo("DGT Technician");
+        assertThat(saved.getAction()).isEqualTo("New Account Creation");
+        assertThat(saved.getOperationState()).isEqualTo("Completed");
+        assertThat(saved.getAuthorizedBy()).isEqualTo("ana.ferreira");
+        // UNUSUAL_IP cannot be derived from the event — only a caller knows it.
+        assertThat(saved.getStatus()).isEqualTo(AuditStatus.UNUSUAL_IP);
+        assertThat(saved.getPeriodStart()).isEqualTo(start);
+        assertThat(saved.getPeriodEnd()).isEqualTo(end);
+    }
+
+    @Test
+    void columnsWithNoHonestDerivationStayNull() {
+        when(contextProvider.getContext()).thenReturn(baseContext());
+
+        service.logAuthenticationSuccess();
+
+        SecurityAuditLogEntity saved = captureAppended();
+        assertThat(saved.getOperationState()).isNull();
+        assertThat(saved.getAuthorizedBy()).isNull();
+        assertThat(saved.getPeriodStart()).isNull();
+        assertThat(saved.getPeriodEnd()).isNull();
     }
 
     @Test

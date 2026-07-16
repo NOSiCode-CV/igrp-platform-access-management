@@ -1,8 +1,10 @@
 package cv.igrp.platform.access_management.security_audit.application.service;
 
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -11,7 +13,9 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.UUID;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Provides contextual information for security audit logging.
@@ -20,6 +24,12 @@ import java.util.Optional;
  */
 @Component
 public class SecurityAuditContextProvider {
+
+    /** Authority prefix applied to role codes by {@code IgrpJwtAuthenticationConverter}. */
+    private static final String ROLE_PREFIX = "ROLE_";
+
+    /** Matches the {@code access_role} column width (V11_1). */
+    private static final int ACCESS_ROLE_MAX_LENGTH = 255;
 
     /**
      * Holds a pre-resolved context snapshot for the current thread. Set by the
@@ -49,9 +59,9 @@ public class SecurityAuditContextProvider {
         Map<String, Object> context = new HashMap<>();
 
         getAuthentication().ifPresent(auth -> {
-            context.put("userId", getSub(auth)); // Assuming the name is the user ID
-            context.put("username", auth.getName());
-            // Add roles/profiles if available in your custom principal
+            context.put("userId", getSub(auth));
+            context.put("username", getUsername(auth));
+            context.put("accessRole", getAccessRole(auth));
         });
 
         getRequest().ifPresent(request -> {
@@ -107,6 +117,84 @@ public class SecurityAuditContextProvider {
                 .filter(ServletRequestAttributes.class::isInstance)
                 .map(ServletRequestAttributes.class::cast)
                 .map(ServletRequestAttributes::getRequest);
+    }
+
+    /**
+     * Human-readable actor for the audit trail and the reports.
+     *
+     * <p>{@code Authentication.getName()} is the {@code sub} claim — a UUID — which
+     * left every report row showing an opaque id where a username belongs and made
+     * the documented {@code username} filter unmatchable (R1.5.1–§1.5.3).
+     *
+     * <p>Resolution mirrors {@code ApplicationAuditorAware}, which stamps
+     * {@code created_by} on every entity: {@code preferred_username} first (the
+     * platform's own username, enriched from {@code IGRPUserEntity.username}), so
+     * an audit row and an entity's {@code created_by} name the actor identically.
+     * {@code email} is a further fallback for tokens issued without the profile
+     * scope, and {@code sub} the last resort — an opaque id beats no actor at all.
+     */
+    private String getUsername(Authentication authentication) {
+        Object principal = authentication.getPrincipal();
+
+        // The resource-server chain surfaces IgrpOidcUser (see IgrpJwtAuthenticationConverter),
+        // not a raw Jwt — check the OidcUser view first.
+        if (principal instanceof OidcUser oidcUser) {
+            String resolved = firstNonBlank(oidcUser.getPreferredUsername(), oidcUser.getEmail());
+            if (resolved != null) {
+                return resolved;
+            }
+        }
+
+        if (principal instanceof Jwt jwt) {
+            String resolved = firstNonBlank(
+                    jwt.getClaimAsString("preferred_username"), jwt.getClaimAsString("email"));
+            if (resolved != null) {
+                return resolved;
+            }
+        }
+
+        // M2M authentication (client_credentials) — the client id is the actor.
+        if (principal instanceof User user) {
+            return user.getUsername();
+        }
+
+        return authentication.getName();
+    }
+
+    /**
+     * Role in effect for the action, for the Audit/Access reports' {@code accessRole}
+     * / {@code role} column. Authorities are the user's active role codes, granted as
+     * {@code ROLE_<code>} by {@code IgrpJwtAuthenticationConverter}; a user holding
+     * several active roles yields all of them. Null when the principal carries none.
+     */
+    private String getAccessRole(Authentication authentication) {
+        if (authentication.getAuthorities() == null) {
+            return null;
+        }
+        String roles = authentication.getAuthorities().stream()
+                .map(GrantedAuthority::getAuthority)
+                .filter(Objects::nonNull)
+                .filter(authority -> authority.startsWith(ROLE_PREFIX))
+                .map(authority -> authority.substring(ROLE_PREFIX.length()))
+                .filter(role -> !role.isBlank())
+                .distinct()
+                .sorted()
+                .collect(Collectors.joining(", "));
+
+        if (roles.isBlank()) {
+            return null;
+        }
+        // access_role is VARCHAR(255); keep the column authoritative over the principal.
+        return roles.length() <= ACCESS_ROLE_MAX_LENGTH ? roles : roles.substring(0, ACCESS_ROLE_MAX_LENGTH);
+    }
+
+    private static String firstNonBlank(String... values) {
+        for (String value : values) {
+            if (value != null && !value.isBlank()) {
+                return value;
+            }
+        }
+        return null;
     }
 
     private String getSub(Authentication authentication) {

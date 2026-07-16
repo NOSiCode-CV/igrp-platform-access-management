@@ -18,6 +18,7 @@ import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
+import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
 import java.util.List;
 
@@ -75,6 +76,9 @@ public class SecurityAuditChainService {
     @Transactional(propagation = Propagation.MANDATORY)
     public void append(SecurityAuditLogEntity entity) {
         acquireChainLock();
+
+        // Must happen before the hash is computed — see normalizeTemporalPrecision.
+        normalizeTemporalPrecision(entity);
 
         SecurityAuditLogEntity tip = repository.findTopByOrderBySequenceNumberDesc().orElse(null);
         long nextSequence = tip != null && tip.getSequenceNumber() != null ? tip.getSequenceNumber() + 1 : 1L;
@@ -145,6 +149,40 @@ public class SecurityAuditChainService {
         long removed = before.longValue();
         log.info("[AUDIT] purge removed {} audit rows (GENESIS anchor retained).", removed);
         return removed;
+    }
+
+    /**
+     * Round every hashed temporal field down to the precision the database can
+     * actually store, <em>before</em> the row is hashed.
+     *
+     * <p>Postgres {@code timestamp}/{@code timestamptz} hold microseconds (max
+     * precision 6), while {@code LocalDateTime.now()} and {@code Instant.now()}
+     * carry nanoseconds. Hashing the nanosecond value and then recomputing over
+     * the truncated value read back from the database yields a different HMAC, so
+     * an untouched row reports as tampered. Because {@code timestamp} is always
+     * populated, that made tamper detection a permanent false positive on every
+     * install — and an intermittent one, since a row whose nanos happen to land on
+     * an exact microsecond survives.
+     *
+     * <p>Truncating here keeps the in-memory row and the stored row genuinely
+     * identical, so {@code computeHash} is stable across the round trip. Note this
+     * is a precision problem, not a type problem: moving these fields to
+     * {@code Instant} would not help, because Postgres cannot store nanoseconds
+     * either.
+     *
+     * <p>{@code append} is the single write path into the append-only table, so
+     * normalizing here covers every caller and every future temporal column.
+     */
+    private static void normalizeTemporalPrecision(SecurityAuditLogEntity entity) {
+        if (entity.getTimestamp() != null) {
+            entity.setTimestamp(entity.getTimestamp().truncatedTo(ChronoUnit.MICROS));
+        }
+        if (entity.getPeriodStart() != null) {
+            entity.setPeriodStart(entity.getPeriodStart().truncatedTo(ChronoUnit.MICROS));
+        }
+        if (entity.getPeriodEnd() != null) {
+            entity.setPeriodEnd(entity.getPeriodEnd().truncatedTo(ChronoUnit.MICROS));
+        }
     }
 
     /**
