@@ -72,26 +72,41 @@ class AuthAuditControllerTest {
     @Test
     void validateReturnsChainResultAsBody() {
         when(chainValidator.validate())
-                .thenReturn(new SecurityAuditChainValidator.Result(true, 5, null));
+                .thenReturn(new SecurityAuditChainValidator.Result(true, 5, null, 0));
 
         ResponseEntity<Map<String, Object>> response = controller.validate();
 
         assertThat(response.getBody())
                 .containsEntry("valid", true)
                 .containsEntry("rows_checked", 5)
-                .containsEntry("broken_at", null);
+                .containsEntry("broken_at", null)
+                .containsEntry("unverifiable_legacy_rows", 0);
     }
 
     @Test
     void validateReportsTheFirstBrokenSequence() {
         when(chainValidator.validate())
-                .thenReturn(new SecurityAuditChainValidator.Result(false, 3, 4L));
+                .thenReturn(new SecurityAuditChainValidator.Result(false, 3, 4L, 0));
 
         ResponseEntity<Map<String, Object>> response = controller.validate();
 
         assertThat(response.getBody())
                 .containsEntry("valid", false)
                 .containsEntry("broken_at", 4L);
+    }
+
+    /** An upgraded DB reports its unhashed legacy prefix instead of failing (Bug B). */
+    @Test
+    void validateReportsUnverifiableLegacyRows() {
+        when(chainValidator.validate())
+                .thenReturn(new SecurityAuditChainValidator.Result(true, 4, null, 4717));
+
+        ResponseEntity<Map<String, Object>> response = controller.validate();
+
+        assertThat(response.getBody())
+                .containsEntry("valid", true)
+                .containsEntry("rows_checked", 4)
+                .containsEntry("unverifiable_legacy_rows", 4717);
     }
 
     @Test
