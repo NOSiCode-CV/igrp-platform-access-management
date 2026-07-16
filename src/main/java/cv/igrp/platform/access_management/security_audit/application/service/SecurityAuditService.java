@@ -24,6 +24,22 @@ public interface SecurityAuditService {
     void logEvent(AuditEventType type, AuditCategory category, Map<String, Object> context);
 
     /**
+     * Logs a security event, attaching report-facing detail for the Audit and
+     * Access reports (requirements.md §1.5.1 / §1.5.2).
+     *
+     * <p>Columns the caller leaves unset on {@code report} are derived from the
+     * event and the ambient request context where that can be done honestly —
+     * see {@link AuditReportContext}.
+     *
+     * @param type      The type of the event.
+     * @param category  The category of the event.
+     * @param context   A map of contextual data related to the event.
+     * @param report    Report columns to record alongside the event.
+     */
+    void logEvent(AuditEventType type, AuditCategory category, Map<String, Object> context,
+                  AuditReportContext report);
+
+    /**
      * Logs a successful authentication event.
      */
     void logAuthenticationSuccess();

@@ -93,6 +93,9 @@ class SecurityAuditServiceTransactionBoundaryTest {
         return Stream.of(
                 Arguments.of("logEvent", (Consumer<SecurityAuditService>) s ->
                         s.logEvent(AuditEventType.LOGIN_SUCCESS, AuditCategory.AUTHENTICATION, Map.of())),
+                Arguments.of("logEvent(with report context)", (Consumer<SecurityAuditService>) s ->
+                        s.logEvent(AuditEventType.LOGIN_SUCCESS, AuditCategory.AUTHENTICATION, Map.of(),
+                                AuditReportContext.builder().module("Transfers").build())),
                 Arguments.of("logAuthenticationSuccess", (Consumer<SecurityAuditService>)
                         SecurityAuditService::logAuthenticationSuccess),
                 Arguments.of("logAuthenticationFailure", (Consumer<SecurityAuditService>) s ->
