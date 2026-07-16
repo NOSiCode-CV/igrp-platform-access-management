@@ -5,16 +5,14 @@ import cv.igrp.framework.stereotype.IgrpController;
 import cv.igrp.platform.access_management.security_audit.application.dto.AccessReportRowDTO;
 import cv.igrp.platform.access_management.security_audit.application.dto.AuditReportRowDTO;
 import cv.igrp.platform.access_management.security_audit.application.dto.SettingsReportRowDTO;
-import cv.igrp.platform.access_management.security_audit.application.export.ExcelReportExporter;
-import cv.igrp.platform.access_management.security_audit.application.export.PdfReportExporter;
 import cv.igrp.platform.access_management.security_audit.application.export.ReportColumns;
 import cv.igrp.platform.access_management.security_audit.application.export.ReportDescriptor;
 import cv.igrp.platform.access_management.security_audit.application.export.ReportExportService;
+import cv.igrp.platform.access_management.security_audit.application.export.ReportRenderer;
 import cv.igrp.platform.access_management.security_audit.application.queries.GetAccessReportQuery;
 import cv.igrp.platform.access_management.security_audit.application.queries.GetAuditReportQuery;
 import cv.igrp.platform.access_management.security_audit.application.queries.GetSettingsReportQuery;
-import org.springframework.context.MessageSource;
-import org.springframework.context.i18n.LocaleContextHolder;
+import cv.igrp.platform.access_management.security_audit.domain.enums.ReportFormat;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -30,7 +28,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.servlet.mvc.method.annotation.StreamingResponseBody;
 
 import java.time.Instant;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.function.Supplier;
@@ -39,38 +36,32 @@ import java.util.stream.Stream;
 /**
  * Reporting surface over the unified audit log. Three paginated, filtered JSON
  * views (Audit / Access / Settings) that project {@code t_security_audit_log}
- * rows through the report DTOs (requirements.md §1.5), plus (Phase 4) PDF and
- * Excel export variants of each (§1.7).
+ * rows through the report DTOs (requirements.md §1.5), plus (Phase 4) PDF,
+ * Excel and CSV export variants of each (§1.7).
  *
  * <p>All endpoints are gated by the single {@code igrp.audit.view} permission
  * (R4.1). {@code startDate}/{@code endDate} are required — a missing bound yields
  * a 400. Export endpoints accept the same filters as their JSON siblings, minus
  * pagination, and stream every matching row (R7.2/R7.3).
+ *
+ * <p>Archiving a report to storage instead of downloading it lives on
+ * {@code AuditReportArchiveController}.
  */
 @RestController("auditReportsController")
 @IgrpController
 @RequestMapping("/api/auth/reports")
 public class AuditReportsController {
 
-    private static final MediaType XLSX_MEDIA_TYPE = MediaType.parseMediaType(
-            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-
     private final QueryBus queryBus;
     private final ReportExportService exportService;
-    private final ExcelReportExporter excelExporter;
-    private final PdfReportExporter pdfExporter;
-    private final MessageSource messageSource;
+    private final ReportRenderer renderer;
 
     public AuditReportsController(QueryBus queryBus,
                                  ReportExportService exportService,
-                                 ExcelReportExporter excelExporter,
-                                 PdfReportExporter pdfExporter,
-                                 MessageSource messageSource) {
+                                 ReportRenderer renderer) {
         this.queryBus = queryBus;
         this.exportService = exportService;
-        this.excelExporter = excelExporter;
-        this.pdfExporter = pdfExporter;
-        this.messageSource = messageSource;
+        this.renderer = renderer;
     }
 
     // ----------------------------------------------------------------- JSON
@@ -87,7 +78,6 @@ public class AuditReportsController {
             @RequestParam(required = false) String authorizedBy,
             @RequestParam(required = false) String status,
             Pageable pageable) {
-        AuditDateRange.require(startDate, endDate);
         return queryBus.handle(new GetAuditReportQuery(
                 toLocal(startDate), toLocal(endDate),
                 username, module, accessRole, operationState, authorizedBy, status, pageable));
@@ -104,7 +94,6 @@ public class AuditReportsController {
             @RequestParam(required = false) String action,
             @RequestParam(required = false) String status,
             Pageable pageable) {
-        AuditDateRange.require(startDate, endDate);
         return queryBus.handle(new GetAccessReportQuery(
                 toLocal(startDate), toLocal(endDate),
                 username, role, module, action, status, pageable));
@@ -121,13 +110,12 @@ public class AuditReportsController {
             @RequestParam(required = false) String operation,
             @RequestParam(required = false) String entityName,
             Pageable pageable) {
-        AuditDateRange.require(startDate, endDate);
         return queryBus.handle(new GetSettingsReportQuery(
                 toLocal(startDate), toLocal(endDate),
                 performedBy, area, entityType, operation, entityName, pageable));
     }
 
-    // -------------------------------------------------------------- Exports
+    // ------------------------------------------------------- Audit exports
 
     @GetMapping("/audit.xlsx")
     @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
@@ -140,8 +128,7 @@ public class AuditReportsController {
             @RequestParam(required = false) String operationState,
             @RequestParam(required = false) String authorizedBy,
             @RequestParam(required = false) String status) {
-        AuditDateRange.require(startDate, endDate);
-        return excel(ReportColumns.AUDIT, () -> exportService.streamAuditRows(
+        return download(ReportColumns.AUDIT, ReportFormat.XLSX, () -> exportService.streamAuditRows(
                 toLocal(startDate), toLocal(endDate),
                 username, module, accessRole, operationState, authorizedBy, status));
     }
@@ -157,11 +144,28 @@ public class AuditReportsController {
             @RequestParam(required = false) String operationState,
             @RequestParam(required = false) String authorizedBy,
             @RequestParam(required = false) String status) {
-        AuditDateRange.require(startDate, endDate);
-        return pdf(ReportColumns.AUDIT, () -> exportService.streamAuditRows(
+        return download(ReportColumns.AUDIT, ReportFormat.PDF, () -> exportService.streamAuditRows(
                 toLocal(startDate), toLocal(endDate),
                 username, module, accessRole, operationState, authorizedBy, status));
     }
+
+    @GetMapping("/audit.csv")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
+    public ResponseEntity<StreamingResponseBody> auditReportCsv(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String module,
+            @RequestParam(required = false) String accessRole,
+            @RequestParam(required = false) String operationState,
+            @RequestParam(required = false) String authorizedBy,
+            @RequestParam(required = false) String status) {
+        return download(ReportColumns.AUDIT, ReportFormat.CSV, () -> exportService.streamAuditRows(
+                toLocal(startDate), toLocal(endDate),
+                username, module, accessRole, operationState, authorizedBy, status));
+    }
+
+    // ------------------------------------------------------ Access exports
 
     @GetMapping("/access.xlsx")
     @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
@@ -173,8 +177,7 @@ public class AuditReportsController {
             @RequestParam(required = false) String module,
             @RequestParam(required = false) String action,
             @RequestParam(required = false) String status) {
-        AuditDateRange.require(startDate, endDate);
-        return excel(ReportColumns.ACCESS, () -> exportService.streamAccessRows(
+        return download(ReportColumns.ACCESS, ReportFormat.XLSX, () -> exportService.streamAccessRows(
                 toLocal(startDate), toLocal(endDate), username, role, module, action, status));
     }
 
@@ -188,10 +191,25 @@ public class AuditReportsController {
             @RequestParam(required = false) String module,
             @RequestParam(required = false) String action,
             @RequestParam(required = false) String status) {
-        AuditDateRange.require(startDate, endDate);
-        return pdf(ReportColumns.ACCESS, () -> exportService.streamAccessRows(
+        return download(ReportColumns.ACCESS, ReportFormat.PDF, () -> exportService.streamAccessRows(
                 toLocal(startDate), toLocal(endDate), username, role, module, action, status));
     }
+
+    @GetMapping("/access.csv")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
+    public ResponseEntity<StreamingResponseBody> accessReportCsv(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) String module,
+            @RequestParam(required = false) String action,
+            @RequestParam(required = false) String status) {
+        return download(ReportColumns.ACCESS, ReportFormat.CSV, () -> exportService.streamAccessRows(
+                toLocal(startDate), toLocal(endDate), username, role, module, action, status));
+    }
+
+    // ---------------------------------------------------- Settings exports
 
     @GetMapping("/settings.xlsx")
     @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
@@ -203,8 +221,7 @@ public class AuditReportsController {
             @RequestParam(required = false) String entityType,
             @RequestParam(required = false) String operation,
             @RequestParam(required = false) String entityName) {
-        AuditDateRange.require(startDate, endDate);
-        return excel(ReportColumns.SETTINGS, () -> exportService.streamSettingsRows(
+        return download(ReportColumns.SETTINGS, ReportFormat.XLSX, () -> exportService.streamSettingsRows(
                 toLocal(startDate), toLocal(endDate), performedBy, area, entityType, operation, entityName));
     }
 
@@ -218,41 +235,37 @@ public class AuditReportsController {
             @RequestParam(required = false) String entityType,
             @RequestParam(required = false) String operation,
             @RequestParam(required = false) String entityName) {
-        AuditDateRange.require(startDate, endDate);
-        return pdf(ReportColumns.SETTINGS, () -> exportService.streamSettingsRows(
+        return download(ReportColumns.SETTINGS, ReportFormat.PDF, () -> exportService.streamSettingsRows(
+                toLocal(startDate), toLocal(endDate), performedBy, area, entityType, operation, entityName));
+    }
+
+    @GetMapping("/settings.csv")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
+    public ResponseEntity<StreamingResponseBody> settingsReportCsv(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
+            @RequestParam(required = false) String performedBy,
+            @RequestParam(required = false) String area,
+            @RequestParam(required = false) String entityType,
+            @RequestParam(required = false) String operation,
+            @RequestParam(required = false) String entityName) {
+        return download(ReportColumns.SETTINGS, ReportFormat.CSV, () -> exportService.streamSettingsRows(
                 toLocal(startDate), toLocal(endDate), performedBy, area, entityType, operation, entityName));
     }
 
     // -------------------------------------------------------------- helpers
 
-    private <T> ResponseEntity<StreamingResponseBody> excel(
-            ReportDescriptor<T> descriptor, Supplier<Stream<T>> rows) {
-        StreamingResponseBody body = out -> excelExporter.write(out, descriptor.columns(), rows.get());
+    private <T> ResponseEntity<StreamingResponseBody> download(
+            ReportDescriptor<T> descriptor, ReportFormat format, Supplier<Stream<T>> rows) {
+        StreamingResponseBody body = out -> renderer.render(out, descriptor, format, rows.get());
         return ResponseEntity.ok()
-                .contentType(XLSX_MEDIA_TYPE)
-                .header(HttpHeaders.CONTENT_DISPOSITION, disposition(descriptor.filenamePrefix(), "xlsx"))
+                .contentType(MediaType.parseMediaType(format.contentType()))
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        ContentDisposition.attachment()
+                                .filename(renderer.fileName(descriptor, format))
+                                .build()
+                                .toString())
                 .body(body);
-    }
-
-    private <T> ResponseEntity<StreamingResponseBody> pdf(
-            ReportDescriptor<T> descriptor, Supplier<Stream<T>> rows) {
-        String headerText = title(descriptor) + " generated on " + LocalDate.now();
-        StreamingResponseBody body = out -> pdfExporter.write(out, headerText, descriptor.columns(), rows.get());
-        return ResponseEntity.ok()
-                .contentType(MediaType.APPLICATION_PDF)
-                .header(HttpHeaders.CONTENT_DISPOSITION, disposition(descriptor.filenamePrefix(), "pdf"))
-                .body(body);
-    }
-
-    private String title(ReportDescriptor<?> descriptor) {
-        return messageSource.getMessage(
-                descriptor.titleMessageKey(), null, descriptor.defaultTitle(),
-                LocaleContextHolder.getLocale());
-    }
-
-    private static String disposition(String prefix, String ext) {
-        String filename = prefix + "-" + LocalDate.now() + "." + ext;
-        return ContentDisposition.attachment().filename(filename).build().toString();
     }
 
     /** The audit {@code timestamp} column is a {@code LocalDateTime} (system zone). */

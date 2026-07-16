@@ -51,7 +51,16 @@ Every endpoint in this feature must be tested with **both** tokens. Expected res
 | `GET  /api/auth/reports/settings` | 200 | 403 |
 | `GET  /api/auth/reports/*.pdf` | 200 | 403 |
 | `GET  /api/auth/reports/*.xlsx` | 200 | 403 |
+| `GET  /api/auth/reports/*.csv` | 200 | 403 |
+| `POST /api/auth/reports/*/archive` | 200 | 403 |
+| `GET  /api/auth/reports/archives` | 200 | 403 |
 | Admin write ops (create app, invite user, etc.) | 200/201 | 403 |
+
+> **Gate-check caveat.** `gate_check` only proves the *normal user* is refused. Pick an
+> endpoint the user genuinely lacks permission for: a token holding
+> `igrp.applications.create` returns **400** (validation) on `POST /api/applications`,
+> not 403, which reads as a gate failure but isn't one. `GET /api/auth/audit` is a
+> reliable control — no normal user has `igrp.audit.view`.
 
 A `sanity_permission_gate` helper checks it once per endpoint:
 
@@ -247,30 +256,44 @@ curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/audit?$Q&size=20" \
 
 Each row in the catalog (see [`plan.md`](./plan.md) §Phase 3) must produce exactly one audit row. Test the ones with existing handlers; note gaps.
 
+> **Use a fresh verification window.** `$Q` pins `endDate` at script start, so any row
+> written *later in the run* falls outside it and the query returns nothing — which
+> reads as "no audit row" when the row is actually there. Every verification below
+> re-derives the window:
+>
+> ```bash
+> # Re-derive on each verification, with headroom for clock skew and the @Async listener.
+> fresh_q() {
+>   local from="$1"  # e.g. "$DAY_AGO"
+>   echo "startDate=${from}&endDate=$(date -u -d '+5 minutes' +'%Y-%m-%dT%H:%M:%SZ')"
+> }
+> FQ=$(fresh_q "$DAY_AGO")
+> ```
+
 ### 3.1 Create application → Settings row appears
 
 ```bash
 APP_NAME="test-audit-app-$(date +%s)"
 
 # Snapshot count before
-BEFORE=$(curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$Q&area=APPLICATIONS&entityName=$APP_NAME" \
+BEFORE=$(curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$(fresh_q "$DAY_AGO")&area=APPLICATIONS&entityName=$APP_NAME" \
   | jq '.content | length')
 
-# Perform the admin action — endpoint path may vary; adjust to actual route
+# `type` is @NotNull — omitting it 400s. Valid values come from the AppType enum.
 curl -sS -X POST "${A_ADMIN[@]}" "${A_JSON[@]}" \
-  -d "{\"name\":\"$APP_NAME\",\"code\":\"$APP_NAME\",\"description\":\"audit test\"}" \
+  -d "{\"name\":\"$APP_NAME\",\"code\":\"$APP_NAME\",\"description\":\"audit test\",\"type\":\"INTERNAL\"}" \
   "$BASE_URL/api/applications" | jq
 
 # Verify audit row landed
 sleep 1  # @Async listener needs a beat
-AFTER=$(curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$Q&area=APPLICATIONS&entityName=$APP_NAME" \
+AFTER=$(curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$(fresh_q "$DAY_AGO")&area=APPLICATIONS&entityName=$APP_NAME" \
   | jq '.content | length')
 
 echo "before=$BEFORE after=$AFTER"
 # EXPECT: after == before + 1
 
 # Verify row shape
-curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$Q&entityName=$APP_NAME" \
+curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$(fresh_q "$DAY_AGO")&entityName=$APP_NAME" \
   | jq '.content[0] | {area, entityType, operation, entityName, status}'
 # EXPECT: {"area":"APPLICATIONS","entityType":"APPLICATION","operation":"CREATE","entityName":"<APP_NAME>","status":"SUCCESS"}
 ```
@@ -278,44 +301,60 @@ curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$Q&entityName=$APP
 ### 3.2 Edit application → EDIT row with previousValue/newValue populated
 
 ```bash
-APP_ID=$(curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/applications?search=$APP_NAME" | jq -r '.content[0].id')
-
+# Applications are keyed by CODE, not id — /api/applications/{code}. Using an id 404s.
 curl -sS -X PUT "${A_ADMIN[@]}" "${A_JSON[@]}" \
-  -d "{\"name\":\"$APP_NAME\",\"code\":\"$APP_NAME\",\"description\":\"edited via test\"}" \
-  "$BASE_URL/api/applications/$APP_ID" | jq
+  -d "{\"name\":\"$APP_NAME\",\"code\":\"$APP_NAME\",\"description\":\"edited via test\",\"type\":\"INTERNAL\"}" \
+  "$BASE_URL/api/applications/$APP_NAME" | jq
 
 sleep 1
-curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$Q&entityName=$APP_NAME&operation=EDIT" \
+curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$(fresh_q "$DAY_AGO")&entityName=$APP_NAME&operation=EDIT" \
   | jq '.content[0] | {operation, previousValue, newValue}'
-# EXPECT: operation=EDIT, previousValue and newValue both non-null with the description diff.
+# EXPECT: operation=EDIT, previousValue and newValue both non-null, compact diff form
+#         e.g. previousValue="description=audit test", newValue="description=edited via test"
 ```
 
 ### 3.3 Delete application → DELETE row
 
 ```bash
-curl -sS -X DELETE "${A_ADMIN[@]}" "$BASE_URL/api/applications/$APP_ID"
+curl -sS -X DELETE "${A_ADMIN[@]}" "$BASE_URL/api/applications/$APP_NAME"
 sleep 1
-curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$Q&entityName=$APP_NAME&operation=DELETE" \
+curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$(fresh_q "$DAY_AGO")&entityName=$APP_NAME&operation=DELETE" \
   | jq '.content | length'
 # EXPECT: >= 1
 ```
 
 ### 3.4 Role CRUD → CREATE/EDIT/DELETE Settings rows
 
-Same pattern as 3.1-3.3, targeting `/api/departments/{deptId}/roles`. Verify `entityName` matches the `department.role` convention from the catalog (e.g., `TEST.MyRole`).
+Same pattern as 3.1-3.3, targeting `/api/departments/{departmentCode}/roles`.
+
+```bash
+curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$(fresh_q "$DAY_AGO")&entityType=ROLE&operation=CREATE" \
+  | jq '.content[0] | {entityType, operation, entityName}'
+# EXPECT: entityName is the BARE role name (e.g. "TestAuditRole"), not "DEPT.TestAuditRole".
+# NOTE: an earlier revision of this plan expected the `department.role` convention.
+#       plan.md's catalog never specifies one and the implementation emits the bare
+#       name, so the expectation was corrected here. Pending team adjudication.
+```
 
 ### 3.5 Associate/disassociate permission to role → ASSOCIATE/DISASSOCIATE rows with `relatedEntity`
 
 ```bash
-# Assumes existing role $ROLE_ID and permission "igrp.test.action"
+# Actual route is department-scoped, and the body is a BARE ARRAY of permission
+# names — not /api/roles/{id}/permissions with {"permissionNames":[...]}.
 curl -sS -X POST "${A_ADMIN[@]}" "${A_JSON[@]}" \
-  -d "{\"permissionNames\":[\"igrp.test.action\"]}" \
-  "$BASE_URL/api/roles/$ROLE_ID/permissions"
+  -d '["igrp.departments.view"]' \
+  "$BASE_URL/api/departments/$DEPT_CODE/roles/$ROLE_CODE/permissions"
 
 sleep 1
-curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$Q&operation=ASSOCIATE&entityType=ROLE" \
-  | jq '.content[0] | {operation, entityName, relatedEntity}'
-# EXPECT: operation=ASSOCIATE, relatedEntity="igrp.test.action"
+curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$(fresh_q "$DAY_AGO")&operation=ASSOCIATE" \
+  | jq '.content[0] | {operation, entityType, entityName, relatedEntity}'
+# EXPECT: operation=ASSOCIATE, entityType=PERMISSION,
+#         entityName="igrp.departments.view", relatedEntity="<role>"
+#
+# NOTE: an earlier revision expected the inverse (entityType=ROLE, relatedEntity=<permission>).
+#       The implementation treats the PERMISSION as the subject — consistent with
+#       PermissionAssociatedToRoleEvent — so the expectation was corrected here.
+#       Pending team adjudication; if the contract flips, both this and the event change.
 ```
 
 ### 3.6 Audit chain still valid after admin operations
@@ -336,100 +375,245 @@ curl -sS -o /dev/null -w "%{http_code}\n" -X POST "${A_ADMIN[@]}" "${A_JSON[@]}"
 
 # Confirm no audit row created for empty-name creation
 sleep 1
-curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$Q&operation=CREATE&entityType=APPLICATION" \
+curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/settings?$(fresh_q "$DAY_AGO")&operation=CREATE&entityType=APPLICATION" \
   | jq '[.content[] | select(.entityName == "")] | length'
 # EXPECT: 0
 ```
 
-### 3.8 Permission gate for every admin write op (spot check)
+### 3.8 Permission gate for admin write ops (spot check)
 
 ```bash
-gate_check POST /api/applications
-gate_check POST /api/departments
-# ... normal user gets 403 without the write permission
+# Pick an endpoint the USER_JWT genuinely lacks. If the token happens to hold
+# igrp.applications.create / igrp.departments.*, these return 400 (validation),
+# NOT 403 — that is not a gate failure, just the wrong control.
+gate_check GET /api/auth/audit          # reliable: no normal user has igrp.audit.view
+gate_check POST /api/applications       # only meaningful if USER_JWT lacks igrp.applications.create
+```
+
+First confirm what the token actually carries:
+
+```bash
+echo "$USER_JWT" | cut -d. -f2 | base64 -d 2>/dev/null | jq '.permissions // .authorities // .scope'
+# If igrp.applications.create is present, skip that gate_check and rely on the audit control.
 ```
 
 ---
 
-## Phase 4 tests — PDF & Excel export
+## Phase 4 tests — PDF, Excel & CSV export, and report archive
+
+Nine download endpoints (3 reports × 3 formats), plus archive + list.
 
 ### 4.1 Content-Type and Content-Disposition
 
 ```bash
-for r in audit access settings; do
-  echo "--- $r.xlsx ---"
-  curl -sSI "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/$r.xlsx?$Q" \
-    | grep -iE "content-type|content-disposition"
-  # EXPECT: Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet
-  # EXPECT: Content-Disposition: attachment; filename="<r>-report-YYYY-MM-DD.xlsx"
+declare -A CT=(
+  [xlsx]="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+  [pdf]="application/pdf"
+  [csv]="text/csv"
+)
 
-  echo "--- $r.pdf ---"
-  curl -sSI "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/$r.pdf?$Q" \
-    | grep -iE "content-type|content-disposition"
-  # EXPECT: Content-Type: application/pdf
-  # EXPECT: Content-Disposition: attachment; filename="<r>-report-YYYY-MM-DD.pdf"
+for r in audit access settings; do
+  for f in xlsx pdf csv; do
+    echo "--- $r.$f ---"
+    curl -sSI "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/$r.$f?$Q" \
+      | grep -iE "content-type|content-disposition"
+    # EXPECT: Content-Type starts with ${CT[$f]}   (csv also carries ;charset=UTF-8)
+    # EXPECT: Content-Disposition: attachment; filename="<r>-report-YYYY-MM-DD.$f"
+  done
 done
 ```
 
 ### 4.2 Files download and open
 
 ```bash
-mkdir -p /tmp/audit-exports
+mkdir -p ./audit-exports
 for r in audit access settings; do
-  curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/$r.xlsx?$Q" -o "/tmp/audit-exports/$r.xlsx"
-  curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/$r.pdf?$Q"  -o "/tmp/audit-exports/$r.pdf"
+  for f in xlsx pdf csv; do
+    code=$(curl -sS -w "%{http_code}" "${A_ADMIN[@]}" \
+      "$BASE_URL/api/auth/reports/$r.$f?$Q" -o "./audit-exports/$r.$f")
+    size=$(stat -c%s "./audit-exports/$r.$f" 2>/dev/null || echo 0)
+    echo "$r.$f -> HTTP=$code bytes=$size"
+    # EXPECT: HTTP=200 and bytes > 0 for ALL NINE.
+    # A 500 with bytes=0 but correct headers means the exception was thrown while
+    # streaming, after headers were committed — for .xlsx that is the POI temp-dir
+    # signature; check the startup log (see 4.6) before suspecting anything else.
+  done
 
-  # Magic-byte sanity
-  file "/tmp/audit-exports/$r.xlsx"
-  # EXPECT: "Microsoft Excel 2007+" or "Zip archive data"
-  file "/tmp/audit-exports/$r.pdf"
-  # EXPECT: "PDF document, version 1.x"
-
-  # Non-empty
-  [[ -s "/tmp/audit-exports/$r.xlsx" ]] && echo "$r.xlsx OK" || echo "$r.xlsx EMPTY (FAIL)"
-  [[ -s "/tmp/audit-exports/$r.pdf"  ]] && echo "$r.pdf OK"  || echo "$r.pdf EMPTY (FAIL)"
+  file "./audit-exports/$r.xlsx"   # EXPECT: "Microsoft Excel 2007+" / "Zip archive data"
+  file "./audit-exports/$r.pdf"    # EXPECT: "PDF document, version 1.x"
+  head -c 3 "./audit-exports/$r.csv" | xxd | head -1
+  # EXPECT: efbb bf — the UTF-8 BOM (R7.5)
 done
 ```
 
-### 4.3 Same filter contract as JSON siblings
+### 4.3 Same filter contract as JSON siblings — all three formats
 
 ```bash
-# JSON row count vs export row count should match (before pagination)
 JSON_COUNT=$(curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/audit?$Q&size=10000" | jq '.content | length')
 
-# Excel row count via unzip + xmllint (or via Python for CI)
-XLSX_ROWS=$(unzip -p /tmp/audit-exports/audit.xlsx xl/worksheets/sheet1.xml \
-  | grep -c "<row ")
-# subtract 1 for the header row
-XLSX_DATA=$((XLSX_ROWS - 1))
+XLSX_DATA=$(( $(unzip -p ./audit-exports/audit.xlsx xl/worksheets/sheet1.xml | grep -c "<row ") - 1 ))
 
-echo "JSON rows=$JSON_COUNT  XLSX data rows=$XLSX_DATA"
-# EXPECT: JSON_COUNT == XLSX_DATA (within reason for concurrent activity)
+# CSV: total lines minus the header. Quoted fields may contain newlines, so count
+# with a real parser rather than `wc -l`.
+CSV_DATA=$(python3 -c "
+import csv,sys
+with open('./audit-exports/audit.csv', newline='', encoding='utf-8-sig') as fh:
+    print(sum(1 for _ in csv.reader(fh)) - 1)
+")
+
+echo "JSON=$JSON_COUNT  XLSX=$XLSX_DATA  CSV=$CSV_DATA"
+# EXPECT: all three equal (within reason for concurrent activity)
 ```
 
 ### 4.4 Permission gate
 
 ```bash
 for r in audit access settings; do
-  for f in pdf xlsx; do
+  for f in pdf xlsx csv; do
     gate_check GET "/api/auth/reports/$r.$f?$Q"
   done
 done
+gate_check POST "/api/auth/reports/audit/archive?format=CSV&$Q"
+gate_check GET  "/api/auth/reports/archives"
 ```
 
 ### 4.5 PDF header text
 
 ```bash
 # Requires pdftotext (poppler)
-pdftotext /tmp/audit-exports/audit.pdf - | head -3
+pdftotext ./audit-exports/audit.pdf - | head -3
 # EXPECT: first line matches "Audit Report generated on \d{4}-\d{2}-\d{2}"
+```
+
+### 4.6 Excel scratch directory and fallback (R7.6)
+
+`SXSSFWorkbook` creates its temp file **when the sheet is created**, not when the
+100-row window overflows — so a temp-dir problem breaks `.xlsx` at *every* size and
+is invisible at the HTTP layer until the body fails mid-stream.
+
+```bash
+# 1. Which path is the server on? Check the boot log.
+#    "Excel export temp directory ready (<path>) — .xlsx exports will stream via SXSSF."
+#      -> streaming path (preferred; the only one that meets N2)
+#    "Excel export temp directory '<path>' is not writable — falling back to in-memory"
+#      -> fallback path: exports still work, but heap-heavy. Mount a writable /tmp.
+kubectl logs deploy/access-management | grep -i "Excel export temp directory"
+
+# 2. Smallest possible export must succeed. If .xlsx 500s while .pdf/.csv return 200,
+#    it is the scratch directory — not a scale problem, not the data.
+NARROW="startDate=$DAY_AGO&endDate=$NOW&username=__no_such_user__"
+curl -sS -o /dev/null -w "tiny xlsx -> %{http_code}\n" "${A_ADMIN[@]}" \
+  "$BASE_URL/api/auth/reports/audit.xlsx?$NARROW"
+# EXPECT: 200 (a header-only workbook is valid)
+
+# 3. Both paths must produce an openable workbook. To exercise the fallback
+#    deliberately, restart with an unwritable dir:
+#      -Digrp.audit.export.temp-dir=/proc/nonexistent
+#    then repeat 4.2 for .xlsx — EXPECT: still 200, still a valid workbook,
+#    plus the fallback warning in the log.
+```
+
+### 4.7 Archive → storage + DB record (R7.7–R7.9)
+
+```bash
+# Archive one report in each format.
+for f in XLSX PDF CSV; do
+  echo "--- archive audit as $f ---"
+  curl -sS -X POST "${A_ADMIN[@]}" \
+    "$BASE_URL/api/auth/reports/audit/archive?format=$f&$Q" \
+    | jq '{id, reportType, format, filePath, fileName, contentType, sizeBytes, rowCount, generatedBy, generatedAt}'
+  # EXPECT: reportType=AUDIT, format=$f
+  # EXPECT: filePath starts "private/audit-reports/<your-sub>/" and ends "_audit-report-YYYY-MM-DD.<ext>"
+  #         The private/ prefix is REQUIRED — GET /api/files/url only resolves
+  #         paths literally starting with private/ or public/.
+  # EXPECT: sizeBytes > 0, rowCount >= 0, generatedBy = your sub, generatedAt set
+done
+
+# All three reports archive too.
+for r in access settings; do
+  curl -sS -X POST "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/$r/archive?format=CSV&$Q" \
+    | jq '{reportType, format, filePath}'
+done
+# EXPECT: reportType=ACCESS / SETTINGS, filePath prefix "private/audit-reports/"
+
+# Bad format → 400, not 500
+curl -sS -o /dev/null -w "bad format -> %{http_code}\n" -X POST "${A_ADMIN[@]}" \
+  "$BASE_URL/api/auth/reports/audit/archive?format=DOCX&$Q"
+# EXPECT: 400
+```
+
+### 4.8 Archived file is retrievable end-to-end (R7.11)
+
+This is the whole point of the archive: `file_path` → link → the same document.
+
+```bash
+FP=$(curl -sS -X POST "${A_ADMIN[@]}" \
+  "$BASE_URL/api/auth/reports/audit/archive?format=CSV&$Q" | jq -r '.filePath')
+echo "filePath=$FP"
+
+# Resolve to a presigned URL via the existing file endpoint.
+URL=$(curl -sS "${A_ADMIN[@]}" --get --data-urlencode "filePath=$FP" \
+  "$BASE_URL/api/files/url" | jq -r '.url')
+echo "url=$URL"
+# EXPECT: a presigned URL; the sibling `expiration` field is set for private paths.
+
+# Download it WITHOUT the API token — the presigned URL carries its own auth.
+curl -sS "$URL" -o ./audit-exports/archived.csv
+head -c 3 ./audit-exports/archived.csv | xxd | head -1   # EXPECT: efbb bf (BOM)
+head -1 ./audit-exports/archived.csv
+# EXPECT: the CSV header line — i.e. the archived object is the real document.
+
+# And it matches what the download endpoint returns for the same filters.
+curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/audit.csv?$Q" -o ./audit-exports/direct.csv
+diff <(tail -n +2 ./audit-exports/archived.csv) <(tail -n +2 ./audit-exports/direct.csv) \
+  && echo "archive == direct download" || echo "DIFFER (only acceptable if rows landed in between)"
+```
+
+### 4.9 Archive list endpoint (R7.10)
+
+```bash
+curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/archives?page=0&size=10" | jq '{
+  total: .totalElements,
+  first: (.content[0] | {reportType, format, filePath, generatedAt})
+}'
+# EXPECT: newest first; every row carries a non-null filePath.
+
+# Filters narrow the set.
+curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/archives?format=CSV" \
+  | jq '.content | all(.format == "CSV")'
+# EXPECT: true
+
+curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/archives?reportType=SETTINGS" \
+  | jq '.content | all(.reportType == "SETTINGS")'
+# EXPECT: true
+
+# Unparseable enum → empty page, NOT a 500.
+curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/archives?reportType=NONSENSE" \
+  | jq '.totalElements'
+# EXPECT: 0
+```
+
+### 4.10 Archive failure isolation (R7.9)
+
+**Requires the ability to break storage** (stop MinIO, or point the bucket at a bad
+name). Skip if you cannot.
+
+```bash
+# With storage down:
+curl -sS -o /dev/null -w "archive with storage down -> %{http_code}\n" -X POST "${A_ADMIN[@]}" \
+  "$BASE_URL/api/auth/reports/audit/archive?format=CSV&$Q"
+# EXPECT: 400 (IGRP_AUTH_FILE_UPLOAD_FAILED), and the error is logged server-side.
+
+# The archive list must NOT have grown — no row may point at a file that was never stored.
+curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/archives?size=1" | jq '.totalElements'
+# EXPECT: unchanged from before the failed call.
 ```
 
 ---
 
 ## Phase 5 tests — SDK smoke
 
-Both SDKs should be able to call every new endpoint. These are quick smoke checks; full SDK unit tests run in the SDK repos.
+Both SDKs should be able to call every new endpoint — the 3 JSON reports, the 9 exports (pdf/xlsx/**csv**), the 3 archive calls and the archive list. These are quick smoke checks; full SDK unit tests run in the SDK repos.
 
 ### 5.1 Java SDK
 
@@ -505,6 +689,33 @@ curl -sS "${A_ADMIN[@]}" -X POST "$BASE_URL/api/auth/audit/validate" | jq
 ```
 
 Then restore from a backup or re-run `V10_1` migration on a fresh DB.
+
+### E2E-4 — Export symmetry across all three formats
+
+```bash
+# JSON row count == data rows in each exported format, for the same filters.
+JSON_N=$(curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/audit?$Q&size=10000" | jq '.content | length')
+echo "JSON=$JSON_N (compare against XLSX/CSV counts from 4.3)"
+# EXPECT: XLSX and CSV data-row counts both equal JSON_N.
+```
+
+### E2E-5 — Generate → archive → link → open
+
+```bash
+# The full archive round trip, as a frontend would do it:
+FP=$(curl -sS -X POST "${A_ADMIN[@]}" \
+  "$BASE_URL/api/auth/reports/settings/archive?format=XLSX&$Q" | jq -r '.filePath')
+URL=$(curl -sS "${A_ADMIN[@]}" --get --data-urlencode "filePath=$FP" \
+  "$BASE_URL/api/files/url" | jq -r '.url')
+curl -sS "$URL" -o ./audit-exports/e2e.xlsx
+file ./audit-exports/e2e.xlsx
+# EXPECT: "Microsoft Excel 2007+" — archived object opens as a real workbook.
+
+# And the record is discoverable without knowing the path up front.
+curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/auth/reports/archives?reportType=SETTINGS&format=XLSX&size=1" \
+  | jq -r '.content[0].filePath'
+# EXPECT: equals $FP
+```
 
 ### E2E-3 — SDK / API contract match
 

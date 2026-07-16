@@ -110,30 +110,49 @@ For each command in the catalog table in `plan.md` §Phase 3 that has a handler 
 
 ---
 
-## Phase 4 — PDF + Excel export
+## Phase 4 — PDF, Excel + CSV export, and report archive
 
 ### Compile & unit
 
-- [ ] `mvnw -DskipTests compile` — BUILD SUCCESS (both new deps resolved from Maven Central via Nexus).
-- [ ] `mvnw test -Dtest=ExcelReportExporterTest,PdfReportExporterTest,AuditReportsExportControllerTest` — all green.
+- [ ] `mvnw -DskipTests compile` — BUILD SUCCESS (new deps resolved from Maven Central via Nexus).
+- [ ] `mvnw test -Dtest=ExcelReportExporterTest,PdfReportExporterTest,CsvReportExporterTest,AuditReportsExportControllerTest,AuditReportArchiveServiceTest` — all green.
+- [ ] Packaged fat jar contains POI's transitive set — `jar tf target/*.jar | grep BOOT-INF/lib/` shows `poi`, `poi-ooxml`, `poi-ooxml-lite`, `xmlbeans`, `commons-compress`, `commons-io-2.16.1`, `SparseBitSet`, `curvesapi`. (A missing one surfaces only at runtime, as a 500 mid-stream.)
 
 ### Golden-file
 
 - [ ] Seed a fixed 5-row dataset. Generate `audit.xlsx`; open with Apache POI; assert cell values row-by-row against expected map.
+- [ ] The same `audit.xlsx` assertions pass on **both** generation paths — `ExcelTempDirStatus(usable=true)` (SXSSF) and `(usable=false)` (in-memory fallback).
 - [ ] Same for `audit.pdf` — extract text with OpenPDF's `PdfReader`; assert header line matches `"Audit Report generated on \d{4}-\d{2}-\d{2}"` and body contains the 5 expected `username` values.
+- [ ] Same for `audit.csv` — assert the BOM, the header line, one line per row, and RFC 4180 quoting of fields containing `,` / `"` / newline.
 - [ ] Same 5-row assertion set for Access and Settings reports.
 
 ### Contract
 
-- [ ] `Content-Type` = `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` for `.xlsx`; `application/pdf` for `.pdf`.
+- [ ] `Content-Type` = `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet` for `.xlsx`; `application/pdf` for `.pdf`; `text/csv;charset=UTF-8` for `.csv`.
 - [ ] `Content-Disposition` header = `attachment; filename="<report>-YYYY-MM-DD.<ext>"`.
 - [ ] Same filter contract as JSON siblings (verify with `startDate`, `endDate`, one report-specific filter each).
-- [ ] Missing `igrp.audit.view` → 403.
+- [ ] Missing `igrp.audit.view` → 403 on all 9 download endpoints, both archive endpoints and the list endpoint.
+
+### Excel scratch directory (R7.6)
+
+- [ ] On boot with a writable temp dir → log reads `Excel export temp directory ready (<path>) — .xlsx exports will stream via SXSSF.`
+- [ ] On boot with `igrp.audit.export.temp-dir` pointed at an unwritable path → startup **warns** (naming the path), the app still starts, and `.xlsx` still returns 200 with a valid workbook (fallback path).
+- [ ] `.xlsx` export succeeds at a small row count (e.g. 5) — SXSSF creates its temp file at sheet creation, so a temp-dir problem is *not* size-dependent and must be caught here.
+
+### Archive (R7.7–R7.11)
+
+- [ ] `V13_1__create_audit_report_file.sql` applies cleanly; `t_audit_report_file` present with `file_path NOT NULL` and both indexes.
+- [ ] `POST /api/auth/reports/audit/archive?format=XLSX&startDate=..&endDate=..` → 200 with a record whose `filePath` starts `private/audit-reports/` and ends `_audit-report-YYYY-MM-DD.xlsx`; `rowCount`, `sizeBytes`, `generatedBy`, `generatedAt` populated.
+- [ ] Repeat for `format=PDF` and `format=CSV`, and for the access and settings reports (9 combinations).
+- [ ] The object exists in storage and `GET /api/files/url?filePath=<filePath>` returns a presigned URL that downloads the same document.
+- [ ] `GET /api/auth/reports/archives` lists the records newest-first; `reportType`, `format` and `generatedBy` filters each narrow the set; an unparseable enum filter yields an empty page (not a 500).
+- [ ] Upload failure → no row persisted (no record pointing at a file that was never stored).
 
 ### Scale (manual, not CI)
 
-- [ ] Generate `audit.xlsx` against 100k seeded rows → completes in < 30s, JVM heap stays under 256MB (verify with `jvisualvm`).
+- [ ] Generate `audit.xlsx` against 100k seeded rows via **download** → completes in < 30s, JVM heap stays under 256MB (verify with `jvisualvm`). Requires the SXSSF path — confirm the startup log first.
 - [ ] Generate `audit.pdf` against 10k seeded rows → completes in < 20s.
+- [ ] Archive is **exempt** from N2 (`StorageService` takes `byte[]`, so the document is materialized) — do not treat its heap use as a regression.
 
 ---
 

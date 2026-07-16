@@ -105,18 +105,43 @@ Every listed platform action must publish a strongly-typed Spring `ApplicationEv
 
 ### 1.7 Export
 
-- **R7.1** Each of the 3 report endpoints has PDF and Excel variants:
-  - `GET /api/auth/reports/audit.pdf`, `.xlsx`
-  - `GET /api/auth/reports/access.pdf`, `.xlsx`
-  - `GET /api/auth/reports/settings.pdf`, `.xlsx`
+Two delivery modes, both over the same three reports and the same three formats:
+**download** (stream the document straight back) and **archive** (store the
+document and hand back a retrievable path).
+
+#### 1.7.1 Download
+
+- **R7.1** Each of the 3 report endpoints has PDF, Excel and CSV variants — 9 endpoints:
+  - `GET /api/auth/reports/audit.pdf`, `.xlsx`, `.csv`
+  - `GET /api/auth/reports/access.pdf`, `.xlsx`, `.csv`
+  - `GET /api/auth/reports/settings.pdf`, `.xlsx`, `.csv`
 - **R7.2** Export endpoints accept the same filter contracts as their JSON counterparts, minus pagination — export streams all rows matching the filter.
-- **R7.3** Exports are generated in-request (no async job queue). Rows stream via Apache POI `SXSSFWorkbook` for Excel and OpenPDF direct render for PDF. Memory stays flat for reports up to 100k rows.
+- **R7.3** Exports are generated in-request (no async job queue). Rows stream via Apache POI `SXSSFWorkbook` for Excel, OpenPDF direct render for PDF, and a direct writer for CSV. Memory stays flat for reports up to 100k rows on the download path.
 - **R7.4** PDF header reads "Audit Report generated on YYYY-MM-DD" (or the corresponding title for the other two reports); localized via `MessageSource`.
+- **R7.5** CSV is RFC 4180: `,` separator, `CRLF` line ends, fields containing a separator/quote/line break are quoted with embedded quotes doubled. Written UTF-8 with a BOM so Excel reads accented names correctly on double-click. CSV touches no disk and no workbook model.
+- **R7.6** `SXSSFWorkbook` stages rows in a temp file that it creates **eagerly when the sheet is created** — not only once the in-memory window overflows. Excel export therefore requires a writable scratch directory, or it fails at any row count, inside the response body after headers are committed (an opaque 500). Accordingly:
+  - the scratch directory is configurable via `igrp.audit.export.temp-dir` (default `${java.io.tmpdir}/igrp-audit-exports`) and is **probed for writability once at startup**, not per request;
+  - where it is not writable, Excel export **falls back to in-memory generation** (`XSSFWorkbook`) rather than failing — trading R7.3's flat memory for availability, and logging a warning naming the directory;
+  - the choice is made before any byte is written to the response, so a fallback can never leave a half-written document;
+  - deployments are still expected to provide a writable directory (see `k8s/deployment.yaml`), because streaming is what upholds N2.
+
+#### 1.7.2 Archive
+
+- **R7.7** Each report can be archived instead of downloaded, in any of the 3 formats:
+  - `POST /api/auth/reports/audit/archive?format={PDF|XLSX|CSV}`
+  - `POST /api/auth/reports/access/archive?format={PDF|XLSX|CSV}`
+  - `POST /api/auth/reports/settings/archive?format={PDF|XLSX|CSV}`
+
+  Each accepts the same filters as its JSON sibling, generates the document, uploads it, records it, and returns the record.
+- **R7.8** Documents are uploaded to object storage (MinIO/S3) through the existing `StorageService` port, under the folder `audit-reports`, using the same key convention as inbound uploads: `private/audit-reports/{username}/{uuid}_{filename}`. The `private/` prefix is **mandatory, not cosmetic** — `GET /api/files/url` resolves a path only if it literally starts with `private/` or `public/`. Reports are private because they carry usernames, IP addresses and administrative history.
+- **R7.9** Every archived document is recorded in `t_audit_report_file` with, at minimum, its **`file_path`** (the storage key), report type, format, file name, content type, size, row count, a JSON snapshot of the filters used, the reporting window, and who generated it when. The record is only written **after** a successful upload — no row may point at a file that was never stored.
+- **R7.10** `GET /api/auth/reports/archives` lists archived reports (paginated, newest first, filterable by `reportType`, `format`, `generatedBy`).
+- **R7.11** No download link is persisted. Clients take `file_path` from the record and call the existing `GET /api/files/url?filePath=...` to mint a presigned link on demand, because presigned URLs expire (default 300s).
 
 ### 1.8 SDK contract
 
-- **R8.1** Java client SDK adds `AuditReportsApi` with 3 JSON methods and 6 export methods (returning `InputStream`). Bumps to `0.2.0-beta.11`. Republishes to Nexus.
-- **R8.2** TypeScript client mirrors: `AuditReportsClient` with matching method signatures + all new DTOs and enums. Bumps to `0.2.0-beta.13`. Republishes via `pnpm publish`.
+- **R8.1** Java client SDK adds `AuditReportsApi` with 3 JSON methods, 9 export methods (PDF/XLSX/CSV × 3 reports, returning `InputStream`), 3 archive methods and the archive list. Bumps to `0.2.0-beta.11`. Republishes to Nexus.
+- **R8.2** TypeScript client mirrors: `AuditReportsClient` with matching method signatures + all new DTOs and enums (including `AuditReportFile`, `ReportType`, `ReportFormat`). Bumps to `0.2.0-beta.13`. Republishes via `pnpm publish`.
 - **R8.3** The pre-existing `AuthAuditLog*` types in the client SDKs are renamed / consolidated onto the SecurityAudit types (matches R1.1 on the backend).
 
 ## 2. Non-functional requirements
@@ -124,8 +149,11 @@ Every listed platform action must publish a strongly-typed Spring `ApplicationEv
 ### 2.1 Performance
 
 - **N1** Report list endpoints must return first page (default size 20) in < 500ms p95 against a 1M-row audit table with all filters applied. Indexed on `(settings_area, timestamp DESC)`, `(application_module, timestamp DESC)`, `(user_id, timestamp DESC)`, `(timestamp DESC)`.
-- **N2** Excel export of 100k rows must complete in < 30s and consume < 256MB of heap.
+- **N2** Excel **download** of 100k rows must complete in < 30s and consume < 256MB of heap. Two documented carve-outs, both structural rather than implementation defects:
+  - **the archive path (R7.7) does not meet this.** `StorageService.uploadFile` accepts `byte[]` only — there is no stream overload — so archiving necessarily materializes the whole document in memory. Archive requests are expected to cover report-sized windows, not 100k-row dumps.
+  - **the Excel in-memory fallback (R7.6) does not meet this** either, by design: it exists to keep exports working where no writable scratch directory is available, and is the degraded mode.
 - **N3** PDF export of 10k rows must complete in < 20s.
+- **N3.1** CSV export is the cheapest path — no workbook model, no temp files, flat memory at any row count — and is the recommended format for large extracts.
 
 ### 2.2 Reliability
 
@@ -142,6 +170,8 @@ Every listed platform action must publish a strongly-typed Spring `ApplicationEv
 - **N8** Chain secret (`AUDIT_CHAIN_SECRET`) is a required environment variable in production. Missing → refuse to start.
 - **N9** Rehash-on-boot flag (`igrp.audit.chain.rehash-on-boot=true`) is refused when Spring profile `prod` is active — logged as an error, ignored.
 - **N10** Neither raw IP nor identifier value is written to application logs (only to the audit table). Tamper-detection error logs from MR 362 already scrub hash values from log lines.
+- **N11** Archived reports are stored under `private/` and are only reachable through a short-lived presigned URL (R7.8/R7.11). No archived report is ever written to a public object.
+- **N12** *(open)* CSV export does not neutralise spreadsheet formula injection. Audit rows carry user-influenced text (`entityName`, `previousValue`, `newValue`); a field like `=1+1` round-trips as-is and RFC 4180 quoting does not stop Excel evaluating it on open. Neutralising means prefixing `'`, which mutates the value for programmatic consumers — a product decision, deliberately not taken silently. Revisit before CSV is exposed to untrusted report consumers.
 
 ## 3. Design decisions (locked)
 
@@ -158,5 +188,11 @@ Every listed platform action must publish a strongly-typed Spring `ApplicationEv
 | Async ordering | Sync writes with `@Transactional(REQUIRES_NEW)` + Postgres advisory lock | Preserves "audit committed before caller sees success" guarantee. Advisory lock serializes chain writes cluster-wide. |
 | `SessionAuditLogger` | Unchanged | Already calls `SecurityAuditService`; inherits the hash chain automatically. |
 | Catalog-gap handlers | Skip with `TODO`, don't create in this feature | Extracting activate/deactivate/invite handlers is its own design task. |
-| PDF library | OpenPDF 2.0.3 (LGPL) | Apache POI covers Excel; OpenPDF is the LGPL-safe fork of iText 4. AGPL iText is off the table. |
+| PDF library | OpenPDF 2.0.3 (LGPL) | Apache POI covers Excel; OpenPDF is the LGPL-safe fork of iText 4. AGPL iText is off the table. Note the artifact is `com.github.librepdf:openpdf` — `openpdf-core-legacy` does not exist on Maven Central; 2.0.x still ships the legacy `com.lowagie.text` package. |
+| `commons-io` version | Pinned to 2.16.1 | POI 5.3.0 needs `BoundedInputStream.builder()` (≥ 2.16); an older transitive 2.14.0 otherwise wins and Excel fails at runtime with `NoSuchMethodError`. |
+| Third export format | CSV | Asked for by the product owner. Also the only format with no library, no temp file and no workbook model — so it doubles as the dependency-free fallback when Excel generation is degraded. |
+| Excel with no writable temp dir | Fall back to in-memory `XSSFWorkbook` | SXSSF cannot stream without disk. Failing the request is worse than using more heap; the alternative (requiring infra everywhere) makes the endpoint environment-dependent. Streaming stays the default and preferred path. |
+| Archive delivery | Store + return `file_path`, don't return bytes or a link | Direct download already covers "give me the file now". Archiving answers "keep it and let me find it later". A persisted link would expire; the path does not. |
+| Archive upload path | Call `StorageService` directly, not `UploadFileCommandHandler` | That handler takes a `MultipartFile` (an inbound upload); archived reports are generated server-side. The key convention is mirrored so both land in the same shape. |
+| Archive record vs. re-generation | Persist metadata, not the row data | The document is the artefact; `t_security_audit_log` remains the source of truth. The record exists to locate the file, not to reconstruct it. |
 | TS SDK publish | `pnpm publish` | Existing workflow. |

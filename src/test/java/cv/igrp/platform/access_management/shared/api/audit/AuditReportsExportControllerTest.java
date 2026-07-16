@@ -2,16 +2,15 @@ package cv.igrp.platform.access_management.shared.api.audit;
 
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.security_audit.application.dto.AuditReportRowDTO;
-import cv.igrp.platform.access_management.security_audit.application.export.ExcelReportExporter;
-import cv.igrp.platform.access_management.security_audit.application.export.PdfReportExporter;
+import cv.igrp.platform.access_management.security_audit.application.export.ReportColumns;
 import cv.igrp.platform.access_management.security_audit.application.export.ReportExportService;
+import cv.igrp.platform.access_management.security_audit.application.export.ReportRenderer;
+import cv.igrp.platform.access_management.security_audit.domain.enums.ReportFormat;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.context.MessageSource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,25 +23,22 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Contract tests for the six Phase 4 export endpoints on
+ * Contract tests for the nine Phase 4 export endpoints on
  * {@link AuditReportsController}: correct {@code Content-Type},
- * {@code Content-Disposition} filename, and delegation to the right exporter
- * (validation.md §Phase 4 contract).
+ * {@code Content-Disposition} filename, and delegation to the renderer with the
+ * right format (validation.md §Phase 4 contract).
  */
 @ExtendWith(MockitoExtension.class)
 class AuditReportsExportControllerTest {
 
     @Mock private QueryBus queryBus;
     @Mock private ReportExportService exportService;
-    @Mock private ExcelReportExporter excelExporter;
-    @Mock private PdfReportExporter pdfExporter;
-    @Mock private MessageSource messageSource;
+    @Mock private ReportRenderer renderer;
 
     private AuditReportsController controller;
 
@@ -51,60 +47,82 @@ class AuditReportsExportControllerTest {
 
     @BeforeEach
     void setUp() {
-        controller = new AuditReportsController(
-                queryBus, exportService, excelExporter, pdfExporter, messageSource);
+        controller = new AuditReportsController(queryBus, exportService, renderer);
+    }
+
+    private void stubAuditRows() {
+        when(exportService.streamAuditRows(any(), any(), any(), any(), any(), any(), any(), any()))
+                .thenReturn(Stream.<AuditReportRowDTO>empty());
     }
 
     @Test
-    void auditXlsxSetsSpreadsheetContentTypeAndFilenameAndStreamsThroughExcelExporter() throws Exception {
-        when(exportService.streamAuditRows(any(), any(), any(), any(), any(), any(), any(), any()))
-                .thenReturn(Stream.<AuditReportRowDTO>empty());
+    void auditXlsxSetsSpreadsheetContentTypeAndFilenameAndRendersAsXlsx() throws Exception {
+        stubAuditRows();
+        when(renderer.fileName(any(), eq(ReportFormat.XLSX))).thenReturn("audit-report-2026-07-16.xlsx");
 
         ResponseEntity<StreamingResponseBody> response = controller.auditReportXlsx(
                 start, end, null, null, null, null, null, null);
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
-        assertThat(response.getHeaders().getContentType())
-                .isEqualTo(MediaType.parseMediaType(
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
-        String disposition = response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION);
-        assertThat(disposition).startsWith("attachment;");
-        assertThat(disposition).contains("audit-report-").endsWith(".xlsx\"");
+        assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.parseMediaType(
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
+                .isEqualTo("attachment; filename=\"audit-report-2026-07-16.xlsx\"");
 
         response.getBody().writeTo(new ByteArrayOutputStream());
-        verify(excelExporter).write(any(), any(), any());
+        verify(renderer).render(any(), eq(ReportColumns.AUDIT), eq(ReportFormat.XLSX), any());
     }
 
     @Test
-    void auditPdfSetsPdfContentTypeAndHeaderReadsGeneratedOn() throws Exception {
-        when(messageSource.getMessage(eq("report.audit.title"), any(), anyString(), any()))
-                .thenReturn("Audit Report");
-        when(exportService.streamAuditRows(any(), any(), any(), any(), any(), any(), any(), any()))
-                .thenReturn(Stream.<AuditReportRowDTO>empty());
+    void auditPdfSetsPdfContentTypeAndRendersAsPdf() throws Exception {
+        stubAuditRows();
+        when(renderer.fileName(any(), eq(ReportFormat.PDF))).thenReturn("audit-report-2026-07-16.pdf");
 
         ResponseEntity<StreamingResponseBody> response = controller.auditReportPdf(
                 start, end, null, null, null, null, null, null);
 
-        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.OK);
         assertThat(response.getHeaders().getContentType()).isEqualTo(MediaType.APPLICATION_PDF);
-        assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
-                .contains("audit-report-").endsWith(".pdf\"");
+        assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION)).endsWith(".pdf\"");
 
         response.getBody().writeTo(new ByteArrayOutputStream());
-
-        ArgumentCaptor<String> headerCaptor = ArgumentCaptor.forClass(String.class);
-        verify(pdfExporter).write(any(), headerCaptor.capture(), any(), any());
-        assertThat(headerCaptor.getValue()).containsPattern("Audit Report generated on \\d{4}-\\d{2}-\\d{2}");
+        verify(renderer).render(any(), eq(ReportColumns.AUDIT), eq(ReportFormat.PDF), any());
     }
 
     @Test
-    void settingsXlsxUsesSettingsFilenamePrefix() {
-        // Body is not executed here, so streamSettingsRows is never invoked —
-        // this asserts only the response envelope (content type + filename).
-        ResponseEntity<StreamingResponseBody> response = controller.settingsReportXlsx(
+    void auditCsvSetsCsvContentTypeAndRendersAsCsv() throws Exception {
+        stubAuditRows();
+        when(renderer.fileName(any(), eq(ReportFormat.CSV))).thenReturn("audit-report-2026-07-16.csv");
+
+        ResponseEntity<StreamingResponseBody> response = controller.auditReportCsv(
+                start, end, null, null, null, null, null, null);
+
+        assertThat(response.getHeaders().getContentType().isCompatibleWith(MediaType.parseMediaType("text/csv")))
+                .isTrue();
+        assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION)).endsWith(".csv\"");
+
+        response.getBody().writeTo(new ByteArrayOutputStream());
+        verify(renderer).render(any(), eq(ReportColumns.AUDIT), eq(ReportFormat.CSV), any());
+    }
+
+    @Test
+    void settingsCsvUsesSettingsDescriptor() {
+        when(renderer.fileName(any(), eq(ReportFormat.CSV))).thenReturn("settings-report-2026-07-16.csv");
+
+        ResponseEntity<StreamingResponseBody> response = controller.settingsReportCsv(
                 start, end, null, null, null, null, null);
 
         assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
-                .contains("settings-report-").endsWith(".xlsx\"");
+                .isEqualTo("attachment; filename=\"settings-report-2026-07-16.csv\"");
+    }
+
+    @Test
+    void accessXlsxUsesAccessDescriptor() {
+        when(renderer.fileName(any(), eq(ReportFormat.XLSX))).thenReturn("access-report-2026-07-16.xlsx");
+
+        ResponseEntity<StreamingResponseBody> response = controller.accessReportXlsx(
+                start, end, null, null, null, null, null);
+
+        assertThat(response.getHeaders().getFirst(HttpHeaders.CONTENT_DISPOSITION))
+                .contains("access-report-").endsWith(".xlsx\"");
     }
 }

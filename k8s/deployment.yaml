@@ -33,4 +33,13 @@ spec:
               value: "postgres"
             - name: SPRING_DATASOURCE_PASSWORD
               value: "postgres"
-          
+          # Apache POI (SXSSFWorkbook) streams .xlsx exports through a temp file
+          # under java.io.tmpdir, created as soon as the sheet is created. With a
+          # read-only root filesystem and no writable /tmp, every .xlsx export
+          # fails with a 500. This volume guarantees the writable scratch space.
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
