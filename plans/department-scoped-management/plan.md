@@ -76,25 +76,30 @@ All write endpoints in R1.2 gated. Existing endpoints still work for superadmins
 
 ---
 
-## Phase 3 — SDK updates + observability
+## Phase 3 — Observability
 
-**Goal:** clients and monitoring reflect the new scoping.
+**Goal:** ops can alert on scope-denial spikes as a signal of misconfiguration or privilege-escalation probing.
+
+**Reduced scope note:** the SDK work originally planned here (`DepartmentsApi.getManageable()` + typed `OutOfScopeException` in the SDK) was dropped because Phase 1 no longer adds a `/manageable` endpoint (the existing `GET /api/departments` is already scope-filtered). SDK consumers discriminate the two new 403 error codes by reading the `error` property on the returned `ProblemDetail` — no new SDK method or typed exception is required.
 
 ### Steps
 
-1. **Java client SDK** (`modules/client`):
-   - Add `DepartmentsApi.getManageable()` returning `List<DepartmentDTO>`.
-   - Add typed exception `OutOfScopeException` in the SDK's `error` package that the HTTP layer throws on 403 with `error=OUT_OF_SCOPE`.
-   - Bump `client 0.2.0-beta.<next> → 0.2.0-beta.<next+1>`.
-2. **TypeScript client**:
-   - `DepartmentsClient.getManageable()`.
-   - Discriminated union on error responses so `catch (e) { if (e.code === 'OUT_OF_SCOPE') ... }` works.
-3. **Metric** `igrp_department_scope_check_denied_total{endpoint, reason}` — Prometheus counter incremented on every `OutOfScopeException` and `RootDepartmentForbiddenException`. Wired to the existing actuator/micrometer setup.
-4. **Log line** on every denial: `INFO cv.igrp...scope=OUT_OF_SCOPE user={userId} target={deptId} endpoint={path}` — one structured log line, no PII beyond IDs.
+1. **`DepartmentScopeMetrics`** (new, in `department/infrastructure/metrics/`) — Micrometer counter `igrp.department.scope.check.denied` tagged with `reason=OUT_OF_SCOPE|ROOT_DEPARTMENT_FORBIDDEN`. Follows the existing `SessionMetrics` naming convention (`igrp.<domain>.<counter>` → `igrp_<domain>_<counter>_total` in Prometheus).
+
+2. **Wire into `ScopeService`** — `assertInScope` and `assertSuperAdmin` bump the counter on denial, right before throwing. The `DepartmentScopeMetrics` bean is `@Autowired(required = false)` so unit tests that construct `ScopeService` directly (without a `MeterRegistry`) don't need to supply it.
+
+3. **Structured log line** — already added in Phase 1: `scope=OUT_OF_SCOPE user={id} target={dept}` and `scope=ROOT_DEPARTMENT_FORBIDDEN user={id}` at INFO level. No further work.
 
 ### Deliverable
 
-Frontend can render the scoped picker; SDK consumers get typed errors; ops can alert on scope-denial spikes (signal of misconfiguration or attack).
+Two Prometheus time series available on `/actuator/prometheus`:
+
+```
+igrp_department_scope_check_denied_total{reason="OUT_OF_SCOPE"}
+igrp_department_scope_check_denied_total{reason="ROOT_DEPARTMENT_FORBIDDEN"}
+```
+
+Ops can alert on non-zero rates; auditors get log lines already in place from Phase 1.
 
 ---
 
@@ -104,7 +109,7 @@ Frontend can render the scoped picker; SDK consumers get typed errors; ops can a
 |---|---|---|
 | 1 | 2-3h | Low — read-only, well-scoped |
 | 2 | 3-4h | Med — 14 handlers to wire; catalog-gap handlers from audit feature complicate mapping |
-| 3 | 2h Java + 2h TS + 30m metric | Low — mechanical |
+| 3 | ~30min (only the metric — SDK work dropped, logs already done) | Low |
 
 Total: ~8-11h across 2-3 focused sessions.
 

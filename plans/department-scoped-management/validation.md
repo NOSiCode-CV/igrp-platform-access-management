@@ -75,24 +75,30 @@ For each endpoint in R1.2, seed a user with a role in an unrelated department tr
 
 ---
 
-## Phase 3 — SDK + observability
+## Phase 3 — Observability
 
-### Java SDK
+### Compile & unit
 
-- [ ] `client 0.2.0-beta.<next>` builds. Contains `DepartmentsApi.getManageable()` and `error.OutOfScopeException`.
-- [ ] Standalone smoke: instantiate `DepartmentsApi`, call `getManageable()` against local API, assert non-empty response.
-- [ ] Trigger an out-of-scope operation → SDK throws `OutOfScopeException` with the target dept ID accessible via `e.getDepartmentId()`.
-
-### TypeScript SDK
-
-- [ ] `pnpm build` — success.
-- [ ] `DepartmentsClient.getManageable()` returns typed `Department[]`.
-- [ ] Error discriminated union: `catch (e) { if (e.code === 'OUT_OF_SCOPE') ... }` compiles and works at runtime.
+- [ ] `mvnw -DskipTests compile` — BUILD SUCCESS.
+- [ ] `mvnw test -Dtest=ScopeServiceAssertionsTest` — still 6/6 green (the `@Autowired(required=false)` metrics field means unit-constructed ScopeService still works without a MeterRegistry).
 
 ### Observability
 
-- [ ] `curl -sS http://localhost:8080/igrp-access-management/actuator/prometheus | grep igrp_department_scope_check_denied_total` shows the metric present and > 0 after triggering a denial.
-- [ ] Log lines on denial: `grep "scope=OUT_OF_SCOPE" application.log` shows one INFO line per 403, structured with `user`, `target`, `endpoint`.
+- [ ] Trigger an out-of-scope operation (e.g. Alice tries `PUT /api/departments/{root-code}`).
+- [ ] `curl -sS http://localhost:8080/igrp-access-management/actuator/prometheus | grep igrp_department_scope_check_denied_total` shows:
+  ```
+  igrp_department_scope_check_denied_total{reason="OUT_OF_SCOPE",} 1.0
+  ```
+- [ ] Trigger a root-department creation attempt as a non-superadmin.
+- [ ] Prometheus now shows a second series:
+  ```
+  igrp_department_scope_check_denied_total{reason="ROOT_DEPARTMENT_FORBIDDEN",} 1.0
+  ```
+- [ ] Log lines on denial: `grep "scope=OUT_OF_SCOPE" application.log` shows one INFO line per 403, structured with `user` and `target`.
+
+### SDK (dropped — see plan.md Phase 3 note)
+
+No SDK bumps in this phase. Consumers of `GET /api/departments`, department writes, and role writes discriminate the new 403 error codes by reading `ProblemDetail.getProperty("error")` == `"OUT_OF_SCOPE"` or `"ROOT_DEPARTMENT_FORBIDDEN"`. No new SDK method or typed exception required because no new endpoint was added.
 
 ---
 

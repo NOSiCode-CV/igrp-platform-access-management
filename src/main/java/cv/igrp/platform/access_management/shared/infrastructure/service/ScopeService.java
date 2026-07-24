@@ -2,6 +2,8 @@ package cv.igrp.platform.access_management.shared.infrastructure.service;
 
 import cv.igrp.platform.access_management.department.domain.exceptions.OutOfScopeException;
 import cv.igrp.platform.access_management.department.domain.exceptions.RootDepartmentForbiddenException;
+import cv.igrp.platform.access_management.department.infrastructure.metrics.DepartmentScopeMetrics;
+import org.springframework.beans.factory.annotation.Autowired;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
@@ -33,6 +35,12 @@ public class ScopeService {
     private final ApplicationEntityRepository applicationRepository;
     private final RoleEntityRepository roleRepository;
     private final JdbcTemplate jdbcTemplate;
+
+    // Optional so tests using the direct-constructor form don't have to
+    // supply a MeterRegistry-backed metrics bean. When unset, denials still
+    // log + throw; they just don't increment the counter.
+    @Autowired(required = false)
+    private DepartmentScopeMetrics metrics;
 
     public ScopeService(
             AuthenticationHelper authenticationHelper,
@@ -232,6 +240,7 @@ public class ScopeService {
     public void assertInScope(Integer departmentId) {
         if (!isInScope(departmentId)) {
             LOGGER.info("scope=OUT_OF_SCOPE user={} target={}", safeActorId(), departmentId);
+            if (metrics != null) metrics.recordScopeDenied("OUT_OF_SCOPE");
             throw new OutOfScopeException(departmentId);
         }
     }
@@ -244,6 +253,7 @@ public class ScopeService {
     public void assertSuperAdmin() {
         if (!isSuperAdmin()) {
             LOGGER.info("scope=ROOT_DEPARTMENT_FORBIDDEN user={}", safeActorId());
+            if (metrics != null) metrics.recordScopeDenied("ROOT_DEPARTMENT_FORBIDDEN");
             throw new RootDepartmentForbiddenException();
         }
     }
