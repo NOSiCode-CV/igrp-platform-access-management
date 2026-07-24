@@ -10,6 +10,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import cv.igrp.platform.access_management.security_audit.domain.events.RoleDeletedEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -43,6 +44,7 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
    private final RoleEntityRepository roleRepository;
    private final DepartmentEntityRepository departmentRepository;
    private final EventPublisher eventPublisher;
+   private final ScopeService scopeService;
 
    /**
     * Constructs a new instance of {@code DeleteRoleCommandHandler} with the required dependencies.
@@ -50,11 +52,13 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
     * @param roleRepository       repository for accessing and updating role entities
     * @param departmentRepository repository for accessing and updating department entities
     * @param eventPublisher       publishes session-invalidation events
+    * @param scopeService         enforces the department-management scope on the caller
     */
-   public DeleteRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, EventPublisher eventPublisher) {
+   public DeleteRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, EventPublisher eventPublisher, ScopeService scopeService) {
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
       this.eventPublisher = eventPublisher;
+      this.scopeService = scopeService;
    }
 
    /**
@@ -77,6 +81,9 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
       log.info("Delete Role with code: {}.", command.getRoleCode());
 
       DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(departmentCode);
+
+      // Scope enforcement (R1.2): the role belongs to the target department.
+      scopeService.assertInScope(department.getId());
 
       RoleEntity role = roleRepository.findByDepartmentAndCodeAndStatusNot(department, command.getRoleCode(), Status.DELETED)
               .orElseThrow(() -> {

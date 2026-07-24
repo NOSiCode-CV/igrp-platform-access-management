@@ -13,6 +13,7 @@ import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -39,6 +40,7 @@ class DepartmentSettingsAuditIT {
     @Mock private DepartmentMapper departmentMapper;
     @Mock private RoleEntityRepository roleRepository;
     @Mock private EventPublisher eventPublisher;
+    @Mock private ScopeService scopeService;
 
     @Test
     void createDepartmentPublishesDepartmentCreatedEvent() {
@@ -58,7 +60,7 @@ class DepartmentSettingsAuditIT {
         when(departmentRepository.save(any(DepartmentEntity.class))).thenReturn(saved);
         when(departmentMapper.toDto(saved)).thenReturn(dto);
 
-        var handler = new PostDepartmentCommandHandler(departmentRepository, departmentMapper, eventPublisher);
+        var handler = new PostDepartmentCommandHandler(departmentRepository, departmentMapper, eventPublisher, scopeService);
 
         handler.handle(new PostDepartmentCommand(dto));
 
@@ -82,7 +84,7 @@ class DepartmentSettingsAuditIT {
                 .thenReturn(Optional.of(department));
         when(departmentRepository.save(any(DepartmentEntity.class))).thenAnswer(inv -> inv.getArgument(0));
 
-        var handler = new DeleteDepartmentCommandHandler(departmentRepository, roleRepository, eventPublisher);
+        var handler = new DeleteDepartmentCommandHandler(departmentRepository, roleRepository, eventPublisher, scopeService);
 
         handler.handle(new DeleteDepartmentCommand("FIN"));
 

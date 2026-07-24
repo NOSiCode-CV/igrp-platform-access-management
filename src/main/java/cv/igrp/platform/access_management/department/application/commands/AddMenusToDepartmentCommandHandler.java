@@ -12,6 +12,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.security_audit.domain.events.MenuAssociatedToRoleEvent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -30,12 +31,14 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
    private final DepartmentEntityRepository departmentRepository;
    private final ApplicationEntityRepository applicationRepository;
    private final EventPublisher eventPublisher;
+   private final ScopeService scopeService;
 
-   public AddMenusToDepartmentCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentRepository, ApplicationEntityRepository applicationRepository, EventPublisher eventPublisher) {
+   public AddMenusToDepartmentCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentRepository, ApplicationEntityRepository applicationRepository, EventPublisher eventPublisher, ScopeService scopeService) {
       this.menuEntryRepository = menuEntryRepository;
       this.departmentRepository = departmentRepository;
       this.applicationRepository = applicationRepository;
       this.eventPublisher = eventPublisher;
+      this.scopeService = scopeService;
    }
 
    @IgrpCommandHandler
@@ -55,6 +58,10 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
 
       var department = departmentOpt.get();
       var application = applicationOpt.get();
+
+      // Scope enforcement (R1.2): the target department must be in the caller's scope.
+      scopeService.assertInScope(department.getId());
+
       for (String menuCode : menuCodes) {
          var menuEntryOpt = menuEntryRepository.findByApplicationIdAndCodeAndStatusNot(application, menuCode, Status.DELETED);
          if (menuEntryOpt.isEmpty()) {

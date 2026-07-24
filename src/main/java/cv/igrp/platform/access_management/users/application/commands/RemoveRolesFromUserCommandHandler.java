@@ -17,6 +17,8 @@ import cv.igrp.platform.access_management.security_audit.domain.events.RoleUnass
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -42,21 +44,17 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
    private final SecurityAuditService securityAuditService;
    private final cv.igrp.platform.access_management.role.domain.service.RoleMapper roleMapper;
    private final EventPublisher eventPublisher;
+   private final ScopeService scopeService;
 
-   /**
-    * Constructs the handler with the required repository dependency.
-    *
-    * @param userRepository the repository used to retrieve and save {@link IGRPUserEntity} entities
-    * @param roleRepository the repository used to retrieve and save {@link RoleEntity} entities
-    */
    public RemoveRolesFromUserCommandHandler(
-           IGRPUserEntityRepository userRepository, 
-           RoleEntityRepository roleRepository, 
-           DepartmentEntityRepository departmentRepository, 
+           IGRPUserEntityRepository userRepository,
+           RoleEntityRepository roleRepository,
+           DepartmentEntityRepository departmentRepository,
            UserRoleAssignmentRepository userRoleAssignmentRepository,
            SecurityAuditService securityAuditService,
            cv.igrp.platform.access_management.role.domain.service.RoleMapper roleMapper,
-           EventPublisher eventPublisher) {
+           EventPublisher eventPublisher,
+           ScopeService scopeService) {
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
@@ -64,6 +62,7 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
       this.securityAuditService = securityAuditService;
       this.roleMapper = roleMapper;
       this.eventPublisher = eventPublisher;
+      this.scopeService = scopeService;
    }
 
    /**
@@ -81,11 +80,19 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
 
       logger.info("Attempting to remove roles {} from id={}", roleIdsToRemove, userId);
 
-      // Ensure department lookup occurs (used by tests for validation/stubbing)
+      // Ensure department lookup occurs (used by tests for validation/stubbing).
+      // If the lookup succeeds, enforce scope (R1.6): only the role's department
+      // needs to be in the caller's scope; target user is unrestricted.
       try {
-         departmentRepository.findByCodeAndStatusNotDeleted(command.getDepartmentCode());
+         DepartmentEntity dept = departmentRepository.findByCodeAndStatusNotDeleted(command.getDepartmentCode());
+         if (dept != null) {
+            scopeService.assertInScope(dept.getId());
+         }
+      } catch (cv.igrp.platform.access_management.department.domain.exceptions.OutOfScopeException oose) {
+         // scope failures must propagate — do not swallow
+         throw oose;
       } catch (Exception ignored) {
-         // No behavior change; lookup is for validation/logical consistency
+         // Preserve legacy behavior: non-scope lookup failures are swallowed
       }
 
       IGRPUserEntity user = userRepository.findById(userId)

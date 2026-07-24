@@ -21,6 +21,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.shared.domain.events.UserRoleChangedEvent;
 import cv.igrp.platform.access_management.security_audit.domain.events.RoleAssignedToUserEvent;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
@@ -66,17 +67,10 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
    private final ExpireRoleService expireRoleService;
    private final SecurityAuditService securityAuditService;
    private final EventPublisher eventPublisher;
+   private final ScopeService scopeService;
 
    /**
     * Constructs the handler with required dependencies.
-    *
-    * @param userRepository the repository used to retrieve user entities
-    * @param roleRepository the repository used to retrieve and update roles
-    * @param departmentRepository the repository used to retrieve department entities
-    * @param roleMapper the mapper used to convert role entities to DTOs
-    * @param userRoleAssignmentRepository the repository for user role assignments
-    * @param expireRoleService the service for managing role expiration
-    * @param securityAuditService the service for security auditing
     */
    public AddRolesToUserCommandHandler(
            IGRPUserEntityRepository userRepository,
@@ -86,7 +80,8 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
            UserRoleAssignmentRepository userRoleAssignmentRepository,
            ExpireRoleService expireRoleService,
            SecurityAuditService securityAuditService,
-           EventPublisher eventPublisher) {
+           EventPublisher eventPublisher,
+           ScopeService scopeService) {
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
@@ -95,6 +90,7 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
       this.expireRoleService = expireRoleService;
       this.securityAuditService = securityAuditService;
       this.eventPublisher = eventPublisher;
+      this.scopeService = scopeService;
    }
 
    /**
@@ -115,6 +111,15 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
          throw new NoActionPerformedException("No action performed because the role list is empty");
 
       DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(departmentCode);
+
+      // Scope enforcement (R1.5): only the role's department needs to be in the caller's
+      // scope. The target user is unrestricted — a scoped manager may assign a role
+      // from their subtree to any user platform-wide.
+      // Null-guard: real repo throws when the dept is missing, but tests stub the
+      // return to null. Preserve the null-not-found flow instead of masking it.
+      if (department != null) {
+         scopeService.assertInScope(department.getId());
+      }
 
       List<RoleEntity> successfullyAssignedRoles = new ArrayList<>();
 

@@ -12,6 +12,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.security_audit.domain.events.RoleEditedEvent;
 import cv.igrp.platform.access_management.security_audit.application.support.SettingsDiff;
 import lombok.extern.slf4j.Slf4j;
@@ -61,6 +62,7 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
    private final RoleMapper roleMapper;
    private final UserUtils userUtils;
    private final EventPublisher eventPublisher;
+   private final ScopeService scopeService;
 
    /**
     * Constructs an {@code UpdateRoleCommandHandler} with the required dependencies.
@@ -70,13 +72,15 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
     * @param roleMapper     the mapper used to convert {@link RoleEntity} to {@link RoleDTO}
     * @param userUtils      the utility class used to handle user-related operations
     * @param eventPublisher publishes the settings-audit event
+    * @param scopeService   enforces the department-management scope on the caller
     */
-   public UpdateRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper, UserUtils userUtils, EventPublisher eventPublisher) {
+   public UpdateRoleCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper, UserUtils userUtils, EventPublisher eventPublisher, ScopeService scopeService) {
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
       this.roleMapper = roleMapper;
       this.userUtils = userUtils;
       this.eventPublisher = eventPublisher;
+      this.scopeService = scopeService;
    }
 
    /**
@@ -99,6 +103,9 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
       log.info("Update Role with code: {}.", command.getRoledto().getCode());
 
       DepartmentEntity department = departmentRepository.findByCodeAndStatusNotDeleted(command.getDepartmentCode());
+
+      // Scope enforcement (R1.2): the role belongs to the target department.
+      scopeService.assertInScope(department.getId());
 
       RoleDTO newData = command.getRoledto();
       RoleEntity roleToUpdate = roleRepository.findByDepartmentAndCodeAndStatusNot(department, command.getRoleCode(), Status.DELETED)

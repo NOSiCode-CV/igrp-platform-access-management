@@ -19,6 +19,7 @@ import org.springframework.stereotype.Component;
 
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.security_audit.domain.events.RoleCreatedEvent;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +48,7 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
    private final RoleEntityRepository roleRepository;
    private final RoleMapper roleMapper;
    private final EventPublisher eventPublisher;
+   private final ScopeService scopeService;
 
    /**
     * Constructs the role creation handler with required dependencies.
@@ -55,12 +57,14 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
     * @param roleRepository repository to manage roles
     * @param roleMapper mapper to convert between entity and DTO
     * @param eventPublisher publishes the settings-audit event
+    * @param scopeService enforces the department-management scope on the caller
     */
-   public CreateRoleCommandHandler(DepartmentEntityRepository departmentRepository, RoleEntityRepository roleRepository, RoleMapper roleMapper, EventPublisher eventPublisher) {
+   public CreateRoleCommandHandler(DepartmentEntityRepository departmentRepository, RoleEntityRepository roleRepository, RoleMapper roleMapper, EventPublisher eventPublisher, ScopeService scopeService) {
       this.departmentRepository = departmentRepository;
       this.roleRepository = roleRepository;
       this.roleMapper = roleMapper;
       this.eventPublisher = eventPublisher;
+      this.scopeService = scopeService;
    }
 
    /**
@@ -87,6 +91,9 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
                          HttpStatus.NOT_FOUND, "Create Role", "Department with code: " + command.getCode() + " not found."
                  );
               });
+
+      // Scope enforcement (R1.2): role belongs to the department; the caller must be able to manage it.
+      scopeService.assertInScope(department.getId());
 
       String roleCode = RoleValidator.normalizeRoleCode(command.getRoledto().getCode(), command.getRoledto().getParentCode());
 

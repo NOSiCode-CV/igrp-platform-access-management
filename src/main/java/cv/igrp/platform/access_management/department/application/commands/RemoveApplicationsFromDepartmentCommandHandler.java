@@ -7,6 +7,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.security_audit.domain.events.ApplicationDisassociatedFromRoleEvent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -25,11 +26,13 @@ public class RemoveApplicationsFromDepartmentCommandHandler implements CommandHa
    private final ApplicationEntityRepository applicationRepository;
    private final DepartmentEntityRepository departmentRepository;
    private final EventPublisher eventPublisher;
+   private final ScopeService scopeService;
 
-   public RemoveApplicationsFromDepartmentCommandHandler(ApplicationEntityRepository applicationRepository, DepartmentEntityRepository departmentRepository, EventPublisher eventPublisher) {
+   public RemoveApplicationsFromDepartmentCommandHandler(ApplicationEntityRepository applicationRepository, DepartmentEntityRepository departmentRepository, EventPublisher eventPublisher, ScopeService scopeService) {
       this.applicationRepository = applicationRepository;
       this.departmentRepository = departmentRepository;
       this.eventPublisher = eventPublisher;
+      this.scopeService = scopeService;
    }
 
    @Transactional
@@ -39,6 +42,9 @@ public class RemoveApplicationsFromDepartmentCommandHandler implements CommandHa
       LOGGER.info("Handling applications removal from department: {}", command.getCode());
 
       var department = departmentRepository.findByCodeAndStatusNotDeleted(command.getCode());
+
+      // Scope enforcement (R1.2): the target department must be in the caller's scope.
+      scopeService.assertInScope(department.getId());
 
       for (var appCode : command.getRemoveApplicationsFromDepartmentRequest()) {
 

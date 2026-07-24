@@ -16,6 +16,7 @@ import org.slf4j.LoggerFactory;
 
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.security_audit.domain.events.DepartmentCreatedEvent;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -49,6 +50,7 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
    private final DepartmentEntityRepository departmentRepository;
    private final DepartmentMapper departmentMapper;
    private final EventPublisher eventPublisher;
+   private final ScopeService scopeService;
 
    /**
     * Constructs the command handler with required dependencies.
@@ -56,14 +58,17 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
     * @param departmentRepository the repository used to persist departments
     * @param departmentMapper the mapper used to convert between DTOs and domain entities
     * @param eventPublisher publishes the settings-audit event
+    * @param scopeService enforces the department-management scope on the caller
     */
    public PostDepartmentCommandHandler(
            DepartmentEntityRepository departmentRepository,
            DepartmentMapper departmentMapper,
-           EventPublisher eventPublisher) {
+           EventPublisher eventPublisher,
+           ScopeService scopeService) {
       this.departmentRepository = departmentRepository;
       this.departmentMapper = departmentMapper;
       this.eventPublisher = eventPublisher;
+      this.scopeService = scopeService;
    }
 
    /**
@@ -104,7 +109,12 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
                     return IgrpResponseStatusException.of(
                             HttpStatus.BAD_REQUEST, "Invalid department Code", "No parent department found with Code: " + departmentDto.getParentCode());
                  });
+         // Scope enforcement (R1.2): the caller must be able to manage the target parent department.
+         scopeService.assertInScope(parent.getId());
          department.setParentId(parent);
+      } else {
+         // Root-department creation (R1.4): superadmin only.
+         scopeService.assertSuperAdmin();
       }
 
       DepartmentEntity saved = departmentRepository.save(department);

@@ -1,6 +1,8 @@
 package cv.igrp.platform.access_management.shared.domain.exceptions;
 
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import cv.igrp.platform.access_management.department.domain.exceptions.OutOfScopeException;
+import cv.igrp.platform.access_management.department.domain.exceptions.RootDepartmentForbiddenException;
 import cv.igrp.platform.access_management.shared.security.InvalidPrincipalException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -34,6 +36,25 @@ public class GlobalExceptionHandler {
         LOGGER.error(ex.getMessage(), ex);
 
         return ex.getBody();
+    }
+
+    @ExceptionHandler(OutOfScopeException.class)
+    public ProblemDetail handleOutOfScope(OutOfScopeException ex) {
+        LOGGER.warn("Out-of-scope department access attempt: {}", ex.getMessage());
+        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Out of scope");
+        problem.setProperty("error", "OUT_OF_SCOPE");
+        problem.setProperty("departmentId", ex.getDepartmentId());
+        return problem;
+    }
+
+    @ExceptionHandler(RootDepartmentForbiddenException.class)
+    public ProblemDetail handleRootDepartmentForbidden(RootDepartmentForbiddenException ex) {
+        LOGGER.warn("Root-department creation attempted by non-superadmin");
+        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
+        problem.setTitle("Root department forbidden");
+        problem.setProperty("error", "ROOT_DEPARTMENT_FORBIDDEN");
+        return problem;
     }
 
     @ExceptionHandler(ClassCastException.class)

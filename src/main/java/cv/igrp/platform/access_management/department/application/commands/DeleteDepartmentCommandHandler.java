@@ -11,6 +11,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.security_audit.domain.events.DepartmentDeletedEvent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -37,6 +38,7 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
    private final DepartmentEntityRepository departmentRepository;
    private final RoleEntityRepository roleRepository;
    private final EventPublisher eventPublisher;
+   private final ScopeService scopeService;
 
    /**
     * Constructs a new instance of {@code DeleteDepartmentCommandHandler} with the given repository.
@@ -44,11 +46,13 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
     * @param departmentRepository the repository used to access and delete departments
     * @param roleRepository the repository used to access and delete roles
     * @param eventPublisher publishes the settings-audit event
+    * @param scopeService enforces the department-management scope on the caller
     */
-   public DeleteDepartmentCommandHandler(DepartmentEntityRepository departmentRepository, RoleEntityRepository roleRepository, EventPublisher eventPublisher) {
+   public DeleteDepartmentCommandHandler(DepartmentEntityRepository departmentRepository, RoleEntityRepository roleRepository, EventPublisher eventPublisher, ScopeService scopeService) {
       this.departmentRepository = departmentRepository;
       this.roleRepository = roleRepository;
       this.eventPublisher = eventPublisher;
+      this.scopeService = scopeService;
    }
 
    /**
@@ -80,6 +84,10 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
                          logger.warn("Department with code={} not found", code);
                          return IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_DEPARTMENT_NOT_FOUND_BY_CODE, code);
                       });
+
+      // Scope enforcement (R1.2): the caller must be able to manage the target department.
+      // Descendants are in scope by construction (subtree), so cascade needs no extra check.
+      scopeService.assertInScope(department.getId());
 
       deleteDepartmentRoles(department);
 
