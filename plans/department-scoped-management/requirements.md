@@ -56,10 +56,10 @@ The endpoints affected:
 - **R1.8** Scope enforcement is **additive** to existing permission gates. A user still needs `igrp.departments.manage` (or the equivalent granular permission) to attempt the operation. Missing permission → 403 with the current authorization error. Insufficient scope → 403 with `OUT_OF_SCOPE`. Missing both → the permission gate fires first.
 - **R1.9** No new permissions are introduced by this feature. It reuses the existing `igrp.departments.*`, `igrp.roles.*`, `igrp.users.roles.*` grants.
 
-### 1.6 Read side — unscoped (except one exception)
+### 1.6 Read side — already scoped by existing infrastructure
 
-- **R1.10** `GET` endpoints for departments, roles, users, permissions, menus are **not scoped** in this feature. Everyone with `igrp.<resource>.view` sees everything. Rationale: reads are cheaper to reason about; scoping reads is a separate feature if needed later.
-- **R1.11** `GET /api/departments/manageable` — one new endpoint that returns the caller's scope (list of department IDs + hierarchical view). Powers the frontend's department picker so managers only see what they can act on. Uses `igrp.departments.view` for authorization.
+- **R1.10** `GET /api/departments` is **already scope-filtered** for non-superadmins by the existing `ScopeAspect` + `@Scoped` + `DepartmentSpecificationBuilder.applyScope` chain — the endpoint returns only departments in the caller's visible-department set (their active role's department + all transitive descendants). No new endpoint is needed for this feature; the frontend's department picker reads from `GET /api/departments`.
+- **R1.11** Other `GET` endpoints for roles, users, permissions, menus are **not further scoped** in this feature. Everyone with `igrp.<resource>.view` sees everything. Rationale: reads are cheaper to reason about; scoping the rest of the read surface is a separate feature if needed later.
 - **R1.12** The Settings Audit Report (`GET /api/auth/reports/settings`) is **not scoped**. Auditors with `igrp.audit.view` see all rows regardless of the audited entity's department. Locked design decision.
 
 ## 2. Non-functional requirements

@@ -1,11 +1,15 @@
 package cv.igrp.platform.access_management.shared.infrastructure.service;
 
+import cv.igrp.platform.access_management.department.domain.exceptions.OutOfScopeException;
+import cv.igrp.platform.access_management.department.domain.exceptions.RootDepartmentForbiddenException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import cv.igrp.platform.access_management.shared.security.RequestScopeCache;
 import cv.igrp.platform.access_management.shared.security.SubjectParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -20,6 +24,8 @@ import static cv.igrp.platform.access_management.shared.infrastructure.service.C
 
 @Service
 public class ScopeService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScopeService.class);
 
     private final AuthenticationHelper authenticationHelper;
     private final RequestScopeCache cache;
@@ -201,4 +207,52 @@ public class ScopeService {
             Object rawPrincipal
     ) {}
 
+    // ─── write-side scope assertions ───────────────────────────────────
+    //
+    // Used by command handlers to gate mutations on department, role, and
+    // role-linked resources. Superadmins short-circuit to allow. Non-null
+    // department id required — a null id can never belong to any scope.
+
+    /**
+     * True when {@code departmentId} is in the caller's visible-department set
+     * (their active role's department + all transitive descendants), or when
+     * the caller is a superadmin. False for a null id.
+     */
+    public boolean isInScope(Integer departmentId) {
+        if (departmentId == null) return false;
+        if (isSuperAdmin()) return true;
+        return getVisibleDepartmentIds().contains(departmentId);
+    }
+
+    /**
+     * Throws {@link OutOfScopeException} (→ 403 OUT_OF_SCOPE) when
+     * {@code departmentId} is not in the caller's scope. Superadmins never
+     * trigger.
+     */
+    public void assertInScope(Integer departmentId) {
+        if (!isInScope(departmentId)) {
+            LOGGER.info("scope=OUT_OF_SCOPE user={} target={}", safeActorId(), departmentId);
+            throw new OutOfScopeException(departmentId);
+        }
+    }
+
+    /**
+     * Throws {@link RootDepartmentForbiddenException} (→ 403
+     * ROOT_DEPARTMENT_FORBIDDEN) unless the caller is a superadmin. Used by
+     * the create-department handler to gate root-department creation.
+     */
+    public void assertSuperAdmin() {
+        if (!isSuperAdmin()) {
+            LOGGER.info("scope=ROOT_DEPARTMENT_FORBIDDEN user={}", safeActorId());
+            throw new RootDepartmentForbiddenException();
+        }
+    }
+
+    private String safeActorId() {
+        try {
+            return getActor().id();
+        } catch (RuntimeException e) {
+            return "<unknown>";
+        }
+    }
 }

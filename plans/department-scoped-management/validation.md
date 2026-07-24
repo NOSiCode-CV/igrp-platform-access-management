@@ -6,27 +6,25 @@ Companion documents: [`plan.md`](./plan.md), [`requirements.md`](./requirements.
 
 ---
 
-## Phase 1 — Scope service + helper endpoint
+## Phase 1 — Extend `ScopeService` with write-side assertions
 
 ### Compile & unit
 
 - [ ] `mvnw -DskipTests compile` — BUILD SUCCESS.
-- [ ] `mvnw test -Dtest=DepartmentScopeServiceTest,DepartmentScopeCteIT` — all green.
+- [ ] `mvnw test -Dtest=ScopeServiceAssertionsTest` — all green (6/6).
 
-### Behaviour
+### Behaviour (delegated to existing `ScopeService.getVisibleDepartmentIds`)
 
-- [ ] Seed: root dept `A` → child `B` → grandchild `C`; role `A.admin` in dept `A`, role `B.mgr` in dept `B`. User `alice` has role `B.mgr` only.
-- [ ] `scopeService.scopeOf(alice)` returns `{ B.id, C.id }`. Excludes `A.id` (parent, out of subtree).
-- [ ] `scopeService.scopeOf(superadmin)` returns the unbounded marker; `isInScope(anyId)` returns true.
-- [ ] `scopeService.scopeOf(userWithNoRoles)` returns empty set.
-- [ ] `GET /api/departments/manageable` as `alice` → response contains `B` and `C`, does not contain `A`. Response is a `List<DepartmentDTO>`.
-- [ ] Same endpoint as superadmin → contains every non-deleted department.
-- [ ] Same endpoint without `igrp.departments.view` → 403.
+- [ ] Seed: root dept `A` → child `B` → grandchild `C`; role `A.admin` in dept `A`, role `B.mgr` in dept `B`. User `alice` has role `B.mgr` only (active role = `B.mgr`).
+- [ ] `scopeService.isInScope(B.id)` = true, `isInScope(C.id)` = true, `isInScope(A.id)` = false for alice.
+- [ ] `scopeService.assertInScope(A.id)` throws `OutOfScopeException` carrying `departmentId=A.id`.
+- [ ] `scopeService.assertSuperAdmin()` throws `RootDepartmentForbiddenException` for alice.
+- [ ] Same three calls for the superadmin → all pass (short-circuit).
+- [ ] `GET /api/departments` as alice → response contains `B` and `C`, does not contain `A` (existing `@Scoped` + `applyScope` chain). Same as superadmin → contains every non-deleted department. Same as user without `igrp.departments.list` → 403.
 
 ### Performance
 
-- [ ] Seed 10k departments in a 5-level tree (via SQL script). `scopeOf(user_with_one_role)` completes in < 50ms measured by `System.nanoTime()` in the integration test.
-- [ ] Manual: run `EXPLAIN ANALYZE` on the recursive CTE with the seeded tree — verify `Index Scan using idx_department_parent_id`, no seq scan.
+- [ ] Existing `ScopeService.resolveDescendants` uses `findDirectChildren` (JPQL) recursively. Partial index `idx_department_parent_id` from `V14_1` covers the parent_id lookups. Verify with `EXPLAIN ANALYZE SELECT id FROM t_department WHERE parent_id = ?` shows `Index Scan using idx_department_parent_id`.
 
 ---
 

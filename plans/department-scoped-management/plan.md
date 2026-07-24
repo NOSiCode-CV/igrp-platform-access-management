@@ -6,66 +6,37 @@ Delivered in 3 phases. Depends on the current department/role write endpoints be
 
 ---
 
-## Phase 1 — `DepartmentScopeService` + read-side helper endpoint
+## Phase 1 — Extend `ScopeService` with write-side assertions
 
-**Goal:** compute a user's management scope on demand; expose it via `GET /api/departments/manageable` for the frontend. No write-side enforcement yet.
+**Goal:** add `isInScope(Integer)`, `assertInScope(Integer)`, `assertSuperAdmin()` to the existing `ScopeService`, plus the two exception types and handlers. Do NOT duplicate the existing scope infrastructure — read-side scoping on `GET /api/departments` is already handled by `ScopeAspect` + `@Scoped` + `DepartmentSpecificationBuilder.applyScope`, which resolves the subtree via `ScopeService.getVisibleDepartmentIds()` → `resolveDescendants` → `findDirectChildren`.
 
 ### Steps
 
-1. **Index migration** `V13_1__index_department_parent_id.sql`:
+1. **Index migration** `V14_1__index_department_parent_id.sql`:
    ```sql
    CREATE INDEX IF NOT EXISTS idx_department_parent_id ON t_department (parent_id) WHERE parent_id IS NOT NULL;
    ```
-   Cheap; supports the recursive CTE in step 3.
+   Cheap; supports the existing `findDirectChildren` JPQL query used by `ScopeService.resolveDescendants`.
 
-2. **Superadmin detector**: reuse the existing `PermissionCacheService.isSuperAdmin(user)` from the audit feature; no new code needed. Confirm the API works for both JWT and M2M principals.
+2. **`OutOfScopeException` + `RootDepartmentForbiddenException`** — RuntimeExceptions in `department/domain/exceptions/`. Both mapped by `GlobalExceptionHandler` to `ProblemDetail` with HTTP 403 and error codes `OUT_OF_SCOPE` / `ROOT_DEPARTMENT_FORBIDDEN` so the frontend can distinguish them from generic permission denial.
 
-3. **`DepartmentScopeService`** (new, in `department/application/service/`):
+3. **Extend `ScopeService`** (existing, in `shared/infrastructure/service/`) with:
    ```java
-   @Service
-   @RequestScope
-   public class DepartmentScopeService {
-       private Set<UUID> cachedScope;  // computed once per request
-       private Boolean cachedSuperAdmin;
-
-       public Set<UUID> scopeOf(Authentication auth) { ... }
-       public boolean isInScope(UUID departmentId, Authentication auth) { ... }
-       public void assertInScope(UUID departmentId, Authentication auth) {
-           if (!isInScope(departmentId, auth))
-               throw new OutOfScopeException(departmentId);
-       }
-   }
+   public boolean isInScope(Integer departmentId) { /* short-circuit for superadmin */ }
+   public void assertInScope(Integer departmentId) { throw OutOfScopeException }
+   public void assertSuperAdmin() { throw RootDepartmentForbiddenException }
    ```
-   `scopeOf(auth)`:
-   - If `isSuperAdmin(auth)` → returns a sentinel `UNBOUNDED` marker (or `null` semantically meaning "all"). `isInScope` short-circuits `true`.
-   - Otherwise: SQL recursive CTE from all department IDs owning any of the user's roles:
-     ```sql
-     WITH RECURSIVE subtree(id) AS (
-       SELECT r.department_id FROM t_role r
-         JOIN t_user_role ur ON ur.role_id = r.id
-         WHERE ur.user_id = :userId AND r.status != 'DELETED'
-       UNION
-       SELECT d.id FROM t_department d
-         JOIN subtree s ON d.parent_id = s.id
-         WHERE d.status != 'DELETED'
-     )
-     SELECT id FROM subtree;
-     ```
+   All three delegate to the existing `isSuperAdmin()` and `getVisibleDepartmentIds()` machinery — no new query, no new cache, no duplicate scope logic. `assert*` methods log one structured line (`scope=OUT_OF_SCOPE user={id} target={dept}` / `scope=ROOT_DEPARTMENT_FORBIDDEN user={id}`) before throwing — supports the Prometheus counter and log-based forensics in Phase 3.
 
-4. **`OutOfScopeException`** (RuntimeException) with a dedicated `@ExceptionHandler` returning HTTP 403 with body `{ error: "OUT_OF_SCOPE", message: "..." }`.
+4. **No new endpoint** — the frontend's department picker calls the existing `GET /api/departments` which already returns the scope-filtered set (verified: `GetDepartmentsQueryHandler` passes `new ScopeContext()`; `@Scoped` populates it; `DepartmentSpecificationBuilder.applyScope` adds `id IN (visibleDepartments)` when not superadmin). Superadmins see the full list; scoped managers see their subtree; users with no relevant roles see `[]`.
 
-5. **New endpoint** `GET /api/departments/manageable` in `DepartmentController`:
-   - Returns `List<DepartmentDTO>` filtered by the caller's scope.
-   - For superadmins, returns everything.
-   - Gated by `igrp.departments.view`.
-
-6. **Tests**:
-   - `DepartmentScopeServiceTest` — mocked repository; verify (a) superadmin returns unbounded, (b) user with one role → returns closure, (c) user with roles in two unrelated trees → returns union, (d) user with no roles → returns empty set.
-   - `DepartmentScopeCteIT` — Testcontainers Postgres; seed a 5-level tree; assert the recursive CTE returns the expected IDs in < 50ms.
+5. **Tests** (unit, mocking `ScopeService` collaborators):
+   - `ScopeServiceAssertionsTest` — 6 cases: superadmin unbounded; scoped user reads visible set; assertInScope throws with target id; assertSuperAdmin throws for non-admin; null departmentId always false; empty visible set always false.
+   - Existing `GET /api/departments` scope behaviour is already covered by existing tests — no re-coverage.
 
 ### Deliverable
 
-Superadmin sees no change. Non-superadmins can call `GET /api/departments/manageable` and get the frontend picker data.
+`ScopeService` gains the write-side API needed by Phase 2. No new endpoint. No new query. No duplicate scope machinery.
 
 ---
 

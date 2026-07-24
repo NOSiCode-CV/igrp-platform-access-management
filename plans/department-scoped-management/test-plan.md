@@ -44,40 +44,45 @@ curl -sS -o /dev/null -w "user =%{http_code}\n"  "${A_USER[@]}"  "$BASE_URL/api/
 
 ---
 
-## Phase 1 tests — `DepartmentScopeService` + `GET /departments/manageable`
+## Phase 1 tests — `ScopeService` write-side assertions
 
-### 1.1 Manageable endpoint — scoped manager sees their subtree
+Phase 1 adds `isInScope`, `assertInScope`, `assertSuperAdmin` to the existing `ScopeService`. There is NO new endpoint — the frontend's department picker reads from the pre-existing `GET /api/departments` which is already scope-filtered by `ScopeAspect` + `applyScope`. Verify that the existing endpoint respects scope before moving to Phase 2.
+
+### 1.1 Existing `GET /api/departments` — scoped manager sees only their subtree
 
 ```bash
-curl -sS "${A_MGR[@]}" "$BASE_URL/api/departments/manageable" | jq 'map(.id)'
+curl -sS "${A_MGR[@]}" "$BASE_URL/api/departments" | jq 'map(.id // .code)'
 # EXPECT: array contains MGR_DEPT_B_ID and MGR_CHILD_DEPT_C_ID
 # EXPECT: array does NOT contain ROOT_DEPT_A_ID
 ```
 
-### 1.2 Manageable endpoint — superadmin sees everything
+### 1.2 Existing `GET /api/departments` — superadmin sees everything
 
 ```bash
-ADMIN_COUNT=$(curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/departments/manageable" | jq 'length')
-TOTAL_COUNT=$(curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/departments" | jq '.totalElements')
-echo "manageable=$ADMIN_COUNT total=$TOTAL_COUNT"
-# EXPECT: ADMIN_COUNT == TOTAL_COUNT
+ADMIN_COUNT=$(curl -sS "${A_ADMIN[@]}" "$BASE_URL/api/departments" | jq 'length')
+echo "admin sees $ADMIN_COUNT departments"
+# EXPECT: matches SELECT COUNT(*) FROM t_department WHERE status <> 'DELETED' AND code <> 'DEPT_IGRP'
 ```
 
-### 1.3 Manageable endpoint — normal user without view permission
+### 1.3 Existing `GET /api/departments` — normal user without list permission
 
 ```bash
-curl -sS -o /dev/null -w "%{http_code}\n" "${A_USER[@]}" "$BASE_URL/api/departments/manageable"
-# EXPECT: 403
+curl -sS -o /dev/null -w "%{http_code}\n" "${A_USER[@]}" "$BASE_URL/api/departments"
+# EXPECT: 403 (missing igrp.departments.list)
 ```
 
-### 1.4 Manageable endpoint — user with view permission but no roles → empty
+### 1.4 Existing `GET /api/departments` — user with list permission but no roles → empty
 
-If USER_JWT holds `igrp.departments.view`:
+If USER_JWT holds `igrp.departments.list` but has no role assignments:
 
 ```bash
-curl -sS "${A_USER[@]}" "$BASE_URL/api/departments/manageable" | jq 'length'
-# EXPECT: 0 (they have view but no role -> empty scope)
+curl -sS "${A_USER[@]}" "$BASE_URL/api/departments" | jq 'length'
+# EXPECT: 0 (has permission, but empty visible-departments set → filter matches nothing)
 ```
+
+### 1.5 Assertion methods (indirect — verified by Phase 2 write tests)
+
+`ScopeService.isInScope / assertInScope / assertSuperAdmin` are not directly callable via HTTP in Phase 1. Their behaviour is exercised by Phase 2's write-endpoint tests (§2.1 onward), which trigger denials that come from these assertions.
 
 ---
 
