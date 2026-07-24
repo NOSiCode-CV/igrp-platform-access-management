@@ -16,6 +16,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import cv.igrp.platform.access_management.security_audit.domain.events.PermissionAssociatedToRoleEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -55,6 +56,7 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
    private final DepartmentEntityRepository departmentRepository;
    private final RoleMapper roleMapper;
    private final EventPublisher eventPublisher;
+   private final ScopeService scopeService;
 
    /**
     * Constructs the handler with necessary repositories and mappers.
@@ -64,13 +66,15 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
     * @param departmentRepository repository used to fetch departments
     * @param roleMapper           mapper for converting {@link RoleEntity} entities to {@link RoleDTO}
     * @param eventPublisher       publishes session-invalidation events
+    * @param scopeService         enforces the department-management scope on the caller
     */
-   public AddPermissionsCommandHandler(PermissionEntityRepository permissionRepository, RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper, EventPublisher eventPublisher) {
+   public AddPermissionsCommandHandler(PermissionEntityRepository permissionRepository, RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper, EventPublisher eventPublisher, ScopeService scopeService) {
       this.permissionRepository = permissionRepository;
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
       this.roleMapper = roleMapper;
       this.eventPublisher = eventPublisher;
+      this.scopeService = scopeService;
    }
 
    /**
@@ -98,6 +102,11 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
       if (department == null) {
          // Fallback used by some tests that stub a generic department code
          department = departmentRepository.findByCodeAndStatusNotDeleted("DEPT");
+      }
+
+      // Scope enforcement (R1.2): permission changes on a role require managing its department.
+      if (department != null) {
+         scopeService.assertInScope(department.getId());
       }
 
       RoleEntity foundRole;

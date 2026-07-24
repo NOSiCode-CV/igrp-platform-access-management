@@ -9,6 +9,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,6 +37,8 @@ class AddMenusToDepartmentCommandHandlerTest {
 
     @Mock
     private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
+
+    @Mock private ScopeService scopeService;
 
     @InjectMocks
     private AddMenusToDepartmentCommandHandler handler;

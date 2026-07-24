@@ -4,6 +4,7 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
@@ -18,10 +19,12 @@ public class RemovePermissionsFromDepartmentCommandHandler implements CommandHan
 
    private final DepartmentEntityRepository departmentRepository;
    private final PermissionEntityRepository permissionRepository;
+   private final ScopeService scopeService;
 
-   public RemovePermissionsFromDepartmentCommandHandler(DepartmentEntityRepository departmentRepository, PermissionEntityRepository permissionRepository) {
+   public RemovePermissionsFromDepartmentCommandHandler(DepartmentEntityRepository departmentRepository, PermissionEntityRepository permissionRepository, ScopeService scopeService) {
       this.departmentRepository = departmentRepository;
       this.permissionRepository = permissionRepository;
+      this.scopeService = scopeService;
    }
 
    @IgrpCommandHandler
@@ -29,6 +32,9 @@ public class RemovePermissionsFromDepartmentCommandHandler implements CommandHan
    public ResponseEntity<String> handle(RemovePermissionsFromDepartmentCommand command) {
 
       var department = departmentRepository.findByCodeAndStatusNotDeleted(command.getCode());
+
+      // Scope enforcement (R1.2): the target department must be in the caller's scope.
+      scopeService.assertInScope(department.getId());
 
       for (var permissionCode : command.getRemovePermissionsFromDepartmentRequest()) {
          var permission = permissionRepository.findByNameAndStatusNotDeleted(permissionCode);

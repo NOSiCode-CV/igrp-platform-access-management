@@ -4,6 +4,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,6 +35,8 @@ public class RemovePermissionsFromDepartmentCommandHandlerTest {
 
     @Mock
     private PermissionEntityRepository permissionRepository;
+
+    @Mock private ScopeService scopeService;
 
     @InjectMocks
     private RemovePermissionsFromDepartmentCommandHandler handler;

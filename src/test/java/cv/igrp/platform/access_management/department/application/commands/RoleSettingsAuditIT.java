@@ -15,6 +15,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -40,6 +41,7 @@ class RoleSettingsAuditIT {
     @Mock private RoleEntityRepository roleRepository;
     @Mock private RoleMapper roleMapper;
     @Mock private EventPublisher eventPublisher;
+    @Mock private ScopeService scopeService;
 
     @Test
     void createRolePublishesRoleCreatedEvent() {
@@ -67,7 +69,7 @@ class RoleSettingsAuditIT {
         when(roleRepository.save(mapped)).thenReturn(saved);
         when(roleMapper.mapToDto(saved)).thenReturn(new RoleDTO());
 
-        var handler = new CreateRoleCommandHandler(departmentRepository, roleRepository, roleMapper, eventPublisher);
+        var handler = new CreateRoleCommandHandler(departmentRepository, roleRepository, roleMapper, eventPublisher, scopeService);
 
         handler.handle(new CreateRoleCommand(dto, departmentCode));
 
@@ -100,7 +102,7 @@ class RoleSettingsAuditIT {
                 .thenReturn(Optional.of(role));
         when(roleRepository.save(role)).thenReturn(role);
 
-        var handler = new DeleteRoleCommandHandler(roleRepository, departmentRepository, eventPublisher);
+        var handler = new DeleteRoleCommandHandler(roleRepository, departmentRepository, eventPublisher, scopeService);
 
         handler.handle(new DeleteRoleCommand(departmentCode, roleCode));
 

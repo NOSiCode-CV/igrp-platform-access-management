@@ -14,6 +14,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import cv.igrp.platform.access_management.security_audit.domain.events.PermissionDisassociatedFromRoleEvent;
 import lombok.extern.slf4j.Slf4j;
@@ -53,6 +54,7 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
    private final DepartmentEntityRepository departmentRepository;
    private final RoleMapper roleMapper;
    private final EventPublisher eventPublisher;
+   private final ScopeService scopeService;
 
    /**
     * Constructs a new instance of {@code RemovePermissionsCommandHandler} with the necessary dependencies.
@@ -61,12 +63,14 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
     * @param departmentRepository repository used to retrieve department entities
     * @param roleMapper           mapper used to convert {@link RoleEntity} entities into {@link RoleDTO}
     * @param eventPublisher       publishes session-invalidation events
+    * @param scopeService         enforces the department-management scope on the caller
     */
-   public RemovePermissionsCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper, EventPublisher eventPublisher) {
+   public RemovePermissionsCommandHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RoleMapper roleMapper, EventPublisher eventPublisher, ScopeService scopeService) {
       this.roleRepository = roleRepository;
       this.departmentRepository = departmentRepository;
       this.roleMapper = roleMapper;
       this.eventPublisher = eventPublisher;
+      this.scopeService = scopeService;
    }
 
    /**
@@ -86,6 +90,9 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
       log.info("Remove Permissions with name: {} from Role with code: {}.", command.getRemovePermissionsRequest().stream().toList(), command.getRoleCode());
 
       DepartmentEntity departmentEntity = departmentRepository.findByCodeAndStatusNotDeleted(command.getDepartmentCode());
+
+      // Scope enforcement (R1.2): permission changes on a role require managing its department.
+      scopeService.assertInScope(departmentEntity.getId());
 
       RoleEntity foundRole = roleRepository.findByDepartmentAndCodeAndStatusNot(departmentEntity, command.getRoleCode(), Status.DELETED)
               .orElseThrow(() -> {

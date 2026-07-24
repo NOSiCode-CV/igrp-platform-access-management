@@ -12,6 +12,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.security_audit.domain.events.MenuDisassociatedFromRoleEvent;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -32,12 +33,14 @@ public class RemoveMenusFromDepartmentCommandHandler implements CommandHandler<R
    private final DepartmentEntityRepository departmentEntityRepository;
    private final ApplicationEntityRepository applicationEntityRepository;
    private final EventPublisher eventPublisher;
+   private final ScopeService scopeService;
 
-   public RemoveMenusFromDepartmentCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentEntityRepository, ApplicationEntityRepository applicationEntityRepository, EventPublisher eventPublisher) {
+   public RemoveMenusFromDepartmentCommandHandler(MenuEntryEntityRepository menuEntryRepository, DepartmentEntityRepository departmentEntityRepository, ApplicationEntityRepository applicationEntityRepository, EventPublisher eventPublisher, ScopeService scopeService) {
       this.menuEntryRepository = menuEntryRepository;
       this.departmentEntityRepository = departmentEntityRepository;
       this.applicationEntityRepository = applicationEntityRepository;
       this.eventPublisher = eventPublisher;
+      this.scopeService = scopeService;
    }
 
    @IgrpCommandHandler
@@ -54,6 +57,10 @@ public class RemoveMenusFromDepartmentCommandHandler implements CommandHandler<R
                          "Department not found",
                          "Department not found with code: " + command.getDepartmentCode());
               });
+
+      // Scope enforcement (R1.2): the target department must be in the caller's scope.
+      scopeService.assertInScope(department.getId());
+
       var application = applicationEntityRepository.findByCodeAndStatusNot(appCode, Status.DELETED)
               .orElseThrow(() -> {
                  LOGGER.warn("Application not found with code: {}", appCode);

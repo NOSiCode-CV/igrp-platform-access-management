@@ -20,6 +20,7 @@ import org.slf4j.LoggerFactory;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.domain.events.DepartmentScopeChangedEvent;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.security_audit.domain.events.DepartmentEditedEvent;
 import cv.igrp.platform.access_management.security_audit.application.support.SettingsDiff;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,6 +53,7 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
    private final DepartmentMapper departmentMapper;
    private final UserUtils userUtils;
    private final EventPublisher eventPublisher;
+   private final ScopeService scopeService;
 
    /**
     * Constructs the command handler with required dependencies.
@@ -61,19 +63,22 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
     * @param departmentMapper     the mapper used to convert between DTOs and entities
     * @param userUtils            the utility class used to validate user roles
     * @param eventPublisher       publishes session-invalidation events
+    * @param scopeService         enforces the department-management scope on the caller
     */
    public UpdateDepartmentCommandHandler(
            DepartmentEntityRepository departmentRepository,
            RoleEntityRepository roleRepository,
            DepartmentMapper departmentMapper,
            UserUtils userUtils,
-           EventPublisher eventPublisher
+           EventPublisher eventPublisher,
+           ScopeService scopeService
    ) {
       this.departmentRepository = departmentRepository;
       this.roleRepository = roleRepository;
       this.departmentMapper = departmentMapper;
       this.userUtils = userUtils;
       this.eventPublisher = eventPublisher;
+      this.scopeService = scopeService;
    }
 
    /**
@@ -96,6 +101,9 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
                  return IgrpResponseStatusException.of(
                          HttpStatus.NOT_FOUND, "Invalid Department Code", "Department not found with code: " + departmentCode);
               });
+
+      // Scope enforcement (R1.2): the caller must be able to manage the target department.
+      scopeService.assertInScope(department.getId());
 
       boolean statusChanged = command.getDepartmentdto().getStatus() != null &&
               !Objects.equals(command.getDepartmentdto().getStatus(), department.getStatus());

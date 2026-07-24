@@ -17,6 +17,7 @@ import cv.igrp.platform.access_management.security_audit.application.service.Sec
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -56,6 +57,8 @@ public class AddRolesToUserCommandHandlerTest {
 
     @Mock
     private EventPublisher eventPublisher;
+
+    @Mock private ScopeService scopeService;
 
     @InjectMocks
     private AddRolesToUserCommandHandler handler;
