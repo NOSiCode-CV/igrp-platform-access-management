@@ -137,243 +137,151 @@ export function toPermissionDTOs(source: PermissionsJson): PermissionDTO[] {
 
 ---
 
-## 4. Environment variables
+## 4. Environment variable
 
-The sync is gated and configured entirely through environment variables so the same Next.js image ships to every environment.
+Permissions sync **reuses the existing IAM-connection variables** already documented in application-center's [`.env.example`](../../../frontend/application-center/.env.example) — do not re-declare them:
 
-| Variable                                | Required                                     | Default                            | Purpose |
-|-----------------------------------------|----------------------------------------------|------------------------------------|---|
-| `IGRP_ACCESS_MANAGEMENT_BASE_URL`       | **yes** (when sync is enabled)               | —                                  | Base URL of the IAM API. Example: `https://api-demoigrp.nosi.cv/igrp-access-management`. Both `/oauth2/token` and `/api/m2m/*` hang off this. |
-| `IGRP_M2M_CLIENT_ID`                    | **yes** (when sync is enabled)               | —                                  | OAuth2 `client_credentials` client id. Never checked into git. |
-| `IGRP_M2M_CLIENT_SECRET`                | **yes** (when sync is enabled)               | —                                  | OAuth2 `client_credentials` client secret. Load from your secrets manager. |
-| `IGRP_M2M_SCOPE`                        | no                                           | `m2m`                              | OAuth2 scope. Override if your IAM instance uses a different name. |
-| `IGRP_PERMISSIONS_SYNC_ENABLED`         | no                                           | `false` in `development`, `true` elsewhere | Master switch. When `false`, `syncPermissionsFromStudio()` returns immediately without contacting IAM. |
-| `IGRP_PERMISSIONS_SYNC_ON_STARTUP`      | no                                           | `false`                            | If `true`, sync runs on server boot (via the Next.js `instrumentation.ts` hook). Otherwise, sync only runs when you invoke the CLI script explicitly. |
-| `IGRP_PERMISSIONS_SYNC_FILE`            | no                                           | `.igrpstudio/permissions.json`     | Location of the source-of-truth file, relative to the process cwd. Rarely overridden. |
-| `IGRP_PERMISSIONS_SYNC_SERVICE_ID`      | no                                           | none                               | Value for the informational `X-Machine-Service-ID` header. Handy on IAM logs to identify which service triggered a sync when multiple services share one OAuth client. |
-| `IGRP_PERMISSIONS_SYNC_FAIL_ON_ERROR`   | no                                           | `false` in `production`, `true` in `development` | Whether a sync failure aborts server startup. Prod defaults to non-fatal to prevent an IAM outage from wedging the app; dev defaults to fatal so misconfiguration surfaces immediately. |
+- `IGRP_ACCESS_MANAGEMENT_API` — base URL of the IAM API (`/oauth2/token` and `/api/m2m/*` hang off this).
+- `IGRP_M2M_CLIENT_ID` / `IGRP_M2M_CLIENT_SECRET` — OAuth2 `client_credentials` pair.
+- `IGRP_SERVICE_ID` — sent as `X-Machine-Service-ID`.
+- `IGRP_SYNC_ACCESS` — master sync toggle. Must be `true` for any M2M sync to fire.
+- `IGRP_PREVIEW_MODE` — must be `false` (or unset) for sync to fire.
 
-**Rationale for `IGRP_PERMISSIONS_SYNC_ON_STARTUP=false` default.** Running sync at every container start on a horizontally-scaled deployment means N replicas race to hit `/api/m2m/sync/permissions` for the same catalog. The endpoint is idempotent, but the noise is undesirable. Prefer a one-shot CI/CD step that runs `pnpm igrp:sync-permissions` after image build and before rollout.
+**One new variable to add** — the permissions-specific opt-in, following the same naming pattern as `IGRP_SYNC_ON_CODE_MENUS`:
+
+```env
+# Enable permissions catalog synchronization
+# When set to true, the framework reads `.igrpstudio/permissions.json`
+# and pushes the entries to Access Management at startup via
+# M2MClient.syncPermissions(...). Requires IGRP_SYNC_ACCESS=true and
+# IGRP_PREVIEW_MODE=false to take effect.
+# When false (default), AM remains the source of truth and no push happens.
+# NOTE: sync is idempotent upsert keyed on `name` — permissions removed
+# from the JSON are NOT deleted in AM; retire them via the AM admin UI.
+# Values: true or false
+IGRP_SYNC_PERMISSIONS=false
+```
+
+Add that block to your project's `.env.example` alongside `IGRP_SYNC_ON_CODE_MENUS`.
 
 ---
 
-## 5. Integration pattern A — CI/CD script (recommended)
+## 5. Wiring the sync — same shape as `IGRP_SYNC_ON_CODE_MENUS`
 
-Run the sync once per deploy, not once per container start.
+**Recommended:** follow the exact pattern the framework uses for the on-code menu push. Menus load a local array at build time and hand it to `apiManagementConfig` in [`igrp.template.config.ts`](../../../frontend/application-center/src/igrp.template.config.ts); the framework's `@igrp/framework-next` runtime picks it up and calls `syncApplicationMenus` at boot when `syncOnCodeMenus === true`. Permissions get the parallel treatment.
 
-### 5.1 Add the CLI entry point
+### 5.1 Load + map the JSON
 
 ```ts
-// scripts/sync-permissions.ts
+// src/lib/igrp/permissions.ts
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { M2MClient } from '@igrp/platform-access-management-client-ts';
-import { toPermissionDTOs, type PermissionsJson } from '../src/lib/igrp/permissions-sync';
+import type { PermissionDTO } from '@igrp/platform-access-management-client-ts';
+import { Status } from '@igrp/platform-access-management-client-ts';
 
-async function main(): Promise<void> {
-  const enabled = process.env.IGRP_PERMISSIONS_SYNC_ENABLED === 'true';
-  if (!enabled) {
-    console.log('[igrp-sync] IGRP_PERMISSIONS_SYNC_ENABLED != true — skipping.');
-    return;
-  }
-
-  const baseUrl      = required('IGRP_ACCESS_MANAGEMENT_BASE_URL');
-  const clientId     = required('IGRP_M2M_CLIENT_ID');
-  const clientSecret = required('IGRP_M2M_CLIENT_SECRET');
-  const scope        = process.env.IGRP_M2M_SCOPE ?? 'm2m';
-  const serviceId    = process.env.IGRP_PERMISSIONS_SYNC_SERVICE_ID;
-  const filePath     = resolve(
-    process.cwd(),
-    process.env.IGRP_PERMISSIONS_SYNC_FILE ?? '.igrpstudio/permissions.json',
-  );
-
-  const raw = readFileSync(filePath, 'utf-8');
-  const source = JSON.parse(raw) as PermissionsJson;
-  const permissions = toPermissionDTOs(source);
-  console.log(`[igrp-sync] Syncing ${permissions.length} permissions from ${filePath}`);
-
-  const m2m = new M2MClient(
-    { baseUrl },
-    { clientId, clientSecret, scope, serviceId },
-  );
-
-  const result = await m2m.syncPermissions(permissions);
-  if (result.status !== 204) {
-    throw new Error(`Unexpected status ${result.status} from syncPermissions`);
-  }
-  console.log(`[igrp-sync] OK — ${permissions.length} permissions synced.`);
+export interface IgrpStudioPermission {
+  id: string;              // ignored on sync
+  name: string;
+  label?: string;          // ignored on sync
+  description?: string;
+  enabled: boolean;
 }
+interface PermissionsJson { permissions: IgrpStudioPermission[] }
 
-function required(name: string): string {
-  const v = process.env[name];
-  if (!v || v.trim() === '') throw new Error(`Missing required env var: ${name}`);
-  return v;
-}
+// Loaded once at module import — same lifetime as IGRP_DEFAULT_MENU from
+// `@/temp/menus/menus`, so the array is baked into the server bundle at
+// build time and doesn't require disk I/O per boot.
+const filePath = resolve(process.cwd(), '.igrpstudio/permissions.json');
+const source: PermissionsJson = JSON.parse(readFileSync(filePath, 'utf-8'));
 
-main().catch((err) => {
-  const fatal = (process.env.IGRP_PERMISSIONS_SYNC_FAIL_ON_ERROR ?? 'true') === 'true';
-  console.error('[igrp-sync] FAILED', err);
-  if (fatal) process.exit(1);
+export const IGRP_DEFAULT_PERMISSIONS: PermissionDTO[] = source.permissions.map((p) => ({
+  id: undefined as unknown as number,      // AM assigns / matches on `name`
+  name: p.name,
+  description: p.description ?? null,
+  status: p.enabled ? Status.ACTIVE : Status.INACTIVE,
+  departmentCode: '',                       // not applicable on M2M sync
+}));
+```
+
+### 5.2 Pass it into `igrp.template.config.ts` next to the menus
+
+```ts
+// src/igrp.template.config.ts
+import { igrpBuildConfig } from '@igrp/framework-next';
+import { IGRP_DEFAULT_MENU } from '@/temp/menus/menus';
+import { IGRP_DEFAULT_PERMISSIONS } from '@/lib/igrp/permissions';   // ← add
+// ...
+
+return igrpBuildConfig({
+  // ...existing fields (appCode, previewMode, syncAccess, ...)
+  apiManagementConfig: {
+    baseUrl: process.env.IGRP_ACCESS_MANAGEMENT_API || '',
+    serviceId: process.env.IGRP_SERVICE_ID || '',
+    m2mClientId: process.env.IGRP_M2M_CLIENT_ID || '',
+    m2mClientSecret: process.env.IGRP_M2M_CLIENT_SECRET || '',
+
+    // existing on-code menus block
+    syncOnCodeMenus: process.env.IGRP_SYNC_ON_CODE_MENUS === 'true',
+    syncOnCodeMenuRoles: process.env.IGRP_SYNC_ON_CODE_MENU_ROLES !== 'false',
+    onCodeMenus: IGRP_DEFAULT_MENU,
+
+    // new on-code permissions block — same shape
+    syncPermissions: process.env.IGRP_SYNC_PERMISSIONS === 'true',
+    onCodePermissions: IGRP_DEFAULT_PERMISSIONS,
+
+    appRoutes,
+    paramMapBody,
+  },
+  // ...
 });
 ```
 
-### 5.2 Wire it into `package.json`
+That's the entire integration on the app side. The framework:
 
-```json
-{
-  "scripts": {
-    "igrp:sync-permissions": "tsx scripts/sync-permissions.ts"
-  }
-}
-```
+1. Sees `syncAccess === true && previewMode === false` — the standard M2M sync gate.
+2. If `syncPermissions === true`, calls `M2MClient.syncPermissions(onCodePermissions)` at startup — same `after()`-scheduled flow that already handles `syncOnCodeMenus`, so it never blocks the first request.
+3. On IAM outage or 4xx, logs and moves on (matches the menu-sync failure policy — the pod stays healthy).
 
-### 5.3 Add it to your pipeline
-
-```yaml
-# .github/workflows/deploy.yml (or .gitlab-ci.yml, etc.)
-- name: Sync iGRP permissions
-  env:
-    IGRP_PERMISSIONS_SYNC_ENABLED: 'true'
-    IGRP_ACCESS_MANAGEMENT_BASE_URL: ${{ vars.IGRP_ACCESS_MANAGEMENT_BASE_URL }}
-    IGRP_M2M_CLIENT_ID: ${{ secrets.IGRP_M2M_CLIENT_ID }}
-    IGRP_M2M_CLIENT_SECRET: ${{ secrets.IGRP_M2M_CLIENT_SECRET }}
-    IGRP_PERMISSIONS_SYNC_SERVICE_ID: ${{ github.repository }}
-  run: pnpm igrp:sync-permissions
-```
-
-Run this **after** the image build and **before** the rollout starts. If the sync fails, fail the deploy — a mismatched permission catalog is worse than a rolled-back release.
+**Note on replicas.** Every replica boot triggers one sync call. The endpoint is idempotent (upsert keyed on `name`), so no data corruption — just log noise proportional to replica count. Identical trade-off to `IGRP_SYNC_ON_CODE_MENUS`.
 
 ---
 
-## 6. Integration pattern B — Next.js boot hook (opt-in)
-
-If you can't add a CI/CD step (e.g. edge deployment where you don't own the pipeline), Next.js's `instrumentation.ts` hook fires exactly once per process on server start.
+## 6. Testing the mapping
 
 ```ts
-// instrumentation.ts (in project root or /src)
-export async function register(): Promise<void> {
-  if (process.env.NEXT_RUNTIME !== 'nodejs') return;
-  if (process.env.IGRP_PERMISSIONS_SYNC_ON_STARTUP !== 'true') return;
-
-  const { syncPermissionsFromStudio } = await import('./src/lib/igrp/permissions-sync-runner');
-  try {
-    await syncPermissionsFromStudio();
-  } catch (err) {
-    const fatal = (process.env.IGRP_PERMISSIONS_SYNC_FAIL_ON_ERROR ?? 'false') === 'true';
-    // eslint-disable-next-line no-console
-    console.error('[igrp-sync] Boot-time sync failed', err);
-    if (fatal) process.exit(1);
-  }
-}
-```
-
-```ts
-// src/lib/igrp/permissions-sync-runner.ts
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { M2MClient } from '@igrp/platform-access-management-client-ts';
-import { toPermissionDTOs, type PermissionsJson } from './permissions-sync';
-
-export async function syncPermissionsFromStudio(): Promise<void> {
-  const baseUrl      = mustEnv('IGRP_ACCESS_MANAGEMENT_BASE_URL');
-  const clientId     = mustEnv('IGRP_M2M_CLIENT_ID');
-  const clientSecret = mustEnv('IGRP_M2M_CLIENT_SECRET');
-  const scope        = process.env.IGRP_M2M_SCOPE ?? 'm2m';
-  const serviceId    = process.env.IGRP_PERMISSIONS_SYNC_SERVICE_ID;
-  const filePath     = resolve(
-    process.cwd(),
-    process.env.IGRP_PERMISSIONS_SYNC_FILE ?? '.igrpstudio/permissions.json',
-  );
-
-  const source = JSON.parse(readFileSync(filePath, 'utf-8')) as PermissionsJson;
-  const permissions = toPermissionDTOs(source);
-
-  const m2m = new M2MClient(
-    { baseUrl },
-    { clientId, clientSecret, scope, serviceId },
-  );
-
-  await m2m.syncPermissions(permissions);
-}
-
-function mustEnv(name: string): string {
-  const v = process.env[name];
-  if (!v) throw new Error(`Missing required env var: ${name}`);
-  return v;
-}
-```
-
-**Warnings for boot-hook mode:**
-
-1. **Race across replicas.** If N pods start at once, they all hit the sync endpoint simultaneously. The endpoint is idempotent so no data corruption — just noise in IAM logs. Consider a `IGRP_PERMISSIONS_SYNC_ON_STARTUP=true` only on pod index 0 (leader-election) or on cron.
-2. **Cold-start latency.** Every request served during the sync will wait behind it. For a large catalog (~200+ permissions) this is 1–2 s of added TTFB on the first request per pod.
-3. **IAM downtime.** If the IAM API is unreachable during boot, the Next.js pod fails to serve. Default `IGRP_PERMISSIONS_SYNC_FAIL_ON_ERROR=false` keeps the pod alive; the sync just logs an error and moves on. Retry manually via the CLI script when IAM is back.
-
----
-
-## 7. Testing the mapping
-
-```ts
-// scripts/sync-permissions.test.ts
+// src/lib/igrp/permissions.test.ts
 import { describe, it, expect } from 'vitest';
 import { Status } from '@igrp/platform-access-management-client-ts';
-import { toPermissionDTOs } from '../src/lib/igrp/permissions-sync';
+import { IGRP_DEFAULT_PERMISSIONS } from './permissions';
 
-describe('toPermissionDTOs', () => {
-  it('maps enabled=true to Status.ACTIVE and drops id + label', () => {
-    const dtos = toPermissionDTOs({
-      permissions: [
-        {
-          id: 'perm_01HZX111',
-          name: 'inss.invoice_list.delete',
-          label: 'Delete Invoice',
-          description: 'Permite eliminar faturas',
-          enabled: true,
-        },
-      ],
-    });
-    expect(dtos).toHaveLength(1);
-    expect(dtos[0]).toMatchObject({
-      name: 'inss.invoice_list.delete',
-      description: 'Permite eliminar faturas',
-      status: Status.ACTIVE,
-    });
-    // id and label are not part of the outgoing payload
-    expect((dtos[0] as any).label).toBeUndefined();
-  });
-
-  it('maps enabled=false to Status.INACTIVE', () => {
-    const dtos = toPermissionDTOs({
-      permissions: [{ id: 'x', name: 'x.y.z', enabled: false }],
-    });
-    expect(dtos[0].status).toBe(Status.INACTIVE);
-  });
-
-  it('coerces missing description to null (never omits the key)', () => {
-    const dtos = toPermissionDTOs({
-      permissions: [{ id: 'x', name: 'x.y.z', enabled: true }],
-    });
-    expect(dtos[0].description).toBeNull();
+// The module is loaded once at import and reflects the real
+// .igrpstudio/permissions.json — inspect the derived array directly.
+describe('IGRP_DEFAULT_PERMISSIONS', () => {
+  it('maps every enabled row to Status.ACTIVE and drops id + label', () => {
+    for (const p of IGRP_DEFAULT_PERMISSIONS) {
+      expect(p.name).toMatch(/^[A-Za-z0-9._-]+$/);
+      expect(p.status === Status.ACTIVE || p.status === Status.INACTIVE).toBe(true);
+      expect((p as any).label).toBeUndefined();
+    }
   });
 });
 ```
 
 ---
 
-## 8. Troubleshooting
+## 7. Troubleshooting
 
 | Symptom                                                          | Likely cause                                                                 | Fix |
 |------------------------------------------------------------------|------------------------------------------------------------------------------|---|
-| `401 Unauthorized` from `/oauth2/token`                          | Wrong `clientId` / `clientSecret`, or the client is disabled in IAM.         | Re-check secrets; hit `POST /oauth2/token` manually with curl to isolate. |
-| `403 Forbidden` from `/api/m2m/sync/permissions`                 | Client is authenticated but its service account lacks the `igrp.m2m.sync` permission (or the equivalent your IAM uses). | Grant the missing permission via the IAM admin UI. |
-| `400 Bad Request` naming a field                                 | A permission `name` violates `^[A-Za-z0-9._-]+$` or exceeds 255 chars.       | Fix in `.igrpstudio/permissions.json` and re-sync. |
-| Sync appears to succeed but the permission never shows up in IAM | Old cached SDK version pointing at the wrong `baseUrl`; wrong environment.  | `console.log(baseUrl)` in the runner; ensure the deploy set `IGRP_ACCESS_MANAGEMENT_BASE_URL` correctly. |
-| Retired a permission in the JSON but IAM still lists it          | **Expected.** Sync is upsert-only; retire via IAM admin UI or a separate DELETE. | Manual cleanup for now; deferred to `/api/m2m/sync/permissions?prune=true` in a future release. |
-| Cold-start latency spike after enabling boot-hook mode           | See §6 warning 2.                                                            | Switch to CI/CD mode (§5). |
+| Sync silently doesn't run                                        | One of the three gates is false: `IGRP_SYNC_ACCESS`, `IGRP_PREVIEW_MODE=false`, `IGRP_SYNC_PERMISSIONS`. | Log the three values at boot. |
+| `401 Unauthorized` from `/oauth2/token`                          | Wrong `IGRP_M2M_CLIENT_ID` / `IGRP_M2M_CLIENT_SECRET`, or the client is disabled in IAM. | Re-check secrets. |
+| `403 Forbidden` from `/api/m2m/sync/permissions`                 | The M2M client's service account lacks `igrp.m2m.sync` (or the equivalent).  | Grant it via the IAM admin UI. |
+| `400 Bad Request` naming a field                                 | A permission `name` violates `^[A-Za-z0-9._-]+$` or exceeds 255 chars.       | Fix `.igrpstudio/permissions.json` and re-deploy. |
+| Retired a permission in the JSON but IAM still lists it          | **Expected.** Sync is upsert-only; retire via IAM admin UI.                  | Manual cleanup for now. |
 
 ---
 
-## 9. See also
+## 8. See also
 
 - [`IGRP_PERMISSIONS_INTEGRATION_GUIDE.md`](./IGRP_PERMISSIONS_INTEGRATION_GUIDE.md) — the equivalent guide for Spring Boot target projects (uses `AuthorizationSyncRunner` + `@IgrpPermission` annotation processor instead of a JSON file).
 - [`IAM_SYNCHRONIZATION.md`](./IAM_SYNCHRONIZATION.md) — deeper reference on the M2M sync endpoints (resources, applications, menus in addition to permissions).
