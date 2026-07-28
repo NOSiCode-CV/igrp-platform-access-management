@@ -184,6 +184,7 @@ public class ClaimsEnrichmentService {
                     ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT);
             claims.put(ServiceAccountTokenClaims.CLAIM_SERVICE_ACCOUNT_ID, account.getId().toString());
             claims.put(ServiceAccountTokenClaims.CLAIM_CLIENT_ID, clientId);
+            claims.put(ServiceAccountTokenClaims.CLAIM_APPLICATION_CODE, resolveApplicationCode(account));
         });
 
         Map<String, Object> metadata = filteredMetadata(user);
@@ -194,6 +195,27 @@ public class ClaimsEnrichmentService {
         LOGGER.debug("Enriched claims for subject={} clientId={} -> keys={}",
                 subject, clientId, claims.keySet());
         return claims;
+    }
+
+    /**
+     * Resolve the application code to stamp on the token. Prefers the
+     * service account's own {@code application_id} FK (which lets a single
+     * OAuth client back service accounts across multiple applications, if
+     * the deployment ever needs that). Falls back to the OAuth client's own
+     * application. Returns an empty string when neither is set — consumers
+     * treat that as "no application binding" rather than reject the token.
+     */
+    private String resolveApplicationCode(ServiceAccountEntity account) {
+        if (account == null) return "";
+        if (account.getApplication() != null && account.getApplication().getCode() != null) {
+            return account.getApplication().getCode();
+        }
+        if (account.getOauthClient() != null
+                && account.getOauthClient().getApplication() != null
+                && account.getOauthClient().getApplication().getCode() != null) {
+            return account.getOauthClient().getApplication().getCode();
+        }
+        return "";
     }
 
     private Optional<IGRPUserEntity> resolveUser(String subject) {
