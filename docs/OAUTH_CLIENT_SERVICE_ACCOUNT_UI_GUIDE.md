@@ -86,6 +86,7 @@ const { data: created } = await client.oauthClients.createOAuthClient({
   grantTypes:    ['client_credentials'],
   scopes:        ['m2m'],
   redirectUris:  [],              // required only for authorization_code
+  postLogoutRedirectUris:  [],              // required only for authorization_code
   accessTokenTtl:       3600,     // seconds; optional (server default applies)
   refreshTokenTtl:      2592000,
   authorizationCodeTtl: 300,
@@ -96,73 +97,51 @@ const { data: created } = await client.oauthClients.createOAuthClient({
 
 ### 4.1 Tab: Basic Information (Auth0 §Basic Information)
 
-| Auth0 label | Our field | Type | Required | Notes |
-|---|---|---|---|---|
-| Name | `clientName` | text | yes | Human label. |
-| Domain | — | — | — | **Not applicable.** Auth0 uses this for tenant DNS; iGRP AM is per-deployment single-tenant. Hide the row. |
-| Client ID | `clientId` | text | yes on create, immutable on edit | Machine key. Auth0 auto-generates it; ours accepts a caller-provided value. UI can either mirror Auth0 (auto-generate + let the operator override) or expose the field directly. On edit, render read-only. |
-| Client Secret | `clientSecret` | password | shown once after create | Never rendered on edit — no rotate endpoint yet. |
-| Description | `description` | textarea | no | Free text; no length limit enforced on the wire, but 500 chars is the entity column limit. |
+| Label          | Our field | Type | Required | Notes |
+|----------------|---|---|---|---|
+| Name           | `clientName` | text | yes | Human label. |
+| Client ID      | `clientId` | text | yes on create, immutable on edit | Machine key. Auth0 auto-generates it; ours accepts a caller-provided value. UI can either mirror Auth0 (auto-generate + let the operator override) or expose the field directly. On edit, render read-only. |
+| Client Secret  | `clientSecret` | password | shown once after create | Never rendered on edit — no rotate endpoint yet. |
+| Description    | `description` | textarea | no | Free text; no length limit enforced on the wire, but 500 chars is the entity column limit. |
+| PKCE Required? | `requirePkce` | boolean | no | Whether to require PKCE for the client. |
 
 ### 4.2 Tab: Application Properties (Auth0 §Application Properties)
 
-| Auth0 label | Our field | Notes |
-|---|---|---|
-| Application Ownership | — | Not modelled. Every client is first-party. Hide. |
-| Application Type | `grantTypes` | Auth0's "Regular Web / SPA / Native / M2M" collapses onto our grant-type multiselect. See §4.4. |
-| Application Logo | — | Not modelled. Hide. |
+| Label                  | Our field | Notes                                                                                                                                      |
+|------------------------|---|--------------------------------------------------------------------------------------------------------------------------------------------|
+| Associated Application | `applicationId` | Combobox loading the current user applications options and map the application ID from the response as value and application name as label |
+| Grant Types            | `grantTypes` | Auth0's "Regular Web / SPA / Native / M2M" collapses onto our grant-type multiselect. See §4.4.                                            | |
 
 ### 4.3 Tab: URIs (Auth0 §Application URIs) — only for `authorization_code` clients
 
-| Auth0 label | Our field | Notes |
-|---|---|---|
-| Application Login URI | — | Not modelled — the app is responsible for its own login route. Hide. |
+| Label                 | Our field        | Notes |
+|-----------------------|------------------|---|
 | Allowed Callback URLs | `redirectUris[]` | Chip input. Required when `grantTypes` contains `authorization_code`. Byte-for-byte match with what the authorization request sends. |
-| Allowed Logout URLs | — | Not modelled as a separate list — the AM uses the same redirect URI set for post-logout redirects. Merge into the same input. |
-| Allowed Web Origins | — | Not modelled. Hide. |
-| Allowed Origins (CORS) | — | Not modelled at the client level — CORS is configured server-side. Hide. |
+| Allowed Logout URLs   | `postLogoutRedirectUris[]` | Chip input. Required when `grantTypes` contains `authorization_code`. |
 
 Show this whole tab conditionally: hide it entirely for pure `client_credentials` clients.
 
 ### 4.4 Tab: Advanced → Grant Types (Auth0 §Advanced Settings → Grant Types)
 
-| Auth0 label | Our value |
-|---|---|
-| Authorization Code | `authorization_code` |
-| Refresh Token | `refresh_token` |
-| Client Credentials | `client_credentials` |
-| Device Code | `device_code` |
-| Implicit / Password / MFA / Passkey / … | **Not supported.** Hide. |
+| Label                                   | Our value |
+|-----------------------------------------|---|
+| Authorization Code                      | `authorization_code` |
+| Refresh Token                           | `refresh_token` |
+| Client Credentials                      | `client_credentials` |
 
 Enforce these UX rules client-side (mirror the Auth0 warnings):
-- `refresh_token` requires `authorization_code` (or `device_code`) in the same set — refresh alone doesn't make sense.
+- `refresh_token` requires `authorization_code` in the same set — refresh alone doesn't make sense.
 - `client_credentials` should not be combined with `authorization_code` in the same client — spin up a separate M2M client instead.
 
 ### 4.5 Tab: Token Lifetimes (Auth0 §ID Token / Refresh Token Expiration)
 
 All three are seconds and optional (server defaults apply when omitted).
 
-| Auth0 label | Our field | Server default (verify with backend at UI wire time) |
-|---|---|---|
-| Maximum ID Token Lifetime | — | We don't expose id_token lifetime — bound to access token TTL. Hide. |
-| Access Token Lifetime | `accessTokenTtl` | Ask the backend team for the current default; the field is required on the DTO type but the backend accepts null. |
+| Label                          | Our field | Server default (verify with backend at UI wire time) |
+|--------------------------------|---|---|
+| Access Token Lifetime          | `accessTokenTtl` | Ask the backend team for the current default; the field is required on the DTO type but the backend accepts null. |
 | Maximum Refresh Token Lifetime | `refreshTokenTtl` | Same. |
-| Idle Refresh Token Lifetime | — | Not modelled. Hide. |
-| Refresh Token Rotation | — | Not modelled as a client toggle — always on for `refresh_token` clients. Hide the toggle; document the behaviour in a hint. |
-| Authorization Code TTL | `authorizationCodeTtl` | Auth0 doesn't expose this; we do. Add it as a "Advanced" input, defaults to 300s. |
-
-### 4.6 Sections we don't have (hide the corresponding Auth0 rows entirely)
-
-- OpenID Connect Back-Channel Logout — no back-channel endpoint on our AM.
-- Cross-Origin Authentication + Fallback URL — n/a.
-- Social Login (Google One Tap) — n/a; identity federation is IdP-side.
-- Session Transfer / Device Binding — n/a.
-- Token Sender-Constraining (mTLS/DPoP) — not yet supported.
-- Pushed Authorization Requests (PAR) — not yet supported.
-- JWT-Secured Authorization Requests (JAR) — not yet supported.
-- Multi-Resource Refresh Token (MRRT) — not yet supported.
-
-Any of these becoming supported would land as an SDK bump; treat this list as a snapshot.
+| Authorization Code TTL         | `authorizationCodeTtl` | Auth0 doesn't expose this; we do. Add it as a "Advanced" input, defaults to 300s. |
 
 ---
 
@@ -179,10 +158,12 @@ await client.oauthClients.updateOAuthClient(clientRow.id, {
   clientName:    form.clientName,
   description:   form.description,
   active:        form.active,
+  requirePkce:        form.requirePkce,
   applicationId: form.applicationId,
   grantTypes:    form.grantTypes,
   scopes:        form.scopes,
   redirectUris:  form.redirectUris,
+  postLogoutRedirectUris: form.postLogoutRedirectUris,
   accessTokenTtl:       form.accessTokenTtl,
   refreshTokenTtl:      form.refreshTokenTtl,
   authorizationCodeTtl: form.authorizationCodeTtl,
@@ -197,10 +178,9 @@ await client.oauthClients.updateOAuthClient(clientRow.id, {
 
 Auth0 offers two actions; we offer one.
 
-| Auth0 action | Our SDK call | Notes |
-|---|---|---|
-| Delete this application | `client.oauthClients.deleteOAuthClient(id)` | Requires all linked service accounts to be deleted first (409 otherwise). Show a two-step confirmation dialog and warn about tokens becoming un-verifiable at introspection. |
-| Rotate secret | **Not supported.** | No `POST /api/clients/{id}/rotate-secret` endpoint yet. Either hide the button, or render it disabled with a tooltip pointing to the workaround: delete and recreate the client (breaks every consumer). Backend follow-up recommended. |
+| Action             | Our SDK call | Notes |
+|--------------------|---|---|
+| Delete this client | `client.oauthClients.deleteOAuthClient(id)` | Requires all linked service accounts to be deleted first (409 otherwise). Show a two-step confirmation dialog and warn about tokens becoming un-verifiable at introspection. |
 
 ---
 
@@ -243,17 +223,17 @@ const { data: created } = await client.serviceAccounts.createServiceAccount({
 
 **Fields (there is no Auth0 equivalent — this is our own concept):**
 
-| Label | Field | Notes |
-|---|---|---|
-| Name | `name` | Human label, unique per deployment. |
-| Description | `description` | Optional free text. |
-| Linked OAuth Client | `oauthClientId` | Autocomplete over the filtered client list. Show the picked client's `clientId` + `applicationCode` inline for confirmation. |
+| Label | Field | Notes                                                                                                                                                                                      |
+|---|---|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Name | `name` | Human label, unique per deployment.                                                                                                                                                        |
+| Description | `description` | Optional free text.                                                                                                                                                                        |
+| Linked OAuth Client | `oauthClientId` | Autocomplete over the filtered client list. Show the picked client's `clientId` + `applicationCode` inline for confirmation.                                                               |
 | Application | `applicationId` | Optional; separate from the OAuth client's application FK. Backend uses this first when stamping the `application_code` claim on issued tokens, then falls back to the OAuth client's app. |
-| Roles | `roleIds[]` | Multiselect over `/api/departments/.../roles`. Store ids, display codes. |
-| Direct permissions | `permissionIds[]` | Multiselect over the permission catalog. Show a warning ("bypasses role scoping") when non-empty. |
-| Active | `active` | Default true. |
+| Roles | `roleIds[]` | Multiselect over `/api/departments/.../roles`. Store ids, display names with code between parentisis. e.g.: `Role A (ROLE_A)`.                                                             |
+| Direct permissions | `permissionIds[]` | Multiselect over the permission catalog. Show a warning ("bypasses role scoping") when non-empty.                                                                                          |
+| Active | `active` | Default true.                                                                                                                                                                              |
 
-The create response does **not** include a secret — the secret was surfaced when the OAuth client was created (§4).
+The creation response does **not** include a secret — the secret was surfaced when the OAuth client was created (§4).
 
 ---
 
