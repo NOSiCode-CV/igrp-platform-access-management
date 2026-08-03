@@ -2,7 +2,7 @@
 
 **Audience:** the Application Center team building the admin UI for OAuth client and service account management.
 
-**Contract source:** all interaction goes through the TypeScript client at [`@igrp/platform-access-management-client-ts`](https://sonatype.nosi.cv/repository/igrp/@igrp%2fplatform-access-management-client-ts) (currently `0.2.0-beta.14`). Never call the API endpoints (`/api/clients/**`, `/api/service-accounts/**`) with a raw HTTP client — the SDK handles authentication, error mapping, and DTO typing consistently across services.
+**Contract source:** all interaction goes through the TypeScript client at [`@igrp/platform-access-management-client-ts`](https://sonatype.nosi.cv/repository/igrp/@igrp%2fplatform-access-management-client-ts) (currently `0.2.0-beta.15`). Never call the API endpoints (`/api/clients/**`, `/api/service-accounts/**`) with a raw HTTP client — the SDK handles authentication, error mapping, and DTO typing consistently across services.
 
 **Visual inspiration:** the Auth0 Application Management screens (screenshots supplied). This guide maps Auth0's field labels onto our API contract; where a field has no equivalent, that's called out explicitly so the UI doesn't render dead controls.
 
@@ -274,12 +274,13 @@ Quick cheatsheet for the UI author cross-referencing an Auth0 screenshot.
 | Client ID | `clientId` | Basic Info; immutable on edit |
 | Client Secret | `clientSecret` | Response of `createOAuthClient` only |
 | Description | `description` | Basic Info |
+| — (no Auth0 equivalent, security default) | `requirePkce` | Basic Info; server default `true`, only shown for `authorization_code` clients |
 | Application Ownership | — | Hide row |
 | Application Type | `grantTypes` | Advanced → Grant Types |
 | Application Logo | — | Hide row |
 | Application Login URI | — | Hide row |
 | Allowed Callback URLs | `redirectUris` | URIs tab |
-| Allowed Logout URLs | `redirectUris` (merged) | URIs tab |
+| Allowed Logout URLs | `postLogoutRedirectUris` | URIs tab |
 | Allowed Web Origins / CORS | — | Hide rows |
 | ID Token Lifetime | — | Hide |
 | Access Token Lifetime | `accessTokenTtl` | Token Lifetimes |
