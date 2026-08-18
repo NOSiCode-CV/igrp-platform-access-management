@@ -60,11 +60,26 @@ public class SessionManagementService {
     }
 
     /**
-     * Get current session for user
+     * Get current session for the caller.
+     *
+     * <p>When {@code sid} is non-null (populated from the JWT's {@code sid}
+     * claim), this returns THE session this request is authenticated by —
+     * unambiguous even when the user has multiple concurrent sessions
+     * (LRU cap defaults to 5). When {@code sid} is null (legacy callers
+     * without JWT context), falls back to the user's most-recently-seen
+     * active session — best-effort.
+     *
+     * <p>Historical note: this method used to call
+     * {@code SessionRepository.findByUserIdAndStatus(userId, ACTIVE)} which
+     * returned {@code Optional<SessionEntity>}. That signature crashed with
+     * {@code NonUniqueResultException} the moment any user held more than
+     * one active session. The bad method has been removed; every code path
+     * either resolves the specific session by {@code sid} or explicitly
+     * chooses one from the list.
      */
     @Transactional(readOnly = true)
-    public Optional<SessionResponseDTO> getCurrentSession(String userId) {
-        log.debug("Getting current session for user: {}", userId);
+    public Optional<SessionResponseDTO> getCurrentSession(String userId, UUID sid) {
+        log.debug("Getting current session for user: {} sid: {}", userId, sid);
 
         // First check cache
         SessionResponseDTO cachedSession = sessionCacheService.getOrLoadSession(userId);
@@ -73,11 +88,14 @@ public class SessionManagementService {
             return Optional.of(cachedSession);
         }
 
-        Optional<SessionEntity> sessionOpt = sessionRepository
-                .findByUserIdAndStatus(userId, SessionStatus.ACTIVE);
+        Optional<SessionEntity> sessionOpt = (sid != null)
+                ? sessionRepository.findBySessionId(sid)
+                        .filter(s -> userId.equals(s.getUserId()))
+                        .filter(s -> s.getStatus() == SessionStatus.ACTIVE)
+                : findMostRecentActive(userId);
 
         if (sessionOpt.isEmpty()) {
-            log.debug("No active session found for user: {}", userId);
+            log.debug("No active session found for user: {} sid: {}", userId, sid);
             return Optional.empty();
         }
 
@@ -97,6 +115,27 @@ public class SessionManagementService {
     }
 
     /**
+     * Backward-compatible overload — used by callers that don't yet propagate
+     * the JWT sid. Prefer {@link #getCurrentSession(String, UUID)} everywhere.
+     */
+    @Transactional(readOnly = true)
+    public Optional<SessionResponseDTO> getCurrentSession(String userId) {
+        return getCurrentSession(userId, null);
+    }
+
+    /**
+     * Pick the user's most-recently-seen active session. Best-effort fallback
+     * for legacy code paths that receive only a userId and can't disambiguate
+     * across the (up to {@code IGRP_SESSION_MAX_PER_USER}) concurrent sessions.
+     */
+    private Optional<SessionEntity> findMostRecentActive(String userId) {
+        return sessionRepository
+                .findByUserIdAndStatusOrderByLastSeenAtDesc(userId, SessionStatus.ACTIVE)
+                .stream()
+                .findFirst();
+    }
+
+    /**
      * Initialize a new session for user
      */
     public SessionResponseDTO initializeSession(String userId, String clientIp,
@@ -110,9 +149,15 @@ public class SessionManagementService {
             throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_SESSION_USER_INACTIVE, userId);
         }
 
-        sessionRepository.findByUserIdAndStatus(userId, SessionStatus.ACTIVE)
+        // Pre-existing behaviour was "close THE existing session before opening a
+        // new one" — that assumed one session per user. Under the LRU model (up
+        // to IGRP_SESSION_MAX_PER_USER sessions) we preserve the closest legacy
+        // semantic: close the most-recently-seen active session. Full multi-
+        // session handling here belongs in SessionIssuanceService (which does
+        // proper LRU eviction on issuance).
+        findMostRecentActive(userId)
                 .ifPresent(existingSession -> {
-                    log.info("Closing existing session for user: {}", userId);
+                    log.info("Closing most-recent existing session for user: {}", userId);
                     existingSession.close("SESSION_REPLACED", "SYSTEM");
                     sessionRepository.save(existingSession);
                 });
@@ -142,8 +187,11 @@ public class SessionManagementService {
     public Optional<SessionResponseDTO> refreshSession(String userId, Integer extensionSeconds) {
         log.debug("Refreshing session for user: {}", userId);
 
-        Optional<SessionEntity> sessionOpt = sessionRepository
-                .findByUserIdAndStatus(userId, SessionStatus.ACTIVE);
+        // Best-effort: refresh the most-recent active session. Correct
+        // sid-scoped refresh belongs on the token-refresh path
+        // (SessionIssuanceService), which has JWT context; this legacy method
+        // is user-id only.
+        Optional<SessionEntity> sessionOpt = findMostRecentActive(userId);
 
         if (sessionOpt.isEmpty()) {
             log.debug("No active session to refresh for user: {}", userId);
@@ -179,8 +227,10 @@ public class SessionManagementService {
     public boolean closeSession(String userId, String reason) {
         log.info("Closing session for user: {} with reason: {}", userId, reason);
 
-        Optional<SessionEntity> sessionOpt = sessionRepository
-                .findByUserIdAndStatus(userId, SessionStatus.ACTIVE);
+        // Best-effort: close the most-recent active session. When the caller
+        // has JWT context, prefer looking up by sid via findBySessionId and
+        // closing that specific row.
+        Optional<SessionEntity> sessionOpt = findMostRecentActive(userId);
 
         if (sessionOpt.isEmpty()) {
             log.debug("No active session to close for user: {}", userId);

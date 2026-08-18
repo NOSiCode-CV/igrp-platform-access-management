@@ -209,7 +209,8 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
         }
 
         heartbeatService.cache(session);
-        heartbeatService.touch(session, now, sessionProperties.getHeartbeatDebounceSeconds());
+        heartbeatService.touch(session, now, sessionProperties.getHeartbeatDebounceSeconds(),
+                sessionProperties.getTimeoutSeconds());
         sessionMetrics.recordHeartbeat();
 
         filterChain.doFilter(request, response);
@@ -243,7 +244,8 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
     private void touchFromDb(UUID sid, Instant now) {
         try {
             sessionRepository.findBySessionId(sid).ifPresent(entity ->
-                    heartbeatService.touch(entity, now, sessionProperties.getHeartbeatDebounceSeconds()));
+                    heartbeatService.touch(entity, now, sessionProperties.getHeartbeatDebounceSeconds(),
+                            sessionProperties.getTimeoutSeconds()));
         } catch (DataAccessException ex) {
             LOGGER.warn("Heartbeat: cannot reload sid={} for last_seen_at update: {}",
                     sid, ex.getMessage());

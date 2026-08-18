@@ -69,13 +69,34 @@ public class SessionController {
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SessionResponseDTO> getCurrentSession() {
         String userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
-        log.debug("Getting current session for user: {}", userId);
+        UUID sid = extractSid();
+        log.debug("Getting current session for user: {} sid: {}", userId, sid);
 
-        var query = new GetCurrentSessionQuery(userId);
+        var query = new GetCurrentSessionQuery(userId, sid);
         Optional<SessionResponseDTO> session = queryBus.handle(query);
 
         return session.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.noContent().build());
+    }
+
+    /**
+     * Best-effort read of the JWT's {@code sid} claim — populated by
+     * {@code SessionIssuanceService} at token issuance and used to
+     * disambiguate WHICH of the caller's active sessions to operate on
+     * (a user can hold up to {@code IGRP_SESSION_MAX_PER_USER} sessions
+     * concurrently). Returns null if the claim is missing or malformed;
+     * downstream services fall back to "the user's most recently seen
+     * active session" in that case.
+     */
+    private UUID extractSid() {
+        try {
+            Jwt jwt = authenticationHelper.getJwtToken();
+            String sid = jwt.getClaimAsString("sid");
+            return (sid != null && !sid.isBlank()) ? UUID.fromString(sid) : null;
+        } catch (RuntimeException e) {
+            // No JWT (M2M path) or non-UUID sid value — legacy path.
+            return null;
+        }
     }
 
     @GetMapping("/check")
