@@ -21,25 +21,38 @@ import java.util.UUID;
 public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
 
     /**
-     * Find active session for a specific user
-     */
-    Optional<SessionEntity> findByUserIdAndStatus(String userId, SessionStatus status);
-
-    /**
-     * Find active session for a specific (user, device) pair. Used by the
-     * token-issuance pipeline to atomically replace any previous session bound
-     * to the same physical device before opening a new one.
-     */
-    Optional<SessionEntity> findByUserIdAndDeviceIdAndStatus(String userId,
-                                                             String deviceId,
-                                                             SessionStatus status);
-
-    /**
      * List active sessions of a user ordered oldest-first by {@code last_seen_at}.
      * Used by the LRU eviction step when the per-user concurrency cap is exceeded.
      */
     List<SessionEntity> findByUserIdAndStatusOrderByLastSeenAtAsc(String userId,
                                                                   SessionStatus status);
+
+    /**
+     * List active sessions of a user ordered newest-first by {@code last_seen_at}.
+     * Used by operations that need to pick "the most recent session" as a
+     * best-effort fallback when the caller cannot supply the specific {@code sid}
+     * to operate on (e.g. legacy code paths that only receive a userId).
+     *
+     * <p>Prefer {@link #findBySessionId(UUID)} when a JWT's {@code sid} claim
+     * is available — that identifies the request's session unambiguously and
+     * avoids the "which of the 5 tabs?" question.
+     */
+    List<SessionEntity> findByUserIdAndStatusOrderByLastSeenAtDesc(String userId,
+                                                                   SessionStatus status);
+
+    /**
+     * Find active session for a specific (user, device) pair. Used by the
+     * token-issuance pipeline to atomically replace any previous session bound
+     * to the same physical device before opening a new one.
+     *
+     * <p>The (user, device, ACTIVE) tuple is expected to be unique by design —
+     * one active session per physical device. If a race ever seeded two rows,
+     * this method would throw {@code NonUniqueResultException}; callers should
+     * be prepared to handle that as a data-integrity signal.
+     */
+    Optional<SessionEntity> findByUserIdAndDeviceIdAndStatus(String userId,
+                                                             String deviceId,
+                                                             SessionStatus status);
 
     /**
      * Find the active session bound to the given JWT id. Used by the refresh
