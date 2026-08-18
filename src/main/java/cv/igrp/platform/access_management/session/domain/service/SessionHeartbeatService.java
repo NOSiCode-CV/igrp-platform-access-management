@@ -76,6 +76,23 @@ public class SessionHeartbeatService {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void touch(SessionEntity session, Instant now, long debounceSeconds) {
+        touch(session, now, debounceSeconds, null);
+    }
+
+    /**
+     * As {@link #touch(SessionEntity, Instant, long)}, but ALSO extends the
+     * sliding deadline (`expires_at`) by {@code slideByseconds} — the missing
+     * half of the "sliding TTL" contract. Without this, {@code expires_at} is
+     * fixed at session creation to {@code startedAt + timeoutSeconds} and every
+     * session dies at that mark regardless of activity, because
+     * {@link cv.igrp.platform.access_management.shared.security.SessionEnforcementFilter}
+     * denies on {@code expires_at}, not on {@code last_seen_at}.
+     *
+     * <p>Pass {@code null} for {@code slideBySeconds} to skip the deadline
+     * update (legacy call sites that only want the metric write).
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void touch(SessionEntity session, Instant now, long debounceSeconds, Long slideBySeconds) {
         if (session == null || session.getSessionId() == null) {
             return;
         }
@@ -89,6 +106,12 @@ public class SessionHeartbeatService {
         }
         try {
             session.setLastSeenAt(now);
+            if (slideBySeconds != null && slideBySeconds > 0) {
+                Instant candidate = now.plusSeconds(slideBySeconds);
+                Instant cap = session.getAbsoluteExpiresAt();
+                // Never slide past the hard absolute-lifetime ceiling.
+                session.setExpiresAt(cap != null && candidate.isAfter(cap) ? cap : candidate);
+            }
             SessionEntity saved = sessionRepository.save(session);
             cache(saved);
         } catch (DataAccessException ex) {
