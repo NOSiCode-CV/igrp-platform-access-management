@@ -3,10 +3,12 @@ package cv.igrp.platform.access_management.department.application.commands;
 import static org.mockito.Mockito.*;
 import static org.junit.jupiter.api.Assertions.*;
 
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,6 +28,12 @@ public class RemoveResourcesFromDepartmentCommandHandlerTest {
 
     @Mock
     private ResourceEntityRepository resourceRepository;
+
+    @Mock
+    private EventPublisher eventPublisher;
+
+    @Mock
+    private ScopeService scopeService;
 
     @InjectMocks
     private RemoveResourcesFromDepartmentCommandHandler handler;

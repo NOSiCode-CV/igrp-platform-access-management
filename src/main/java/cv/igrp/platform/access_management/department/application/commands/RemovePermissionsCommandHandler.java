@@ -136,6 +136,15 @@ public class RemovePermissionsCommandHandler implements CommandHandler<RemovePer
 
             roleRepository.save(childRole);
 
+            // Fix (P0 gap): the primary role fires RolePermissionChangedEvent, but child
+            // roles used to be silently mutated with no event, so users assigned to child
+            // roles kept the revoked permission in their JWT until token refresh. Fire
+            // the same event per child so the session listener invalidates their sessions.
+            eventPublisher.publishRolePermissionChanged(new RolePermissionChangedEvent(
+                    childRole.getCode(),
+                    childRole.getDepartment() != null ? childRole.getDepartment().getCode() : null,
+                    "PERMISSIONS_REMOVED", null));
+
             removePermissionsForChildren(departmentEntity, childRole, permissionNames);
 
             log.info("Permissions with IDs {} removed from child role with code: {} successfully.", permissionNames, childRole.getCode());

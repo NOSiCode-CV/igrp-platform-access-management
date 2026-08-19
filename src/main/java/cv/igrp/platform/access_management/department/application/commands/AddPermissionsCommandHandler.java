@@ -4,6 +4,7 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.PermissionMapper;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
@@ -25,6 +26,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -128,6 +130,21 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
                  .toList();
       }
 
+      // Fix (P0 gap): department-ancestor invariant. Previously a permission could be
+      // granted to a role even if the permission wasn't linked to the role's department
+      // or any ancestor — undoing the RemovePermissionsFromDepartment cascade in one
+      // POST. Reject any permission that isn't available in the role's dept ancestor
+      // chain (dept + parent + grandparent…, stopping at DELETED or root).
+      if (foundRole != null) {
+         Set<DepartmentEntity> availableDepts = collectAncestorChain(foundRole.getDepartment());
+         if (!availableDepts.isEmpty()) {
+            permissionList = permissionList.stream()
+                    .filter(p -> p.getDepartments() != null
+                            && p.getDepartments().stream().anyMatch(availableDepts::contains))
+                    .toList();
+         }
+      }
+
       if (permissionList.isEmpty()) {
          log.warn("No permission available from given set: {} ", command.getAddPermissionsRequest().stream().toList());
          throw IgrpResponseStatusException.ofWithDetails(IgrpErrorCode.IGRP_AUTH_PERMISSIONS_NOT_FOUND, permissionIdList, permissionIdList);
@@ -157,6 +174,23 @@ public class AddPermissionsCommandHandler implements CommandHandler<AddPermissio
 
       log.info("Permissions: {} for Role code: {} added successfully.", addedPermissionIds, command.getRoleCode());
       return new ResponseEntity<>(response, HttpStatus.OK);
+   }
+
+   /**
+    * Walks {@code dept} up through {@link DepartmentEntity#getParentId()} and returns every
+    * non-deleted ancestor (including the department itself). Used to build the set of
+    * departments in which a permission must appear to be grantable to a role in
+    * {@code dept}. Returns an empty set if {@code dept} is null.
+    */
+   private Set<DepartmentEntity> collectAncestorChain(DepartmentEntity dept) {
+      Set<DepartmentEntity> chain = new HashSet<>();
+      DepartmentEntity current = dept;
+      while (current != null) {
+         if (current.getStatus() == DepartmentStatus.DELETED) break;
+         if (!chain.add(current)) break; // defensive: cycle guard
+         current = current.getParentId();
+      }
+      return chain;
    }
 
 }

@@ -2,12 +2,15 @@ package cv.igrp.platform.access_management.app.application.commands;
 
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.MenuEntryEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.app.mapper.MenuEntryMapper;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -45,11 +48,18 @@ public class RemoveRolesFromMenuCommandHandlerTest {
     @Mock
     private MenuEntryMapper menuEntryMapper;
 
+    @Mock
+    private EventPublisher eventPublisher;
+
+    @Mock
+    private ScopeService scopeService;
+
     @InjectMocks
     private RemoveRolesFromMenuCommandHandler handler;
 
     private ApplicationEntity application;
     private MenuEntryEntity menuEntry;
+    private DepartmentEntity roleDept;
 
     @BeforeEach
     void setUp() {
@@ -58,12 +68,20 @@ public class RemoveRolesFromMenuCommandHandlerTest {
         application.setId(10);
         application.setCode("APP1");
 
+        // Roles must belong to a department for the scope-check cascade to allow removal.
+        roleDept = new DepartmentEntity();
+        roleDept.setId(1);
+        roleDept.setCode("DEPT");
+
         RoleEntity r1 = new RoleEntity();
         r1.setCode("R1");
+        r1.setDepartment(roleDept);
         RoleEntity r2 = new RoleEntity();
         r2.setCode("R2");
+        r2.setDepartment(roleDept);
         RoleEntity r3 = new RoleEntity();
         r3.setCode("R3");
+        r3.setDepartment(roleDept);
 
         menuEntry = new MenuEntryEntity();
         menuEntry.setId(100);

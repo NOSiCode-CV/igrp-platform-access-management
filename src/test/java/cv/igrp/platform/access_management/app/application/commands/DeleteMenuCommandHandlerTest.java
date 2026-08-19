@@ -32,6 +32,9 @@ public class DeleteMenuCommandHandlerTest {
     @Mock
     private ApplicationEntityRepository applicationRepository;
 
+    @Mock
+    private cv.igrp.platform.access_management.shared.domain.events.EventPublisher eventPublisher;
+
     @InjectMocks
     private DeleteMenuCommandHandler deleteMenuCommandHandler;
 

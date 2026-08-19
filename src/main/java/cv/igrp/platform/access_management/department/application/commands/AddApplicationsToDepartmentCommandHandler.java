@@ -14,6 +14,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 
 
@@ -35,6 +36,7 @@ public class AddApplicationsToDepartmentCommandHandler implements CommandHandler
    }
 
    @IgrpCommandHandler
+   @Transactional
    public ResponseEntity<String> handle(AddApplicationsToDepartmentCommand command) {
 
       LOGGER.info("Handling add applications to department: {}", command.getCode());
