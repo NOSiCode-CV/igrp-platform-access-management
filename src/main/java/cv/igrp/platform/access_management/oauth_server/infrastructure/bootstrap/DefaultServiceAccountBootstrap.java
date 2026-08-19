@@ -146,7 +146,22 @@ public class DefaultServiceAccountBootstrap {
             return;
         }
 
+        // Existence check by NAME first (the fast, intent-preserving path) and by
+        // OAUTH_CLIENT_ID as a fallback. The client_id column has a UNIQUE constraint
+        // (idx_service_account_oauth_client — the 1:1 SA↔client pairing), so if any
+        // SA — even one that has been renamed — is already linked to this client, we
+        // MUST reuse it. Skipping the client-id check caused a DuplicateKeyException
+        // on the next boot after the SA was renamed via the API.
         UUID serviceAccountId = findServiceAccountIdByName(serviceAccountName);
+        if (serviceAccountId == null) {
+            serviceAccountId = findServiceAccountIdByOAuthClient(clientId);
+            if (serviceAccountId != null) {
+                LOGGER.info("[Default SA Bootstrap] A service account is already linked to OAuth client '{}' (id={}) "
+                                + "under a different name (expected='{}', existing SA id={}). Reusing it and "
+                                + "reconciling permission grants; the SA name is not modified here.",
+                        defaultClientId, clientId, serviceAccountName, serviceAccountId);
+            }
+        }
         if (serviceAccountId == null) {
             serviceAccountId = createServiceAccount(clientId);
             LOGGER.info("[Default SA Bootstrap] Seeded default service account '{}' (id={}) linked to OAuth client '{}' (id={})",
@@ -184,6 +199,26 @@ public class DefaultServiceAccountBootstrap {
                     "SELECT id FROM t_service_account WHERE name = ? LIMIT 1",
                     UUID.class,
                     name);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Fallback for the existence check: the t_service_account row uses
+     * {@code oauth_client_id} as a UNIQUE key ({@code idx_service_account_oauth_client}),
+     * so at most one SA can be linked to a given OAuth client. If an existing SA is
+     * linked to our target client — even one with a different {@code name} (someone
+     * renamed it via the API since first boot) — we MUST reuse it, otherwise the
+     * insert in {@link #createServiceAccount(UUID)} raises a
+     * {@link org.springframework.dao.DuplicateKeyException} on the next boot.
+     */
+    private UUID findServiceAccountIdByOAuthClient(UUID oauthClientId) {
+        try {
+            return jdbcTemplate.queryForObject(
+                    "SELECT id FROM t_service_account WHERE oauth_client_id = ? LIMIT 1",
+                    UUID.class,
+                    oauthClientId);
         } catch (EmptyResultDataAccessException e) {
             return null;
         }

@@ -181,6 +181,58 @@ class DefaultServiceAccountBootstrapTest {
                 any(Object.class), any(Object.class), any(Object.class), any(Object.class));
     }
 
+    // ─── regression: SA renamed via API but still linked to our client ──
+
+    @Test
+    @DisplayName("SA was renamed but the oauth_client_id link still points to our client — reuse it, DO NOT re-insert")
+    void saRenamed_reusedByClientId_noDuplicateInsert() {
+        // Reproduces the DuplicateKeyException on idx_service_account_oauth_client that
+        // happened when the default SA was renamed after first boot: the by-name lookup
+        // missed, the bootstrap tried to INSERT another SA against the same client_id
+        // (UNIQUE), and Postgres rejected it.
+        UUID existingSa = UUID.randomUUID();
+
+        when(jdbcTemplate.queryForObject(
+                startsWith("SELECT id FROM t_oauth_client"),
+                eq(UUID.class),
+                eq(DEFAULT_CLIENT_ID)))
+                .thenReturn(clientUuid);
+
+        // by-name lookup returns empty (SA was renamed via the API)
+        when(jdbcTemplate.queryForObject(
+                startsWith("SELECT id FROM t_service_account"),
+                eq(UUID.class),
+                eq(DEFAULT_SA_NAME)))
+                .thenThrow(new EmptyResultDataAccessException(1));
+
+        // by-oauth_client_id lookup resolves the existing (renamed) SA
+        when(jdbcTemplate.queryForObject(
+                startsWith("SELECT id FROM t_service_account"),
+                eq(UUID.class),
+                eq(clientUuid)))
+                .thenReturn(existingSa);
+
+        for (String name : allDefaultPermissionNames()) {
+            stubPermissionId(name, (long) (name.hashCode() & 0xFFFF));
+        }
+        when(jdbcTemplate.update(
+                startsWith("INSERT INTO t_service_account_permission_grant"),
+                any(Object.class), any(Object.class), any(Object.class), any(Object.class)))
+                .thenReturn(0);
+
+        bootstrap.seedDefaultServiceAccount();
+
+        // The row INSERT must NOT fire — that is the bug this test guards against.
+        verify(jdbcTemplate, never()).update(
+                startsWith("INSERT INTO t_service_account\n"),
+                any(UUID.class), any(String.class), any(String.class), any(UUID.class));
+
+        // Grants still reconciled on the existing SA (idempotent no-ops here).
+        verify(jdbcTemplate, times(12)).update(
+                startsWith("INSERT INTO t_service_account_permission_grant"),
+                any(Object.class), any(Object.class), any(Object.class), any(Object.class));
+    }
+
     // ─── permission row missing: skipped with warning, not a hard fail ──
 
     @Test
