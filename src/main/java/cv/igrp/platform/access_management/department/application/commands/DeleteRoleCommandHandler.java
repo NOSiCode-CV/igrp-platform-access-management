@@ -121,10 +121,22 @@ public class DeleteRoleCommandHandler implements CommandHandler<DeleteRoleComman
          // Recurse down the existing graph instead of reloading from the repository to avoid NPEs
          deleteChildRoles(child);
 
-         if (!Status.DELETED.equals(child.getStatus())) {
+         boolean wasActive = !Status.DELETED.equals(child.getStatus());
+         if (wasActive) {
             child.setStatus(Status.DELETED);
          }
          roleRepository.save(child);
+
+         // Fix (P0 gap): the primary role fires RolePermissionChangedEvent(ROLE_DELETED),
+         // but child roles used to be silently marked DELETED with no event, so users
+         // assigned to those child roles kept the deleted role in their JWT until token
+         // refresh. Fire the same event per newly-deleted child.
+         if (wasActive) {
+            eventPublisher.publishRolePermissionChanged(new RolePermissionChangedEvent(
+                    child.getCode(),
+                    child.getDepartment() != null ? child.getDepartment().getCode() : null,
+                    "ROLE_DELETED", null));
+         }
       }
 
    }

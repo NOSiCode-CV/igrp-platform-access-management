@@ -18,6 +18,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -42,6 +43,7 @@ public class AddMenusToDepartmentCommandHandler implements CommandHandler<AddMen
    }
 
    @IgrpCommandHandler
+   @Transactional
    public ResponseEntity<String> handle(AddMenusToDepartmentCommand command) {
       List<String> menuCodes = command.getAddMenusToDepartmentRequest();
       var departmentOpt = departmentRepository.findByCodeAndStatusNot(command.getDepartmentCode(), DepartmentStatus.DELETED);

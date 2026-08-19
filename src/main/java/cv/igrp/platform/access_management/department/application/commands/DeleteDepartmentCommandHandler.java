@@ -10,9 +10,11 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.events.DepartmentScopeChangedEvent;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.security_audit.domain.events.DepartmentDeletedEvent;
+import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
@@ -101,6 +103,15 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
 
       eventPublisher.publishSettingsAudit(new DepartmentDeletedEvent(department.getName()));
 
+      // Fix (P0 gap): the department is now DELETED but the previous implementation only
+      // emitted a settings-audit event. Sessions of users whose active dept was just
+      // deleted kept working (up to IGRP_SESSION_ABSOLUTE_TIMEOUT_SECONDS, 8h) because
+      // no invalidation event fired. Emit DepartmentScopeChangedEvent(CHANGE_STATUS) so
+      // SessionInvalidationEventListener.handleDepartmentScopeChanged invalidates every
+      // active session for users belonging to this department.
+      eventPublisher.publishDepartmentScopeChanged(new DepartmentScopeChangedEvent(
+              department.getCode(), DepartmentScopeChangedEvent.CHANGE_STATUS, null));
+
       logger.info("Successfully deleted department with code={}", code);
       return ResponseEntity.noContent().build();
    }
@@ -115,6 +126,12 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
            roleEntity.setStatus(Status.DELETED);
            deleteChildRoles(roleEntity);
            roleRepository.save(roleEntity);
+
+           // Fix (P0 gap): fire per-role invalidation so users assigned to the role are
+           // logged out precisely (in addition to the coarser dept-level event fired at
+           // the end of handle()). Mirrors DeleteRoleCommandHandler's behavior.
+           eventPublisher.publishRolePermissionChanged(new RolePermissionChangedEvent(
+                   roleEntity.getCode(), department.getCode(), "ROLE_DELETED", null));
        }
 
    }
@@ -135,6 +152,12 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
 
          childDepartment.setStatus(DepartmentStatus.DELETED);
          departmentRepository.save(childDepartment);
+
+         // Fix (P0 gap): per-child-department invalidation. Without this, only the top
+         // department's users are invalidated; users active in a descendant that was
+         // just DELETED keep working sessions until token expiry.
+         eventPublisher.publishDepartmentScopeChanged(new DepartmentScopeChangedEvent(
+                 childDepartment.getCode(), DepartmentScopeChangedEvent.CHANGE_STATUS, null));
 
       }
 

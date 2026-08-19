@@ -98,7 +98,7 @@ class AppSettingsAuditIT {
         when(applicationRepository.findByCodeAndStatusNot("APP001", Status.DELETED))
                 .thenReturn(Optional.of(application));
 
-        var handler = new DeleteApplicationCommandHandler(applicationRepository, menuRepository, eventPublisher);
+        var handler = new DeleteApplicationCommandHandler(applicationRepository, menuRepository, departmentRepository, eventPublisher);
 
         handler.handle(new DeleteApplicationCommand("APP001"));
 

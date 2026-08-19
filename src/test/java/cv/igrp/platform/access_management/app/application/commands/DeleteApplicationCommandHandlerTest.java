@@ -7,6 +7,8 @@ import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.MenuEntryEntityRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -28,6 +30,12 @@ public class DeleteApplicationCommandHandlerTest {
 
     @Mock
     private ApplicationEntityRepository applicationRepository;
+
+    @Mock
+    private MenuEntryEntityRepository menuRepository;
+
+    @Mock
+    private DepartmentEntityRepository departmentRepository;
 
     @Test
     void testHandle_whenApplicationFoundAndDeleted() {
