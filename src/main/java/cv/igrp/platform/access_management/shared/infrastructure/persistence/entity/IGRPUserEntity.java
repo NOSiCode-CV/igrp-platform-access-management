@@ -76,9 +76,16 @@ public class IGRPUserEntity extends AuditEntity implements UserIdentity {
     private List<UserRoleAssignment> userRoleAssignments = new ArrayList<>();
 
     public List<RoleEntity> getRoles() {
+        // .distinct() is required because userRoleAssignments is a bag List and the
+        // JPQL fetch used by findByIdWithRolesAndPermissions joins u.userRoleAssignments
+        // WITH r.permissions in the same query. That produces a Cartesian product:
+        // each URA row appears once per permission on its role, so the derived roles
+        // list would carry N duplicates per role (same Hibernate-managed reference)
+        // without the dedup. Fixes GET /api/users/me/roles returning duplicated roles.
         return userRoleAssignments.stream()
                 .filter(ura -> ura.getExpiresAt() == null || ura.getExpiresAt().isAfter(java.time.LocalDateTime.now()))
                 .map(UserRoleAssignment::getRole)
+                .distinct()
                 .toList();
     }
 

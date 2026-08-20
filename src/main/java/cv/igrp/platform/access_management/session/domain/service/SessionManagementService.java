@@ -331,9 +331,15 @@ public class SessionManagementService {
                 );
             }
 
+            // .distinct() on URAs: the JPQL fetch used by findByIdWithRolesAndPermissions
+            // joins u.userRoleAssignments with r.permissions in one query, producing a
+            // Cartesian product. Each URA appears once per permission on its role
+            // (same Hibernate-managed reference), so without dedup /api/session would
+            // return a role N times where N = permissions on that role.
             roles = user.getUserRoleAssignments().stream()
                     .filter(ura -> ura.getExpiresAt() == null || ura.getExpiresAt().isAfter(java.time.LocalDateTime.now()))
                     .filter(ura -> Status.ACTIVE.equals(ura.getRole().getStatus()))
+                    .distinct()
                     .map(roleMapper::mapToDto)
                     .filter(Objects::nonNull)
                     .map(roleDto -> new RoleDepartmentDTO(roleDto.getCode(), roleDto.getDepartmentCode()))
