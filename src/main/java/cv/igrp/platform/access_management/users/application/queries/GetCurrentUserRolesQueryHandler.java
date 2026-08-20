@@ -86,9 +86,17 @@ public class GetCurrentUserRolesQueryHandler implements QueryHandler<GetCurrentU
         IGRPUserEntity user = userRepository.findByIdWithRolesAndPermissions(userId)
                 .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_USER_NOT_FOUND_BY_ID, userId));
 
+        // .distinct() is required: userRoleAssignments is a bag List and the JPQL
+        // fetch used by findByIdWithRolesAndPermissions joins u.userRoleAssignments
+        // with r.permissions in one query, producing a Cartesian product. Each URA
+        // row appears once per permission on its role (same Hibernate-managed
+        // reference), so without dedup a role with N permissions would emit N
+        // identical RoleDTOs. Dedup at the URA level because it's the same object
+        // reference and cheapest; the mapper runs once per real assignment.
         List<RoleDTO> result = user.getUserRoleAssignments().stream()
                 .filter(ura -> ura.getExpiresAt() == null || ura.getExpiresAt().isAfter(java.time.LocalDateTime.now()))
                 .filter(ura -> Objects.equals(ura.getRole().getStatus(), Status.ACTIVE))
+                .distinct()
                 .map(roleMapper::mapToDto)
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
