@@ -32,6 +32,7 @@
         <framework.auth.version>0.1.0-beta.1</framework.auth.version>
         <filemanager.version>0.0.3-alpha</filemanager.version>
         <igrp.framework.notification.core.version>0.0.1-alpha</igrp.framework.notification.core.version>
+        <igrp.platform.notification.client.version>0.2.0-beta.5</igrp.platform.notification.client.version>
     </properties>
 
     <dependencyManagement>
@@ -264,6 +265,18 @@
             <groupId>cv.igrp.framework</groupId>
             <artifactId>notifications-core</artifactId>
             <version>${igrp.framework.notification.core.version}</version>
+        </dependency>
+        <!--
+          Notification Service Java client — primary delivery path for the
+          user-invitation email (template "user-invitation" seeded under
+          APP_IGRP_CENTER). The legacy Spring Mail sender above remains the
+          fallback when igrp.notification.service.enabled=false or the service
+          is unreachable at send time; see InvitationNotificationSender.
+        -->
+        <dependency>
+            <groupId>cv.igrp.platform.notification</groupId>
+            <artifactId>client</artifactId>
+            <version>${igrp.platform.notification.client.version}</version>
         </dependency>
         <!-- Report export (Phase 4 — Unified Audit & Reports). POI streams Excel
              (SXSSFWorkbook); OpenPDF (LGPL fork of iText 4) renders PDF. -->

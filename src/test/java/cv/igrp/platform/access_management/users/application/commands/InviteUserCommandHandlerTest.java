@@ -1,10 +1,8 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
+import cv.igrp.platform.access_management.notification.domain.service.InvitationNotificationSender;
 import cv.igrp.platform.access_management.shared.application.dto.InviteUserDTO;
-import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.exception.NotificationException;
-import cv.igrp.framework.notifications.core.model.Notification;
-import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
 import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -38,7 +36,7 @@ import static org.mockito.Mockito.*;
 class InviteUserCommandHandlerTest {
 
     @MockBean
-    private NotificationAdapter<NotificationResult> notificationAdapter;
+    private InvitationNotificationSender invitationSender;
 
     @MockBean
     private cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository userRepository;
@@ -109,6 +107,13 @@ class InviteUserCommandHandlerTest {
         assertEquals(expectedDto, response.getBody());
 
         verify(invitationRepository).saveAndFlush(any(InvitationEntity.class));
-        verify(notificationAdapter).send(any(Notification.class));
+        // InvitationNotificationSender.send(email, displayName, url, token, locale) is
+        // the new indirection — used to be a direct notificationAdapter.send(Notification).
+        verify(invitationSender).send(
+                eq("john@nosi.cv"),
+                eq("john@nosi.cv"),
+                eq("http://test.url"),
+                eq("test-token"),
+                isNull());
     }
 }
