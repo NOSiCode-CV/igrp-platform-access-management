@@ -1,17 +1,14 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
-import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
-import cv.igrp.framework.notifications.core.model.Notification;
-import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.notification.domain.service.InvitationNotificationSender;
 import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils;
 import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
@@ -19,8 +16,6 @@ import org.slf4j.LoggerFactory;
 
 import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
 
-import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -29,32 +24,21 @@ public class ResendUserInvitationCommandHandler implements CommandHandler<Resend
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ResendUserInvitationCommandHandler.class);
 
-    @Value("${igrp.mail.invite.template}")
-    private String emailTemplate = """
-            Dear {{user}}, your were invited to the iGRP platform
-            
-            Please click on the link below to accept the invitation:
-            {{url}}
-            
-            Best Regards.
-            iGRP
-            """;
-
     @Value("${igrp.app-center.url:}")
     private String appCenterUrl = "";
 
-    private final NotificationAdapter<NotificationResult> notificationAdapter;
+    private final InvitationNotificationSender invitationSender;
     private final InvitationEntityRepository invitationRepository;
     private final UserUtils userUtils;
     private final InvitationMapper invitationMapper;
 
     public ResendUserInvitationCommandHandler(
-            NotificationAdapter<NotificationResult> notificationAdapter,
+            InvitationNotificationSender invitationSender,
             InvitationEntityRepository invitationRepository,
             UserUtils userUtils,
             InvitationMapper invitationMapper
     ) {
-        this.notificationAdapter = notificationAdapter;
+        this.invitationSender = invitationSender;
         this.invitationRepository = invitationRepository;
         this.userUtils = userUtils;
         this.invitationMapper = invitationMapper;
@@ -81,21 +65,17 @@ public class ResendUserInvitationCommandHandler implements CommandHandler<Resend
 
         var updatedInvitation = invitationRepository.save(invitation);
 
-        try {
-
-            if ("EMAIL".equalsIgnoreCase(invitation.getIdentifierType())) {
-                var notification = new Notification();
-    
-                notification.setRecipients(List.of(invitation.getIdentifierValue()));
-                notification.setSubject("iGRP User Invitation");
-                notification.setContent(emailTemplate.replace("{{user}}", invitation.getIdentifierValue()).replace("{{url}}", url));
-                notification.setMetadata(Map.of("invitationToken", newToken, "email", invitation.getIdentifierValue()));
-    
-                notificationAdapter.send(notification);
-            }
-
-        } catch (Exception e) {
-            LOGGER.error("Error while sending user invitation", e);
+        if ("EMAIL".equalsIgnoreCase(invitation.getIdentifierType())) {
+            // Primary path = Notification Service ("user-invitation" template by default,
+            // configurable via igrp.notification.service.invitation.resend-template-code);
+            // fallback = legacy Spring Mail sender. The sender swallows any failure so
+            // the invite is still persisted + returned even if all email paths are down.
+            invitationSender.sendResend(
+                    invitation.getIdentifierValue(),
+                    invitation.getIdentifierValue(),
+                    url,
+                    newToken,
+                    null);
         }
 
         LOGGER.info("User invited successfully with token={}", newToken);

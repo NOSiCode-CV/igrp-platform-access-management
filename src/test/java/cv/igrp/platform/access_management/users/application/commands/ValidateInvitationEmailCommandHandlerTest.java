@@ -1,9 +1,7 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
-import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
 import cv.igrp.framework.notifications.core.exception.NotificationException;
-import cv.igrp.framework.notifications.core.model.Notification;
-import cv.igrp.framework.notifications.core.model.NotificationResult;
+import cv.igrp.platform.access_management.notification.domain.service.InvitationNotificationSender;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.InvitationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
@@ -36,7 +34,7 @@ class ValidateInvitationEmailCommandHandlerTest {
     private OtpEntityRepository otpEntityRepository;
 
     @MockBean
-    private NotificationAdapter<NotificationResult> notificationAdapter;
+    private InvitationNotificationSender invitationSender;
 
     @Autowired
     private ValidateInvitationEmailCommandHandler commandHandler;
@@ -59,6 +57,7 @@ class ValidateInvitationEmailCommandHandlerTest {
     void testHandle_Success() throws NotificationException {
         when(invitationRepository.findByTokenAndStatusPending("valid-token")).thenReturn(invitation);
         when(otpEntityRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(invitationSender.sendOtpOrThrow(any(), any(), any(), any())).thenReturn(true);
 
         ResponseEntity<OtpResponseDTO> response = commandHandler.handle(command);
 
@@ -68,7 +67,8 @@ class ValidateInvitationEmailCommandHandlerTest {
         assertTrue(response.getBody().getMessage().contains("OTP code has been sent"));
 
         verify(otpEntityRepository, times(1)).save(any());
-        verify(notificationAdapter, times(1)).send(any(Notification.class));
+        verify(invitationSender, times(1)).sendOtpOrThrow(
+                eq("user@example.com"), any(String.class), eq("valid-token"), isNull());
     }
 
     @Test
@@ -85,7 +85,10 @@ class ValidateInvitationEmailCommandHandlerTest {
     void testHandle_NotificationFailure() throws NotificationException {
         when(invitationRepository.findByTokenAndStatusPending("valid-token")).thenReturn(invitation);
         when(otpEntityRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
-        doThrow(new RuntimeException("Mail server down")).when(notificationAdapter).send(any());
+        // sendOtpOrThrow returns false when both primary + fallback fail — the
+        // handler translates that to the IGRP_AUTH_INVITATION_OTP_SEND_FAILED
+        // business error so the caller receives 5xx rather than a silent success.
+        when(invitationSender.sendOtpOrThrow(any(), any(), any(), any())).thenReturn(false);
 
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> commandHandler.handle(command));
         assertEquals(HttpStatus.INTERNAL_SERVER_ERROR.value(), exception.getBody().getStatus());

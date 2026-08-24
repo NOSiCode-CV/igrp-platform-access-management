@@ -1,10 +1,8 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
-import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
-import cv.igrp.framework.notifications.core.model.Notification;
-import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.notification.domain.service.InvitationNotificationSender;
 import cv.igrp.platform.access_management.shared.application.dto.OtpResponseDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -13,14 +11,11 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.OtpEntityRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Map;
 import java.util.Random;
 
 @Component
@@ -30,17 +25,14 @@ public class ValidateInvitationEmailCommandHandler implements CommandHandler<Val
 
     private final InvitationEntityRepository invitationRepository;
     private final OtpEntityRepository otpEntityRepository;
-    private final NotificationAdapter<NotificationResult> notificationAdapter;
-
-    @Value("${igrp.mail.otp.template:Dear user, your OTP code is {{otp}}.}")
-    private String emailTemplate;
+    private final InvitationNotificationSender invitationSender;
 
     public ValidateInvitationEmailCommandHandler(InvitationEntityRepository invitationRepository,
                                                  OtpEntityRepository otpEntityRepository,
-                                                 NotificationAdapter<NotificationResult> notificationAdapter) {
+                                                 InvitationNotificationSender invitationSender) {
         this.invitationRepository = invitationRepository;
         this.otpEntityRepository = otpEntityRepository;
-        this.notificationAdapter = notificationAdapter;
+        this.invitationSender = invitationSender;
     }
 
     @IgrpCommandHandler
@@ -66,19 +58,22 @@ public class ValidateInvitationEmailCommandHandler implements CommandHandler<Val
 
         OtpEntity savedOtp = otpEntityRepository.save(otpEntity);
 
-        try {
-            var notification = new Notification();
-            notification.setRecipients(List.of(invitation.getIdentifierValue()));
-            notification.setSubject("iGRP Security Code");
-            notification.setContent(emailTemplate.replace("{{otp}}", otpCode));
-            notification.setMetadata(Map.of("invitationToken", command.getToken(), "email", invitation.getIdentifierValue()));
-
-            notificationAdapter.send(notification);
-            LOGGER.info("OTP sent to email: {}", invitation.getIdentifierValue());
-        } catch (Exception e) {
-            LOGGER.error("Failed to send OTP via email", e);
+        // Primary = Notification Service ("user-invitation-otp" template by default —
+        // not yet seeded, so this will fall back to Spring Mail with the legacy
+        // IGRP_MAIL_OTP_TEMPLATE body until the notification team publishes it);
+        // fallback = legacy Spring Mail sender. Unlike the other invitation events
+        // this one MUST surface failure to the caller — an OTP that never arrives
+        // blocks the invitation flow entirely, so use the OrThrow variant.
+        boolean delivered = invitationSender.sendOtpOrThrow(
+                invitation.getIdentifierValue(),
+                otpCode,
+                command.getToken(),
+                null);
+        if (!delivered) {
+            LOGGER.error("Failed to send OTP via email for invitationToken={}", command.getToken());
             throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_OTP_SEND_FAILED);
         }
+        LOGGER.info("OTP sent to email: {}", invitation.getIdentifierValue());
 
         OtpResponseDTO response = new OtpResponseDTO();
         response.setToken(command.getToken());

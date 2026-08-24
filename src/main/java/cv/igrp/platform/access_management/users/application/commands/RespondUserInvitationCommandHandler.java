@@ -1,10 +1,8 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
-import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
-import cv.igrp.framework.notifications.core.model.Notification;
-import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.notification.domain.service.InvitationNotificationSender;
 import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -48,15 +46,7 @@ public class RespondUserInvitationCommandHandler
 
    private static final Logger LOGGER = LoggerFactory.getLogger(RespondUserInvitationCommandHandler.class);
 
-   @Value("${igrp.mail.invite.response.template}")
-   private String emailTemplate = """
-         Dear {{user}}, you accepted the invite to the iGRP platform successfully.
-
-         Best Regards.
-         iGRP
-         """;
-
-   private final NotificationAdapter<NotificationResult> notificationAdapter;
+   private final InvitationNotificationSender invitationSender;
    private final IGRPUserEntityRepository userRepository;
    private final RoleEntityRepository roleRepository;
    private final InvitationEntityRepository invitationRepository;
@@ -71,7 +61,7 @@ public class RespondUserInvitationCommandHandler
    private final SessionAuditLogger sessionAuditLogger;
 
    public RespondUserInvitationCommandHandler(
-         NotificationAdapter<NotificationResult> notificationAdapter,
+         InvitationNotificationSender invitationSender,
          IGRPUserEntityRepository userRepository,
          RoleEntityRepository roleRepository,
          InvitationEntityRepository invitationRepository,
@@ -84,7 +74,7 @@ public class RespondUserInvitationCommandHandler
          ExpireRoleService expireRoleService,
          EventPublisher eventPublisher,
          SessionAuditLogger sessionAuditLogger) {
-      this.notificationAdapter = notificationAdapter;
+      this.invitationSender = invitationSender;
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
       this.invitationRepository = invitationRepository;
@@ -416,21 +406,19 @@ public class RespondUserInvitationCommandHandler
             }
          }
 
-         try {
-            if (savedUser.getEmail() != null && !savedUser.getEmail().isBlank()) {
-               LOGGER.info("Notifying user: id={}, email={}", savedUser.getId(), savedUser.getEmail());
-
-               var notification = new Notification();
-               notification.setRecipients(List.of(savedUser.getEmail()));
-               notification.setSubject("iGRP Invitation Response");
-               notification.setContent(emailTemplate.replace("{{user}}", savedUser.getEmail()));
-               notification.setMetadata(Map.of("userId", savedUser.getId(), "email", savedUser.getEmail()));
-
-               notificationAdapter.send(notification);
-               LOGGER.info("User with id={} was notified.", savedUser.getId());
-            }
-         } catch (Exception e) {
-            LOGGER.error("Invitation Email failed", e);
+         if (savedUser.getEmail() != null && !savedUser.getEmail().isBlank()) {
+            LOGGER.info("Notifying user: id={}, email={}", savedUser.getId(), savedUser.getEmail());
+            // Primary path = Notification Service ("user-invitation-responded" template
+            // by default — falls back to Spring Mail with the legacy
+            // IGRP_MAIL_INVITE_RESPONSE_TEMPLATE body when the template isn't
+            // resolvable on the service side); fallback = legacy Spring Mail sender.
+            invitationSender.sendResponse(
+                    savedUser.getEmail(),
+                    savedUser.getEmail(),
+                    savedUser.getId(),
+                    invitation.getToken(),
+                    null);
+            LOGGER.info("User with id={} was notified.", savedUser.getId());
          }
 
          return ResponseEntity.ok(invitationMapper.toDto(updatedInvitation));
