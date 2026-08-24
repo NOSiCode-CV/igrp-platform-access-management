@@ -1,10 +1,8 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
-import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
-import cv.igrp.framework.notifications.core.model.Notification;
-import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.notification.domain.service.InvitationNotificationSender;
 import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
 import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
@@ -34,21 +32,10 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
     private static final Logger LOGGER = LoggerFactory.getLogger(InviteUserCommandHandler.class);
 
-    @Value("${igrp.mail.invite.template}")
-    private String emailTemplate = """
-            Dear {{user}}, your were invited to the iGRP platform
-
-            Please click on the link below to accept the invitation:
-            {{url}}
-
-            Best Regards.
-            iGRP
-            """;
-
     @Value("${igrp.app-center.url:}")
     private String appCenterUrl = "";
 
-    private final NotificationAdapter<NotificationResult> notificationAdapter;
+    private final InvitationNotificationSender invitationSender;
     private final RoleEntityRepository roleRepository;
     private final DepartmentEntityRepository departmentRepository;
     private final InvitationEntityRepository invitationRepository;
@@ -56,7 +43,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
     private final UserUtils userUtils;
     private final IGRPUserEntityRepository userRepository;
 
-    public InviteUserCommandHandler(NotificationAdapter<NotificationResult> notificationAdapter,
+    public InviteUserCommandHandler(InvitationNotificationSender invitationSender,
                                     RoleEntityRepository roleRepository,
                                     DepartmentEntityRepository departmentRepository,
                                     InvitationEntityRepository invitationRepository,
@@ -64,7 +51,7 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
                                     UserUtils userUtils,
                                     IGRPUserEntityRepository userRepository
     ) {
-        this.notificationAdapter = notificationAdapter;
+        this.invitationSender = invitationSender;
         this.roleRepository = roleRepository;
         this.departmentRepository = departmentRepository;
         this.invitationRepository = invitationRepository;
@@ -145,21 +132,19 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         var url = userUtils.constructInvitationUrl(appCenterUrl, savedInvitation.getToken());
 
-        try {
-            LOGGER.info("Inviting new user via email: token={}, email={}", savedInvitation.getToken(), dto.getEmail());
+        LOGGER.info("Inviting new user via email: token={}, email={}", savedInvitation.getToken(), dto.getEmail());
 
-                var notification = new Notification();
-                notification.setRecipients(List.of(dto.getEmail()));
-                notification.setSubject("iGRP User Invitation");
-                notification.setContent(
-                        emailTemplate.replace("{{user}}", dto.getEmail()).replace("{{url}}", url));
-                notification.setMetadata(
-                        Map.of("invitationToken", savedInvitation.getToken(), "email", dto.getEmail()));
-
-                notificationAdapter.send(notification);
-        } catch (Exception e) {
-            LOGGER.error("Invitation Email failed", e);
-        }
+        // Primary path = iGRP Notification Service (template "user-invitation");
+        // fallback path = legacy Spring Mail sender via NotificationAdapter.
+        // The sender swallows any failure so persisting the invitation never
+        // fails because of a downstream mail issue — the invite token remains
+        // valid and can be re-delivered manually if needed.
+        invitationSender.send(
+                dto.getEmail(),
+                dto.getEmail(),
+                url,
+                savedInvitation.getToken(),
+                null);
 
         LOGGER.info("User invited successfully with token={}", savedInvitation.getToken());
         return ResponseEntity.ok(invitationMapper.toDtoWithUrl(savedInvitation, url));
