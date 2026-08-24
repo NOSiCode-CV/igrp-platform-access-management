@@ -72,8 +72,37 @@ public class NotificationServiceProperties {
      * property namespace.
      */
     public static class Invitation {
-        /** Template code seeded by the Notification Service. Defaults to the seed name. */
+        /** Template code used when a new invitation is issued. Defaults to the seed name. */
         private String templateCode = "user-invitation";
+
+        /**
+         * Template code used when an existing invitation is resent. Defaults to the
+         * same template as the initial invite because the email content is identical —
+         * only the trigger differs. Override to a distinct template only if operations
+         * later publishes a separate "user-invitation-resend" template.
+         */
+        private String resendTemplateCode = "user-invitation";
+
+        /**
+         * Template code used to notify the invitee that their pending invitation was
+         * cancelled by an administrator. Not yet seeded by the Notification Service —
+         * until a matching template lands on that side, sends will 4xx and fall back
+         * to the legacy Spring Mail body ({@code IGRP_MAIL_INVITE_CANCELLATION_TEMPLATE}).
+         */
+        private String cancellationTemplateCode = "user-invitation-cancelled";
+
+        /**
+         * Template code used to confirm the invitee that their acceptance succeeded.
+         * Same seed-not-yet-published caveat as {@link #cancellationTemplateCode}.
+         */
+        private String responseTemplateCode = "user-invitation-responded";
+
+        /**
+         * Template code used to email the OTP during invitation email validation
+         * ({@link cv.igrp.platform.access_management.users.application.commands.ValidateInvitationEmailCommandHandler}).
+         * Same seed-not-yet-published caveat as {@link #cancellationTemplateCode}.
+         */
+        private String otpTemplateCode = "user-invitation-otp";
 
         /** Fallback locale when the invited user's own locale is unknown. */
         private String defaultLocale = "en";
@@ -90,6 +119,18 @@ public class NotificationServiceProperties {
 
         public String getTemplateCode() { return templateCode; }
         public void setTemplateCode(String templateCode) { this.templateCode = templateCode; }
+
+        public String getResendTemplateCode() { return resendTemplateCode; }
+        public void setResendTemplateCode(String resendTemplateCode) { this.resendTemplateCode = resendTemplateCode; }
+
+        public String getCancellationTemplateCode() { return cancellationTemplateCode; }
+        public void setCancellationTemplateCode(String cancellationTemplateCode) { this.cancellationTemplateCode = cancellationTemplateCode; }
+
+        public String getResponseTemplateCode() { return responseTemplateCode; }
+        public void setResponseTemplateCode(String responseTemplateCode) { this.responseTemplateCode = responseTemplateCode; }
+
+        public String getOtpTemplateCode() { return otpTemplateCode; }
+        public void setOtpTemplateCode(String otpTemplateCode) { this.otpTemplateCode = otpTemplateCode; }
 
         public String getDefaultLocale() { return defaultLocale; }
         public void setDefaultLocale(String defaultLocale) { this.defaultLocale = defaultLocale; }

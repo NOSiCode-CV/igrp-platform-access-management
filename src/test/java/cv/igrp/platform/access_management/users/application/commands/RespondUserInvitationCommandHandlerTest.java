@@ -38,7 +38,7 @@ import java.util.Set;
 class RespondUserInvitationCommandHandlerTest {
 
     @Mock
-    private NotificationAdapter<NotificationResult> notificationAdapter;
+    private cv.igrp.platform.access_management.notification.domain.service.InvitationNotificationSender invitationSender;
 
     @Mock
     private IGRPUserEntityRepository userRepository;
@@ -177,7 +177,7 @@ class RespondUserInvitationCommandHandlerTest {
         assertEquals(InvitationStatus.REJECTED, invitation.getStatus());
         assertEquals("Rejected", invitation.getComments());
         verify(invitationRepository).save(invitation);
-        verifyNoInteractions(notificationAdapter);
+        verifyNoInteractions(invitationSender);
     }
 
     @Test

@@ -1,14 +1,11 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
-import cv.igrp.framework.notifications.core.adapter.NotificationAdapter;
-import cv.igrp.framework.notifications.core.model.Notification;
-import cv.igrp.framework.notifications.core.model.NotificationResult;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
+import cv.igrp.platform.access_management.notification.domain.service.InvitationNotificationSender;
 import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
 import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
@@ -16,30 +13,21 @@ import org.slf4j.LoggerFactory;
 
 import cv.igrp.platform.access_management.shared.application.dto.InvitationDTO;
 
-import java.util.List;
-import java.util.Map;
-
 @Component
 public class CancelUserInvitationCommandHandler implements CommandHandler<CancelUserInvitationCommand, ResponseEntity<InvitationDTO>> {
 
    private static final Logger LOGGER = LoggerFactory.getLogger(CancelUserInvitationCommandHandler.class);
 
-   @Value("${igrp.mail.invite.cancellation.template}")
-   private String emailTemplate = """
-                        Dear {{user}}, your invitation to the iGRP platform was cancelled
-                        
-                        Best Regards.
-                        iGRP
-                        """;
-
    private final InvitationEntityRepository invitationRepository;
    private final InvitationMapper invitationMapper;
-   private final NotificationAdapter<NotificationResult> notificationAdapter;
+   private final InvitationNotificationSender invitationSender;
 
-   public CancelUserInvitationCommandHandler(InvitationEntityRepository invitationRepository, InvitationMapper invitationMapper, NotificationAdapter<NotificationResult> notificationAdapter) {
+   public CancelUserInvitationCommandHandler(InvitationEntityRepository invitationRepository,
+                                             InvitationMapper invitationMapper,
+                                             InvitationNotificationSender invitationSender) {
       this.invitationRepository = invitationRepository;
       this.invitationMapper = invitationMapper;
-      this.notificationAdapter = notificationAdapter;
+      this.invitationSender = invitationSender;
    }
 
    @IgrpCommandHandler
@@ -55,23 +43,18 @@ public class CancelUserInvitationCommandHandler implements CommandHandler<Cancel
 
       var updatedInvitation = invitationRepository.save(invitation);
 
-      try {
+      LOGGER.info("Notifying new user: token={}, type={}, value={}", updatedInvitation.getToken(), updatedInvitation.getIdentifierType(), updatedInvitation.getIdentifierValue());
 
-         LOGGER.info("Notifying new user: token={}, type={}, value={}", updatedInvitation.getToken(), updatedInvitation.getIdentifierType(), updatedInvitation.getIdentifierValue());
-
-         if ("EMAIL".equalsIgnoreCase(updatedInvitation.getIdentifierType())) {
-             var notification = new Notification();
-
-             notification.setRecipients(List.of(updatedInvitation.getIdentifierValue()));
-             notification.setSubject("iGRP User Invitation");
-             notification.setContent(emailTemplate.replace("{{user}}", updatedInvitation.getIdentifierValue()));
-             notification.setMetadata(Map.of("invitationToken", updatedInvitation.getToken(), "email", updatedInvitation.getIdentifierValue()));
-
-             notificationAdapter.send(notification);
-         }
-
-      } catch (Exception e) {
-         LOGGER.error("Notification Email failed", e);
+      if ("EMAIL".equalsIgnoreCase(updatedInvitation.getIdentifierType())) {
+         // Primary path = Notification Service ("user-invitation-cancelled" template
+         // by default — falls back to Spring Mail with the legacy
+         // IGRP_MAIL_INVITE_CANCELLATION_TEMPLATE body when the template isn't
+         // resolvable on the service side); fallback = legacy Spring Mail sender.
+         invitationSender.sendCancellation(
+                 updatedInvitation.getIdentifierValue(),
+                 updatedInvitation.getIdentifierValue(),
+                 updatedInvitation.getToken(),
+                 null);
       }
 
       LOGGER.info("Invitation with id: {} cancelled successfully", command.getId());
