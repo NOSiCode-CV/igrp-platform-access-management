@@ -68,6 +68,8 @@ stages:
 # ============================================
 
 .build-template:
+  tags:
+    - nosi-runner
   only:
     - deploy/base-jvm
     - deploy/base-native
@@ -111,6 +113,8 @@ create-native-manifest:
   needs:
     - build-native-amd64
     - build-native-arm64
+  tags:
+    - nosi-runner
   only:
     - deploy/base-native
 
@@ -168,6 +172,8 @@ build-jvm-amd64-pre-release:
     - docker buildx create --use --name preleasebuilder || true
     - docker buildx inspect --bootstrap
     - docker buildx build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_FULL-jvm:pre-release" -t "$IMAGE_NAME_FULL-jvm:amd64-pre-release-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT="$CI_COMMIT_SHA" --push .
+  tags:
+    - nosi-runner
   only:
     - deploy/pre-release
 
