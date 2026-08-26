@@ -57,7 +57,13 @@ public class InvitationNotificationSender {
     private static final String SUBJECT_OTP = "iGRP Security Code";
 
     private final Optional<NotificationsApi> notificationsApi;
-    private final NotificationServiceProperties properties;
+    // Optional because the properties bean itself may be absent — e.g. a
+    // consumer of this SDK that never enabled the Notification Service, or a
+    // slim test slice that only wires the legacy path. Empty is treated as
+    // "primary path disabled" (defaults applied to whatever falls through to
+    // configuredProperties()), so the sender always has SOMETHING to work with
+    // and never NPEs on missing config.
+    private final Optional<NotificationServiceProperties> propertiesOpt;
     private final NotificationAdapter<NotificationResult> legacyAdapter;
 
     private final String legacyInvitationBody;
@@ -67,19 +73,30 @@ public class InvitationNotificationSender {
 
     public InvitationNotificationSender(
             Optional<NotificationsApi> notificationsApi,
-            NotificationServiceProperties properties,
+            Optional<NotificationServiceProperties> propertiesOpt,
             NotificationAdapter<NotificationResult> legacyAdapter,
             @Value("${igrp.mail.invite.template:}") String legacyInvitationBody,
             @Value("${igrp.mail.invite.cancellation.template:}") String legacyCancellationBody,
             @Value("${igrp.mail.invite.response.template:}") String legacyResponseBody,
             @Value("${igrp.mail.otp.template:Dear user, your OTP code is {{otp}}.}") String legacyOtpBody) {
         this.notificationsApi = notificationsApi;
-        this.properties = properties;
+        this.propertiesOpt = propertiesOpt;
         this.legacyAdapter = legacyAdapter;
         this.legacyInvitationBody = legacyInvitationBody;
         this.legacyCancellationBody = legacyCancellationBody;
         this.legacyResponseBody = legacyResponseBody;
         this.legacyOtpBody = legacyOtpBody;
+    }
+
+    /**
+     * Effective properties. Returns a fresh default-valued instance when the
+     * properties bean is absent, so downstream code always sees non-null
+     * template codes / project / locale. The default instance has
+     * {@code enabled=false}, so callers checking {@link NotificationServiceProperties#isEnabled()}
+     * naturally short-circuit to the fallback path.
+     */
+    private NotificationServiceProperties properties() {
+        return propertiesOpt.orElseGet(NotificationServiceProperties::new);
     }
 
     // ─── event methods ────────────────────────────────────────────────────
@@ -93,7 +110,7 @@ public class InvitationNotificationSender {
         String user = fallbackDisplayName(userDisplayName, email);
         Map<String, Object> variables = commonInvitationVariables(user, invitationLink);
         dispatch(new SendSpec(
-                properties.getInvitation().getTemplateCode(),
+                properties().getInvitation().getTemplateCode(),
                 email,
                 locale,
                 variables,
@@ -120,7 +137,7 @@ public class InvitationNotificationSender {
         String user = fallbackDisplayName(userDisplayName, email);
         Map<String, Object> variables = commonInvitationVariables(user, invitationLink);
         dispatch(new SendSpec(
-                properties.getInvitation().getResendTemplateCode(),
+                properties().getInvitation().getResendTemplateCode(),
                 email,
                 locale,
                 variables,
@@ -143,15 +160,15 @@ public class InvitationNotificationSender {
                                  String locale) {
         String user = fallbackDisplayName(userDisplayName, email);
         Map<String, Object> variables = new HashMap<>();
-        variables.put("project", properties.getInvitation().getProject());
+        variables.put("project", properties().getInvitation().getProject());
         variables.put("user", user);
         variables.put("year", String.valueOf(Year.now().getValue()));
-        String appCenterUrl = properties.getInvitation().getAppCenterUrl();
+        String appCenterUrl = properties().getInvitation().getAppCenterUrl();
         if (appCenterUrl != null && !appCenterUrl.isBlank()) {
             variables.put("appCenterUrl", appCenterUrl);
         }
         dispatch(new SendSpec(
-                properties.getInvitation().getCancellationTemplateCode(),
+                properties().getInvitation().getCancellationTemplateCode(),
                 email,
                 locale,
                 variables,
@@ -178,16 +195,16 @@ public class InvitationNotificationSender {
                              String locale) {
         String user = fallbackDisplayName(userDisplayName, email);
         Map<String, Object> variables = new HashMap<>();
-        variables.put("project", properties.getInvitation().getProject());
+        variables.put("project", properties().getInvitation().getProject());
         variables.put("user", user);
         variables.put("year", String.valueOf(Year.now().getValue()));
-        String appCenterUrl = properties.getInvitation().getAppCenterUrl();
+        String appCenterUrl = properties().getInvitation().getAppCenterUrl();
         if (appCenterUrl != null && !appCenterUrl.isBlank()) {
             variables.put("appCenterUrl", appCenterUrl);
         }
         String dedupKey = invitationToken != null && !invitationToken.isBlank() ? invitationToken : userId;
         dispatch(new SendSpec(
-                properties.getInvitation().getResponseTemplateCode(),
+                properties().getInvitation().getResponseTemplateCode(),
                 email,
                 locale,
                 variables,
@@ -215,15 +232,15 @@ public class InvitationNotificationSender {
                         String invitationToken,
                         String locale) {
         Map<String, Object> variables = new HashMap<>();
-        variables.put("project", properties.getInvitation().getProject());
+        variables.put("project", properties().getInvitation().getProject());
         variables.put("otp", otpCode);
         variables.put("year", String.valueOf(Year.now().getValue()));
-        String appCenterUrl = properties.getInvitation().getAppCenterUrl();
+        String appCenterUrl = properties().getInvitation().getAppCenterUrl();
         if (appCenterUrl != null && !appCenterUrl.isBlank()) {
             variables.put("appCenterUrl", appCenterUrl);
         }
         dispatch(new SendSpec(
-                properties.getInvitation().getOtpTemplateCode(),
+                properties().getInvitation().getOtpTemplateCode(),
                 email,
                 locale,
                 variables,
@@ -253,15 +270,15 @@ public class InvitationNotificationSender {
                                   String invitationToken,
                                   String locale) {
         Map<String, Object> variables = new HashMap<>();
-        variables.put("project", properties.getInvitation().getProject());
+        variables.put("project", properties().getInvitation().getProject());
         variables.put("otp", otpCode);
         variables.put("year", String.valueOf(Year.now().getValue()));
-        String appCenterUrl = properties.getInvitation().getAppCenterUrl();
+        String appCenterUrl = properties().getInvitation().getAppCenterUrl();
         if (appCenterUrl != null && !appCenterUrl.isBlank()) {
             variables.put("appCenterUrl", appCenterUrl);
         }
         return dispatchWithResult(new SendSpec(
-                properties.getInvitation().getOtpTemplateCode(),
+                properties().getInvitation().getOtpTemplateCode(),
                 email,
                 locale,
                 variables,
@@ -291,7 +308,7 @@ public class InvitationNotificationSender {
      * failure while every other method swallows.
      */
     private boolean dispatchWithResult(SendSpec spec) {
-        if (properties.isEnabled() && notificationsApi.isPresent()) {
+        if (properties().isEnabled() && notificationsApi.isPresent()) {
             try {
                 SendNotificationRequest request = buildServiceRequest(spec);
                 NotificationResponse response = notificationsApi.get().send(request);
@@ -310,7 +327,7 @@ public class InvitationNotificationSender {
     }
 
     private SendNotificationRequest buildServiceRequest(SendSpec spec) {
-        NotificationServiceProperties.Invitation invitationProps = properties.getInvitation();
+        NotificationServiceProperties.Invitation invitationProps = properties().getInvitation();
 
         TemplateRefDto template = new TemplateRefDto();
         template.setCode(spec.templateCode());
@@ -351,11 +368,11 @@ public class InvitationNotificationSender {
 
     private Map<String, Object> commonInvitationVariables(String user, String invitationLink) {
         Map<String, Object> variables = new HashMap<>();
-        variables.put("project", properties.getInvitation().getProject());
+        variables.put("project", properties().getInvitation().getProject());
         variables.put("user", user);
         variables.put("link", invitationLink);
         variables.put("year", String.valueOf(Year.now().getValue()));
-        String appCenterUrl = properties.getInvitation().getAppCenterUrl();
+        String appCenterUrl = properties().getInvitation().getAppCenterUrl();
         if (appCenterUrl != null && !appCenterUrl.isBlank()) {
             variables.put("appCenterUrl", appCenterUrl);
         }
