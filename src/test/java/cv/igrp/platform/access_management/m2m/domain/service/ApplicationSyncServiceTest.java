@@ -38,6 +38,7 @@ class ApplicationSyncServiceTest {
         dto.setDescription("desc");
         dto.setStatus(Status.ACTIVE);
         dto.setType(AppType.INTERNAL);
+        dto.setSlug("app-one");
     }
 
     @Test
@@ -85,6 +86,7 @@ class ApplicationSyncServiceTest {
         assertEquals("desc", saved.getDescription());
         assertEquals(Status.ACTIVE, saved.getStatus());
         assertEquals(AppType.INTERNAL, saved.getType());
+        assertEquals("app-one", saved.getSlug());
     }
 
     @Test
@@ -95,6 +97,7 @@ class ApplicationSyncServiceTest {
         existing.setDescription("Old desc");
         existing.setStatus(Status.INACTIVE);
         existing.setType(AppType.EXTERNAL);
+        existing.setSlug("old-slug");
         when(applicationRepository.findByCodeAndStatusNot("APP_ONE", Status.DELETED))
                 .thenReturn(Optional.of(existing));
 
@@ -104,6 +107,7 @@ class ApplicationSyncServiceTest {
         assertEquals("desc", existing.getDescription());
         assertEquals(Status.ACTIVE, existing.getStatus());
         assertEquals(AppType.INTERNAL, existing.getType());
+        assertEquals("app-one", existing.getSlug());
         verify(applicationRepository).save(existing);
     }
 
@@ -115,12 +119,52 @@ class ApplicationSyncServiceTest {
         existing.setDescription("desc");
         existing.setStatus(Status.ACTIVE);
         existing.setType(AppType.INTERNAL);
+        existing.setSlug("app-one");
         when(applicationRepository.findByCodeAndStatusNot("APP_ONE", Status.DELETED))
                 .thenReturn(Optional.of(existing));
 
         service.synchronizeApplication(dto);
 
         verify(applicationRepository, never()).save(any());
+    }
+
+    @Test
+    void synchronize_OnlySlugDiffers_Updated() {
+        ApplicationEntity existing = new ApplicationEntity();
+        existing.setCode("APP_ONE");
+        existing.setName("App One");
+        existing.setDescription("desc");
+        existing.setStatus(Status.ACTIVE);
+        existing.setType(AppType.INTERNAL);
+        existing.setSlug(null); // caller is filling in a slug that was never set before
+        when(applicationRepository.findByCodeAndStatusNot("APP_ONE", Status.DELETED))
+                .thenReturn(Optional.of(existing));
+
+        service.synchronizeApplication(dto);
+
+        assertEquals("app-one", existing.getSlug());
+        verify(applicationRepository).save(existing);
+    }
+
+    @Test
+    void synchronize_NullDescriptionOnEitherSide_DoesNotNpe() {
+        // Regression: the diff used to call existing.getDescription().equals(...) which
+        // NPE'd when either side was null and got swallowed as IGRP_AUTH_APPLICATION_SYNC_FAILED.
+        dto.setDescription(null);
+        ApplicationEntity existing = new ApplicationEntity();
+        existing.setCode("APP_ONE");
+        existing.setName("App One");
+        existing.setDescription("was set");
+        existing.setStatus(Status.ACTIVE);
+        existing.setType(AppType.INTERNAL);
+        existing.setSlug("app-one");
+        when(applicationRepository.findByCodeAndStatusNot("APP_ONE", Status.DELETED))
+                .thenReturn(Optional.of(existing));
+
+        service.synchronizeApplication(dto);
+
+        assertNull(existing.getDescription());
+        verify(applicationRepository).save(existing);
     }
 
     @Test
