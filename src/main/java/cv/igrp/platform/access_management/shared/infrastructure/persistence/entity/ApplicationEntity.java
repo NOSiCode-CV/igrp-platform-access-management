@@ -71,7 +71,7 @@ public class ApplicationEntity extends AuditEntity {
     private String url;
 
   
-    @Column(name="slug", length=50)
+    @Column(name="slug", length=255)
     private String slug;
 
   

@@ -11,6 +11,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Objects;
+
 import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.IGRP_APP;
 
 @Service
@@ -52,16 +54,19 @@ public class ApplicationSyncService {
             ApplicationEntity existing = applicationRepository.findByCodeAndStatusNot(applicationDTO.getCode(), Status.DELETED).orElse(null);
 
             if (existing != null) {
-                // Check for differences
-                if (!existing.getName().equals(applicationDTO.getName()) ||
-                        !existing.getDescription().equals(applicationDTO.getDescription()) ||
-                        !existing.getStatus().equals(applicationDTO.getStatus()) ||
-                        !existing.getType().equals(applicationDTO.getType())) {
+                // Diff every synced field. Using Objects.equals so a null on either
+                // side does not NPE and get swallowed as IGRP_AUTH_APPLICATION_SYNC_FAILED.
+                if (!Objects.equals(existing.getName(),        applicationDTO.getName()) ||
+                        !Objects.equals(existing.getDescription(), applicationDTO.getDescription()) ||
+                        !Objects.equals(existing.getStatus(),      applicationDTO.getStatus()) ||
+                        !Objects.equals(existing.getType(),        applicationDTO.getType()) ||
+                        !Objects.equals(existing.getSlug(),        applicationDTO.getSlug())) {
 
                     existing.setName(applicationDTO.getName());
                     existing.setDescription(applicationDTO.getDescription());
                     existing.setStatus(applicationDTO.getStatus());
                     existing.setType(applicationDTO.getType());
+                    existing.setSlug(applicationDTO.getSlug());
                     applicationRepository.save(existing);
                     LOGGER.info("[ApplicationSync] Updated application '{}'", applicationDTO.getCode());
                 } else {
@@ -75,6 +80,7 @@ public class ApplicationSyncService {
                 newApp.setDescription(applicationDTO.getDescription());
                 newApp.setStatus(applicationDTO.getStatus());
                 newApp.setType(applicationDTO.getType());
+                newApp.setSlug(applicationDTO.getSlug());
                 applicationRepository.save(newApp);
                 LOGGER.info("[ApplicationSync] Created new application '{}'", applicationDTO.getCode());
             }
