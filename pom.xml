@@ -29,7 +29,7 @@
         <javadoc.plugin.version>3.12.0</javadoc.plugin.version>
         <igrp.framework.core.version>0.2.0-beta.1</igrp.framework.core.version>
         <igrp.framework.stereotype.version>0.2.0-beta.1</igrp.framework.stereotype.version>
-        <framework.auth.version>0.2.0-beta.1</framework.auth.version>
+        <framework.auth.version>0.2.0-beta.2</framework.auth.version>
         <igrp.filemanager.version>0.2.0-beta.1</igrp.filemanager.version>
         <igrp.filemanager.awss3.version>0.2.0-beta.1</igrp.filemanager.awss3.version>
         <igrp.filemanager.minio.version>0.2.0-beta.1</igrp.filemanager.minio.version>
