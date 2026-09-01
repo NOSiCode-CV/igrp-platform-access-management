@@ -35,13 +35,7 @@ build-jvm-amd64-pre-release:
   script:
     - docker buildx create --use --name releasebuilder || true
     - docker buildx inspect --bootstrap
-    - docker build -f Dockerfile \
-      --platform linux/amd64 \
-      -t "$IMAGE_NAME_FULL-jvm:pre-release" \
-      -t "$IMAGE_NAME_FULL-jvm:amd64-pre-release-$PIPELINE_TAG" \
-      --no-cache --pull \
-      --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA \
-      --push .
+    - docker build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_FULL-jvm:pre-release" -t "$IMAGE_NAME_FULL-jvm:amd64-pre-release-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push .
   only:
     - deploy/pre-release
 
@@ -53,13 +47,7 @@ build-jvm-amd64-0.1.0-beta:
   script:
     - docker buildx create --use --name releasebuilder || true
     - docker buildx inspect --bootstrap
-    - docker build -f Dockerfile \
-      --platform linux/amd64 \
-      -t "$IMAGE_NAME_FULL-jvm:0.1.0-beta" \
-      -t "$IMAGE_NAME_FULL-jvm:amd64-0.1.0-beta-$PIPELINE_TAG" \
-      --no-cache --pull \
-      --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA \
-      --push .
+    - docker build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_FULL-jvm:0.1.0-beta" -t "$IMAGE_NAME_FULL-jvm:amd64-0.1.0-beta-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push .
   only:
     - deploy/0.1.0-beta
 
@@ -71,13 +59,6 @@ build-jvm-amd64-0.2.0-beta:
   script:
     - docker buildx create --use --name releasebuilder || true
     - docker buildx inspect --bootstrap
-    - docker build -f Dockerfile \
-      --platform linux/amd64 \
-      -t "$IMAGE_NAME_FULL-jvm:0.2.0-beta" \
-      -t "$IMAGE_NAME_FULL-jvm:latest" \
-      -t "$IMAGE_NAME_FULL-jvm:amd64-0.2.0-beta-$PIPELINE_TAG" \
-      --no-cache --pull \
-      --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA \
-      --push .
+    - docker build -f Dockerfile --platform linux/amd64 -t "$IMAGE_NAME_FULL-jvm:0.2.0-beta" -t "$IMAGE_NAME_FULL-jvm:latest" -t "$IMAGE_NAME_FULL-jvm:amd64-0.2.0-beta-$PIPELINE_TAG" --no-cache --pull --build-arg APP_BUILD_FINGERPRINT=$CI_COMMIT_SHA --push .
   only:
     - deploy/0.2.0-beta
