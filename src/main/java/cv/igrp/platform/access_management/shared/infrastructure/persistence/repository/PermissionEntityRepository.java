@@ -174,14 +174,21 @@ public interface PermissionEntityRepository extends
     List<PermissionEntity> findByDepartmentAndStatusNot(DepartmentEntity department, Status status);
 
     @Query(value = """
-    SELECT p.*
+    SELECT DISTINCT p.*
     FROM t_permission p
     JOIN t_permission_department dp ON dp.permission_id = p.id
+    LEFT JOIN t_resource_permission rp ON rp.permission = p.id
+    LEFT JOIN t_resource r ON r.id = rp.resource_id
     WHERE dp.department = :department
       AND p.status <> :status
       AND (:name IS NULL OR p.name ILIKE CONCAT('%', :name, '%'))
+      AND (:resourceName IS NULL OR r.name = :resourceName)
 """, nativeQuery = true)
-    List<PermissionEntity> findByDepartmentAndStatusNotFiltered(Integer department, String status, String name);
+    List<PermissionEntity> findByDepartmentAndStatusNotFiltered(
+            @Param("department") Integer department,
+            @Param("status") String status,
+            @Param("name") String name,
+            @Param("resourceName") String resourceName);
 
     List<PermissionEntity> findAllByResourcesAndStatusNot(Set<ResourceEntity> resources, Status status);
 

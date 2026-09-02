@@ -878,10 +878,12 @@ public class DepartmentController {
   )
   
   public ResponseEntity<List<PermissionDTO>> getDepartmentPermissions(
-    @RequestParam(value = "permissionName", required = false) String permissionName, @PathVariable(value = "code") String code)
+    @RequestParam(value = "permissionName", required = false) String permissionName,
+    @RequestParam(value = "resourceName", required = false) String resourceName,
+    @PathVariable(value = "code") String code)
   {
 
-      final var query = new GetDepartmentPermissionsQuery(permissionName, code);
+      final var query = new GetDepartmentPermissionsQuery(permissionName, resourceName, code);
 
       return queryBus.handle(query);
 

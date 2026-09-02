@@ -1,16 +1,20 @@
 package cv.igrp.platform.access_management.m2m.domain.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.domain.events.DeletePermissionEvent;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.PermissionEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ResourceEntityRepository;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import cv.igrp.platform.access_management.shared.security.ServiceAccountTokenClaims;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -36,17 +40,20 @@ public class PermissionSyncService {
     private final AuthenticationHelper authenticationHelper;
     private final PermissionEntityRepository permissionRepository;
     private final ResourceEntityRepository resourceEntityRepository;
+    private final RoleEntityRepository roleEntityRepository;
     private final ObjectMapper objectMapper;
     private final EventPublisher eventPublisher;
 
     public PermissionSyncService(PermissionEntityRepository permissionRepository,
                                  ResourceEntityRepository resourceEntityRepository,
+                                 RoleEntityRepository roleEntityRepository,
                                  ObjectMapper objectMapper,
                                  AuthenticationHelper authenticationHelper,
                                  EventPublisher eventPublisher) {
         this.authenticationHelper = authenticationHelper;
         this.permissionRepository = permissionRepository;
         this.resourceEntityRepository = resourceEntityRepository;
+        this.roleEntityRepository = roleEntityRepository;
         this.objectMapper = objectMapper;
         this.eventPublisher = eventPublisher;
     }
@@ -146,15 +153,7 @@ public class PermissionSyncService {
 
         if (!toDelete.isEmpty()) {
             for (PermissionEntity perm : toDelete) {
-                perm.setStatus(Status.DELETED);
-                permissionRepository.save(perm);
-                LOGGER.info("[PermissionSync] Deleted permission '{}'", perm.getName());
-
-                // Phase D / FR-16 cascade: publish so SessionInvalidationEventListener
-                // can resolve every user that held this permission and revoke their
-                // sessions, and so PermissionCacheInvalidator can evict cached entries.
-                eventPublisher.publishPermissionDeleted(
-                        new DeletePermissionEvent(this, perm.getName()));
+                cascadeDeletePermission(perm);
             }
         }
 
@@ -194,6 +193,51 @@ public class PermissionSyncService {
             return sub;
         }
         return "<unknown-caller>";
+    }
+
+    /**
+     * Soft-deletes a permission that fell out of the incoming sync payload and
+     * explicitly disassociates it from every department and role that still
+     * holds it. Fires one {@link RolePermissionChangedEvent} per touched
+     * (role, department) so the session-invalidation listener can revoke
+     * sessions of users whose active role held the permission, and publishes a
+     * single {@link DeletePermissionEvent} as a catch-all (evicts caches and
+     * revokes any session missed by the per-role events — e.g. sessions
+     * indexed only by permission name).
+     *
+     * <p>Ordering: unlink first, then mark DELETED, then publish. Publishing
+     * before the unlink would race the invalidation listener against the
+     * still-visible role↔permission row.
+     */
+    private void cascadeDeletePermission(PermissionEntity perm) {
+        // 1. Unlink from every role that still holds it (owning side = RoleEntity).
+        List<RoleEntity> holdingRoles = roleEntityRepository.findAllByPermissionId(perm.getId());
+        for (RoleEntity role : holdingRoles) {
+            role.getPermissions().removeIf(p -> Objects.equals(p.getId(), perm.getId()));
+            roleEntityRepository.save(role);
+        }
+
+        // 2. Unlink from every department (owning side = PermissionEntity).
+        Set<DepartmentEntity> touchedDepartments = new HashSet<>(perm.getDepartments());
+        perm.getDepartments().clear();
+
+        // 3. Soft-delete the permission itself.
+        perm.setStatus(Status.DELETED);
+        permissionRepository.save(perm);
+        LOGGER.info("[PermissionSync] Deleted permission '{}' — unlinked from {} role(s) and {} department(s)",
+                perm.getName(), holdingRoles.size(), touchedDepartments.size());
+
+        // 4. Per-role events so SessionInvalidationEventListener can revoke
+        //    sessions scoped to each affected (role, department) combination.
+        for (RoleEntity role : holdingRoles) {
+            String deptCode = role.getDepartment() != null ? role.getDepartment().getCode() : null;
+            eventPublisher.publishRolePermissionChanged(new RolePermissionChangedEvent(
+                    role.getCode(), deptCode, "PERMISSIONS_REMOVED", null));
+        }
+
+        // 5. Global by-name catch-all — evicts permission caches and covers
+        //    users whose sessions might not be indexed by role.
+        eventPublisher.publishPermissionDeleted(new DeletePermissionEvent(this, perm.getName()));
     }
 
     private String computeStructuralHash(PermissionEntity entity) {
