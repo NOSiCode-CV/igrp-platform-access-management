@@ -128,4 +128,17 @@ public interface RoleEntityRepository extends
     default List<RoleEntity> findAllByDepartmentAndStatusNotDeleted(DepartmentEntity department) {
         return findByDepartmentAndStatusNot(department, Status.DELETED);
     }
+
+    /**
+     * Roles (not deleted) that currently hold the given permission id via
+     * {@code t_role_permission}. Used by {@code PermissionSyncService} to
+     * scrub a soft-deleted permission from every role that still references it
+     * and to publish per-role invalidation events.
+     */
+    @Query("""
+        select distinct r from RoleEntity r
+        join r.permissions p
+        where p.id = :permissionId and r.status <> 'DELETED'
+    """)
+    List<RoleEntity> findAllByPermissionId(@Param("permissionId") Integer permissionId);
 }
