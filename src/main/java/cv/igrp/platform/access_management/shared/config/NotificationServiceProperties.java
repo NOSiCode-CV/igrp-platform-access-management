@@ -2,6 +2,8 @@ package cv.igrp.platform.access_management.shared.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
+import java.time.Duration;
+
 /**
  * Configuration for the primary user-invitation delivery path: the iGRP
  * Notification Service (its Java client). All values are optional so
@@ -104,6 +106,14 @@ public class NotificationServiceProperties {
          */
         private String otpTemplateCode = "user-invitation-otp";
 
+        /**
+         * How long an issued OTP stays valid. Applied at issuance time in
+         * {@link cv.igrp.platform.access_management.users.application.commands.ValidateInvitationEmailCommandHandler}.
+         * Accepts the ISO-8601 duration format ({@code PT10M}) and the Spring
+         * short form ({@code 10m}, {@code 600s}, {@code 1h}). Default: 10 minutes.
+         */
+        private Duration otpTtl = Duration.ofMinutes(10);
+
         /** Fallback locale when the invited user's own locale is unknown. */
         private String defaultLocale = "en";
 
@@ -131,6 +141,9 @@ public class NotificationServiceProperties {
 
         public String getOtpTemplateCode() { return otpTemplateCode; }
         public void setOtpTemplateCode(String otpTemplateCode) { this.otpTemplateCode = otpTemplateCode; }
+
+        public Duration getOtpTtl() { return otpTtl; }
+        public void setOtpTtl(Duration otpTtl) { this.otpTtl = otpTtl; }
 
         public String getDefaultLocale() { return defaultLocale; }
         public void setDefaultLocale(String defaultLocale) { this.defaultLocale = defaultLocale; }

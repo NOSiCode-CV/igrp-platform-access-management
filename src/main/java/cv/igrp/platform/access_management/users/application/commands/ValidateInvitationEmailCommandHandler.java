@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.Optional;
 import java.util.Random;
@@ -24,6 +25,9 @@ import java.util.Random;
 public class ValidateInvitationEmailCommandHandler implements CommandHandler<ValidateInvitationEmailCommand, ResponseEntity<OtpResponseDTO>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ValidateInvitationEmailCommandHandler.class);
+
+    /** Used when notification-service properties are absent (e.g. slim test slices). */
+    private static final Duration DEFAULT_OTP_TTL = Duration.ofMinutes(10);
 
     private final InvitationEntityRepository invitationRepository;
     private final OtpEntityRepository otpEntityRepository;
@@ -58,11 +62,20 @@ public class ValidateInvitationEmailCommandHandler implements CommandHandler<Val
         // Generate 6-digit OTP
         String otpCode = String.format("%06d", new Random().nextInt(999999));
 
+        // TTL comes from igrp.notification.service.invitation.otp-ttl
+        // (env: IGRP_NOTIFICATION_SERVICE_INVITATION_OTP_TTL). Accepts Spring's
+        // short form ("10m", "600s", "1h") and ISO-8601 ("PT10M"). Falls back to
+        // 10m when the notification-service properties bean is absent (e.g. in
+        // a test slice that doesn't wire that config).
+        Duration otpTtl = notificationProperties
+                .map(p -> p.getInvitation().getOtpTtl())
+                .orElse(DEFAULT_OTP_TTL);
+
         OtpEntity otpEntity = new OtpEntity();
         otpEntity.setReferenceId(command.getToken());
         otpEntity.setOtpCode(otpCode);
         otpEntity.setStatus("PENDING");
-        otpEntity.setExpiresAt(LocalDateTime.now().plusMinutes(10));
+        otpEntity.setExpiresAt(LocalDateTime.now().plus(otpTtl));
 
         OtpEntity savedOtp = otpEntityRepository.save(otpEntity);
 
