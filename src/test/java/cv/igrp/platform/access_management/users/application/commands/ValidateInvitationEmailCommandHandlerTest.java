@@ -18,7 +18,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Optional;
+
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity;
+import org.mockito.ArgumentCaptor;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -56,9 +62,10 @@ class ValidateInvitationEmailCommandHandlerTest {
         invitation.setToken("valid-token");
         invitation.setIdentifierValue("user@example.com");
 
-        // Wire the default locale so the handler passes it through explicitly.
+        // Wire the default locale + default OTP TTL so the handler passes them through explicitly.
         NotificationServiceProperties.Invitation invProps = new NotificationServiceProperties.Invitation();
         invProps.setDefaultLocale("pt");
+        // Keep the Invitation defaults for otpTtl (10 minutes) unless a test overrides it.
         when(notificationProperties.getInvitation()).thenReturn(invProps);
     }
 
@@ -92,6 +99,34 @@ class ValidateInvitationEmailCommandHandlerTest {
         IgrpResponseStatusException exception = assertThrows(IgrpResponseStatusException.class, () -> commandHandler.handle(command));
         assertEquals(HttpStatus.BAD_REQUEST.value(), exception.getBody().getStatus());
         assertTrue(exception.getMessage().contains("provided email does not match"));
+    }
+
+    @Test
+    void testHandle_OtpExpiresAt_UsesConfiguredTtl() throws NotificationException {
+        // Override the invitation props to a short TTL and assert the persisted
+        // OtpEntity.expiresAt reflects it (rather than the hard-coded 10 minutes).
+        NotificationServiceProperties.Invitation invProps = new NotificationServiceProperties.Invitation();
+        invProps.setDefaultLocale("pt");
+        invProps.setOtpTtl(Duration.ofMinutes(2));
+        when(notificationProperties.getInvitation()).thenReturn(invProps);
+
+        when(invitationRepository.findByTokenAndStatusPending("valid-token")).thenReturn(invitation);
+        when(invitationSender.sendOtpOrThrow(any(), any(), any(), any(), any())).thenReturn(true);
+
+        ArgumentCaptor<OtpEntity> captor = ArgumentCaptor.forClass(OtpEntity.class);
+        when(otpEntityRepository.save(captor.capture())).thenAnswer(inv -> inv.getArgument(0));
+
+        LocalDateTime before = LocalDateTime.now();
+        commandHandler.handle(command);
+        LocalDateTime after = LocalDateTime.now();
+
+        LocalDateTime expiresAt = captor.getValue().getExpiresAt();
+        assertNotNull(expiresAt);
+        // Should fall inside [now + 2m - epsilon, now + 2m + epsilon].
+        LocalDateTime lowerBound = before.plusMinutes(2).minus(1, ChronoUnit.SECONDS);
+        LocalDateTime upperBound = after.plusMinutes(2).plus(1, ChronoUnit.SECONDS);
+        assertFalse(expiresAt.isBefore(lowerBound), "expiresAt " + expiresAt + " is before " + lowerBound);
+        assertFalse(expiresAt.isAfter(upperBound),  "expiresAt " + expiresAt + " is after "  + upperBound);
     }
 
     @Test
