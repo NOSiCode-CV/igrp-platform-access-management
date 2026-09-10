@@ -1,13 +1,20 @@
 package cv.igrp.platform.access_management.session.config;
 
 import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.stereotype.Component;
 
 /**
- * Configuration properties for session management
+ * Configuration properties for session management.
+ *
+ * <p>Setters are REQUIRED: Spring's JavaBean binder only accepts an override
+ * without a setter when it equals the field's current value. Getter-only, any
+ * non-default IGRP_SESSION_* value made the context fail to start with
+ * "No setter found for property". Guarded by SessionPropertiesContextBindingTest.
  */
 @Getter
+@Setter
 @Component
 @ConfigurationProperties(prefix = "igrp.session")
 public class SessionProperties {
@@ -22,6 +29,14 @@ public class SessionProperties {
      * Refresh-token rotations cannot push {@code expiresAt} past creation + this value.
      */
     private long absoluteTimeoutSeconds = 28800L;
+
+    /**
+     * Extra seconds added on top of the issuing client's access-token lifetime
+     * when a token issuance slides the session's idle deadline (default: 5 minutes).
+     * Covers the gap between the frontend's proactive refresh and actual expiry,
+     * clock skew and slow networks. See {@code SessionIssuanceService#effectiveSlideSeconds}.
+     */
+    private long refreshGraceSeconds = 300L;
 
     /**
      * Maximum concurrent ACTIVE sessions per user across distinct devices (default: 5).
