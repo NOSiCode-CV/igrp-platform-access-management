@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -118,7 +119,7 @@ public class SessionIssuanceService {
         String deviceId = resolveDeviceId(request, clientId);
         AuthorizationGrantType grantType = context.getAuthorizationGrantType();
         Instant now = Instant.now();
-        long ttlSeconds = sessionProperties.getTimeoutSeconds();
+        long ttlSeconds = effectiveSlideSeconds(context.getRegisteredClient());
 
         if (grantType != null && AuthorizationGrantType.REFRESH_TOKEN.equals(grantType)) {
             Optional<SessionEntity> existing = locateSessionForRefresh(context, userId, deviceId);
@@ -133,6 +134,33 @@ public class SessionIssuanceService {
 
         SessionEntity created = openNewSession(userId, deviceId, clientId, jti, request, now, ttlSeconds, upstreamIdToken);
         return new IssuanceBinding(created.getSessionId(), created.getDeviceId());
+    }
+
+    /**
+     * How far a token issuance pushes the session's idle deadline.
+     *
+     * <p>The deadline must outlive the token being issued. Frontends only refresh
+     * shortly before access-token expiry, and business backends validate the JWT
+     * locally without ever touching this session — so for a user working in a
+     * business app, the refresh is the ONLY heartbeat this service sees. If the
+     * slide were just the idle timeout and the idle timeout were shorter than the
+     * access-token lifetime (e.g. 30 min vs 60 min), an actively working user
+     * would idle out between two refreshes and get bounced to /login.
+     *
+     * <p>Hence {@code max(idle timeout, access-token TTL + grace)}, computed from
+     * the issuing client's own token settings so custom client registrations with
+     * longer tokens are covered, not just the seeded default client.
+     */
+    long effectiveSlideSeconds(RegisteredClient client) {
+        long idle = sessionProperties.getTimeoutSeconds();
+        if (client == null
+                || client.getTokenSettings() == null
+                || client.getTokenSettings().getAccessTokenTimeToLive() == null) {
+            return idle;
+        }
+        long floor = client.getTokenSettings().getAccessTokenTimeToLive().toSeconds()
+                + sessionProperties.getRefreshGraceSeconds();
+        return Math.max(idle, floor);
     }
 
     private Optional<SessionEntity> locateSessionForRefresh(JwtEncodingContext context,

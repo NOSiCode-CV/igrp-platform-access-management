@@ -110,7 +110,17 @@ public class SessionHeartbeatService {
                 Instant candidate = now.plusSeconds(slideBySeconds);
                 Instant cap = session.getAbsoluteExpiresAt();
                 // Never slide past the hard absolute-lifetime ceiling.
-                session.setExpiresAt(cap != null && candidate.isAfter(cap) ? cap : candidate);
+                if (cap != null && candidate.isAfter(cap)) {
+                    candidate = cap;
+                }
+                // Never move the deadline BACKWARDS. A token issuance may have
+                // pushed expires_at past now + idle-timeout (to outlive the access
+                // token); a later API heartbeat must not pull it back in, or the
+                // session could die before the next refresh.
+                Instant current = session.getExpiresAt();
+                if (current == null || candidate.isAfter(current)) {
+                    session.setExpiresAt(candidate);
+                }
             }
             SessionEntity saved = sessionRepository.save(session);
             cache(saved);
