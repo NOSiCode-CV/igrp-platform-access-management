@@ -20,7 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
-import java.util.ArrayList;
 import java.util.HashSet;
 
 @ExtendWith(MockitoExtension.class)
@@ -69,10 +68,10 @@ public class GetDepartmentPermissionsQueryHandlerTest {
 
   @Test
   void testHandle_AllPermissions_NoFilter() {
-    GetDepartmentPermissionsQuery query = new GetDepartmentPermissionsQuery(null, "DEP1");
+    GetDepartmentPermissionsQuery query = new GetDepartmentPermissionsQuery(null, null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(permissionRepository.findByDepartmentAndStatusNotFiltered(eq(department.getId()), eq(Status.DELETED.getCode()), any()))
+    when(permissionRepository.findByDepartmentAndStatusNotFiltered(eq(department.getId()), eq(Status.DELETED.getCode()), any(), any()))
             .thenReturn(List.of(permRead, permWrite));
     when(permissionMapper.mapToDTO(permRead)).thenReturn(dtoRead);
     when(permissionMapper.mapToDTO(permWrite)).thenReturn(dtoWrite);
@@ -87,10 +86,10 @@ public class GetDepartmentPermissionsQueryHandlerTest {
 
   @Test
   void testHandle_FilterByPermissionName() {
-    GetDepartmentPermissionsQuery query = new GetDepartmentPermissionsQuery("perm.read", "DEP1");
+    GetDepartmentPermissionsQuery query = new GetDepartmentPermissionsQuery("perm.read", null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(permissionRepository.findByDepartmentAndStatusNotFiltered(eq(department.getId()), eq(Status.DELETED.getCode()), any()))
+    when(permissionRepository.findByDepartmentAndStatusNotFiltered(eq(department.getId()), eq(Status.DELETED.getCode()), eq("perm.read"), isNull()))
             .thenReturn(List.of(permRead));
     when(permissionMapper.mapToDTO(permRead)).thenReturn(dtoRead);
 
@@ -102,11 +101,42 @@ public class GetDepartmentPermissionsQueryHandlerTest {
   }
 
   @Test
-  void testHandle_NoPermissionsAvailable() {
-    GetDepartmentPermissionsQuery query = new GetDepartmentPermissionsQuery(null, "DEP1");
+  void testHandle_FilterByResourceName() {
+    GetDepartmentPermissionsQuery query = new GetDepartmentPermissionsQuery(null, "invoice-service", "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
-    when(permissionRepository.findByDepartmentAndStatusNotFiltered(eq(department.getId()), eq(Status.DELETED.getCode()), any()))
+    when(permissionRepository.findByDepartmentAndStatusNotFiltered(eq(department.getId()), eq(Status.DELETED.getCode()), isNull(), eq("invoice-service")))
+            .thenReturn(List.of(permRead));
+    when(permissionMapper.mapToDTO(permRead)).thenReturn(dtoRead);
+
+    ResponseEntity<List<PermissionDTO>> response = handler.handle(query);
+
+    assertNotNull(response);
+    assertEquals(1, response.getBody().size());
+    assertEquals("perm.read", response.getBody().get(0).getName());
+  }
+
+  @Test
+  void testHandle_FilterByPermissionNameAndResourceName() {
+    GetDepartmentPermissionsQuery query = new GetDepartmentPermissionsQuery("perm.read", "invoice-service", "DEP1");
+
+    when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
+    when(permissionRepository.findByDepartmentAndStatusNotFiltered(eq(department.getId()), eq(Status.DELETED.getCode()), eq("perm.read"), eq("invoice-service")))
+            .thenReturn(List.of(permRead));
+    when(permissionMapper.mapToDTO(permRead)).thenReturn(dtoRead);
+
+    ResponseEntity<List<PermissionDTO>> response = handler.handle(query);
+
+    assertNotNull(response);
+    assertEquals(1, response.getBody().size());
+  }
+
+  @Test
+  void testHandle_NoPermissionsAvailable() {
+    GetDepartmentPermissionsQuery query = new GetDepartmentPermissionsQuery(null, null, "DEP1");
+
+    when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenReturn(department);
+    when(permissionRepository.findByDepartmentAndStatusNotFiltered(eq(department.getId()), eq(Status.DELETED.getCode()), any(), any()))
             .thenReturn(List.of());
 
     ResponseEntity<List<PermissionDTO>> response = handler.handle(query);
@@ -119,7 +149,7 @@ public class GetDepartmentPermissionsQueryHandlerTest {
 
   @Test
   void testHandle_DepartmentNotFound_ShouldThrow() {
-    GetDepartmentPermissionsQuery query = new GetDepartmentPermissionsQuery(null, "DEP1");
+    GetDepartmentPermissionsQuery query = new GetDepartmentPermissionsQuery(null, null, "DEP1");
 
     when(departmentRepository.findByCodeAndStatusNotDeleted("DEP1")).thenThrow(IgrpResponseStatusException.class);
 

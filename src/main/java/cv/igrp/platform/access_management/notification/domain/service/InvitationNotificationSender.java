@@ -228,17 +228,12 @@ public class InvitationNotificationSender {
      * as the other methods.
      */
     public void sendOtp(String email,
+                        String userDisplayName,
                         String otpCode,
                         String invitationToken,
                         String locale) {
-        Map<String, Object> variables = new HashMap<>();
-        variables.put("project", properties().getInvitation().getProject());
-        variables.put("otp", otpCode);
-        variables.put("year", String.valueOf(Year.now().getValue()));
-        String appCenterUrl = properties().getInvitation().getAppCenterUrl();
-        if (appCenterUrl != null && !appCenterUrl.isBlank()) {
-            variables.put("appCenterUrl", appCenterUrl);
-        }
+        String user = fallbackDisplayName(userDisplayName, email);
+        Map<String, Object> variables = otpVariables(user, otpCode);
         dispatch(new SendSpec(
                 properties().getInvitation().getOtpTemplateCode(),
                 email,
@@ -252,8 +247,8 @@ public class InvitationNotificationSender {
                 SUBJECT_OTP,
                 Map.of("invitationToken", invitationToken, "email", email),
                 () -> renderLegacy(legacyOtpBody,
-                        "Dear user, your OTP code is {{otp}}.",
-                        Map.of("otp", otpCode))));
+                        "Dear {{user}}, your OTP code is {{otp}}.",
+                        Map.of("user", user, "otp", otpCode))));
     }
 
     /**
@@ -266,17 +261,12 @@ public class InvitationNotificationSender {
      *         {@code false} when both failed
      */
     public boolean sendOtpOrThrow(String email,
+                                  String userDisplayName,
                                   String otpCode,
                                   String invitationToken,
                                   String locale) {
-        Map<String, Object> variables = new HashMap<>();
-        variables.put("project", properties().getInvitation().getProject());
-        variables.put("otp", otpCode);
-        variables.put("year", String.valueOf(Year.now().getValue()));
-        String appCenterUrl = properties().getInvitation().getAppCenterUrl();
-        if (appCenterUrl != null && !appCenterUrl.isBlank()) {
-            variables.put("appCenterUrl", appCenterUrl);
-        }
+        String user = fallbackDisplayName(userDisplayName, email);
+        Map<String, Object> variables = otpVariables(user, otpCode);
         return dispatchWithResult(new SendSpec(
                 properties().getInvitation().getOtpTemplateCode(),
                 email,
@@ -287,8 +277,28 @@ public class InvitationNotificationSender {
                 SUBJECT_OTP,
                 Map.of("invitationToken", invitationToken, "email", email),
                 () -> renderLegacy(legacyOtpBody,
-                        "Dear user, your OTP code is {{otp}}.",
-                        Map.of("otp", otpCode))));
+                        "Dear {{user}}, your OTP code is {{otp}}.",
+                        Map.of("user", user, "otp", otpCode))));
+    }
+
+    /**
+     * Common variables for the OTP template. Kept in one place so that {@link #sendOtp}
+     * and {@link #sendOtpOrThrow} always produce the same variable set — historically
+     * the {@code user} variable was missing here and the Notification Service returned
+     * a 422 {@code TEMPLATE_ERROR: Missing required template variables: [user]},
+     * causing every OTP send to silently fall back to the legacy Spring Mail path.
+     */
+    private Map<String, Object> otpVariables(String user, String otpCode) {
+        Map<String, Object> variables = new HashMap<>();
+        variables.put("project", properties().getInvitation().getProject());
+        variables.put("user", user);
+        variables.put("otp", otpCode);
+        variables.put("year", String.valueOf(Year.now().getValue()));
+        String appCenterUrl = properties().getInvitation().getAppCenterUrl();
+        if (appCenterUrl != null && !appCenterUrl.isBlank()) {
+            variables.put("appCenterUrl", appCenterUrl);
+        }
+        return variables;
     }
 
     // ─── plumbing ─────────────────────────────────────────────────────────

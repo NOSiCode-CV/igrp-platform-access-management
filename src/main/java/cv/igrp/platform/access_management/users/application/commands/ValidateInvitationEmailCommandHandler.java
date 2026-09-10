@@ -4,6 +4,7 @@ import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.notification.domain.service.InvitationNotificationSender;
 import cv.igrp.platform.access_management.shared.application.dto.OtpResponseDTO;
+import cv.igrp.platform.access_management.shared.config.NotificationServiceProperties;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.OtpEntity;
@@ -15,7 +16,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.Optional;
 import java.util.Random;
 
 @Component
@@ -23,16 +26,25 @@ public class ValidateInvitationEmailCommandHandler implements CommandHandler<Val
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ValidateInvitationEmailCommandHandler.class);
 
+    /** Used when notification-service properties are absent (e.g. slim test slices). */
+    private static final Duration DEFAULT_OTP_TTL = Duration.ofMinutes(10);
+
     private final InvitationEntityRepository invitationRepository;
     private final OtpEntityRepository otpEntityRepository;
     private final InvitationNotificationSender invitationSender;
+    // Optional so the handler still boots when notification-service configuration
+    // isn't wired (e.g. in test slices) — in that case we pass null locale and
+    // InvitationNotificationSender falls back to its own default resolution.
+    private final Optional<NotificationServiceProperties> notificationProperties;
 
     public ValidateInvitationEmailCommandHandler(InvitationEntityRepository invitationRepository,
                                                  OtpEntityRepository otpEntityRepository,
-                                                 InvitationNotificationSender invitationSender) {
+                                                 InvitationNotificationSender invitationSender,
+                                                 Optional<NotificationServiceProperties> notificationProperties) {
         this.invitationRepository = invitationRepository;
         this.otpEntityRepository = otpEntityRepository;
         this.invitationSender = invitationSender;
+        this.notificationProperties = notificationProperties;
     }
 
     @IgrpCommandHandler
@@ -50,25 +62,40 @@ public class ValidateInvitationEmailCommandHandler implements CommandHandler<Val
         // Generate 6-digit OTP
         String otpCode = String.format("%06d", new Random().nextInt(999999));
 
+        // TTL comes from igrp.notification.service.invitation.otp-ttl
+        // (env: IGRP_NOTIFICATION_SERVICE_INVITATION_OTP_TTL). Accepts Spring's
+        // short form ("10m", "600s", "1h") and ISO-8601 ("PT10M"). Falls back to
+        // 10m when the notification-service properties bean is absent (e.g. in
+        // a test slice that doesn't wire that config).
+        Duration otpTtl = notificationProperties
+                .map(p -> p.getInvitation().getOtpTtl())
+                .orElse(DEFAULT_OTP_TTL);
+
         OtpEntity otpEntity = new OtpEntity();
         otpEntity.setReferenceId(command.getToken());
         otpEntity.setOtpCode(otpCode);
         otpEntity.setStatus("PENDING");
-        otpEntity.setExpiresAt(LocalDateTime.now().plusMinutes(10));
+        otpEntity.setExpiresAt(LocalDateTime.now().plus(otpTtl));
 
         OtpEntity savedOtp = otpEntityRepository.save(otpEntity);
 
-        // Primary = Notification Service ("user-invitation-otp" template by default —
-        // not yet seeded, so this will fall back to Spring Mail with the legacy
-        // IGRP_MAIL_OTP_TEMPLATE body until the notification team publishes it);
+        // Primary = Notification Service ("user-invitation-otp" template);
         // fallback = legacy Spring Mail sender. Unlike the other invitation events
         // this one MUST surface failure to the caller — an OTP that never arrives
         // blocks the invitation flow entirely, so use the OrThrow variant.
+        //
+        // Locale: inherit from igrp.notification.service.invitation.default-locale
+        // when available. Passing null would still work (the sender applies the
+        // same default internally), but explicit is easier to trace in logs.
+        String locale = notificationProperties
+                .map(p -> p.getInvitation().getDefaultLocale())
+                .orElse(null);
         boolean delivered = invitationSender.sendOtpOrThrow(
+                invitation.getIdentifierValue(),
                 invitation.getIdentifierValue(),
                 otpCode,
                 command.getToken(),
-                null);
+                locale);
         if (!delivered) {
             LOGGER.error("Failed to send OTP via email for invitationToken={}", command.getToken());
             throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_INVITATION_OTP_SEND_FAILED);
