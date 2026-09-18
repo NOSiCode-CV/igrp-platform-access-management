@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletRequestWrapper;
 import jakarta.servlet.http.HttpServletResponse;
 import org.jspecify.annotations.NonNull;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Profile;
@@ -26,12 +27,19 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.jackson2.OAuth2AuthorizationServerJackson2Module;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
+import org.springframework.security.oauth2.client.oidc.authentication.OidcIdTokenDecoderFactory;
+import org.springframework.security.oauth2.client.oidc.authentication.OidcIdTokenValidator;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.server.resource.web.authentication.BearerTokenAuthenticationFilter;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.jwt.JwtDecoderFactory;
+import org.springframework.security.oauth2.jwt.JwtTimestampValidator;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
@@ -45,9 +53,12 @@ import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
+import java.util.UUID;
 
 @Configuration
 @Profile("!basic-auth")
@@ -276,6 +287,63 @@ public class AuthorizationServerConfig {
      * header is hidden from downstream filters. See the
      * {@code addFilterBefore(...)} site above for full rationale.
      */
+    /** Hard ceiling on the configurable id_token clock tolerance. */
+    static final long MAX_ID_TOKEN_CLOCK_SKEW_SECONDS = 300L;
+
+    /**
+     * Decoder for the upstream IdP's id_token, with a configurable timestamp
+     * tolerance.
+     *
+     * <p>Spring's default is a fixed 60 seconds with no way to override it, so
+     * when a host's clock drifts past that there is no mitigation available
+     * while the real problem (NTP) is being fixed — every login fails with
+     * {@code invalid_id_token} / "Jwt used before …".
+     *
+     * <p>This is a <b>mitigation, not a fix</b>. Widening the window also
+     * weakens {@code exp} enforcement on the upstream token, which is why it is
+     * capped at {@link #MAX_ID_TOKEN_CLOCK_SKEW_SECONDS}. Correct the clock;
+     * don't live on a wide tolerance.
+     *
+     * <p>Both validators are supplied explicitly rather than decorating the
+     * default factory, so behaviour doesn't depend on Spring's internal
+     * default-validator composition: {@link JwtTimestampValidator} enforces
+     * {@code exp}/{@code nbf}, {@link OidcIdTokenValidator} enforces the OIDC
+     * claims ({@code iss}, {@code aud}, {@code azp}, {@code iat}, nonce).
+     */
+    @Bean
+    public JwtDecoderFactory<ClientRegistration> idTokenDecoderFactory(
+            @Value("${igrp.oauth.external-idp.clock-skew-seconds:60}") long configuredSkewSeconds) {
+
+        Duration skew = resolveIdTokenClockSkew(configuredSkewSeconds);
+        AS_CONFIG_LOG.info("OIDC id_token timestamp tolerance = {}s (configured {}s, max {}s)",
+                skew.toSeconds(), configuredSkewSeconds, MAX_ID_TOKEN_CLOCK_SKEW_SECONDS);
+
+        OidcIdTokenDecoderFactory factory = new OidcIdTokenDecoderFactory();
+        factory.setJwtValidatorFactory(registration -> {
+            OidcIdTokenValidator oidcValidator = new OidcIdTokenValidator(registration);
+            oidcValidator.setClockSkew(skew);
+            return new DelegatingOAuth2TokenValidator<Jwt>(
+                    new JwtTimestampValidator(skew), oidcValidator);
+        });
+        return factory;
+    }
+
+    /** Clamps the configured tolerance into {@code [0, MAX_ID_TOKEN_CLOCK_SKEW_SECONDS]}. */
+    static Duration resolveIdTokenClockSkew(long configuredSeconds) {
+        if (configuredSeconds < 0) {
+            AS_CONFIG_LOG.warn("igrp.oauth.external-idp.clock-skew-seconds={} is negative; using 0s",
+                    configuredSeconds);
+            return Duration.ZERO;
+        }
+        if (configuredSeconds > MAX_ID_TOKEN_CLOCK_SKEW_SECONDS) {
+            AS_CONFIG_LOG.warn("igrp.oauth.external-idp.clock-skew-seconds={} exceeds the {}s ceiling; "
+                            + "clamping. A tolerance this wide hides a broken clock — fix NTP instead.",
+                    configuredSeconds, MAX_ID_TOKEN_CLOCK_SKEW_SECONDS);
+            return Duration.ofSeconds(MAX_ID_TOKEN_CLOCK_SKEW_SECONDS);
+        }
+        return Duration.ofSeconds(configuredSeconds);
+    }
+
     /**
      * Terminal failure handler for the OIDC client (oauth2Login) callback.
      *
@@ -307,39 +375,53 @@ public class AuthorizationServerConfig {
         public void onAuthenticationFailure(HttpServletRequest request,
                                             HttpServletResponse response,
                                             AuthenticationException exception) throws IOException {
-            String errorCode = "login_failed";
-            String errorDescription = null;
-            if (exception instanceof OAuth2AuthenticationException oauthEx) {
-                OAuth2Error error = oauthEx.getError();
-                if (error != null) {
-                    if (error.getErrorCode() != null) {
-                        errorCode = error.getErrorCode();
-                    }
-                    errorDescription = error.getDescription();
-                }
-            }
+            OidcLoginFailureAnalysis analysis = OidcLoginFailureAnalysis.of(exception, Instant.now());
+
+            // Correlation id ties the page the user is looking at to the log
+            // line below. Without it "share the error code with the platform
+            // team" is unactionable: the code alone can't locate one failure
+            // among thousands.
+            String correlationId = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
 
             // Log loud and structured — this is the failure that *used* to be
             // invisible behind the redirect loop. Operators triaging "site is
             // down" reports should land directly on this line.
             LOG.warn("[OIDC LOGIN FAILURE] OAuth2-login callback failed — terminating with 401 instead of looping. "
-                            + "errorCode={}, description={}, exceptionClass={}, requestUri={}, queryString={}",
-                    errorCode,
-                    errorDescription != null ? errorDescription : "(none)",
+                            + "correlationId={}, errorCode={}, clockSkew={}, description={}, "
+                            + "exceptionClass={}, requestUri={}, queryString={}",
+                    correlationId,
+                    analysis.errorCode(),
+                    analysis.skewSummary(),
+                    analysis.rawDescription() != null ? analysis.rawDescription() : "(none)",
                     exception.getClass().getName(),
                     request.getRequestURI(),
                     request.getQueryString(),
                     exception);
 
+            if (analysis.isClockSkew()) {
+                LOG.warn("[OIDC LOGIN FAILURE] correlationId={} is a CLOCK problem, not a configuration one: "
+                                + "the upstream id_token's timestamps are {}s away from this server's clock ({}). "
+                                + "Check NTP on this host before touching the IdP configuration.",
+                        correlationId,
+                        analysis.skew() != null ? analysis.skew().toSeconds() : 0L,
+                        analysis.direction());
+            }
+
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-            response.setHeader("X-IGRP-Login-Failure-Reason", errorCode);
+            response.setHeader("X-IGRP-Login-Failure-Reason", analysis.errorCode());
+            response.setHeader("X-IGRP-Login-Failure-Id", correlationId);
             response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
             response.setHeader("Pragma", "no-cache");
             response.setContentType("text/html; charset=UTF-8");
 
-            String safeErrorCode = escapeHtml(errorCode);
-            String safeDescription = escapeHtml(errorDescription != null ? errorDescription
-                    : "Authentication completed at the identity provider but the session could not be created on this server.");
+            String safeErrorCode = escapeHtml(analysis.errorCode());
+            String safeCorrelationId = escapeHtml(correlationId);
+            // Deliberately generic. The raw validator description carries token
+            // timestamps and claim values; that belongs in the log above, not in
+            // an end user's browser.
+            String safeDescription =
+                    "Authentication completed at the identity provider, but this server could not "
+                            + "complete the sign-in.";
 
             // Retry is an EXPLICIT user action (a link the user clicks) — never
             // an auto-redirect, never a meta-refresh. That is the property that
@@ -359,8 +441,9 @@ public class AuthorizationServerConfig {
                     + "</style></head><body>"
                     + "<h1>Login could not be completed</h1>"
                     + "<p>" + safeDescription + "</p>"
-                    + "<p class=\"meta\">Error code: <code>" + safeErrorCode + "</code></p>"
-                    + "<p class=\"meta\">If this keeps happening, share the error code above with the platform team.</p>"
+                    + "<p class=\"meta\">Error code: <code>" + safeErrorCode + "</code><br>"
+                    + "Reference: <code>" + safeCorrelationId + "</code></p>"
+                    + "<p class=\"meta\">If this keeps happening, share both values above with the platform team.</p>"
                     + "<a class=\"retry\" href=\"/oauth2/authorization/external-idp\">Try again</a>"
                     + "</body></html>";
             response.getWriter().write(html);

@@ -24,48 +24,15 @@ import java.util.List;
         scheme = "bearer",
         bearerFormat = "JWT",
         description = """
-                Bearer JWT issued by the iGRP authorization server.
+                Paste your access token (JWT) in the **Value** field below and click
+                **Authorize**. Swagger adds the `Bearer ` prefix for you — paste the
+                raw token only, with no quotes.
 
-                ### Access-token claims
+                Getting a token: sign in to the Application Center and copy the access
+                token from your session, or request one from the authorization server's
+                `/oauth2/token` endpoint.
 
-                Standard OAuth2/OIDC:
-                - **sub** (string) — internal user id (subject).
-                - **jti** (string) — unique token id. Mirrored to `SessionEntity.jti`.
-                - **iat** (number, seconds since epoch) — token issuance time. Compared
-                  against the user-wide `tokens_not_valid_before` floor on every
-                  authenticated request (Phase F1).
-                - **exp** (number, seconds since epoch) — token-level expiry.
-                - **iss** (string) — issuer (the authorization server URL).
-                - **aud** (string | string[]) — audience(s) the token is intended for.
-
-                iGRP session-binding (NEW, mandatory on user-bound tokens):
-                - **sid** (string, UUID) — canonical session identifier. Equal to
-                  `t_user_session.session_id`. The `SessionEnforcementFilter` rejects
-                  the request when the row is no longer ACTIVE or has expired.
-                - **device_id** (string) — opaque device identifier. Read from the
-                  `X-Device-Id` request header on the token endpoint, or derived as a
-                  SHA-256 hash of `(User-Agent, client IP, client_id)` when not
-                  supplied. Two concurrent sessions cannot share `(user, device_id)`.
-
-                iGRP authorization enrichment (added by `ClaimsEnrichmentService`):
-                - **selectedRole** (string) — the user's currently-active role code.
-                - **org** (object) — organizational unit context (department / scope).
-                - **permissions** (string[]) — flattened permission names granted via
-                  the active role.
-                - **resource_access** (object) — Keycloak-shaped per-client role map
-                  for downstream resource servers.
-                - **identity claims** — user profile fields (name, email,
-                  email_verified, preferred_username, phone_number, picture, nic, etc.)
-                  copied from `IGRPUserEntity` for the configured client.
-
-                Tokens issued via `client_credentials` (M2M) carry neither `sid` nor
-                `device_id` and bypass the session enforcement filter.
-
-                **Phase F1 — token validity floor:** the user record carries a
-                `tokens_not_valid_before` instant. The enforcement filter rejects any
-                JWT with `iat` strictly before this floor, even when the bound session
-                row is still ACTIVE. The floor is bumped by password reset / forced
-                re-auth flows.
+                Tokens expire. On a sudden `401`, get a fresh token and authorize again.
                 """
 )
 public class SwaggerConfig {

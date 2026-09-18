@@ -35,6 +35,8 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -65,16 +67,36 @@ class ClaimsEnrichmentServiceTest {
         identity.setUserId("abc-123");
         identity.setUser(user);
 
-        when(userIdentityRepository.findByProviderAndUserId("external-idp", "abc-123"))
+        when(userIdentityRepository.findActiveByProviderAndUserId("external-idp", "abc-123"))
                 .thenReturn(Optional.of(identity));
 
         assertEquals(uid, service.mapSubject("external-idp", "abc-123"));
     }
 
+    /**
+     * mapSubject must use the status-filtered lookup, never the raw one.
+     * The raw variant returns identities of DELETED / INACTIVE users, which
+     * would put a soft-deleted user's id in the JWT `sub` — a token that
+     * authenticates but is denied by every authorization check. This test
+     * previously stubbed the raw method and silently drifted when the
+     * production call site moved to the filtered one.
+     */
+    @Test
+    void mapSubjectUsesTheStatusFilteredLookup() {
+        when(userIdentityRepository.findActiveByProviderAndUserId("external-idp", "abc-123"))
+                .thenReturn(Optional.empty());
+
+        service.mapSubject("external-idp", "abc-123");
+
+        verify(userIdentityRepository).findActiveByProviderAndUserId("external-idp", "abc-123");
+        verify(userIdentityRepository, never()).findByProviderAndUserId("external-idp", "abc-123");
+    }
+
     @Test
     void mapSubjectReturnsNullWhenIdentityAbsent() {
-        when(userIdentityRepository.findByProviderAndUserId("x", "y")).thenReturn(Optional.empty());
+        when(userIdentityRepository.findActiveByProviderAndUserId("x", "y")).thenReturn(Optional.empty());
         assertNull(service.mapSubject("x", "y"));
+        // Null arguments short-circuit before the repository is consulted.
         assertNull(service.mapSubject(null, "y"));
         assertNull(service.mapSubject("x", null));
     }

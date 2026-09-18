@@ -68,7 +68,7 @@ Every iGRP Studio-generated Next.js project has this file at the repo root. Its 
   "permissions": [
     {
       "id": "perm_01HZX111",
-      "name": "inss.invoice_list.delete",
+      "name": "finance.invoice_list.delete",
       "label": "Delete Invoice",
       "description": "Permite eliminar faturas",
       "enabled": true
