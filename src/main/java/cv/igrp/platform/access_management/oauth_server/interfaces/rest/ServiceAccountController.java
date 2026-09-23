@@ -22,6 +22,18 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
 import java.util.UUID;
 
+/**
+ * Administrative API for service accounts.
+ *
+ * <p><b>Authorization inherits the OAuth-client permissions</b>
+ * ({@code igrp.client.*}) rather than using a dedicated
+ * {@code igrp.service_account.*} set. A service account is an identity bound to
+ * an OAuth client, so whoever can create, update or delete the client can
+ * already obtain the same capability through that route — a separate permission
+ * set would not restrict anything, it would only create pairs of endpoints
+ * where one is guarded and its equivalent is not, and two catalogs for
+ * administrators to keep in step.
+ */
 @RestController
 @RequestMapping(path = "api/service-accounts")
 @Tag(name = "Service Accounts", description = "Manage OAuth client service accounts")
@@ -34,37 +46,42 @@ public class ServiceAccountController {
     }
 
     @GetMapping
-    @Operation(summary = "List service accounts")
-    @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_SERVICE_ACCOUNT_LIST, T(Permission).IGRP_SERVICE_ACCOUNT_MANAGE)")
+    @Operation(summary = "List service accounts",
+            description = "This Permission is required: igrp.client.list")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_LIST)")
     public ResponseEntity<List<ServiceAccountDTO>> findAll() {
         return ResponseEntity.ok(service.findAll());
     }
 
     @GetMapping("/{id}")
-    @Operation(summary = "Get service account by id")
-    @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_SERVICE_ACCOUNT_VIEW, T(Permission).IGRP_SERVICE_ACCOUNT_MANAGE)")
+    @Operation(summary = "Get service account by id",
+            description = "This Permission is required: igrp.client.view")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_VIEW)")
     public ResponseEntity<ServiceAccountDTO> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(service.findById(id));
     }
 
     @PostMapping
-    @Operation(summary = "Create service account")
-    @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_SERVICE_ACCOUNT_CREATE, T(Permission).IGRP_SERVICE_ACCOUNT_MANAGE)")
+    @Operation(summary = "Create service account",
+            description = "This Permission is required: igrp.client.create")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_CREATE)")
     public ResponseEntity<ServiceAccountDTO> create(@Valid @RequestBody ServiceAccountRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
     }
 
     @PutMapping("/{id}")
-    @Operation(summary = "Update service account")
-    @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_SERVICE_ACCOUNT_UPDATE, T(Permission).IGRP_SERVICE_ACCOUNT_MANAGE)")
+    @Operation(summary = "Update service account",
+            description = "This Permission is required: igrp.client.update")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_UPDATE)")
     public ResponseEntity<ServiceAccountDTO> update(@PathVariable UUID id,
                                                     @Valid @RequestBody ServiceAccountRequestDTO request) {
         return ResponseEntity.ok(service.update(id, request));
     }
 
     @DeleteMapping("/{id}")
-    @Operation(summary = "Delete service account")
-    @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_SERVICE_ACCOUNT_DELETE, T(Permission).IGRP_SERVICE_ACCOUNT_MANAGE)")
+    @Operation(summary = "Delete service account",
+            description = "This Permission is required: igrp.client.delete")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_DELETE)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();
