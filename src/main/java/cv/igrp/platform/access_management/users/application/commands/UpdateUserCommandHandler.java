@@ -115,6 +115,11 @@ public class UpdateUserCommandHandler implements CommandHandler<UpdateUserComman
             user.setPhoneNumber(dto.getPhoneNumber());
         }
 
+        // metadata is deliberately NOT written here (neither replaced nor merged
+        // from dto.getMetadata()): it is owned by PUT /users/{id}/metadata and, for
+        // the language preference (metadata.locale), by PUT /users/me/locale. This
+        // keeps PUT /users/me and the admin update from ever dropping metadata.locale.
+
         var updatedUser = userRepository.save(user);
 
         logger.info("User updated successfully: id={}, email={}", updatedUser.getId(), updatedUser.getEmail());

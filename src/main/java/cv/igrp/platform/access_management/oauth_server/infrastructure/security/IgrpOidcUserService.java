@@ -386,9 +386,17 @@ public class IgrpOidcUserService extends OidcUserService {
         for (String key : new String[]{"name", "given_name", "family_name", "preferred_username", "email",
                 "email_verified", "locale", "picture", "phone_number"}) {
             Object value = attributes.get(key);
-            if (value != null) {
-                metadata.put(key, value);
+            if (value == null) {
+                continue;
             }
+            // i18n (FR-10/FR-27): metadata.locale is the user's language preference
+            // (PUT /api/users/me/locale, invitation acceptance). The upstream IdP's
+            // locale claim only seeds it once; it must not overwrite the preference
+            // on every login.
+            if ("locale".equals(key) && metadata.get(key) != null) {
+                continue;
+            }
+            metadata.put(key, value);
         }
         user.setMetadata(metadata);
     }

@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.shared.domain.exceptions;
 import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import cv.igrp.platform.access_management.department.domain.exceptions.OutOfScopeException;
 import cv.igrp.platform.access_management.department.domain.exceptions.RootDepartmentForbiddenException;
+import cv.igrp.platform.access_management.shared.i18n.Messages;
 import cv.igrp.platform.access_management.shared.security.InvalidPrincipalException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
@@ -25,24 +26,67 @@ import java.util.Arrays;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Maps exceptions to RFC 7807 {@link ProblemDetail} responses.
+ *
+ * <p><b>i18n:</b> every user-facing text is resolved through {@link Messages} in the
+ * request locale (Accept-Language → platform default): {@link IgrpErrorCode}-backed
+ * exceptions use {@code error.<CODE>}, handler titles use {@code error.handler.*}.
+ * Log lines keep the English text carried by the exception itself.
+ */
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+    private final Messages messages;
+
+    public GlobalExceptionHandler(Messages messages) {
+        this.messages = messages;
+    }
+
     @ExceptionHandler(IgrpResponseStatusException.class)
     public ProblemDetail handleIgrpResponseStatusException(IgrpResponseStatusException ex) {
 
+        // Logged before localization: the exception body carries the English
+        // enum template, which is what operators search for in the logs.
         LOGGER.error(ex.getMessage(), ex);
 
-        return ex.getBody();
+        return localize(ex);
+    }
+
+    /**
+     * Returns a copy of the exception body whose {@code title} and {@code detail}
+     * carry the {@code error.<CODE>} message in the request locale. The {@code code}
+     * property and every other property are kept as-is (NFR-5). Exceptions built
+     * with the legacy free-text factories (no {@link IgrpErrorCode}) are returned
+     * unchanged. The exception's own body is never mutated.
+     */
+    private ProblemDetail localize(IgrpResponseStatusException ex) {
+        ProblemDetail body = ex.getBody();
+        IgrpErrorCode code = ex.getCode();
+        if (code == null) {
+            return body;
+        }
+        Object[] args = ex.getArgs();
+        String text = messages.getOrDefault(code.messageKey(), code.formatMessage(args), args);
+
+        ProblemDetail localized = ProblemDetail.forStatus(body.getStatus());
+        localized.setType(body.getType());
+        localized.setInstance(body.getInstance());
+        localized.setTitle(text);
+        localized.setDetail(text);
+        if (body.getProperties() != null) {
+            localized.setProperties(new LinkedHashMap<>(body.getProperties()));
+        }
+        return localized;
     }
 
     @ExceptionHandler(OutOfScopeException.class)
     public ProblemDetail handleOutOfScope(OutOfScopeException ex) {
         LOGGER.warn("Out-of-scope department access attempt: {}", ex.getMessage());
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
-        problem.setTitle("Out of scope");
+        problem.setTitle(messages.get("error.handler.outOfScope"));
         problem.setProperty("error", "OUT_OF_SCOPE");
         problem.setProperty("departmentId", ex.getDepartmentId());
         return problem;
@@ -52,7 +96,7 @@ public class GlobalExceptionHandler {
     public ProblemDetail handleRootDepartmentForbidden(RootDepartmentForbiddenException ex) {
         LOGGER.warn("Root-department creation attempted by non-superadmin");
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
-        problem.setTitle("Root department forbidden");
+        problem.setTitle(messages.get("error.handler.rootDepartmentForbidden"));
         problem.setProperty("error", "ROOT_DEPARTMENT_FORBIDDEN");
         return problem;
     }
@@ -87,11 +131,15 @@ public class GlobalExceptionHandler {
         var errors = ex.getBindingResult().getFieldErrors()
                 .stream()
                 .collect(Collectors.toMap(
-                        FieldError::getField, fe -> fe.getDefaultMessage() != null ? fe.getDefaultMessage() : "Invalid value")
+                        FieldError::getField,
+                        fe -> fe.getDefaultMessage() != null ? fe.getDefaultMessage() : messages.get("error.handler.invalidValue"),
+                        // Several constraints can fail on the same field: keep the first.
+                        (first, second) -> first,
+                        LinkedHashMap::new)
                 );
 
         var problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
-        problemDetail.setTitle("Validation Errors");
+        problemDetail.setTitle(messages.get("error.handler.validationErrors"));
         problemDetail.setProperty("errors", errors);
 
         return problemDetail;
@@ -102,10 +150,11 @@ public class GlobalExceptionHandler {
 
         var errors = ex.getConstraintViolations()
                 .stream()
-                .collect(Collectors.toMap(v -> v.getPropertyPath().toString(), ConstraintViolation::getMessage));
+                .collect(Collectors.toMap(v -> v.getPropertyPath().toString(), ConstraintViolation::getMessage,
+                        (first, second) -> first, LinkedHashMap::new));
 
         var problemDetail = ProblemDetail.forStatus(HttpStatus.BAD_REQUEST);
-        problemDetail.setTitle("Constraint Violation Errors");
+        problemDetail.setTitle(messages.get("error.handler.constraintViolationErrors"));
         problemDetail.setProperty("errors", errors);
 
         return problemDetail;
@@ -126,13 +175,13 @@ public class GlobalExceptionHandler {
                     .map(Object::toString)
                     .toArray(String[]::new);
 
-            problem.setTitle("Invalid value for enum type: " + targetType.getSimpleName());
+            problem.setTitle(messages.get("error.handler.invalidEnumValue", targetType.getSimpleName()));
             problem.setProperty("CurrentValue", ife.getValue());
             problem.setProperty("AllowedValues", allowedValues);
             return problem;
         }
 
-        problem.setTitle("Malformed JSON request");
+        problem.setTitle(messages.get("error.handler.malformedJson"));
         problem.setDetail(ex.getMessage());
 
         return problem;
@@ -162,7 +211,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoActionPerformedException.class)
     public ProblemDetail handleNoActionPerformed(NoActionPerformedException ex) {
         var problemDetail = ProblemDetail.forStatus(ex.getStatusCode());
-        problemDetail.setTitle("No Action Performed");
+        problemDetail.setTitle(messages.get("error.handler.noActionPerformed"));
         problemDetail.setDetail(ex.getReason());
         return problemDetail;
     }
