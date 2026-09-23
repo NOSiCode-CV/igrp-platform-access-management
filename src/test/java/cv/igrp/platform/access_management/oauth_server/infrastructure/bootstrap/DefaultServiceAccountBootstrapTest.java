@@ -87,7 +87,7 @@ class DefaultServiceAccountBootstrapTest {
     // ─── fresh install: create SA + grant all resolvable permissions ────
 
     @Test
-    @DisplayName("fresh install: creates SA and grants all 12 permissions")
+    @DisplayName("fresh install: creates SA and grants all 6 permissions")
     void freshInstall_createsSaAndGrantsAllPermissions() {
         // OAuth client resolves
         when(jdbcTemplate.queryForObject(
@@ -103,19 +103,13 @@ class DefaultServiceAccountBootstrapTest {
                 eq(DEFAULT_SA_NAME)))
                 .thenThrow(new EmptyResultDataAccessException(1));
 
-        // permission lookups: 6 client.* start at 19, 6 service_account.* start at 25
-        stubPermissionId("igrp.client.list",              19L);
-        stubPermissionId("igrp.client.view",              20L);
-        stubPermissionId("igrp.client.create",            21L);
-        stubPermissionId("igrp.client.update",            22L);
-        stubPermissionId("igrp.client.delete",            23L);
-        stubPermissionId("igrp.client.manage",            24L);
-        stubPermissionId("igrp.service_account.list",     25L);
-        stubPermissionId("igrp.service_account.view",     26L);
-        stubPermissionId("igrp.service_account.create",   27L);
-        stubPermissionId("igrp.service_account.update",   28L);
-        stubPermissionId("igrp.service_account.delete",   29L);
-        stubPermissionId("igrp.service_account.manage",   30L);
+        // permission lookups: the 6 client.* rows start at 19
+        stubPermissionId("igrp.client.list",   19L);
+        stubPermissionId("igrp.client.view",   20L);
+        stubPermissionId("igrp.client.create", 21L);
+        stubPermissionId("igrp.client.update", 22L);
+        stubPermissionId("igrp.client.delete", 23L);
+        stubPermissionId("igrp.client.manage", 24L);
 
         // grants return 1 (inserted) each time
         when(jdbcTemplate.update(
@@ -133,8 +127,8 @@ class DefaultServiceAccountBootstrapTest {
                 eq(DEFAULT_SA_NAME),
                 eq(clientUuid));
 
-        // Verify grants fired 12 times (once per permission)
-        verify(jdbcTemplate, times(12)).update(
+        // Verify grants fired 6 times (once per permission)
+        verify(jdbcTemplate, times(6)).update(
                 startsWith("INSERT INTO t_service_account_permission_grant"),
                 any(Object.class), any(Object.class), any(Object.class), any(Object.class));
     }
@@ -157,7 +151,7 @@ class DefaultServiceAccountBootstrapTest {
                 eq(DEFAULT_SA_NAME)))
                 .thenReturn(existingSa);
 
-        // Stub all 12 permissions resolvable
+        // Stub all 6 permissions resolvable
         for (String name : allDefaultPermissionNames()) {
             stubPermissionId(name, (long) (name.hashCode() & 0xFFFF));
         }
@@ -175,8 +169,8 @@ class DefaultServiceAccountBootstrapTest {
                 startsWith("INSERT INTO t_service_account\n"),
                 any(UUID.class), any(String.class), any(String.class), any(UUID.class));
 
-        // Grants still attempted 12 times (idempotent no-ops)
-        verify(jdbcTemplate, times(12)).update(
+        // Grants still attempted 6 times (idempotent no-ops)
+        verify(jdbcTemplate, times(6)).update(
                 startsWith("INSERT INTO t_service_account_permission_grant"),
                 any(Object.class), any(Object.class), any(Object.class), any(Object.class));
     }
@@ -228,7 +222,7 @@ class DefaultServiceAccountBootstrapTest {
                 any(UUID.class), any(String.class), any(String.class), any(UUID.class));
 
         // Grants still reconciled on the existing SA (idempotent no-ops here).
-        verify(jdbcTemplate, times(12)).update(
+        verify(jdbcTemplate, times(6)).update(
                 startsWith("INSERT INTO t_service_account_permission_grant"),
                 any(Object.class), any(Object.class), any(Object.class), any(Object.class));
     }
@@ -249,19 +243,15 @@ class DefaultServiceAccountBootstrapTest {
                 eq(DEFAULT_SA_NAME)))
                 .thenThrow(new EmptyResultDataAccessException(1));
 
-        // Only 6 igrp.client.* permissions exist; igrp.service_account.* aren't seeded yet.
+        // The CRUD rows exist, but igrp.client.manage hasn't been synced yet —
+        // the case where the SA is seeded before the permission catalog has
+        // caught up. The boot must not fail on it.
         stubPermissionId("igrp.client.list",   19L);
         stubPermissionId("igrp.client.view",   20L);
         stubPermissionId("igrp.client.create", 21L);
         stubPermissionId("igrp.client.update", 22L);
         stubPermissionId("igrp.client.delete", 23L);
-        stubPermissionId("igrp.client.manage", 24L);
-        stubPermissionMissing("igrp.service_account.list");
-        stubPermissionMissing("igrp.service_account.view");
-        stubPermissionMissing("igrp.service_account.create");
-        stubPermissionMissing("igrp.service_account.update");
-        stubPermissionMissing("igrp.service_account.delete");
-        stubPermissionMissing("igrp.service_account.manage");
+        stubPermissionMissing("igrp.client.manage");
 
         when(jdbcTemplate.update(
                 startsWith("INSERT INTO t_service_account_permission_grant"),
@@ -275,8 +265,8 @@ class DefaultServiceAccountBootstrapTest {
                 startsWith("INSERT INTO t_service_account\n"),
                 any(UUID.class), eq(DEFAULT_SA_DESCRIPTION), eq(DEFAULT_SA_NAME), eq(clientUuid));
 
-        // Only 6 grants fired (client.*), the 6 service_account.* were skipped
-        verify(jdbcTemplate, times(6)).update(
+        // Only 5 grants fired — the unresolvable igrp.client.manage was skipped
+        verify(jdbcTemplate, times(5)).update(
                 startsWith("INSERT INTO t_service_account_permission_grant"),
                 any(Object.class), any(Object.class), any(Object.class), any(Object.class));
     }
@@ -302,8 +292,6 @@ class DefaultServiceAccountBootstrapTest {
     private static java.util.List<String> allDefaultPermissionNames() {
         return java.util.List.of(
                 "igrp.client.list", "igrp.client.view", "igrp.client.create",
-                "igrp.client.update", "igrp.client.delete", "igrp.client.manage",
-                "igrp.service_account.list", "igrp.service_account.view", "igrp.service_account.create",
-                "igrp.service_account.update", "igrp.service_account.delete", "igrp.service_account.manage");
+                "igrp.client.update", "igrp.client.delete", "igrp.client.manage");
     }
 }

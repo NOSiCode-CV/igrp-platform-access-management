@@ -26,13 +26,16 @@ import java.util.UUID;
  * Administrative API for service accounts.
  *
  * <p><b>Authorization inherits the OAuth-client permissions</b>
- * ({@code igrp.client.*}) rather than using a dedicated
- * {@code igrp.service_account.*} set. A service account is an identity bound to
- * an OAuth client, so whoever can create, update or delete the client can
- * already obtain the same capability through that route — a separate permission
- * set would not restrict anything, it would only create pairs of endpoints
- * where one is guarded and its equivalent is not, and two catalogs for
- * administrators to keep in step.
+ * ({@code igrp.client.*}). A service account is an identity bound to an OAuth
+ * client, so whoever can create, update or delete the client can already obtain
+ * the same capability through that route — a separate permission set would not
+ * restrict anything, it would only create pairs of endpoints where one is
+ * guarded and its equivalent is not, and two catalogs for administrators to
+ * keep in step.
+ *
+ * <p>A dedicated {@code igrp.service_account.*} set was declared alongside this
+ * controller and retired without ever being referenced; do not reintroduce it
+ * without first resolving the asymmetry described above.
  */
 @RestController
 @RequestMapping(path = "api/service-accounts")
