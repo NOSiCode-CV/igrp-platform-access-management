@@ -22,10 +22,10 @@ import java.util.UUID;
  * <p>Runs on {@link ApplicationReadyEvent} — one phase after
  * {@link DefaultOAuthClientBootstrap}'s {@link org.springframework.boot.CommandLineRunner}
  * — so the linked OAuth client already exists, and the {@code igrp.client.*}
- * and {@code igrp.service_account.*} permission rows have been seeded by
- * whichever mechanism your deployment uses (Flyway migration or an in-process
- * sync). Missing permission rows are skipped with a WARN and the SA is still
- * created; the grants can be re-attempted on the next boot.
+ * permission rows have been seeded by whichever mechanism your deployment uses
+ * (Flyway migration or an in-process sync). Missing permission rows are skipped
+ * with a WARN and the SA is still created; the grants can be re-attempted on
+ * the next boot.
  *
  * <p>The manual equivalent this replaces:
  *
@@ -44,19 +44,17 @@ import java.util.UUID;
  *          (NOW(), &lt;id of igrp.client.create&gt;,        &lt;SA UUID&gt;),
  *          (NOW(), &lt;id of igrp.client.update&gt;,        &lt;SA UUID&gt;),
  *          (NOW(), &lt;id of igrp.client.delete&gt;,        &lt;SA UUID&gt;),
- *          (NOW(), &lt;id of igrp.client.manage&gt;,        &lt;SA UUID&gt;),
- *          (NOW(), &lt;id of igrp.service_account.list&gt;, &lt;SA UUID&gt;),
- *          … same for view/create/update/delete/manage;
+ *          (NOW(), &lt;id of igrp.client.manage&gt;,        &lt;SA UUID&gt;);
  * </pre>
  *
  * <p><b>Why by name, not by id.</b> The infra team's script grants
  * "permissions with ids 19-24". Row ids drift with migration order and
  * environment reseeding, so this bootstrap looks permissions up by their
  * canonical {@code name} column. The set granted is fixed in
- * {@link #DEFAULT_PERMISSION_NAMES}: all {@code igrp.client.*} plus all
- * {@code igrp.service_account.*} permissions, giving the SA the minimum
- * privilege needed to provision downstream clients and service accounts
- * for each API/UI service.
+ * {@link #DEFAULT_PERMISSION_NAMES}: all {@code igrp.client.*} permissions,
+ * giving the SA the minimum privilege needed to provision downstream clients
+ * and service accounts for each API/UI service — the service-account endpoints
+ * gate on the same {@code igrp.client.*} set.
  *
  * <p><b>Config surface</b> (all optional):
  * <ul>
@@ -86,20 +84,15 @@ public class DefaultServiceAccountBootstrap {
      * and does NOT require touching migration ids.
      */
     private static final List<String> DEFAULT_PERMISSION_NAMES = List.of(
-            // OAuth2 client CRUD
+            // OAuth2 client CRUD. Also covers the service-account endpoints:
+            // ServiceAccountController gates on igrp.client.* (see its javadoc),
+            // so no separate service-account grants are needed here.
             "igrp.client.list",
             "igrp.client.view",
             "igrp.client.create",
             "igrp.client.update",
             "igrp.client.delete",
-            "igrp.client.manage",
-            // Service-account CRUD (added alongside this bootstrap)
-            "igrp.service_account.list",
-            "igrp.service_account.view",
-            "igrp.service_account.create",
-            "igrp.service_account.update",
-            "igrp.service_account.delete",
-            "igrp.service_account.manage"
+            "igrp.client.manage"
     );
 
     private final JdbcTemplate jdbcTemplate;

@@ -115,6 +115,76 @@ class OAuthClientServiceTest {
     }
 
     @Test
+    void rotateSecretReturnsRawOnceAndPersistsOnlyTheHash() {
+        UUID id = UUID.randomUUID();
+        OAuthClientEntity existing = new OAuthClientEntity();
+        existing.setId(id);
+        existing.setClientId("acme");
+        existing.setClientSecret("{bcrypt}OLD");
+
+        when(repository.findById(id)).thenReturn(Optional.of(existing));
+        when(passwordEncoder.encode(any())).thenReturn("{bcrypt}NEW");
+        when(repository.save(any(OAuthClientEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        OAuthClientDTO rotated = service.rotateSecret(id);
+
+        assertNotNull(rotated.getClientSecret(), "raw secret must be returned once on rotation");
+        assertNotEquals("{bcrypt}NEW", rotated.getClientSecret(), "the DTO must carry the RAW secret, not the hash");
+
+        ArgumentCaptor<OAuthClientEntity> captor = ArgumentCaptor.forClass(OAuthClientEntity.class);
+        verify(repository).save(captor.capture());
+        assertEquals("{bcrypt}NEW", captor.getValue().getClientSecret(),
+                "persisted secret must be the new hash, never the raw value");
+    }
+
+    @Test
+    void rotateSecretPreservesIdentity() {
+        // The whole point of the endpoint: delete-and-recreate changes the id
+        // and orphans downstream references. Rotation must not.
+        UUID id = UUID.randomUUID();
+        OAuthClientEntity existing = new OAuthClientEntity();
+        existing.setId(id);
+        existing.setClientId("acme");
+        existing.setClientSecret("{bcrypt}OLD");
+
+        when(repository.findById(id)).thenReturn(Optional.of(existing));
+        when(passwordEncoder.encode(any())).thenReturn("{bcrypt}NEW");
+        when(repository.save(any(OAuthClientEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        OAuthClientDTO rotated = service.rotateSecret(id);
+
+        assertEquals(id, rotated.getId());
+        assertEquals("acme", rotated.getClientId());
+        verify(repository, never()).delete(any(OAuthClientEntity.class));
+    }
+
+    @Test
+    void rotateSecretProducesADifferentSecretEachTime() {
+        UUID id = UUID.randomUUID();
+        OAuthClientEntity existing = new OAuthClientEntity();
+        existing.setId(id);
+        existing.setClientId("acme");
+
+        when(repository.findById(id)).thenReturn(Optional.of(existing));
+        when(passwordEncoder.encode(any())).thenAnswer(inv -> "{bcrypt}" + inv.getArgument(0));
+        when(repository.save(any(OAuthClientEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        String first = service.rotateSecret(id).getClientSecret();
+        String second = service.rotateSecret(id).getClientSecret();
+
+        assertNotEquals(first, second);
+    }
+
+    @Test
+    void rotateSecretThrowsWhenMissing() {
+        UUID id = UUID.randomUUID();
+        when(repository.findById(id)).thenReturn(Optional.empty());
+
+        assertThrows(EntityNotFoundException.class, () -> service.rotateSecret(id));
+        verify(repository, never()).save(any(OAuthClientEntity.class));
+    }
+
+    @Test
     void updateThrowsWhenMissing() {
         UUID id = UUID.randomUUID();
         when(repository.findById(id)).thenReturn(Optional.empty());

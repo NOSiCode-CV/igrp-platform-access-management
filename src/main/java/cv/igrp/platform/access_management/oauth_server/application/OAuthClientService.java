@@ -76,6 +76,39 @@ public class OAuthClientService {
         return toDto(repository.save(entity));
     }
 
+    /**
+     * Replace this client's secret with a freshly generated one, returning the
+     * raw value exactly once — the same contract as {@link #create}.
+     *
+     * <p>Exists so a leaked secret can be replaced without the delete-and-
+     * recreate dance, which is not atomic (a failed re-create leaves no client
+     * at all) and which changes the {@code id}, orphaning every downstream
+     * reference to it. Here {@code id} and {@code clientId} are preserved, so
+     * consumers only need the new secret.
+     *
+     * <p>Effective immediately: {@code IgrpRegisteredClientRepository} reads
+     * the entity on every lookup and holds no cache, so the previous secret
+     * stops authenticating as soon as this transaction commits.
+     *
+     * <p><b>Access tokens already issued to this client stay valid until they
+     * expire</b> — they are self-contained JWTs verified by signature, not by
+     * re-checking the client secret. Rotation closes the door on obtaining
+     * NEW tokens. If a leak requires cutting off existing ones too, deactivate
+     * the client (or shorten its access-token TTL) as well.
+     */
+    @Transactional
+    public OAuthClientDTO rotateSecret(UUID id) {
+        OAuthClientEntity entity = require(id);
+
+        String rawSecret = generateClientSecret();
+        entity.setClientSecret(passwordEncoder.encode(rawSecret));
+
+        OAuthClientDTO dto = toDto(repository.save(entity));
+        // Exposed once, exactly as on creation. Never recoverable afterwards.
+        dto.setClientSecret(rawSecret);
+        return dto;
+    }
+
     @Transactional
     public void delete(UUID id) {
         OAuthClientEntity entity = require(id);

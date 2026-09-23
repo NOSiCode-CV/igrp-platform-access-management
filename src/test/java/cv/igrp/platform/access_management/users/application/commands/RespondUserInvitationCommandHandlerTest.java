@@ -114,6 +114,9 @@ class RespondUserInvitationCommandHandlerTest {
         invitation.setStatus(InvitationStatus.PENDING);
         RoleEntity role = new RoleEntity();
         role.setId(1);
+        // code is @NotBlank/NOT NULL on RoleEntity, so a persisted role always
+        // has one. Accept bootstraps the active role and publishes it by code.
+        role.setCode("ROLE_TEST");
         invitation.setRoles(Set.of(role));
 
         when(invitationRepository.findByTokenOrThrow(token)).thenReturn(invitation);
@@ -140,7 +143,9 @@ class RespondUserInvitationCommandHandlerTest {
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(invitationRepository).save(invitation);
-        verify(userRepository).save(any(IGRPUserEntity.class));
+        // Saved twice: once creating the user, then again once accept has
+        // bootstrapped the active role from the invitation.
+        verify(userRepository, times(2)).save(any(IGRPUserEntity.class));
         verify(auditService).logUserChange(any(), eq("CREATE"));
     }
 
@@ -227,6 +232,9 @@ class RespondUserInvitationCommandHandlerTest {
         invitation.setStatus(InvitationStatus.PENDING);
         RoleEntity role = new RoleEntity();
         role.setId(1);
+        // code is @NotBlank/NOT NULL on RoleEntity, so a persisted role always
+        // has one. Accept bootstraps the active role and publishes it by code.
+        role.setCode("ROLE_TEST");
         invitation.setRoles(Set.of(role));
 
         when(invitationRepository.findByTokenOrThrow(token)).thenReturn(invitation);
@@ -305,6 +313,9 @@ class RespondUserInvitationCommandHandlerTest {
         invitation.setStatus(InvitationStatus.PENDING);
         RoleEntity role = new RoleEntity();
         role.setId(1);
+        // code is @NotBlank/NOT NULL on RoleEntity, so a persisted role always
+        // has one. Accept bootstraps the active role and publishes it by code.
+        role.setCode("ROLE_TEST");
         invitation.setRoles(Set.of(role));
 
         when(invitationRepository.findByTokenOrThrow(token)).thenReturn(invitation);
@@ -399,6 +410,9 @@ class RespondUserInvitationCommandHandlerTest {
         invitation.setStatus(InvitationStatus.PENDING);
         RoleEntity role = new RoleEntity();
         role.setId(1);
+        // code is @NotBlank/NOT NULL on RoleEntity, so a persisted role always
+        // has one. Accept bootstraps the active role and publishes it by code.
+        role.setCode("ROLE_TEST");
         invitation.setRoles(Set.of(role));
 
         when(invitationRepository.findByTokenOrThrow(token)).thenReturn(invitation);
@@ -511,6 +525,9 @@ class RespondUserInvitationCommandHandlerTest {
         invitation.setStatus(InvitationStatus.PENDING);
         RoleEntity role = new RoleEntity();
         role.setId(1);
+        // code is @NotBlank/NOT NULL on RoleEntity, so a persisted role always
+        // has one. Accept bootstraps the active role and publishes it by code.
+        role.setCode("ROLE_TEST");
         invitation.setRoles(Set.of(role));
         when(invitationRepository.findByTokenOrThrow(token)).thenReturn(invitation);
 

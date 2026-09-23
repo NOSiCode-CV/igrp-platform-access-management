@@ -11,6 +11,8 @@ Backend parent: `cv.igrp.framework.auth:backend:0.2.0-beta.5`.
 
 | When | What |
 |---|---|
+| 2026-09 | **Service-account endpoints inherit the client permissions.** `/api/service-accounts` now gates on `igrp.client.*`; the `igrp.service_account.*` set is retired and the default SA bootstrap no longer grants it. The rows are soft-deleted by the permission sync on first boot. |
+| 2026-09 | **`POST /api/clients/{id}/rotate-secret`.** Replaces delete-and-recreate for leaked secrets; the new raw secret is returned once. In both SDKs. |
 | 2026-07 | **Java 26 migration.** All poms bumped 25 → 26 (API) and 21 → 26 (SDK). Published SDK 0.2.0-beta.5 / client 0.2.0-beta.10 to Nexus. |
 | 2026-07 | **Default Service Account bootstrap.** On startup, the platform seeds a `igrp-access-management-sa` service account with all `igrp.client.*` and `igrp.service_account.*` permissions if absent. `.env.example` documents `IGRP_OAUTH_DEFAULT_SERVICE_ACCOUNT_*`. |
 | 2026-07 | **ServiceAccountsApi** — full CRUD on service accounts via the client SDK. |

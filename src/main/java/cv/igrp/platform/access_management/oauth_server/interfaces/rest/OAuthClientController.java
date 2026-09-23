@@ -57,6 +57,18 @@ public class OAuthClientController {
         return ResponseEntity.ok(service.update(id, request));
     }
 
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_UPDATE)")
+    @PostMapping("/{id}/rotate-secret")
+    @Operation(summary = "Rotate the client secret",
+            description = "Generates a new secret for an existing client and returns it in the response body; "
+                    + "it will not be available again. The id and clientId are preserved, so only the secret has to "
+                    + "be redistributed to consumers. The previous secret stops working immediately. Access tokens "
+                    + "already issued remain valid until they expire — deactivate the client as well if a leak "
+                    + "requires cutting those off. This Permission is required: igrp.client.update")
+    public ResponseEntity<OAuthClientDTO> rotateSecret(@PathVariable UUID id) {
+        return ResponseEntity.ok(service.rotateSecret(id));
+    }
+
     @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_DELETE)")
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete OAuth client", description = "This Permission is required: igrp.client.delete")
