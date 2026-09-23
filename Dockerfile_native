@@ -1,9 +1,16 @@
 ARG BUILDPLATFORM
 ARG TARGETPLATFORM
 #===================================================================
-# Build stage: GraalVM 24 + Native Image
+# Build stage: GraalVM 25 + Native Image
+#
+# NOTE: pom.xml targets Java 26 but no GraalVM 26 image exists yet (25 is the
+# newest native-image-community tag), so this stage still lags the JVM build by
+# one release and cannot compile Java 26 language features. Not currently
+# blocking — .gitlab-ci.yml only builds `-f Dockerfile`. Bump to 26-ol9 when it
+# ships, or hold java.version at 25 if the native image becomes a release gate.
+# Keep this tag pinned: the JVM Dockerfile broke on an unpinned one.
 # ===================================================================
-FROM --platform=${BUILDPLATFORM} ghcr.io/graalvm/native-image-community:23-ol9 AS build
+FROM --platform=${BUILDPLATFORM} ghcr.io/graalvm/native-image-community:25-ol9 AS build
 
 ARG APP_BUILD_FINGERPRINT
 # show platforms
