@@ -4,6 +4,9 @@ import cv.igrp.platform.access_management.oauth_server.application.OAuthClientSe
 import cv.igrp.platform.access_management.oauth_server.application.dto.OAuthClientDTO;
 import cv.igrp.platform.access_management.oauth_server.application.dto.OAuthClientRequestDTO;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -72,6 +75,14 @@ public class OAuthClientController {
     @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_DELETE)")
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete OAuth client", description = "This Permission is required: igrp.client.delete")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Deleted", content = @Content),
+            @ApiResponse(responseCode = "404", description = "No client with this id", content = @Content),
+            @ApiResponse(responseCode = "409",
+                    description = "A service account is still bound to this client. Delete the service "
+                            + "account first — the client is never deleted out from under it.",
+                    content = @Content)
+    })
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

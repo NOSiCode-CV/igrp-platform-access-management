@@ -4,10 +4,12 @@ import com.fasterxml.jackson.databind.exc.InvalidFormatException;
 import cv.igrp.platform.access_management.department.domain.exceptions.OutOfScopeException;
 import cv.igrp.platform.access_management.department.domain.exceptions.RootDepartmentForbiddenException;
 import cv.igrp.platform.access_management.shared.security.InvalidPrincipalException;
+import jakarta.persistence.EntityNotFoundException;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.ConstraintViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ProblemDetail;
@@ -54,6 +56,52 @@ public class GlobalExceptionHandler {
         var problem = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, ex.getMessage());
         problem.setTitle("Root department forbidden");
         problem.setProperty("error", "ROOT_DEPARTMENT_FORBIDDEN");
+        return problem;
+    }
+
+    /**
+     * A lookup that found nothing. Services throw this from their {@code require(id)}
+     * helpers; before this handler existed it escaped as a 500, so a mistyped id was
+     * indistinguishable from an outage to any caller.
+     */
+    @ExceptionHandler(EntityNotFoundException.class)
+    public ProblemDetail handleEntityNotFound(EntityNotFoundException ex) {
+        LOGGER.warn("Entity not found: {}", ex.getMessage());
+        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
+        problem.setTitle("Not Found");
+        return problem;
+    }
+
+    /**
+     * Rejected input that Bean Validation cannot express — an id that resolves to
+     * nothing, a value the domain refuses. Conflicts (a uniqueness rule the caller
+     * violated) are NOT this: throw
+     * {@code IgrpResponseStatusException.of(HttpStatus.CONFLICT, ...)} for those so
+     * the caller can tell "you sent something invalid" from "this already exists".
+     */
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ProblemDetail handleIllegalArgument(IllegalArgumentException ex) {
+        LOGGER.warn("Illegal argument: {}", ex.getMessage());
+        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.BAD_REQUEST, ex.getMessage());
+        problem.setTitle("Bad Request");
+        return problem;
+    }
+
+    /**
+     * A database constraint stopped the write — a unique index, or a foreign key still
+     * referenced by another row (deleting an OAuth client that a service account is
+     * bound to, for example). These are genuine conflicts, so 409.
+     *
+     * <p>The exception's own message carries SQL, constraint names and sometimes column
+     * values, so it is logged and never returned. The caller gets a fixed sentence.
+     */
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ProblemDetail handleDataIntegrityViolation(DataIntegrityViolationException ex) {
+        LOGGER.error("Data integrity violation", ex);
+        var problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT,
+                "The request conflicts with the current state of the data. "
+                        + "A uniqueness rule was violated, or the record is still referenced by another.");
+        problem.setTitle("Conflict");
         return problem;
     }
 

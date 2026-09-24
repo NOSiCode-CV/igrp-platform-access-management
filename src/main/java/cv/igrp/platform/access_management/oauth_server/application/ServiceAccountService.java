@@ -1,7 +1,9 @@
 package cv.igrp.platform.access_management.oauth_server.application;
 
 import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAccountDTO;
+import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAccountPermissionDTO;
 import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAccountRequestDTO;
+import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAccountRoleDTO;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.OAuthClientEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.ServiceAccountEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
@@ -12,11 +14,14 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import jakarta.persistence.EntityNotFoundException;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -59,8 +64,7 @@ public class ServiceAccountService {
     @Transactional
     public ServiceAccountDTO create(ServiceAccountRequestDTO request) {
         if (repository.existsByOauthClient_Id(request.getOauthClientId())) {
-            throw new IllegalArgumentException(
-                    "oauthClientId already has a service account: " + request.getOauthClientId());
+            throw alreadyLinked(request.getOauthClientId());
         }
 
         ServiceAccountEntity entity = new ServiceAccountEntity();
@@ -74,8 +78,7 @@ public class ServiceAccountService {
         ServiceAccountEntity entity = requireWithRoles(id);
         if (!entity.getOauthClient().getId().equals(request.getOauthClientId())
                 && repository.existsByOauthClient_Id(request.getOauthClientId())) {
-            throw new IllegalArgumentException(
-                    "oauthClientId already has a service account: " + request.getOauthClientId());
+            throw alreadyLinked(request.getOauthClientId());
         }
 
         applyRequestOntoEntity(request, entity);
@@ -85,6 +88,17 @@ public class ServiceAccountService {
     @Transactional
     public void delete(UUID id) {
         repository.delete(requireWithRoles(id));
+    }
+
+    /**
+     * A service account is 1:1 with its OAuth client — enforced here and by a unique
+     * index on {@code oauth_client_id}. 409 rather than 400: the request is well-formed,
+     * it lost to state that already exists, and the caller's next move is to open the
+     * existing account rather than to correct the payload.
+     */
+    private static IgrpResponseStatusException alreadyLinked(UUID oauthClientId) {
+        return IgrpResponseStatusException.of(HttpStatus.CONFLICT,
+                "OAuth client " + oauthClientId + " already has a service account");
     }
 
     private ServiceAccountEntity requireWithRoles(UUID id) {
@@ -159,6 +173,27 @@ public class ServiceAccountService {
                 .clientId(entity.getOauthClient() != null ? entity.getOauthClient().getClientId() : null)
                 .applicationId(entity.getApplication() != null ? entity.getApplication().getId() : null)
                 .applicationCode(entity.getApplication() != null ? entity.getApplication().getCode() : null)
+                // Paired views. Sorted by id so the order is stable across calls —
+                // the flat sets below are HashSets whose iteration order depends on
+                // element hash codes, which is why they can never be zipped together.
+                .roles(roles.stream()
+                        .sorted(Comparator.comparing(RoleEntity::getId,
+                                Comparator.nullsLast(Comparator.naturalOrder())))
+                        .map(r -> ServiceAccountRoleDTO.builder()
+                                .id(r.getId())
+                                .code(r.getCode())
+                                .departmentCode(r.getDepartment() != null ? r.getDepartment().getCode() : null)
+                                .build())
+                        .toList())
+                .permissions(directPermissions.stream()
+                        .sorted(Comparator.comparing(PermissionEntity::getId,
+                                Comparator.nullsLast(Comparator.naturalOrder())))
+                        .map(p -> ServiceAccountPermissionDTO.builder()
+                                .id(p.getId())
+                                .name(p.getName())
+                                .build())
+                        .toList())
+                // Deprecated flat sets, retained so existing callers keep working.
                 .roleIds(roles.stream().map(RoleEntity::getId).collect(Collectors.toSet()))
                 .roleCodes(roles.stream().map(RoleEntity::getCode).collect(Collectors.toSet()))
                 .permissionIds(directPermissions.stream().map(PermissionEntity::getId).collect(Collectors.toSet()))

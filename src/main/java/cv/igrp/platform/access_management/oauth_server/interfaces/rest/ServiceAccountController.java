@@ -5,6 +5,9 @@ import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAc
 import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAccountRequestDTO;
 import cv.igrp.framework.auth.generated.PermissionsRegistry.Permission;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -66,7 +69,20 @@ public class ServiceAccountController {
 
     @PostMapping
     @Operation(summary = "Create service account",
-            description = "This Permission is required: igrp.client.create")
+            description = "A service account is 1:1 with its OAuth client. Roles and direct permissions are "
+                    + "NOT department-scoped: any role or permission in the system may be granted. "
+                    + "This Permission is required: igrp.client.create")
+    @ApiResponses({
+            @ApiResponse(responseCode = "201", description = "Created"),
+            @ApiResponse(responseCode = "400",
+                    description = "Validation failed, or a roleId/permissionId does not exist. The whole "
+                            + "request is rejected and the unknown ids are listed — none are silently dropped.",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "oauthClientId or applicationId does not exist",
+                    content = @Content),
+            @ApiResponse(responseCode = "409", description = "This OAuth client already has a service account",
+                    content = @Content)
+    })
     @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_CREATE)")
     public ResponseEntity<ServiceAccountDTO> create(@Valid @RequestBody ServiceAccountRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
@@ -74,7 +90,21 @@ public class ServiceAccountController {
 
     @PutMapping("/{id}")
     @Operation(summary = "Update service account",
-            description = "This Permission is required: igrp.client.update")
+            description = "Replaces the whole roleIds and permissionIds sets — send the full desired state, "
+                    + "not a delta. Roles and permissions are NOT department-scoped: any in the system may be "
+                    + "granted. This Permission is required: igrp.client.update")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "Updated"),
+            @ApiResponse(responseCode = "400",
+                    description = "Validation failed, or a roleId/permissionId does not exist. The whole "
+                            + "request is rejected and the unknown ids are listed — none are silently dropped.",
+                    content = @Content),
+            @ApiResponse(responseCode = "404", description = "No service account with this id",
+                    content = @Content),
+            @ApiResponse(responseCode = "409",
+                    description = "Reassigning to an OAuth client that already has a service account",
+                    content = @Content)
+    })
     @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_UPDATE)")
     public ResponseEntity<ServiceAccountDTO> update(@PathVariable UUID id,
                                                     @Valid @RequestBody ServiceAccountRequestDTO request) {
@@ -84,6 +114,10 @@ public class ServiceAccountController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete service account",
             description = "This Permission is required: igrp.client.delete")
+    @ApiResponses({
+            @ApiResponse(responseCode = "204", description = "Deleted", content = @Content),
+            @ApiResponse(responseCode = "404", description = "No service account with this id", content = @Content)
+    })
     @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_DELETE)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
