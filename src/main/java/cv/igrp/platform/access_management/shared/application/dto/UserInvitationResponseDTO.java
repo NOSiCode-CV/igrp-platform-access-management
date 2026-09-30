@@ -20,7 +20,7 @@ import lombok.AllArgsConstructor;
 public class UserInvitationResponseDTO  {
 
 
-  @NotNull(message = "The field <accept> is required")
+  @NotNull(message = "{validation.accept.required}")
   
   private boolean accept ;
   

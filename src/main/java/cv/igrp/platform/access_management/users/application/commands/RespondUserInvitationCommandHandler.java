@@ -210,6 +210,13 @@ public class RespondUserInvitationCommandHandler
              user.setName(profile.fullName());
          }
 
+         // i18n (FR-31): the language chosen for the invitee becomes the user's
+         // preference. The brand-new user and the TEMPORARY account created at first
+         // login (whose metadata only holds IdP-derived values) always take it; an
+         // already-activated account keeps its stored preference, if any.
+         applyInvitationLocale(user, invitation.getLocale(),
+               isNewUser || user.getStatus() == Status.TEMPORARY);
+
          // NOTE: active role is now set AFTER the UserRoleAssignment rows are
          // created, further down. Setting it here (before save, before the URA
          // loop) was order-fragile and silently picked a non-deterministic role
@@ -417,7 +424,8 @@ public class RespondUserInvitationCommandHandler
                     savedUser.getEmail(),
                     savedUser.getId(),
                     invitation.getToken(),
-                    null);
+                    // Invitation language (FR-30); null → configured default locale (FR-33).
+                    invitation.getLocale());
             LOGGER.info("User with id={} was notified.", savedUser.getId());
          }
 
@@ -453,6 +461,29 @@ public class RespondUserInvitationCommandHandler
             }
          }
          return ResponseEntity.noContent().build();
+      }
+   }
+
+   /**
+    * Copies the invitation language into {@code metadata.locale} (FR-31). With
+    * {@code overwrite} it always wins; otherwise only when the user has no valid
+    * preference yet. Pre-i18n invitations (null locale) leave metadata untouched.
+    * Other metadata keys are always preserved.
+    */
+   static void applyInvitationLocale(IGRPUserEntity user, String invitationLocale, boolean overwrite) {
+      var normalized = cv.igrp.platform.access_management.shared.i18n.IgrpLocale.fromTag(invitationLocale);
+      if (normalized.isEmpty()) {
+         return;
+      }
+      Map<String, Object> metadata = user.getMetadata() != null
+              ? new java.util.LinkedHashMap<>(user.getMetadata())
+              : new java.util.LinkedHashMap<>();
+      Object current = metadata.get(UpdateCurrentUserLocaleCommandHandler.METADATA_LOCALE_KEY);
+      boolean hasPreference = current instanceof String s
+              && cv.igrp.platform.access_management.shared.i18n.IgrpLocale.fromTag(s).isPresent();
+      if (overwrite || !hasPreference) {
+         metadata.put(UpdateCurrentUserLocaleCommandHandler.METADATA_LOCALE_KEY, normalized.get().tag());
+         user.setMetadata(metadata);
       }
    }
 

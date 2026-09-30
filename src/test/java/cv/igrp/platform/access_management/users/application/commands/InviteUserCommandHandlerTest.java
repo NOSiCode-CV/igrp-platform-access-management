@@ -116,4 +116,65 @@ class InviteUserCommandHandlerTest {
                 eq("test-token"),
                 isNull());
     }
+
+    // ─── i18n: BE-11 (FR-29, FR-30) ──────────────────────────────────────────
+
+    private void stubHappyPath() {
+        when(invitationRepository.findByIdentifierTypeAndIdentifierValueAndStatus(IdentifierType.EMAIL.name(), "john@nosi.cv", InvitationStatus.PENDING)).thenReturn(Optional.empty());
+        DepartmentEntity department = new DepartmentEntity();
+        department.setCode("DEPT_TEST");
+        when(departmentRepository.findByCodeAndStatusNotDeleted("DEPT_TEST")).thenReturn(department);
+        when(roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, "ROLE_TEST")).thenReturn(new RoleEntity());
+        // Echo the entity back so the persisted locale is what the handler set.
+        when(invitationRepository.saveAndFlush(any(InvitationEntity.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(userUtils.constructInvitationUrl(any(), any())).thenReturn("http://test.url");
+    }
+
+    @Test
+    void itShouldPersistTheInviteeLocaleAndPassItToTheSender() {
+        stubHappyPath();
+        inviteUserDTO.setLocale("fr");
+
+        underTest.handle(command);
+
+        org.mockito.ArgumentCaptor<InvitationEntity> saved = org.mockito.ArgumentCaptor.forClass(InvitationEntity.class);
+        verify(invitationRepository).saveAndFlush(saved.capture());
+        assertEquals("fr", saved.getValue().getLocale());
+        verify(invitationSender).send(eq("john@nosi.cv"), eq("john@nosi.cv"), eq("http://test.url"), any(), eq("fr"));
+    }
+
+    @Test
+    void itShouldNormalizeRegionalInviteeLocale() {
+        stubHappyPath();
+        inviteUserDTO.setLocale("pt-CV");
+
+        underTest.handle(command);
+
+        verify(invitationSender).send(any(), any(), any(), any(), eq("pt"));
+    }
+
+    @Test
+    void itShouldKeepANullLocaleWhenNoneIsChosen() {
+        stubHappyPath();
+        inviteUserDTO.setLocale("  ");
+
+        underTest.handle(command);
+
+        org.mockito.ArgumentCaptor<InvitationEntity> saved = org.mockito.ArgumentCaptor.forClass(InvitationEntity.class);
+        verify(invitationRepository).saveAndFlush(saved.capture());
+        assertNull(saved.getValue().getLocale());
+        verify(invitationSender).send(any(), any(), any(), any(), isNull());
+    }
+
+    @Test
+    void itShouldRejectAnUnsupportedInviteeLocale() {
+        when(invitationRepository.findByIdentifierTypeAndIdentifierValueAndStatus(any(), any(), any())).thenReturn(Optional.empty());
+        inviteUserDTO.setLocale("de");
+
+        var ex = assertThrows(cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException.class,
+                () -> underTest.handle(command));
+        assertEquals(cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode.INVALID_LOCALE, ex.getCode());
+        verify(invitationRepository, never()).saveAndFlush(any());
+        verifyNoInteractions(invitationSender);
+    }
 }

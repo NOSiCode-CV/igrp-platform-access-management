@@ -15,9 +15,9 @@ import java.util.List;
 @IgrpDTO
 public class AddRolesToUserRequestDTO {
    
-   @NotEmpty(message = "The field <roles> is required")
+   @NotEmpty(message = "{validation.roles.required}")
    private List<String> roles;
    
-   @Future(message = "The field <expiresAt> must be a date in the future")
+   @Future(message = "{validation.expiresAt.future}")
    private LocalDateTime expiresAt;
 }

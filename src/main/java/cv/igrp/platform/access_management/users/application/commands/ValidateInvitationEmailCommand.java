@@ -11,10 +11,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class ValidateInvitationEmailCommand implements Command {
 
-    @NotBlank(message = "The field <token> is required")
+    @NotBlank(message = "{validation.token.required}")
     private String token;
 
-    @NotBlank(message = "The field <email> is required")
+    @NotBlank(message = "{validation.email.required}")
     private String email;
 
 }
