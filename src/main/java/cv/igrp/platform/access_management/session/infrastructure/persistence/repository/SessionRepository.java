@@ -41,18 +41,25 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
                                                                    SessionStatus status);
 
     /**
-     * Find active session for a specific (user, device) pair. Used by the
-     * token-issuance pipeline to atomically replace any previous session bound
-     * to the same physical device before opening a new one.
+     * Active sessions for a (user, device) pair, most recently seen first.
      *
-     * <p>The (user, device, ACTIVE) tuple is expected to be unique by design —
-     * one active session per physical device. If a race ever seeded two rows,
-     * this method would throw {@code NonUniqueResultException}; callers should
-     * be prepared to handle that as a data-integrity signal.
+     * <p><b>Returns a list, deliberately.</b> This used to return
+     * {@code Optional} on the assumption that (user, device, ACTIVE) was unique
+     * — one active session per physical device. That assumption no longer holds:
+     * several applications sharing one browser each run their own
+     * {@code authorization_code} exchange and so open their own session under
+     * the same derived {@code device_id}. A single-result query here would throw
+     * {@code NonUniqueResultException} the moment a user opened a second app.
+     *
+     * <p>Prefer {@link #findBySessionId(UUID)} whenever a JWT's {@code sid} is
+     * available: with several sessions per device, only {@code sid} identifies
+     * which one the request belongs to. This method is a fallback for callers
+     * that have lost that anchor, and "most recently seen" is a heuristic, not
+     * a correct answer.
      */
-    Optional<SessionEntity> findByUserIdAndDeviceIdAndStatus(String userId,
-                                                             String deviceId,
-                                                             SessionStatus status);
+    List<SessionEntity> findByUserIdAndDeviceIdAndStatusOrderByLastSeenAtDesc(String userId,
+                                                                              String deviceId,
+                                                                              SessionStatus status);
 
     /**
      * Find the active session bound to the given JWT id. Used by the refresh

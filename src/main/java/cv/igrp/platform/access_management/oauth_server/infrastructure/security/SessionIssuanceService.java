@@ -183,8 +183,24 @@ public class SessionIssuanceService {
                 }
             }
         }
-        return sessionRepository.findByUserIdAndDeviceIdAndStatus(
-                userId, deviceId, SessionStatus.ACTIVE);
+        // Fallback only — sid above is the reliable anchor. With several apps per
+        // device this can no longer be a single-result query, and "most recently
+        // seen" is a guess at which app is refreshing. Returning the wrong row
+        // would slide the wrong session's deadline, so prefer no match over a
+        // confident mistake when the list is ambiguous.
+        List<SessionEntity> candidates = sessionRepository
+                .findByUserIdAndDeviceIdAndStatusOrderByLastSeenAtDesc(
+                        userId, deviceId, SessionStatus.ACTIVE);
+        if (candidates.isEmpty()) {
+            return Optional.empty();
+        }
+        if (candidates.size() > 1) {
+            LOGGER.warn("Refresh without a usable sid for user={} device={} matched {} active sessions; "
+                            + "cannot tell which application is refreshing — opening a new session instead",
+                    userId, deviceId, candidates.size());
+            return Optional.empty();
+        }
+        return Optional.of(candidates.get(0));
     }
 
     private SessionEntity applyRefresh(SessionEntity session,
@@ -244,15 +260,26 @@ public class SessionIssuanceService {
                                          Instant now,
                                          long ttlSeconds,
                                          String upstreamIdToken) {
-        // FR-1: atomically replace any existing (user, device_id) ACTIVE row.
-        sessionRepository
-                .findByUserIdAndDeviceIdAndStatus(userId, deviceId, SessionStatus.ACTIVE)
-                .ifPresent(prev -> {
-                    prev.close("SESSION_REPLACED", "SYSTEM");
-                    sessionRepository.save(prev);
-                    sessionAuditLogger.recordReplaced(prev.getSessionId(), prev.getUserId(),
-                            prev.getDeviceId(), prev.getClientId(), SessionAuditLogger.USER);
-                });
+        // FR-1 (revised): a new session no longer closes the previous session on
+        // the same device.
+        //
+        // The original rule — one ACTIVE session per (user, device_id) — assumed
+        // one application per browser. Several IGRP apps on one domain break that
+        // assumption: each runs its own authorization_code exchange, every app
+        // derives the SAME device_id (same User-Agent, IP and client_id), and so
+        // opening a second app closed the first app's session. The first app's
+        // next call failed SessionEnforcementFilter with 401, bounced the user
+        // through a fresh login, and that login closed the second app's session —
+        // a loop in which only one app could be signed in at a time.
+        //
+        // Several ACTIVE sessions per (user, device) are therefore expected now.
+        // The per-user cap below remains the bound on how many a user may hold.
+        //
+        // NOT done here: revoking the PREVIOUS user's sessions when a different
+        // user signs in on the same browser. That needs a trustworthy per-browser
+        // identifier; today's device_id is a hash of (User-Agent, IP, client_id),
+        // so colleagues behind one NAT running the same browser build collide on
+        // it and would sign each other out. It belongs with the SSO-session model.
 
         // FR-5: enforce the per-user cap with LRU eviction.
         int maxPerUser = Math.max(1, sessionProperties.getMaxPerUser());
