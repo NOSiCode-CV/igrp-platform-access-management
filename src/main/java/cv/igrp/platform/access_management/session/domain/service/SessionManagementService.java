@@ -283,6 +283,41 @@ public class SessionManagementService {
     /**
      * Close current session
      */
+    /**
+     * Close the CALLER's own session, identified by the {@code sid} claim.
+     *
+     * <p>Server-side only. This ends the {@link SessionEntity} so
+     * {@code SessionEnforcementFilter} rejects the next request carrying that
+     * {@code sid} — it does NOT clear browser cookies, end the SSO session at
+     * this server, revoke the caller's tokens, or cascade to the upstream IdP.
+     * {@code /connect/logout} with an {@code id_token_hint} remains the way to
+     * actually sign a user out; this is for an application that wants to drop
+     * its own server-side session without touching the browser's login.
+     *
+     * @return true when a session was closed, false when the caller had none.
+     */
+    public boolean closeCallerSession(String userId, UUID sid, String reason) {
+        log.info("Closing session for user: {} sid: {} reason: {}", userId, sid, reason);
+
+        Optional<SessionEntity> sessionOpt = resolveCallerSession(userId, sid);
+        if (sessionOpt.isEmpty()) {
+            log.debug("No session to close for user: {} sid: {}", userId, sid);
+            return false;
+        }
+
+        SessionEntity session = sessionOpt.get();
+        if (!SessionStatus.ACTIVE.equals(session.getStatus())) {
+            log.debug("Session {} is already {} — nothing to close", session.getSessionId(), session.getStatus());
+            return false;
+        }
+
+        session.close(reason, "USER");
+        sessionRepository.save(session);
+        sessionCacheEvictService.evictBySubject(userId);
+        log.info("Closed session {} for user {}", session.getSessionId(), userId);
+        return true;
+    }
+
     public boolean closeSession(String userId, String reason) {
         log.info("Closing session for user: {} with reason: {}", userId, reason);
 

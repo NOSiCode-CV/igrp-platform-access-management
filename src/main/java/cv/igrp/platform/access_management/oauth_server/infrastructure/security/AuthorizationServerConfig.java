@@ -24,6 +24,7 @@ import org.springframework.security.jackson2.SecurityJackson2Modules;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
+import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.server.authorization.jackson2.OAuth2AuthorizationServerJackson2Module;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
@@ -595,7 +596,8 @@ public class AuthorizationServerConfig {
     public OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate,
                                                            RegisteredClientRepository registeredClientRepository,
                                                            RevocationCascadeListener revocationCascadeListener,
-                                                           RefreshTokenReuseGuard refreshTokenReuseGuard) {
+                                                           RefreshTokenReuseGuard refreshTokenReuseGuard,
+                                                           AuthorizationServerSettings authorizationServerSettings) {
         JdbcOAuth2AuthorizationService delegate =
                 new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
 
@@ -617,7 +619,11 @@ public class AuthorizationServerConfig {
         // FR-8 — save() tombstones rotated refresh tokens; findByToken() consults
         // those tombstones on a miss so replays revoke the session and publish
         // SessionRevokedEvent before Spring AS returns invalid_grant.
-        return new CascadingAuthorizationService(delegate, revocationCascadeListener, refreshTokenReuseGuard);
+        // The token endpoint path lets findByToken tell a GRANT (where a replayed
+        // refresh token is an attack) from introspection/revocation (where a miss
+        // is routine and must stay a no-op).
+        return new CascadingAuthorizationService(delegate, revocationCascadeListener, refreshTokenReuseGuard,
+                authorizationServerSettings.getTokenEndpoint());
     }
 
     /**

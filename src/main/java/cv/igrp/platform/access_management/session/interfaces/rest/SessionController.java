@@ -11,6 +11,7 @@ import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.platform.access_management.session.application.queries.GetCurrentSessionQuery;
 import cv.igrp.platform.access_management.session.application.queries.GetSessionCheckQuery;
+import cv.igrp.platform.access_management.session.application.commands.CloseSessionCommand;
 import cv.igrp.platform.access_management.session.application.commands.RefreshSessionCommand;
 import cv.igrp.platform.access_management.session.application.commands.RotateSessionCommand;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -18,6 +19,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -191,6 +193,36 @@ public class SessionController {
 
         return session.map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
+    }
+
+    @PostMapping("/close")
+    @Operation(
+        summary = "Close the current session",
+        description = "Closes the caller's own session server-side, identified by the sid claim of the "
+                + "access token. The next request carrying that sid is rejected.\n\n"
+                + "This is NOT a logout. It does not clear browser cookies, does not end the SSO session "
+                + "on this server, does not revoke the caller's tokens, and does not cascade to the "
+                + "upstream identity provider — so a subsequent /oauth2/authorize may well sign the user "
+                + "straight back in without a prompt. To actually sign a user out, use the OIDC "
+                + "end_session endpoint (/connect/logout) with an id_token_hint.\n\n"
+                + "Use this when an application wants to drop its own server-side session while leaving "
+                + "the browser's login alone — sibling applications on the same browser are unaffected."
+    )
+    @ApiResponses({
+        @ApiResponse(responseCode = "204", description = "Session closed", content = @Content),
+        @ApiResponse(responseCode = "404", description = "The caller has no active session", content = @Content)
+    })
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<Void> closeSession() {
+        String userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
+        log.info("Closing session for user: {}", userId);
+
+        var command = new CloseSessionCommand(userId, extractSid(), "USER_CLOSED");
+        Boolean closed = commandBus.send(command);
+
+        return Boolean.TRUE.equals(closed)
+                ? ResponseEntity.noContent().build()
+                : ResponseEntity.notFound().build();
     }
 
     /**

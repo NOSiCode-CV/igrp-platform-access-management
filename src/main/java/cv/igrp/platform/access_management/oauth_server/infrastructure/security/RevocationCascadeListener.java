@@ -54,6 +54,21 @@ public class RevocationCascadeListener {
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void onAuthorizationRemoved(OAuth2Authorization authorization) {
+        revokeBoundSession(authorization, "OAUTH_AUTHORIZATION_REMOVED");
+    }
+
+    /**
+     * Revoke the {@link SessionEntity} bound to this authorization, recording
+     * {@code reason}.
+     *
+     * <p>Exists because not every revocation removes the authorization. RFC 7009
+     * revocation marks the token invalidated and calls {@code save()}, so
+     * {@code /oauth2/revoke} needs this cascade just as much as a removal does —
+     * it simply arrives by a different route and deserves its own reason in the
+     * audit trail.
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void revokeBoundSession(OAuth2Authorization authorization, String reason) {
         if (authorization == null) {
             return;
         }
@@ -72,16 +87,16 @@ public class RevocationCascadeListener {
             heartbeatService.evict(sid);
             return;
         }
-        session.revoke("OAUTH_AUTHORIZATION_REMOVED", "SYSTEM");
+        session.revoke(reason, "SYSTEM");
         sessionRepository.save(session);
         heartbeatService.evict(sid);
         if (session.getUserId() != null) {
             sessionCacheEvictService.evictBySubject(session.getUserId());
         }
         sessionAuditLogger.recordRevoked(session.getSessionId(), session.getUserId(),
-                "OAUTH_AUTHORIZATION_REMOVED", SessionAuditLogger.SYSTEM);
-        LOGGER.info("Revoked session {} (user={}) following OAuth2 authorization removal {}",
-                sid, session.getUserId(), authorization.getId());
+                reason, SessionAuditLogger.SYSTEM);
+        LOGGER.info("Revoked session {} (user={}) with reason {} following OAuth2 authorization {}",
+                sid, session.getUserId(), reason, authorization.getId());
     }
 
     private static UUID extractSid(OAuth2Authorization authorization) {
