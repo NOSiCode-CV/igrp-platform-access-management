@@ -225,6 +225,26 @@ public class SessionIssuanceService {
                     "Session " + session.getSessionId() + " hit its absolute lifetime ceiling");
         }
 
+        // Idle deadline. Refresh used to check only status and the absolute
+        // ceiling, which left the idle timeout unenforceable on this path:
+        // SessionCleanupScheduler flips an idle-expired row to EXPIRED only on
+        // its next sweep (igrp.session.cleanup-interval-seconds, default 300),
+        // and until then a refresh slid expires_at forward and revived a
+        // session that SessionEnforcementFilter was already rejecting with
+        // session_expired. A session must not be simultaneously dead to the API
+        // and refreshable at the token endpoint, so the deadline is enforced
+        // here too rather than left to the sweep.
+        Instant idleDeadline = session.getExpiresAt();
+        if (idleDeadline != null && !now.isBefore(idleDeadline)) {
+            session.expire();
+            sessionRepository.save(session);
+            sessionCacheEvictService.evictBySubject(session.getUserId());
+            sessionMetrics.recordRefreshRejected("idle_timeout_exceeded");
+            throw new SessionRefreshRejectedException(
+                    "idle_timeout_exceeded",
+                    "Session " + session.getSessionId() + " passed its idle deadline");
+        }
+
         Instant slid = now.plusSeconds(ttlSeconds);
         if (absolute != null && slid.isAfter(absolute)) {
             slid = absolute;
