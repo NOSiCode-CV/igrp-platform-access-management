@@ -50,6 +50,7 @@ public class RefreshSessionCommandHandler implements CommandHandler<RefreshSessi
         
         Optional<SessionResponseDTO> session = sessionManagementService.refreshSession(
                 command.getUserId(),
+                command.getSid(),
                 command.getExtensionSeconds()
         );
         

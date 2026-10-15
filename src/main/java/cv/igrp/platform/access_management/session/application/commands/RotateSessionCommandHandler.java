@@ -49,6 +49,7 @@ public class RotateSessionCommandHandler implements CommandHandler<RotateSession
         
         Optional<SessionResponseDTO> session = sessionManagementService.rotateSession(
                 command.getUserId(),
+                command.getSid(),
                 command.getClientIp(),
                 command.getUserAgent(),
                 command.getDeviceId()

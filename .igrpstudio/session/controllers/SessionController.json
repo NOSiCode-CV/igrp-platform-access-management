@@ -27,6 +27,24 @@
       }
     },
     {
+      "actionName": "checkSession",
+      "method": "GET",
+      "path": "/check",
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "objectType": "dto",
+                "module": "session"
+              }
+            }
+          }
+        }
+      }
+    },
+    {
       "actionName": "initializeSession",
       "method": "POST",
       "path": "/init",
