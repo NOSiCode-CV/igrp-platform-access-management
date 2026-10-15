@@ -136,6 +136,46 @@ public class SessionManagementService {
     }
 
     /**
+     * The session the CALLER is operating on, identified by the {@code sid}
+     * claim of their own access token.
+     *
+     * <p>Several applications sharing one browser each hold their own session,
+     * so "the user's most recently seen active session" is somebody else's row
+     * as often as not. These endpoints used to resolve that way, which meant one
+     * application refreshing or rotating could slide or close a sibling's
+     * session. {@code sid} is the only value that says which one the request
+     * belongs to.
+     *
+     * <p>The ownership check is belt-and-braces: {@code sid} is read from the
+     * caller's own validated JWT, so it is already theirs — but a session
+     * belonging to another subject must never be touched on the strength of a
+     * claim, whatever the route in.
+     *
+     * <p>Falls back to the most recently seen session only when the token
+     * carries no {@code sid} (M2M tokens, or one issued before sid existed).
+     * That fallback is logged: with several apps per browser it is a guess.
+     */
+    private Optional<SessionEntity> resolveCallerSession(String userId, UUID sid) {
+        if (sid == null) {
+            log.warn("Session operation for user {} arrived without a sid claim — falling back to the "
+                    + "most recently seen active session, which may belong to another application", userId);
+            return findMostRecentActive(userId);
+        }
+        Optional<SessionEntity> found = sessionRepository.findBySessionId(sid);
+        if (found.isEmpty()) {
+            log.debug("No session row for sid={} (user {})", sid, userId);
+            return Optional.empty();
+        }
+        SessionEntity session = found.get();
+        if (!userId.equals(session.getUserId())) {
+            log.warn("Refusing session operation: sid={} belongs to another subject than the caller {}",
+                    sid, userId);
+            return Optional.empty();
+        }
+        return found;
+    }
+
+    /**
      * Initialize a new session for user
      */
     public SessionResponseDTO initializeSession(String userId, String clientIp,
@@ -162,6 +202,20 @@ public class SessionManagementService {
                     sessionRepository.save(existingSession);
                 });
 
+        return createSession(userId, clientIp, userAgent, deviceId);
+    }
+
+    /**
+     * Open a session row without closing anything first.
+     *
+     * <p>Split out of {@link #initializeSession} so {@code rotateSession} can
+     * close exactly the caller's session and open a replacement, instead of
+     * inheriting that method's "close the most-recently-seen row" step — which,
+     * once several applications share a browser, closed a sibling application's
+     * session as a side effect of one app rotating its own.
+     */
+    private SessionResponseDTO createSession(String userId, String clientIp,
+                                             String userAgent, String deviceId) {
         SessionEntity newSession = new SessionEntity();
         newSession.setSessionId(UUID.randomUUID());
         newSession.setUserId(userId);
@@ -184,21 +238,26 @@ public class SessionManagementService {
     /**
      * Refresh existing session
      */
-    public Optional<SessionResponseDTO> refreshSession(String userId, Integer extensionSeconds) {
-        log.debug("Refreshing session for user: {}", userId);
+    public Optional<SessionResponseDTO> refreshSession(String userId, UUID sid, Integer extensionSeconds) {
+        log.debug("Refreshing session for user: {} sid: {}", userId, sid);
 
-        // Best-effort: refresh the most-recent active session. Correct
-        // sid-scoped refresh belongs on the token-refresh path
-        // (SessionIssuanceService), which has JWT context; this legacy method
-        // is user-id only.
-        Optional<SessionEntity> sessionOpt = findMostRecentActive(userId);
+        Optional<SessionEntity> sessionOpt = resolveCallerSession(userId, sid);
 
         if (sessionOpt.isEmpty()) {
-            log.debug("No active session to refresh for user: {}", userId);
+            log.debug("No active session to refresh for user: {} sid: {}", userId, sid);
             return Optional.empty();
         }
 
         SessionEntity session = sessionOpt.get();
+
+        // Resolving by sid returns the row whatever its state, where the old
+        // most-recently-active lookup filtered to ACTIVE implicitly. A closed or
+        // already-expired session must not be refreshed back into service.
+        if (!SessionStatus.ACTIVE.equals(session.getStatus())) {
+            log.info("Cannot refresh session {} for user {}: status is {}",
+                    session.getSessionId(), userId, session.getStatus());
+            return Optional.empty();
+        }
 
         if (session.isExpired()) {
             log.info("Cannot refresh expired session for user: {}", userId);
@@ -250,16 +309,29 @@ public class SessionManagementService {
     /**
      * Rotate session (close current and create new one)
      */
-    public Optional<SessionResponseDTO> rotateSession(String userId, String clientIp,
+    public Optional<SessionResponseDTO> rotateSession(String userId, UUID sid, String clientIp,
                                                  String userAgent, String deviceId) {
-        log.info("Rotating session for user: {}", userId);
+        log.info("Rotating session for user: {} sid: {}", userId, sid);
 
-        boolean closed = closeSession(userId, "SESSION_ROTATION");
+        // Close exactly the caller's session, then open a replacement.
+        //
+        // This previously ran closeSession(userId) followed by
+        // initializeSession(userId), and BOTH resolved "the most recently seen
+        // active session" — so one rotate closed two rows, neither of them
+        // necessarily the caller's, and the new row was bound to no token. With
+        // several applications in one browser that signed siblings out.
+        Optional<SessionEntity> current = resolveCallerSession(userId, sid);
+        current.ifPresent(session -> {
+            session.close("SESSION_ROTATION", "USER");
+            sessionRepository.save(session);
+            sessionCacheEvictService.evictBySubject(userId);
+            log.info("Closed session {} for rotation (user {})", session.getSessionId(), userId);
+        });
 
-        SessionResponseDTO newSession = initializeSession(userId, clientIp, userAgent, deviceId);
+        SessionResponseDTO newSession = createSession(userId, clientIp, userAgent, deviceId);
 
         log.info("Session rotation completed for user: {}, old session closed: {}",
-                userId, closed);
+                userId, current.isPresent());
 
         return Optional.of(newSession);
     }

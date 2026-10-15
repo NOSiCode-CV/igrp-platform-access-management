@@ -154,7 +154,10 @@ public class SessionController {
 
         Integer extensionSeconds = request != null ? request.getExtensionSeconds() : null;
 
-        var command = new RefreshSessionCommand(userId, extensionSeconds);
+        // sid scopes the operation to THIS caller's session. Several apps in one
+        // browser each hold their own; without it the service falls back to the
+        // user's most recently seen session, which is often a sibling's.
+        var command = new RefreshSessionCommand(userId, extractSid(), extensionSeconds);
         Optional<SessionResponseDTO> session = commandBus.send(command);
 
         return session.map(ResponseEntity::ok)
@@ -183,7 +186,7 @@ public class SessionController {
         String userAgent = httpRequest.getHeader("User-Agent");
         String deviceId = request.getDeviceId();
 
-        var command = new RotateSessionCommand(userId, clientIp, userAgent, deviceId);
+        var command = new RotateSessionCommand(userId, extractSid(), clientIp, userAgent, deviceId);
         Optional<SessionResponseDTO> session = commandBus.send(command);
 
         return session.map(ResponseEntity::ok)
