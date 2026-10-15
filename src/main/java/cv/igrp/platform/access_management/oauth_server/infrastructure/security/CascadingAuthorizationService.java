@@ -145,6 +145,13 @@ public class CascadingAuthorizationService implements OAuth2AuthorizationService
      */
     private boolean servingTokenEndpoint() {
         if (!(RequestContextHolder.getRequestAttributes() instanceof ServletRequestAttributes attrs)) {
+            // Never expected on a grant: Spring Boot registers RequestContextFilter
+            // ahead of the security chain, which is why SessionIssuanceService can
+            // already read the same request to derive device_id at this very
+            // endpoint. Logged rather than ignored so that if the ordering ever
+            // changes, replay detection going quiet is visible instead of silent.
+            LOGGER.warn("Refresh-token miss with no request context bound — replay detection skipped. "
+                    + "If this appears while serving /oauth2/token, reuse detection is no longer running.");
             return false;
         }
         String uri = attrs.getRequest().getRequestURI();

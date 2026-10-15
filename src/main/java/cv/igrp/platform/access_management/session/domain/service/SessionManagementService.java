@@ -342,34 +342,24 @@ public class SessionManagementService {
     }
 
     /**
-     * Rotate session (close current and create new one)
+     * Session rotation is deliberately NOT implemented here.
+     *
+     * <p>Rotation means replacing the session identifier, and a new sid is only
+     * of use once a token carries it — which only the token endpoint can do.
+     * The REST implementation that used to live here closed the caller's row and
+     * opened a fresh one, but nothing handed the caller the new sid: its access
+     * token still presented the old, now-closed one, so the very next request
+     * failed with {@code session_revoked}. Calling rotate signed the caller out.
+     *
+     * <p>Worse, the new row was bound to no token at all. It stayed ACTIVE,
+     * bypassed the per-user cap on the way in, yet still counted toward LRU
+     * eviction on the next real issuance — so repeated rotation quietly evicted
+     * the user's genuine sessions.
+     *
+     * <p>The refresh grant at the token endpoint rotates a session properly, via
+     * {@code SessionIssuanceService}, and returns tokens carrying the new sid.
+     * {@code SessionController.rotateSession} answers 501 and points there.
      */
-    public Optional<SessionResponseDTO> rotateSession(String userId, UUID sid, String clientIp,
-                                                 String userAgent, String deviceId) {
-        log.info("Rotating session for user: {} sid: {}", userId, sid);
-
-        // Close exactly the caller's session, then open a replacement.
-        //
-        // This previously ran closeSession(userId) followed by
-        // initializeSession(userId), and BOTH resolved "the most recently seen
-        // active session" — so one rotate closed two rows, neither of them
-        // necessarily the caller's, and the new row was bound to no token. With
-        // several applications in one browser that signed siblings out.
-        Optional<SessionEntity> current = resolveCallerSession(userId, sid);
-        current.ifPresent(session -> {
-            session.close("SESSION_ROTATION", "USER");
-            sessionRepository.save(session);
-            sessionCacheEvictService.evictBySubject(userId);
-            log.info("Closed session {} for rotation (user {})", session.getSessionId(), userId);
-        });
-
-        SessionResponseDTO newSession = createSession(userId, clientIp, userAgent, deviceId);
-
-        log.info("Session rotation completed for user: {}, old session closed: {}",
-                userId, current.isPresent());
-
-        return Optional.of(newSession);
-    }
 
     /**
      * Kill specific session (admin operation)

@@ -10,7 +10,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.mockito.ArgumentCaptor;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -82,45 +81,10 @@ class SessionSidScopingTest {
         return entity;
     }
 
-    // ─── rotate ─────────────────────────────────────────────────────────
-
-    @Test
-    @DisplayName("rotate closes only the caller's session, never a sibling's")
-    void rotate_closesOnlyTheCallersSession() {
-        service.rotateSession(USER, appCenter.getSessionId(), "10.0.0.1", "Chrome", "derived:same-browser");
-
-        assertEquals(SessionStatus.CLOSED, appCenter.getStatus());
-        assertEquals("SESSION_ROTATION", appCenter.getClosedReason());
-        assertEquals(SessionStatus.ACTIVE, demo.getStatus(), "the sibling must be untouched");
-        assertNull(demo.getClosedReason());
-    }
-
-    @Test
-    @DisplayName("rotate closes exactly one row — the old path closed two")
-    void rotate_closesExactlyOneRow() {
-        service.rotateSession(USER, appCenter.getSessionId(), "10.0.0.1", "Chrome", "derived:same-browser");
-
-        ArgumentCaptor<SessionEntity> saved = ArgumentCaptor.forClass(SessionEntity.class);
-        verify(repository, atLeastOnce()).save(saved.capture());
-        long closed = saved.getAllValues().stream()
-                .filter(s -> SessionStatus.CLOSED.equals(s.getStatus()))
-                .map(SessionEntity::getSessionId)
-                .distinct()
-                .count();
-        assertEquals(1, closed, "rotation must close one session, not the two it used to");
-    }
-
-    @Test
-    @DisplayName("rotate refuses a sid belonging to another subject")
-    void rotate_refusesForeignSid() {
-        SessionEntity foreign = session(OTHER_USER, Instant.now());
-        when(repository.findBySessionId(foreign.getSessionId())).thenReturn(Optional.of(foreign));
-
-        service.rotateSession(USER, foreign.getSessionId(), "10.0.0.1", "Chrome", "d");
-
-        assertEquals(SessionStatus.ACTIVE, foreign.getStatus(),
-                "another subject's session must never be closed on the strength of a claim");
-    }
+    // Rotation used to live here. It was removed in favour of a 501 on the
+    // endpoint: closing the caller's row and opening a new one cannot work over
+    // REST, because nothing hands the caller the new sid. See
+    // SessionRotateNotImplementedTest and SessionManagementService's note.
 
     // ─── refresh ────────────────────────────────────────────────────────
 

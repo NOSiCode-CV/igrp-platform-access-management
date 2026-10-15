@@ -13,7 +13,6 @@ import cv.igrp.platform.access_management.session.application.queries.GetCurrent
 import cv.igrp.platform.access_management.session.application.queries.GetSessionCheckQuery;
 import cv.igrp.platform.access_management.session.application.commands.CloseSessionCommand;
 import cv.igrp.platform.access_management.session.application.commands.RefreshSessionCommand;
-import cv.igrp.platform.access_management.session.application.commands.RotateSessionCommand;
 import org.springframework.security.oauth2.jwt.Jwt;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
@@ -24,6 +23,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
@@ -168,13 +169,21 @@ public class SessionController {
 
     @PostMapping("/rotate")
     @Operation(
-        summary = "Rotate session",
-        description = "Closes the current session and creates a new one (session fixation protection)"
+        summary = "Rotate session (not implemented)",
+        description = "Always returns 501.\n\n"
+                + "Rotation means replacing the session identifier, and the new sid is only useful once a "
+                + "token carries it — which only the token endpoint can do. A REST implementation can close "
+                + "the old row and open a new one, but nothing hands the caller the new sid, so its access "
+                + "token still presents the old one and every subsequent call fails with session_revoked. "
+                + "In other words, calling this would sign the caller out and leave an orphan row behind, "
+                + "counting against the per-user session cap.\n\n"
+                + "Use the refresh grant at /oauth2/token: it rotates the session and returns tokens "
+                + "carrying the new sid."
     )
     @ApiResponse(
-        responseCode = "200",
-        description = "Session rotated successfully",
-        content = @Content(schema = @Schema(implementation = SessionResponseDTO.class))
+        responseCode = "501",
+        description = "Rotation is not available over REST — use the refresh grant",
+        content = @Content
     )
     @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SessionResponseDTO> rotateSession(
@@ -182,17 +191,15 @@ public class SessionController {
             HttpServletRequest httpRequest) {
 
         String userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
-        log.info("Rotating session for user: {}", userId);
+        log.warn("Rejected /api/session/rotate for user {}: rotation cannot be performed over REST", userId);
 
-        String clientIp = getClientIp(httpRequest);
-        String userAgent = httpRequest.getHeader("User-Agent");
-        String deviceId = request.getDeviceId();
-
-        var command = new RotateSessionCommand(userId, extractSid(), clientIp, userAgent, deviceId);
-        Optional<SessionResponseDTO> session = commandBus.send(command);
-
-        return session.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.notFound().build());
+        throw IgrpResponseStatusException.of(HttpStatus.NOT_IMPLEMENTED,
+                "Session rotation is not available over REST. Rotating a session means issuing a new sid, "
+                        + "and only the token endpoint can put that sid into a token. Closing the old row "
+                        + "here would simply sign the calling application out, because its access token "
+                        + "still carries the old sid. Obtain fresh tokens through the refresh grant at "
+                        + "/oauth2/token instead; that rotates the session properly and hands you the new "
+                        + "sid in the response.");
     }
 
     @PostMapping("/close")
