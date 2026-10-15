@@ -109,6 +109,7 @@ Repositories use `JpaSpecificationExecutor` for complex filtered queries and `Re
 - `BasicAuthSecurityConfiguration` — activated with `basic-auth` Spring profile (dev/test use)
 - `MethodSecurityConfig` — enables `@PreAuthorize` with a custom `IgrpMethodSecurityExpressionHandler` that resolves iGRP permission enums from generated classes in `cv.igrp.framework.auth.generated`
 - No "ROLE_" prefix convention — authorities are stored as plain role codes
+- Actuator: only `/actuator/health` and `/actuator/health/**` (liveness/readiness) are `permitAll`; every other actuator path requires authentication. Staging/production publish only `health`, hide details and cap access at read-only (`MANAGEMENT_*` vars in `.env.example`)
 
 ### Error Responses
 

@@ -94,7 +94,11 @@ public class OAuth2SecurityConfiguration {
                                 "/swagger-ui.html",
                                 "/swagger-resources/**",
                                 "/webjars/**",
-                                "/actuator/**"
+                                // OWASP A05 — only health and its liveness/readiness
+                                // probe groups are public. Every other actuator
+                                // endpoint falls through to authenticated().
+                                "/actuator/health",
+                                "/actuator/health/**"
                         ).permitAll()
                         // Phase G3 — these four endpoints admit ACTIVE OR TEMPORARY
                         // users so a freshly provisioned user can finish onboarding

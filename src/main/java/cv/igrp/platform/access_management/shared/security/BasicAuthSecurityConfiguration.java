@@ -65,7 +65,9 @@ public class BasicAuthSecurityConfiguration {
                 }, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
-                                "/swagger-resources/**", "/webjars/**", "/actuator/**").permitAll()
+                                "/swagger-resources/**", "/webjars/**",
+                                // OWASP A05 — only health and its probe groups are public.
+                                "/actuator/health", "/actuator/health/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .httpBasic(withDefaults())
