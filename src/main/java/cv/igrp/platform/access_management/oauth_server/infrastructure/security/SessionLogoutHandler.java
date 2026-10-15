@@ -34,6 +34,9 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -127,17 +130,23 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         OidcIdToken idToken = token.getIdToken();
 
         // Debug-aid: emit the incoming request's redirect target and the FULL
-        // (un-redacted) id_token_hint exactly as the caller sent it, before
-        // any of our side-effects (revoke, OAuth2Authorization remove, cookie
-        // expiry) run. Lets us reproduce IdP-cascade failures by pasting the
-        // hint into jwt.io for offline inspection (claims, exp, signature)
-        // and confirm the SPA actually sent the post_logout_redirect_uri it
-        // claims it did. Logged at INFO so it shows up by default; switch the
-        // logger to DEBUG to silence in production once integration stabilises.
+        // Record the inbound request before any of our side-effects (revoke,
+        // OAuth2Authorization remove, cookie expiry) run, so an IdP-cascade
+        // failure can be reconstructed from logs: did the SPA send a hint at
+        // all, was it the SAME hint across two attempts, and did it send the
+        // post_logout_redirect_uri it claims it did.
+        //
+        // The hint is FINGERPRINTED, never logged verbatim. It was previously
+        // written out in full so it could be pasted into jwt.io — that put a
+        // replayable logout credential carrying the subject's identity claims
+        // into INFO-level logs, which are shipped, indexed and retained far
+        // beyond this debugging need. The fingerprint still answers "same hint
+        // or different?" across lines; for claim-level inspection, read the
+        // session row rather than the log.
         LOGGER.info("Incoming /connect/logout: post_logout_redirect_uri={}, state={}, id_token_hint={}",
                 token.getPostLogoutRedirectUri(),
                 token.getState(),
-                idToken == null ? null : idToken.getTokenValue());
+                describeIdToken(idToken));
 
         // 1. iGRP-side cleanup — load the bound SessionEntity ONCE so we can
         //    extract the upstream id_token (needed for the cascade hint
@@ -450,6 +459,39 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
      * aggregation. Replaces the value with {@code <jwt-XX-chars>} so size
      * is still visible for triage. Everything else in the URL is preserved.
      */
+    /**
+     * Render an id_token for logs without disclosing it: its length plus a
+     * truncated SHA-256 of the token value.
+     *
+     * <p>The fingerprint is stable, so two log lines can be compared to answer
+     * "did the client resend the same hint?" — which is the question that
+     * actually arises when an IdP cascade fails. It is not reversible and
+     * cannot be replayed against {@code /connect/logout}.
+     */
+    static String describeIdToken(OidcIdToken idToken) {
+        if (idToken == null || idToken.getTokenValue() == null) {
+            return "<absent>";
+        }
+        String value = idToken.getTokenValue();
+        return "<jwt len=" + value.length() + " sha256=" + fingerprint(value) + ">";
+    }
+
+    private static String fingerprint(String value) {
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256")
+                    .digest(value.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(16);
+            for (int i = 0; i < 8; i++) {
+                hex.append(Character.forDigit((hash[i] >> 4) & 0xF, 16));
+                hex.append(Character.forDigit(hash[i] & 0xF, 16));
+            }
+            return hex.toString();
+        } catch (NoSuchAlgorithmException e) {
+            // SHA-256 is mandated by the JRE; unreachable.
+            return "unavailable";
+        }
+    }
+
     private static String maskIdTokenHint(String url) {
         if (url == null) {
             return null;
