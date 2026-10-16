@@ -266,6 +266,32 @@ public class JwtTokenConfig {
                                     ex.getMessage(),
                                     null),
                             ex);
+                } catch (RuntimeException ex) {
+                    // Anything else that goes wrong while opening the session is
+                    // OUR failure, and it must say so.
+                    //
+                    // Left to propagate, it escaped the authorization-server
+                    // filter chain, was forwarded to /error, and the security
+                    // chain denied that as anonymous — so the caller received a
+                    // bare 401 with no OAuth error body. That is the same shape
+                    // as invalid_client, which sent an integration team hunting a
+                    // credentials problem while the real cause was a duplicate
+                    // key on t_user_session (the ux_session_user_device_active
+                    // index, since dropped).
+                    //
+                    // server_error is the honest code: the request was fine, we
+                    // could not complete it. Spring AS renders it as a proper
+                    // OAuth error body with a 500, so clients can tell "retry or
+                    // escalate" from "fix your credentials". The cause is logged
+                    // here because the error returned to the caller is
+                    // deliberately generic.
+                    LOG.error("Session binding failed during token issuance for user={} client={}; "
+                            + "returning server_error", issuanceUserId, clientId, ex);
+                    throw new OAuth2AuthenticationException(
+                            new OAuth2Error(OAuth2ErrorCodes.SERVER_ERROR,
+                                    "The session could not be established for this token.",
+                                    null),
+                            ex);
                 }
             }
 

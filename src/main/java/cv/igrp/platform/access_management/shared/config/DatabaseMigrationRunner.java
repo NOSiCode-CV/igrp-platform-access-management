@@ -78,10 +78,26 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
             // the actual type migration. Keeping a retype-to-INTEGER block here
             // would crash on every boot post-G2 (cast UUID strings to integer
             // fails). Block intentionally removed.
+            // One ACTIVE session per (user, device) is NO LONGER true, so the
+            // partial unique index that enforced it must go.
+            //
+            // Several IGRP applications share one browser, each runs its own
+            // authorization_code exchange, and all of them derive the same
+            // device_id — it is hashed from (User-Agent, client_ip, client_id)
+            // of the SERVER-TO-SERVER token call, so every login through one
+            // Next.js app server lands on the same value. The application stopped
+            // closing the previous row for that pair, which is correct: closing
+            // it signed sibling applications out. But this index still rejected
+            // the insert, so the second login failed with a duplicate-key error
+            // that surfaced to users as a bare 401 at /oauth2/token.
+            //
+            // Dropped rather than reinstating the close: the constraint encodes
+            // the one-application-per-browser assumption the platform has
+            // outgrown. The per-user cap in SessionIssuanceService is what bounds
+            // sessions now. ix_session_user_device (non-unique, declared on the
+            // entity) still serves the lookups.
             jdbcTemplate.execute(
-                    "CREATE UNIQUE INDEX IF NOT EXISTS ux_session_user_device_active " +
-                    "ON t_user_session (user_id, device_id) " +
-                    "WHERE status = 'ACTIVE'");
+                    "DROP INDEX IF EXISTS ux_session_user_device_active");
             LOGGER.debug("t_user_session schema migrations ensured.");
         } catch (Exception e) {
             LOGGER.warn("Could not ensure t_user_session schema (may not exist yet): {}", e.getMessage());
