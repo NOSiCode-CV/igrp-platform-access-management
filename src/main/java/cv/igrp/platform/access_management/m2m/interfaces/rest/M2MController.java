@@ -16,6 +16,7 @@ import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 import cv.igrp.framework.core.domain.CommandBus;
+import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.m2m.application.commands.*;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
@@ -25,6 +26,8 @@ import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPBusinessUserDTO;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
+import cv.igrp.platform.access_management.global_configuration.application.dto.GlobalConfigurationDTO;
+import cv.igrp.platform.access_management.global_configuration.application.queries.GetGlobalConfigurationQuery;
 
 @IgrpController
 @RestController
@@ -37,10 +40,68 @@ public class M2MController {
 
   
   private final CommandBus commandBus;
+  private final QueryBus queryBus;
 
-  public M2MController(CommandBus commandBus) {
-          
+  public M2MController(CommandBus commandBus, QueryBus queryBus) {
+
           this.commandBus = commandBus;
+          this.queryBus = queryBus;
+  }
+
+  /**
+   * Read-only view of a global configuration for machine callers.
+   *
+   * <p>Exists so a framework application can load the organization Brand with
+   * its own {@code client_credentials} token. The user-scoped
+   * {@code GET /api/global-configuration} cannot serve this: public pages
+   * (login, invitation) have no user, so a freshly started app process renders
+   * default colours and logos there until some signed-in request warms its
+   * cache.
+   *
+   * <p>Adding the user-scoped path to {@code M2MTokenRejectionFilter}'s skip
+   * list was the alternative and is unsafe — that filter exists precisely
+   * because a sid-less M2M token reaching user-scoped code blows up in the
+   * permission cache on {@code Integer.parseInt(jwt.getSubject())}. A separate
+   * endpoint under {@code /api/m2m/} keeps machine tokens out of the user path,
+   * and is already covered by the existing skip prefix.
+   *
+   * <p>Authorized like every other {@code /api/m2m/} endpoint: being a
+   * registered M2M client is enough. No permission is checked, because the
+   * payload is branding — colours and public logo URLs — and is not secret.
+   * Writes are unaffected: {@code POST /api/global-configuration} still
+   * requires a user token and {@code igrp.applications.customize}.
+   */
+  @GetMapping(
+  value = "m2m/global-configuration"
+  )
+  @Operation(
+    summary = "Get global configuration (M2M)",
+    description = "Reads a global configuration with a client_credentials token. Returns the most "
+            + "recently modified row for the given type, identical to GET /api/global-configuration. "
+            + "Intended for branding on pages that have no signed-in user.",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "",
+          content = @Content(
+              mediaType = "application/json",
+              schema = @Schema(
+                  implementation = GlobalConfigurationDTO.class,
+                  type = "object")
+          )
+      ),
+      @ApiResponse(responseCode = "400", description = "Unknown configuration type", content = @Content),
+      @ApiResponse(responseCode = "404", description = "No configuration saved for this type", content = @Content)
+    }
+  )
+  public ResponseEntity<GlobalConfigurationDTO> getGlobalConfigurationForMachine(
+    @RequestParam(value = "type") String type)
+  {
+
+      final var query = new GetGlobalConfigurationQuery(type);
+
+      return queryBus.handle(query);
+
   }
    @PostMapping(
    value = "m2m/sync/permissions"
