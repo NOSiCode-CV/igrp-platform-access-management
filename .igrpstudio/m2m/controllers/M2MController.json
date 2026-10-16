@@ -327,6 +327,39 @@
           "isRequired": false
         }
       ]
+    },
+    {
+      "actionName": "getGlobalConfigurationForMachine",
+      "method": "GET",
+      "path": "m2m/global-configuration",
+      "queryParams": [
+        {
+          "name": "type",
+          "type": "string",
+          "isRequired": true
+        }
+      ],
+      "responses": {
+        "200": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "GlobalConfigurationDTO",
+                "name": "data",
+                "collectionType": "none",
+                "objectType": "dto",
+                "module": "global_configuration"
+              }
+            }
+          }
+        },
+        "400": {
+          "content": {}
+        },
+        "404": {
+          "content": {}
+        }
+      }
     }
   ],
   "id": "jws7h4f2af-syncPermissions-getUsersForBusiness-getUsersForBusiness-getDepartmentForBusiness-getRolesForBusiness-syncApplicationMenus-getUsersForBusiness"
