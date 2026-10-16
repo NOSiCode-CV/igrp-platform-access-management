@@ -132,6 +132,14 @@ This profile also enables `spring.jpa.hibernate.ddl-auto=update` for automatic s
 
 **Database Migrations** — `DatabaseMigrationRunner` (in `shared/config/`) executes cleanup operations at startup via JDBC. For new schema changes, rely on Hibernate's DDL auto in development; custom DDL migrations belong in `DatabaseMigrationRunner.run()`.
 
+### Git & Branching
+
+**Push to `development`.** It is the integration branch for this repository: branch from it, and push work back to it unless the request names a different branch explicitly.
+
+Do not push to `version/0.2.0-beta`. It was the integration branch until 2026-10-16 and has been merged into `development`; work landing there now will be missed.
+
+`deploy/*` branches (`deploy/0.1.0-beta`, `deploy/0.2.0-beta`, `deploy/pre-release`) are release targets driven by CI — never push to them as part of ordinary work.
+
 ### CI/CD
 
 `.gitlab-ci.yml` builds multi-arch (ARM64 + AMD64) Docker images for both JVM and GraalVM native targets. Primary registry: `registry.nosi.cv/igrp/access-management-api`. Pre-release testing uses the `deploy/pre-release` branch.
