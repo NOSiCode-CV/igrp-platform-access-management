@@ -33,6 +33,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.context.WebApplicationContext;
@@ -135,6 +136,20 @@ class M2MTokenRejectionFilterTest {
                         .header("Authorization", "Bearer test-cc")
                         .contentType("application/json")
                         .content("{}"))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void m2mBrandingReadIsCoveredByTheExistingSkipPrefix() throws Exception {
+        // GET /api/m2m/global-configuration exists so framework apps can load the
+        // organization Brand with their client_credentials token on pages that
+        // have no signed-in user. It needs NO change to this filter: the
+        // /api/m2m/ prefix already covers it. That is what this asserts — if
+        // someone narrows SKIPPED_PREFIXES, branding on login pages breaks.
+        when(jwtDecoder.decode("test-cc")).thenReturn(ccJwt("test-cc"));
+
+        mockMvc.perform(get("/api/m2m/global-configuration").param("type", "ORGANIZATION")
+                        .header("Authorization", "Bearer test-cc"))
                 .andExpect(status().isOk());
     }
 
@@ -275,6 +290,12 @@ class M2MTokenRejectionFilterTest {
             @PostMapping("/api/m2m/ping")
             public Map<String, String> m2mPing() {
                 return Map.of("ok", "true");
+            }
+
+            /** Stands in for M2MController.getGlobalConfigurationForMachine. */
+            @GetMapping("/api/m2m/global-configuration")
+            public Map<String, String> m2mGlobalConfiguration(@RequestParam String type) {
+                return Map.of("type", type);
             }
         }
     }

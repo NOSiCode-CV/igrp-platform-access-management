@@ -140,18 +140,7 @@
         }
       },
       "responses": {
-        "200": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "type": "object",
-                "objectType": "dto",
-                "module": "session"
-              }
-            }
-          }
-        },
-        "404": {
+        "501": {
           "content": {}
         }
       }
