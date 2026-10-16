@@ -2,6 +2,13 @@
 
 ---
 
+## Related Documentation
+
+- [Internationalization (i18n)](docs/I18N.md) — platform languages, locale resolution from
+  `Accept-Language`, message bundles, `PUT /api/users/me/locale` and the invitation locale.
+
+---
+
 ## System Architecture Overview
 
 ### Layered Architecture

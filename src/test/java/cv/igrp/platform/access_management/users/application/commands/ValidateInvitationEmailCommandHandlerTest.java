@@ -91,6 +91,19 @@ class ValidateInvitationEmailCommandHandlerTest {
                 eq("pt"));                // inherited from NotificationServiceProperties.invitation.default-locale
     }
 
+    /** i18n FR-30: the OTP email uses the invitation's own language when it has one. */
+    @Test
+    void testHandle_UsesInvitationLocaleOverTheDefault() {
+        invitation.setLocale("fr");
+        when(invitationRepository.findByTokenAndStatusPending("valid-token")).thenReturn(invitation);
+        when(otpEntityRepository.save(any())).thenAnswer(invocation -> invocation.getArgument(0));
+        when(invitationSender.sendOtpOrThrow(any(), any(), any(), any(), any())).thenReturn(true);
+
+        commandHandler.handle(command);
+
+        verify(invitationSender).sendOtpOrThrow(any(), any(), any(), eq("valid-token"), eq("fr"));
+    }
+
     @Test
     void testHandle_EmailMismatch() {
         command.setEmail("wrong@example.com");

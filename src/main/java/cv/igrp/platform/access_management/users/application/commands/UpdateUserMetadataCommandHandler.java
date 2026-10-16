@@ -21,6 +21,8 @@ public class UpdateUserMetadataCommandHandler implements CommandHandler<UpdateUs
 
     private static final Logger LOGGER = LoggerFactory.getLogger(UpdateUserMetadataCommandHandler.class);
 
+    private static final String LOCALE_KEY = UpdateCurrentUserLocaleCommandHandler.METADATA_LOCALE_KEY;
+
     private final IGRPUserEntityRepository userRepository;
 
     public UpdateUserMetadataCommandHandler(IGRPUserEntityRepository userRepository) {
@@ -42,6 +44,14 @@ public class UpdateUserMetadataCommandHandler implements CommandHandler<UpdateUs
         Map<String, Object> incoming = command.getMetadata() == null
                 ? new LinkedHashMap<>()
                 : new LinkedHashMap<>(command.getMetadata());
+
+        // i18n (FR-10): metadata.locale is the user's language preference, owned by
+        // PUT /api/users/me/locale. A replacement that does not mention it must not
+        // silently drop it; an explicit value in the payload still wins.
+        Map<String, Object> current = user.getMetadata();
+        if (current != null && current.containsKey(LOCALE_KEY) && !incoming.containsKey(LOCALE_KEY)) {
+            incoming.put(LOCALE_KEY, current.get(LOCALE_KEY));
+        }
 
         user.setMetadata(incoming);
         IGRPUserEntity saved = userRepository.save(user);

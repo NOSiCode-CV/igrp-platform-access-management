@@ -29,6 +29,7 @@ public class InvitationMapper {
         dto.setExpiry(invitation.getExpiry());
         dto.setComments(invitation.getComments());
         dto.setInvitedBy(invitation.getCreatedBy());
+        dto.setLocale(invitation.getLocale());
         dto.setRoles(invitation.getRoles().stream().map(it -> {
             var output = new CodeDescriptionDTO();
             output.setCode(it.getCode());

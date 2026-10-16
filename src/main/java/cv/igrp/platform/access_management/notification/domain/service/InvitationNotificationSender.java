@@ -56,6 +56,11 @@ public class InvitationNotificationSender {
     private static final String SUBJECT_RESPONSE = "iGRP Invitation Response";
     private static final String SUBJECT_OTP = "iGRP Security Code";
 
+    /** Notification Service error code for template problems (missing template OR missing variables). */
+    static final String TEMPLATE_ERROR_CODE = "TEMPLATE_ERROR";
+    /** Message fragment that distinguishes "no template for this locale" from other TEMPLATE_ERRORs. */
+    static final String TEMPLATE_MISSING_MARKER = "No PUBLISHED template";
+
     private final Optional<NotificationsApi> notificationsApi;
     // Optional because the properties bean itself may be absent — e.g. a
     // consumer of this SDK that never enabled the Notification Service, or a
@@ -70,6 +75,8 @@ public class InvitationNotificationSender {
     private final String legacyCancellationBody;
     private final String legacyResponseBody;
     private final String legacyOtpBody;
+    /** API module default locale ({@code igrp.i18n.default-locale}) — the one-shot retry target (FR-32). */
+    private final String moduleDefaultLocale;
 
     public InvitationNotificationSender(
             Optional<NotificationsApi> notificationsApi,
@@ -78,7 +85,8 @@ public class InvitationNotificationSender {
             @Value("${igrp.mail.invite.template:}") String legacyInvitationBody,
             @Value("${igrp.mail.invite.cancellation.template:}") String legacyCancellationBody,
             @Value("${igrp.mail.invite.response.template:}") String legacyResponseBody,
-            @Value("${igrp.mail.otp.template:Dear user, your OTP code is {{otp}}.}") String legacyOtpBody) {
+            @Value("${igrp.mail.otp.template:Dear user, your OTP code is {{otp}}.}") String legacyOtpBody,
+            @Value("${igrp.i18n.default-locale:en}") String moduleDefaultLocale) {
         this.notificationsApi = notificationsApi;
         this.propertiesOpt = propertiesOpt;
         this.legacyAdapter = legacyAdapter;
@@ -86,6 +94,7 @@ public class InvitationNotificationSender {
         this.legacyCancellationBody = legacyCancellationBody;
         this.legacyResponseBody = legacyResponseBody;
         this.legacyOtpBody = legacyOtpBody;
+        this.moduleDefaultLocale = moduleDefaultLocale;
     }
 
     /**
@@ -319,15 +328,31 @@ public class InvitationNotificationSender {
      */
     private boolean dispatchWithResult(SendSpec spec) {
         if (properties().isEnabled() && notificationsApi.isPresent()) {
+            String locale = effectiveLocale(spec);
             try {
-                SendNotificationRequest request = buildServiceRequest(spec);
-                NotificationResponse response = notificationsApi.get().send(request);
-                LOGGER.info("Invitation email sent via Notification Service (template={}, businessKey={}, notificationId={})",
-                        spec.templateCode(), spec.businessKey(), response != null ? response.getId() : null);
+                sendViaService(spec, locale);
                 return true;
             } catch (ApiException ex) {
-                LOGGER.warn("Notification Service send failed (template={}, httpCode={}, message={}), falling back to legacy mail sender for businessKey={}",
-                        spec.templateCode(), ex.getCode(), ex.getMessage(), spec.businessKey());
+                if (isTemplateMissing(ex) && canRetryWithModuleDefault(locale)) {
+                    // FR-32: the Notification Service matches templates by exact locale
+                    // and has no fallback of its own - retry exactly once with the API
+                    // module default before giving up on the primary path.
+                    LOGGER.info("Notification Service has no template '{}' for locale={}; retrying once with module default locale={} (businessKey={})",
+                            spec.templateCode(), locale, moduleDefaultLocale, spec.businessKey());
+                    try {
+                        sendViaService(spec, moduleDefaultLocale);
+                        return true;
+                    } catch (ApiException retryEx) {
+                        LOGGER.warn("Notification Service send failed on module-default retry (template={}, locale={}, httpCode={}, message={}), falling back to legacy mail sender for businessKey={}",
+                                spec.templateCode(), moduleDefaultLocale, retryEx.getCode(), retryEx.getMessage(), spec.businessKey());
+                    } catch (RuntimeException retryEx) {
+                        LOGGER.warn("Notification Service unavailable on module-default retry, falling back to legacy mail sender for template={} businessKey={}",
+                                spec.templateCode(), spec.businessKey(), retryEx);
+                    }
+                } else {
+                    LOGGER.warn("Notification Service send failed (template={}, httpCode={}, message={}), falling back to legacy mail sender for businessKey={}",
+                            spec.templateCode(), ex.getCode(), ex.getMessage(), spec.businessKey());
+                }
             } catch (RuntimeException ex) {
                 LOGGER.warn("Notification Service unavailable, falling back to legacy mail sender for template={} businessKey={}",
                         spec.templateCode(), spec.businessKey(), ex);
@@ -336,13 +361,49 @@ public class InvitationNotificationSender {
         return sendLegacyFallback(spec);
     }
 
-    private SendNotificationRequest buildServiceRequest(SendSpec spec) {
-        NotificationServiceProperties.Invitation invitationProps = properties().getInvitation();
+    private void sendViaService(SendSpec spec, String locale) throws ApiException {
+        SendNotificationRequest request = buildServiceRequest(spec, locale);
+        NotificationResponse response = notificationsApi.orElseThrow().send(request);
+        LOGGER.info("Invitation email sent via Notification Service (template={}, locale={}, businessKey={}, notificationId={})",
+                spec.templateCode(), locale, spec.businessKey(), response != null ? response.getId() : null);
+    }
 
+    /** The spec's locale, or {@code igrp.notification.service.invitation.default-locale} when absent (FR-33). */
+    private String effectiveLocale(SendSpec spec) {
+        return (spec.locale() != null && !spec.locale().isBlank())
+                ? spec.locale() : properties().getInvitation().getDefaultLocale();
+    }
+
+    private boolean canRetryWithModuleDefault(String locale) {
+        return moduleDefaultLocale != null && !moduleDefaultLocale.isBlank()
+                && !moduleDefaultLocale.equalsIgnoreCase(locale);
+    }
+
+    /**
+     * "No template for this locale" (OQ-5): HTTP 422 with error code
+     * {@code TEMPLATE_ERROR} and a message containing {@code "No PUBLISHED template"}.
+     * The same code is also used for missing template variables, which must NOT
+     * trigger the retry - hence the message check.
+     */
+    static boolean isTemplateMissing(ApiException ex) {
+        if (ex.getCode() != 422) {
+            return false;
+        }
+        String errorCode = ex.getErrorCode();
+        String message = ex.getErrorMessage();
+        if (errorCode == null && message == null) {
+            // Client built without a parsed body: the raw text is the exception message.
+            String raw = ex.getMessage();
+            return raw != null && raw.contains(TEMPLATE_ERROR_CODE) && raw.contains(TEMPLATE_MISSING_MARKER);
+        }
+        return TEMPLATE_ERROR_CODE.equals(errorCode)
+                && message != null && message.contains(TEMPLATE_MISSING_MARKER);
+    }
+
+    private SendNotificationRequest buildServiceRequest(SendSpec spec, String locale) {
         TemplateRefDto template = new TemplateRefDto();
         template.setCode(spec.templateCode());
-        template.setLocale((spec.locale() != null && !spec.locale().isBlank())
-                ? spec.locale() : invitationProps.getDefaultLocale());
+        template.setLocale(locale);
 
         RecipientDto recipient = new RecipientDto();
         recipient.setEmail(spec.recipientEmail());
