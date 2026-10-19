@@ -73,8 +73,9 @@ class DisabledAccountLoginTest {
         OAuth2AuthenticationException ex = assertThrows(OAuth2AuthenticationException.class, this::enforce);
 
         assertEquals("account_disabled", ex.getError().getErrorCode(),
-                "\"disabled\", not \"suspended\" — INACTIVE covers leaving for another employer, "
-                        + "a mission posting or temporary unavailability, none of which are misconduct");
+                "INACTIVE records a state, not a reason: it may follow a disciplinary suspension, "
+                        + "a departure, a mission posting or an absence. The code must not assert a "
+                        + "cause the platform does not store");
     }
 
     @Test

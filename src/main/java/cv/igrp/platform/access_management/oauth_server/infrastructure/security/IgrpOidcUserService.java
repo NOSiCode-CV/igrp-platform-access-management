@@ -259,10 +259,16 @@ public class IgrpOidcUserService extends OidcUserService {
     /**
      * Refuse a federated login for a disabled account.
      *
-     * <p>"Disabled", not "suspended": INACTIVE is set for ordinary reasons —
-     * someone has left for another employer, is away on a mission, or is
-     * temporarily out of service. The word the user sees should not imply they
-     * did something wrong.
+     * <p>"Disabled", not "suspended", because {@code INACTIVE} records a state
+     * and not a reason. It is set for all sorts of causes: a disciplinary
+     * suspension, yes, but equally a departure to another employer, a mission
+     * posting, or a temporary absence. The platform does not store which, and
+     * there is no {@code SUSPENDED} value in {@link Status} to store it in.
+     * Naming the error after one possible cause would assert something we do
+     * not know — in one direction it accuses someone who did nothing wrong, in
+     * the other it dresses up a real suspension as an administrative detail.
+     * "Disabled" is accurate whichever applies; the reason belongs with the
+     * administrator who set it.
      *
      * <p>Closes a gap between two pieces that were written to different
      * assumptions about {@code INACTIVE}:
