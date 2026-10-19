@@ -116,6 +116,9 @@ public class IgrpOidcUserService extends OidcUserService {
         // --- Security gate 3: minimum ACR (OWASP A07) ---
         enforceAcr(oidcUser, externalUserId);
 
+        // --- Security gate 4: the account is not suspended ---
+        enforceAccountNotSuspended(provider, externalUserId);
+
         // Resolve the linked internal user, but ONLY when that user is still
         // login-able (ACTIVE / TEMPORARY). A previously-DELETED user logging
         // back in via the same upstream IdP would otherwise silently resurrect
@@ -251,6 +254,54 @@ public class IgrpOidcUserService extends OidcUserService {
                                     + "meet the required authentication context for this platform.",
                             null));
         }
+    }
+
+    /**
+     * Refuse a federated login for an administratively suspended account.
+     *
+     * <p>Closes a gap between two pieces that were written to different
+     * assumptions about {@code INACTIVE}:
+     *
+     * <ul>
+     *   <li>{@code findActiveByProviderAndUserId} hides INACTIVE as well as
+     *       DELETED, so the login path treats a suspended user as "no existing
+     *       link" and falls through to {@link #provisionUser}.</li>
+     *   <li>{@code anonymiseConflictingDeletedRecords} frees the UNIQUE
+     *       constraint for DELETED rows only — by design, since an
+     *       ACTIVE/TEMPORARY/INACTIVE collision is a real conflict.</li>
+     * </ul>
+     *
+     * <p>A suspended user logging in therefore reached the INSERT with their
+     * identity row still in place and died on
+     * {@code uk_user_identity_provider_sub}, which surfaced as a 500 rather
+     * than anything a user or an operator could act on.
+     *
+     * <p>Rejecting here, rather than teaching the anonymiser about INACTIVE,
+     * is deliberate. Freeing the constraint would hand a suspended user a
+     * brand-new TEMPORARY account on their next login and silently undo the
+     * suspension — the same resurrection problem the DELETED guard exists to
+     * prevent, wearing the opposite hat. Suspension should refuse the login
+     * and say so.
+     *
+     * <p>DELETED is untouched: it still falls through to provisioning as a
+     * fresh account, with the old row anonymised for audit.
+     */
+    private void enforceAccountNotSuspended(String provider, String externalUserId) {
+        if (provider == null || externalUserId == null) {
+            return;
+        }
+        userIdentityRepository.findByProviderAndUserId(provider, externalUserId)
+                .map(UserIdentityEntity::getUser)
+                .filter(user -> user != null && Status.INACTIVE.equals(user.getStatus()))
+                .ifPresent(user -> {
+                    LOGGER.warn("[OIDC-SEC] Rejected federated login sub={} provider={}: "
+                                    + "linked user id={} is INACTIVE (suspended)",
+                            externalUserId, provider, user.getId());
+                    throw new OAuth2AuthenticationException(
+                            new OAuth2Error("account_suspended",
+                                    "This account has been suspended. Contact an administrator.",
+                                    null));
+                });
     }
 
     // -------------------------------------------------------------------------
