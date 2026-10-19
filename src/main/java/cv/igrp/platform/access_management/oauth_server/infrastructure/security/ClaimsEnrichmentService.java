@@ -110,7 +110,7 @@ public class ClaimsEnrichmentService {
     /**
      * Resolve the internal IGRP user id given a federated provider and email.
      * Returns {@code null} if no matching local user is found, OR if the
-     * matching user is administratively suspended (INACTIVE) / soft-deleted
+     * matching user is administratively disabled (INACTIVE) / soft-deleted
      * (DELETED). Only {@code ACTIVE} and {@code TEMPORARY} users are admitted
      * to the platform via the federated-login path — INACTIVE accounts must
      * not be silently re-activated by a successful upstream login.

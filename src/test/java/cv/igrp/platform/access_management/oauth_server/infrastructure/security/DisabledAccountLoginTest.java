@@ -19,7 +19,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 /**
- * A suspended (INACTIVE) account must be refused at federated login with a
+ * A disabled (INACTIVE) account must be refused at federated login with a
  * usable reason — not crash on a unique constraint.
  *
  * <p>Production, 2026-10-19: {@code fidel.luz@nosi.cv} hit
@@ -30,9 +30,9 @@ import static org.mockito.Mockito.*;
  * collided with the user's own identity row.
  *
  * <p>Refusing the login is the fix rather than freeing the constraint, which
- * would have handed a suspended user a fresh working account.
+ * would have handed a disabled user a fresh working account.
  */
-class SuspendedAccountLoginTest {
+class DisabledAccountLoginTest {
 
     private static final String PROVIDER = "external-idp";
     private static final String SUB = "fidel.luz@nosi.cv";
@@ -62,22 +62,24 @@ class SuspendedAccountLoginTest {
     }
 
     private void enforce() {
-        ReflectionTestUtils.invokeMethod(service, "enforceAccountNotSuspended", PROVIDER, SUB);
+        ReflectionTestUtils.invokeMethod(service, "enforceAccountNotDisabled", PROVIDER, SUB);
     }
 
     @Test
-    @DisplayName("a suspended account is refused with account_suspended")
-    void suspendedAccount_isRefused() {
+    @DisplayName("a disabled account is refused with account_disabled")
+    void disabledAccount_isRefused() {
         identityLinkedTo(Status.INACTIVE);
 
         OAuth2AuthenticationException ex = assertThrows(OAuth2AuthenticationException.class, this::enforce);
 
-        assertEquals("account_suspended", ex.getError().getErrorCode());
+        assertEquals("account_disabled", ex.getError().getErrorCode(),
+                "\"disabled\", not \"suspended\" — INACTIVE covers leaving for another employer, "
+                        + "a mission posting or temporary unavailability, none of which are misconduct");
     }
 
     @Test
     @DisplayName("the refusal never reaches provisioning, so no duplicate INSERT is attempted")
-    void suspendedAccount_doesNotProvision() {
+    void disabledAccount_doesNotProvision() {
         identityLinkedTo(Status.INACTIVE);
 
         assertThrows(OAuth2AuthenticationException.class, this::enforce);

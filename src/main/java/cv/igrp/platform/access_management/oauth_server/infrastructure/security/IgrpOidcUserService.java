@@ -116,8 +116,8 @@ public class IgrpOidcUserService extends OidcUserService {
         // --- Security gate 3: minimum ACR (OWASP A07) ---
         enforceAcr(oidcUser, externalUserId);
 
-        // --- Security gate 4: the account is not suspended ---
-        enforceAccountNotSuspended(provider, externalUserId);
+        // --- Security gate 4: the account is not disabled ---
+        enforceAccountNotDisabled(provider, externalUserId);
 
         // Resolve the linked internal user, but ONLY when that user is still
         // login-able (ACTIVE / TEMPORARY). A previously-DELETED user logging
@@ -257,36 +257,41 @@ public class IgrpOidcUserService extends OidcUserService {
     }
 
     /**
-     * Refuse a federated login for an administratively suspended account.
+     * Refuse a federated login for a disabled account.
+     *
+     * <p>"Disabled", not "suspended": INACTIVE is set for ordinary reasons —
+     * someone has left for another employer, is away on a mission, or is
+     * temporarily out of service. The word the user sees should not imply they
+     * did something wrong.
      *
      * <p>Closes a gap between two pieces that were written to different
      * assumptions about {@code INACTIVE}:
      *
      * <ul>
      *   <li>{@code findActiveByProviderAndUserId} hides INACTIVE as well as
-     *       DELETED, so the login path treats a suspended user as "no existing
+     *       DELETED, so the login path treats a disabled user as "no existing
      *       link" and falls through to {@link #provisionUser}.</li>
      *   <li>{@code anonymiseConflictingDeletedRecords} frees the UNIQUE
      *       constraint for DELETED rows only — by design, since an
      *       ACTIVE/TEMPORARY/INACTIVE collision is a real conflict.</li>
      * </ul>
      *
-     * <p>A suspended user logging in therefore reached the INSERT with their
+     * <p>A disabled user logging in therefore reached the INSERT with their
      * identity row still in place and died on
      * {@code uk_user_identity_provider_sub}, which surfaced as a 500 rather
      * than anything a user or an operator could act on.
      *
      * <p>Rejecting here, rather than teaching the anonymiser about INACTIVE,
-     * is deliberate. Freeing the constraint would hand a suspended user a
+     * is deliberate. Freeing the constraint would hand a disabled user a
      * brand-new TEMPORARY account on their next login and silently undo the
-     * suspension — the same resurrection problem the DELETED guard exists to
-     * prevent, wearing the opposite hat. Suspension should refuse the login
-     * and say so.
+     * deactivation — the same resurrection problem the DELETED guard exists to
+     * prevent, wearing the opposite hat. A disabled account should refuse the
+     * login and say so.
      *
      * <p>DELETED is untouched: it still falls through to provisioning as a
      * fresh account, with the old row anonymised for audit.
      */
-    private void enforceAccountNotSuspended(String provider, String externalUserId) {
+    private void enforceAccountNotDisabled(String provider, String externalUserId) {
         if (provider == null || externalUserId == null) {
             return;
         }
@@ -295,11 +300,12 @@ public class IgrpOidcUserService extends OidcUserService {
                 .filter(user -> user != null && Status.INACTIVE.equals(user.getStatus()))
                 .ifPresent(user -> {
                     LOGGER.warn("[OIDC-SEC] Rejected federated login sub={} provider={}: "
-                                    + "linked user id={} is INACTIVE (suspended)",
+                                    + "linked user id={} is INACTIVE (disabled)",
                             externalUserId, provider, user.getId());
                     throw new OAuth2AuthenticationException(
-                            new OAuth2Error("account_suspended",
-                                    "This account has been suspended. Contact an administrator.",
+                            new OAuth2Error("account_disabled",
+                                    "This account is currently disabled. Contact an administrator "
+                                            + "to have it reactivated.",
                                     null));
                 });
     }
