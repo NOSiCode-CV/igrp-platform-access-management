@@ -24,7 +24,7 @@ public interface UserIdentityJpaRepository extends JpaRepository<UserIdentityEnt
      * Login-safe lookup: returns the identity link ONLY when the underlying
      * {@code t_user} row is still in a logged-in-able state (ACTIVE or
      * TEMPORARY). Soft-deleted ({@code DELETED}) and administratively
-     * suspended ({@code INACTIVE}) users are excluded so the federated-login
+     * disabled ({@code INACTIVE}) users are excluded so the federated-login
      * path treats them as "no existing link" and falls through to
      * provisioning a fresh account.
      *
