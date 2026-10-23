@@ -58,7 +58,12 @@ The key must be available at `/oauth2/token`. That call is server-to-server and 
 ### 1.4 Configuration
 
 - **R3.1** Set `server.servlet.session.timeout` explicitly, via an env override. It is the window in which `prompt=none` signs a user into another app without a prompt; today it is Spring's unconfigured 30-minute default. The value is a product decision. Document it next to `igrp.session.*`.
-- **R3.2** When AM runs more than one replica without sticky sessions, the servlet session must be shared (Spring Session on the existing Redis). Otherwise `prompt=none` succeeds or fails depending on which pod answers. Document it as a deployment requirement if not implemented. The cascade does not depend on it (R1.6).
+- **R3.2** The servlet session must be shared across replicas (Spring Session on the existing Redis). **Prerequisite, not a deployment note.** AM is expected to scale past one replica on demand, and nothing shares the session today: no `spring-session` dependency, no `spring.session.*` properties, and no custom `AuthorizationRequestRepository`, so Spring's default `HttpSessionOAuth2AuthorizationRequestRepository` keeps the pending authorization request in one pod's memory.
+  - This is not a hypothetical. It is the cause of the `authorization_request_not_found` login failures already reported from `api-gateway-test`: the browser starts at `/oauth2/authorize` on one pod, the IdP callback lands on another (or on the same pod after a restart), and the `state` matches no saved request. The user sees "Login could not be completed".
+  - `prompt=none` multiplies the exposure, because every additional app is another authorize round-trip through AM. The silent sign-in this whole feature is built on is exactly the path that breaks.
+  - The cascade itself does not depend on it (R1.6); silent sign-in does.
+  - Scope: add `spring-session-data-redis` and `spring.session.store-type=redis` — Redis is already required, so no new infrastructure. The work is serialization: the session holds the `SecurityContext` and the saved `OAuth2AuthorizationRequest`. `authorizationStoreObjectMapper` is the precedent in this repository (`SecurityJackson2Modules` plus allowlist mixins for `IgrpOidcUser`, `OidcContextAuthenticationToken`, `UserProfile`); expect the same, and expect it to be where the time goes.
+  - Sticky sessions at the ingress are the cheaper alternative, but they do not survive a pod restart — the restart case has already been observed — so they narrow the window rather than close it.
 - **R3.3** Document that `IGRP_SESSION_MAX_PER_USER` must be at least (apps per host × devices per user). Each app sign-in is one session against the cap, and LRU eviction signs the oldest app out.
 
 ---
@@ -102,6 +107,16 @@ The key must be available at `/oauth2/token`. That call is server-to-server and 
 
 ## 6. Open questions
 
-1. What does `GET /api/users/me/applications/{code}/menus` return for an application the user is not assigned to: 403 or an empty list? The framework spec changes 403 handling and needs the answer.
-2. How many replicas does the deployed AM run, and with sticky sessions? This decides R3.2.
+1. ~~What does `GET /api/users/me/applications/{code}/menus` return for an application the user is not assigned to: 403 or an empty list?~~ **Answered 2026-10-23: an empty list, `200`. Never 403.** The endpoint carries no `@PreAuthorize` and `GetCurrentUserApplicationMenusQueryHandler` performs no assignment check — assignment is a filter input, not a gate. For an unassigned user the role-filtered query matches nothing and the handler returns `ok(...)` on every path. The other outcomes on this route, for the framework spec:
+
+   | Case | Response |
+   |---|---|
+   | User not assigned to the application | `200`, `[]` |
+   | Application code unknown or `DELETED` | `404` (`IGRP_AUTH_APPLICATION_NOT_FOUND_BY_CODE`) |
+   | JWT subject has no `t_user` row | `401` ("User not found") |
+   | Caller holds `SUPER_ADMIN_ROLE` | `200`, all active menus, role filter bypassed |
+
+   A 403 on this route can only come from the filter chain — an invalid or revoked token — never from the endpoint. Note that an empty array is not an error: it is indistinguishable from an assigned user whose roles grant no menus, and treating it as a failure would hide that legitimate case.
+
+2. ~~How many replicas does the deployed AM run, and with sticky sessions?~~ **Answered 2026-10-23: AM may be scaled past one replica on demand (Kubernetes), so a single replica cannot be assumed.** R3.2 is therefore required, and is restated above as a prerequisite rather than a deployment note.
 3. Does the deployed AM include `6674a9d6` (which implies `0444154d`)? `0444154d` alone causes the 2026-10-16 incident: the partial unique index `ux_session_user_device_active` still rejects the second app's session and the sign-in ends in a bare 401. Without either commit, a second app's sign-in closes the first app's session and the cascade question is moot. As of 2026-10-23 both are on `development`, but `staging` has only `0444154d`.
