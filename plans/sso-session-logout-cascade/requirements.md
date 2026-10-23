@@ -64,6 +64,7 @@ The key must be available at `/oauth2/token`. That call is server-to-server and 
   - The cascade itself does not depend on it (R1.6); silent sign-in does.
   - Scope: add `spring-session-data-redis` and `spring.session.store-type=redis` — Redis is already required, so no new infrastructure. The work is serialization: the session holds the `SecurityContext` and the saved `OAuth2AuthorizationRequest`. `authorizationStoreObjectMapper` is the precedent in this repository (`SecurityJackson2Modules` plus allowlist mixins for `IgrpOidcUser`, `OidcContextAuthenticationToken`, `UserProfile`); expect the same, and expect it to be where the time goes.
   - Sticky sessions at the ingress are the cheaper alternative, but they do not survive a pod restart — the restart case has already been observed — so they narrow the window rather than close it.
+  - **Scoped separately in `plans/shared-servlet-session/scope.md`.** It stands on its own: it fixes the `authorization_request_not_found` logins whether or not the cascade is built. That document also resolves the serialization question raised here — the mixins for `IgrpOidcUser`, `OidcContextAuthenticationToken` and `UserProfile` already exist in `authorizationStoreObjectMapper`, so the remaining unknown is narrow enough to settle with a half-day spike.
 - **R3.3** Document that `IGRP_SESSION_MAX_PER_USER` must be at least (apps per host × devices per user). Each app sign-in is one session against the cap, and LRU eviction signs the oldest app out.
 
 ---
