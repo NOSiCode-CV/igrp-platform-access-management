@@ -17,7 +17,30 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-@Repository
+/**
+ * Repository for {@code t_user_session} — iGRP's own per-application sessions.
+ *
+ * <p><b>The explicit bean name is required, not cosmetic.</b> Spring Session's
+ * {@code JdbcHttpSessionConfiguration} publishes its {@code JdbcIndexedSessionRepository}
+ * under the name {@code sessionRepository}, which is exactly what Spring Data
+ * would derive from this interface's name. With bean-definition overriding
+ * disabled — the Boot default — the context fails to start:
+ *
+ * <pre>
+ * The bean 'sessionRepository' ... could not be registered. A bean with that
+ * name has already been defined in ... JdbcHttpSessionConfiguration
+ * </pre>
+ *
+ * <p>Renaming this bean rather than the Spring Session one is the only option
+ * available (theirs is library-defined), and it is also the better name: this
+ * repository is about {@code t_user_session}, a different thing from the browser
+ * servlet session in {@code SPRING_SESSION}. See the two-session note in
+ * {@code CLAUDE.md}.
+ *
+ * <p>Nothing injects this by name — all call sites inject by type — so the name
+ * is free to change. {@code SessionRepositoryBeanNameTest} guards it.
+ */
+@Repository("userSessionRepository")
 public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
 
     /**
