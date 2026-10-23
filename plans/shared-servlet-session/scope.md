@@ -103,13 +103,29 @@ Recommendation: **3b**, with the §6 spike before committing to an estimate.
 
 ---
 
-## 6. The spike, before estimating
-
-One question decides whether this is two days or a week:
+## 6. The spike — **run 2026-10-23, answered**
 
 > Does an `ObjectMapper` built like `authorizationStoreObjectMapper` round-trip a **real** session — `SecurityContextImpl` holding the federated authentication, plus a saved `OAuth2AuthorizationRequest` with its PKCE verifier, plus a `DefaultSavedRequest`?
 
-Write it as a test that serializes and deserializes a session captured from an actual login, and assert V4. If extra mixins are needed, that is the work; if not, steps 2–4 are configuration.
+**Yes, with six extra allowlist entries.** `SessionSerializationSpikeTest` (3 tests, passing) is the evidence and stays as a regression guard.
+
+The risk was not where this document put it:
+
+- **The two payloads flagged as unproven were fine.** `OAuth2AuthorizationRequest` round-trips with `state`, scopes, `nonce` and the **PKCE `code_verifier`** intact, and `DefaultSavedRequest` round-trips, both with **no new mixins** — Spring Security's bundled modules already cover them. The stated unknown has closed.
+- **The failure was in the control**, the payload assumed proven. Deserializing the `SecurityContext` fails on `UserProfile.amr`:
+
+  ```
+  java.util.ImmutableCollections$List12 is not in the allowlist
+    ... IgrpOidcUser["userProfile"] -> UserProfile["amr"]
+  ```
+
+  The allowlist admits the `Collections.empty*` sentinels but **not the `List.of()` / `Set.of()` / `Map.of()` family**. These are different classes: `List.of()` is `ImmutableCollections$ListN`, not `Collections$EmptyList`.
+
+**Fix:** six `addMixIn` calls for `List.of()`, `List.of(a)`, `Set.of()`, `Set.of(a)`, `Map.of()`, `Map.of(a,b)` — covering the `ListN`/`List12`/`SetN`/`Set12`/`MapN`/`Map1` implementations. Add them when extracting the shared mapper (step 3).
+
+**This is also a latent hazard in the existing mapper, not only a session concern.** `authorizationStoreObjectMapper` has the same gap. Production escapes it today by luck of construction: the OIDC login path builds `amr` from `oidcUser.getClaimAsStringList("amr")`, which yields an `ArrayList` and *is* allowlisted. But `IgrpJwtAuthenticationConverter:78` constructs a `UserProfile` with `java.util.List.of()` → `ImmutableCollections$ListN`, which is not. Whether that principal ever reaches the authorization store is path-dependent; the same six lines remove the question either way, and should be applied to the existing mapper regardless of whether this feature proceeds.
+
+**Estimate consequence:** steps 2–4 are configuration plus those six lines. The work lands at the short end of the range, and the serialization risk that justified the spike is retired.
 
 ---
 
