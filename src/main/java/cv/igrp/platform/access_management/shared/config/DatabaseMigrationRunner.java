@@ -23,6 +23,71 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
         ensureUserSessionSchema();
         ensureUserTokensFloor();
         ensureUserStatusCheckConstraint();
+        ensureSpringSessionSchema();
+    }
+
+    /**
+     * R3.2 — the Spring Session tables backing the shared servlet session.
+     *
+     * <p>Transcribed from the DDL Spring Session ships at
+     * {@code org/springframework/session/jdbc/schema-postgresql.sql}, written
+     * {@code IF NOT EXISTS} so it is a no-op on every boot after the first.
+     *
+     * <p>Owned here rather than by {@code spring.session.jdbc.initialize-schema}
+     * for two reasons: this repository already keeps its DDL in one place, and
+     * {@code never} removes any question about whether Boot's initializer is
+     * idempotent against tables that already exist.
+     *
+     * <p>Not JPA entities, so Hibernate's {@code ddl-auto} never touches them.
+     * Rows are pruned by {@code spring.session.jdbc.cleanup-cron} — which is a
+     * different mechanism from {@code SessionCleanupScheduler}, and a different
+     * table: {@code SPRING_SESSION} holds the browser-side SSO session,
+     * {@code t_user_session} holds iGRP's own per-application sessions.
+     *
+     * <p>Unlike the other migrations here, a failure is <b>not</b> swallowed. If
+     * these tables are missing, every login fails on the first session write,
+     * and failing at startup with the cause is better than serving traffic that
+     * cannot authenticate.
+     *
+     * <p>On ordering: a {@link CommandLineRunner} runs after the context has
+     * refreshed, so the web server is already listening when this executes. That
+     * is safe because Kubernetes gates traffic on the readiness probe, and
+     * {@code ApplicationReadyEvent} — which flips readiness to accepting traffic
+     * — fires only after every runner has completed. A login cannot arrive
+     * before the tables exist. If this service were ever fronted by something
+     * that routes on liveness alone, this DDL would need to move into context
+     * refresh instead.
+     */
+    private void ensureSpringSessionSchema() {
+        jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS SPRING_SESSION (
+                    PRIMARY_ID CHAR(36) NOT NULL,
+                    SESSION_ID CHAR(36) NOT NULL,
+                    CREATION_TIME BIGINT NOT NULL,
+                    LAST_ACCESS_TIME BIGINT NOT NULL,
+                    MAX_INACTIVE_INTERVAL INT NOT NULL,
+                    EXPIRY_TIME BIGINT NOT NULL,
+                    PRINCIPAL_NAME VARCHAR(100),
+                    CONSTRAINT SPRING_SESSION_PK PRIMARY KEY (PRIMARY_ID)
+                )""");
+        jdbcTemplate.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS SPRING_SESSION_IX1 ON SPRING_SESSION (SESSION_ID)");
+        jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS SPRING_SESSION_IX2 ON SPRING_SESSION (EXPIRY_TIME)");
+        jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS SPRING_SESSION_IX3 ON SPRING_SESSION (PRINCIPAL_NAME)");
+        jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS SPRING_SESSION_ATTRIBUTES (
+                    SESSION_PRIMARY_ID CHAR(36) NOT NULL,
+                    ATTRIBUTE_NAME VARCHAR(200) NOT NULL,
+                    ATTRIBUTE_BYTES BYTEA NOT NULL,
+                    CONSTRAINT SPRING_SESSION_ATTRIBUTES_PK
+                        PRIMARY KEY (SESSION_PRIMARY_ID, ATTRIBUTE_NAME),
+                    CONSTRAINT SPRING_SESSION_ATTRIBUTES_FK
+                        FOREIGN KEY (SESSION_PRIMARY_ID) REFERENCES SPRING_SESSION(PRIMARY_ID)
+                        ON DELETE CASCADE
+                )""");
+        LOGGER.info("SPRING_SESSION schema ensured (shared servlet session, R3.2).");
     }
 
     /**

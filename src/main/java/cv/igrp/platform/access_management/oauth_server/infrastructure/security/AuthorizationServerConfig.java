@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import cv.igrp.platform.access_management.shared.security.SecurityStoreObjectMapperFactory;
 import cv.igrp.platform.access_management.shared.security.IgrpOidcUser;
 import cv.igrp.platform.access_management.shared.security.OidcContextAuthenticationToken;
 import cv.igrp.platform.access_management.shared.security.UserProfile;
@@ -601,7 +602,8 @@ public class AuthorizationServerConfig {
         JdbcOAuth2AuthorizationService delegate =
                 new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
 
-        ObjectMapper objectMapper = authorizationStoreObjectMapper();
+        ObjectMapper objectMapper = SecurityStoreObjectMapperFactory.create(
+                AuthorizationServerConfig.class.getClassLoader());
 
         JdbcOAuth2AuthorizationService.OAuth2AuthorizationRowMapper rowMapper =
                 new JdbcOAuth2AuthorizationService.OAuth2AuthorizationRowMapper(registeredClientRepository);
@@ -626,86 +628,4 @@ public class AuthorizationServerConfig {
                 authorizationServerSettings.getTokenEndpoint());
     }
 
-    /**
-     * Build an {@link ObjectMapper} aligned with Spring Authorization Server's
-     * defaults (security modules + oauth2 authorization-server module) and
-     * extended with Mixins for:
-     * <ul>
-     *   <li>{@link IgrpOidcUser}, {@link OidcContextAuthenticationToken},
-     *       {@link UserProfile} — the iGRP-specific principal types stored on
-     *       the {@code OAuth2Authorization} attributes map.</li>
-     *   <li>{@code Collections.emptySet/emptyList/emptyMap} — JDK sentinel
-     *       singletons that pop up whenever the principal's authorities, scopes,
-     *       or claim maps are empty. Without these on the allowlist the
-     *       deserializer fails with {@code IllegalArgumentException: ... is not
-     *       in the allowlist}.</li>
-     *   <li>{@code List.of()/Set.of()/Map.of()} — the immutable-factory family.
-     *       These are <em>not</em> the same classes as the
-     *       {@code Collections.empty*} sentinels above:
-     *       {@code List.of()} is {@code ImmutableCollections$ListN}, not
-     *       {@code Collections$EmptyList}. The OIDC login path happens to build
-     *       {@code UserProfile.amr} from {@code getClaimAsStringList}, which
-     *       yields an allowlisted {@code ArrayList}, but
-     *       {@code IgrpJwtAuthenticationConverter} builds one with
-     *       {@code List.of()} — so whether this gap bites is path-dependent.
-     *       Allowlisting the family removes the question.</li>
-     * </ul>
-     *
-     * <p>{@code SessionSerializationSpikeTest} mirrors this builder and is the
-     * regression guard for the entries above. The two must be kept in step
-     * until the mapper is extracted into a shared bean
-     * ({@code plans/shared-servlet-session/scope.md} step 3).
-     */
-    private ObjectMapper authorizationStoreObjectMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        ClassLoader classLoader = AuthorizationServerConfig.class.getClassLoader();
-        List<Module> securityModules = SecurityJackson2Modules.getModules(classLoader);
-        mapper.registerModules(securityModules);
-        mapper.registerModule(new OAuth2AuthorizationServerJackson2Module());
-
-        // Allowlist the empty JDK collection sentinels via Jackson Mixin so the
-        // SecurityJackson2Modules allowlist resolver admits them.
-        mapper.addMixIn(Collections.emptySet().getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(Collections.emptyList().getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(Collections.emptyMap().getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(Collections.emptySortedSet().getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(Collections.emptySortedMap().getClass(), AllowlistedClassMixin.class);
-
-        // The List.of()/Set.of()/Map.of() family. Distinct classes from the
-        // Collections.empty* sentinels above and NOT covered by them:
-        //   List.of()        -> ImmutableCollections$ListN
-        //   List.of(a[,b])   -> ImmutableCollections$List12
-        // IgrpJwtAuthenticationConverter builds a UserProfile with List.of(),
-        // so without these a principal carrying one fails to deserialize.
-        // Proven by SessionSerializationSpikeTest.
-        mapper.addMixIn(List.of().getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(List.of("a").getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(java.util.Set.of().getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(java.util.Set.of("a").getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(java.util.Map.of().getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(java.util.Map.of("a", "b").getClass(), AllowlistedClassMixin.class);
-
-        // Allowlist the iGRP custom principal types.
-        mapper.addMixIn(IgrpOidcUser.class, AllowlistedClassMixin.class);
-        mapper.addMixIn(OidcContextAuthenticationToken.class, AllowlistedClassMixin.class);
-        mapper.addMixIn(UserProfile.class, AllowlistedClassMixin.class);
-
-        return mapper;
-    }
-
-    /**
-     * Marker Mixin used to widen the {@link SecurityJackson2Modules} allowlist
-     * for empty JDK collection sentinels and the iGRP principal types. The
-     * {@code @JsonTypeInfo}/{@code @JsonAutoDetect} annotations mirror those
-     * applied to {@link IgrpOidcUser} so default-typing round-trips work.
-     */
-    @com.fasterxml.jackson.annotation.JsonTypeInfo(use = com.fasterxml.jackson.annotation.JsonTypeInfo.Id.CLASS)
-    @com.fasterxml.jackson.annotation.JsonAutoDetect(
-            fieldVisibility = com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY,
-            getterVisibility = com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE,
-            isGetterVisibility = com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.NONE,
-            creatorVisibility = com.fasterxml.jackson.annotation.JsonAutoDetect.Visibility.ANY)
-    @com.fasterxml.jackson.annotation.JsonIgnoreProperties(ignoreUnknown = true)
-    private abstract static class AllowlistedClassMixin {
-    }
 }

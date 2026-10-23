@@ -1,7 +1,7 @@
 # Scope — Shared servlet session across replicas
 
 **Why:** AM may scale past one replica on demand (Kubernetes). The servlet session is in-JVM today, so anything stored in it is lost when a request lands on a different pod, or on the same pod after a restart.
-**Status:** scoped, not planned.
+**Status:** **implemented 2026-10-23.** Pending only the cutover window (§8).
 **Target branch:** `development`.
 **Required by:** `plans/sso-session-logout-cascade/requirements.md` R3.2 — silent sign-in (`prompt=none`) depends on this. The logout cascade itself does not (R1.6).
 **Standalone value:** this fixes a live production failure regardless of whether the cascade is ever built.
@@ -106,20 +106,24 @@ Recommendation: **4b**.
 
 ---
 
-## 5. Work breakdown
+## 5. Work breakdown — **done 2026-10-23**
 
-1. ~~Spike the serializer against a real login.~~ **Done 2026-10-23 (§6).**
-2. Add `spring-session-jdbc`. Set `spring.session.store-type=jdbc` and `spring.session.jdbc.initialize-schema=never`.
-3. Create the Spring Session tables — `SPRING_SESSION`, `SPRING_SESSION_ATTRIBUTES` and the three shipped indexes — in `DatabaseMigrationRunner`, taking the DDL Spring Session ships at `org/springframework/session/jdbc/schema-postgresql.sql` as the source and writing it `IF NOT EXISTS`. Reason for not using `initialize-schema`: this repository already owns its DDL in one place, and `never` removes any question about whether Boot's initializer is idempotent against an existing table.
-4. Extract the mapper currently built inside `AuthorizationServerConfig.authorizationStoreObjectMapper()` into a shared `@Bean` so both the authorization store and the session converters use one definition. Avoids the two drifting apart — and retires the "keep in step" note now in that method's javadoc.
-5. Register the `springSessionConversionService` bean with that mapper.
-6. Set the session timeout — see R3.1 and §8. It has to be in the configuration from the first commit, not added later.
-7. Leave `spring.session.jdbc.cleanup-cron` at its default and confirm the delete it issues is indexed. Note it alongside `SessionCleanupScheduler` so the two expiry jobs are not mistaken for each other.
-8. Verify `changeSessionId` session-fixation protection still behaves (Spring Session supports it; confirm the id actually rotates on login).
-9. Confirm `SessionLogoutHandler` still clears the cookie — `SESSION` is already in `CLEARABLE_COOKIES`, so this is a check, not a change.
-10. Tests (§7) and a short runbook note.
+1. ~~Spike the serializer against a real login.~~ Done (§6).
+2. ~~Add `spring-session-jdbc`;~~ `spring.session.store-type=jdbc`, `spring.session.jdbc.initialize-schema=never`. Version is managed by the Boot parent, so nothing to pin.
+3. ~~Create the Spring Session tables in `DatabaseMigrationRunner`~~ — transcribed from `schema-postgresql.sql`, written `IF NOT EXISTS`. Unlike the neighbouring migrations, failures are **not** swallowed: missing tables break every login, so failing loudly beats serving traffic that cannot authenticate.
+4. ~~Extract the mapper into one shared definition~~ — `SecurityStoreObjectMapperFactory`, used by both the authorization store and the session converters.
+5. ~~Register the `springSessionConversionService`~~ — `SessionStoreConfig`.
+6. ~~Set the timeout~~ — `server.servlet.session.timeout=${IGRP_SSO_SESSION_TIMEOUT_SECONDS:28800}s`, documented in `.env.example` next to the `IGRP_SESSION_*` family it is easy to confuse with.
+7. ~~Confirm the cleanup job.~~ Left at Boot's default cron.
+8. Session fixation — `changeSessionId` still applies; **confirm the id rotates on login during V1–V3**, which is manual verification rather than code.
+9. ~~Confirm `SessionLogoutHandler` clears the cookie~~ — `SESSION` was already in `CLEARABLE_COOKIES`.
+10. ~~Tests~~ — `SessionStoreConversionTest` (4) and `ResourceServerChainStatelessTest` (1). Suite: 978, 0 failures.
 
----
+### Two things the implementation found
+
+**The shared mapper must not be a bean.** Step 4 originally said "shared `@Bean`". Publishing an `ObjectMapper` bean satisfies the `@ConditionalOnMissingBean(ObjectMapper.class)` guard in Boot's `JacksonAutoConfiguration`, which would silently replace the mapper used for **HTTP message conversion** with this one — class-name default typing and an allowlist, correct for a trusted store and wrong for request bodies. It is a static factory instead: one definition, none of the hazard.
+
+**Postgres needs the upsert customizer, and Boot does not register it.** Spring Session's default attribute write is a plain `INSERT`. Boot's `JdbcSessionConfiguration` contributes a customizer that sets only the timeout, table name and cleanup cron — it does **not** apply `PostgreSqlJdbcIndexedSessionRepositoryCustomizer`, which swaps the insert for `ON CONFLICT ... DO UPDATE`. Without it, two concurrent requests on one session that both see an attribute as new race on the `(SESSION_PRIMARY_ID, ATTRIBUTE_NAME)` primary key and the loser fails. The authorize flow does issue concurrent requests against one session, and this is the third duplicate-key defect in this area, so it is registered explicitly in `SessionStoreConfig`.
 
 ## 6. The spike — **run 2026-10-23, answered**
 

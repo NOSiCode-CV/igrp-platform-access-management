@@ -120,6 +120,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-data-jpa</artifactId>
         </dependency>
+        <!-- R3.2 — shared servlet session across replicas, stored in Postgres.
+             Version managed by spring-boot-starter-parent (spring-session BOM).
+             Postgres rather than Redis: it is already a hard dependency of login,
+             so the session store adds no new failure mode. See
+             plans/shared-servlet-session/scope.md Section 1. -->
+        <dependency>
+            <groupId>org.springframework.session</groupId>
+            <artifactId>spring-session-jdbc</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
             <artifactId>flyway-core</artifactId>
