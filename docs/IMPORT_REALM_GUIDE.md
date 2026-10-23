@@ -2,6 +2,14 @@
 
 This guide explains how to import the **iGRP realm** into **Keycloak version 26 or later** using the provided `igrp-realm.json` file.
 
+> 🔐 **Client secrets are placeholders — replace them**
+>
+> Every `secret` in `igrp-realm.json` is `CHANGEME-NOT-A-REAL-SECRET`. The file will import, but no client will authenticate until you set real values.
+>
+> Generate a fresh secret per client in the Keycloak admin console (**Clients → *client* → Credentials → Regenerate**) and keep it in your secret store. Do **not** paste a working secret back into this file: it is version-controlled, and a secret committed here is a secret published to everyone with repository access.
+>
+> This file is a **non-production seed**. Keycloak documents realm exports as reference artefacts for setting up development environments — treat a realm export as a template, never as a way to move production credentials between environments.
+
 > ⚠️ **Important Notice**
 >
 > The realm configuration assumes that **Keycloak is running on `http://localhost:8080`**.

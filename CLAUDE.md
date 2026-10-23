@@ -83,6 +83,11 @@ Commands are dispatched via `CommandBus`. Handlers are annotated with `@IgrpComm
 
 **Permission Caching** — `PermissionCacheService` checks permissions via direct JDBC (not JPA) to avoid lazy-load issues in async contexts. Permission cache keys are user/permission combos stored in Redis. Cache is invalidated by `UserRoleChangedEvent` and `RolePermissionChangedEvent`.
 
+**Two session mechanisms, easily confused:**
+1. `SPRING_SESSION` / `SPRING_SESSION_ATTRIBUTES` — the *browser* servlet session, shared across replicas via `spring-session-jdbc` so a login survives landing on another pod (fixes `authorization_request_not_found`). Holds the pending OAuth2 authorization request with its PKCE verifier, the `SecurityContext` and the saved request. Lifetime: `server.servlet.session.timeout` (`IGRP_SSO_SESSION_TIMEOUT_SECONDS`, 8h). Tables owned by `DatabaseMigrationRunner`; attributes stored as JSON via `SecurityStoreObjectMapperFactory`. Pruned by `spring.session.jdbc.cleanup-cron`.
+2. `t_user_session` / `igrp.session.*` — iGRP's own *per-application* sessions, one row per app sign-in. Pruned by `SessionCleanupScheduler`.
+Anything added to the servlet session must be on the Jackson allowlist in `SecurityStoreObjectMapperFactory`, or it fails to deserialize during a login.
+
 **Session Management** — One active session per user enforced at DB level (unique constraint). `SessionCleanupScheduler` expires sessions every 5 min and purges old records daily at 2 AM. Redis is the primary lookup path; DB is the source of truth.
 
 **Audit Trail — Two layers:**
