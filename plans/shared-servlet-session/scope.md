@@ -5,6 +5,7 @@
 **Target branch:** `development`.
 **Required by:** `plans/sso-session-logout-cascade/requirements.md` R3.2 — silent sign-in (`prompt=none`) depends on this. The logout cascade itself does not (R1.6).
 **Standalone value:** this fixes a live production failure regardless of whether the cascade is ever built.
+**Store:** **Postgres, via `spring-session-jdbc`.** Revised 2026-10-23 — the first draft of this document assumed Redis. The reasoning for the change is in §1.1.
 
 ---
 
@@ -22,24 +23,50 @@ A single replica does not make this safe — a rolling deploy or an OOM-kill rep
 
 ---
 
-## 1. What is already in place
+## 1. Store choice
 
-| | |
-|---|---|
-| `spring-boot-starter-data-redis` | present in `pom.xml` |
-| Redis connection | `spring.data.redis.{host,port,password}`, already required at startup |
-| Redis serialization precedent | `CacheConfig` uses `GenericJackson2JsonRedisSerializer` |
-| **Security-object JSON precedent** | `AuthorizationServerConfig.authorizationStoreObjectMapper()` — `SecurityJackson2Modules` + `OAuth2AuthorizationServerJackson2Module` + allowlist mixins for `IgrpOidcUser`, `OidcContextAuthenticationToken`, `UserProfile` and the `Collections.empty*` singletons |
-| Session cookie hardening | `SameSite=Lax`, `Secure`, `HttpOnly` already set |
-| Logout cookie clearing | `SessionLogoutHandler.CLEARABLE_COOKIES` already includes `SESSION`, Spring Session's default cookie name, alongside `JSESSIONID` |
+### 1.1 Postgres (`spring-session-jdbc`) — **recommended**
 
-Spring Boot 3.5.14, so `spring-session-data-redis` is version-managed by the parent.
+Two facts decide it.
 
-**The precedent is the headline.** The hard part of this work — making these exact principal types survive a round trip through an external store — is already solved, in production, for the authorization store. This scope is largely about pointing the same mapper at a second store.
+**Postgres is already a hard dependency of login; Redis is not.** A federated sign-in cannot complete without Postgres: `IgrpOidcUserService` reads and writes `t_user` on every sign-in, and `SessionIssuanceService` writes `t_user_session` at token issuance. Putting the servlet session there adds **no new failure mode** — if Postgres is down, login was already failing.
+
+Choosing Redis would, by contrast, make a Redis outage stop new sign-ins, which it does not do today: Redis currently backs only caches, and `CacheConfig`'s `FallbackCacheManager` / `SafeCache` deliberately swallows `RedisConnectionFailureException` so the permission path degrades to its JDBC queries. That graceful-degradation property **cannot** be extended to sessions. A cache miss is safe only when the value is derivable; a session is the authoritative record of an authentication, so swallowing the error would silently sign everyone out — reproducing the very failure in §0 rather than surviving it.
+
+**The write volume is negligible, because the API never creates a session.** `OAuth2SecurityConfiguration:89` sets `SessionCreationPolicy.STATELESS` on the resource-server chain, so JWT API traffic — the overwhelming majority of requests — creates and touches nothing. Only the browser authorization-server chain uses a session (`AuthorizationServerConfig:181`, `IF_REQUIRED`). That is a handful of rows and `last_accessed_time` updates **per login**, not per request. The usual objection to a JDBC session store does not apply to this service's traffic shape.
+
+Secondary benefits: sessions are inspectable with SQL when debugging a login that failed on one pod, and the store inherits Postgres's existing backup and HA arrangements instead of needing its own.
+
+### 1.2 Redis (`spring-session-data-redis`) — documented alternative
+
+Viable, and the dependency (`spring-boot-starter-data-redis`) is already present with a connection required at startup. Rejected for now only because it widens the blast radius of a Redis outage from "caches degrade" to "nobody can sign in", for no benefit at this volume.
+
+Revisit if session volume stops being login-shaped — for example if the resource-server chain stops being stateless, or AM starts serving a stateful UI of its own.
+
+### 1.3 A composite Redis-cache-over-Postgres repository — rejected
+
+Tempting by analogy with `PermissionCacheService`, and explicitly **not** recommended. It means writing and maintaining write-through and invalidation logic for authentication state, to optimise a load that is already trivial (§1.1). `spring-session-jdbc` is off-the-shelf and correct; a composite is bespoke code that would have to be made correct. Parked, not planned.
 
 ---
 
-## 2. What is in the session
+## 2. What is already in place
+
+| | |
+|---|---|
+| Postgres | required at startup (`DATABASE_URL`), and already required for login to succeed |
+| DDL migration path | `DatabaseMigrationRunner` (`shared/config/`) runs idempotent DDL at startup over JDBC — this repository's established home for custom schema changes |
+| **Security-object JSON precedent** | `AuthorizationServerConfig.authorizationStoreObjectMapper()` — `SecurityJackson2Modules` + `OAuth2AuthorizationServerJackson2Module` + allowlist mixins for `IgrpOidcUser`, `OidcContextAuthenticationToken`, `UserProfile`, the `Collections.empty*` singletons and the `List.of()` / `Set.of()` / `Map.of()` family |
+| Session cookie hardening | `SameSite=Lax`, `Secure`, `HttpOnly` already set |
+| Logout cookie clearing | `SessionLogoutHandler.CLEARABLE_COOKIES` already includes `SESSION`, Spring Session's default cookie name, alongside `JSESSIONID` |
+| Stateless API chain | `OAuth2SecurityConfiguration:89` — `SessionCreationPolicy.STATELESS`, so the store sees login traffic only |
+
+Spring Boot 3.5.14, so `spring-session-jdbc` is version-managed by the parent.
+
+**The precedent is the headline.** The hard part of this work — making these exact principal types survive a round trip through an external store — is already solved, in production, for the authorization store, and the spike (§6) has now confirmed it covers everything the session holds. This scope is largely about pointing the same mapper at a second store.
+
+---
+
+## 3. What is in the session
 
 Verified by reading the security configuration, not assumed:
 
@@ -52,54 +79,45 @@ Verified by reading the security configuration, not assumed:
 
 ---
 
-## 3. Serializer decision
+## 4. Serializer decision
 
-This is the whole estimate. Two options.
+Spring Session JDBC stores each attribute as `BYTEA` and converts it with a `ConversionService`. Its default is JDK serialization. Two options — unchanged in substance by the move from Redis to Postgres; only the integration point differs (a `springSessionConversionService` bean instead of a `RedisSerializer`).
 
-### 3a. JDK serialization — Spring Session's default
+### 4a. JDK serialization — the default
 
 Cheapest wiring, but **it does not work as the code stands**. `IgrpOidcUser extends DefaultOidcUser` (serializable) but holds `private final UserProfile userProfile`, and `UserProfile` is a `record` carrying Jackson annotations with **no `Serializable`**. Writing the security context would fail with `NotSerializableException`.
 
 Making it work means adding `Serializable` to `UserProfile` and auditing its components, then accepting:
 
 - the stored format is coupled to class shape — adding or renaming a field invalidates every live session unless `serialVersionUID` is managed deliberately;
-- sessions are opaque blobs in Redis, so an operator cannot inspect one;
+- sessions are opaque blobs, so an operator cannot inspect one;
 - a second, independent serialization contract to maintain beside the JSON one that already exists.
 
-### 3b. JSON via the existing mapper — **recommended**
+### 4b. JSON via the existing mapper — **recommended**
 
-Configure Spring Session's `RedisSerializer` with an `ObjectMapper` built the same way as `authorizationStoreObjectMapper`. The three mixins that matter (`IgrpOidcUser`, `OidcContextAuthenticationToken`, `UserProfile`) are **already written and already proven** against these classes.
+Register a `springSessionConversionService` whose `Object → byte[]` and `byte[] → Object` converters use an `ObjectMapper` built the same way as `authorizationStoreObjectMapper`.
 
 - No new `Serializable` surface, no `serialVersionUID` discipline.
-- Sessions are readable in Redis, which matters when debugging a login that fails on one pod.
+- Sessions are readable with SQL, which matters when debugging a login that fails on one pod.
 - One serialization contract for security objects, not two.
-- Cost: the mapper must additionally cover `OAuth2AuthorizationRequest` and `DefaultSavedRequest`, which the authorization store does not exercise. Spring Security ships Jackson modules for both; `SecurityJackson2Modules.getModules()` is already in the builder, so this is expected to be configuration rather than new mixins — **but it is the one unproven step and should be spiked first** (§6).
+- **Proven.** §6 settled the one unknown: the mapper round-trips all three payloads.
 
-Recommendation: **3b**, with the §6 spike before committing to an estimate.
-
----
-
-## 4. Work breakdown
-
-1. **Spike** the serializer against a real login (§6). Half a day. Decides everything below.
-2. Add `spring-session-data-redis`; set `spring.session.store-type=redis`, a key namespace, and `spring.session.timeout` aligned to R3.1's `server.servlet.session.timeout`.
-3. Extract the mapper currently built inside `AuthorizationServerConfig.authorizationStoreObjectMapper()` into a shared `@Bean` so both the authorization store and the session serializer use one definition. Avoids the two drifting apart.
-4. Register the Spring Session `RedisSerializer` with that mapper.
-5. Verify `changeSessionId` session-fixation protection still behaves (Spring Session supports it; confirm the id actually rotates on login).
-6. Confirm `SessionLogoutHandler` still clears the cookie — `SESSION` is already in `CLEARABLE_COOKIES`, so this is a check, not a change.
-7. Tests (§5) and a short runbook note (§7).
+Recommendation: **4b**.
 
 ---
 
-## 5. Validation
+## 5. Work breakdown
 
-- **V1** Sign in through the federated flow, then serve `/login/oauth2/code/external-idp` from a **different** pod. The login completes. This is the reported failure, and it is the acceptance test.
-- **V2** Restart the pod mid-login, between `/oauth2/authorize` and the callback. The login completes.
-- **V3** Two apps on one host: the second signs in via `prompt=none` with requests spread across pods, without a credential prompt.
-- **V4** The session survives a round trip intact: `SecurityContext` authentication, principal type `IgrpOidcUser`, and a non-null `UserProfile` after deserialization.
-- **V5** Session fixation — the session id changes on login.
-- **V6** Logout clears the Redis entry and the `SESSION` cookie; a replay of the old cookie does not resurrect the session.
-- **V7** Redis unavailable at login: the failure is a clean error, not a 500 stack trace. Decide and assert the intended behaviour.
+1. ~~Spike the serializer against a real login.~~ **Done 2026-10-23 (§6).**
+2. Add `spring-session-jdbc`. Set `spring.session.store-type=jdbc` and `spring.session.jdbc.initialize-schema=never`.
+3. Create the Spring Session tables — `SPRING_SESSION`, `SPRING_SESSION_ATTRIBUTES` and the three shipped indexes — in `DatabaseMigrationRunner`, taking the DDL Spring Session ships at `org/springframework/session/jdbc/schema-postgresql.sql` as the source and writing it `IF NOT EXISTS`. Reason for not using `initialize-schema`: this repository already owns its DDL in one place, and `never` removes any question about whether Boot's initializer is idempotent against an existing table.
+4. Extract the mapper currently built inside `AuthorizationServerConfig.authorizationStoreObjectMapper()` into a shared `@Bean` so both the authorization store and the session converters use one definition. Avoids the two drifting apart — and retires the "keep in step" note now in that method's javadoc.
+5. Register the `springSessionConversionService` bean with that mapper.
+6. Set the session timeout — see R3.1 and §8. It has to be in the configuration from the first commit, not added later.
+7. Leave `spring.session.jdbc.cleanup-cron` at its default and confirm the delete it issues is indexed. Note it alongside `SessionCleanupScheduler` so the two expiry jobs are not mistaken for each other.
+8. Verify `changeSessionId` session-fixation protection still behaves (Spring Session supports it; confirm the id actually rotates on login).
+9. Confirm `SessionLogoutHandler` still clears the cookie — `SESSION` is already in `CLEARABLE_COOKIES`, so this is a check, not a change.
+10. Tests (§7) and a short runbook note.
 
 ---
 
@@ -121,27 +139,41 @@ The risk was not where this document put it:
 
   The allowlist admits the `Collections.empty*` sentinels but **not the `List.of()` / `Set.of()` / `Map.of()` family**. These are different classes: `List.of()` is `ImmutableCollections$ListN`, not `Collections$EmptyList`.
 
-**Fix:** six `addMixIn` calls for `List.of()`, `List.of(a)`, `Set.of()`, `Set.of(a)`, `Map.of()`, `Map.of(a,b)` — covering the `ListN`/`List12`/`SetN`/`Set12`/`MapN`/`Map1` implementations. Add them when extracting the shared mapper (step 3).
+**Fix: applied 2026-10-23, independently of this feature.** Six `addMixIn` calls — for `List.of()`, `List.of(a)`, `Set.of()`, `Set.of(a)`, `Map.of()` and `Map.of(a,b)`, covering the `ListN` / `List12` / `SetN` / `Set12` / `MapN` / `Map1` implementations — are now in `authorizationStoreObjectMapper`.
 
-**This is also a latent hazard in the existing mapper, not only a session concern.** `authorizationStoreObjectMapper` has the same gap. Production escapes it today by luck of construction: the OIDC login path builds `amr` from `oidcUser.getClaimAsStringList("amr")`, which yields an `ArrayList` and *is* allowlisted. But `IgrpJwtAuthenticationConverter:78` constructs a `UserProfile` with `java.util.List.of()` → `ImmutableCollections$ListN`, which is not. Whether that principal ever reaches the authorization store is path-dependent; the same six lines remove the question either way, and should be applied to the existing mapper regardless of whether this feature proceeds.
+They were applied ahead of this work because **the gap was a latent hazard in the existing mapper, not only a session concern.** Production escaped it by luck of construction: the OIDC login path builds `amr` from `oidcUser.getClaimAsStringList("amr")`, which yields an allowlisted `ArrayList`, but `IgrpJwtAuthenticationConverter:78` constructs a `UserProfile` with `java.util.List.of()` → `ImmutableCollections$ListN`, which was not. Whether that principal ever reached the authorization store was path-dependent; the six lines remove the question either way.
 
-**Estimate consequence:** steps 2–4 are configuration plus those six lines. The work lands at the short end of the range, and the serialization risk that justified the spike is retired.
+**Estimate consequence:** steps 2–5 are configuration plus one small bean. The serialization risk that justified the spike is retired, and the store choice (§1) removed the remaining architectural question.
 
 ---
 
-## 7. Rollout and operational notes
+## 7. Validation
 
-- **Every signed-in user is logged out once at cutover.** Existing sessions live in pod memory and are not migrated. Deploy it when that is acceptable, and say so in the release note.
-- Session TTL in Redis must match `server.servlet.session.timeout` (R3.1), which is itself currently Spring's unconfigured 30-minute default and needs a deliberate value.
-- Redis becomes a hard dependency of **login**, not only of caching. It already is for the permission cache, but the blast radius grows: a Redis outage stops new sign-ins. Worth stating explicitly to whoever owns the SLO.
-- Key namespace must be distinct from the permission and session caches already in that Redis.
+- **V1** Sign in through the federated flow, then serve `/login/oauth2/code/external-idp` from a **different** pod. The login completes. This is the reported failure, and it is the acceptance test.
+- **V2** Restart the pod mid-login, between `/oauth2/authorize` and the callback. The login completes.
+- **V3** Two apps on one host: the second signs in via `prompt=none` with requests spread across pods, without a credential prompt.
+- **V4** The session survives a round trip intact: `SecurityContext` authentication, principal type `IgrpOidcUser`, and a non-null `UserProfile` after deserialization.
+- **V5** Session fixation — the session id changes on login.
+- **V6** Logout clears the `SPRING_SESSION` row and the `SESSION` cookie; a replay of the old cookie does not resurrect the session.
+- **V7** An expired session is deleted by the cleanup job, and a request carrying its cookie starts a fresh login rather than erroring.
+- **V8** API traffic creates **no** `SPRING_SESSION` rows. This is the assumption §1.1 rests on, so assert it rather than trust it: a future chain change that quietly drops `STATELESS` would turn every API call into a session write.
+
+---
+
+## 8. Rollout and operational notes
+
+- **Every signed-in user is logged out once at cutover.** Existing sessions live in pod memory and are not migrated. Deploy it when that is acceptable, and say so in the release note. This is the one remaining acceptance decision.
+- `server.servlet.session.timeout` (R3.1) is still Spring's unconfigured 30-minute default and needs a deliberate value. **Recommendation: 28800 s (8 h), via an env override**, matching `igrp.session.absoluteTimeoutSeconds`. It is the window in which opening a second app signs the user in silently; the app sessions it creates already run to an 8-hour ceiling, so aligning the two gives one lifetime story — the SSO session and the app sessions end together. It should never be set *above* that ceiling: an SSO session outliving every app session it can create is a window with nothing visible behind it. Today's 30 minutes is the worst of both, because a user who signs into one app at 09:00 and opens another at 10:00 gets an unexplained prompt.
+- **Postgres does not become a new dependency of login.** It already is one (§1.1). There is no SLO change to negotiate, which is the main practical gain over Redis.
+- Two expiry mechanisms now coexist and must not be confused: `spring.session.jdbc.cleanup-cron` prunes `SPRING_SESSION`, while `SessionCleanupScheduler` expires `t_user_session`. Different tables, different meanings.
 - Sticky sessions at the ingress are the cheaper alternative and are **not** equivalent: they do not survive a pod restart, which is the case already observed in production.
 
 ---
 
-## 8. Out of scope
+## 9. Out of scope
 
 - `t_user_session` and anything under `igrp.session.*`.
 - The logout cascade itself (`plans/sso-session-logout-cascade/`).
-- A custom cookie-based `AuthorizationRequestRepository`. It would fix the authorize round-trip without Redis, but leaves the `SecurityContext` unshared, so `prompt=none` would still depend on hitting the right pod. Worth revisiting only if Redis is ruled out.
-- Redis high availability.
+- Redis as the session store (§1.2) and a Redis-over-Postgres composite (§1.3). Both are recorded with their reasoning rather than dropped.
+- A custom cookie-based `AuthorizationRequestRepository`. It would fix the authorize round-trip without a shared store, but leaves the `SecurityContext` unshared, so `prompt=none` would still depend on hitting the right pod.
+- Postgres high availability.
