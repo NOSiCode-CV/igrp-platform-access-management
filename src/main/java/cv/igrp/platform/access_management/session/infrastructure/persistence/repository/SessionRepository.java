@@ -51,6 +51,22 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
                                                                   SessionStatus status);
 
     /**
+     * Every session opened under one AM sign-in (R2.1).
+     *
+     * <p>Backed by {@code ix_session_sso_key} on
+     * {@code (user_id, sso_session_key, status)} — the cascade is one indexed
+     * read plus one write per row, with no per-row network call (N1).
+     *
+     * <p>Scoped by {@code user_id} as well as the key, although the key alone is
+     * unique in practice. A key is a hash and a cascade revokes sessions: a
+     * query that could match another user's rows on a collision is not one worth
+     * leaving open.
+     */
+    List<SessionEntity> findByUserIdAndSsoSessionKeyAndStatus(String userId,
+                                                              String ssoSessionKey,
+                                                              SessionStatus status);
+
+    /**
      * List active sessions of a user ordered newest-first by {@code last_seen_at}.
      * Used by operations that need to pick "the most recent session" as a
      * best-effort fallback when the caller cannot supply the specific {@code sid}
