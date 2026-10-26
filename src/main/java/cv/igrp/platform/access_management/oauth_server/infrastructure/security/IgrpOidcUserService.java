@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
+import cv.igrp.platform.access_management.session.domain.service.SsoSessionKey;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.UserIdentityEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.UserIdentityJpaRepository;
 import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
@@ -140,10 +141,18 @@ public class IgrpOidcUserService extends OidcUserService {
         LOGGER.debug("Federated OIDC login mapped: provider={} sub={} -> internalId={}",
                 provider, externalUserId, user.getId());
 
+        // R1.6 — mint the SSO login id here, at the one point in the flow that
+        // corresponds to "one AM sign-in". This method runs during the
+        // authorization-code exchange with the upstream IdP, so it runs once per
+        // federated login; every later prompt=none authorize reuses the
+        // SecurityContext from the servlet session and therefore this same
+        // principal, reporting the same id. Logout invalidates that session, so
+        // the next sign-in lands here again and gets a different id.
         return new IgrpOidcUser(
                 oidcUser.getAuthorities(),
                 request.getIdToken(),
-                buildUserProfile(oidcUser)
+                buildUserProfile(oidcUser),
+                SsoSessionKey.newLoginId()
         );
     }
 

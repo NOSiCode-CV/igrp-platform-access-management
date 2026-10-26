@@ -163,6 +163,15 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
             // entity) still serves the lookups.
             jdbcTemplate.execute(
                     "DROP INDEX IF EXISTS ux_session_user_device_active");
+            // R1.1 — sso_session_key links every application session opened
+            // under one AM sign-in, so RP-initiated logout can revoke them
+            // together. Nullable with no backfill (N2): rows predating it have
+            // none and keep the old single-row logout behaviour.
+            jdbcTemplate.execute(
+                    "ALTER TABLE t_user_session ADD COLUMN IF NOT EXISTS sso_session_key VARCHAR(64)");
+            jdbcTemplate.execute(
+                    "CREATE INDEX IF NOT EXISTS ix_session_sso_key "
+                            + "ON t_user_session (user_id, sso_session_key, status)");
             LOGGER.debug("t_user_session schema migrations ensured.");
         } catch (Exception e) {
             LOGGER.warn("Could not ensure t_user_session schema (may not exist yet): {}", e.getMessage());

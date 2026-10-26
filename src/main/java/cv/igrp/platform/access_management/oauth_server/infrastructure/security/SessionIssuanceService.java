@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.session.config.SessionProperties;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
+import cv.igrp.platform.access_management.session.domain.service.SsoSessionKey;
 import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.session.infrastructure.cache.SessionCacheEvictService;
 import cv.igrp.platform.access_management.session.infrastructure.metrics.SessionMetrics;
@@ -111,6 +112,26 @@ public class SessionIssuanceService {
                                            String clientId,
                                            String jti,
                                            String upstreamIdToken) {
+        return bindAccessToken(context, userId, clientId, jti, upstreamIdToken, null);
+    }
+
+    /**
+     * Variant that also records which AM sign-in this session belongs to, so
+     * RP-initiated logout can revoke its siblings (R1.4).
+     *
+     * <p>{@code ssoLoginId} is the raw per-sign-in id carried on the
+     * authentication principal; only its digest is stored. Pass {@code null}
+     * when there is no browser sign-in behind the grant — {@code
+     * client_credentials}, or a refresh that fell through without a recoverable
+     * id. Those rows get no key and are revoked alone (R1.5).
+     */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public IssuanceBinding bindAccessToken(JwtEncodingContext context,
+                                           String userId,
+                                           String clientId,
+                                           String jti,
+                                           String upstreamIdToken,
+                                           String ssoLoginId) {
         if (userId == null) {
             throw new IllegalStateException("Cannot bind a JWT to a session without a resolved user id");
         }
@@ -132,7 +153,8 @@ public class SessionIssuanceService {
                     userId, deviceId);
         }
 
-        SessionEntity created = openNewSession(userId, deviceId, clientId, jti, request, now, ttlSeconds, upstreamIdToken);
+        SessionEntity created = openNewSession(userId, deviceId, clientId, jti, request, now, ttlSeconds,
+                upstreamIdToken, ssoLoginId);
         return new IssuanceBinding(created.getSessionId(), created.getDeviceId());
     }
 
@@ -252,6 +274,12 @@ public class SessionIssuanceService {
         session.setExpiresAt(slid);
         session.setLastSeenAt(now);
         session.setJti(jti);
+        // R1.4 — sso_session_key is deliberately NOT touched here. It records
+        // which sign-in opened this session; a refresh is the same session
+        // continuing, not a new sign-in. Re-deriving it on this path would also
+        // get it wrong, since a refresh_token grant is server-to-server and
+        // carries no principal from the browser login.
+
         if (clientId != null) {
             session.setClientId(clientId);
         }
@@ -279,7 +307,8 @@ public class SessionIssuanceService {
                                          HttpServletRequest request,
                                          Instant now,
                                          long ttlSeconds,
-                                         String upstreamIdToken) {
+                                         String upstreamIdToken,
+                                         String ssoLoginId) {
         // FR-1 (revised): a new session no longer closes the previous session on
         // the same device.
         //
@@ -328,6 +357,10 @@ public class SessionIssuanceService {
         entity.setDeviceId(deviceId);
         entity.setClientId(clientId);
         entity.setJti(jti);
+        // R1.3/R1.4 — store only the digest. Null when no sign-in is behind this
+        // grant, which leaves the row behaving exactly as every row did before
+        // the cascade existed (R1.5).
+        entity.setSsoSessionKey(SsoSessionKey.hash(ssoLoginId));
         if (upstreamIdToken != null && !upstreamIdToken.isBlank()) {
             entity.setUpstreamIdToken(upstreamIdToken);
         }

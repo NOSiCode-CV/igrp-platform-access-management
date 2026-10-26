@@ -28,7 +28,9 @@ import java.util.UUID;
            @Index(name = "ix_session_user_status", columnList = "user_id, status"),
            @Index(name = "ix_session_expires_active", columnList = "expires_at"),
            @Index(name = "ix_session_user_device", columnList = "user_id, device_id"),
-           @Index(name = "ix_session_jti", columnList = "jti")
+           @Index(name = "ix_session_jti", columnList = "jti"),
+           @Index(name = "ix_session_sso_key",
+                  columnList = "user_id, sso_session_key, status")
        },
        uniqueConstraints = {
            @UniqueConstraint(name = "ux_session_session_id", columnNames = {"session_id"})
@@ -106,6 +108,22 @@ public class SessionEntity extends AuditEntity {
      */
     @Column(name = "upstream_id_token", columnDefinition = "text")
     private String upstreamIdToken;
+
+    /**
+     * Links every application session opened under one AM sign-in, so logout can
+     * revoke them together (R1.1). The SHA-256 digest of a per-sign-in login id,
+     * base64url without padding — never a value that would authenticate anything
+     * if the table leaked. See {@code SsoSessionKey}.
+     *
+     * <p>Nullable, and null is ordinary rather than exceptional (R1.5): a
+     * {@code client_credentials} grant has no browser sign-in behind it, a
+     * refresh that falls through to a new session may have no recoverable login
+     * id, and every row created before this column existed has none. A row
+     * without a key is revoked alone, exactly as all rows were before the
+     * cascade (R2.1), so no backfill is needed (N2).
+     */
+    @Column(name = "sso_session_key", length = 64)
+    private String ssoSessionKey;
 
     @PrePersist
     protected void onCreate() {

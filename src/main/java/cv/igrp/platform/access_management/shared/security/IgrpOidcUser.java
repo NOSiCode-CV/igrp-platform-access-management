@@ -34,16 +34,51 @@ public class IgrpOidcUser extends DefaultOidcUser {
 
     private final UserProfile userProfile;
 
+    /**
+     * Identifies the AM sign-in this principal was created by (R1.6).
+     *
+     * <p>Minted once in {@code IgrpOidcUserService} when the federated login
+     * completes, so every application that then authorizes silently
+     * ({@code prompt=none}) on the same browser session reuses this same
+     * instance and reports the same value. Logout invalidates the servlet
+     * session, so the next sign-in mints a different one — which is precisely
+     * the "one AM sign-in" boundary R1.2 defines.
+     *
+     * <p>Null when the principal was not built by a sign-in — notably
+     * {@code IgrpJwtAuthenticationConverter}, which reconstructs one from a
+     * bearer JWT on the resource-server chain. Null is also what a principal
+     * deserialized from an authorization stored before this field existed
+     * yields, which {@code @JsonIgnoreProperties(ignoreUnknown = true)} makes
+     * harmless. Both cases mean "no session key" (R1.5), not an error.
+     */
+    private final String ssoLoginId;
+
     @JsonCreator
     public IgrpOidcUser(
             @JsonProperty("authorities") Collection<? extends GrantedAuthority> authorities,
             @JsonProperty("idToken") OidcIdToken idToken,
-            @JsonProperty("userProfile") UserProfile userProfile) {
+            @JsonProperty("userProfile") UserProfile userProfile,
+            @JsonProperty("ssoLoginId") String ssoLoginId) {
         super(authorities, idToken);
         this.userProfile = userProfile;
+        this.ssoLoginId = ssoLoginId;
+    }
+
+    /**
+     * For principals with no sign-in behind them, such as one rebuilt from a
+     * bearer token. Equivalent to passing a null login id.
+     */
+    public IgrpOidcUser(Collection<? extends GrantedAuthority> authorities,
+                        OidcIdToken idToken,
+                        UserProfile userProfile) {
+        this(authorities, idToken, userProfile, null);
     }
 
     public UserProfile getUserProfile() {
         return userProfile;
+    }
+
+    public String getSsoLoginId() {
+        return ssoLoginId;
     }
 }

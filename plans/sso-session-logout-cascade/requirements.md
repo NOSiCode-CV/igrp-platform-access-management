@@ -1,7 +1,7 @@
 # Requirements — SSO Session Link and Logout Cascade
 
 **Feature:** link every app session created under one AM sign-in, and make RP-initiated logout (`/connect/logout`) revoke all of them instead of only the app that logged out.
-**Status:** draft, not planned.
+**Status:** **implemented 2026-10-26.** R1.1-R2.5, R3.1 and R3.2 are in code on `development`; V1-V7 are deployment verification.
 **Target branch:** `development`.
 **Interacts with:** the framework spec `igrp-framework-nextjs/docs/superpowers/specs/2026-10-22-multi-app-auth-sessions-spec.md` (how the apps notice a revoked session) and the AM client spec `frontend/packages/packages/client/docs/specs/2026-10-22-session-client-alignment.md` (`checkSession()`). Builds on commits `0444154d` (several apps per device) and `6674a9d6` (drops the `ux_session_user_device_active` index that `0444154d` alone turned into a login failure).
 
@@ -120,4 +120,6 @@ The key must be available at `/oauth2/token`. That call is server-to-server and 
    A 403 on this route can only come from the filter chain — an invalid or revoked token — never from the endpoint. Note that an empty array is not an error: it is indistinguishable from an assigned user whose roles grant no menus, and treating it as a failure would hide that legitimate case.
 
 2. ~~How many replicas does the deployed AM run, and with sticky sessions?~~ **Answered 2026-10-23: AM may be scaled past one replica on demand (Kubernetes), so a single replica cannot be assumed.** R3.2 is therefore required, and is restated above as a prerequisite rather than a deployment note.
-3. Does the deployed AM include `6674a9d6` (which implies `0444154d`)? `0444154d` alone causes the 2026-10-16 incident: the partial unique index `ux_session_user_device_active` still rejects the second app's session and the sign-in ends in a bare 401. Without either commit, a second app's sign-in closes the first app's session and the cascade question is moot. As of 2026-10-23 both are on `development`, but `staging` has only `0444154d`.
+3. **Where the login id comes from, resolved in implementation.** R1.6 said "the authentication's details or attributes". It is a field on `IgrpOidcUser`, minted in `IgrpOidcUserService.loadUser` — the one point that runs exactly once per federated login, since every later `prompt=none` authorize reuses the `SecurityContext` from the servlet session and therefore the same principal. `details` was rejected: whether it survives the authorization store's JSON round trip depends on Spring Security's mixins rather than on anything in this repository, whereas `IgrpOidcUser` is already allowlisted and now has `IgrpOidcUserSerializationTest` proving the field round-trips. Note there is no form-login path on the AS chain to cover — it is `oauth2Login()` only.
+
+4. Does the deployed AM include `6674a9d6` (which implies `0444154d`)? `0444154d` alone causes the 2026-10-16 incident: the partial unique index `ux_session_user_device_active` still rejects the second app's session and the sign-in ends in a bare 401. Without either commit, a second app's sign-in closes the first app's session and the cascade question is moot. As of 2026-10-23 both are on `development`, but `staging` has only `0444154d`.
