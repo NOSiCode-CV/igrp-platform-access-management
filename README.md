@@ -1,3109 +1,638 @@
-# iGRP Access Management API - Comprehensive Documentation
+# iGRP Access Management API — Comprehensive Documentation
 
----
-
-## Related Documentation
-
-- [Internationalization (i18n)](docs/I18N.md) — platform languages, locale resolution from
-  `Accept-Language`, message bundles, `PUT /api/users/me/locale` and the invitation locale.
-
----
-
-## System Architecture Overview
-
-### Layered Architecture
-
-```mermaid
-flowchart TD
-    A[Client] --> B[API Controllers]
-    B --> C[Command/Query Handlers]
-    C --> D[Core Services]
-    D --> E[Repository Layer]
-    E --> F[(Database)]
-    D --> G[IAdapter Interface]
-    G --> H[Keycloak Implementation]
-    G --> I[WSO2 Implementation]
-    C --> J[Cache Layer]
-```
-
-**Explanation:**
-- **Client:** Initiates requests to the API.
-- **API Controllers:** Handle HTTP requests and route them to the appropriate handlers.
-- **Command/Query Handlers:** Implement business logic for commands (mutations) and queries (reads).
-- **Core Services:** Encapsulate domain logic and rules.
-- **Repository Layer:** Manages persistence and retrieval of entities.
-- **Database:** Stores all persistent data.
-- **IAdapter Interface:** Abstracts integration with external IAM providers (Keycloak, WSO2).
-- **Cache Layer:** Optimizes performance for permission and authorization checks.
-
----
-
-## Data Workflow & Endpoints
-
-### Global Workflow
-
-```mermaid
-sequenceDiagram
-    participant Client
-    participant Controller
-    participant CommandBus
-    participant Handler
-    participant Service
-    participant Repository
-    participant Database
-    participant IAdapter
-    participant ExternalIAM
-
-    Client->>Controller: HTTP Request (REST)
-    Controller->>CommandBus: Dispatch Command/Query
-    CommandBus->>Handler: Handle Command/Query
-    Handler->>Service: Business Logic
-    Service->>Repository: Persist/Retrieve Entity
-    Repository->>Database: DB Operation
-    Service->>IAdapter: IAM Sync (if needed)
-    IAdapter->>ExternalIAM: IAM Operation
-    ExternalIAM-->>IAdapter: Result
-    IAdapter-->>Service: Sync Result
-    Service-->>Handler: Entity/DTO
-    Handler-->>Controller: Response
-    Controller-->>Client: HTTP Response
-```
-
-**Explanation:**
-- Every endpoint follows a layered dispatch, ensuring separation of concerns and extensibility.
-- IAM operations are abstracted via adapters, allowing for easy provider switching.
-
----
-
-## API Endpoints - Deep Dive
-
-### Endpoint Coverage
-
-All endpoints are documented below, grouped by controller. Each endpoint includes:
-- **Method & Path**
-- **Purpose**
-- **Request/Response Structure**
-- **Workflow Diagram**
-- **Detailed Explanation**
-
----
-
-### ApplicationController
-
-#### Endpoints
-| Method | Path                                       | Purpose |
-|--------|--------------------------------------------|---------|
-| POST   | /api/applications                          | Create application |
-| PUT    | /api/applications/{code}                   | Create application |
-| GET    | /api/applications                          | List applications |
-| GET    | /api/applications/{code}                     | Get application by ID |
-| GET    | /api/applications/{code}/custom-fields       | Get custom fields |
-| POST   | /api/applications/{code}/custom-fields       | Add custom fields |
-| DELETE     | /api/applications/{code}/custom-fields | Remove custom fields |
-| POST   | /api/applications/by-ids                   | List applications by IDs |
-| GET    | /api/applications/by-user/{uid}            | Allowed applications by user |
-| GET    | /api/applications/denied/by-user/{uid}     | Denied applications by user |
-
-#### Workflow Example: Create Application
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ApplicationController
-    participant CommandBus
-    participant CreateApplicationCommandHandler
-    participant ApplicationMapper
-    participant ApplicationRepository
-    participant Database
-    participant IAdapter
-    participant ExternalIAM
-
-    Client->>ApplicationController: POST /api/applications
-    ApplicationController->>CommandBus: CreateApplicationCommand
-    CommandBus->>CreateApplicationCommandHandler: handle()
-    CreateApplicationCommandHandler->>ApplicationMapper: validate & map DTO
-    CreateApplicationCommandHandler->>ApplicationRepository: save()
-    ApplicationRepository->>Database: persist
-    CreateApplicationCommandHandler->>IAdapter: sync with IAM
-    IAdapter->>ExternalIAM: create app
-    ExternalIAM-->>IAdapter: result
-    IAdapter-->>CreateApplicationCommandHandler: sync result
-    CreateApplicationCommandHandler-->>ApplicationController: response
-    ApplicationController-->>Client: 201 Created
-```
-
-**Explanation:**
-- Application creation validates input, persists to DB, and synchronizes with IAM provider.
-- Custom fields and batch operations are supported for flexibility.
-
-
-#### Endpoint: Update Application
-| Method | Path | Purpose |
-|--------|------|---------|
-| PUT    | /api/applications/{code} | Update application |
-
-**Request:**
-- Path Parameter: `code` (String)
-- Body: Application update DTO (fields to update)
-
-**Response:**
-- 200 OK: Updated ApplicationDTO
-- 404 Not Found: If application does not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ApplicationController
-    participant CommandBus
-    participant UpdateApplicationCommandHandler
-    participant ApplicationMapper
-    participant ApplicationRepository
-    participant Database
-    participant IAdapter
-    participant ExternalIAM
-
-    Client->>ApplicationController: PUT /api/applications/{code}
-    ApplicationController->>CommandBus: UpdateApplicationCommand
-    CommandBus->>UpdateApplicationCommandHandler: handle()
-    UpdateApplicationCommandHandler->>ApplicationMapper: validate & map DTO
-    UpdateApplicationCommandHandler->>ApplicationRepository: update()
-    ApplicationRepository->>Database: persist
-    UpdateApplicationCommandHandler->>IAdapter: sync with IAM
-    IAdapter->>ExternalIAM: update app
-    ExternalIAM-->>IAdapter: result
-    IAdapter-->>UpdateApplicationCommandHandler: sync result
-    UpdateApplicationCommandHandler-->>ApplicationController: response
-    ApplicationController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Updates application details and synchronizes changes with the IAM provider.
-- Handles validation and error cases gracefully.
-
-**Example Case:**
-- Update the name and description of an existing application with code `app123`.
-
----
-
-#### Endpoint: Delete Application
-| Method | Path | Purpose |
-|--------|------|---------|
-| DELETE | /api/applications/{code} | Delete application |
-
-**Request:**
-- Path Parameter: `code` (String)
-
-**Response:**
-- 204 No Content: Successfully deleted
-- 404 Not Found: If application does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ApplicationController
-    participant CommandBus
-    participant DeleteApplicationCommandHandler
-    participant ApplicationRepository
-    participant Database
-    participant IAdapter
-    participant ExternalIAM
-
-    Client->>ApplicationController: DELETE /api/applications/{code}
-    ApplicationController->>CommandBus: DeleteApplicationCommand
-    CommandBus->>DeleteApplicationCommandHandler: handle()
-    DeleteApplicationCommandHandler->>ApplicationRepository: delete()
-    ApplicationRepository->>Database: remove
-    DeleteApplicationCommandHandler->>IAdapter: sync with IAM
-    IAdapter->>ExternalIAM: delete app
-    ExternalIAM-->>IAdapter: result
-    IAdapter-->>DeleteApplicationCommandHandler: sync result
-    DeleteApplicationCommandHandler-->>ApplicationController: response
-    ApplicationController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Deletes the application and removes it from the IAM provider.
-- Ensures all related entities are handled appropriately.
-
-**Example Case:**
-- Delete the application with code `app123`.
-
----
-
-#### Endpoint: Get Custom Fields for Application
-| Method | Path                                   | Purpose |
-|--------|----------------------------------------|---------|
-| GET    | /api/applications/{code}/custom-fields | Get custom fields for application |
-
-**Request:**
-- Path Parameter: `code` (String)
-
-**Response:**
-- 200 OK: List of CustomFieldDTO
-- 404 Not Found: If application does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ApplicationController
-    participant QueryBus
-    participant GetApplicationCustomFieldsQueryHandler
-    participant ApplicationRepository
-    participant CustomFieldRepository
-    participant Database
-
-    Client->>ApplicationController: GET /api/applications/{id}/custom-fields
-    ApplicationController->>QueryBus: GetApplicationCustomFieldsQuery
-    QueryBus->>GetApplicationCustomFieldsQueryHandler: handle()
-    GetApplicationCustomFieldsQueryHandler->>ApplicationRepository: validate existence
-    GetApplicationCustomFieldsQueryHandler->>CustomFieldRepository: fetch custom fields
-    CustomFieldRepository->>Database: query
-    GetApplicationCustomFieldsQueryHandler-->>ApplicationController: response
-    ApplicationController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Retrieves all custom fields associated with the specified application.
-
-**Example Case:**
-- Get custom fields for application with code `APP_DEMO`.
-
----
-
-#### Endpoint: Add Custom Fields to Application
-| Method | Path                                | Purpose |
-|--------|-------------------------------------|---------|
-| POST   | /api/applications/{code}/custom-fields | Add custom fields to application |
-
-**Request:**
-- Path Parameter: `code` (String)
-- Body: List of CustomFieldDTO
-
-**Response:**
-- 200 OK: Updated list of CustomFieldDTO
-- 404 Not Found: If application does not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ApplicationController
-    participant CommandBus
-    participant AddCustomFieldsToApplicationCommandHandler
-    participant ApplicationMapper
-    participant CustomFieldRepository
-    participant Database
-
-    Client->>ApplicationController: POST /api/applications/{id}/custom-fields
-    ApplicationController->>CommandBus: AddCustomFieldsToApplicationCommand
-    CommandBus->>AddCustomFieldsToApplicationCommandHandler: handle()
-    AddCustomFieldsToApplicationCommandHandler->>ApplicationMapper: validate & map DTO
-    ApplicationMapper->>CustomFieldRepository: save custom fields
-    CustomFieldRepository->>Database: persist
-    AddCustomFieldsToApplicationCommandHandler-->>ApplicationController: response
-    ApplicationController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Adds new custom fields to the specified application.
-- Handles validation and persistence.
-
-**Example Case:**
-- Add a custom field `env=production` to application with code `app42`.
-
----
-
-#### Endpoint: Remove Custom Fields from Application
-| Method | Path                                 | Purpose |
-|--------|--------------------------------------|---------|
-| DELETE | /api/applications/{code}/custom-fields | Remove custom fields from application |
-
-**Request:**
-- Path Parameter: `code` (String)
-- Body: List of CustomFieldDTO (fields to remove)
-
-**Response:**
-- 200 OK: Updated list of CustomFieldDTO
-- 404 Not Found: If application does not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ApplicationController
-    participant CommandBus
-    participant RemoveCustomFieldsFromApplicationCommandHandler
-    participant CustomFieldRepository
-    participant Database
-
-    Client->>ApplicationController: POST /api/applications/{id}/custom-fields/remove
-    ApplicationController->>CommandBus: RemoveCustomFieldsFromApplicationCommand
-    CommandBus->>RemoveCustomFieldsFromApplicationCommandHandler: handle()
-    RemoveCustomFieldsFromApplicationCommandHandler->>CustomFieldRepository: remove custom fields
-    CustomFieldRepository->>Database: delete
-    RemoveCustomFieldsFromApplicationCommandHandler-->>ApplicationController: response
-    ApplicationController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Removes specified custom fields from the application.
-- Handles validation and persistence.
-
-**Example Case:**
-- Remove the custom field `env=production` from application with code `app42`.
-
----
-
-#### Endpoint: List Applications by IDs
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST   | /api/applications/by-ids | List applications by IDs |
-
-**Request:**
-- Body: List of application IDs (Long)
-
-**Response:**
-- 200 OK: List of ApplicationDTO
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ApplicationController
-    participant QueryBus
-    participant GetApplicationsByIdsQueryHandler
-    participant ApplicationMapper
-    participant ApplicationRepository
-    participant Database
-
-    Client->>ApplicationController: POST /api/applications/by-ids
-    ApplicationController->>QueryBus: GetApplicationsByIdsQuery
-    QueryBus->>GetApplicationsByIdsQueryHandler: handle()
-    GetApplicationsByIdsQueryHandler->>ApplicationRepository: fetch applications
-    GetApplicationsByIdsQueryHandler->>ApplicationMapper: convert to DTos
-    ApplicationRepository->>Database: query
-    GetApplicationsByIdsQueryHandler-->>ApplicationController: response
-    ApplicationController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Retrieves applications matching the provided list of IDs.
-
-**Example Case:**
-- List applications with IDs `[42, 43, 44]`.
-
----
-
-#### Endpoint: Allowed Applications by User
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET    | /api/applications/by-user/{uid} | Allowed applications by user |
-
-**Request:**
-- Path Parameter: `uid` (String)
-
-**Response:**
-- 200 OK: List of ApplicationDTO
-- 404 Not Found: If user does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ApplicationController
-    participant QueryBus
-    participant GetAllowedApplicationsByUserQueryHandler
-    participant ApplicationRepository
-    participant Database
-
-    Client->>ApplicationController: GET /api/applications/by-user/{uid}
-    ApplicationController->>QueryBus: GetAllowedApplicationsByUserQuery
-    QueryBus->>GetAllowedApplicationsByUserQueryHandler: handle()
-    GetAllowedApplicationsByUserQueryHandler->>ApplicationRepository: fetch allowed applications
-    ApplicationRepository->>Database: query
-    GetAllowedApplicationsByUserQueryHandler-->>ApplicationController: response
-    ApplicationController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Lists applications the specified user is allowed to access.
-
-**Example Case:**
-- Get allowed applications for user `john.doe@igrp.cv`.
-
----
-
-#### Endpoint: Denied Applications by User
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET    | /api/applications/denied/by-user/{uid} | Denied applications by user |
-
-**Request:**
-- Path Parameter: `uid` (String)
-
-**Response:**
-- 200 OK: List of ApplicationDTO
-- 404 Not Found: If user does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ApplicationController
-    participant QueryBus
-    participant GetDeniedApplicationsByUserQueryHandler
-    participant ApplicationRepository
-    participant Database
-
-    Client->>ApplicationController: GET /api/applications/denied/by-user/{uid}
-    ApplicationController->>QueryBus: GetDeniedApplicationsByUserQuery
-    QueryBus->>GetDeniedApplicationsByUserQueryHandler: handle()
-    GetDeniedApplicationsByUserQueryHandler->>ApplicationRepository: fetch denied applications
-    ApplicationRepository->>Database: query
-    GetDeniedApplicationsByUserQueryHandler-->>ApplicationController: response
-    ApplicationController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Lists applications the specified user is denied access to.
-
-**Example Case:**
-- Get denied applications for user `john.doe@igrp.cv`.
-
----
-
-### DepartmentController
-
-#### Endpoints
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST   | /api/departments | Create department |
-| GET    | /api/departments | List departments |
-| GET    | /api/departments/{id} | Get department by ID |
-| PUT    | /api/departments/{code} | Update department |
-| DELETE | /api/departments/{code} | Delete department |
-| POST   | /api/departments/{code}/applications | Add applications to department |
-| DELETE | /api/departments/{code}/applications | Remove applications from department |
-| POST   | /api/departments/{code}/menus | Add menus to department |
-| DELETE | /api/departments/{code}/menus | Remove menus from department |
-| GET    | /api/departments/{code}/menus/available | Get available menus for department |
-| GET    | /api/departments/{code}/resources/available | Get available resources for department |
-
----
-
-#### Endpoint: Create Department
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST   | /api/departments | Create department |
-
-**Request:**
-- Body: DepartmentDTO (code, name, parentId, applicationId, etc.)
-
-**Response:**
-- 201 Created: DepartmentDTO
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant DepartmentController
-    participant CommandBus
-    participant CreateDepartmentCommandHandler
-    participant DepartmentMapperValidator
-    participant DepartmentRepository
-    participant Database
-
-    Client->>DepartmentController: POST /api/departments
-    DepartmentController->>CommandBus: CreateDepartmentCommand
-    CommandBus->>CreateDepartmentCommandHandler: handle()
-    CreateDepartmentCommandHandler->>DepartmentMapperValidator: validate & map DTO
-    CreateDepartmentCommandHandler->>DepartmentRepository: save()
-    DepartmentRepository->>Database: persist
-    CreateDepartmentCommandHandler-->>DepartmentController: response
-    DepartmentController-->>Client: 201 Created
-```
-
-**Explanation:**
-- Creates a new department, optionally as a child of another department.
-- Associates department with an application if provided.
-
-**Example Case:**
-- Create a department named "Finance" under application ID `42`.
-
----
-
-#### Endpoint: List Departments
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET    | /api/departments | List departments |
-
-**Request:**
-- Query Parameters: Optional filters (applicationCode, parentCode, status, etc.)
-
-**Response:**
-- 200 OK: List of DepartmentDTO
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant DepartmentController
-    participant QueryBus
-    participant GetDepartmentsQueryHandler
-    participant DepartmentMapperValidator
-    participant DepartmentRepository
-    participant Database
-
-    Client->>DepartmentController: GET /api/departments
-    DepartmentController->>QueryBus: GetDepartmentsQuery
-    QueryBus->>GetDepartmentsQueryHandler: handle()
-    GetDepartmentsQueryHandler->>DepartmentMapperValidator: apply filters
-    DepartmentMapperValidator->>DepartmentRepository: fetch departments
-    DepartmentRepository->>Database: query
-    GetDepartmentsQueryHandler-->>DepartmentController: response
-    DepartmentController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Lists all departments, optionally filtered by application, parent, or status.
-
-**Example Case:**
-- List all departments for application code `app42`.
-
----
-
-#### Endpoint: Get Department by ID
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET    | /api/departments/{id} | Get department by ID |
-
-**Request:**
-- Path Parameter: `id` (Long)
-
-**Response:**
-- 200 OK: DepartmentDTO
-- 404 Not Found: If department does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant DepartmentController
-    participant QueryBus
-    participant GetDepartmentByIdQueryHandler
-    participant DepartmentMapperValidator
-    participant DepartmentRepository
-    participant Database
-
-    Client->>DepartmentController: GET /api/departments/{id}
-    DepartmentController->>QueryBus: GetDepartmentByIdQuery
-    QueryBus->>GetDepartmentByIdQueryHandler: handle()
-    GetDepartmentByIdQueryHandler->>DepartmentMapperValidator: validate existence & map DTO
-    GetDepartmentByIdQueryHandler->>DepartmentRepository: fetch department
-    DepartmentRepository->>Database: query
-    GetDepartmentByIdQueryHandler-->>DepartmentController: response
-    DepartmentController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Retrieves details of a specific department by its ID.
-
-**Example Case:**
-- Get department with ID `101`.
-
----
-
-#### Endpoint: Update Department
-| Method | Path | Purpose |
-|--------|------|---------|
-| PUT    | /api/departments/{code} | Update department |
-
-**Request:**
-- Path Parameter: `code` (String)
-- Body: DepartmentDTO (fields to update)
-
-**Response:**
-- 200 OK: Updated DepartmentDTO
-- 404 Not Found: If department does not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant DepartmentController
-    participant CommandBus
-    participant UpdateDepartmentCommandHandler
-    participant DepartmentMapperValidator
-    participant DepartmentRepository
-    participant Database
-
-    Client->>DepartmentController: PUT /api/departments/{code}
-    DepartmentController->>CommandBus: UpdateDepartmentCommand
-    CommandBus->>UpdateDepartmentCommandHandler: handle()
-    UpdateDepartmentCommandHandler->>DepartmentMapperValidator: validate & map DTO
-    UpdateDepartmentCommandHandler->>DepartmentRepository: update()
-    DepartmentRepository->>Database: persist
-    UpdateDepartmentCommandHandler-->>DepartmentController: response
-    DepartmentController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Updates department details, including name, parent, or application association.
-
-**Example Case:**
-- Update the name of department with code `finance` to "Finance & Accounting".
-
----
-
-#### Endpoint: Delete Department
-| Method | Path | Purpose |
-|--------|------|---------|
-| DELETE | /api/departments/{code} | Delete department |
-
-**Request:**
-- Path Parameter: `code` (String)
-
-**Response:**
-- 204 No Content: Successfully deleted
-- 404 Not Found: If department does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant DepartmentController
-    participant CommandBus
-    participant DeleteDepartmentCommandHandler
-    participant DepartmentRepository
-    participant Database
-
-    Client->>DepartmentController: DELETE /api/departments/{code}
-    DepartmentController->>CommandBus: DeleteDepartmentCommand
-    CommandBus->>DeleteDepartmentCommandHandler: handle()
-    DeleteDepartmentCommandHandler->>DepartmentRepository: delete()
-    DepartmentRepository->>Database: remove
-    DeleteDepartmentCommandHandler-->>DepartmentController: response
-    DepartmentController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Deletes the department and handles child/related entities as needed.
-
-**Example Case:**
-- Delete department with code `finance`.
-
----
-
-#### Endpoint: Add Applications to Department
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST   | /api/departments/{code}/applications | Add applications to department |
-
-**Request:**
-- Path Parameter: `code` (String)
-- Body: List of ApplicationDTO (applications to add)
-
-**Response:**
-- 204 No Content: Successfully added
-- 404 Not Found: If department or applications do not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant DepartmentController
-    participant CommandBus
-    participant AddApplicationsToDepartmentCommandHandler
-    participant DepartmentRepository
-    participant ApplicationRepository
-    participant Database
-
-    Client->>DepartmentController: POST /api/departments/{code}/applications
-    DepartmentController->>CommandBus: AddApplicationsToDepartmentCommand
-    CommandBus->>AddApplicationsToDepartmentCommandHandler: handle()
-    AddApplicationsToDepartmentCommandHandler->>DepartmentRepository: validate & update department
-    AddApplicationsToDepartmentCommandHandler->>ApplicationRepository: validate application
-    DepartmentRepository->>Database: persist
-    AddApplicationsToDepartmentCommandHandler-->>DepartmentController: response
-    DepartmentController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Adds one or more applications to the specified department.
-- Ensures parent-child consistency for application assignments.
-
-**Example Case:**
-- Add applications `app123` and `app456` to department with code `finance`.
-
----
-
-#### Endpoint: Remove Applications from Department
-| Method | Path | Purpose |
-|--------|------|---------|
-| DELETE | /api/departments/{code}/applications | Remove applications from department |
-
-**Request:**
-- Path Parameter: `code` (String)
-- Body: List of ApplicationDTO (applications to remove)
-
-**Response:**
-- 204 No Content: Successfully removed
-- 404 Not Found: If department or applications do not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant DepartmentController
-    participant CommandBus
-    participant RemoveApplicationsFromDepartmentCommandHandler
-    participant DepartmentRepository
-    participant ApplicationRepository
-    participant Database
-
-    Client->>DepartmentController: DELETE /api/departments/{code}/applications
-    DepartmentController->>CommandBus: RemoveApplicationsFromDepartmentCommand
-    CommandBus->>RemoveApplicationsFromDepartmentCommandHandler: handle()
-    RemoveApplicationsFromDepartmentCommandHandler->>DepartmentRepository: validate & update department
-    RemoveApplicationsFromDepartmentCommandHandler->>ApplicationRepository: validate application
-    DepartmentRepository->>Database: persist
-    RemoveApplicationsFromDepartmentCommandHandler-->>DepartmentController: response
-    DepartmentController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Removes one or more applications from the specified department.
-
-**Example Case:**
-- Remove application `app123` from department with code `finance`.
-
----
-
-#### Endpoint: Add Menus to Department
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST   | /api/departments/{code}/menus | Add menus to department |
-
-**Request:**
-- Path Parameter: `code` (String)
-- Body: List of MenuEntryDTO (menus to add)
-
-**Response:**
-- 204 No Content: Successfully added
-- 404 Not Found: If department or menus do not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant DepartmentController
-    participant CommandBus
-    participant AddMenusToDepartmentCommandHandler
-    participant DepartmentRepository
-    participant MenuRepository
-    participant Database
-
-    Client->>DepartmentController: POST /api/departments/{code}/menus
-    DepartmentController->>CommandBus: AddMenusToDepartmentCommand
-    CommandBus->>AddMenusToDepartmentCommandHandler: handle()
-    AddMenusToDepartmentCommandHandler-->>DepartmentRepository: validate & update department
-    AddMenusToDepartmentCommandHandler->>MenuRepository: validate menu
-    DepartmentRepository->>Database: persist
-    AddMenusToDepartmentCommandHandler-->>DepartmentController: response
-    DepartmentController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Adds one or more menus to the specified department.
-
-**Example Case:**
-- Add menu `menu123` to department with code `finance`.
-
----
-
-#### Endpoint: Remove Menus from Department
-| Method | Path | Purpose |
-|--------|------|---------|
-| DELETE | /api/departments/{code}/menus | Remove menus from department |
-
-**Request:**
-- Path Parameter: `code` (String)
-- Body: List of MenuEntryDTO (menus to remove)
-
-**Response:**
-- 204 No Content: Successfully removed
-- 404 Not Found: If department or menus do not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant DepartmentController
-    participant CommandBus
-    participant RemoveMenusFromDepartmentCommandHandler
-    participant DepartmentRepository
-    participant MenuRepository
-    participant Database
-
-    Client->>DepartmentController: DELETE /api/departments/{code}/menus
-    DepartmentController->>CommandBus: RemoveMenusFromDepartmentCommand
-    CommandBus->>RemoveMenusFromDepartmentCommandHandler: handle()
-    RemoveMenusFromDepartmentCommandHandler->>DepartmentRepository: validate & update department
-    RemoveMenusFromDepartmentCommandHandler->>MenuRepository: validate menu
-    DepartmentRepository->>Database: persist
-    RemoveMenusFromDepartmentCommandHandler-->>DepartmentController: response
-    DepartmentController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Removes one or more menus from the specified department.
-
-**Example Case:**
-- Remove menu `menu123` from department with code `finance`.
-
----
-
-#### Endpoint: Get Available Menus for Department
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET    | /api/departments/{code}/menus/available | Get available menus for department |
-
-**Request:**
-- Path Parameter: `code` (String)
-
-**Response:**
-- 200 OK: List of MenuEntryDTO
-- 404 Not Found: If department does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant DepartmentController
-    participant QueryBus
-    participant GetAvailableMenusForDepartmentQueryHandler
-    participant MenuRepository
-    participant Database
-
-    Client->>DepartmentController: GET /api/departments/{code}/menus/available
-    DepartmentController->>QueryBus: GetAvailableMenusForDepartmentQuery
-    QueryBus->>GetAvailableMenusForDepartmentQueryHandler: handle()
-    GetAvailableMenusForDepartmentQueryHandler->>MenuRepository: fetch available menus
-    MenuRepository->>Database: query
-    GetAvailableMenusForDepartmentQueryHandler-->>DepartmentController: response
-    DepartmentController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Lists menus available for assignment to the specified department.
-
-**Example Case:**
-- Get available menus for department with code `finance`.
-
----
-
-#### Endpoint: Get Available Resources for Department
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET    | /api/departments/{code}/resources/available | Get available resources for department |
-
-**Request:**
-- Path Parameter: `code` (String)
-
-**Response:**
-- 200 OK: List of ResourceDTO
-- 404 Not Found: If department does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant DepartmentController
-    participant QueryBus
-    participant GetAvailableResourcesForDepartmentQueryHandler
-    participant ResourceRepository
-    participant Database
-
-    Client->>DepartmentController: GET /api/departments/{code}/resources/available
-    DepartmentController->>QueryBus: GetAvailableResourcesForDepartmentQuery
-    QueryBus->>GetAvailableResourcesForDepartmentQueryHandler: handle()
-    GetAvailableResourcesForDepartmentQueryHandler->>ResourceRepository: fetch available resources
-    ResourceRepository->>Database: query
-    GetAvailableResourcesForDepartmentQueryHandler-->>DepartmentController: response
-    DepartmentController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Lists resources available for assignment to the specified department.
-
-**Example Case:**
-- Get available resources for department with code `finance`.
-
----
-
-### UserController
-
-#### Endpoints
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST   | /api/users | Create user |
-| GET    | /api/users | List users |
-| GET    | /api/users/{uid} | Get user by UID |
-| PUT    | /api/users/{uid} | Update user |
-| DELETE | /api/users/{uid} | Delete user |
-| POST   | /api/users/{uid}/roles | Add roles to user |
-| DELETE | /api/users/{uid}/roles | Remove roles from user |
-| GET    | /api/users/{uid}/roles | Get roles for user |
-| POST   | /api/users/invite | Invite user |
-
----
-
-#### Endpoint: Create User
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST   | /api/users | Create user |
-
-**Request:**
-- Body: IGRPUserDTO (uid, name, email, departmentCode, etc.)
-
-**Response:**
-- 201 Created: IGRPUserDTO
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant UserController
-    participant CommandBus
-    participant CreateUserCommandHandler
-    participant IGRPUserMapper
-    participant IGRPUserRepository
-    participant Database
-
-    Client->>UserController: POST /api/users
-    UserController->>CommandBus: CreateUserCommand
-    CommandBus->>CreateUserCommandHandler: handle()
-    CreateUserCommandHandler->>IGRPUserMapper: map DTO
-    CreateUserCommandHandler->>IGRPUserRepository: save()
-    IGRPUserRepository->>Database: persist
-    CreateUserCommandHandler-->>UserController: response
-    UserController-->>Client: 201 Created
-```
-
-**Explanation:**
-- Creates a new user and associates with department if provided.
-
-**Example Case:**
-- Create user with UID `john.doe`, name "John Doe", department code `finance`.
-
----
-
-#### Endpoint: List Users
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET    | /api/users | List users |
-
-**Request:**
-- Query Parameters: Optional filters (departmentCode, status, etc.)
-
-**Response:**
-- 200 OK: List of IGRPUserDTO
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant UserController
-    participant QueryBus
-    participant GetUsersQueryHandler
-    participant UserRepository
-    participant Database
-
-    Client->>UserController: GET /api/users
-    UserController->>QueryBus: GetUsersQuery
-    QueryBus->>GetUsersQueryHandler: handle()
-    GetUsersQueryHandler->>UserRepository: fetch users
-    UserRepository->>Database: query
-    GetUsersQueryHandler-->>UserController: response
-    UserController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Lists all users, optionally filtered by department or status.
-
-**Example Case:**
-- List all users in department code `finance`.
-
----
-
-#### Endpoint: Get User by UID
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET    | /api/users/{uid} | Get user by UID |
-
-**Request:**
-- Path Parameter: `uid` (String)
-
-**Response:**
-- 200 OK: IGRPUserDTO
-- 404 Not Found: If user does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant UserController
-    participant QueryBus
-    participant GetUserByUidQueryHandler
-    participant UserRepository
-    participant Database
-
-    Client->>UserController: GET /api/users/{uid}
-    UserController->>QueryBus: GetUserByUidQuery
-    QueryBus->>GetUserByUidQueryHandler: handle()
-    GetUserByUidQueryHandler-->UserRepository: fetch user
-    UserRepository->>Database: query
-    GetUserByUidQueryHandler-->>UserController: response
-    UserController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Retrieves details of a specific user by UID.
-
-**Example Case:**
-- Get user with UID `john.doe`.
-
----
-
-#### Endpoint: Update User
-| Method | Path | Purpose |
-|--------|------|---------|
-| PUT    | /api/users/{uid} | Update user |
-
-**Request:**
-- Path Parameter: `uid` (String)
-- Body: IGRPUserDTO (fields to update)
-
-**Response:**
-- 200 OK: Updated IGRPUserDTO
-- 404 Not Found: If user does not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant UserController
-    participant CommandBus
-    participant UpdateUserCommandHandler
-    participant UserMapper
-    participant UserRepository
-    participant Database
-
-    Client->>UserController: PUT /api/users/{uid}
-    UserController->>CommandBus: UpdateUserCommand
-    CommandBus->>UpdateUserCommandHandler: handle()
-    UpdateUserCommandHandler->>UserMapper: map DTO
-    UpdateUserCommandHandler->>UserRepository: update()
-    UserRepository->>Database: persist
-    UpdateUserCommandHandler-->>UserController: response
-    UserController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Updates user details, including name, department, or status.
-
-**Example Case:**
-- Update the name of user `john.doe` to "Johnathan Doe".
-
----
-
-#### Endpoint: Delete User
-| Method | Path | Purpose |
-|--------|------|---------|
-| DELETE | /api/users/{uid} | Delete user |
-
-**Request:**
-- Path Parameter: `uid` (String)
-
-**Response:**
-- 204 No Content: Successfully deleted
-- 404 Not Found: If user does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant UserController
-    participant CommandBus
-    participant DeleteUserCommandHandler
-    participant UserRepository
-    participant Database
-
-    Client->>UserController: DELETE /api/users/{uid}
-    UserController->>CommandBus: DeleteUserCommand
-    CommandBus->>DeleteUserCommandHandler: handle()
-    DeleteUserCommandHandler->>UserMapper: map to DTO
-    DeleteUserCommandHandler->>UserRepository: delete()
-    UserRepository->>Database: remove
-    DeleteUserCommandHandler-->>UserController: response
-    UserController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Deletes the user and handles related entities as needed.
-
-**Example Case:**
-- Delete user with UID `john.doe@igrp.cv`.
-
----
-
-#### Endpoint: Add Roles to User
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST   | /api/users/{uid}/roles | Add roles to user |
-
-**Request:**
-- Path Parameter: `uid` (String)
-- Body: List of RoleDTO (roles to add)
-
-**Response:**
-- 204 No Content: Successfully added
-- 404 Not Found: If user or roles do not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant UserController
-    participant CommandBus
-    participant AddRolesToUserCommandHandler
-    participant UserRepository
-    participant RoleRepository
-    participant Database
-
-    Client->>UserController: POST /api/users/{uid}/roles
-    UserController->>CommandBus: AddRolesToUserCommand
-    CommandBus->>AddRolesToUserCommandHandler: handle()
-    AddRolesToUserCommandHandler->>UserRepository: update user
-    AddRolesToUserCommandHandler->>RoleRepository: validate roles
-    UserRepository->>Database: persist
-    AddRolesToUserCommandHandler-->>UserController: response
-    UserController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Adds one or more roles to the specified user.
-
-**Example Case:**
-- Add roles `admin` and `manager` to user `john.doe`.
-
----
-
-#### Endpoint: Remove Roles from User
-| Method | Path | Purpose |
-|--------|------|---------|
-| DELETE | /api/users/{uid}/roles | Remove roles from user |
-
-**Request:**
-- Path Parameter: `uid` (String)
-- Body: List of RoleDTO (roles to remove)
-
-**Response:**
-- 204 No Content: Successfully removed
-- 404 Not Found: If user or roles do not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant UserController
-    participant CommandBus
-    participant RemoveRolesFromUserCommandHandler
-    participant UserRepository
-    participant RoleRepository
-    participant Database
-
-    Client->>UserController: DELETE /api/users/{uid}/roles
-    UserController->>CommandBus: RemoveRolesFromUserCommand
-    CommandBus->>RemoveRolesFromUserCommandHandler: handle()
-    RemoveRolesFromUserCommandHandler->>UserRepository: update user
-    RemoveRolesFromUserCommandHandler->>RoleRepository: validate roles
-    UserRepository->>Database: persist
-    RemoveRolesFromUserCommandHandler-->>UserController: response
-    UserController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Removes one or more roles from the specified user.
-
-**Example Case:**
-- Remove role `manager` from user `john.doe`.
-
----
-
-#### Endpoint: Get Roles for User
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET    | /api/users/{uid}/roles | Get roles for user |
-
-**Request:**
-- Path Parameter: `uid` (String)
-
-**Response:**
-- 200 OK: List of RoleDTO
-- 404 Not Found: If user does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant UserController
-    participant QueryBus
-    participant GetRolesForUserQueryHandler
-    participant RoleRepository
-    participant Database
-
-    Client->>UserController: GET /api/users/{uid}/roles
-    UserController->>QueryBus: GetRolesForUserQuery
-    QueryBus->>GetRolesForUserQueryHandler: handle()
-    GetRolesForUserQueryHandler->>RoleRepository: fetch roles
-    RoleRepository->>Database: query
-    GetRolesForUserQueryHandler-->>UserController: response
-    UserController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Lists roles assigned to the specified user.
-
-**Example Case:**
-- Get roles for user `john.doe`.
-
----
-
-#### Endpoint: Invite User
-| Method | Path | Purpose |
-|--------|------|---------|
-| POST   | /api/users/invite | Invite user |
-
-**Request:**
-- Body: InviteUserDTO (uid, email, departmentCode, etc.)
-
-**Response:**
-- 200 OK: Invitation sent
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant UserController
-    participant CommandBus
-    participant InviteUserCommandHandler
-    participant UserRepository
-    participant EmailService
-    participant Database
-
-    Client->>UserController: POST /api/users/invite
-    UserController->>CommandBus: InviteUserCommand
-    CommandBus->>InviteUserCommandHandler: handle()
-    InviteUserCommandHandler->>UserRepository: save invitation
-    UserRepository->>Database: persist
-    InviteUserCommandHandler->>EmailService: send invitation
-    EmailService-->>InviteUserCommandHandler: result
-    InviteUserCommandHandler-->>UserController: response
-    UserController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Invites a user to the platform, sending an email invitation.
+Identity and access management for the iGRP 3.0 platform. This service is both an
+**OAuth 2.1 / OpenID Connect authorization server** — it issues the platform's own
+access, refresh and ID tokens — and the **system of record** for users, roles,
+permissions, departments, applications and sessions.
 
-**Example Case:**
-- Invite user with UID `jane.doe`, email `jane.doe@example.com` to department code `finance`.
+**Stack:** Java 26 · Spring Boot 3.5.14 · Spring Authorization Server · Spring Cloud 2025.0.0 · PostgreSQL · Redis · MinIO/S3
 
 ---
 
-### MenuController
-
-#### Endpoints
-| Method | Path                            | Purpose                      |
-|--------|---------------------------------|------------------------------|
-| POST   | /api/menus                      | Create menu                  |
-| GET    | /api/menus                      | List menus                   |
-| GET    | /api/menus/{code}               | Get menu by code             |
-| PUT    | /api/menus/{code}               | Update menu                  |
-| DELETE | /api/menus/{code}               | Delete menu                  |
-| POST   | /api/menus/{code}/roles         | Add roles to menu            |
-| DELETE | /api/menus/{code}/roles         | Remove roles from menu       |
-| POST   | /api/menus/{code}/departments   | Add departments to menu      |
-| DELETE | /api/menus/{code}/departments   | Remove departments from menu |
+## Table of Contents
 
----
-
-#### Endpoint: Create Menu
-| Method | Path       | Purpose     |
-|--------|------------|-------------|
-| POST   | /api/menus | Create menu |
-
-**Request:**
-- Body: MenuEntryDTO (name, type, applicationId, etc.)
-
-**Response:**
-- 201 Created: MenuEntryDTO
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant MenuController
-    participant CommandBus
-    participant CreateMenuCommandHandler
-    participant MenuRepository
-    participant Database
-
-    Client->>MenuController: POST /api/menus
-    MenuController->>CommandBus: CreateMenuCommand
-    CommandBus->>CreateMenuCommandHandler: handle()
-    CreateMenuCommandHandler->>MenuRepository: save()
-    MenuRepository->>Database: persist
-    CreateMenuCommandHandler-->>MenuController: response
-    MenuController-->>Client: 201 Created
-```
-
-**Explanation:**
-- Creates a new menu entry, optionally linked to an application.
-
-**Example Case:**
-- Create a menu named "Dashboard" for application code `app42`.
-
----
-
-#### Endpoint: List Menus
-| Method | Path | Purpose |
-|--------|------|---------|
-| GET    | /api/menus | List menus |
-
-**Request:**
-- Query Parameters: Optional filters (applicationCode, type, etc.)
-
-**Response:**
-- 200 OK: List of MenuEntryDTO
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant MenuController
-    participant QueryBus
-    participant GetMenusQueryHandler
-    participant MenuRepository
-    participant Database
-
-    Client->>MenuController: GET /api/menus
-    MenuController->>QueryBus: GetMenusQuery
-    QueryBus->>GetMenusQueryHandler: handle()
-    GetMenusQueryHandler->>MenuRepository: fetch menus
-    MenuRepository->>Database: query
-    GetMenusQueryHandler-->>MenuController: response
-    MenuController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Lists all menus, optionally filtered by application or type.
-
-**Example Case:**
-- List all menus for application code `app42`.
-
----
-
-#### Endpoint: Get Menu by ID
-| Method | Path              | Purpose          |
-|--------|-------------------|------------------|
-| GET    | /api/menus/{code} | Get menu by code |
-
-**Request:**
-- Path Parameter: `id` (Long)
-
-**Response:**
-- 200 OK: MenuEntryDTO
-- 404 Not Found: If menu does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant MenuController
-    participant QueryBus
-    participant GetMenuByIdQueryHandler
-    participant MenuService
-    participant MenuRepository
-    participant Database
-
-    Client->>MenuController: GET /api/menus/{code}
-    MenuController->>QueryBus: GetMenuByIdQuery
-    QueryBus->>GetMenuByIdQueryHandler: handle()
-    GetMenuByIdQueryHandler->>MenuService: validate existence
-    MenuService->>MenuRepository: fetch menu
-    MenuRepository->>Database: query
-    GetMenuByIdQueryHandler-->>MenuController: response
-    MenuController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Retrieves details of a specific menu by its ID.
-
-**Example Case:**
-- Get menu with code `menu101`.
-
----
-
-#### Endpoint: Update Menu
-| Method | Path              | Purpose     |
-|--------|-------------------|-------------|
-| PUT    | /api/menus/{code} | Update menu |
-
-**Request:**
-- Path Parameter: `code` (String)
-- Body: MenuEntryDTO (fields to update)
-
-**Response:**
-- 200 OK: Updated MenuEntryDTO
-- 404 Not Found: If menu does not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant MenuController
-    participant CommandBus
-    participant UpdateMenuCommandHandler
-    participant MenuRepository
-    participant Database
-
-    Client->>MenuController: PUT /api/menus/{code}
-    MenuController->>CommandBus: UpdateMenuCommand
-    CommandBus->>UpdateMenuCommandHandler: handle()
-    UpdateMenuCommandHandler->>MenuRepository: update()
-    MenuRepository->>Database: persist
-    UpdateMenuCommandHandler-->>MenuController: response
-    MenuController-->>Client: 200 OK
-```
-
-**Explanation:**
-- Updates menu details, such as name or type.
-
-**Example Case:**
-- Update the name of menu with code `menu101` to "Main Dashboard".
-
----
-
-#### Endpoint: Delete Menu
-| Method | Path              | Purpose     |
-|--------|-------------------|-------------|
-| DELETE | /api/menus/{code} | Delete menu |
-
-**Request:**
-- Path Parameter: `code` (String)
-
-**Response:**
-- 204 No Content: Successfully deleted
-- 404 Not Found: If menu does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant MenuController
-    participant CommandBus
-    participant DeleteMenuCommandHandler
-    participant MenuRepository
-    participant Database
-
-    Client->>MenuController: DELETE /api/menus/{id}
-    MenuController->>CommandBus: DeleteMenuCommand
-    CommandBus->>DeleteMenuCommandHandler: handle()
-    DeleteMenuCommandHandler->>MenuRepository: delete()
-    MenuRepository->>Database: remove
-    DeleteMenuCommandHandler-->>MenuController: response
-    MenuController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Deletes the menu and handles related items as needed.
-
-**Example Case:**
-- Delete menu with code `menu101`.
-
----
-
-#### Endpoint: Add Roles to Menu
-| Method | Path                    | Purpose           |
-|--------|-------------------------|-------------------|
-| POST   | /api/menus/{code}/roles | Add roles to menu |
-
-**Request:**
-- Path Parameter: `code` (String)
-- Body: List of role codes (roles to add)
-
-**Response:**
-- 204 No Content: Successfully added
-- 404 Not Found: If menu or roles do not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant MenuController
-    participant CommandBus
-    participant AddRolesToMenuCommandHandler
-    participant MenuRepository
-    participant Database
-
-    Client->>MenuController: POST /api/menus/{id}/items
-    MenuController->>CommandBus: AddItemsToMenuCommand
-    CommandBus->>AddRolesToMenuCommandHandler: handle()
-    AddRolesToMenuCommandHandler->>MenuRepository: update menu
-    MenuRepository->>Database: persist
-    AddRolesToMenuCommandHandler-->>MenuController: response
-    MenuController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Adds one or more roles to the specified menu.
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Getting Started](#getting-started)
+- [Configuration](#configuration)
+- [Authentication](#authentication)
+- [API Reference](#api-reference)
+- [Session Management](#session-management)
+- [Error Responses](#error-responses)
+- [Client SDKs](#client-sdks)
+- [Development](#development)
+- [Deployment](#deployment)
+- [Observability](#observability)
+- [Security](#security)
+- [Documentation Index](#documentation-index)
+- [Contributing](#contributing)
+- [Support and License](#support-and-license)
 
-**Example Case:**
-- Add roles `role123` and `role456` to menu with code `menu101`.
-
----
-
-#### Endpoint: Remove Roles from Menu
-| Method | Path                    | Purpose                |
-|--------|-------------------------|------------------------|
-| DELETE | /api/menus/{code}/roles | Remove roles from menu |
-
-**Request:**
-- Path Parameter: `code` (String)
-- Body: List of role codes (roles to remove)
-
-**Response:**
-- 204 No Content: Successfully removed
-- 404 Not Found: If menu or roles do not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant MenuController
-    participant CommandBus
-    participant RemoveRolesFromMenuCommandHandler
-    participant MenuRepository
-    participant Database
-
-    Client->>MenuController: DELETE /api/menus/{id}/items
-    MenuController->>CommandBus: RemoveItemsFromMenuCommand
-    CommandBus->>RemoveRolesFromMenuCommandHandler: handle()
-    RemoveRolesFromMenuCommandHandler->>MenuRepository: update menu
-    MenuRepository->>Database: persist
-    RemoveRolesFromMenuCommandHandler-->>MenuController: response
-    MenuController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Removes one or more roles from the specified menu.
-
-**Example Case:**
-- Remove role `role123` from menu with code `menu101`.
-
----
-
-#### Endpoint: Add Departments to Menu
-| Method | Path                          | Purpose                 |
-|--------|-------------------------------|-------------------------|
-| POST   | /api/menus/{code}/departments | Add departments to menu |
-
-**Request:**
-- Path Parameter: `code` (String)
-- Body: List of department codes (departments to add)
-
-**Response:**
-- 204 No Content: Successfully added
-- 404 Not Found: If menu or departments do not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant MenuController
-    participant CommandBus
-    participant AddDepartmentsToMenuCommandHandler
-    participant MenuRepository
-    participant Database
-
-    Client->>MenuController: POST /api/menus/{id}/items
-    MenuController->>CommandBus: AddItemsToMenuCommand
-    CommandBus->>AddDepartmentsToMenuCommandHandler: handle()
-    AddDepartmentsToMenuCommandHandler->>MenuRepository: update menu
-    MenuRepository->>Database: persist
-    AddDepartmentsToMenuCommandHandler-->>MenuController: response
-    MenuController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Adds one or more departments to the specified menu.
-
-**Example Case:**
-- Add departments `department123` and `department456` to menu with code `menu101`.
-
 ---
-
-#### Endpoint: Remove Departments from Menu
-| Method | Path                          | Purpose                      |
-|--------|-------------------------------|------------------------------|
-| DELETE | /api/menus/{code}/departments | Remove departments from menu |
 
-**Request:**
-- Path Parameter: `code` (String)
-- Body: List of department codes (departments to remove)
+## Overview
 
-**Response:**
-- 204 No Content: Successfully removed
-- 404 Not Found: If menu or departments do not exist
-- 400 Bad Request: Validation errors
+### What this service does
 
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant MenuController
-    participant CommandBus
-    participant RemoveDepartmentsFromMenuCommandHandler
-    participant MenuRepository
-    participant Database
-
-    Client->>MenuController: DELETE /api/menus/{id}/items
-    MenuController->>CommandBus: RemoveItemsFromMenuCommand
-    CommandBus->>RemoveDepartmentsFromMenuCommandHandler: handle()
-    RemoveDepartmentsFromMenuCommandHandler->>MenuRepository: update menu
-    MenuRepository->>Database: persist
-    RemoveDepartmentsFromMenuCommandHandler-->>MenuController: response
-    MenuController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Removes one or more departments from the specified menu.
+| Capability | Summary |
+|---|---|
+| **Authorization server** | Issues platform JWTs via authorization-code (with PKCE), refresh-token and client-credentials grants. Supports RFC 7009 revocation and RP-initiated logout. |
+| **Federated login** | Delegates end-user authentication to an external OIDC provider (Keycloak, WSO2 Identity Server), then issues its own tokens. |
+| **Authorization model** | Users hold roles; roles hold permissions; both can be department-scoped. Role assignments may be temporary with automatic expiry. |
+| **Permission checks** | Real-time checks over a Redis-cached read path that degrades to direct JDBC when Redis is unavailable. |
+| **Session management** | A server-side session per application sign-in, with idle and absolute timeouts, a per-user cap, revocation and logout cascade. |
+| **Applications and menus** | Registration of platform applications with their resources and role-filtered menus. |
+| **M2M synchronisation** | Idempotent push of applications, permissions and menus from other services, deduplicated by SHA-256 structural hashing. |
+| **Security audit** | An append-only, hash-chained log of security-semantic events, with reporting and archival endpoints. |
 
-**Example Case:**
-- Remove department `department123` from menu with code `menu101`.
+### What it deliberately does not do
 
----
+The service **never mutates the external identity provider.** It does not create users
+in Keycloak, call admin APIs or synchronise state outward. Its only interaction with the
+IdP is authentication-time validation: issuer discovery, JWT verification and claims
+extraction.
 
-### ResourceController
-
-#### Endpoints
-| Method | Path                        | Purpose                    |
-|--------|-----------------------------|----------------------------|
-| POST   | /api/resources              | Create resource            |
-| GET    | /api/resources              | List resources             |
-| GET    | /api/resources/{name}       | Get resource by name       |
-| PUT    | /api/resources/{name}       | Update resource            |
-| DELETE | /api/resources/{name}       | Delete resource            |
-| POST   | /api/resources/{name}/items | Add items to resource      |
-| DELETE | /api/resources/{name}/items | Remove items from resource |
-| GET    | /api/resources/{name}/items | Get items for resource     |
+This is enforced, not merely documented — `NoAdapterArchitectureTest` fails the build if
+any class depends on an `IAdapter` type or on a Keycloak admin API. Background:
+[`docs/NO_ADAPTER_ARCHITECTURE.md`](docs/NO_ADAPTER_ARCHITECTURE.md).
 
 ---
-
-#### Endpoint: Create Resource
-| Method | Path           | Purpose         |
-|--------|----------------|-----------------|
-| POST   | /api/resources | Create resource |
 
-**Request:**
-- Body: ResourceDTO (name, type, applicationCode, etc.)
+## Architecture
 
-**Response:**
-- 201 Created: ResourceDTO
-- 400 Bad Request: Validation errors
+### Request flow
 
-**Workflow Diagram:**
 ```mermaid
-sequenceDiagram
-    participant Client
-    participant ResourceController
-    participant CommandBus
-    participant CreateResourceCommandHandler
-    participant ResourceRepository
-    participant Database
-
-    Client->>ResourceController: POST /api/resources
-    ResourceController->>CommandBus: CreateResourceCommand
-    CommandBus->>CreateResourceCommandHandler: handle()
-    CreateResourceCommandHandler->>ResourceRepository: save()
-    ResourceRepository->>Database: persist
-    CreateResourceCommandHandler-->>ResourceController: response
-    ResourceController-->>Client: 201 Created
+flowchart LR
+    C[Client] --> F[Security filter chain]
+    F --> R[REST controller]
+    R --> B[CommandBus / QueryBus]
+    B --> H["@IgrpCommandHandler<br/>@IgrpQueryHandler"]
+    H --> S[Domain service]
+    S --> P[JPA repository]
+    P --> DB[(PostgreSQL)]
+    S --> X[(Redis cache)]
+    H -. domain events .-> L[Listeners<br/>cache invalidation]
 ```
-
-**Explanation:**
-- Creates a new resource, optionally linked to an application.
 
-**Example Case:**
-- Create a resource named "Document" for application code `app42`.
+Controllers do no business logic; they dispatch a command or query onto the bus, which
+routes it to the handler annotated for it. Handlers publish domain events
+(`UserRoleChangedEvent`, `RolePermissionChangedEvent`) that listeners consume to
+invalidate caches.
 
----
-
-#### Endpoint: List Resources
-| Method | Path           | Purpose        |
-|--------|----------------|----------------|
-| GET    | /api/resources | List resources |
-
-**Request:**
-- Query Parameters: Optional filters (applicationCode, type, etc.)
-
-**Response:**
-- 200 OK: List of ResourceDTO
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ResourceController
-    participant QueryBus
-    participant GetResourcesQueryHandler
-    participant ResourceRepository
-    participant Database
-
-    Client->>ResourceController: GET /api/resources
-    ResourceController->>QueryBus: GetResourcesQuery
-    QueryBus->>GetResourcesQueryHandler: handle()
-    GetResourcesQueryHandler->>ResourceRepository: fetch resources
-    ResourceRepository->>Database: query
-    GetResourcesQueryHandler-->>ResourceController: response
-    ResourceController-->>Client: 200 OK
-```
+### Two security filter chains
 
-**Explanation:**
-- Lists all resources, optionally filtered by application or type.
+Which chain serves a request determines almost everything about how it behaves.
 
-**Example Case:**
-- List all resources for application code `app42`.
+| | Authorization-server chain | Resource-server chain |
+|---|---|---|
+| **Serves** | `/oauth2/**`, `/connect/**`, `/userinfo`, `/login/**` | `/api/**` |
+| **Authenticates with** | Browser session (federated login) | `Bearer` JWT |
+| **Session policy** | `IF_REQUIRED` | **`STATELESS`** |
+| **Configured in** | `AuthorizationServerConfig` | `OAuth2SecurityConfiguration` |
 
----
-
-#### Endpoint: Get Resource by ID
-| Method | Path                  | Purpose              |
-|--------|-----------------------|----------------------|
-| GET    | /api/resources/{name} | Get resource by name |
+The API chain being stateless is load-bearing: it means API traffic creates no servlet
+session at all, which is why the shared session store (below) carries only login traffic.
+`ResourceServerChainStatelessTest` guards it.
 
-**Request:**
-- Path Parameter: `name` (String)
+### Bounded contexts
 
-**Response:**
-- 200 OK: ResourceDTO
-- 404 Not Found: If resource does not exist
+Each top-level package under `cv.igrp.platform.access_management` is a bounded context
+with the same internal shape:
 
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ResourceController
-    participant QueryBus
-    participant GetResourceByIdQueryHandler
-    participant ResourceRepository
-    participant Database
-
-    Client->>ResourceController: GET /api/resources/{id}
-    ResourceController->>QueryBus: GetResourceByIdQuery
-    QueryBus->>GetResourceByIdQueryHandler: handle()
-    GetResourceByIdQueryHandler->>ResourceRepository: fetch resource
-    ResourceRepository->>Database: query
-    GetResourceByIdQueryHandler-->>ResourceController: response
-    ResourceController-->>Client: 200 OK
 ```
-
-**Explanation:**
-- Retrieves details of a specific resource by its name.
-
-**Example Case:**
-- Get resource with name `document123`.
-
----
-#### Endpoint: Update Resource
-| Method | Path                  | Purpose              |
-|--------|-----------------------|----------------------|
-| PUT    | /api/resources/{name} | Update resource      |
-
-**Request:**
-- Path Parameter: `name` (String)
-- Body: ResourceDTO (fields to update)
-
-**Response:**
-- 200 OK: Updated ResourceDTO
-- 404 Not Found: If resource does not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ResourceController
-    participant CommandBus
-    participant UpdateResourceCommandHandler
-    participant ResourceRepository
-    participant Database
-
-    Client->>ResourceController: PUT /api/resources/{id}
-    ResourceController->>CommandBus: UpdateResourceCommand
-    CommandBus->>UpdateResourceCommandHandler: handle()
-    UpdateResourceCommandHandler->>ResourceRepository: update()
-    ResourceRepository->>Database: persist
-    UpdateResourceCommandHandler-->>ResourceController: response
-    ResourceController-->>Client: 200 OK
+<context>/
+├── application/
+│   ├── commands/    # write operations
+│   └── queries/     # read operations
+├── domain/service/  # business logic
+├── interfaces/rest/ # controllers
+├── infrastructure/  # persistence, schedulers, caches
+└── mapper/          # entity ↔ DTO
 ```
 
-**Explanation:**
-- Updates resource details, such as name or type.
+`app` · `authorization` · `department` · `files` · `global_configuration` · `m2m` ·
+`notification` · `oauth_server` · `role` · `security_audit` · `session` · `users` ·
+`shared`
 
-**Example Case:**
-- Update the name of resource with name `document123` to "Main Document".
+Entities live under `shared/infrastructure/persistence/entity/`, extend `AuditEntity`
+and are audited by Hibernate Envers.
 
 ---
-#### Endpoint: Delete Resource
-| Method | Path                  | Purpose              |
-|--------|-----------------------|----------------------|
-| DELETE | /api/resources/{name} | Delete resource      |
-
-**Request:**
-- Path Parameter: `name` (String)
-
-**Response:**
-- 204 No Content: Successfully deleted
-- 404 Not Found: If resource does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ResourceController
-    participant CommandBus
-    participant DeleteResourceCommandHandler
-    participant ResourceRepository
-    participant Database
-
-    Client->>ResourceController: DELETE /api/resources/{id}
-    ResourceController->>CommandBus: DeleteResourceCommand
-    CommandBus->>DeleteResourceCommandHandler: handle()
-    DeleteResourceCommandHandler->>ResourceRepository: delete()
-    ResourceRepository->>Database: remove
-    DeleteResourceCommandHandler-->>ResourceController: response
-    ResourceController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Deletes the resource and handles related items as needed.
 
-**Example Case:**
-- Delete resource with name `document123`.
-
----
+## Getting Started
 
-#### Endpoint: Add Items to Resource
-| Method | Path                        | Purpose               |
-|--------|-----------------------------|-----------------------|
-| POST   | /api/resources/{name}/items | Add items to resource |
+### Prerequisites
 
-**Request:**
-- Path Parameter: `name` (String)
-- Body: List of ResourceItemDTO (items to add)
+| | Version | Notes |
+|---|---|---|
+| JDK | **26** | `<java.version>26</java.version>`. Lombok must match the JDK — see [Troubleshooting](#troubleshooting). |
+| Maven | 3.9+ | |
+| PostgreSQL | 14+ | |
+| Redis | 6+ | Required at startup, not optional |
+| OIDC provider | Keycloak 26+ or WSO2 IS | For end-user authentication |
+| MinIO or S3 | — | Only if file storage is used |
+| Docker | — | Optional, for the container build |
 
-**Response:**
-- 204 No Content: Successfully added
-- 404 Not Found: If resource or items do not exist
-- 400 Bad Request: Validation errors
+### 1. Configure
 
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ResourceController
-    participant CommandBus
-    participant AddItemsToResourceCommandHandler
-    participant ResourceRepository
-    participant Database
-
-    Client->>ResourceController: POST /api/resources/{id}/items
-    ResourceController->>CommandBus: AddItemsToResourceCommand
-    CommandBus->>AddItemsToResourceCommandHandler: handle()
-    AddItemsToResourceCommandHandler->>ResourceRepository: update resource
-    ResourceRepository->>Database: persist
-    AddItemsToResourceCommandHandler-->>ResourceController: response
-    ResourceController-->>Client: 204 No Content
+```bash
+cp .env.example .env
 ```
-
-**Explanation:**
-- Adds one or more items to the specified resource.
-
-**Example Case:**
-- Add items `item123` and `item456` to resource with name `document123`.
 
----
-
-#### Endpoint: Remove Items from Resource
-| Method | Path                        | Purpose                    |
-|--------|-----------------------------|----------------------------|
-| DELETE | /api/resources/{name}/items | Remove items from resource |
+Then set, at minimum, the variables in [Required configuration](#required-configuration).
+`application.properties` imports `.env` automatically via
+`spring.config.import=optional:file:.env[.properties]`.
 
-**Request:**
-- Path Parameter: `name` (String)
-- Body: List of ResourceItemDTO (items to remove)
+### 2. Seed the identity provider
 
-**Response:**
-- 204 No Content: Successfully removed
-- 404 Not Found: If resource or items do not exist
-- 400 Bad Request: Validation errors
+For a local Keycloak, import the bundled realm:
 
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ResourceController
-    participant CommandBus
-    participant RemoveItemsFromResourceCommandHandler
-    participant ResourceRepository
-    participant Database
-
-    Client->>ResourceController: DELETE /api/resources/{id}/items
-    ResourceController->>CommandBus: RemoveItemsFromResourceCommand
-    CommandBus->>RemoveItemsFromResourceCommandHandler: handle()
-    RemoveItemsFromResourceCommandHandler-->>ResourceRepository: update resource
-    ResourceRepository->>Database: persist
-    RemoveItemsFromResourceCommandHandler-->>ResourceController: response
-    ResourceController-->>Client: 204 No Content
+```bash
+# Place docs/igrp-realm.json in Keycloak's import directory, then:
+/opt/keycloak/bin/kc.sh start-dev --import-realm
 ```
 
-**Explanation:**
-- Removes one or more items from the specified resource.
+The realm file ships with **placeholder client secrets** (`CHANGEME-NOT-A-REAL-SECRET`).
+It will import, but no client authenticates until you set real values in the Keycloak
+console. Never commit a working secret back into that file. Full walkthrough:
+[`docs/IMPORT_REALM_GUIDE.md`](docs/IMPORT_REALM_GUIDE.md).
 
-**Example Case:**
-- Remove item `item123` from resource with name `document123`.
+### 3. Run
 
----
-
-#### Endpoint: Get Items for Resource
-| Method | Path                        | Purpose                |
-|--------|-----------------------------|------------------------|
-| GET    | /api/resources/{name}/items | Get items for resource |
-
-**Request:**
-- Path Parameter: `name` (String)
-
-**Response:**
-- 200 OK: List of ResourceItemDTO
-- 404 Not Found: If resource does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant ResourceController
-    participant QueryBus
-    participant GetItemsForResourceQueryHandler
-    participant ResourceService
-    participant ResourceRepository
-    participant Database
-
-    Client->>ResourceController: GET /api/resources/{id}/items
-    ResourceController->>QueryBus: GetItemsForResourceQuery
-    QueryBus->>GetItemsForResourceQueryHandler: handle()
-    GetItemsForResourceQueryHandler->>ResourceRepository: fetch items
-    ResourceRepository->>Database: query
-    GetItemsForResourceQueryHandler-->>ResourceController: response
-    ResourceController-->>Client: 200 OK
+```bash
+mvn spring-boot:run -Dspring-boot.run.profiles=development
 ```
-
-**Explanation:**
-- Lists items assigned to the specified resource.
 
-**Example Case:**
-- Get items for resource with ID `101`.
+The `development` profile enables `spring.jpa.hibernate.ddl-auto=update` and SQL logging.
+`staging` and `production` use `ddl-auto=validate`.
 
----
-
-## PermissionsController
-
-### Summary of Endpoints
-| Method | Path                              | Purpose                      |
-|--------|-----------------------------------|------------------------------|
-| POST   | /api/permissions                  | Create a new permission      |
-| GET    | /api/permissions                  | List all permissions         |
-| GET    | /api/permissions/{name}           | Get permission by name       |
-| PUT    | /api/permissions/{name}           | Update permission            |
-| DELETE | /api/permissions/{name}           | Delete permission            |
-| POST   | /api/roles/{roleCode}/permissions | Assign permissions to role   |
-| DELETE | /api/roles/{roleCode}/permissions | Remove permissions from role |
-
----
+### 4. Verify
 
-### Endpoint: Create Permission
-| Method | Path             | Purpose                 |
-|--------|------------------|-------------------------|
-| POST   | /api/permissions | Create a new permission |
-
-**Request:**
-- Body: PermissionDTO
-
-**Response:**
-- 201 Created: PermissionDTO
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant PermissionsController
-    participant CommandBus
-    participant CreatePermissionCommandHandler
-    participant PermissionRepository
-    participant Database
-
-    Client->>PermissionsController: POST /api/permissions
-    PermissionsController->>CommandBus: CreatePermissionCommand
-    CommandBus->>CreatePermissionCommandHandler: handle()
-    CreatePermissionCommandHandler->>PermissionRepository: save
-    PermissionRepository->>Database: insert
-    CreatePermissionCommandHandler-->>PermissionsController: response
-    PermissionsController-->>Client: 201 Created
+```bash
+curl http://localhost:8080/actuator/health
+curl http://localhost:8080/.well-known/openid-configuration
 ```
-
-**Explanation:**
-- Creates a new permission with the provided details.
 
-**Example Case:**
-- Create permission `VIEW_REPORTS`.
+Then open Swagger UI at <http://localhost:8080/swagger-ui.html>.
 
 ---
-
-### Endpoint: List Permissions
-| Method | Path             | Purpose              |
-|--------|------------------|----------------------|
-| GET    | /api/permissions | List all permissions |
-
-**Response:**
-- 200 OK: List of PermissionDTO
 
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant PermissionsController
-    participant QueryBus
-    participant ListPermissionsQueryHandler
-    participant PermissionRepository
-    participant Database
-
-    Client->>PermissionsController: GET /api/permissions
-    PermissionsController->>QueryBus: ListPermissionsQuery
-    QueryBus->>ListPermissionsQueryHandler: handle()
-    ListPermissionsQueryHandler->>PermissionRepository: findAll
-    PermissionRepository->>Database: query
-    ListPermissionsQueryHandler-->>PermissionsController: response
-    PermissionsController-->>Client: 200 OK
-```
+## Configuration
 
-**Explanation:**
-- Retrieves all permissions in the system.
+Configuration is entirely environment-driven. [`.env.example`](.env.example) is the
+complete, commented reference — roughly 130 variables. The tables below cover what you
+cannot start without and what you will most often change.
 
-**Example Case:**
-- List all available permissions.
+### Required configuration
 
----
+The application fails at startup without these.
 
-### Endpoint: Get Permission by name
-| Method | Path                    | Purpose                |
-|--------|-------------------------|------------------------|
-| GET    | /api/permissions/{name} | Get permission by name |
+| Variable | Purpose |
+|---|---|
+| `AUTH_JWT_ISSUER` | Issuer URI whose JWKS validates incoming JWTs |
+| `IGRP_OAUTH_ISSUER` | Issuer this service stamps on the tokens it mints |
+| `REDIS_HOST` | Redis host |
+| `IGRP_SUPERADMIN_USER_EXTERNAL_ID` | External subject seeded as the first superadmin |
+| `IGRP_APP_CENTER_URL` | Application Center base URL |
+| `IGRP_OAUTH_EXTERNAL_IDP_ISSUER_URI` | External OIDC provider issuer |
+| `IGRP_OAUTH_EXTERNAL_IDP_CLIENT_ID` / `_SECRET` | This service's client registration at that provider |
 
-**Request:**
-- Path Parameter: `name` (String)
+### Database
 
-**Response:**
-- 200 OK: PermissionDTO
-- 404 Not Found: If permission does not exist
+Either supply a full JDBC URL, or let it be composed from parts:
 
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant PermissionsController
-    participant QueryBus
-    participant GetPermissionByIdQueryHandler
-    participant PermissionRepository
-    participant Database
-
-    Client->>PermissionsController: GET /api/permissions/{id}
-    PermissionsController->>QueryBus: GetPermissionByIdQuery
-    QueryBus->>GetPermissionByIdQueryHandler: handle()
-    GetPermissionByIdQueryHandler->>PermissionRepository: findById
-    PermissionRepository->>Database: query
-    GetPermissionByIdQueryHandler-->>PermissionsController: response
-    PermissionsController-->>Client: 200 OK
+```properties
+DATABASE_URL=jdbc:postgresql://localhost:5432/db_igrp_iam   # takes precedence
+# or
+POSTGRES_HOST=localhost
+POSTGRES_PORT=5432
+POSTGRES_DATABASE=db_igrp_iam
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=...
 ```
-
-**Explanation:**
-- Retrieves details for a specific permission by its name.
-
-**Example Case:**
-- Get permission with name `VIEW_REPORTS`.
 
----
-
-### Endpoint: Update Permission
-| Method | Path                    | Purpose           |
-|--------|-------------------------|-------------------|
-| PUT    | /api/permissions/{name} | Update permission |
+### Session configuration
 
-**Request:**
-- Path Parameter: `name` (String)
-- Body: PermissionDTO
+Two independent mechanisms. See [Session Management](#session-management) for why they
+are different things.
 
-**Response:**
-- 200 OK: Updated PermissionDTO
-- 400 Bad Request: Validation errors
-- 404 Not Found: If permission does not exist
+| Variable | Default | Governs |
+|---|---|---|
+| `IGRP_SESSION_TIMEOUT_SECONDS` | `1800` | Idle timeout of an application session |
+| `IGRP_SESSION_ABSOLUTE_TIMEOUT_SECONDS` | `28800` | Hard ceiling on an application session |
+| `IGRP_SESSION_MAX_PER_USER` | `5` | Concurrent active sessions per user, LRU-evicted beyond |
+| `IGRP_SESSION_REFRESH_GRACE_SECONDS` | `300` | Added to access-token TTL when sliding the idle deadline |
+| `IGRP_SESSION_ENFORCEMENT_ENABLED` | `true` | Kill switch for `SessionEnforcementFilter` |
+| `IGRP_SSO_SESSION_TIMEOUT_SECONDS` | `28800` | Idle timeout of the **browser SSO session** |
 
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant PermissionsController
-    participant CommandBus
-    participant UpdatePermissionCommandHandler
-    participant PermissionRepository
-    participant Database
-
-    Client->>PermissionsController: PUT /api/permissions/{id}
-    PermissionsController->>CommandBus: UpdatePermissionCommand
-    CommandBus->>UpdatePermissionCommandHandler: handle()
-    UpdatePermissionCommandHandler->>PermissionRepository: save
-    PermissionRepository->>Database: update
-    UpdatePermissionCommandHandler-->>PermissionsController: response
-    PermissionsController-->>Client: 200 OK
-```
+> `IGRP_SESSION_MAX_PER_USER` must be at least *(applications per host × devices per
+> user)*. Every application sign-in costs one session against the cap, and the oldest is
+> evicted when it is exceeded.
 
-**Explanation:**
-- Updates the details of an existing permission by its name.
+### Other groups
 
-**Example Case:**
-- Update permission with name `VIEW_REPORTS` to change its description.
+`IGRP_OAUTH_*` (keys, default client, external IdP, login policy) ·
+`IGRP_STORAGE_*` (MinIO/S3) · `IGRP_NOTIFICATION_SERVICE_*` and `SMTP_*` ·
+`AUDIT_CHAIN_*` · `OTEL_*` · `MANAGEMENT_*` · `ENABLE_SWAGGER` ·
+`IGRP_CORS_ALLOWED_ORIGINS` (a literal `*` is rejected when credentials are allowed).
 
 ---
-
-### Endpoint: Delete Permission
-| Method | Path                    | Purpose           |
-|--------|-------------------------|-------------------|
-| DELETE | /api/permissions/{name} | Delete permission |
-
-**Request:**
-- Path Parameter: `name` (String)
-
-**Response:**
-- 204 No Content: Successfully deleted
-- 404 Not Found: If permission does not exist
 
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant PermissionsController
-    participant CommandBus
-    participant DeletePermissionCommandHandler
-    participant PermissionRepository
-    participant Database
-
-    Client->>PermissionsController: DELETE /api/permissions/{id}
-    PermissionsController->>CommandBus: DeletePermissionCommand
-    CommandBus->>DeletePermissionCommandHandler: handle()
-    DeletePermissionCommandHandler->>PermissionRepository: delete
-    PermissionRepository->>Database: remove
-    DeletePermissionCommandHandler-->>PermissionsController: response
-    PermissionsController-->>Client: 204 No Content
-```
+## Authentication
 
-**Explanation:**
-- Deletes the specified permission from the system.
+This service **issues** the platform's tokens. Applications integrate with it, not with
+the upstream IdP directly.
 
-**Example Case:**
-- Delete permission with name `VIEW_REPORTS`.
+### Endpoints
 
----
+All paths are Spring Authorization Server defaults — only the issuer is customised.
 
-### Endpoint: Assign Permissions to Role
-| Method | Path                              | Purpose                    |
-|--------|-----------------------------------|----------------------------|
-| POST   | /api/roles/{roleCode}/permissions | Assign permissions to role |
+| Endpoint | Purpose |
+|---|---|
+| `GET /.well-known/openid-configuration` | Discovery; start here |
+| `GET /oauth2/authorize` | Authorization endpoint (PKCE) |
+| `POST /oauth2/token` | Token endpoint |
+| `POST /oauth2/revoke` | Revocation (RFC 7009) |
+| `POST /oauth2/introspect` | Introspection |
+| `GET /oauth2/jwks` | Signing keys; supports a secondary key for rotation |
+| `GET /userinfo` | UserInfo |
+| `GET|POST /connect/logout` | RP-initiated logout |
 
-**Request:**
-- Path Parameter: `roleCode` (String)
-- Body: List of PermissionDTO
+### Authorization code with PKCE
 
-**Response:**
-- 204 No Content: Successfully assigned
-- 404 Not Found: If role or permissions do not exist
-- 400 Bad Request: Validation errors
+The flow for interactive applications. The user is redirected to the external IdP; on
+return, this service issues **its own** tokens.
 
-**Workflow Diagram:**
 ```mermaid
 sequenceDiagram
-    participant Client
-    participant PermissionsController
-    participant CommandBus
-    participant AssignPermissionsToRoleCommandHandler
-    participant PermissionRepository
-    participant Database
-
-    Client->>PermissionsController: POST /api/roles/{roleId}/permissions
-    PermissionsController->>CommandBus: AssignPermissionsToRoleCommand
-    CommandBus->>AssignPermissionsToRoleCommandHandler: handle()
-    AssignPermissionsToRoleCommandHandler->>PermissionRepository: assign
-    PermissionRepository->>Database: update
-    AssignPermissionsToRoleCommandHandler-->>PermissionsController: response
-    PermissionsController-->>Client: 204 No Content
-```
-
-**Explanation:**
-- Assigns one or more permissions to the specified role.
+    participant App
+    participant Browser
+    participant AM as Access Management
+    participant IdP as External IdP
 
-**Example Case:**
-- Assign permissions `VIEW_REPORTS` and `EDIT_USERS` to role code `ADMIN`.
-
----
-### Endpoint: Remove Permissions from Role
-| Method | Path                              | Purpose                      |
-|--------|-----------------------------------|------------------------------|
-| DELETE | /api/roles/{roleCode}/permissions | Remove permissions from role |
-
-**Request:**
-- Path Parameter: `roleCode` (String)
-- Body: List of PermissionDTO
-
-**Response:**
-- 204 No Content: Successfully removed
-- 404 Not Found: If role or permissions do not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant PermissionsController
-    participant CommandBus
-    participant RemovePermissionsFromRoleCommandHandler
-    participant PermissionRepository
-    participant Database
-
-    Client->>PermissionsController: DELETE /api/roles/{roleId}/permissions
-    PermissionsController->>CommandBus: RemovePermissionsFromRoleCommand
-    CommandBus->>RemovePermissionsFromRoleCommandHandler: handle()
-    RemovePermissionsFromRoleCommandHandler->>PermissionRepository: remove
-    PermissionRepository->>Database: update
-    RemovePermissionsFromRoleCommandHandler-->>PermissionsController: response
-    PermissionsController-->>Client: 204 No Content
+    App->>Browser: redirect to /oauth2/authorize (+ PKCE challenge)
+    Browser->>AM: GET /oauth2/authorize
+    AM->>Browser: redirect to external IdP
+    Browser->>IdP: authenticate
+    IdP->>AM: GET /login/oauth2/code/external-idp
+    AM->>AM: resolve/create local user, open SSO session
+    AM->>Browser: redirect to app with code
+    App->>AM: POST /oauth2/token (code + PKCE verifier)
+    AM->>App: access + refresh + ID token
 ```
-
-**Explanation:**
-- Removes one or more permissions from the specified role.
-
-**Example Case:**
-- Remove permission `EDIT_USERS` from role code `ADMIN`.
 
----
-
-## RolesController
-
-### Summary of Endpoints
-| Method | Path                              | Purpose                      |
-|--------|-----------------------------------|------------------------------|
-| POST   | /api/roles                        | Create a new role            |
-| GET    | /api/roles/{roleCode}             | Get role by code             |
-| PUT    | /api/roles/{roleCode}             | Update role                  |
-| DELETE | /api/roles/{roleCode}             | Delete role                  |
-| GET    | /api/roles/by-user/{uid}          | List roles by user           |
-| POST   | /api/users/{id}/roles             | Assign users to role         |
-| DELETE | /api/users/{id}/roles             | Remove users from role       |
-| POST   | /api/roles/{roleCode}/permissions | Assign permissions to role   |
-| DELETE | /api/roles/{roleCode}/permissions | Remove permissions from role |
-
----
+Token issuance also opens a server-side session row and stamps `sid` and `device_id`
+claims onto the access token.
 
-### Endpoint: Create Role
-| Method | Path       | Purpose           |
-|--------|------------|-------------------|
-| POST   | /api/roles | Create a new role |
+### Client credentials (machine-to-machine)
 
-**Request:**
-- Body: RoleDTO
-
-**Response:**
-- 201 Created: RoleDTO
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant RolesController
-    participant CommandBus
-    participant CreateRoleCommandHandler
-    participant RoleRepository
-    participant Database
-    participant IAdapter
-    participant ExternalIAM
-
-    Client->>RolesController: POST /api/roles
-    RolesController->>CommandBus: CreateRoleCommand
-    CommandBus->>CreateRoleCommandHandler: handle()
-    CreateRoleCommandHandler->>RoleRepository: save
-    RoleRepository->>Database: insert
-    CreateRoleCommandHandler-->>RolesController: response
-    CreateRoleCommandHandler-->>IAdapter: sync role to provider
-    IAdapter-->>ExternalIAM: create role
-    ExternalIAM-->>IAdapter: role created
-    IAdapter-->>CreateRoleCommandHandler: role synced
-    CreateRoleCommandHandler-->>RolesController: response
-    RolesController-->>Client: 201 Created
+```bash
+curl -X POST http://localhost:8080/oauth2/token \
+  -u "<client-id>:<client-secret>" \
+  -d "grant_type=client_credentials&scope=<scope>"
 ```
 
-**Explanation:**
-- Creates a new role with the provided details.
+M2M tokens carry no `sid`. Both `M2MTokenRejectionFilter` and `SessionEnforcementFilter`
+skip the `/api/m2m/` prefix so these tokens are admitted there and rejected elsewhere.
 
-**Example Case:**
-- Create role `ADMIN`.
+### Calling the API
 
----
-
-### Endpoint: List Roles
-| Method | Path       | Purpose        |
-|--------|------------|----------------|
-| GET    | /api/roles | List all roles |
-
-**Response:**
-- 200 OK: List of RoleDTO
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant RolesController
-    participant QueryBus
-    participant ListRolesQueryHandler
-    participant RoleRepository
-    participant Database
-
-    Client->>RolesController: GET /api/roles
-    RolesController->>QueryBus: ListRolesQuery
-    QueryBus->>ListRolesQueryHandler: handle()
-    ListRolesQueryHandler->>RoleRepository: findAll
-    RoleRepository->>Database: query
-    ListRolesQueryHandler-->>RolesController: response
-    RolesController-->>Client: 200 OK
+```bash
+curl http://localhost:8080/api/users \
+  -H "Authorization: Bearer <access-token>"
 ```
-
-**Explanation:**
-- Retrieves all roles in the system.
-
-**Example Case:**
-- List all available roles.
 
----
-
-### Endpoint: Get Role by code
-| Method | Path              | Purpose          |
-|--------|-------------------|------------------|
-| GET    | /api/roles/{code} | Get role by code |
+### Authorization on endpoints
 
-**Request:**
-- Path Parameter: `code` (String)
+Endpoints are guarded by `@PreAuthorize` against generated permission constants:
 
-**Response:**
-- 200 OK: RoleDTO
-- 404 Not Found: If role does not exist
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant RolesController
-    participant QueryBus
-    participant GetRoleByIdQueryHandler
-    participant RoleRepository
-    participant Database
-
-    Client->>RolesController: GET /api/roles/{id}
-    RolesController->>QueryBus: GetRoleByIdQuery
-    QueryBus->>GetRoleByIdQueryHandler: handle()
-    GetRoleByIdQueryHandler->>RoleRepository: findByCode
-    RoleRepository->>Database: query
-    GetRoleByIdQueryHandler-->>RolesController: response
-    RolesController-->>Client: 200 OK
+```java
+@PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_CREATE)")
 ```
 
-**Explanation:**
-- Retrieves details for a specific role.
+Permissions are declared with `@IgrpPermission`, code-generated into a registry, and
+synchronised into the database at startup. Authorities are stored as plain role codes —
+there is no `ROLE_` prefix convention. Any user holding `SUPER_ADMIN_ROLE` bypasses
+permission checks entirely.
 
-**Example Case:**
-- Get role with code `ADMIN`.
+Login-time policy can additionally require a verified email
+(`IGRP_OAUTH_REQUIRE_EMAIL_VERIFIED`), an allowed email domain
+(`IGRP_OAUTH_ALLOWED_EMAIL_DOMAINS`) or specific ACR values
+(`IGRP_OAUTH_REQUIRED_ACR_VALUES`). A disabled account is refused with the OAuth error
+code `account_disabled`.
 
 ---
-
-### Endpoint: Update Role
-| Method | Path              | Purpose     |
-|--------|-------------------|-------------|
-| PUT    | /api/roles/{code} | Update role |
 
-**Request:**
-- Path Parameter: `code` (String)
-- Body: RoleDTO
+## API Reference
 
-**Response:**
-- 200 OK: Updated RoleDTO
-- 400 Bad Request: Validation errors
-- 404 Not Found: If role does not exist
+**The generated OpenAPI specification is authoritative.** It is produced from the code
+and cannot drift from it.
 
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant RolesController
-    participant CommandBus
-    participant UpdateRoleCommandHandler
-    participant RoleRepository
-    participant Database
-
-    Client->>RolesController: PUT /api/roles/{id}
-    RolesController->>CommandBus: UpdateRoleCommand
-    CommandBus->>UpdateRoleCommandHandler: handle()
-    UpdateRoleCommandHandler->>RoleRepository: save
-    RoleRepository->>Database: update
-    UpdateRoleCommandHandler-->>RolesController: response
-    RolesController-->>Client: 200 OK
-```
+| | |
+|---|---|
+| Swagger UI | `/swagger-ui.html` |
+| OpenAPI JSON | `/v3/api-docs` |
+| Toggle | `ENABLE_SWAGGER` (default `true`; disable in production) |
+| Postman collection | [`docs/iGRP 3.0 - Access Management API.postman_collection.json`](docs/) |
+| Hand-written catalogue | [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) — worked request/response examples |
 
-**Explanation:**
-- Updates the details of an existing role.
-Replace `id` with `code` in the path parameter.
+### Endpoint groups
 
-**Example Case:**
-- Update role with code `ADMIN` to change its name.
+| Area | Base path |
+|---|---|
+| Applications | `/api/applications` |
+| Users | `/api/users` |
+| Roles | `/api/roles` |
+| Departments | `/api/departments` |
+| Permission checks | `/api/authorize/check` |
+| Files | `/api/files` |
+| Global configuration | `/api/global-configuration` |
+| OAuth clients | `/api/clients` |
+| Service accounts | `/api/service-accounts` |
+| Sessions (caller's own) | `/api/session` |
+| Sessions (administrative) | `/api/admin/sessions`, `/api/admin/users` |
+| Audit log | `/api/auth/audit` |
+| Audit reports and archive | `/api/auth/reports` |
+| M2M synchronisation | `/api/m2m` |
 
 ---
 
-### Endpoint: Delete Role
-| Method | Path              | Purpose     |
-|--------|-------------------|-------------|
-| DELETE | /api/roles/{code} | Delete role |
+## Session Management
 
-**Request:**
-- Path Parameter: `code` (String)
+Two mechanisms share the word "session" and are routinely confused. They have different
+tables, lifetimes and owners.
 
-**Response:**
-- 204 No Content: Successfully deleted
-- 404 Not Found: If role does not exist
+### 1. `SPRING_SESSION` — the browser SSO session
 
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant RolesController
-    participant CommandBus
-    participant DeleteRoleCommandHandler
-    participant RoleRepository
-    participant Database
-
-    Client->>RolesController: DELETE /api/roles/{id}
-    RolesController->>CommandBus: DeleteRoleCommand
-    CommandBus->>DeleteRoleCommandHandler: handle()
-    DeleteRoleCommandHandler->>RoleRepository: delete
-    RoleRepository->>Database: remove
-    DeleteRoleCommandHandler-->>RolesController: response
-    RolesController-->>Client: 204 No Content
-```
+The servlet session created by the browser login flow. Holds the pending OAuth2
+authorization request (including its PKCE verifier), the `SecurityContext` and the saved
+request.
 
-**Explanation:**
-- Deletes the specified role from the system.
-Replace `id` with `code` in the path parameter.
+Stored in **PostgreSQL** via `spring-session-jdbc` so that a login survives landing on a
+different replica. Without a shared store, a browser that starts at `/oauth2/authorize`
+on one pod and returns to the IdP callback on another finds no saved request matching its
+`state`, and the user sees *"Login could not be completed"*
+(`authorization_request_not_found`). A rolling deploy reproduces this even on a single
+replica.
 
-**Example Case:**
-- Delete role with code `ADMIN`.
+PostgreSQL rather than Redis deliberately: it is already a hard dependency of login, so
+the session store adds no new failure mode, whereas Redis currently backs only caches and
+degrades gracefully. Full reasoning:
+[`plans/shared-servlet-session/scope.md`](plans/shared-servlet-session/scope.md).
 
----
+Attributes are stored as JSON through `SecurityStoreObjectMapperFactory`. **Anything
+added to this session must be on that allowlist**, or it fails to deserialise during a
+login. Lifetime: `IGRP_SSO_SESSION_TIMEOUT_SECONDS`. Pruned by
+`spring.session.jdbc.cleanup-cron`.
 
-### Endpoint: List Roles by User
-| Method | Path                   | Purpose            |
-|--------|------------------------|--------------------|
-| GET    | /api/users/{uid}/roles | List roles by user |
+### 2. `t_user_session` — application sessions
 
-**Request:**
-- Path Parameter: `uid` (String)
+One row per application sign-in, carrying the `sid` claim stamped on that application's
+access token. Sliding idle timeout, absolute ceiling, per-user cap with LRU eviction.
+Pruned by `SessionCleanupScheduler`.
 
-**Response:**
-- 200 OK: List of RoleDTO
-- 404 Not Found: If user does not exist
+`SessionEnforcementFilter` checks the `sid` on every API request and answers
+`401 session_revoked` when the row is no longer active. `/api/session/check` is
+**exempt** from that filter, so a client holding a revoked token can ask why instead of
+receiving an opaque 401:
 
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant RolesController
-    participant QueryBus
-    participant GetUserRolesQueryHandler
-    participant RoleRepository
-    participant UserRepository
-    participant Database
-
-    Client->>RolesController: GET /api/roles/by-user/{uid}
-    RolesController->>QueryBus: ListRolesByUserQuery
-    QueryBus->>GetUserRolesQueryHandler: handle()
-    GetUserRolesQueryHandler->>UserRepository: find user
-    GetUserRolesQueryHandler->>RoleRepository: find roles
-    RoleRepository->>Database: query
-    UserRepository->>Database: query
-    GetUserRolesQueryHandler-->>RolesController: response
-    RolesController-->>Client: 200 OK
+```bash
+curl /api/session/check -H "Authorization: Bearer <token>"
+# → 200 {"valid": false, "reason": "USER_LOGOUT"}
 ```
-
-**Explanation:**
-- Lists all roles assigned to a specific user.
 
-**Example Case:**
-- List roles for user `john.doe@igrp.cv`.
+Reasons include `USER_LOGOUT`, `IDLE_TIMEOUT`, `ABSOLUTE_TIMEOUT`, `USER_CLOSED`,
+`SESSION_LIMIT_EXCEEDED` and `SESSION_NOT_FOUND`. Clients should distinguish
+`USER_LOGOUT` (sign out) from `SESSION_LIMIT_EXCEEDED` (cap eviction — not a sign-out).
 
----
-
-### Endpoint: Assign Users to Role
-| Method | Path                   | Purpose              |
-|--------|------------------------|----------------------|
-| POST   | /api/users/{uid}/roles | Assign users to role |
+### Logout cascade
 
-**Request:**
-- Path Parameter: `uid` (Long)
-- Body: List of UserDTO
+Several iGRP applications typically run on one host, each with its own session row, the
+later ones signing in silently via `prompt=none`. RP-initiated logout revokes **all
+sessions opened under the same AM sign-in**, not only the application that logged out.
 
-**Response:**
-- 204 No Content: Successfully assigned
-- 404 Not Found: If role or users do not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant RolesController
-    participant CommandBus
-    participant AddRolesToUserCommandHandler
-    participant RoleRepository
-    participant Database
-
-    Client->>RolesController: POST /api/users/{uid}/roles
-    RolesController->>CommandBus: AddRolesToUserCommand
-    CommandBus->>AddRolesToUserCommandHandler: handle()
-    AddRolesToUserCommandHandler->>RoleRepository: assign
-    RoleRepository->>Database: update
-    AddRolesToUserCommandHandler-->>RolesController: response
-    RolesController-->>Client: 204 No Content
-```
+The link is a per-sign-in login id carried on the authentication principal, stored as a
+SHA-256 digest in `t_user_session.sso_session_key`. Rows without a key — client-credentials
+grants, and rows created before the column existed — are revoked alone.
 
-**Explanation:**
-- Assigns one or more users to the specified role.
+> **Caveat when testing.** If an application runs on a different site from this service
+> (for example `localhost` against a remote deployment), `/connect/logout` is a cross-site
+> POST and the `SameSite=Lax` session cookie is not sent. The sign-in cannot be resolved,
+> so **nothing cascades and the servlet session survives**. Test the cascade same-site.
 
-**Example Case:**
-- Assign users `john.doe@igrp.cv` and `jane.doe@igrp.cv` to role with code `ADMIN`.
+Specification: [`plans/sso-session-logout-cascade/requirements.md`](plans/sso-session-logout-cascade/requirements.md).
 
 ---
 
-### Endpoint: Remove Users from Role
-| Method | Path                   | Purpose                |
-|--------|------------------------|------------------------|
-| DELETE | /api/users/{uid}/roles | Remove users from role |
+## Error Responses
 
-**Request:**
-- Path Parameter: `uid` (String)
-- Body: List of RoleDTO
+All errors use RFC 7807 `application/problem+json`, produced by
+`GlobalExceptionHandler`:
 
-**Response:**
-- 204 No Content: Successfully removed
-- 404 Not Found: If role or users do not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant RolesController
-    participant CommandBus
-    participant RemoveRolesFromUserCommandHandler
-    participant RoleService
-    participant RoleRepository
-    participant Database
-
-    Client->>RolesController: DELETE /api/roles/{id}/users
-    RolesController->>CommandBus: RemoveUsersFromRoleCommand
-    CommandBus->>RemoveRolesFromUserCommandHandler: handle()
-    RemoveRolesFromUserCommandHandler->>RoleRepository: remove
-    RoleRepository->>Database: update
-    RemoveRolesFromUserCommandHandler-->>RolesController: response
-    RolesController-->>Client: 204 No Content
+```json
+{
+  "type": "about:blank",
+  "title": "Not Found",
+  "status": 404,
+  "detail": "Application not found for code: FOO",
+  "instance": "/api/applications/FOO",
+  "errorCode": "IGRP_AUTH_APPLICATION_NOT_FOUND_BY_CODE"
+}
 ```
 
-**Explanation:**
-- Removes one or more users from the specified role.
+OAuth2 endpoints instead return the error format their specifications require — for
+example `{"error": "invalid_grant", "error_description": "session_not_active"}`.
 
-**Example Case:**
-- Remove user `jane.doe@igrp.cv` from role with code `ADMIN`.
+Internally, exceptions are raised through `IgrpResponseStatusException.of()`,
+`.notFound()` and `.badRequest()`.
 
 ---
-
-### Endpoint: Assign Permissions to Role
-| Method | Path                          | Purpose                    |
-|--------|-------------------------------|----------------------------|
-| POST   | /api/roles/{code}/permissions | Assign permissions to role |
 
-**Request:**
-- Path Parameter: `code` (String)
-- Body: List of PermissionDTO
+## Client SDKs
 
-**Response:**
-- 204 No Content: Successfully assigned
-- 404 Not Found: If role or permissions do not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant RolesController
-    participant CommandBus
-    participant AddPermissionsCommandHandler
-    participant RoleRepository
-    participant Database
-
-    Client->>RolesController: POST /api/roles/{code}/permissions
-    RolesController->>CommandBus: AddPermissionsCommand
-    CommandBus->>AddPermissionsCommandHandler: handle()
-    AddPermissionsCommandHandler->>RoleRepository: assign
-    RoleRepository->>Database: update
-    AddPermissionsCommandHandler-->>RolesController: response
-    RolesController-->>Client: 204 No Content
-```
+Prefer a generated client over hand-rolled HTTP.
 
-**Explanation:**
-- Assigns one or more permissions to the specified role.
+| Language | Package | Source |
+|---|---|---|
+| TypeScript | `@igrp/platform-access-management-client-ts` | `access-management/frontend/packages` |
+| Java | iGRP auth backend monorepo | `access-management/backend/modules` |
 
-**Example Case:**
-- Assign permissions `VIEW_REPORTS` and `EDIT_USERS` to role with code `ADMIN`.
+Both are published to the internal Nexus at `sonatype.nosi.cv`.
 
 ---
 
-### Endpoint: Remove Permissions from Role
-| Method | Path                          | Purpose                      |
-|--------|-------------------------------|------------------------------|
-| DELETE | /api/roles/{code}/permissions | Remove permissions from role |
+## Development
 
-**Request:**
-- Path Parameter: `code` (String)
-- Body: List of PermissionDTO
+### Commands
 
-**Response:**
-- 204 No Content: Successfully removed
-- 404 Not Found: If role or permissions do not exist
-- 400 Bad Request: Validation errors
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant RolesController
-    participant CommandBus
-    participant RemovePermissionsCommandHandler
-    participant RoleRepository
-    participant Database
-    
-    Client->>RolesController: DELETE /api/roles/{code}/permissions
-    RolesController->>CommandBus: RemovePermissionsCommand
-    CommandBus->>RemovePermissionsCommandHandler: handle()
-    RemovePermissionsCommandHandler->>RoleRepository: remove
-    RoleRepository->>Database: update
-    RemovePermissionsCommandHandler-->>RolesController: response
-    RolesController-->>Client: 204 No Content
+```bash
+mvn -B -DskipTests clean package          # build
+mvn test                                  # full suite
+mvn test -Dtest=SsoSessionKeyTest          # one class
+mvn dependency-check:check                 # OWASP dependency scan
+docker build -t access-management-api .    # container image
 ```
-
-**Explanation:**
-- Removes one or more permissions from the specified role.
 
-**Example Case:**
-- Remove permission `EDIT_USERS` from role with code `ADMIN`.
+### Testing
 
----
+The suite is **999 tests** and must stay green. It is unit-level and mock-based: it does
+not start an application context, so bean-wiring and context-start failures are **not**
+caught by it — verify those against a running instance.
 
-## FilesController
-
-### Summary of Endpoints
-| Method | Path               | Purpose               |
-|--------|--------------------|-----------------------|
-| POST   | /api/files/public  | Upload a public file  |
-| POST   | /api/files/private | Upload a private file |
-| GET    | /api/files/url     | Get file URL by ID    |
----
+Notable guard tests, which exist because the thing they assert has broken before:
 
-### Endpoint: Upload File
-| Method | Path                           | Purpose       |
-|--------|--------------------------------|---------------|
-| POST   | /api/files/<public \| private> | Upload a file |
+| Test | Asserts |
+|---|---|
+| `NoAdapterArchitectureTest` | No class touches `IAdapter` or Keycloak admin APIs |
+| `ResourceServerChainStatelessTest` | The API chain stays `STATELESS` |
+| `SessionStoreConversionTest` | Session attributes round-trip through the JSON allowlist |
+| `SessionRepositoryBeanNameTest` | The session repository bean does not collide with Spring Session's |
+| `IgrpOidcUserSerializationTest` | The SSO login id survives serialisation |
 
-**Request:**
-- Multipart/form-data: file, metadata (optional)
+Guide: [`docs/TESTING.md`](docs/TESTING.md).
 
-**Response:**
-- 201 Created: FileUrlDTO (id, url, name, type)
-- 400 Bad Request: Validation errors
+### Database migrations
 
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant FilesController
-    participant CommandBus
-    participant UploadFileCommandHandler
-    participant StorageService
-    participant StorageSDK
-    participant Database
-
-    Client->>FilesController: POST /api/files/upload
-    FilesController->>CommandBus: UploadFileCommand
-    CommandBus->>UploadFileCommandHandler: handle()
-    UploadFileCommandHandler->>StorageService: validate & store
-    StorageService->>StorageSDK: save
-    StorageSDK->>Database: insert
-    UploadFileCommandHandler-->>FilesController: response
-    FilesController-->>Client: 201 Created
-```
+There is no Flyway. Custom DDL belongs in `DatabaseMigrationRunner.run()`
+(`shared/config/`), written idempotently (`IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`) so
+it is a no-op on every boot after the first. In `development`, Hibernate's
+`ddl-auto=update` creates entity tables; `staging` and `production` use `validate`, so
+anything Hibernate will not generate must be in the runner.
 
-**Explanation:**
-- Uploads a file and returns its path.
+### Troubleshooting
 
-**Example Case:**
-- Upload a PDF document.
+| Symptom | Cause |
+|---|---|
+| `ExceptionInInitializerError: com.sun.tools.javac.tree.EndPosTable` at build | Lombok predates the JDK. Lombok patches javac internals, so it must be new enough for the compiler in use. Pin the toolchain rather than floating it. |
+| `authorization_request_not_found` at login | The shared servlet session store is not active, or `SPRING_SESSION` tables are missing. |
+| `... is not in the allowlist` during login | A type reachable from a session or authorization attribute is missing from `SecurityStoreObjectMapperFactory`. |
+| `401` with `session_revoked` on every API call | The caller's `t_user_session` row is not `ACTIVE`. Ask `/api/session/check` for the reason. |
 
 ---
 
-### Endpoint: Get File URL by ID
-| Method | Path           | Purpose              |
-|--------|----------------|----------------------|
-| GET    | /api/files/url | Get file URL by path |
+## Deployment
 
-**Request:**
-- Query Parameter: `privateFilePath` (Long)
+`.gitlab-ci.yml` builds multi-architecture (ARM64 + AMD64) images for both JVM and
+GraalVM native targets.
 
-**Response:**
-- 200 OK: FileUrlDTO
-- 404 Not Found: If file does not exist
+| | |
+|---|---|
+| Registry | `registry.nosi.cv/igrp/access-management-api` |
+| JVM image | `Dockerfile` — Temurin 26 build, Temurin 26 JRE runtime, exposes `8080` |
+| Native image | `Dockerfile_native` |
+| Pre-release testing | the `deploy/pre-release` branch |
 
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant FilesController
-    participant QueryBus
-    participant GetFileUrlQueryHandler
-    participant StorageService
-    participant StorageSDK
-    participant Database
-
-    Client->>FilesController: GET /api/files/url
-    FilesController->>QueryBus: GetFileUrlQuery
-    QueryBus->>GetFileUrlQueryHandler: handle()
-    GetFileUrlQueryHandler->>StorageService: fetch file URL
-    StorageService->>StorageSDK: findById
-    StorageSDK->>Database: query
-    GetFileUrlQueryHandler-->>FilesController: response
-    FilesController-->>Client: 200 OK
-```
+Base images are **pinned to explicit versions on purpose.** A floating tag previously
+rolled forward to a newer JDK than Lombok supported and broke the pipeline.
 
-**Explanation:**
-- Retrieves the URL for the specified file.
+### Deployment notes
 
-**Example Case:**
-- Get URL for file with path `/public/superadmin/1234-5678-9abc-def/photo.jpg`.
+- Set `ENABLE_SWAGGER=false` outside development.
+- `staging` and `production` publish only the `health` actuator endpoint, hide details and
+  cap access at read-only via `MANAGEMENT_*`.
+- Deploying the shared servlet session store for the first time **signs every active user
+  out once** — in-memory sessions cannot be migrated. Schedule it and note it in the
+  release notes.
 
 ---
 
----
+## Observability
 
-## GlobalConfigurationController
+| | |
+|---|---|
+| Health | `/actuator/health`, plus liveness and readiness groups — the only public actuator paths |
+| Metrics | Micrometer; session metrics include creation, LRU eviction and refresh rejections |
+| Tracing and logs | OpenTelemetry via `OTEL_*`; collector at `OTEL_COLLECTOR_ENDPOINT` |
+| Audit trail | Hibernate Envers for entity history, plus `SecurityAuditLogEntity` for security events |
 
-### Summary of Endpoints
-| Method | Path                      | Purpose                          |
-|--------|---------------------------|----------------------------------|
-| POST   | /api/global-configuration | Set global configuration         |
-| GET    | /api/global-configuration | Get global configuration by type |
+The security audit log is hash-chained (`AUDIT_CHAIN_SECRET`) so tampering is detectable;
+`POST /api/auth/audit/validate` verifies the chain. Duplicate login events are suppressed by a
+one-hour cache keyed on the JWT id.
 
 ---
 
-### Endpoint: Set Global Configuration
-| Method | Path                      | Purpose                  |
-|--------|---------------------------|--------------------------|
-| POST   | /api/global-configuration | Set global configuration |
-
-**Request:**
-- Body (application/json):
-  - `config` (string, required): Configuration value
-  - `type` (enum, required): Type of configuration (`CLUSTER`, `ORGANIZATION`)
-
-**Response:**
-- 200 OK: GlobalConfigurationDTO
-  - `config` (string)
-  - `type` (enum: `CLUSTER`, `ORGANIZATION`)
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant GlobalConfigurationController
-    participant CommandBus
-    participant SetGlobalConfigurationCommandHandler
-    participant GlobalConfigurationRepository
-    participant Database
-
-    Client->>GlobalConfigurationController: POST /api/global-configuration
-    GlobalConfigurationController->>CommandBus: SetGlobalConfigurationCommand
-    CommandBus->>SetGlobalConfigurationCommandHandler: handle()
-    SetGlobalConfigurationCommandHandler->>GlobalConfigurationRepository: save
-    GlobalConfigurationRepository->>Database: update
-    SetGlobalConfigurationCommandHandler-->>GlobalConfigurationController: response
-    GlobalConfigurationController-->>Client: 200 OK
-```
+## Security
 
-**Explanation:**
-- Sets a global configuration value for the specified type.
+- **OWASP ASVS mapping:** [`docs/ASVS-MAPPING.md`](docs/ASVS-MAPPING.md)
+- **Dependency scanning:** `mvn dependency-check:check`
+- **Session cookies:** `SameSite=Lax`, `Secure`, `HttpOnly`
+- **Key rotation:** a secondary signing key can be published through the JWKS endpoint
+  (`IGRP_OAUTH_SECONDARY_*`) so verifiers pick up the new key before the old one is retired
+- **Refresh-token reuse** is detected; a replayed token revokes the session
+- **CORS:** `IGRP_CORS_ALLOWED_ORIGINS` must list explicit origins — a wildcard is
+  rejected when credentials are permitted
 
-**Example Case:**
-- Set cluster configuration: `{ "config": "cluster-xyz", "type": "CLUSTER" }`
+**Never commit secrets.** `docs/igrp-realm.json` is a non-production seed whose client
+secrets are placeholders; treat a realm export as a template, never as a way to move
+production credentials between environments.
 
 ---
-
-### Endpoint: Get Global Configuration by Type
-| Method | Path                      | Purpose                          |
-|--------|---------------------------|----------------------------------|
-| GET    | /api/global-configuration | Get global configuration by type |
-
-**Request:**
-- Query Parameter: `type` (string, required, values: `CLUSTER`, `ORGANIZATION`)
 
-**Response:**
-- 200 OK: GlobalConfigurationDTO
-  - `config` (string)
-  - `type` (enum: `CLUSTER`, `ORGANIZATION`)
+## Documentation Index
 
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant GlobalConfigurationController
-    participant QueryBus
-    participant GetGlobalConfigurationQueryHandler
-    participant GlobalConfigurationRepository
-    participant Database
-
-    Client->>GlobalConfigurationController: GET /api/global-configuration?type=CLUSTER
-    GlobalConfigurationController->>QueryBus: GetGlobalConfigurationQuery
-    QueryBus->>GetGlobalConfigurationQueryHandler: handle()
-    GetGlobalConfigurationQueryHandler->>GlobalConfigurationRepository: findByType
-    GlobalConfigurationRepository->>Database: query
-    GetGlobalConfigurationQueryHandler-->>GlobalConfigurationController: response
-    GlobalConfigurationController-->>Client: 200 OK
-```
+### Integration
 
-**Explanation:**
-- Retrieves the global configuration value for the specified type.
+| Document | Contents |
+|---|---|
+| [`docs/API_REFERENCE.md`](docs/API_REFERENCE.md) | Endpoint catalogue with worked examples |
+| [`docs/CLAIMS_MAPPING.md`](docs/CLAIMS_MAPPING.md) | External IdP claims → platform claims |
+| [`docs/IGRP_PERMISSIONS_SYNC_NEXTJS_GUIDE.md`](docs/IGRP_PERMISSIONS_SYNC_NEXTJS_GUIDE.md) | Permission sync from a Next.js application |
+| [`docs/AUDIT_REPORTS_INTEGRATION_GUIDE.md`](docs/AUDIT_REPORTS_INTEGRATION_GUIDE.md) | Audit report endpoints |
+| [`docs/SESSION_FETCHING.md`](docs/SESSION_FETCHING.md) | Session read paths |
+| [`docs/I18N.md`](docs/I18N.md) | Locale resolution, message bundles, `PUT /api/users/me/locale` |
 
-**Example Case:**
-- Get organization configuration: `/api/global-configuration?type=ORGANIZATION`
+### Setup and operations
 
----
+| Document | Contents |
+|---|---|
+| [`docs/IMPORT_REALM_GUIDE.md`](docs/IMPORT_REALM_GUIDE.md) | Importing the Keycloak realm |
+| [`docs/OIDC_WSO2.md`](docs/OIDC_WSO2.md) | WSO2 Identity Server specifics |
+| [`docs/IAM_SYNCHRONIZATION.md`](docs/IAM_SYNCHRONIZATION.md) | Synchronisation boundaries |
+| [`docs/TESTING.md`](docs/TESTING.md) | Test strategy |
 
-## M2MController
+### Architecture and design
 
-### Summary of Endpoints
-| Method | Path                        | Purpose                        |
-|--------|-----------------------------|--------------------------------|
-| POST   | /api/m2m/sync/permissions   | Sync permissions (M2M)         |
-| POST   | /api/m2m/sync/resources     | Sync resources (M2M)           |
-| POST   | /api/m2m/sync/applications  | Sync applications (M2M)        |
+| Document | Contents |
+|---|---|
+| [`docs/ADR-001.md`](docs/ADR-001.md) | Architecture decision record |
+| [`docs/NO_ADAPTER_ARCHITECTURE.md`](docs/NO_ADAPTER_ARCHITECTURE.md) | Why no IAM provider mutation |
+| [`docs/PERMISSION_MANAGEMENT_SPECS.md`](docs/PERMISSION_MANAGEMENT_SPECS.md) | Permission model |
+| [`docs/ASVS-MAPPING.md`](docs/ASVS-MAPPING.md) | OWASP ASVS coverage |
+| [`docs/ENTERPRISE_IAM_RECOMMENDATIONS.md`](docs/ENTERPRISE_IAM_RECOMMENDATIONS.md) | Hardening recommendations |
+| [`plans/shared-servlet-session/scope.md`](plans/shared-servlet-session/scope.md) | Shared session store design |
+| [`plans/sso-session-logout-cascade/requirements.md`](plans/sso-session-logout-cascade/requirements.md) | Logout cascade requirements |
 
 ---
-
-### Endpoint: Sync Permissions (M2M)
-| Method | Path                      | Purpose              |
-|--------|---------------------------|----------------------|
-| POST   | /api/m2m/sync/permissions | Sync permissions     |
-
-**Request:**
-- Body (application/json): List of PermissionDTO
-  - `id` (integer, optional)
-  - `name` (string, required)
-  - `description` (string, optional)
-  - `status` (enum, optional)
-  - `departmentCode` (string, optional)
-
-**Response:**
-- 204 No Content: Successfully synced
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant M2MController
-    participant CommandBus
-    participant SyncPermissionsCommandHandler
-    participant PermissionRepository
-    participant Database
-
-    Client->>M2MController: POST /api/m2m/sync/permissions
-    M2MController->>CommandBus: SyncPermissionsCommand
-    CommandBus->>SyncPermissionsCommandHandler: handle()
-    SyncPermissionsCommandHandler->>PermissionRepository: save
-    PermissionRepository->>Database: update
-    SyncPermissionsCommandHandler-->>M2MController: response
-    M2MController-->>Client: 204 No Content
-```
 
-**Explanation:**
-- Synchronizes a list of permissions between systems.
+## Contributing
 
-**Example Case:**
-- Sync permissions: `[ { "name": "VIEW_REPORTS" }, { "name": "EDIT_USERS" } ]`
+### Branching
 
----
+**`development` is the integration branch.** Branch from it and push back to it unless a
+request names another branch explicitly.
 
-### Endpoint: Sync Resources (M2M)
-| Method | Path                      | Purpose              |
-|--------|---------------------------|----------------------|
-| POST   | /api/m2m/sync/resources   | Sync resources       |
-
-**Request:**
-- Body (application/json): ResourceDTO
-  - `id` (integer, optional)
-  - `name` (string, required)
-  - `description` (string, optional)
-  - `type` (enum, required)
-  - `status` (enum, optional)
-  - `applications` (list of string, optional)
-  - `items` (list of ResourceItemDTO, optional)
-  - `externalId` (string, optional)
-  - `createdBy` (string, optional)
-  - `createdDate` (string, optional)
-  - `lastModifiedBy` (string, optional)
-  - `lastModifiedDate` (string, optional)
-  - `permissions` (list of string, optional)
-
-**Response:**
-- 204 No Content: Successfully synced
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant M2MController
-    participant CommandBus
-    participant SyncResourcesCommandHandler
-    participant ResourceRepository
-    participant Database
-
-    Client->>M2MController: POST /api/m2m/sync/resources
-    M2MController->>CommandBus: SyncResourcesCommand
-    CommandBus->>SyncResourcesCommandHandler: handle()
-    SyncResourcesCommandHandler->>ResourceRepository: save
-    ResourceRepository->>Database: update
-    SyncResourcesCommandHandler-->>M2MController: response
-    M2MController-->>Client: 204 No Content
-```
+`staging` and `production` are promotion targets, and `deploy/*` branches are release
+targets driven by CI. Never push to them as ordinary work. `main` and
+`version/0.2.0-beta` no longer exist.
 
-**Explanation:**
-- Synchronizes a resource between systems.
+### Before opening a merge request
 
-**Example Case:**
-- Sync resource: `{ "name": "REPORTS", "type": "MODULE" }`
+1. `mvn test` — the full suite must pass.
+2. Add a guard test for anything that could regress silently, especially configuration and
+   wiring.
+3. Update this README and the relevant `docs/` page in the same change.
+4. Write idempotent DDL in `DatabaseMigrationRunner`, never a bare `ALTER`.
+5. Keep `.env.example` in step with any new configuration variable.
 
 ---
 
-### Endpoint: Sync Applications (M2M)
-| Method | Path                         | Purpose              |
-|--------|------------------------------|----------------------|
-| POST   | /api/m2m/sync/applications   | Sync applications    |
-
-**Request:**
-- Body (application/json): ApplicationDTO
-  - `id` (integer, optional)
-  - `code` (string, required)
-  - `name` (string, required)
-  - `description` (string, optional)
-  - `status` (enum, optional)
-  - `type` (enum, required)
-  - `owner` (string, optional)
-  - `picture` (string, optional)
-  - `url` (uri, optional)
-  - `slug` (string, optional)
-  - `createdBy` (string, optional)
-  - `createdDate` (string, optional)
-  - `lastModifiedBy` (string, optional)
-  - `lastModifiedDate` (string, optional)
-  - `departments` (list of string, optional)
-
-**Response:**
-- 204 No Content: Successfully synced
-
-**Workflow Diagram:**
-```mermaid
-sequenceDiagram
-    participant Client
-    participant M2MController
-    participant CommandBus
-    participant SyncApplicationsCommandHandler
-    participant ApplicationRepository
-    participant Database
-
-    Client->>M2MController: POST /api/m2m/sync/applications
-    M2MController->>CommandBus: SyncApplicationsCommand
-    CommandBus->>SyncApplicationsCommandHandler: handle()
-    SyncApplicationsCommandHandler->>ApplicationRepository: save
-    ApplicationRepository->>Database: update
-    SyncApplicationsCommandHandler-->>M2MController: response
-    M2MController-->>Client: 204 No Content
-```
+## Support and License
 
-**Explanation:**
-- Synchronizes an application between systems.
+| | |
+|---|---|
+| Repository | `git.nosi.cv/igrp-3_0/igrp-auth/backend/igrp-platform-access-management` |
+| Maintainer | iGRP Platform Team, NOSI |
 
-**Example Case:**
-- Sync application: `{ "code": "APP_XYZ", "name": "App XYZ", "type": "INTERNAL" }`
-
----
+No `LICENSE` file is present in this repository. Treat the code as internal to the iGRP
+platform unless the platform team states otherwise.
