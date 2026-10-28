@@ -30,7 +30,12 @@
         <igrp.framework.core.version>0.0.3-alpha</igrp.framework.core.version>
         <igrp.framework.stereotype.version>0.1.0-beta-20251021.121417-2</igrp.framework.stereotype.version>
         <framework.auth.version>0.1.0-beta.1</framework.auth.version>
-        <filemanager.version>0.0.3-alpha</filemanager.version>
+        <!-- All three file-manager artifacts are released in lockstep and
+             minio depends on the core, so they share one property. 0.2.0-beta.1
+             carries minio 8.6.0, which fixes CVE-2026-45925. The StorageService
+             interface is byte-identical to 0.1.0-beta.2's, which is the only
+             surface this service uses. -->
+        <filemanager.version>0.2.0-beta.1</filemanager.version>
         <igrp.framework.notification.core.version>0.0.1-alpha</igrp.framework.notification.core.version>
         <igrp.platform.notification.client.version>0.2.0-beta.5</igrp.platform.notification.client.version>
 
@@ -272,17 +277,17 @@
         <dependency>
             <groupId>cv.igrp.platform</groupId>
             <artifactId>filemanager</artifactId>
-            <version>0.1.0-beta.2</version>
+            <version>${filemanager.version}</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework.filemanager</groupId>
             <artifactId>aws-s3</artifactId>
-            <version>0.1.0-beta.3</version>
+            <version>${filemanager.version}</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework.filemanager</groupId>
             <artifactId>minio</artifactId>
-            <version>0.1.0-beta.4</version>
+            <version>${filemanager.version}</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.framework</groupId>
