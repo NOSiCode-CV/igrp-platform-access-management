@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.14</version>
+        <version>3.5.16</version>
         <relativePath />
     </parent>
 
@@ -33,6 +33,36 @@
         <filemanager.version>0.0.3-alpha</filemanager.version>
         <igrp.framework.notification.core.version>0.0.1-alpha</igrp.framework.notification.core.version>
         <igrp.platform.notification.client.version>0.2.0-beta.5</igrp.platform.notification.client.version>
+
+        <!--
+            Security patch overrides on top of the parent BOM (2026-10-28).
+            Each raises a version the parent still pins below its patched
+            release; all stay inside the current minor line, so no API change
+            is implied. Replaces the per-artifact <dependencyManagement> pins
+            that used to live below, because these are the same properties
+            spring-boot-dependencies uses and so they cover every sibling
+            artifact in each family rather than only the ones enumerated.
+
+            Drop an entry once the parent BOM catches up to or passes it.
+        -->
+        <!-- 3 CRITICAL. Must stay on 10.1.x: Tomcat 11 is Servlet 6.1 and
+             Boot 3.5 targets 6.0. The advisories name 10.1.58 as the fix, but
+             that version was never published — the line goes 10.1.57 -> 10.1.59. -->
+        <tomcat.version>10.1.61</tomcat.version>
+        <!-- 1 CRITICAL, 8 HIGH. Deliberately the 4.2 line, not the 4.1 the
+             parent manages; this predates the current report. -->
+        <netty.version>4.2.19.Final</netty.version>
+        <!-- 8 HIGH. The parent reaches only 2.21.4, which is short of the fix. -->
+        <jackson-bom.version>2.21.8</jackson-bom.version>
+        <!-- 1 HIGH -->
+        <postgresql.version>42.7.12</postgresql.version>
+        <!-- 1 MEDIUM -->
+        <log4j2.version>2.26.1</log4j2.version>
+        <!-- 2 CRITICAL, 1 HIGH, 2 MEDIUM. Not managed by the parent BOM at
+             all, so it needs dependencyManagement entries below. bcprov
+             arrives transitively via spring-cloud-commons; BouncyCastle
+             expects its modules version-aligned, so both are set together. -->
+        <bouncycastle.version>1.85</bouncycastle.version>
     </properties>
 
     <dependencyManagement>
@@ -51,49 +81,33 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
-            <!-- Override transitive Netty to latest patched line (CVE-2026-42581 etc.) -->
+            <!-- Netty, Tomcat, Jackson, PostgreSQL and Log4j2 are now raised
+                 through the parent's own version properties (see <properties>)
+                 rather than pinned per artifact here. -->
+            <!-- BouncyCastle is NOT in the parent BOM, so it does need entries.
+                 bcprov is transitive (spring-cloud-commons) and was previously
+                 unpinned at 1.80 while bcpkix was pinned at 1.82 — a split the
+                 library does not support. -->
             <dependency>
-                <groupId>io.netty</groupId>
-                <artifactId>netty-bom</artifactId>
-                <version>4.2.14.Final</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcprov-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.bouncycastle</groupId>
+                <artifactId>bcpkix-jdk18on</artifactId>
+                <version>${bouncycastle.version}</version>
             </dependency>
             <!-- Override transitive deps with CVEs the parent BOM doesn't catch -->
-            <dependency>
-                <groupId>org.apache.tomcat.embed</groupId>
-                <artifactId>tomcat-embed-core</artifactId>
-                <version>10.1.55</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.tomcat.embed</groupId>
-                <artifactId>tomcat-embed-websocket</artifactId>
-                <version>10.1.55</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.tomcat.embed</groupId>
-                <artifactId>tomcat-embed-el</artifactId>
-                <version>10.1.55</version>
-            </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
                 <version>4.5.14</version>
             </dependency>
             <dependency>
-                <groupId>org.postgresql</groupId>
-                <artifactId>postgresql</artifactId>
-                <version>42.7.11</version>
-            </dependency>
-            <dependency>
                 <groupId>org.bitbucket.b_c</groupId>
                 <artifactId>jose4j</artifactId>
                 <version>0.9.6</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.logging.log4j</groupId>
-                <artifactId>log4j-api</artifactId>
-                <version>2.26.0</version>
             </dependency>
             <dependency>
                 <groupId>commons-jxpath</groupId>
@@ -228,7 +242,7 @@
         <dependency>
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcpkix-jdk18on</artifactId>
-            <version>1.82</version>
+            <version>${bouncycastle.version}</version>
         </dependency>
         <!-- https://mvnrepository.com/artifact/com.google.protobuf/protobuf-java -->
         <dependency>
