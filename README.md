@@ -494,11 +494,18 @@ Guide: [`docs/TESTING.md`](docs/TESTING.md).
 
 ### Database migrations
 
-There is no Flyway. Custom DDL belongs in `DatabaseMigrationRunner.run()`
-(`shared/config/`), written idempotently (`IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`) so
-it is a no-op on every boot after the first. In `development`, Hibernate's
-`ddl-auto=update` creates entity tables; `staging` and `production` use `validate`, so
-anything Hibernate will not generate must be in the runner.
+Three mechanisms shape the schema, and new DDL goes to a different one depending on what
+it is.
+
+| Mechanism | Use it for |
+|---|---|
+| **Flyway** — `src/main/resources/db/migration/V*.sql` | Versioned, one-shot migrations: data backfills, constraint fixes, seeding. Runs once and is recorded. `spring.flyway.enabled=true`, with `baseline-on-migrate` for pre-existing databases. |
+| **`DatabaseMigrationRunner`** (`shared/config/`) | DDL that must be idempotent and re-assert itself on every boot — dropping a constraint that must stay dropped, or adding a column Hibernate will not generate. Written `IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`, so it is a no-op after the first run. |
+| **Hibernate `ddl-auto`** | `update` in `development` only, to create entity tables while iterating. `staging` and `production` use `validate`, so anything Hibernate will not generate must come from one of the two above. |
+
+Note that some historical Flyway migrations were superseded by the runner — see the
+comments in `ensureUserSessionSchema()` for a case where a retype step had to move. When
+in doubt, prefer Flyway for a one-time change and the runner for an invariant.
 
 ### Troubleshooting
 
