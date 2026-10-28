@@ -119,6 +119,23 @@
                 <artifactId>commons-jxpath</artifactId>
                 <version>1.4.0</version>
             </dependency>
+            <!-- Align commons-compress with what POI asks for, rather than
+                 whatever wins nearest-first.
+                 POI 5.4.1 declares 1.27.1, but io.kubernetes:client-java
+                 declares 1.26.1 closer to the root, so Maven silently
+                 DOWNGRADES it under POI. POI uses commons-compress for the
+                 OOXML zip container, so a call added after 1.26.1 would fail
+                 with NoSuchMethodError inside the audit-report export —
+                 at runtime, in a download, not at build time.
+                 The mismatch predates the POI 5.3.0 -> 5.4.1 bump (5.3.0
+                 wanted 1.26.2) but was only patch-level then; the bump widened
+                 it to a minor, which is what made it worth pinning. Not
+                 security-driven: no advisory against 1.26.1 in the scan. -->
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-compress</artifactId>
+                <version>1.27.1</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -311,7 +328,17 @@
         <dependency>
             <groupId>org.apache.poi</groupId>
             <artifactId>poi-ooxml</artifactId>
-            <version>5.3.0</version>
+            <!-- 5.4.0 fixes CVE-2025-31672 (MEDIUM, unexpected content when
+                 PARSING OOXML input); .1 is the latest patch on that line.
+                 This service only writes workbooks, so the advisory barely
+                 reaches it — taken because the fix is free, not because the
+                 exposure is real. Staying on 5.4.x rather than 5.5.x: the
+                 extra minor buys no advisory, and the export path is the one
+                 place a POI regression would reach users as a corrupt
+                 download. ExcelReportExporterTest is the guard — it writes a
+                 workbook through both the SXSSF and fallback paths and reads
+                 it back. -->
+            <version>5.4.1</version>
         </dependency>
         <dependency>
             <groupId>com.github.librepdf</groupId>
