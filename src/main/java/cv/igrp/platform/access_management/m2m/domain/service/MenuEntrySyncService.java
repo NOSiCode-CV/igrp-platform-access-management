@@ -107,11 +107,10 @@ public class MenuEntrySyncService {
             if (syncRoles && dto.getRoles() != null) {
                 Set<RoleEntity> newRoles = dto.getRoles().stream()
                         .filter(Objects::nonNull)
-                        .map(RoleDepartmentDTO::roleCode)
-                        .filter(s -> !s.isEmpty())
-                        .map(roleRepository::findIdByCode)
-                        .filter(Objects::nonNull)
-                        .map(roleRepository::getReferenceById)
+                        .filter(role -> role.roleCode() != null && !role.roleCode().isEmpty())
+                        .map(role -> roleRepository.findByDepartmentCodeAndCodeAndStatusNot(
+                                role.departmentCode(), role.roleCode(), Status.DELETED))
+                        .flatMap(Optional::stream)
                         .collect(Collectors.toSet());
                 entity.getRoles().clear();
                 entity.getRoles().addAll(newRoles);
@@ -194,7 +193,11 @@ public class MenuEntrySyncService {
                 m.put("pageSlug", d.getPageSlug());
                 m.put("parentCode", d.getParentCode());
                 if (includeRoles) {
-                    List<String> roles = d.getRoles() == null ? List.of() : d.getRoles().stream().map(RoleDepartmentDTO::roleCode).sorted().toList();
+                    List<RoleDepartmentDTO> roles = d.getRoles() == null ? List.of() : d.getRoles().stream()
+                            .filter(Objects::nonNull)
+                            .sorted(Comparator.comparing(RoleDepartmentDTO::departmentCode, Comparator.nullsFirst(String::compareTo))
+                                    .thenComparing(RoleDepartmentDTO::roleCode, Comparator.nullsFirst(String::compareTo)))
+                            .toList();
                     m.put("roles", roles);
                 }
                 return m;
