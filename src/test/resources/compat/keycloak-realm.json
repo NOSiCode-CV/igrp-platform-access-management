@@ -1,0 +1,44 @@
+{
+  "realm": "compat",
+  "enabled": true,
+  "sslRequired": "none",
+  "registrationAllowed": false,
+  "loginWithEmailAllowed": true,
+  "accessTokenLifespan": 900,
+  "clients": [
+    {
+      "clientId": "igrp-access-management",
+      "name": "iGRP Access Management (compat suite)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "compat-keycloak-secret",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false,
+      "redirectUris": ["http://localhost:*"],
+      "webOrigins": ["+"],
+      "attributes": {
+        "post.logout.redirect.uris": "https://app.example.cv/*##+"
+      }
+    }
+  ],
+  "users": [
+    {
+      "username": "fulano",
+      "enabled": true,
+      "email": "fulano@example.cv",
+      "emailVerified": true,
+      "firstName": "Fulano",
+      "lastName": "de Tal",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "compat-password",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

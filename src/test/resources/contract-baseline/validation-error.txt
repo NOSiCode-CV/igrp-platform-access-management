@@ -1,0 +1,5 @@
+HTTP 400
+content-type: application/problem+json
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+
+{"type":"about:blank","title":"Erros de validação","status":400,"instance":"/api/departments","errors":{"code":"The field <code> is required","name":"The field <name> is required"}}
