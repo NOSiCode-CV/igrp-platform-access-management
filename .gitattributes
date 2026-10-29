@@ -1,0 +1,4 @@
+# Golden files for the Spring Boot 4 migration gate are compared byte for
+# byte; keep them LF on every checkout, whatever core.autocrlf says.
+src/test/resources/contract-baseline/** text eol=lf
+src/test/resources/compat-baseline/** text eol=lf
