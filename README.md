@@ -503,6 +503,14 @@ it is.
 | **`DatabaseMigrationRunner`** (`shared/config/`) | DDL that must be idempotent and re-assert itself on every boot — dropping a constraint that must stay dropped, or adding a column Hibernate will not generate. Written `IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`, so it is a no-op after the first run. |
 | **Hibernate `ddl-auto`** | `update` in `development` only, to create entity tables while iterating. `staging` and `production` use `validate`, so anything Hibernate will not generate must come from one of the two above. |
 
+**Fresh, empty databases.** The Flyway scripts patch tables that Hibernate and the runner
+created on databases that predate Flyway, so on an empty database they have nothing to
+patch. `FreshDatabaseSchemaCallback` handles that: before the first migration, if there is no
+`t_user` table, it applies `db/bootstrap/base-schema.sql` (a schema-only dump of that
+pre-Flyway state), and Flyway then runs every migration on top. Existing databases never run
+it. Do not edit the dump to follow entity changes; new DDL still goes to Flyway or the runner.
+The compat suite installs from an empty database on every `mvn verify`.
+
 Note that some historical Flyway migrations were superseded by the runner — see the
 comments in `ensureUserSessionSchema()` for a case where a retype step had to move. When
 in doubt, prefer Flyway for a one-time change and the runner for an invariant.
