@@ -63,6 +63,27 @@
         <postgresql.version>42.7.12</postgresql.version>
         <!-- 1 MEDIUM -->
         <log4j2.version>2.26.1</log4j2.version>
+        <!-- 2 HIGH + 1 MEDIUM on the Apache HttpComponents 5 stack:
+             CVE-2026-54399 (DoS via excessive HTTP headers, httpcore5),
+             CVE-2026-54428 (DoS via oversized HTTP/2 HPACK header blocks,
+             httpcore5-h2) and CVE-2026-64607 (DoS via connection leak,
+             httpclient5).
+
+             Versions are the pair upstream ships together, not the bare
+             minimums from the advisories (5.4.3 / 5.6.3): httpclient5 5.6.5's
+             own parent manages httpcore 5.4.4, so this is the combination its
+             authors build and test against. Mixing an older core under a newer
+             client is how the POI/commons-compress mismatch happened in
+             3fffaa12 — a silent downgrade that only shows up at runtime.
+
+             These are minor-version bumps over what the parent BOM pins
+             (httpcore5 5.3.6, httpclient5 5.5.2), so they diverge from the
+             Boot-tested set. Consumers are cv.igrp.framework:core (which
+             declares httpclient5 5.5) and the notification client; both are
+             prebuilt jars, so the bet is Apache's API compatibility within
+             5.x. Revisit if the parent BOM catches up. -->
+        <httpcore5.version>5.4.4</httpcore5.version>
+        <httpclient5.version>5.6.5</httpclient5.version>
         <!-- 2 CRITICAL, 1 HIGH, 2 MEDIUM. Not managed by the parent BOM at
              all, so it needs dependencyManagement entries below. bcprov
              arrives transitively via spring-cloud-commons; BouncyCastle
