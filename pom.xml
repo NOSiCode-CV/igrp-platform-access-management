@@ -136,6 +136,28 @@
                 <artifactId>commons-compress</artifactId>
                 <version>1.27.1</version>
             </dependency>
+            <!-- 2 HIGH + 1 MEDIUM, all DoS/crash on malformed or oversized
+                 compressed input: CVE-2026-108106, CVE-2026-93451,
+                 CVE-2026-116590. Transitive via io.minio:minio; a patch bump
+                 inside 1.1.10.x, and not managed by the parent BOM, so it
+                 needs an entry here. -->
+            <dependency>
+                <groupId>org.xerial.snappy</groupId>
+                <artifactId>snappy-java</artifactId>
+                <version>1.1.10.9</version>
+            </dependency>
+            <!-- CVE-2026-102554 (HIGH): DoS via unthrottled allocation while
+                 deserializing. Required at RUNTIME by io.minio:minio, so this
+                 one cannot be excluded the way auto-service's copy was.
+                 The scan reported 32.0.1-jre because that copy was winning
+                 nearest-first; with it gone, minio's 33.4.8-jre surfaces, so
+                 this is a bump inside 33.x rather than the 32 -> 33 jump the
+                 advisory implies. Use the -jre flavour, not -android. -->
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>33.7.2-jre</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -290,6 +312,36 @@
             <groupId>cv.igrp.framework.auth</groupId>
             <artifactId>core</artifactId>
             <version>${framework.auth.version}</version>
+            <exclusions>
+                <!-- auto-service is an ANNOTATION PROCESSOR and is declared at
+                     compile scope by this library, so it and its dependency
+                     chain land on the runtime classpath:
+
+                       auto-service -> auto-common -> guava 32.0.1-jre
+
+                     This is NOT the only guava in the graph — io.minio:minio
+                     needs one at runtime — but 32.0.1 was winning nearest-first
+                     and masking minio's much newer 33.4.8. Removing this chain
+                     lets the real one through, and annotation processors have no
+                     business in a production jar regardless. (dependency:tree
+                     prints only the winning version, so the second source was
+                     invisible until this exclusion landed.)
+
+                     Safe because the <annotationProcessorPaths> below already
+                     declares cv.igrp.framework.auth:core explicitly, and
+                     processor paths resolve their own dependencies
+                     independently of the compile classpath — so code
+                     generation still gets auto-service, the shipped jar does
+                     not.
+
+                     The real fix belongs upstream: that library should mark
+                     auto-service (and javapoet) as provided. Drop this
+                     exclusion once it does. -->
+                <exclusion>
+                    <groupId>com.google.auto.service</groupId>
+                    <artifactId>auto-service</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>cv.igrp.platform</groupId>
