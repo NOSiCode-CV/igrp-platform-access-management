@@ -1,7 +1,7 @@
 package cv.igrp.platform.access_management.shared.config;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import tools.jackson.databind.json.JsonMapper;
 import cv.igrp.platform.access_management.shared.security.SecurityStoreObjectMapperFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
@@ -64,13 +64,13 @@ public class SessionStoreConfig {
      * falls back to JDK serialization.
      *
      * <p>Deserialization reads into {@link Object}, so it depends on the
-     * class-name default typing {@code SecurityJackson2Modules} enables —
+     * class-name default typing {@code SecurityJacksonModules} enables —
      * restricted to an allowlist, which is why every reachable type needs a
      * Mixin. {@code SessionStoreConversionTest} is the guard.
      */
     @Bean("springSessionConversionService")
     public ConversionService springSessionConversionService() {
-        ObjectMapper mapper = SecurityStoreObjectMapperFactory.create(getClass().getClassLoader());
+        JsonMapper mapper = SecurityStoreObjectMapperFactory.create(getClass().getClassLoader());
         GenericConversionService conversionService = new GenericConversionService();
         conversionService.addConverter(Object.class, byte[].class, serializer(mapper));
         conversionService.addConverter(byte[].class, Object.class, deserializer(mapper));
@@ -96,11 +96,11 @@ public class SessionStoreConfig {
         return new PostgreSqlJdbcIndexedSessionRepositoryCustomizer();
     }
 
-    private static Converter<Object, byte[]> serializer(ObjectMapper mapper) {
+    private static Converter<Object, byte[]> serializer(JsonMapper mapper) {
         return source -> {
             try {
                 return mapper.writeValueAsBytes(source);
-            } catch (JsonProcessingException e) {
+            } catch (JacksonException e) {
                 // Surfacing this is deliberate. Swallowing it would store a
                 // half-written session and sign the user out on the next
                 // request, with nothing in the logs pointing at the attribute
@@ -109,12 +109,12 @@ public class SessionStoreConfig {
                         "Could not serialize session attribute of type "
                                 + source.getClass().getName()
                                 + ". It is most likely missing from the Jackson allowlist in "
-                                + "SecurityStoreObjectMapperFactory.", e);
+                                + "SecurityStoreObjectMapperFactory.", new java.io.IOException(e));
             }
         };
     }
 
-    private static Converter<byte[], Object> deserializer(ObjectMapper mapper) {
+    private static Converter<byte[], Object> deserializer(JsonMapper mapper) {
         return source -> {
             try {
                 return mapper.readValue(source, Object.class);

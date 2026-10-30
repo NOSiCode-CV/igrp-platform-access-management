@@ -1,7 +1,7 @@
 package cv.igrp.platform.access_management.compat;
 
 import org.junit.jupiter.api.Tag;
-import org.springframework.boot.test.autoconfigure.filter.TypeExcludeFilters;
+import org.springframework.boot.test.context.filter.annotation.TypeExcludeFilters;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;

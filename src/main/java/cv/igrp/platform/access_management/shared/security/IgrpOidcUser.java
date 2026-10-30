@@ -17,7 +17,7 @@ import java.util.Collection;
  * UserProfile data directly within the Authentication Context.
  *
  * <p>Carries the Jackson annotations required by Spring Security's
- * {@code SecurityJackson2Modules} allowlist so that an {@code
+ * {@code SecurityJacksonModules} allowlist so that an {@code
  * OAuth2AuthenticationToken} holding this principal can be round-tripped
  * through the session store (HTTP session / Redis) and the persistent
  * {@code JdbcOAuth2AuthorizationService} without tripping the

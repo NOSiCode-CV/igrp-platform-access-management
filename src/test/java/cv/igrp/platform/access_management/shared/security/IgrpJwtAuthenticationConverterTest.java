@@ -91,7 +91,8 @@ class IgrpJwtAuthenticationConverterTest {
 
         AbstractAuthenticationToken token = converter.convert(jwt);
 
-        assertThat(token.getAuthorities()).isEmpty();
+        // Spring Security 7 itself adds this marker to every bearer token.
+        assertThat(token.getAuthorities()).extracting(a -> a.getAuthority()).containsExactly("FACTOR_BEARER");
     }
 
     @Test
@@ -103,7 +104,8 @@ class IgrpJwtAuthenticationConverterTest {
 
         AbstractAuthenticationToken token = converter.convert(jwt);
 
-        assertThat(token.getAuthorities()).isEmpty();
+        // Spring Security 7 itself adds this marker to every bearer token.
+        assertThat(token.getAuthorities()).extracting(a -> a.getAuthority()).containsExactly("FACTOR_BEARER");
     }
 
     // --- Profile & Claims Normalization Tests (from version/0.2.0-beta) ---

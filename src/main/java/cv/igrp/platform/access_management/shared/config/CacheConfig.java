@@ -11,10 +11,11 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
 import java.util.Collection;
 import java.util.concurrent.Callable;
@@ -30,7 +31,14 @@ public class CacheConfig {
      * exercises exactly what production uses.
      */
     public static RedisSerializer<Object> valueSerializer() {
-        return new GenericJackson2JsonRedisSerializer();
+        return GenericJacksonJsonRedisSerializer.builder()
+                .enableSpringCacheNullValueSupport()
+                .enableDefaultTyping(BasicPolymorphicTypeValidator.builder()
+                        .allowIfSubType("cv.igrp.platform.access_management.")
+                        .allowIfSubType("java.")
+                        .allowIfSubType("org.springframework.cache.support.")
+                        .build())
+                .build();
     }
 
     @Bean

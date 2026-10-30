@@ -72,6 +72,8 @@ class HttpContractBaselineIT extends AbstractCompatIT {
         return List.of(
                 // ---- discovery and OAuth2 protocol surface (SDK token provider, gateways) ----
                 new Case("oidc-discovery", t -> t.api.get("/.well-known/openid-configuration", null)),
+                // Advertised by Security 7.1 in WWW-Authenticate, so it has to answer.
+                new Case("protected-resource-metadata", t -> t.api.get("/.well-known/oauth-protected-resource", null)),
                 new Case("oauth-authorization-server-metadata", t -> t.api.get("/.well-known/oauth-authorization-server", null)),
                 // Behind the gateway: the chain matchers must still recognise these paths.
                 new Case("forwarded-prefix-discovery", t -> t.api.get("/.well-known/openid-configuration", null,

@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.shared.domain.exceptions;
 
-import com.fasterxml.jackson.databind.exc.InvalidFormatException;
+import tools.jackson.databind.exc.InvalidFormatException;
 import cv.igrp.platform.access_management.department.domain.exceptions.OutOfScopeException;
 import cv.igrp.platform.access_management.department.domain.exceptions.RootDepartmentForbiddenException;
 import cv.igrp.platform.access_management.shared.i18n.Messages;

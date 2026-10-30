@@ -228,7 +228,6 @@ roleEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.
 roleMapper : cv.igrp.platform.access_management.role.domain.service.RoleMapper
 roleSpecificationBuilder : cv.igrp.platform.access_management.role.specs.RoleSpecificationBuilder
 rolesController : cv.igrp.platform.access_management.role.interfaces.rest.RolesController
-s3StorageProviderProperties : cv.igrp.framework.filemanager.awss3.S3StorageProviderProperties
 scopeAspect : cv.igrp.platform.access_management.shared.security.ScopeAspect
 scopeService : cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService
 scopedTarget.requestScopeCache : cv.igrp.platform.access_management.shared.security.RequestScopeCache

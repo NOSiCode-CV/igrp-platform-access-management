@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.security_audit.application.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditStatus;
@@ -74,7 +73,7 @@ class SecurityAuditServiceTransactionBoundaryTest {
 
         @Bean
         SecurityAuditService securityAuditService() {
-            return new SecurityAuditServiceImpl(REPOSITORY, CONTEXT_PROVIDER, CHAIN_SERVICE, new ObjectMapper());
+            return new SecurityAuditServiceImpl(REPOSITORY, CONTEXT_PROVIDER, CHAIN_SERVICE);
         }
     }
 

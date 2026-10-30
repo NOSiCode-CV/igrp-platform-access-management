@@ -43,4 +43,19 @@ class DefaultProfileTest {
             assertEquals("validate", context.getEnvironment().getProperty("spring.jpa.hibernate.ddl-auto"));
         }
     }
+
+    @Test
+    @DisplayName("The API keeps the Jackson 2 wire format unless IGRP_JACKSON2_DEFAULTS turns it off")
+    void jackson2DefaultsSwitch() {
+        try (ConfigurableApplicationContext context = new SpringApplicationBuilder(Empty.class)
+                .web(WebApplicationType.NONE)
+                .run()) {
+            assertEquals("true", context.getEnvironment().getProperty("spring.jackson.use-jackson2-defaults"));
+        }
+        try (ConfigurableApplicationContext context = new SpringApplicationBuilder(Empty.class)
+                .web(WebApplicationType.NONE)
+                .run("--IGRP_JACKSON2_DEFAULTS=false")) {
+            assertEquals("false", context.getEnvironment().getProperty("spring.jackson.use-jackson2-defaults"));
+        }
+    }
 }

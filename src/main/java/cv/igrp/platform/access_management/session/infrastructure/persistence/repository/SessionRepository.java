@@ -111,6 +111,9 @@ public interface SessionRepository extends JpaRepository<SessionEntity, Long> {
      */
     Optional<SessionEntity> findBySessionId(UUID sessionId);
 
+    @Query("SELECT s.sessionId FROM SessionEntity s WHERE s.userId IN :userIds")
+    List<UUID> findSessionIdsByUserIds(@Param("userIds") Set<String> userIds);
+
     /**
      * Find all sessions with a specific status
      */

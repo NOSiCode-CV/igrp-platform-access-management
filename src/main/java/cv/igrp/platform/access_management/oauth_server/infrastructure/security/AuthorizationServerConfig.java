@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import cv.igrp.platform.access_management.shared.security.SecurityStoreObjectMapperFactory;
 import cv.igrp.platform.access_management.shared.security.IgrpOidcUser;
 import cv.igrp.platform.access_management.shared.security.OidcContextAuthenticationToken;
@@ -21,13 +20,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.jackson2.SecurityJackson2Modules;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
-import org.springframework.security.oauth2.server.authorization.jackson2.OAuth2AuthorizationServerJackson2Module;
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.oidc.authentication.OidcIdTokenDecoderFactory;
 import org.springframework.security.oauth2.client.oidc.authentication.OidcIdTokenValidator;
@@ -583,12 +580,12 @@ public class AuthorizationServerConfig {
      * before any authorization is written.
      *
      * <p>The default {@link JdbcOAuth2AuthorizationService} uses Spring Security's
-     * {@code SecurityJackson2Modules}-driven {@code ObjectMapper}, whose allowlist
+     * {@code SecurityJacksonModules}-driven {@code JsonMapper}, whose allowlist
      * rejects classes it does not recognise — including the empty JDK collection
      * sentinels (e.g. {@code java.util.Collections$EmptySet}) that
      * {@link IgrpOidcUser} stores when its authorities/profile fields are empty.
      * We therefore install a row mapper + parameters mapper backed by an
-     * {@link ObjectMapper} that registers the same modules <i>plus</i> a Mixin
+     * {@link JsonMapper} that registers the same modules <i>plus</i> a Mixin
      * for the empty-collection sentinels and the iGRP principal types, so a
      * superadmin-with-no-explicit-authorities token can be persisted and
      * reloaded without tripping the allowlist guard.
@@ -602,17 +599,14 @@ public class AuthorizationServerConfig {
         JdbcOAuth2AuthorizationService delegate =
                 new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
 
-        ObjectMapper objectMapper = SecurityStoreObjectMapperFactory.create(
+        JsonMapper jsonMapper = SecurityStoreObjectMapperFactory.create(
                 AuthorizationServerConfig.class.getClassLoader());
 
-        JdbcOAuth2AuthorizationService.OAuth2AuthorizationRowMapper rowMapper =
-                new JdbcOAuth2AuthorizationService.OAuth2AuthorizationRowMapper(registeredClientRepository);
-        rowMapper.setObjectMapper(objectMapper);
+        var rowMapper = new JdbcOAuth2AuthorizationService.JsonMapperOAuth2AuthorizationRowMapper(
+                registeredClientRepository, jsonMapper);
         delegate.setAuthorizationRowMapper(rowMapper);
 
-        JdbcOAuth2AuthorizationService.OAuth2AuthorizationParametersMapper parametersMapper =
-                new JdbcOAuth2AuthorizationService.OAuth2AuthorizationParametersMapper();
-        parametersMapper.setObjectMapper(objectMapper);
+        var parametersMapper = new JdbcOAuth2AuthorizationService.JsonMapperOAuth2AuthorizationParametersMapper(jsonMapper);
         delegate.setAuthorizationParametersMapper(parametersMapper);
 
         // Phase C3 — every remove() (revoke / logout / one-shot consume) cascades

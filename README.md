@@ -5,7 +5,7 @@ Identity and access management for the iGRP 3.0 platform. This service is both a
 access, refresh and ID tokens — and the **system of record** for users, roles,
 permissions, departments, applications and sessions.
 
-**Stack:** Java 26 · Spring Boot 3.5.14 · Spring Authorization Server · Spring Cloud 2025.0.0 · PostgreSQL · Redis · MinIO/S3
+**Stack:** Java 26 · Spring Boot 4.1.2 · Spring Authorization Server (Spring Security 7) · Spring Cloud 2025.1.4 · PostgreSQL · Redis · MinIO/S3
 
 ---
 

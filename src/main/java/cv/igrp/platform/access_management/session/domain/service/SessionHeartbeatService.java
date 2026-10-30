@@ -15,7 +15,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Phase C2 — sliding heartbeat for accepted, session-bound requests.
@@ -35,7 +34,7 @@ public class SessionHeartbeatService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(SessionHeartbeatService.class);
     private static final String GATE_KEY_PREFIX = "igrp:session:heartbeat:";
-    private static final String SID_KEY_PREFIX = "igrp:session:bySid:";
+    public static final String SID_KEY_PREFIX = "igrp:session:bySid:";
     private static final Duration SID_CACHE_TTL = Duration.ofSeconds(60);
 
     private final SessionRepository sessionRepository;
@@ -158,8 +157,7 @@ public class SessionHeartbeatService {
             redisTemplate.opsForValue().set(
                     SID_KEY_PREFIX + session.getSessionId(),
                     Snapshot.from(session),
-                    SID_CACHE_TTL.toSeconds(),
-                    TimeUnit.SECONDS);
+                    SID_CACHE_TTL);
         } catch (Exception ex) {
             LOGGER.debug("Heartbeat: SID cache write failed for {}: {}",
                     session.getSessionId(), ex.getMessage());
@@ -175,7 +173,7 @@ public class SessionHeartbeatService {
             return;
         }
         try {
-            redisTemplate.delete(SID_KEY_PREFIX + sid);
+            cv.igrp.platform.access_management.session.infrastructure.cache.AfterCommit.run(() -> redisTemplate.delete(SID_KEY_PREFIX + sid));
         } catch (Exception ex) {
             LOGGER.debug("Heartbeat: SID cache evict failed for {}: {}", sid, ex.getMessage());
         }

@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.m2m.domain.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import cv.igrp.platform.access_management.shared.infrastructure.json.PersistedJson;
 import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
@@ -41,20 +41,17 @@ public class PermissionSyncService {
     private final PermissionEntityRepository permissionRepository;
     private final ResourceEntityRepository resourceEntityRepository;
     private final RoleEntityRepository roleEntityRepository;
-    private final ObjectMapper objectMapper;
     private final EventPublisher eventPublisher;
 
     public PermissionSyncService(PermissionEntityRepository permissionRepository,
                                  ResourceEntityRepository resourceEntityRepository,
                                  RoleEntityRepository roleEntityRepository,
-                                 ObjectMapper objectMapper,
                                  AuthenticationHelper authenticationHelper,
                                  EventPublisher eventPublisher) {
         this.authenticationHelper = authenticationHelper;
         this.permissionRepository = permissionRepository;
         this.resourceEntityRepository = resourceEntityRepository;
         this.roleEntityRepository = roleEntityRepository;
-        this.objectMapper = objectMapper;
         this.eventPublisher = eventPublisher;
     }
 
@@ -102,7 +99,7 @@ public class PermissionSyncService {
         Set<ResourceEntity> resourceEntities = new HashSet<>();
         resourceEntities.add(resource);
 
-        List<PermissionEntity> existingPermissions = permissionRepository.findAllByResourcesAndStatusNot(resourceEntities, Status.DELETED);
+        List<PermissionEntity> existingPermissions = permissionRepository.findDistinctByResourcesInAndStatusNot(resourceEntities, Status.DELETED);
 
         Map<String, PermissionEntity> existingByName = existingPermissions.stream()
                 .collect(Collectors.toMap(
@@ -246,7 +243,7 @@ public class PermissionSyncService {
             canonical.put("name", entity.getName());
             canonical.put("description", entity.getDescription());
             canonical.put("status", entity.getStatus());
-            return DigestUtils.sha256Hex(objectMapper.writeValueAsString(canonical));
+            return DigestUtils.sha256Hex(PersistedJson.MAPPER.writeValueAsString(canonical));
         } catch (Exception e) {
             throw new RuntimeException("Error computing hash for PermissionEntity", e);
         }
@@ -258,7 +255,7 @@ public class PermissionSyncService {
             canonical.put("name", dto.getName());
             canonical.put("description", dto.getDescription());
             canonical.put("status", dto.getStatus());
-            return DigestUtils.sha256Hex(objectMapper.writeValueAsString(canonical));
+            return DigestUtils.sha256Hex(PersistedJson.MAPPER.writeValueAsString(canonical));
         } catch (Exception e) {
             throw new RuntimeException("Error computing hash for PermissionDTO", e);
         }

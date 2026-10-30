@@ -12,6 +12,8 @@ import cv.igrp.platform.access_management.shared.security.UserProfile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.FactorGrantedAuthority;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserRequest;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
@@ -21,6 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -148,8 +151,14 @@ public class IgrpOidcUserService extends OidcUserService {
         // SecurityContext from the servlet session and therefore this same
         // principal, reporting the same id. Logout invalidates that session, so
         // the next sign-in lands here again and gets a different id.
+        // Spring Security 7 reads auth_time from a factor authority, and adds one
+        // only on the plain OAuth2 login path, not on this OIDC one: without it
+        // the token endpoint fails while building the ID token.
+        List<GrantedAuthority> authorities = new ArrayList<>(oidcUser.getAuthorities());
+        authorities.add(FactorGrantedAuthority.fromAuthority(FactorGrantedAuthority.AUTHORIZATION_CODE_AUTHORITY));
+
         return new IgrpOidcUser(
-                oidcUser.getAuthorities(),
+                authorities,
                 request.getIdToken(),
                 buildUserProfile(oidcUser),
                 SsoSessionKey.newLoginId()

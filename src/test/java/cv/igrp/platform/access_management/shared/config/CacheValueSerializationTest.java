@@ -8,7 +8,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.cache.support.NullValue;
 import org.springframework.data.redis.serializer.RedisSerializer;
-import org.springframework.data.redis.serializer.SerializationException;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -82,33 +81,21 @@ class CacheValueSerializationTest {
         assertInstanceOf(NullValue.class, roundTrip(NullValue.INSTANCE));
     }
 
-    // ---- Pinned current behaviour: java.time values are NOT serializable ----
-    //
-    // GenericJackson2JsonRedisSerializer's default mapper registers no JSR-310
-    // module, so any value holding an Instant fails to WRITE. Production never
-    // sees it: SessionHeartbeatService swallows the failure at DEBUG, so the SID
-    // hot-path cache is never populated and every lookup goes to Postgres.
-    //
-    // Jackson 3 handles java.time natively, so after the migration these writes
-    // would start to succeed and the SID cache would come alive: a behaviour
-    // change. The two tests below make that visible. They must be flipped
-    // deliberately, together with the decision recorded in the migration plan,
-    // never as a side effect.
-
     @Test
-    @DisplayName("SID hot-path Snapshot is not serializable today (cache never populated)")
-    void sidSnapshotIsNotSerializableToday() {
+    @DisplayName("SID hot-path Snapshot survives the round trip")
+    void sidSnapshot() {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         SessionHeartbeatService.Snapshot snapshot = new SessionHeartbeatService.Snapshot(
                 UUID.randomUUID(), "user-1", SessionStatus.ACTIVE,
                 now, now.plusSeconds(1800), now.plusSeconds(28800));
 
-        assertThrows(SerializationException.class, () -> serializer.serialize(snapshot));
+        // The enforcement filter accepts only this exact type back.
+        assertEquals(snapshot, assertInstanceOf(SessionHeartbeatService.Snapshot.class, roundTrip(snapshot)));
     }
 
     @Test
-    @DisplayName("sessionCache: SessionResponseDTO is not serializable today (only NullValue is ever stored)")
-    void sessionResponseIsNotSerializableToday() {
+    @DisplayName("sessionCache: SessionResponseDTO survives the round trip")
+    void sessionResponse() {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         SessionResponseDTO session = new SessionResponseDTO();
         session.setSessionId(UUID.randomUUID());
@@ -121,6 +108,7 @@ class CacheValueSerializationTest {
         session.setRoles(new ArrayList<>());
         session.setDepartments(new ArrayList<>());
 
-        assertThrows(SerializationException.class, () -> serializer.serialize(session));
+        SessionResponseDTO back = assertInstanceOf(SessionResponseDTO.class, roundTrip(session));
+        assertEquals(session, back);
     }
 }

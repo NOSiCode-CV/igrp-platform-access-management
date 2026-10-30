@@ -41,7 +41,7 @@ Use `application-development.properties` profile to enable `spring.jpa.hibernate
 
 ## Architecture Overview
 
-This is a **Spring Boot 3.5 IAM (Identity & Access Management)** service structured with **domain-driven design (DDD)** and **CQRS-lite** patterns.
+This is a **Spring Boot 4.1 IAM (Identity & Access Management)** service structured with **domain-driven design (DDD)** and **CQRS-lite** patterns.
 
 ### Domain Modules
 

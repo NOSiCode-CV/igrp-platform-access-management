@@ -1,12 +1,16 @@
 package cv.igrp.platform.access_management.shared.config;
 
 import cv.igrp.platform.access_management.m2m.domain.service.MenuEntrySyncService;
+import cv.igrp.platform.access_management.m2m.domain.service.PermissionSyncService;
 import cv.igrp.platform.access_management.m2m.domain.service.ResourceSyncService;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.application.constants.ResourceType;
+import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
+import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.domain.converters.CustomFieldAttributeConverter;
+import org.apache.commons.codec.digest.DigestUtils;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -57,6 +61,20 @@ class PersistedJsonFormatTest {
 
         assertEquals("d121ceec8285127dd25ae16d727d8e4d4d8c34149c1186a2f445d4e46b0fe733",
                 ReflectionTestUtils.<String>invokeMethod(service, "computeStructuralHash", List.of(dto), true));
+    }
+
+    @Test
+    @DisplayName("Permission structural hash is stable")
+    void permissionHash() {
+        PermissionDTO dto = new PermissionDTO();
+        dto.setName("igrp.users.list");
+        dto.setDescription("List users");
+        dto.setStatus(Status.ACTIVE);
+
+        PermissionSyncService service = Mockito.mock(PermissionSyncService.class, Mockito.CALLS_REAL_METHODS);
+
+        assertEquals(DigestUtils.sha256Hex("{\"name\":\"igrp.users.list\",\"description\":\"List users\",\"status\":\"ACTIVE\"}"),
+                ReflectionTestUtils.<String>invokeMethod(service, "computeStructuralHash", dto));
     }
 
     @Test

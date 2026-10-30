@@ -16,7 +16,7 @@ import java.util.function.Supplier;
 public class IgrpMethodSecurityExpressionHandler extends DefaultMethodSecurityExpressionHandler {
 
     @Override
-    public EvaluationContext createEvaluationContext(Supplier<Authentication> authentication, MethodInvocation mi) {
+    public EvaluationContext createEvaluationContext(Supplier<? extends Authentication> authentication, MethodInvocation mi) {
         EvaluationContext context = super.createEvaluationContext(authentication, mi);
 
         if (context instanceof StandardEvaluationContext standardContext) {

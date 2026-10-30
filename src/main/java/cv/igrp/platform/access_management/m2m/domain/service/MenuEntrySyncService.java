@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.m2m.domain.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import cv.igrp.platform.access_management.shared.infrastructure.json.PersistedJson;
 import cv.igrp.platform.access_management.app.mapper.MenuEntryMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
@@ -179,7 +179,6 @@ public class MenuEntrySyncService {
 
     private String computeStructuralHash(List<MenuEntryDTO> dtos, boolean includeRoles) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
             // Reduce to a minimal comparable structure to avoid audit fields differences
             List<Map<String, Object>> minimal = dtos.stream().map(d -> {
                 Map<String, Object> m = new LinkedHashMap<>();
@@ -199,7 +198,7 @@ public class MenuEntrySyncService {
                 }
                 return m;
             }).toList();
-            String canonicalJson = mapper.writeValueAsString(minimal);
+            String canonicalJson = PersistedJson.MAPPER.writeValueAsString(minimal);
             return DigestUtils.sha256Hex(canonicalJson);
         } catch (Exception e) {
             throw new RuntimeException("Error computing menus hash", e);

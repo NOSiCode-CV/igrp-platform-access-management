@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.m2m.domain.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
@@ -48,7 +47,6 @@ class PermissionSyncServiceTest {
                 permissionRepository,
                 resourceEntityRepository,
                 roleEntityRepository,
-                new ObjectMapper(),
                 authenticationHelper,
                 eventPublisher
         );
@@ -104,7 +102,7 @@ class PermissionSyncServiceTest {
         ResourceEntity res = newResource();
         when(resourceEntityRepository.findByNameAndStatusNot("igrp-access-management", Status.DELETED))
                 .thenReturn(Optional.of(res));
-        when(permissionRepository.findAllByResourcesAndStatusNot(anySet(), eq(Status.DELETED)))
+        when(permissionRepository.findDistinctByResourcesInAndStatusNot(anySet(), eq(Status.DELETED)))
                 .thenReturn(List.of());
         when(permissionRepository.save(any(PermissionEntity.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -122,7 +120,7 @@ class PermissionSyncServiceTest {
         ResourceEntity res = newResource();
         when(resourceEntityRepository.findByNameAndStatusNot("igrp-access-management", Status.DELETED))
                 .thenReturn(Optional.of(res));
-        when(permissionRepository.findAllByResourcesAndStatusNot(anySet(), eq(Status.DELETED)))
+        when(permissionRepository.findDistinctByResourcesInAndStatusNot(anySet(), eq(Status.DELETED)))
                 .thenReturn(List.of());
         when(permissionRepository.save(any(PermissionEntity.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -141,7 +139,7 @@ class PermissionSyncServiceTest {
 
         when(resourceEntityRepository.findByNameAndStatusNot("igrp-access-management", Status.DELETED))
                 .thenReturn(Optional.of(res));
-        when(permissionRepository.findAllByResourcesAndStatusNot(anySet(), eq(Status.DELETED)))
+        when(permissionRepository.findDistinctByResourcesInAndStatusNot(anySet(), eq(Status.DELETED)))
                 .thenReturn(List.of(existing));
 
         service.synchronizePermissions(List.of(permDto("P1", "desc", Status.ACTIVE)), true);
@@ -160,7 +158,7 @@ class PermissionSyncServiceTest {
 
         when(resourceEntityRepository.findByNameAndStatusNot("igrp-access-management", Status.DELETED))
                 .thenReturn(Optional.of(res));
-        when(permissionRepository.findAllByResourcesAndStatusNot(anySet(), eq(Status.DELETED)))
+        when(permissionRepository.findDistinctByResourcesInAndStatusNot(anySet(), eq(Status.DELETED)))
                 .thenReturn(List.of(existing));
 
         service.synchronizePermissions(List.of(permDto("P1", "new", Status.ACTIVE)), true);
@@ -181,7 +179,7 @@ class PermissionSyncServiceTest {
 
         when(resourceEntityRepository.findByNameAndStatusNot("igrp-access-management", Status.DELETED))
                 .thenReturn(Optional.of(res));
-        when(permissionRepository.findAllByResourcesAndStatusNot(anySet(), eq(Status.DELETED)))
+        when(permissionRepository.findDistinctByResourcesInAndStatusNot(anySet(), eq(Status.DELETED)))
                 .thenReturn(List.of(gone));
         when(roleEntityRepository.findAllByPermissionId(42)).thenReturn(List.of());
         when(permissionRepository.save(any(PermissionEntity.class))).thenAnswer(i -> i.getArgument(0));
@@ -228,7 +226,7 @@ class PermissionSyncServiceTest {
 
         when(resourceEntityRepository.findByNameAndStatusNot("igrp-access-management", Status.DELETED))
                 .thenReturn(Optional.of(res));
-        when(permissionRepository.findAllByResourcesAndStatusNot(anySet(), eq(Status.DELETED)))
+        when(permissionRepository.findDistinctByResourcesInAndStatusNot(anySet(), eq(Status.DELETED)))
                 .thenReturn(List.of(gone));
         when(roleEntityRepository.findAllByPermissionId(7)).thenReturn(List.of(role1, role2));
         when(permissionRepository.save(any(PermissionEntity.class))).thenAnswer(i -> i.getArgument(0));
@@ -269,7 +267,7 @@ class PermissionSyncServiceTest {
 
         when(resourceEntityRepository.findByNameAndStatusNot("igrp-access-management", Status.DELETED))
                 .thenReturn(Optional.of(res));
-        when(permissionRepository.findAllByResourcesAndStatusNot(anySet(), eq(Status.DELETED)))
+        when(permissionRepository.findDistinctByResourcesInAndStatusNot(anySet(), eq(Status.DELETED)))
                 .thenReturn(List.of(gone));
         when(roleEntityRepository.findAllByPermissionId(99)).thenReturn(List.of());
         when(permissionRepository.save(any(PermissionEntity.class))).thenAnswer(i -> i.getArgument(0));
@@ -294,7 +292,7 @@ class PermissionSyncServiceTest {
 
         when(resourceEntityRepository.findByNameAndStatusNot("my-client", Status.DELETED))
                 .thenReturn(Optional.of(res));
-        when(permissionRepository.findAllByResourcesAndStatusNot(anySet(), eq(Status.DELETED)))
+        when(permissionRepository.findDistinctByResourcesInAndStatusNot(anySet(), eq(Status.DELETED)))
                 .thenReturn(List.of());
         when(permissionRepository.save(any(PermissionEntity.class))).thenAnswer(i -> i.getArgument(0));
 
@@ -315,7 +313,7 @@ class PermissionSyncServiceTest {
 
         when(resourceEntityRepository.findByNameAndStatusNot("sub-client", Status.DELETED))
                 .thenReturn(Optional.of(res));
-        when(permissionRepository.findAllByResourcesAndStatusNot(anySet(), eq(Status.DELETED)))
+        when(permissionRepository.findDistinctByResourcesInAndStatusNot(anySet(), eq(Status.DELETED)))
                 .thenReturn(List.of());
         when(permissionRepository.save(any(PermissionEntity.class))).thenAnswer(i -> i.getArgument(0));
 

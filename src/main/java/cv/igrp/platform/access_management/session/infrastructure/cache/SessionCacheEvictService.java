@@ -6,10 +6,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.Cursor;
 import org.springframework.data.redis.core.KeyScanOptions;
 import org.springframework.data.redis.core.RedisTemplate;
+import cv.igrp.platform.access_management.session.domain.service.SessionHeartbeatService;
+import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
 import org.springframework.stereotype.Service;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Predicate;
 
 @Service
@@ -20,17 +23,20 @@ public class SessionCacheEvictService {
     private static final int SCAN_BATCH_SIZE = 1000;
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final SessionRepository sessionRepository;
 
     @Autowired
-    public SessionCacheEvictService(RedisTemplate<String, Object> redisTemplate) {
+    public SessionCacheEvictService(RedisTemplate<String, Object> redisTemplate, SessionRepository sessionRepository) {
         this.redisTemplate = redisTemplate;
+        this.sessionRepository = sessionRepository;
     }
 
     /**
      * Evict all sessions from cache (emergency use only)
      */
     public void evictAll() {
-        evictMatchingKeys(key -> true);
+        evictMatchingKeys(CACHE_PREFIX, key -> true);
+        evictMatchingKeys(SessionHeartbeatService.SID_KEY_PREFIX, key -> true);
         LOGGER.warn("Evicted all sessions from cache - emergency operation");
     }
 
@@ -38,7 +44,8 @@ public class SessionCacheEvictService {
      * Evict session for a specific user
      */
     public void evictBySubject(String userId) {
-        evictMatchingKeys(key -> key.equals("%s%s".formatted(CACHE_PREFIX, userId)));
+        evictMatchingKeys(CACHE_PREFIX, key -> key.equals("%s%s".formatted(CACHE_PREFIX, userId)));
+        evictSidsOf(Set.of(userId));
         LOGGER.info("Evicted session from cache for user: {}", userId);
     }
 
@@ -63,12 +70,46 @@ public class SessionCacheEvictService {
                 LOGGER.error("Redis unavailable while evicting sessions for users: {}", userIds, ex);
             }
         }
+        evictSidsOf(userIds);
+    }
+
+    /**
+     * Drop one session from the SID hot-path cache, once any surrounding
+     * transaction has committed.
+     */
+    public void evictSid(UUID sid) {
+        AfterCommit.run(() -> deleteQuietly(Set.of(SessionHeartbeatService.SID_KEY_PREFIX + sid)));
+    }
+
+    /**
+     * The bulk revocations update rows with JPQL, which bypasses entity
+     * listeners, so the users' sessions are looked up here.
+     */
+    private void evictSidsOf(Set<String> userIds) {
+        AfterCommit.run(() -> {
+            Set<String> keys = new HashSet<>();
+            sessionRepository.findSessionIdsByUserIds(userIds)
+                    .forEach(sid -> keys.add(SessionHeartbeatService.SID_KEY_PREFIX + sid));
+            deleteQuietly(keys);
+        });
+    }
+
+    private void deleteQuietly(Set<String> keys) {
+        if (keys.isEmpty()) {
+            return;
+        }
+        try {
+            redisTemplate.delete(keys);
+        } catch (Exception ex) {
+            // The entry expires by itself within seconds.
+            LOGGER.error("Redis unavailable while evicting {} SID entries", keys.size(), ex);
+        }
     }
 
     /**
      * Evict sessions matching a specific predicate
      */
-    private void evictMatchingKeys(Predicate<String> predicate) {
+    private void evictMatchingKeys(String prefix, Predicate<String> predicate) {
         if (!isRedisAvailable()) {
             return;
         }
@@ -77,7 +118,7 @@ public class SessionCacheEvictService {
         try (Cursor<byte[]> cursor = redisTemplate.getConnectionFactory()
                 .getConnection()
                 .keyCommands()
-                .scan(KeyScanOptions.scanOptions().match("%s*".formatted(CACHE_PREFIX)).count(SCAN_BATCH_SIZE).build())) {
+                .scan(KeyScanOptions.scanOptions().match("%s*".formatted(prefix)).count(SCAN_BATCH_SIZE).build())) {
 
             while (cursor.hasNext()) {
                 String key = new String(cursor.next());
