@@ -139,6 +139,7 @@ public class PermissionCacheEvictService {
         Set<String> keysToDelete = new HashSet<>();
         try (Cursor<byte[]> cursor = redisTemplate.getConnectionFactory()
                 .getConnection()
+                .keyCommands()
                 .scan(KeyScanOptions.scanOptions().match("%s*".formatted(CACHE_PREFIX)).count(SCAN_BATCH_SIZE).build())) {
 
             while (cursor.hasNext()) {

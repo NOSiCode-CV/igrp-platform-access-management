@@ -12,7 +12,6 @@ import org.springframework.security.oauth2.client.authentication.OAuth2Authentic
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.core.endpoint.PkceParameterNames;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
-import org.springframework.security.web.PortResolverImpl;
 import org.springframework.security.web.savedrequest.DefaultSavedRequest;
 
 import java.time.Instant;
@@ -112,7 +111,7 @@ class SessionStoreConversionTest {
         http.setServerPort(443);
         http.setScheme("https");
         http.setQueryString("response_type=code&client_id=igrp-access-management");
-        DefaultSavedRequest saved = new DefaultSavedRequest(http, new PortResolverImpl());
+        DefaultSavedRequest saved = new DefaultSavedRequest(http);
 
         Object back = roundTrip(saved);
 

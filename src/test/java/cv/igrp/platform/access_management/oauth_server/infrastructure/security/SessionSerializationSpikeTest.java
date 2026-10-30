@@ -168,7 +168,7 @@ class SessionSerializationSpikeTest {
         http.setServerPort(443);
         http.setScheme("https");
         http.setQueryString("response_type=code&client_id=igrp-access-management");
-        DefaultSavedRequest saved = new DefaultSavedRequest(http, new org.springframework.security.web.PortResolverImpl());
+        DefaultSavedRequest saved = new DefaultSavedRequest(http);
         ObjectMapper mapper = sessionMapper();
 
         String json = mapper.writeValueAsString(saved);

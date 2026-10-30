@@ -73,6 +73,11 @@ class HttpContractBaselineIT extends AbstractCompatIT {
                 // ---- discovery and OAuth2 protocol surface (SDK token provider, gateways) ----
                 new Case("oidc-discovery", t -> t.api.get("/.well-known/openid-configuration", null)),
                 new Case("oauth-authorization-server-metadata", t -> t.api.get("/.well-known/oauth-authorization-server", null)),
+                // Behind the gateway: the chain matchers must still recognise these paths.
+                new Case("forwarded-prefix-discovery", t -> t.api.get("/.well-known/openid-configuration", null,
+                        java.util.Map.of("X-Forwarded-Prefix", "/am"))),
+                new Case("forwarded-prefix-jwks", t -> t.api.get("/oauth2/jwks", null,
+                        java.util.Map.of("X-Forwarded-Prefix", "/am"))),
                 new Case("token-invalid-client", t -> t.api.postForm("/oauth2/token", "no-such-client", "wrong",
                         "grant_type=client_credentials")),
                 new Case("token-unsupported-grant", t -> t.api.postForm("/oauth2/token", t.m2m.clientId(), t.m2m.clientSecret(),
@@ -102,6 +107,9 @@ class HttpContractBaselineIT extends AbstractCompatIT {
 
                 // ---- success bodies over data this suite owns ----
                 new Case("department-by-code", t -> t.api.get("/api/departments/by-code/" + dept, t.admin)),
+                // jackson-dataformat-xml on the classpath enables XML negotiation.
+                new Case("department-by-code-xml", t -> t.api.get("/api/departments/by-code/" + dept, t.admin,
+                        java.util.Map.of("Accept", "application/xml"))),
                 new Case("role-by-code", t -> t.api.get("/api/roles/by-code/" + role + "?departmentCode=" + dept, t.admin)),
                 new Case("users-me", t -> t.api.get("/api/users/me", t.admin)),
                 new Case("users-me-departments", t -> t.api.get("/api/users/me/departments", t.admin)),
@@ -181,6 +189,7 @@ class HttpContractBaselineIT extends AbstractCompatIT {
                 .replace(CompatEnvironment.keycloakIssuer(), "<external-idp>")
                 .replaceAll("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", "<uuid>")
                 .replaceAll("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d+)?(Z|[+-]\\d{2}:\\d{2})?", "<datetime>")
-                .replaceAll("\"(id|[a-zA-Z]+Id|resolutionTimeMs)\":\\d+", "\"$1\":<n>");
+                .replaceAll("\"(id|[a-zA-Z]+Id|resolutionTimeMs)\":\\d+", "\"$1\":<n>")
+                .replaceAll("<id>\\d+</id>", "<id><n></id>");
     }
 }

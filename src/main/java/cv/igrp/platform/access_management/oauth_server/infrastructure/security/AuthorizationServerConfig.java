@@ -49,7 +49,7 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -76,7 +76,7 @@ public class AuthorizationServerConfig {
      * activates Spring's {@code ForwardedHeaderFilter}, which prepends the
      * {@code X-Forwarded-Prefix} value (e.g. {@code /igrp-access-management})
      * to {@link HttpServletRequest#getRequestURI()} before any security
-     * filter runs. An {@link AntPathRequestMatcher} pinned to
+     * filter runs. A {@link PathPatternRequestMatcher} pinned to
      * {@code "/connect/logout"} then silently misses the prefixed URI, so
      * {@code permitAll} never applies, {@code anyRequest().authenticated()}
      * denies the anonymous request, and the auto-installed
@@ -109,16 +109,16 @@ public class AuthorizationServerConfig {
                                                                       SessionLogoutHandler sessionLogoutHandler) throws Exception {
         OAuth2AuthorizationServerConfigurer authServerConfigurer = new OAuth2AuthorizationServerConfigurer();
         var authorizationEndpoints = new OrRequestMatcher(
-                AntPathRequestMatcher.antMatcher("/oauth2/authorize"),
-                AntPathRequestMatcher.antMatcher("/oauth2/authorization/**"),
-                AntPathRequestMatcher.antMatcher("/oauth2/token"),
-                AntPathRequestMatcher.antMatcher("/oauth2/jwks"),
-                AntPathRequestMatcher.antMatcher("/oauth2/revoke"),
-                AntPathRequestMatcher.antMatcher("/oauth2/introspect"),
-                AntPathRequestMatcher.antMatcher("/connect/**"),
-                AntPathRequestMatcher.antMatcher("/.well-known/**"),
-                AntPathRequestMatcher.antMatcher("/login/**"),
-                AntPathRequestMatcher.antMatcher("/userinfo")
+                PathPatternRequestMatcher.withDefaults().matcher("/oauth2/authorize"),
+                PathPatternRequestMatcher.withDefaults().matcher("/oauth2/authorization/**"),
+                PathPatternRequestMatcher.withDefaults().matcher("/oauth2/token"),
+                PathPatternRequestMatcher.withDefaults().matcher("/oauth2/jwks"),
+                PathPatternRequestMatcher.withDefaults().matcher("/oauth2/revoke"),
+                PathPatternRequestMatcher.withDefaults().matcher("/oauth2/introspect"),
+                PathPatternRequestMatcher.withDefaults().matcher("/connect/**"),
+                PathPatternRequestMatcher.withDefaults().matcher("/.well-known/**"),
+                PathPatternRequestMatcher.withDefaults().matcher("/login/**"),
+                PathPatternRequestMatcher.withDefaults().matcher("/userinfo")
         );
 
         http.securityMatcher(authorizationEndpoints)
@@ -240,8 +240,8 @@ public class AuthorizationServerConfig {
                         .defaultAuthenticationEntryPointFor(
                                 new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp"),
                                 new OrRequestMatcher(
-                                        AntPathRequestMatcher.antMatcher("/oauth2/authorize"),
-                                        AntPathRequestMatcher.antMatcher("/oauth2/authorization/**")
+                                        PathPatternRequestMatcher.withDefaults().matcher("/oauth2/authorize"),
+                                        PathPatternRequestMatcher.withDefaults().matcher("/oauth2/authorization/**")
                                 ))
                         .authenticationEntryPoint(
                                 new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp")))
@@ -476,7 +476,7 @@ public class AuthorizationServerConfig {
                 LoggerFactory.getLogger(StripAuthorizationHeaderForLogoutFilter.class);
 
         /**
-         * Path-suffix match instead of {@link org.springframework.security.web.util.matcher.AntPathRequestMatcher}
+         * Path-suffix match instead of {@link PathPatternRequestMatcher}
          * because behind the API gateway, Spring's {@code ForwardedHeaderFilter}
          * (driven by {@code X-Forwarded-Prefix: /igrp-access-management}) rewrites
          * the request URI to include the prefix before this filter runs. An ant

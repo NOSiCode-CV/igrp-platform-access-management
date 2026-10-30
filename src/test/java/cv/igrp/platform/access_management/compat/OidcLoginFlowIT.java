@@ -9,6 +9,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.net.URLEncoder;
 import java.net.http.HttpResponse;
@@ -45,6 +46,8 @@ class OidcLoginFlowIT extends AbstractCompatIT {
 
     @Autowired
     ApplicationContext context;
+    @Autowired
+    JdbcTemplate jdbc;
 
     CompatSupport api;
     String clientSecret;
@@ -86,6 +89,13 @@ class OidcLoginFlowIT extends AbstractCompatIT {
         assertEquals(200, toLogin.response().statusCode(), "expected the IdP login page; trail: " + toLogin.trail());
         assertTrue(toLogin.response().uri().toString().startsWith(CompatEnvironment.keycloakIssuer()),
                 toLogin.response().uri().toString());
+
+        // The pending OAuth2 request must be in the shared JDBC session store, not
+        // in memory: otherwise a login breaks when the callback lands on another pod.
+        Integer pending = jdbc.queryForObject(
+                "select count(*) from spring_session_attributes where attribute_name like '%AUTHORIZATION_REQUEST%'",
+                Integer.class);
+        assertTrue(pending != null && pending > 0, "no pending authorization request in SPRING_SESSION_ATTRIBUTES");
 
         // Log in at the IdP, then back through this service to the client's redirect URI.
         HttpResponse<String> afterLogin = browser.submitLogin(toLogin.response(),

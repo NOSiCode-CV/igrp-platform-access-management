@@ -746,7 +746,7 @@
                             <goal>copy</goal>
                         </goals>
                         <configuration>
-                            <skip>${maven.test.skip}</skip>
+                            <skip>${skipTests}</skip>
                             <artifactItems>
                                 <artifactItem>
                                     <groupId>cv.igrp.platform.access</groupId>

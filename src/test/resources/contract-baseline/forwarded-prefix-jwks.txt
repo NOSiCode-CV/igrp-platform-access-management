@@ -1,0 +1,5 @@
+HTTP 200
+content-type: application/json;charset=ISO-8859-1
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+
+{"keys":[{"kty":"RSA","e":"AQAB","kid":"igrp-oauth-key","n":"kqlhZJmbSFHVI93P9aVsAeNQsrfibHJv-Si9_wSb3pPbXT5eSOwYbc7z7A5zn8P8PL8KQe5tXPdF6jwPztWAykfkmUPBIaeLUgg2157QVLKIILxNpap0egIr6bIx8KBrLGhHjrtUzmekxk5ZdlZ8QGou8Xy0a24_Mr994OsJdJxekp9BlE7dql5YNGI7tTG2KClbw6UpYBt6yHJaQlap-JdhtYM3CTgb8fyeejKWeFphaWhqojuAEk33jilUm-CReeoY1HmjRf0DFc2CVPLET5asJQuOvuxVlOY819YvC1bsG-gOWJYyNzIeZAorUCn96V1tQfgXKDdltbg8YHZHNw"}]}

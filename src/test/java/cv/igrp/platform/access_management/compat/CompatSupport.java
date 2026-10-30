@@ -172,6 +172,13 @@ public final class CompatSupport {
         return send(request(path, bearer).GET().build());
     }
 
+    /** A GET with extra headers; a repeated {@code Accept} replaces the JSON default. */
+    public HttpResponse<String> get(String path, String bearer, Map<String, String> headers) {
+        HttpRequest.Builder builder = request(path, bearer);
+        headers.forEach(builder::setHeader);
+        return send(builder.GET().build());
+    }
+
     public HttpResponse<String> postJson(String path, String bearer, String json) {
         return send(request(path, bearer)
                 .header("Content-Type", "application/json")

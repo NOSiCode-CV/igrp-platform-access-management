@@ -76,6 +76,7 @@ public class SessionCacheEvictService {
         Set<String> keysToDelete = new HashSet<>();
         try (Cursor<byte[]> cursor = redisTemplate.getConnectionFactory()
                 .getConnection()
+                .keyCommands()
                 .scan(KeyScanOptions.scanOptions().match("%s*".formatted(CACHE_PREFIX)).count(SCAN_BATCH_SIZE).build())) {
 
             while (cursor.hasNext()) {
@@ -125,6 +126,7 @@ public class SessionCacheEvictService {
             Set<String> keys = new HashSet<>();
             try (Cursor<byte[]> cursor = redisTemplate.getConnectionFactory()
                     .getConnection()
+                    .keyCommands()
                     .scan(KeyScanOptions.scanOptions().match("%s*".formatted(CACHE_PREFIX)).build())) {
 
                 while (cursor.hasNext()) {
