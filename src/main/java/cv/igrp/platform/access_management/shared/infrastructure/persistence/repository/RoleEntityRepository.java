@@ -73,6 +73,17 @@ public interface RoleEntityRepository extends
 
     Optional<RoleEntity> findByDepartmentAndCodeAndStatusNot(DepartmentEntity department, String code, Status status);
 
+    @Query("""
+        select r from RoleEntity r
+        where r.department.code = :departmentCode
+          and r.code = :code
+          and r.status <> :status
+    """)
+    Optional<RoleEntity> findByDepartmentCodeAndCodeAndStatusNot(
+            @Param("departmentCode") String departmentCode,
+            @Param("code") String code,
+            @Param("status") Status status);
+
     default RoleEntity findByDepartmentAndCodeAndStatusNotDeleted(DepartmentEntity department, String code) {
         return findByDepartmentAndCodeAndStatusNot(department, code, Status.DELETED)
                 .orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_ROLE_NOT_FOUND_BY_CODE, code));

@@ -3,6 +3,8 @@ package cv.igrp.platform.access_management.users.infrastructure.service;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
+import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
+import cv.igrp.platform.access_management.shared.domain.events.UserRoleChangedEvent;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.UserRoleAssignment;
@@ -22,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -40,6 +43,9 @@ class ExpireRoleServiceTest {
 
     @Mock
     private SecurityAuditService securityAuditService;
+
+    @Mock
+    private EventPublisher eventPublisher;
 
     @InjectMocks
     private ExpireRoleService expireRoleService;
@@ -107,6 +113,68 @@ class ExpireRoleServiceTest {
     }
 
     @Test
+    @DisplayName("removeExpiredRoles must publish UserRoleChangedEvent so the permission cache is evicted")
+    void removeExpiredRoles_ShouldPublishUserRoleChangedEvent() {
+        // Without this event nothing reaches PermissionCacheInvalidator, and the
+        // permission cache has no TTL — so a decision cached as "granted" before
+        // expiry would outlive the assignment indefinitely. The SQL filter is
+        // correct but never re-consulted once a decision is memoised.
+        when(userRoleAssignmentRepository.findExpiredRoles()).thenReturn(List.of(assignment));
+
+        expireRoleService.removeExpiredRoles();
+
+        ArgumentCaptor<UserRoleChangedEvent> eventCaptor =
+                ArgumentCaptor.forClass(UserRoleChangedEvent.class);
+        verify(eventPublisher).publishUserRoleChanged(eventCaptor.capture());
+
+        UserRoleChangedEvent event = eventCaptor.getValue();
+        // The userId must be the value the cache keys are built from — the
+        // internal UUID that travels as the JWT subject. Publishing any other
+        // identifier would make evictBySubject a silent no-op, which is the
+        // exact failure this test exists to prevent.
+        assertThat(event.getUserId()).isEqualTo("00000000-0000-0000-0000-000000000001");
+        assertThat(event.getAffectedRoleCodes()).containsExactly("TEST_ROLE");
+        assertThat(event.getChangeType()).isEqualTo(UserRoleChangedEvent.CHANGE_EXPIRED);
+        assertThat(event.getTriggeredBy()).isEqualTo("SYSTEM");
+    }
+
+    @Test
+    @DisplayName("removeExpiredRoles publishes one event per user, not per assignment")
+    void removeExpiredRoles_ShouldGroupEventsByUser() {
+        // Eviction is keyed by subject, so three roles expiring for one user is
+        // one eviction. A second user still gets their own event.
+        RoleEntity secondRole = new RoleEntity();
+        secondRole.setCode("SECOND_ROLE");
+        UserRoleAssignment sameUserOtherRole =
+                new UserRoleAssignment(user, secondRole, LocalDateTime.now().minusMinutes(1));
+
+        IGRPUserEntity otherUser = new IGRPUserEntity();
+        otherUser.setId("00000000-0000-0000-0000-000000000002");
+        UserRoleAssignment otherUserAssignment =
+                new UserRoleAssignment(otherUser, role, LocalDateTime.now().minusMinutes(1));
+
+        when(userRoleAssignmentRepository.findExpiredRoles())
+                .thenReturn(List.of(assignment, sameUserOtherRole, otherUserAssignment));
+
+        expireRoleService.removeExpiredRoles();
+
+        ArgumentCaptor<UserRoleChangedEvent> eventCaptor =
+                ArgumentCaptor.forClass(UserRoleChangedEvent.class);
+        verify(eventPublisher, times(2)).publishUserRoleChanged(eventCaptor.capture());
+
+        Map<String, Set<String>> byUser = eventCaptor.getAllValues().stream()
+                .collect(java.util.stream.Collectors.toMap(
+                        UserRoleChangedEvent::getUserId,
+                        UserRoleChangedEvent::getAffectedRoleCodes));
+
+        assertThat(byUser).hasSize(2);
+        assertThat(byUser.get("00000000-0000-0000-0000-000000000001"))
+                .containsExactlyInAnyOrder("TEST_ROLE", "SECOND_ROLE");
+        assertThat(byUser.get("00000000-0000-0000-0000-000000000002"))
+                .containsExactly("TEST_ROLE");
+    }
+
+    @Test
     @DisplayName("removeExpiredRoles should do nothing when no expired roles found")
     void removeExpiredRoles_ShouldDoNothingWhenNoneFound() {
         // Arrange
@@ -118,5 +186,6 @@ class ExpireRoleServiceTest {
         // Assert
         verify(userRoleAssignmentRepository, never()).deleteAll(anyList());
         verify(securityAuditService, never()).logEvent(any(), any(), any());
+        verify(eventPublisher, never()).publishUserRoleChanged(any());
     }
 }

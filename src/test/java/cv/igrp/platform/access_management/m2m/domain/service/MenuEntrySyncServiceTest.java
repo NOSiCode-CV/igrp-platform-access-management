@@ -198,13 +198,75 @@ class MenuEntrySyncServiceTest {
         incoming.setRoles(List.of(new RoleDepartmentDTO("ROLE_A", "DEPT")));
         MenuEntryEntity mapped = entity("M1", "Menu 1");
         when(menuMapper.toEntity(incoming)).thenReturn(mapped);
-        when(roleRepository.findIdByCode("ROLE_A")).thenReturn(7);
         RoleEntity role = new RoleEntity();
-        when(roleRepository.getReferenceById(7)).thenReturn(role);
+        when(roleRepository.findByDepartmentCodeAndCodeAndStatusNot("DEPT", "ROLE_A", Status.DELETED))
+                .thenReturn(Optional.of(role));
 
         service.synchronizeMenuEntries("APP1", List.of(incoming));
 
         assertTrue(mapped.getRoles().contains(role));
+    }
+
+    @Test
+    void synchronize_DuplicateAdminCodes_AssignsEachDepartmentRole() {
+        MenuEntryDTO incoming = dto("M1", "Menu 1", null);
+        incoming.setRoles(List.of(new RoleDepartmentDTO("ADMIN", "HR"), new RoleDepartmentDTO("ADMIN", "FIN")));
+        MenuEntryEntity mapped = entity("M1", "Menu 1");
+        when(menuMapper.toEntity(incoming)).thenReturn(mapped);
+        RoleEntity hrAdmin = new RoleEntity();
+        hrAdmin.setId(2);
+        RoleEntity finAdmin = new RoleEntity();
+        finAdmin.setId(3);
+        when(roleRepository.findByDepartmentCodeAndCodeAndStatusNot("HR", "ADMIN", Status.DELETED))
+                .thenReturn(Optional.of(hrAdmin));
+        when(roleRepository.findByDepartmentCodeAndCodeAndStatusNot("FIN", "ADMIN", Status.DELETED))
+                .thenReturn(Optional.of(finAdmin));
+
+        service.synchronizeMenuEntries("APP1", List.of(incoming), true);
+
+        assertEquals(Set.of(hrAdmin, finAdmin), mapped.getRoles());
+        verify(roleRepository, never()).findIdByCode(any());
+    }
+
+    @Test
+    void synchronize_AdminDepartmentChanges_ReplacesRoleDespiteSameCode() {
+        MenuEntryEntity existing = entity("M1", "Menu 1");
+        existing.setId(1);
+        RoleEntity hrAdmin = new RoleEntity();
+        hrAdmin.setId(2);
+        existing.getRoles().add(hrAdmin);
+        app.setMenus(new ArrayList<>(List.of(existing)));
+        MenuEntryDTO existingDto = dto("M1", "Menu 1", null);
+        existingDto.setRoles(List.of(new RoleDepartmentDTO("ADMIN", "HR")));
+        when(menuMapper.toDTO(existing)).thenReturn(existingDto);
+        MenuEntryDTO incoming = dto("M1", "Menu 1", null);
+        incoming.setRoles(List.of(new RoleDepartmentDTO("ADMIN", "FIN")));
+        RoleEntity finAdmin = new RoleEntity();
+        finAdmin.setId(3);
+        when(roleRepository.findByDepartmentCodeAndCodeAndStatusNot("FIN", "ADMIN", Status.DELETED))
+                .thenReturn(Optional.of(finAdmin));
+
+        service.synchronizeMenuEntries("APP1", List.of(incoming), true);
+
+        assertEquals(Set.of(finAdmin), existing.getRoles());
+        verify(roleRepository, never()).findIdByCode(any());
+    }
+
+    @Test
+    void synchronize_SameDepartmentRolePairsInDifferentOrder_NoOp() {
+        MenuEntryEntity existing = entity("M1", "Menu 1");
+        existing.setId(1);
+        app.setMenus(new ArrayList<>(List.of(existing)));
+        MenuEntryDTO existingDto = dto("M1", "Menu 1", null);
+        existingDto.setRoles(List.of(new RoleDepartmentDTO("ADMIN", "HR"), new RoleDepartmentDTO("ADMIN", "FIN")));
+        when(menuMapper.toDTO(existing)).thenReturn(existingDto);
+        MenuEntryDTO incoming = dto("M1", "Menu 1", null);
+        incoming.setRoles(List.of(new RoleDepartmentDTO("ADMIN", "FIN"), new RoleDepartmentDTO("ADMIN", "HR")));
+
+        service.synchronizeMenuEntries("APP1", List.of(incoming), true);
+
+        verifyNoInteractions(roleRepository);
+        verify(menuRepository, never()).saveAll(anyList());
     }
 
     @Test
