@@ -603,6 +603,7 @@ production credentials between environments.
 | Document | Contents |
 |---|---|
 | [`docs/ADR-001.md`](docs/ADR-001.md) | Architecture decision record |
+| [`docs/RFC-001.md`](docs/RFC-001.md) | RFC on per-request authorization, the `igrp-security-starter`, M2M identity and observability (proposal under team review; written in Portuguese) |
 | [`docs/NO_ADAPTER_ARCHITECTURE.md`](docs/NO_ADAPTER_ARCHITECTURE.md) | Why no IAM provider mutation |
 | [`docs/PERMISSION_MANAGEMENT_SPECS.md`](docs/PERMISSION_MANAGEMENT_SPECS.md) | Permission model |
 | [`docs/ASVS-MAPPING.md`](docs/ASVS-MAPPING.md) | OWASP ASVS coverage |
