@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.shared.security;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.*;
  */
 class IgrpOidcUserSerializationTest {
 
-    private final ObjectMapper mapper =
+    private final JsonMapper mapper =
             SecurityStoreObjectMapperFactory.create(getClass().getClassLoader());
 
     private UserProfile profile() {

@@ -7,16 +7,13 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.boot.autoconfigure.web.reactive.WebFluxAutoConfiguration;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 @SpringBootApplication(
-  exclude = WebFluxAutoConfiguration.class
+  excludeName = "org.springframework.boot.webflux.autoconfigure.WebFluxAutoConfiguration"
 )
 @EnableScheduling
-@ComponentScan(basePackages = "cv.igrp")
 public class IgrpPlatformAccessManagementApplication {
 
     Logger logger = LoggerFactory.getLogger(IgrpPlatformAccessManagementApplication.class);

@@ -1,0 +1,5 @@
+HTTP 401
+www-authenticate: Bearer resource_metadata="http://localhost:<port>/.well-known/oauth-protected-resource"
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+
+

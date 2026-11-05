@@ -11,8 +11,8 @@ import cv.igrp.platform.access_management.security_audit.application.export.Repo
 import cv.igrp.platform.access_management.security_audit.application.queries.GetAuditReportFilesQuery;
 import cv.igrp.platform.access_management.security_audit.domain.enums.ReportFormat;
 import cv.igrp.platform.access_management.security_audit.domain.enums.ReportType;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.JacksonException;
+import cv.igrp.platform.access_management.shared.infrastructure.json.PersistedJson;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -60,18 +60,15 @@ public class AuditReportArchiveController {
     private final ReportExportService exportService;
     private final ReportRenderer renderer;
     private final AuditReportArchiveService archiveService;
-    private final ObjectMapper objectMapper;
 
     public AuditReportArchiveController(QueryBus queryBus,
                                         ReportExportService exportService,
                                         ReportRenderer renderer,
-                                        AuditReportArchiveService archiveService,
-                                        ObjectMapper objectMapper) {
+                                        AuditReportArchiveService archiveService) {
         this.queryBus = queryBus;
         this.exportService = exportService;
         this.renderer = renderer;
         this.archiveService = archiveService;
-        this.objectMapper = objectMapper;
     }
 
     @PostMapping("/audit/archive")
@@ -169,8 +166,8 @@ public class AuditReportArchiveController {
     /** Snapshot of the filters used, stored on the archive record for traceability. */
     private String toJson(Map<String, Object> filters) {
         try {
-            return objectMapper.writeValueAsString(filters);
-        } catch (JsonProcessingException e) {
+            return PersistedJson.MAPPER.writeValueAsString(filters);
+        } catch (JacksonException e) {
             return "{}";
         }
     }

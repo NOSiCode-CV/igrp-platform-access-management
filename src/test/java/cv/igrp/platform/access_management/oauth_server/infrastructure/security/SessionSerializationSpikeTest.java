@@ -1,24 +1,18 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cv.igrp.platform.access_management.shared.security.IgrpOidcUser;
 import cv.igrp.platform.access_management.shared.security.OidcContextAuthenticationToken;
 import cv.igrp.platform.access_management.shared.security.UserProfile;
 import org.junit.jupiter.api.DisplayName;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextImpl;
-import org.springframework.security.jackson2.SecurityJackson2Modules;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequest;
 import org.springframework.security.oauth2.core.endpoint.PkceParameterNames;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
-import org.springframework.security.oauth2.server.authorization.jackson2.OAuth2AuthorizationServerJackson2Module;
 import org.springframework.security.web.savedrequest.DefaultSavedRequest;
 import org.springframework.mock.web.MockHttpServletRequest;
 
@@ -54,46 +48,11 @@ import static org.junit.jupiter.api.Assertions.*;
 class SessionSerializationSpikeTest {
 
     /** Mirrors the private AllowlistedClassMixin in AuthorizationServerConfig. */
-    @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
-    @JsonAutoDetect(
-            fieldVisibility = JsonAutoDetect.Visibility.ANY,
-            getterVisibility = JsonAutoDetect.Visibility.NONE,
-            isGetterVisibility = JsonAutoDetect.Visibility.NONE,
-            creatorVisibility = JsonAutoDetect.Visibility.ANY)
-    @JsonIgnoreProperties(ignoreUnknown = true)
-    private abstract static class AllowlistedClassMixin {
-    }
 
-    /** Built exactly as AuthorizationServerConfig builds it. */
-    private ObjectMapper sessionMapper() {
-        ObjectMapper mapper = new ObjectMapper();
-        List<Module> securityModules =
-                SecurityJackson2Modules.getModules(getClass().getClassLoader());
-        mapper.registerModules(securityModules);
-        mapper.registerModule(new OAuth2AuthorizationServerJackson2Module());
-
-        mapper.addMixIn(Collections.emptySet().getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(Collections.emptyList().getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(Collections.emptyMap().getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(Collections.emptySortedSet().getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(Collections.emptySortedMap().getClass(), AllowlistedClassMixin.class);
-
-        // The List.of()/Set.of()/Map.of() family. Distinct classes from the
-        // Collections.empty* sentinels above and NOT covered by them:
-        //   List.of()        -> ImmutableCollections$ListN (not Collections$EmptyList)
-        //   List.of(a[,b])   -> ImmutableCollections$List12
-        //   List.of(a,b,c..) -> ImmutableCollections$ListN
-        mapper.addMixIn(List.of().getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(List.of("a").getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(java.util.Set.of().getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(java.util.Set.of("a").getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(Map.of().getClass(), AllowlistedClassMixin.class);
-        mapper.addMixIn(Map.of("a", "b").getClass(), AllowlistedClassMixin.class);
-
-        mapper.addMixIn(IgrpOidcUser.class, AllowlistedClassMixin.class);
-        mapper.addMixIn(OidcContextAuthenticationToken.class, AllowlistedClassMixin.class);
-        mapper.addMixIn(UserProfile.class, AllowlistedClassMixin.class);
-        return mapper;
+    /** The mapper both stores use. */
+    private JsonMapper sessionMapper() {
+        return cv.igrp.platform.access_management.shared.security.SecurityStoreObjectMapperFactory
+                .create(getClass().getClassLoader());
     }
 
     private IgrpOidcUser principal() {
@@ -115,7 +74,7 @@ class SessionSerializationSpikeTest {
         OAuth2AuthenticationToken authentication = new OAuth2AuthenticationToken(
                 principal(), List.of(new SimpleGrantedAuthority("ROLE_USER")), "external-idp");
         SecurityContextImpl context = new SecurityContextImpl(authentication);
-        ObjectMapper mapper = sessionMapper();
+        JsonMapper mapper = sessionMapper();
 
         String json = mapper.writeValueAsString(context);
         SecurityContextImpl back = mapper.readValue(json, SecurityContextImpl.class);
@@ -143,7 +102,7 @@ class SessionSerializationSpikeTest {
                         PkceParameterNames.CODE_VERIFIER, "dBjftJeZ4CVP-mB92K27uhbUJU1p1r_wW1gFWFOEjXk",
                         "registration_id", "external-idp"))
                 .build();
-        ObjectMapper mapper = sessionMapper();
+        JsonMapper mapper = sessionMapper();
 
         String json = mapper.writeValueAsString(request);
         OAuth2AuthorizationRequest back = mapper.readValue(json, OAuth2AuthorizationRequest.class);
@@ -168,8 +127,8 @@ class SessionSerializationSpikeTest {
         http.setServerPort(443);
         http.setScheme("https");
         http.setQueryString("response_type=code&client_id=igrp-access-management");
-        DefaultSavedRequest saved = new DefaultSavedRequest(http, new org.springframework.security.web.PortResolverImpl());
-        ObjectMapper mapper = sessionMapper();
+        DefaultSavedRequest saved = new DefaultSavedRequest(http);
+        JsonMapper mapper = sessionMapper();
 
         String json = mapper.writeValueAsString(saved);
         DefaultSavedRequest back = mapper.readValue(json, DefaultSavedRequest.class);

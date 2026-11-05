@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.m2m.domain.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import cv.igrp.platform.access_management.shared.infrastructure.json.PersistedJson;
 import cv.igrp.platform.access_management.department.mapper.ResourceMapper;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
@@ -99,8 +99,7 @@ public class ResourceSyncService {
 
     private String computeStructuralHash(ResourceDTO dto) {
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            String canonicalJson = mapper.writeValueAsString(dto);
+            String canonicalJson = PersistedJson.MAPPER.writeValueAsString(dto);
             return DigestUtils.sha256Hex(canonicalJson);
         } catch (Exception e) {
             throw new RuntimeException("Error computing resource hash", e);

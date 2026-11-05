@@ -74,10 +74,6 @@ public class ExcelReportExporter {
             });
 
             workbook.write(out);
-            if (workbook instanceof SXSSFWorkbook streaming) {
-                // Remove the temp files backing the streamed rows.
-                streaming.dispose();
-            }
         } catch (IOException e) {
             throw new UncheckedIOException("Failed to write Excel report", e);
         }

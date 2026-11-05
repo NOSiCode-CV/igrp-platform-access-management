@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
-import com.fasterxml.jackson.databind.Module;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import cv.igrp.platform.access_management.shared.security.SecurityStoreObjectMapperFactory;
 import cv.igrp.platform.access_management.shared.security.IgrpOidcUser;
 import cv.igrp.platform.access_management.shared.security.OidcContextAuthenticationToken;
@@ -21,13 +20,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.jackson2.SecurityJackson2Modules;
 import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
-import org.springframework.security.oauth2.server.authorization.config.annotation.web.configurers.OAuth2AuthorizationServerConfigurer;
-import org.springframework.security.oauth2.server.authorization.jackson2.OAuth2AuthorizationServerJackson2Module;
+import org.springframework.security.config.annotation.web.configurers.oauth2.server.authorization.OAuth2AuthorizationServerConfigurer;
 import org.springframework.security.oauth2.client.oidc.userinfo.OidcUserService;
 import org.springframework.security.oauth2.client.oidc.authentication.OidcIdTokenDecoderFactory;
 import org.springframework.security.oauth2.client.oidc.authentication.OidcIdTokenValidator;
@@ -49,7 +46,7 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
 import org.springframework.security.web.util.matcher.OrRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -76,7 +73,7 @@ public class AuthorizationServerConfig {
      * activates Spring's {@code ForwardedHeaderFilter}, which prepends the
      * {@code X-Forwarded-Prefix} value (e.g. {@code /igrp-access-management})
      * to {@link HttpServletRequest#getRequestURI()} before any security
-     * filter runs. An {@link AntPathRequestMatcher} pinned to
+     * filter runs. A {@link PathPatternRequestMatcher} pinned to
      * {@code "/connect/logout"} then silently misses the prefixed URI, so
      * {@code permitAll} never applies, {@code anyRequest().authenticated()}
      * denies the anonymous request, and the auto-installed
@@ -109,16 +106,16 @@ public class AuthorizationServerConfig {
                                                                       SessionLogoutHandler sessionLogoutHandler) throws Exception {
         OAuth2AuthorizationServerConfigurer authServerConfigurer = new OAuth2AuthorizationServerConfigurer();
         var authorizationEndpoints = new OrRequestMatcher(
-                AntPathRequestMatcher.antMatcher("/oauth2/authorize"),
-                AntPathRequestMatcher.antMatcher("/oauth2/authorization/**"),
-                AntPathRequestMatcher.antMatcher("/oauth2/token"),
-                AntPathRequestMatcher.antMatcher("/oauth2/jwks"),
-                AntPathRequestMatcher.antMatcher("/oauth2/revoke"),
-                AntPathRequestMatcher.antMatcher("/oauth2/introspect"),
-                AntPathRequestMatcher.antMatcher("/connect/**"),
-                AntPathRequestMatcher.antMatcher("/.well-known/**"),
-                AntPathRequestMatcher.antMatcher("/login/**"),
-                AntPathRequestMatcher.antMatcher("/userinfo")
+                PathPatternRequestMatcher.withDefaults().matcher("/oauth2/authorize"),
+                PathPatternRequestMatcher.withDefaults().matcher("/oauth2/authorization/**"),
+                PathPatternRequestMatcher.withDefaults().matcher("/oauth2/token"),
+                PathPatternRequestMatcher.withDefaults().matcher("/oauth2/jwks"),
+                PathPatternRequestMatcher.withDefaults().matcher("/oauth2/revoke"),
+                PathPatternRequestMatcher.withDefaults().matcher("/oauth2/introspect"),
+                PathPatternRequestMatcher.withDefaults().matcher("/connect/**"),
+                PathPatternRequestMatcher.withDefaults().matcher("/.well-known/**"),
+                PathPatternRequestMatcher.withDefaults().matcher("/login/**"),
+                PathPatternRequestMatcher.withDefaults().matcher("/userinfo")
         );
 
         http.securityMatcher(authorizationEndpoints)
@@ -240,8 +237,8 @@ public class AuthorizationServerConfig {
                         .defaultAuthenticationEntryPointFor(
                                 new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp"),
                                 new OrRequestMatcher(
-                                        AntPathRequestMatcher.antMatcher("/oauth2/authorize"),
-                                        AntPathRequestMatcher.antMatcher("/oauth2/authorization/**")
+                                        PathPatternRequestMatcher.withDefaults().matcher("/oauth2/authorize"),
+                                        PathPatternRequestMatcher.withDefaults().matcher("/oauth2/authorization/**")
                                 ))
                         .authenticationEntryPoint(
                                 new LoginUrlAuthenticationEntryPoint("/oauth2/authorization/external-idp")))
@@ -476,7 +473,7 @@ public class AuthorizationServerConfig {
                 LoggerFactory.getLogger(StripAuthorizationHeaderForLogoutFilter.class);
 
         /**
-         * Path-suffix match instead of {@link org.springframework.security.web.util.matcher.AntPathRequestMatcher}
+         * Path-suffix match instead of {@link PathPatternRequestMatcher}
          * because behind the API gateway, Spring's {@code ForwardedHeaderFilter}
          * (driven by {@code X-Forwarded-Prefix: /igrp-access-management}) rewrites
          * the request URI to include the prefix before this filter runs. An ant
@@ -583,12 +580,12 @@ public class AuthorizationServerConfig {
      * before any authorization is written.
      *
      * <p>The default {@link JdbcOAuth2AuthorizationService} uses Spring Security's
-     * {@code SecurityJackson2Modules}-driven {@code ObjectMapper}, whose allowlist
+     * {@code SecurityJacksonModules}-driven {@code JsonMapper}, whose allowlist
      * rejects classes it does not recognise — including the empty JDK collection
      * sentinels (e.g. {@code java.util.Collections$EmptySet}) that
      * {@link IgrpOidcUser} stores when its authorities/profile fields are empty.
      * We therefore install a row mapper + parameters mapper backed by an
-     * {@link ObjectMapper} that registers the same modules <i>plus</i> a Mixin
+     * {@link JsonMapper} that registers the same modules <i>plus</i> a Mixin
      * for the empty-collection sentinels and the iGRP principal types, so a
      * superadmin-with-no-explicit-authorities token can be persisted and
      * reloaded without tripping the allowlist guard.
@@ -602,17 +599,14 @@ public class AuthorizationServerConfig {
         JdbcOAuth2AuthorizationService delegate =
                 new JdbcOAuth2AuthorizationService(jdbcTemplate, registeredClientRepository);
 
-        ObjectMapper objectMapper = SecurityStoreObjectMapperFactory.create(
+        JsonMapper jsonMapper = SecurityStoreObjectMapperFactory.create(
                 AuthorizationServerConfig.class.getClassLoader());
 
-        JdbcOAuth2AuthorizationService.OAuth2AuthorizationRowMapper rowMapper =
-                new JdbcOAuth2AuthorizationService.OAuth2AuthorizationRowMapper(registeredClientRepository);
-        rowMapper.setObjectMapper(objectMapper);
+        var rowMapper = new JdbcOAuth2AuthorizationService.JsonMapperOAuth2AuthorizationRowMapper(
+                registeredClientRepository, jsonMapper);
         delegate.setAuthorizationRowMapper(rowMapper);
 
-        JdbcOAuth2AuthorizationService.OAuth2AuthorizationParametersMapper parametersMapper =
-                new JdbcOAuth2AuthorizationService.OAuth2AuthorizationParametersMapper();
-        parametersMapper.setObjectMapper(objectMapper);
+        var parametersMapper = new JdbcOAuth2AuthorizationService.JsonMapperOAuth2AuthorizationParametersMapper(jsonMapper);
         delegate.setAuthorizationParametersMapper(parametersMapper);
 
         // Phase C3 — every remove() (revoke / logout / one-shot consume) cascades

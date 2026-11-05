@@ -11,9 +11,11 @@ import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericJacksonJsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import tools.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 
 import java.util.Collection;
 import java.util.concurrent.Callable;
@@ -22,9 +24,26 @@ import java.util.concurrent.Callable;
 @EnableCaching
 public class CacheConfig {
 
+    /**
+     * The serializer for every value this service writes to Redis, both through
+     * the {@link CacheManager} and through {@link #redisTemplate}. A single
+     * definition so the two cannot drift, and so {@code CacheValueSerializationTest}
+     * exercises exactly what production uses.
+     */
+    public static RedisSerializer<Object> valueSerializer() {
+        return GenericJacksonJsonRedisSerializer.builder()
+                .enableSpringCacheNullValueSupport()
+                .enableDefaultTyping(BasicPolymorphicTypeValidator.builder()
+                        .allowIfSubType("cv.igrp.platform.access_management.")
+                        .allowIfSubType("java.")
+                        .allowIfSubType("org.springframework.cache.support.")
+                        .build())
+                .build();
+    }
+
     @Bean
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        var serializer = new GenericJackson2JsonRedisSerializer();
+        var serializer = valueSerializer();
 
         var config = RedisCacheConfiguration.defaultCacheConfig()
                 .serializeValuesWith(
@@ -44,9 +63,9 @@ public class CacheConfig {
         template.setConnectionFactory(connectionFactory);
 
         template.setKeySerializer(new StringRedisSerializer());
-        template.setValueSerializer(new GenericJackson2JsonRedisSerializer());
+        template.setValueSerializer(valueSerializer());
         template.setHashKeySerializer(new StringRedisSerializer());
-        template.setHashValueSerializer(new GenericJackson2JsonRedisSerializer());
+        template.setHashValueSerializer(valueSerializer());
 
         template.afterPropertiesSet();
         return template;

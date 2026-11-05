@@ -8,7 +8,7 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.16</version>
+        <version>4.1.2</version>
         <relativePath />
     </parent>
 
@@ -21,10 +21,10 @@
     <properties>
         <igrp.version>0.1.0-beta.1</igrp.version>
         <java.version>26</java.version>
-        <spring-cloud.version>2025.0.0</spring-cloud.version>
-        <springdoc.version>2.8.17</springdoc.version>
-        <otel.version>2.28.1</otel.version>
-        <jacoco.version>0.8.13</jacoco.version>
+        <spring-cloud.version>2025.1.4</spring-cloud.version>
+        <springdoc.version>3.2.0</springdoc.version>
+        <otel.version>2.33.1</otel.version>
+        <jacoco.version>0.8.16</jacoco.version>
         <dependency-check.version>12.1.6</dependency-check.version>
         <javadoc.plugin.version>3.12.0</javadoc.plugin.version>
         <igrp.framework.core.version>0.0.3-alpha</igrp.framework.core.version>
@@ -40,50 +40,17 @@
         <igrp.platform.notification.client.version>0.2.0-beta.5</igrp.platform.notification.client.version>
 
         <!--
-            Security patch overrides on top of the parent BOM (2026-10-28).
-            Each raises a version the parent still pins below its patched
-            release; all stay inside the current minor line, so no API change
-            is implied. Replaces the per-artifact <dependencyManagement> pins
-            that used to live below, because these are the same properties
-            spring-boot-dependencies uses and so they cover every sibling
-            artifact in each family rather than only the ones enumerated.
-
-            Drop an entry once the parent BOM catches up to or passes it.
+            Security patch overrides on top of the parent BOM. Each raises a
+            version the parent still pins below its patched release, through the
+            same property spring-boot-dependencies uses. Drop an entry once the
+            parent BOM catches up. Boot 4.1.2 already covers the earlier Tomcat,
+            Netty, PostgreSQL and HttpComponents pins.
         -->
-        <!-- 3 CRITICAL. Must stay on 10.1.x: Tomcat 11 is Servlet 6.1 and
-             Boot 3.5 targets 6.0. The advisories name 10.1.58 as the fix, but
-             that version was never published — the line goes 10.1.57 -> 10.1.59. -->
-        <tomcat.version>10.1.61</tomcat.version>
-        <!-- 1 CRITICAL, 8 HIGH. Deliberately the 4.2 line, not the 4.1 the
-             parent manages; this predates the current report. -->
-        <netty.version>4.2.19.Final</netty.version>
-        <!-- 8 HIGH. The parent reaches only 2.21.4, which is short of the fix. -->
-        <jackson-bom.version>2.21.8</jackson-bom.version>
-        <!-- 1 HIGH -->
-        <postgresql.version>42.7.12</postgresql.version>
         <!-- 1 MEDIUM -->
         <log4j2.version>2.26.1</log4j2.version>
-        <!-- 2 HIGH + 1 MEDIUM on the Apache HttpComponents 5 stack:
-             CVE-2026-54399 (DoS via excessive HTTP headers, httpcore5),
-             CVE-2026-54428 (DoS via oversized HTTP/2 HPACK header blocks,
-             httpcore5-h2) and CVE-2026-64607 (DoS via connection leak,
-             httpclient5).
-
-             Versions are the pair upstream ships together, not the bare
-             minimums from the advisories (5.4.3 / 5.6.3): httpclient5 5.6.5's
-             own parent manages httpcore 5.4.4, so this is the combination its
-             authors build and test against. Mixing an older core under a newer
-             client is how the POI/commons-compress mismatch happened in
-             3fffaa12 — a silent downgrade that only shows up at runtime.
-
-             These are minor-version bumps over what the parent BOM pins
-             (httpcore5 5.3.6, httpclient5 5.5.2), so they diverge from the
-             Boot-tested set. Consumers are cv.igrp.framework:core (which
-             declares httpclient5 5.5) and the notification client; both are
-             prebuilt jars, so the bet is Apache's API compatibility within
-             5.x. Revisit if the parent BOM catches up. -->
-        <httpcore5.version>5.4.4</httpcore5.version>
-        <httpclient5.version>5.6.5</httpclient5.version>
+        <!-- 8 HIGH. Jackson 2 is only here for third-party jars (notification
+             client, keycloak, kubernetes client); the parent reaches 2.21.7. -->
+        <jackson-2-bom.version>2.21.8</jackson-2-bom.version>
         <!-- 2 CRITICAL, 1 HIGH, 2 MEDIUM. Not managed by the parent BOM at
              all, so it needs dependencyManagement entries below. bcprov
              arrives transitively via spring-cloud-commons; BouncyCastle
@@ -185,7 +152,13 @@
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <artifactId>spring-boot-starter-webmvc</artifactId>
+        </dependency>
+        <!-- ScopeAspect: department scoping depends on it. Boot 4 no longer
+             brings AspectJ through spring-boot-starter-data-jpa. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aspectj</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -205,12 +178,12 @@
              so the session store adds no new failure mode. See
              plans/shared-servlet-session/scope.md Section 1. -->
         <dependency>
-            <groupId>org.springframework.session</groupId>
-            <artifactId>spring-session-jdbc</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-session-jdbc</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-flyway</artifactId>
         </dependency>
         <dependency>
             <groupId>org.flywaydb</groupId>
@@ -226,15 +199,15 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-resource-server</artifactId>
+            <artifactId>spring-boot-starter-security-oauth2-resource-server</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-authorization-server</artifactId>
+            <artifactId>spring-boot-starter-security-oauth2-authorization-server</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+            <artifactId>spring-boot-starter-security-oauth2-client</artifactId>
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -264,7 +237,7 @@
             <version>${springdoc.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.fasterxml.jackson.dataformat</groupId>
+            <groupId>tools.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-xml</artifactId>
         </dependency>
         <dependency>
@@ -420,7 +393,7 @@
         </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-test</artifactId>
+            <artifactId>spring-boot-starter-webmvc-test</artifactId>
             <scope>test</scope>
             <exclusions>
                 <exclusion>
@@ -430,14 +403,31 @@
             </exclusions>
         </dependency>
         <dependency>
-            <groupId>org.springframework.security</groupId>
-            <artifactId>spring-security-test</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security-test</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.tngtech.archunit</groupId>
             <artifactId>archunit-junit5</artifactId>
-            <version>1.3.0</version>
+            <version>1.5.1</version>
+            <scope>test</scope>
+        </dependency>
+        <!-- Spring Boot 4 migration gate (compat package): full-context tests
+             against real Postgres and Redis. Versions come from the Boot BOM. -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-testcontainers</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.testcontainers</groupId>
+            <artifactId>testcontainers-postgresql</artifactId>
             <scope>test</scope>
         </dependency>
     </dependencies>
@@ -498,7 +488,7 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-                    <source>26</source>
+                    <source>${java.version}</source>
                     <encoding>UTF-8</encoding>
                     <annotationProcessorPaths>
                         <path>
@@ -664,9 +654,9 @@
                 </configuration>
             </plugin>
             <plugin>
-                <groupId>org.hibernate.orm.tooling</groupId>
-                <artifactId>hibernate-enhance-maven-plugin</artifactId>
-                <version>6.6.18.Final</version>
+                <groupId>org.hibernate.orm</groupId>
+                <artifactId>hibernate-maven-plugin</artifactId>
+                <version>${hibernate.version}</version>
                 <!--
                   Override the Byte Buddy version pulled in transitively by
                   hibernate-enhance (1.15.x). The shipped version does not
@@ -678,7 +668,7 @@
                     <dependency>
                         <groupId>net.bytebuddy</groupId>
                         <artifactId>byte-buddy</artifactId>
-                        <version>1.17.7</version>
+                        <version>${byte-buddy.version}</version>
                     </dependency>
                 </dependencies>
                 <executions>
@@ -694,12 +684,109 @@
                     </execution>
                 </executions>
             </plugin>
+            <!--
+              Spring Boot 4 migration gate: the full-context compat suite
+              (src/test/java/.../compat/*IT) runs in `mvn verify` and needs a
+              Docker daemon (Testcontainers Postgres + Redis). Scoped to that
+              package so the other *IT classes keep their current behaviour.
+              The executions come from spring-boot-starter-parent.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <configuration>
+                    <includes>
+                        <include>**/compat/**/*IT.java</include>
+                    </includes>
+                </configuration>
+            </plugin>
+            <!--
+              Spring Boot 4 migration gate: the PUBLISHED Java SDK releases that
+              consumers run today, copied one directory per version into
+              target/sdk-compat. SdkClientCompatIT loads each in its own class
+              loader and drives it against this service, so any server-side
+              change that would break a deployed SDK fails the build.
+              Jackson is the version every listed client release declares.
+            -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>sdk-compat-clients</id>
+                        <phase>generate-test-resources</phase>
+                        <goals>
+                            <goal>copy</goal>
+                        </goals>
+                        <configuration>
+                            <skip>${skipTests}</skip>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>cv.igrp.platform.access</groupId>
+                                    <artifactId>client</artifactId>
+                                    <version>0.2.0-beta.6</version>
+                                    <outputDirectory>${project.build.directory}/sdk-compat/client-0.2.0-beta.6</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>cv.igrp.platform.access</groupId>
+                                    <artifactId>client</artifactId>
+                                    <version>0.2.0-beta.10</version>
+                                    <outputDirectory>${project.build.directory}/sdk-compat/client-0.2.0-beta.10</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>cv.igrp.platform.access</groupId>
+                                    <artifactId>client</artifactId>
+                                    <version>0.2.0-beta.12</version>
+                                    <outputDirectory>${project.build.directory}/sdk-compat/client-0.2.0-beta.12</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>cv.igrp.platform.access</groupId>
+                                    <artifactId>client</artifactId>
+                                    <version>0.2.0-beta.15</version>
+                                    <outputDirectory>${project.build.directory}/sdk-compat/client-0.2.0-beta.15</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.fasterxml.jackson.core</groupId>
+                                    <artifactId>jackson-databind</artifactId>
+                                    <version>2.15.2</version>
+                                    <outputDirectory>${project.build.directory}/sdk-compat/lib</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.fasterxml.jackson.core</groupId>
+                                    <artifactId>jackson-core</artifactId>
+                                    <version>2.15.2</version>
+                                    <outputDirectory>${project.build.directory}/sdk-compat/lib</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.fasterxml.jackson.core</groupId>
+                                    <artifactId>jackson-annotations</artifactId>
+                                    <version>2.15.2</version>
+                                    <outputDirectory>${project.build.directory}/sdk-compat/lib</outputDirectory>
+                                </artifactItem>
+                                <artifactItem>
+                                    <groupId>com.fasterxml.jackson.datatype</groupId>
+                                    <artifactId>jackson-datatype-jsr310</artifactId>
+                                    <version>2.15.2</version>
+                                    <outputDirectory>${project.build.directory}/sdk-compat/lib</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 
     <profiles>
         <profile>
             <id>native</id>
+            <properties>
+                <!-- GraalVM has no Java 26 release yet (25 is the newest), and
+                     native-image cannot read Java 26 class files. Every jar on
+                     the classpath must be Java 25 or lower too; see Dockerfile_native. -->
+                <java.version>25</java.version>
+                <native.build.heap>10g</native.build.heap>
+            </properties>
             <build>
                 <plugins>
                     <plugin>
@@ -735,13 +822,10 @@
                                 <buildArg>-H:IncludeResources=application-.*\.properties</buildArg>
                                 <buildArg>--no-fallback</buildArg>
                                 <buildArg>-H:+ReportExceptionStackTraces</buildArg>
-                                <buildArg>
-                                    -H:ResourceConfigurationFiles=!META-INF/native-image/software.amazon.awssdk/**
-                                </buildArg>
                                 <buildArg>--enable-url-protocols=http,https</buildArg>
                                 <buildArg>-O1</buildArg>
                                 <buildArg>--gc=serial</buildArg>
-                                <buildArg>-J-Xmx10g</buildArg>
+                                <buildArg>-J-Xmx${native.build.heap}</buildArg>
                                 <buildArg>-J-Xms2g</buildArg>
                                 <buildArg>-R:MaxHeapSize=2G</buildArg>
                                 <buildArg>-H:NumberOfThreads=4</buildArg>

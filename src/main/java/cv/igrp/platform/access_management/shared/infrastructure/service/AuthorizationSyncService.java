@@ -4,10 +4,11 @@ import cv.igrp.framework.auth.generated.PermissionsRegistry;
 import cv.igrp.platform.access_management.m2m.domain.service.PermissionSyncService;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.context.event.ApplicationReadyEvent;
+import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -30,7 +31,16 @@ public class AuthorizationSyncService {
         this.syncService = syncService;
     }
 
-    @PostConstruct
+    /**
+     * Runs once the application is ready, not at bean construction. The
+     * permissions are filed under this service's own resource, which
+     * {@code ConfigurationService} creates from a {@code CommandLineRunner}; on
+     * a fresh database a {@code @PostConstruct} sync ran before that resource
+     * existed, failed with "Resource not found", and left the first boot with
+     * no permissions at all. {@link ApplicationReadyEvent} fires after every
+     * runner and before readiness accepts traffic.
+     */
+    @EventListener(ApplicationReadyEvent.class)
     public void syncAuthorization() {
         try {
             LOGGER.info("[Authorization Sync] Starting authorization synchronization with Access Management API...");

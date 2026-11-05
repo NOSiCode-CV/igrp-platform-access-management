@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.security_audit.application.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import cv.igrp.platform.access_management.security_audit.domain.entities.SecurityAuditLogEntity;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
@@ -37,7 +36,7 @@ class SecurityAuditServiceImplTest {
 
     @BeforeEach
     void setUp() {
-        service = new SecurityAuditServiceImpl(repository, contextProvider, chainService, new ObjectMapper());
+        service = new SecurityAuditServiceImpl(repository, contextProvider, chainService);
     }
 
     private Map<String, Object> baseContext() {

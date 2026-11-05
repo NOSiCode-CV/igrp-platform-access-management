@@ -18,7 +18,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.http.HttpStatus;
@@ -35,25 +35,25 @@ import static org.mockito.Mockito.*;
 @ContextConfiguration(classes = InviteUserCommandHandler.class)
 class InviteUserCommandHandlerTest {
 
-    @MockBean
+    @MockitoBean
     private InvitationNotificationSender invitationSender;
 
-    @MockBean
+    @MockitoBean
     private cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository userRepository;
 
-    @MockBean
+    @MockitoBean
     private RoleEntityRepository roleRepository;
 
-    @MockBean
+    @MockitoBean
     private DepartmentEntityRepository departmentRepository;
 
-    @MockBean
+    @MockitoBean
     private InvitationEntityRepository invitationRepository;
 
-    @MockBean
+    @MockitoBean
     private InvitationMapper invitationMapper;
 
-    @MockBean
+    @MockitoBean
     private UserUtils userUtils;
 
     @Autowired

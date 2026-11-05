@@ -1,7 +1,7 @@
 package cv.igrp.platform.access_management.shared.domain.converters;
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.core.type.TypeReference;
+import cv.igrp.platform.access_management.shared.infrastructure.json.PersistedJson;
 import jakarta.persistence.AttributeConverter;
 import jakarta.persistence.Converter;
 
@@ -13,12 +13,11 @@ public class CustomFieldAttributeConverter implements AttributeConverter<Map<Str
 
     @Override
     public String convertToDatabaseColumn(Map<String, ?> attribute) {
-        final ObjectMapper objectMapper = new ObjectMapper();
         if (attribute == null || attribute.isEmpty()) {
             return "{}";
         }
         try {
-            return objectMapper.writeValueAsString(attribute);
+            return PersistedJson.MAPPER.writeValueAsString(attribute);
         } catch (Exception e) {
             throw new IllegalArgumentException("Could not convert Map to JSON string.", e);
         }
@@ -26,12 +25,11 @@ public class CustomFieldAttributeConverter implements AttributeConverter<Map<Str
 
     @Override
     public Map<String, ?> convertToEntityAttribute(String dbData) {
-        final ObjectMapper objectMapper = new ObjectMapper();
         if (dbData == null || dbData.isBlank()) {
             return new HashMap<>();
         }
         try {
-            return objectMapper.readValue(dbData, new TypeReference<>() {});
+            return PersistedJson.MAPPER.readValue(dbData, new TypeReference<>() {});
         } catch (Exception e) {
             throw new IllegalArgumentException("Could not convert JSON string to Map.", e);
         }

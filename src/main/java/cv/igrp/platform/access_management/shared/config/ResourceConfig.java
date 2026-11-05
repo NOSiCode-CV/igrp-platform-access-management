@@ -30,15 +30,7 @@ public class ResourceConfig {
             RequestMappingInfo info = entry.getKey();
             HandlerMethod method = entry.getValue();
 
-            Set<String> paths = new HashSet<>();
-            if (info.getPathPatternsCondition() != null) {
-                paths.addAll(info.getPathPatternsCondition().getPatterns()
-                        .stream()
-                        .map(Object::toString)
-                        .collect(Collectors.toSet()));
-            } else if (info.getPatternsCondition() != null) {
-                paths.addAll(info.getPatternsCondition().getPatterns());
-            }
+            Set<String> paths = new HashSet<>(info.getPatternValues());
 
             Set<String> httpMethods = info.getMethodsCondition().getMethods()
                     .stream()

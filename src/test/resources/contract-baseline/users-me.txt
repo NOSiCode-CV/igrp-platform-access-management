@@ -1,0 +1,5 @@
+HTTP 200
+content-type: application/json
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+
+{"id":"<uuid>","name":"iGRP Super Admin","username":"<uuid>","email":"superadmin@igrp.cv","status":"ACTIVE","picture":null,"signature":null,"nic":null,"phoneNumber":null,"emailVerified":null,"metadata":{}}

@@ -5,7 +5,7 @@ Identity and access management for the iGRP 3.0 platform. This service is both a
 access, refresh and ID tokens — and the **system of record** for users, roles,
 permissions, departments, applications and sessions.
 
-**Stack:** Java 26 · Spring Boot 3.5.14 · Spring Authorization Server · Spring Cloud 2025.0.0 · PostgreSQL · Redis · MinIO/S3
+**Stack:** Java 26 · Spring Boot 4.1.2 · Spring Authorization Server (Spring Security 7) · Spring Cloud 2025.1.4 · PostgreSQL · Redis · MinIO/S3
 
 ---
 
@@ -502,6 +502,14 @@ it is.
 | **Flyway** — `src/main/resources/db/migration/V*.sql` | Versioned, one-shot migrations: data backfills, constraint fixes, seeding. Runs once and is recorded. `spring.flyway.enabled=true`, with `baseline-on-migrate` for pre-existing databases. |
 | **`DatabaseMigrationRunner`** (`shared/config/`) | DDL that must be idempotent and re-assert itself on every boot — dropping a constraint that must stay dropped, or adding a column Hibernate will not generate. Written `IF NOT EXISTS` / `ADD COLUMN IF NOT EXISTS`, so it is a no-op after the first run. |
 | **Hibernate `ddl-auto`** | `update` in `development` only, to create entity tables while iterating. `staging` and `production` use `validate`, so anything Hibernate will not generate must come from one of the two above. |
+
+**Fresh, empty databases.** The Flyway scripts patch tables that Hibernate and the runner
+created on databases that predate Flyway, so on an empty database they have nothing to
+patch. `FreshDatabaseSchemaCallback` handles that: before the first migration, if there is no
+`t_user` table, it applies `db/bootstrap/base-schema.sql` (a schema-only dump of that
+pre-Flyway state), and Flyway then runs every migration on top. Existing databases never run
+it. Do not edit the dump to follow entity changes; new DDL still goes to Flyway or the runner.
+The compat suite installs from an empty database on every `mvn verify`.
 
 Note that some historical Flyway migrations were superseded by the runner — see the
 comments in `ensureUserSessionSchema()` for a case where a retype step had to move. When

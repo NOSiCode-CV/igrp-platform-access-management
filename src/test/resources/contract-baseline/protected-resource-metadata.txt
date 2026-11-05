@@ -1,0 +1,5 @@
+HTTP 200
+content-type: application/json
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+
+{"resource":"http://localhost:<port>","bearer_methods_supported":["header"],"tls_client_certificate_bound_access_tokens":true}

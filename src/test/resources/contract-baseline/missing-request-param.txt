@@ -1,0 +1,5 @@
+HTTP 400
+content-type: application/json
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+
+{"timestamp":"<datetime>","status":400,"error":"Bad Request","path":"/api/roles/by-code/COMPAT_ROLE"}

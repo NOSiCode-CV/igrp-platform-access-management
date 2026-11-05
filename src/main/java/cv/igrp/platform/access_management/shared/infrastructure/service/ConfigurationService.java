@@ -1,7 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
 import cv.igrp.platform.access_management.shared.application.constants.MenuEntryType;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -38,9 +38,9 @@ public class ConfigurationService {
     public static final String IGRP_APP = "APP_IGRP_CENTER";
 
     private final JdbcTemplate jdbcTemplate;
-    private final ObjectMapper objectMapper;
+    private final JsonMapper objectMapper;
 
-    public ConfigurationService(JdbcTemplate jdbcTemplate, ObjectMapper objectMapper) {
+    public ConfigurationService(JdbcTemplate jdbcTemplate, JsonMapper objectMapper) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
     }
@@ -403,7 +403,7 @@ public class ConfigurationService {
     private void insertMenuHierarchy(JsonNode node, Long parentId, short position, Long appId, Long roleId) {
         for (JsonNode entry : node) {
             try {
-                MenuEntryType type = MenuEntryType.fromCodeOrThrow(entry.get("type").asText());
+                MenuEntryType type = MenuEntryType.fromCodeOrThrow(entry.get("type").asString());
 
                 Long menuId = jdbcTemplate.queryForObject("""
                                     INSERT INTO t_menu_entry
@@ -414,14 +414,14 @@ public class ConfigurationService {
                                     RETURNING id
                                 """,
                         Long.class,
-                        entry.get("code").asText(),
-                        entry.get("name").asText(),
+                        entry.get("code").asString(),
+                        entry.get("name").asString(),
                         type.name(),
-                        entry.has("icon") ? entry.get("icon").asText() : null,
+                        entry.has("icon") ? entry.get("icon").asString() : null,
                         position,
-                        entry.has("target") ? entry.get("target").asText() : "_self",
-                        entry.has("url") ? entry.get("url").asText() : null,
-                        entry.has("pageSlug") ? entry.get("pageSlug").asText() : null,
+                        entry.has("target") ? entry.get("target").asString() : "_self",
+                        entry.has("url") ? entry.get("url").asString() : null,
+                        entry.has("pageSlug") ? entry.get("pageSlug").asString() : null,
                         parentId, appId,
                         SYSTEM_USER, SYSTEM_USER
                 );

@@ -35,6 +35,7 @@ import java.util.UUID;
        uniqueConstraints = {
            @UniqueConstraint(name = "ux_session_session_id", columnNames = {"session_id"})
        })
+@jakarta.persistence.EntityListeners(cv.igrp.platform.access_management.session.infrastructure.cache.SessionSidCacheListener.class)
 public class SessionEntity extends AuditEntity {
 
     @Id

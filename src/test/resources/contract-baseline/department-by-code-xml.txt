@@ -1,0 +1,5 @@
+HTTP 200
+content-type: application/xml;charset=UTF-8
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+
+<DepartmentDTO><id><n></id><code>COMPAT_DEPT</code><name>Compat Department</name><description/><status>ACTIVE</status><icon/><parentCode/></DepartmentDTO>

@@ -190,7 +190,7 @@ public interface PermissionEntityRepository extends
             @Param("name") String name,
             @Param("resourceName") String resourceName);
 
-    List<PermissionEntity> findAllByResourcesAndStatusNot(Set<ResourceEntity> resources, Status status);
+    List<PermissionEntity> findDistinctByResourcesInAndStatusNot(Set<ResourceEntity> resources, Status status);
 
     boolean existsByName(String name);
 

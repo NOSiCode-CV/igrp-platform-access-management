@@ -12,7 +12,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.ContextConfiguration;
@@ -34,16 +34,16 @@ import static org.mockito.Mockito.*;
 @ContextConfiguration(classes = ValidateInvitationEmailCommandHandler.class)
 class ValidateInvitationEmailCommandHandlerTest {
 
-    @MockBean
+    @MockitoBean
     private InvitationEntityRepository invitationRepository;
 
-    @MockBean
+    @MockitoBean
     private OtpEntityRepository otpEntityRepository;
 
-    @MockBean
+    @MockitoBean
     private InvitationNotificationSender invitationSender;
 
-    @MockBean
+    @MockitoBean
     private NotificationServiceProperties notificationProperties;
 
     @Autowired

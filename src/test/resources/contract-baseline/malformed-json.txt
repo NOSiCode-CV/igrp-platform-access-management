@@ -1,0 +1,5 @@
+HTTP 400
+content-type: application/problem+json
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+
+{"type":"about:blank","title":"Pedido JSON mal formado","status":400,"detail":"JSON parse error: Unexpected end-of-input within/between Object entries","instance":"/api/departments"}

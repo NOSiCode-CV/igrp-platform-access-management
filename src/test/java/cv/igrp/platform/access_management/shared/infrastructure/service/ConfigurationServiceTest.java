@@ -1,7 +1,7 @@
 package cv.igrp.platform.access_management.shared.infrastructure.service;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -32,13 +32,13 @@ class ConfigurationServiceTest {
     private static final String SUPER_ADMIN_UUID = "0ab33988-489d-440a-b99d-5ff0aab21262";
 
     private JdbcTemplate jdbcTemplate;
-    private ObjectMapper objectMapper;
+    private JsonMapper objectMapper;
     private ConfigurationService configurationService;
 
     @BeforeEach
     void setUp() {
         jdbcTemplate = mock(JdbcTemplate.class);
-        objectMapper = mock(ObjectMapper.class);
+        objectMapper = mock(JsonMapper.class);
 
         configurationService = new ConfigurationService(jdbcTemplate, objectMapper);
         configurationService.SUPER_ADMIN_EXTERNAL_ID = SUPER_ADMIN_EXTERNAL_ID;
@@ -66,7 +66,7 @@ class ConfigurationServiceTest {
 
         // Mock menus processing
         String jsonContent = "[{\"code\": \"HOME\", \"name\":\"Home\",\"url\": \"/home\",\"icon\":\"home-icon\",\"type\":\"EXTERNAL_PAGE\",\"children\":[]} ]";
-        JsonNode menusNode = new ObjectMapper().readTree(jsonContent);
+        JsonNode menusNode = new JsonMapper().readTree(jsonContent);
         doReturn(menusNode).when(objectMapper).readTree(any(InputStream.class));
         doReturn(null).when(jdbcTemplate).query(contains("SELECT fields->>'menus_hash'"), any(PreparedStatementSetter.class), any(ResultSetExtractor.class));
 
@@ -242,7 +242,7 @@ class ConfigurationServiceTest {
 
         // Menus json
         String jsonContent = "[]";
-        JsonNode menusNode = new ObjectMapper().readTree(jsonContent);
+        JsonNode menusNode = new JsonMapper().readTree(jsonContent);
         doReturn(menusNode).when(objectMapper).readTree(any(InputStream.class));
         doReturn(null).when(jdbcTemplate).query(contains("SELECT fields->>'menus_hash'"), any(PreparedStatementSetter.class), any(ResultSetExtractor.class));
 

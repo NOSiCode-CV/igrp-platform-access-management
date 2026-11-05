@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.security_audit.application.service;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import cv.igrp.platform.access_management.shared.infrastructure.json.PersistedJson;
 import cv.igrp.platform.access_management.security_audit.domain.entities.SecurityAuditLogEntity;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
@@ -42,16 +42,13 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     private final SecurityAuditLogRepository auditLogRepository;
     private final SecurityAuditContextProvider contextProvider;
     private final SecurityAuditChainService chainService;
-    private final ObjectMapper objectMapper;
 
     public SecurityAuditServiceImpl(SecurityAuditLogRepository auditLogRepository,
                                     SecurityAuditContextProvider contextProvider,
-                                    SecurityAuditChainService chainService,
-                                    ObjectMapper objectMapper) {
+                                    SecurityAuditChainService chainService) {
         this.auditLogRepository = auditLogRepository;
         this.contextProvider = contextProvider;
         this.chainService = chainService;
-        this.objectMapper = objectMapper;
     }
 
     @Override
@@ -106,7 +103,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
         logEntity.setDecisionReason(resolveDecisionReason(category, fullContext));
 
         try {
-            logEntity.setContextData(objectMapper.writeValueAsString(fullContext));
+            logEntity.setContextData(PersistedJson.MAPPER.writeValueAsString(fullContext));
         } catch (Exception e) {
             logger.error("[Security audit] Failed to serialize audit context to JSON", e);
             logEntity.setContextData("{\"error\":\"Failed to serialize context\"}");

@@ -1,0 +1,5 @@
+HTTP 200
+content-type: application/json
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+
+{"id":<n>,"code":"COMPAT_DEPT","name":"Compat Department","description":null,"status":"ACTIVE","icon":null,"parentCode":null}

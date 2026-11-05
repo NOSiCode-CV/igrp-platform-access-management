@@ -12,7 +12,7 @@ import java.util.List;
  *
  * <p>Jackson annotations make the record safe to deserialize inside the
  * {@link IgrpOidcUser} principal through Spring Security's
- * {@code SecurityJackson2Modules} allowlist.
+ * {@code SecurityJacksonModules} allowlist.
  */
 @JsonTypeInfo(use = JsonTypeInfo.Id.CLASS)
 @JsonIgnoreProperties(ignoreUnknown = true)

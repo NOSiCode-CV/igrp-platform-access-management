@@ -1,0 +1,5 @@
+HTTP 200
+content-type: application/json
+cache-control: no-cache, no-store, max-age=0, must-revalidate
+
+{"allowed":true,"viaRoles":[],"reason":"Permission granted (superadmin)","resolutionTimeMs":<n>,"cacheHit":false}
