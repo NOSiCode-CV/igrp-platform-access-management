@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
+import cv.igrp.platform.access_management.shared.security.IgrpOidcUser;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
@@ -194,6 +195,7 @@ public class JwtTokenConfig {
 
             String internalSub = null;
             String upstreamIdToken = null;
+            String ssoLoginId = null;
             if (context.getPrincipal() instanceof OAuth2AuthenticationToken oauth2Token) {
                 Map<String, Object> attributes = oauth2Token.getPrincipal().getAttributes();
                 String provider = oauth2Token.getAuthorizedClientRegistrationId();
@@ -212,6 +214,19 @@ public class JwtTokenConfig {
                 // id_token_hint is missing; capturing it here is the only point
                 // in the flow where the upstream OidcUser principal is still
                 // attached to the token-issuance context.
+                // R1.6 — which AM sign-in this authorization was granted under.
+                // Minted in IgrpOidcUserService and carried on the principal,
+                // which Spring AS persists with the authorization; that is why
+                // it is readable here, at a token endpoint call that has no
+                // browser cookie of its own. Null for a principal from before
+                // this field existed, which simply means no key (R1.5).
+                if (oauth2Token.getPrincipal() instanceof IgrpOidcUser igrpOidcUser) {
+                    ssoLoginId = igrpOidcUser.getSsoLoginId();
+                    if (ssoLoginId == null) {
+                        LOG.debug("No SSO login id on the principal for sub={}; this session will not "
+                                + "take part in a logout cascade", internalSub);
+                    }
+                }
                 if (oauth2Token.getPrincipal() instanceof OidcUser oidcUser
                         && oidcUser.getIdToken() != null) {
                     upstreamIdToken = oidcUser.getIdToken().getTokenValue();
@@ -257,13 +272,40 @@ public class JwtTokenConfig {
                 String jti = context.getClaims().build().getId();
                 try {
                     SessionIssuanceService.IssuanceBinding binding =
-                            sessionIssuanceService.bindAccessToken(context, issuanceUserId, clientId, jti, upstreamIdToken);
+                            sessionIssuanceService.bindAccessToken(context, issuanceUserId, clientId, jti,
+                                    upstreamIdToken, ssoLoginId);
                     context.getClaims().claim("sid", binding.sid().toString());
                     context.getClaims().claim("device_id", binding.deviceId());
                 } catch (SessionIssuanceService.SessionRefreshRejectedException ex) {
                     throw new OAuth2AuthenticationException(
                             new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT,
                                     ex.getMessage(),
+                                    null),
+                            ex);
+                } catch (RuntimeException ex) {
+                    // Anything else that goes wrong while opening the session is
+                    // OUR failure, and it must say so.
+                    //
+                    // Left to propagate, it escaped the authorization-server
+                    // filter chain, was forwarded to /error, and the security
+                    // chain denied that as anonymous — so the caller received a
+                    // bare 401 with no OAuth error body. That is the same shape
+                    // as invalid_client, which sent an integration team hunting a
+                    // credentials problem while the real cause was a duplicate
+                    // key on t_user_session (the ux_session_user_device_active
+                    // index, since dropped).
+                    //
+                    // server_error is the honest code: the request was fine, we
+                    // could not complete it. Spring AS renders it as a proper
+                    // OAuth error body with a 500, so clients can tell "retry or
+                    // escalate" from "fix your credentials". The cause is logged
+                    // here because the error returned to the caller is
+                    // deliberately generic.
+                    LOG.error("Session binding failed during token issuance for user={} client={}; "
+                            + "returning server_error", issuanceUserId, clientId, ex);
+                    throw new OAuth2AuthenticationException(
+                            new OAuth2Error(OAuth2ErrorCodes.SERVER_ERROR,
+                                    "The session could not be established for this token.",
                                     null),
                             ex);
                 }

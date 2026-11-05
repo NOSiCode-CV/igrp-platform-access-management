@@ -16,25 +16,41 @@ public class IgrpResponseStatusException extends ErrorResponseException {
      */
     public static final String CODE_PROPERTY = "code";
 
+    private static final Object[] NO_ARGS = new Object[0];
+
     private final IgrpErrorCode code;
+    private final Object[] args;
 
     public IgrpResponseStatusException(HttpStatusCode status) {
         super(status);
         this.code = null;
+        this.args = NO_ARGS;
     }
 
     public IgrpResponseStatusException(HttpStatusCode status, ProblemDetail body, Throwable cause) {
         super(status, body, cause);
         this.code = null;
+        this.args = NO_ARGS;
     }
 
-    private IgrpResponseStatusException(IgrpErrorCode code, ProblemDetail body, Throwable cause) {
+    private IgrpResponseStatusException(IgrpErrorCode code, Object[] args, ProblemDetail body, Throwable cause) {
         super(code.getStatus(), body, cause);
         this.code = code;
+        this.args = args == null ? NO_ARGS : args.clone();
     }
 
     public IgrpErrorCode getCode() {
         return code;
+    }
+
+    /**
+     * Message arguments supplied with the {@link IgrpErrorCode}. The final,
+     * localized text is resolved from {@code error.<CODE>} with these arguments
+     * by the {@code GlobalExceptionHandler}, because the request locale is only
+     * known there.
+     */
+    public Object[] getArgs() {
+        return args.clone();
     }
 
     // ───────────────────────────────────────────────────────────────────────
@@ -43,9 +59,11 @@ public class IgrpResponseStatusException extends ErrorResponseException {
 
     /**
      * Creates an exception using a centrally-defined {@link IgrpErrorCode}. The
-     * code's message template is formatted with {@code args} and used as the
-     * {@code ProblemDetail} title; the code itself is exposed in the
-     * {@code code} property of the response body.
+     * code's English message template is formatted with {@code args} and used as
+     * the {@code ProblemDetail} title (this is also the text that shows up in
+     * logs); the code itself is exposed in the {@code code} property of the
+     * response body. The {@code GlobalExceptionHandler} replaces the title/detail
+     * with the {@code error.<CODE>} message in the request locale.
      */
     public static IgrpResponseStatusException of(IgrpErrorCode code, Object... args) {
         return build(code, null, null, args);
@@ -77,7 +95,7 @@ public class IgrpResponseStatusException extends ErrorResponseException {
         }
         problemDetail.setProperties(properties);
 
-        return new IgrpResponseStatusException(code, problemDetail, cause);
+        return new IgrpResponseStatusException(code, args, problemDetail, cause);
     }
 
     // ───────────────────────────────────────────────────────────────────────

@@ -64,7 +64,7 @@ public interface IGRPUserEntityRepository extends
     /**
      * Auth-path email lookup. Returns only users in {@code ACTIVE} or
      * {@code TEMPORARY} status — {@code INACTIVE} accounts are administratively
-     * suspended and must not be admitted by the federated-login subject
+     * disabled and must not be admitted by the federated-login subject
      * resolver. Returns a {@link List} (not {@link Optional}) so a duplicate
      * data row (two ACTIVE users with the same email, an ACTIVE/TEMPORARY
      * pair, etc.) doesn't throw {@code IncorrectResultSizeDataAccessException}

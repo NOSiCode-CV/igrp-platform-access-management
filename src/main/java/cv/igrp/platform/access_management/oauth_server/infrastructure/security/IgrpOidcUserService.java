@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
+import cv.igrp.platform.access_management.session.domain.service.SsoSessionKey;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.UserIdentityEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.UserIdentityJpaRepository;
 import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
@@ -116,6 +117,9 @@ public class IgrpOidcUserService extends OidcUserService {
         // --- Security gate 3: minimum ACR (OWASP A07) ---
         enforceAcr(oidcUser, externalUserId);
 
+        // --- Security gate 4: the account is not disabled ---
+        enforceAccountNotDisabled(provider, externalUserId);
+
         // Resolve the linked internal user, but ONLY when that user is still
         // login-able (ACTIVE / TEMPORARY). A previously-DELETED user logging
         // back in via the same upstream IdP would otherwise silently resurrect
@@ -137,10 +141,18 @@ public class IgrpOidcUserService extends OidcUserService {
         LOGGER.debug("Federated OIDC login mapped: provider={} sub={} -> internalId={}",
                 provider, externalUserId, user.getId());
 
+        // R1.6 — mint the SSO login id here, at the one point in the flow that
+        // corresponds to "one AM sign-in". This method runs during the
+        // authorization-code exchange with the upstream IdP, so it runs once per
+        // federated login; every later prompt=none authorize reuses the
+        // SecurityContext from the servlet session and therefore this same
+        // principal, reporting the same id. Logout invalidates that session, so
+        // the next sign-in lands here again and gets a different id.
         return new IgrpOidcUser(
                 oidcUser.getAuthorities(),
                 request.getIdToken(),
-                buildUserProfile(oidcUser)
+                buildUserProfile(oidcUser),
+                SsoSessionKey.newLoginId()
         );
     }
 
@@ -251,6 +263,66 @@ public class IgrpOidcUserService extends OidcUserService {
                                     + "meet the required authentication context for this platform.",
                             null));
         }
+    }
+
+    /**
+     * Refuse a federated login for a disabled account.
+     *
+     * <p>"Disabled", not "suspended", because {@code INACTIVE} records a state
+     * and not a reason. It is set for all sorts of causes: a disciplinary
+     * suspension, yes, but equally a departure to another employer, a mission
+     * posting, or a temporary absence. The platform does not store which, and
+     * there is no {@code SUSPENDED} value in {@link Status} to store it in.
+     * Naming the error after one possible cause would assert something we do
+     * not know — in one direction it accuses someone who did nothing wrong, in
+     * the other it dresses up a real suspension as an administrative detail.
+     * "Disabled" is accurate whichever applies; the reason belongs with the
+     * administrator who set it.
+     *
+     * <p>Closes a gap between two pieces that were written to different
+     * assumptions about {@code INACTIVE}:
+     *
+     * <ul>
+     *   <li>{@code findActiveByProviderAndUserId} hides INACTIVE as well as
+     *       DELETED, so the login path treats a disabled user as "no existing
+     *       link" and falls through to {@link #provisionUser}.</li>
+     *   <li>{@code anonymiseConflictingDeletedRecords} frees the UNIQUE
+     *       constraint for DELETED rows only — by design, since an
+     *       ACTIVE/TEMPORARY/INACTIVE collision is a real conflict.</li>
+     * </ul>
+     *
+     * <p>A disabled user logging in therefore reached the INSERT with their
+     * identity row still in place and died on
+     * {@code uk_user_identity_provider_sub}, which surfaced as a 500 rather
+     * than anything a user or an operator could act on.
+     *
+     * <p>Rejecting here, rather than teaching the anonymiser about INACTIVE,
+     * is deliberate. Freeing the constraint would hand a disabled user a
+     * brand-new TEMPORARY account on their next login and silently undo the
+     * deactivation — the same resurrection problem the DELETED guard exists to
+     * prevent, wearing the opposite hat. A disabled account should refuse the
+     * login and say so.
+     *
+     * <p>DELETED is untouched: it still falls through to provisioning as a
+     * fresh account, with the old row anonymised for audit.
+     */
+    private void enforceAccountNotDisabled(String provider, String externalUserId) {
+        if (provider == null || externalUserId == null) {
+            return;
+        }
+        userIdentityRepository.findByProviderAndUserId(provider, externalUserId)
+                .map(UserIdentityEntity::getUser)
+                .filter(user -> user != null && Status.INACTIVE.equals(user.getStatus()))
+                .ifPresent(user -> {
+                    LOGGER.warn("[OIDC-SEC] Rejected federated login sub={} provider={}: "
+                                    + "linked user id={} is INACTIVE (disabled)",
+                            externalUserId, provider, user.getId());
+                    throw new OAuth2AuthenticationException(
+                            new OAuth2Error("account_disabled",
+                                    "This account is currently disabled. Contact an administrator "
+                                            + "to have it reactivated.",
+                                    null));
+                });
     }
 
     // -------------------------------------------------------------------------
@@ -386,9 +458,17 @@ public class IgrpOidcUserService extends OidcUserService {
         for (String key : new String[]{"name", "given_name", "family_name", "preferred_username", "email",
                 "email_verified", "locale", "picture", "phone_number"}) {
             Object value = attributes.get(key);
-            if (value != null) {
-                metadata.put(key, value);
+            if (value == null) {
+                continue;
             }
+            // i18n (FR-10/FR-27): metadata.locale is the user's language preference
+            // (PUT /api/users/me/locale, invitation acceptance). The upstream IdP's
+            // locale claim only seeds it once; it must not overwrite the preference
+            // on every login.
+            if ("locale".equals(key) && metadata.get(key) != null) {
+                continue;
+            }
+            metadata.put(key, value);
         }
         user.setMetadata(metadata);
     }

@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.session.config.SessionProperties;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
+import cv.igrp.platform.access_management.session.domain.service.SsoSessionKey;
 import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.session.infrastructure.cache.SessionCacheEvictService;
 import cv.igrp.platform.access_management.session.infrastructure.metrics.SessionMetrics;
@@ -69,10 +70,65 @@ class SessionMultiAppIssuanceTest {
     }
 
     private SessionEntity openSession(String deviceId, HttpServletRequest request) {
+        return openSession(deviceId, request, null);
+    }
+
+    /** @param ssoLoginId the per-sign-in id (R1.6); null means no browser sign-in. */
+    private SessionEntity openSession(String deviceId, HttpServletRequest request, String ssoLoginId) {
         return (SessionEntity) ReflectionTestUtils.invokeMethod(
                 service, "openNewSession",
                 USER, deviceId, CLIENT, UUID.randomUUID().toString(),
-                request, Instant.now(), 1800L, null);
+                request, Instant.now(), 1800L, null, ssoLoginId);
+    }
+
+    // ─── R1.4/R1.5: the SSO session key ─────────────────────────────────
+
+    @Test
+    @DisplayName("two apps under one sign-in get the same sso_session_key")
+    void appsUnderOneSignInShareTheKey() {
+        // This is what makes the cascade possible: both rows carry the same key,
+        // so revoking one sign-in reaches both applications.
+        String loginId = SsoSessionKey.newLoginId();
+        when(repository.findByUserIdAndStatusOrderByLastSeenAtAsc(USER, SessionStatus.ACTIVE))
+                .thenReturn(List.of());
+
+        SessionEntity appCenter = openSession("derived:same-browser", new MockHttpServletRequest(), loginId);
+        SessionEntity demo = openSession("derived:same-browser", new MockHttpServletRequest(), loginId);
+
+        assertNotNull(appCenter.getSsoSessionKey());
+        assertEquals(appCenter.getSsoSessionKey(), demo.getSsoSessionKey());
+        assertNotEquals(appCenter.getSessionId(), demo.getSessionId());
+        // Stored hashed, never the id itself (R1.3).
+        assertNotEquals(loginId, appCenter.getSsoSessionKey());
+    }
+
+    @Test
+    @DisplayName("a different sign-in yields a different key")
+    void differentSignInsDoNotShareTheKey() {
+        // D1: logging out of one browser must not sign the user out of another.
+        when(repository.findByUserIdAndStatusOrderByLastSeenAtAsc(USER, SessionStatus.ACTIVE))
+                .thenReturn(List.of());
+
+        SessionEntity browserOne = openSession("derived:browser-1", new MockHttpServletRequest(),
+                SsoSessionKey.newLoginId());
+        SessionEntity browserTwo = openSession("derived:browser-2", new MockHttpServletRequest(),
+                SsoSessionKey.newLoginId());
+
+        assertNotEquals(browserOne.getSsoSessionKey(), browserTwo.getSsoSessionKey());
+    }
+
+    @Test
+    @DisplayName("a grant with no sign-in behind it gets no key")
+    void noSignInYieldsNoKey() {
+        // R1.5 — client_credentials and principals rebuilt from a bearer token.
+        // Must be null rather than a shared placeholder, or every keyless session
+        // would become a sibling of every other.
+        when(repository.findByUserIdAndStatusOrderByLastSeenAtAsc(USER, SessionStatus.ACTIVE))
+                .thenReturn(List.of());
+
+        SessionEntity session = openSession("derived:m2m", new MockHttpServletRequest(), null);
+
+        assertNull(session.getSsoSessionKey());
     }
 
     // ─── the regression ─────────────────────────────────────────────────

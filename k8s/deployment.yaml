@@ -19,6 +19,26 @@ spec:
           image: registry.nosi.cv/igrp/access-management-api:latest
           ports:
             - containerPort: 8080
+          # Spring Boot health probe groups — the only actuator paths left
+          # public by the security chain (see application-production.properties).
+          startupProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 5
+            failureThreshold: 36
+          livenessProbe:
+            httpGet:
+              path: /actuator/health/liveness
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /actuator/health/readiness
+              port: 8080
+            periodSeconds: 10
+            failureThreshold: 3
           resources:
             requests:
               cpu: "250m"

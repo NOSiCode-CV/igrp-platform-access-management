@@ -5,7 +5,7 @@ import lombok.Data;
 import java.time.Instant;
 
 /**
- * Event fired when a user's status changes (e.g. ACTIVE → SUSPENDED).
+ * Event fired when a user's status changes (e.g. ACTIVE → INACTIVE).
  * Used by Phase D5 to invalidate sessions on user-status mutation.
  */
 @Data

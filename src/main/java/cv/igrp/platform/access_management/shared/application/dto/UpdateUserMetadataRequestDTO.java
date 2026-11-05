@@ -12,6 +12,6 @@ import java.util.Map;
 @AllArgsConstructor
 public class UpdateUserMetadataRequestDTO {
 
-    @NotNull(message = "metadata is required")
+    @NotNull(message = "{validation.metadata.required}")
     private Map<String, Object> metadata;
 }

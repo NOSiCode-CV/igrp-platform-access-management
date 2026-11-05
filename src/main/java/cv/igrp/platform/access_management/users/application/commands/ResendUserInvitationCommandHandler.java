@@ -75,7 +75,9 @@ public class ResendUserInvitationCommandHandler implements CommandHandler<Resend
                     invitation.getIdentifierValue(),
                     url,
                     newToken,
-                    null);
+                    // Invitation language (FR-30); null (pre-i18n invitation) lets the
+                    // sender apply igrp.notification.service.invitation.default-locale (FR-33).
+                    invitation.getLocale());
         }
 
         LOGGER.info("User invited successfully with token={}", newToken);

@@ -137,7 +137,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "superadmin",
+          "value": "CHANGEME-NOT-A-REAL-SECRET",
           "temporary": false
         }
       ]
@@ -403,7 +403,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "**********",
+      "secret": "CHANGEME-NOT-A-REAL-SECRET",
       "redirectUris": [
         "/*"
       ],
@@ -509,7 +509,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": true,
       "clientAuthenticatorType": "client-secret",
-      "secret": "FTpKJk9kIT2LBCpzIAzCDZfHfjbqzWCy",
+      "secret": "CHANGEME-NOT-A-REAL-SECRET",
       "redirectUris": [
         "*"
       ],
@@ -755,7 +755,7 @@
       "enabled": true,
       "alwaysDisplayInConsole": false,
       "clientAuthenticatorType": "client-secret",
-      "secret": "FTpKJk9kIT2LBCpzIAzCDZfHfjbqzWCy",
+      "secret": "CHANGEME-NOT-A-REAL-SECRET",
       "redirectUris": [
         "http://localhost/api/auth/callback/keycloak",
         "https://oauth.pstmn.io/v1/callback"

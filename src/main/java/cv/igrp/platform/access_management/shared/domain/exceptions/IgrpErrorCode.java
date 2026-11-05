@@ -16,6 +16,12 @@ import java.text.MessageFormat;
  *   <li>a descriptive English message template, in {@link MessageFormat} syntax,
  *       e.g. {@code "The token for the invitation {0} is expired"}.</li>
  * </ul>
+ *
+ * <p><b>i18n:</b> the text returned to API clients is resolved from the
+ * {@code error.<CODE>} key ({@link #messageKey()}) of {@code i18n/messages*.properties}
+ * in the request locale. The English template kept here is the seed of
+ * {@code messages.properties} and the last-resort fallback (and the text used in
+ * logs); keep both in sync — {@code MessageBundleConsistencyTest} enforces it.
  */
 public enum IgrpErrorCode {
 
@@ -204,6 +210,10 @@ public enum IgrpErrorCode {
     IGRP_AUTH_APP_CENTER_URL_REQUIRED(HttpStatus.BAD_REQUEST,
             "Application Center URL is not configured"),
 
+    // ─── i18n ────────────────────────────────────────────────────────────────
+    INVALID_LOCALE(HttpStatus.BAD_REQUEST,
+            "Unsupported locale: {0}. Supported locales: {1}"),
+
     // ─── Generic ─────────────────────────────────────────────────────────────
     IGRP_AUTH_INTERNAL_SERVER_ERROR(HttpStatus.INTERNAL_SERVER_ERROR,
             "An internal server error occurred: {0}"),
@@ -224,6 +234,11 @@ public enum IgrpErrorCode {
 
     public HttpStatus getStatus() {
         return status;
+    }
+
+    /** i18n bundle key for this code: {@code "error." + name()}. */
+    public String messageKey() {
+        return "error." + name();
     }
 
     public String getMessageTemplate() {

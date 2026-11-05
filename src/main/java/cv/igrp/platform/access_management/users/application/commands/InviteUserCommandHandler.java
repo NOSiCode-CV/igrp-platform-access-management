@@ -16,6 +16,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils;
+import cv.igrp.platform.access_management.shared.i18n.IgrpLocale;
 import cv.igrp.platform.access_management.users.mapper.InvitationMapper;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
@@ -117,6 +118,9 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
 
         invitation.setStatus(InvitationStatus.PENDING);
         invitation.setToken(UUID.randomUUID().toString());
+        // Invitee language (FR-29). Stored as the normalized base tag; an absent
+        // value stays null so the sender applies the configured default locale.
+        invitation.setLocale(normalizeLocale(dto.getLocale()));
 
         Set<RoleEntity> roles = new HashSet<>();
         var department = departmentRepository
@@ -144,11 +148,27 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
                 dto.getEmail(),
                 url,
                 savedInvitation.getToken(),
-                null);
+                savedInvitation.getLocale());
 
         LOGGER.info("User invited successfully with token={}", savedInvitation.getToken());
         return ResponseEntity.ok(invitationMapper.toDtoWithUrl(savedInvitation, url));
 
+    }
+
+    /**
+     * Normalizes the requested invitee language to its platform base tag
+     * ({@code pt-CV} → {@code pt}). Blank means "not chosen" → {@code null}. An
+     * unsupported value is rejected with {@code INVALID_LOCALE} (the DTO's
+     * {@code @SupportedLocale} normally catches it earlier, at the controller).
+     */
+    private static String normalizeLocale(String requested) {
+        if (requested == null || requested.isBlank()) {
+            return null;
+        }
+        return IgrpLocale.fromTag(requested)
+                .map(IgrpLocale::tag)
+                .orElseThrow(() -> IgrpResponseStatusException.of(
+                        IgrpErrorCode.INVALID_LOCALE, requested, IgrpLocale.supportedTags()));
     }
 
 }

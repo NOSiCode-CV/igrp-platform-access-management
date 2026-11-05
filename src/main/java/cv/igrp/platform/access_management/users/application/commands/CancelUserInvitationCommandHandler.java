@@ -54,7 +54,8 @@ public class CancelUserInvitationCommandHandler implements CommandHandler<Cancel
                  updatedInvitation.getIdentifierValue(),
                  updatedInvitation.getIdentifierValue(),
                  updatedInvitation.getToken(),
-                 null);
+                 // Invitation language (FR-30); null → configured default locale (FR-33).
+                 updatedInvitation.getLocale());
       }
 
       LOGGER.info("Invitation with id: {} cancelled successfully", command.getId());

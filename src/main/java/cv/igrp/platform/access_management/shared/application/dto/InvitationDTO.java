@@ -50,6 +50,9 @@ public class InvitationDTO  {
   
   
   private String invitationUrl ;
+
+  /** Language of the invitee ({@code pt}/{@code en}/{@code fr}); {@code null} for invitations created before i18n. */
+  private String locale ;
   
   @Valid
   private List<CodeDescriptionDTO> roles = new ArrayList<>();

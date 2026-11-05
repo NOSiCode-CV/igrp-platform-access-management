@@ -391,6 +391,29 @@ public class UserController {
       return commandBus.send(command);
   }
 
+   @PutMapping(
+   value = "users/me/locale"
+  )
+  @Operation(
+    summary = "Update current user locale",
+    description = "Store the current user's language preference (metadata.locale). Accepted values: pt, en, fr.",
+    responses = {
+      @ApiResponse(
+          responseCode = "204",
+          description = "Preference stored"
+      ),
+      @ApiResponse(
+          responseCode = "400",
+          description = "Unsupported locale (code INVALID_LOCALE)"
+      )
+    }
+  )
+  @PreAuthorize("isAuthenticated()")
+  public ResponseEntity<Void> updateCurrentUserLocale(@RequestBody UpdateCurrentUserLocaleCommand updateCurrentUserLocaleRequest)
+  {
+      return commandBus.send(updateCurrentUserLocaleRequest);
+  }
+
    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_CREATE)")
    @PostMapping(
    value = "users/invite"

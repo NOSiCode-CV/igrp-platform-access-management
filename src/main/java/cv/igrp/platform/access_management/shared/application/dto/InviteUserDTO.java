@@ -12,6 +12,7 @@ import lombok.AllArgsConstructor;
 import java.util.ArrayList;
 import java.util.List;
 import cv.igrp.platform.access_management.shared.application.constants.IdentifierType;
+import cv.igrp.platform.access_management.shared.i18n.SupportedLocale;
 
 @Data
 @NoArgsConstructor
@@ -21,8 +22,8 @@ import cv.igrp.platform.access_management.shared.application.constants.Identifie
 @IgrpDTO
 public class InviteUserDTO  {
 
-  @NotBlank(message = "Email is required")
-  @Email(message = "Email must be valid")
+  @NotBlank(message = "{validation.email.required}")
+  @Email(message = "{validation.email.invalid}")
   private String email;
   
   
@@ -30,5 +31,14 @@ public class InviteUserDTO  {
   
   
   private List<String> roles = new ArrayList<>();
+
+  /**
+   * Optional language of the invitee (FR-28/FR-29): {@code pt}, {@code en} or
+   * {@code fr} (regional variants are accepted and normalized). Every invitation
+   * email is sent in this language and it becomes the new user's
+   * {@code metadata.locale} on acceptance. Omit to use the configured default.
+   */
+  @SupportedLocale
+  private String locale;
 
 }

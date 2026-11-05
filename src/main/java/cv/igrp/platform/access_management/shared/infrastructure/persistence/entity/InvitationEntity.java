@@ -60,6 +60,15 @@ public class InvitationEntity extends AuditEntity {
     @Column(name="otp_id")
     private Long otpId;
 
+    /**
+     * Language of the invitee ({@code pt}/{@code en}/{@code fr}, normalized base tag).
+     * Used for every invitation email and copied into the new user's
+     * {@code metadata.locale} on acceptance. {@code null} for invitations created
+     * before i18n — those use the configured notification default locale.
+     */
+    @Column(name="locale", length = 8)
+    private String locale;
+
   
 
 

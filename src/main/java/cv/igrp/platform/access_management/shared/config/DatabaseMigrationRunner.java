@@ -23,6 +23,71 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
         ensureUserSessionSchema();
         ensureUserTokensFloor();
         ensureUserStatusCheckConstraint();
+        ensureSpringSessionSchema();
+    }
+
+    /**
+     * R3.2 — the Spring Session tables backing the shared servlet session.
+     *
+     * <p>Transcribed from the DDL Spring Session ships at
+     * {@code org/springframework/session/jdbc/schema-postgresql.sql}, written
+     * {@code IF NOT EXISTS} so it is a no-op on every boot after the first.
+     *
+     * <p>Owned here rather than by {@code spring.session.jdbc.initialize-schema}
+     * for two reasons: this repository already keeps its DDL in one place, and
+     * {@code never} removes any question about whether Boot's initializer is
+     * idempotent against tables that already exist.
+     *
+     * <p>Not JPA entities, so Hibernate's {@code ddl-auto} never touches them.
+     * Rows are pruned by {@code spring.session.jdbc.cleanup-cron} — which is a
+     * different mechanism from {@code SessionCleanupScheduler}, and a different
+     * table: {@code SPRING_SESSION} holds the browser-side SSO session,
+     * {@code t_user_session} holds iGRP's own per-application sessions.
+     *
+     * <p>Unlike the other migrations here, a failure is <b>not</b> swallowed. If
+     * these tables are missing, every login fails on the first session write,
+     * and failing at startup with the cause is better than serving traffic that
+     * cannot authenticate.
+     *
+     * <p>On ordering: a {@link CommandLineRunner} runs after the context has
+     * refreshed, so the web server is already listening when this executes. That
+     * is safe because Kubernetes gates traffic on the readiness probe, and
+     * {@code ApplicationReadyEvent} — which flips readiness to accepting traffic
+     * — fires only after every runner has completed. A login cannot arrive
+     * before the tables exist. If this service were ever fronted by something
+     * that routes on liveness alone, this DDL would need to move into context
+     * refresh instead.
+     */
+    private void ensureSpringSessionSchema() {
+        jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS SPRING_SESSION (
+                    PRIMARY_ID CHAR(36) NOT NULL,
+                    SESSION_ID CHAR(36) NOT NULL,
+                    CREATION_TIME BIGINT NOT NULL,
+                    LAST_ACCESS_TIME BIGINT NOT NULL,
+                    MAX_INACTIVE_INTERVAL INT NOT NULL,
+                    EXPIRY_TIME BIGINT NOT NULL,
+                    PRINCIPAL_NAME VARCHAR(100),
+                    CONSTRAINT SPRING_SESSION_PK PRIMARY KEY (PRIMARY_ID)
+                )""");
+        jdbcTemplate.execute(
+                "CREATE UNIQUE INDEX IF NOT EXISTS SPRING_SESSION_IX1 ON SPRING_SESSION (SESSION_ID)");
+        jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS SPRING_SESSION_IX2 ON SPRING_SESSION (EXPIRY_TIME)");
+        jdbcTemplate.execute(
+                "CREATE INDEX IF NOT EXISTS SPRING_SESSION_IX3 ON SPRING_SESSION (PRINCIPAL_NAME)");
+        jdbcTemplate.execute("""
+                CREATE TABLE IF NOT EXISTS SPRING_SESSION_ATTRIBUTES (
+                    SESSION_PRIMARY_ID CHAR(36) NOT NULL,
+                    ATTRIBUTE_NAME VARCHAR(200) NOT NULL,
+                    ATTRIBUTE_BYTES BYTEA NOT NULL,
+                    CONSTRAINT SPRING_SESSION_ATTRIBUTES_PK
+                        PRIMARY KEY (SESSION_PRIMARY_ID, ATTRIBUTE_NAME),
+                    CONSTRAINT SPRING_SESSION_ATTRIBUTES_FK
+                        FOREIGN KEY (SESSION_PRIMARY_ID) REFERENCES SPRING_SESSION(PRIMARY_ID)
+                        ON DELETE CASCADE
+                )""");
+        LOGGER.info("SPRING_SESSION schema ensured (shared servlet session, R3.2).");
     }
 
     /**
@@ -78,10 +143,35 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
             // the actual type migration. Keeping a retype-to-INTEGER block here
             // would crash on every boot post-G2 (cast UUID strings to integer
             // fails). Block intentionally removed.
+            // One ACTIVE session per (user, device) is NO LONGER true, so the
+            // partial unique index that enforced it must go.
+            //
+            // Several IGRP applications share one browser, each runs its own
+            // authorization_code exchange, and all of them derive the same
+            // device_id — it is hashed from (User-Agent, client_ip, client_id)
+            // of the SERVER-TO-SERVER token call, so every login through one
+            // Next.js app server lands on the same value. The application stopped
+            // closing the previous row for that pair, which is correct: closing
+            // it signed sibling applications out. But this index still rejected
+            // the insert, so the second login failed with a duplicate-key error
+            // that surfaced to users as a bare 401 at /oauth2/token.
+            //
+            // Dropped rather than reinstating the close: the constraint encodes
+            // the one-application-per-browser assumption the platform has
+            // outgrown. The per-user cap in SessionIssuanceService is what bounds
+            // sessions now. ix_session_user_device (non-unique, declared on the
+            // entity) still serves the lookups.
             jdbcTemplate.execute(
-                    "CREATE UNIQUE INDEX IF NOT EXISTS ux_session_user_device_active " +
-                    "ON t_user_session (user_id, device_id) " +
-                    "WHERE status = 'ACTIVE'");
+                    "DROP INDEX IF EXISTS ux_session_user_device_active");
+            // R1.1 — sso_session_key links every application session opened
+            // under one AM sign-in, so RP-initiated logout can revoke them
+            // together. Nullable with no backfill (N2): rows predating it have
+            // none and keep the old single-row logout behaviour.
+            jdbcTemplate.execute(
+                    "ALTER TABLE t_user_session ADD COLUMN IF NOT EXISTS sso_session_key VARCHAR(64)");
+            jdbcTemplate.execute(
+                    "CREATE INDEX IF NOT EXISTS ix_session_sso_key "
+                            + "ON t_user_session (user_id, sso_session_key, status)");
             LOGGER.debug("t_user_session schema migrations ensured.");
         } catch (Exception e) {
             LOGGER.warn("Could not ensure t_user_session schema (may not exist yet): {}", e.getMessage());

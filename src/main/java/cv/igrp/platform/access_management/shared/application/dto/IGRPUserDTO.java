@@ -31,8 +31,8 @@ public class IGRPUserDTO  {
 
 
   private String username ;
-  @NotBlank(message = "The field <email> is required")
-	@Email(message = "Invalid email format for field <email>")
+  @NotBlank(message = "{validation.email.required}")
+	@Email(message = "{validation.email.invalid}")
 
   private String email ;
 
@@ -51,14 +51,14 @@ public class IGRPUserDTO  {
   // when a non-null string longer than 13 chars is supplied. Studio metadata
   // (.igrpstudio/shared/dto/IGRPUserDTO.json) also declares `required: false`,
   // so no `@NotBlank` will be re-added on the next Studio regeneration.
-  @Size(max = 13, message = "The field <nic> must be at most 13 characters")
+  @Size(max = 13, message = "{validation.nic.size}")
   private String nic;
 
   // Optional. `@Pattern` is skipped on null (Bean Validation spec); only a
   // non-null phone number is required to match the E.164 shape. NOTE: empty
   // string ("") will fail this pattern — callers that mean "no phone" should
   // send `null` or omit the field entirely, not `""`.
-  @Pattern(regexp = "^\\+[1-9]\\d{1,14}$", message = "The field <phoneNumber> must follow E.164 format (e.g., +1234567890)")
+  @Pattern(regexp = "^\\+[1-9]\\d{1,14}$", message = "{validation.phoneNumber.pattern}")
   private String phoneNumber;
 
   /**

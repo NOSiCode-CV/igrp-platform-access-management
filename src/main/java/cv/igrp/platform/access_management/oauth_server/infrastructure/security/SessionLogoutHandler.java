@@ -3,6 +3,8 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import cv.igrp.platform.access_management.session.domain.event.SessionRevokedEvent;
 import cv.igrp.platform.access_management.session.domain.service.SessionHeartbeatService;
+import cv.igrp.platform.access_management.session.domain.service.SsoSessionCascadeService;
+import cv.igrp.platform.access_management.session.domain.service.SsoSessionKey;
 import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
 import cv.igrp.platform.access_management.session.infrastructure.cache.SessionCacheEvictService;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
@@ -75,6 +77,7 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
     private final OAuth2AuthorizationService authorizationService;
     private final ApplicationEventPublisher eventPublisher;
     private final SessionAuditLogger sessionAuditLogger;
+    private final SsoSessionCascadeService ssoSessionCascadeService;
     private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
     private final SecurityContextLogoutHandler springLogoutHandler = new SecurityContextLogoutHandler();
 
@@ -106,6 +109,7 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
                                 OAuth2AuthorizationService authorizationService,
                                 ApplicationEventPublisher eventPublisher,
                                 SessionAuditLogger sessionAuditLogger,
+                                SsoSessionCascadeService ssoSessionCascadeService,
                                 ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider,
                                 @Value("${igrp.oauth.external-idp.registration-id:external-idp}") String upstreamRegistrationId,
                                 @Value("${igrp.oauth.external-idp.logout-cascade:true}") boolean cascadeLogoutToIdp) {
@@ -115,6 +119,7 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         this.authorizationService = authorizationService;
         this.eventPublisher = eventPublisher;
         this.sessionAuditLogger = sessionAuditLogger;
+        this.ssoSessionCascadeService = ssoSessionCascadeService;
         this.clientRegistrationRepositoryProvider = clientRegistrationRepositoryProvider;
         this.upstreamRegistrationId = upstreamRegistrationId;
         this.cascadeLogoutToIdp = cascadeLogoutToIdp;
@@ -173,6 +178,33 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
                     sid, len);
         }
         revokeBoundSession(sid);
+
+        // R2.1 — and now every sibling application signed in under the same AM
+        // sign-in. Reading the key from the row loaded above, which is why that
+        // read happens before the revoke writes back.
+        //
+        // R2.4 — in its own transaction, and wrapped: a failure to revoke
+        // siblings must not undo the bound row's revocation or stop the servlet
+        // session invalidation and upstream cascade below. The worst case is the
+        // behaviour that existed before this feature, which is a degradation
+        // rather than a new failure. Logged at WARN because it is invisible to
+        // the user: they asked to sign out of everything and some applications
+        // stayed signed in.
+        String ssoSessionKey = sessionOpt.map(SessionEntity::getSsoSessionKey).orElse(null);
+        String cascadeUserId = sessionOpt.map(SessionEntity::getUserId).orElse(null);
+        if (ssoSessionKey != null && cascadeUserId != null) {
+            try {
+                ssoSessionCascadeService.revokeSiblings(cascadeUserId, ssoSessionKey, sid);
+            } catch (RuntimeException ex) {
+                LOGGER.warn("Logout cascade failed for user={} ssoKey={}; sibling applications may stay "
+                                + "signed in until their own timeout. The bound session was still revoked.",
+                        cascadeUserId, SsoSessionKey.fingerprint(ssoSessionKey), ex);
+            }
+        } else if (sessionOpt.isPresent()) {
+            // Expected for rows created before R1.1, and for any grant with no
+            // browser sign-in behind it (R1.5). Not a fault.
+            LOGGER.debug("No SSO session key on sid={}; revoking that session alone", sid);
+        }
 
         // 2. Spring AS-side cleanup — remove the OAuth2Authorization so any
         //    refresh-token / introspection replay is denied.

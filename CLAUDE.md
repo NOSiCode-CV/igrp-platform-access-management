@@ -83,6 +83,11 @@ Commands are dispatched via `CommandBus`. Handlers are annotated with `@IgrpComm
 
 **Permission Caching** — `PermissionCacheService` checks permissions via direct JDBC (not JPA) to avoid lazy-load issues in async contexts. Permission cache keys are user/permission combos stored in Redis. Cache is invalidated by `UserRoleChangedEvent` and `RolePermissionChangedEvent`.
 
+**Two session mechanisms, easily confused:**
+1. `SPRING_SESSION` / `SPRING_SESSION_ATTRIBUTES` — the *browser* servlet session, shared across replicas via `spring-session-jdbc` so a login survives landing on another pod (fixes `authorization_request_not_found`). Holds the pending OAuth2 authorization request with its PKCE verifier, the `SecurityContext` and the saved request. Lifetime: `server.servlet.session.timeout` (`IGRP_SSO_SESSION_TIMEOUT_SECONDS`, 8h). Tables owned by `DatabaseMigrationRunner`; attributes stored as JSON via `SecurityStoreObjectMapperFactory`. Pruned by `spring.session.jdbc.cleanup-cron`.
+2. `t_user_session` / `igrp.session.*` — iGRP's own *per-application* sessions, one row per app sign-in. Pruned by `SessionCleanupScheduler`.
+Anything added to the servlet session must be on the Jackson allowlist in `SecurityStoreObjectMapperFactory`, or it fails to deserialize during a login.
+
 **Session Management** — One active session per user enforced at DB level (unique constraint). `SessionCleanupScheduler` expires sessions every 5 min and purges old records daily at 2 AM. Redis is the primary lookup path; DB is the source of truth.
 
 **Audit Trail — Two layers:**
@@ -109,6 +114,7 @@ Repositories use `JpaSpecificationExecutor` for complex filtered queries and `Re
 - `BasicAuthSecurityConfiguration` — activated with `basic-auth` Spring profile (dev/test use)
 - `MethodSecurityConfig` — enables `@PreAuthorize` with a custom `IgrpMethodSecurityExpressionHandler` that resolves iGRP permission enums from generated classes in `cv.igrp.framework.auth.generated`
 - No "ROLE_" prefix convention — authorities are stored as plain role codes
+- Actuator: only `/actuator/health` and `/actuator/health/**` (liveness/readiness) are `permitAll`; every other actuator path requires authentication. Staging/production publish only `health`, hide details and cap access at read-only (`MANAGEMENT_*` vars in `.env.example`)
 
 ### Error Responses
 
@@ -131,6 +137,14 @@ mvn spring-boot:run -Dspring-boot.run.profiles=development
 This profile also enables `spring.jpa.hibernate.ddl-auto=update` for automatic schema evolution.
 
 **Database Migrations** — `DatabaseMigrationRunner` (in `shared/config/`) executes cleanup operations at startup via JDBC. For new schema changes, rely on Hibernate's DDL auto in development; custom DDL migrations belong in `DatabaseMigrationRunner.run()`.
+
+### Git & Branching
+
+**Push to `development`.** It is the integration branch for this repository: branch from it, and push work back to it unless the request names a different branch explicitly.
+
+Do not push to `version/0.2.0-beta`. It was the integration branch until 2026-10-16 and has been merged into `development`; work landing there now will be missed.
+
+`deploy/*` branches (`deploy/0.1.0-beta`, `deploy/0.2.0-beta`, `deploy/pre-release`) are release targets driven by CI — never push to them as part of ordinary work.
 
 ### CI/CD
 

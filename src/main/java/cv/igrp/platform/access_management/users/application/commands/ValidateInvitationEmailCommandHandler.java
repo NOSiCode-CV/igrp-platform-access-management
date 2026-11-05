@@ -84,12 +84,15 @@ public class ValidateInvitationEmailCommandHandler implements CommandHandler<Val
         // this one MUST surface failure to the caller — an OTP that never arrives
         // blocks the invitation flow entirely, so use the OrThrow variant.
         //
-        // Locale: inherit from igrp.notification.service.invitation.default-locale
-        // when available. Passing null would still work (the sender applies the
-        // same default internally), but explicit is easier to trace in logs.
-        String locale = notificationProperties
-                .map(p -> p.getInvitation().getDefaultLocale())
-                .orElse(null);
+        // Locale: the invitation's own language (FR-30). Invitations created before
+        // i18n have none and inherit igrp.notification.service.invitation.default-locale
+        // (FR-33). Passing null would still work (the sender applies the same default
+        // internally), but explicit is easier to trace in logs.
+        String locale = invitation.getLocale() != null && !invitation.getLocale().isBlank()
+                ? invitation.getLocale()
+                : notificationProperties
+                        .map(p -> p.getInvitation().getDefaultLocale())
+                        .orElse(null);
         boolean delivered = invitationSender.sendOtpOrThrow(
                 invitation.getIdentifierValue(),
                 invitation.getIdentifierValue(),
