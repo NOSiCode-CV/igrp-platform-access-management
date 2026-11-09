@@ -1,36 +1,31 @@
 # =============================================
 #  DevSecOps "code review" (gitlab-ci-templates da NOSI, stages à-la-carte)
 #
-#  secrets → test → sast → report → archive (+ report-publish)
-#  Gitleaks  mvn verify  SonarQube  HTML/MD/   MinIO + comentário no MR
-#            + JaCoCo    (+ QG)     JSON
+#  test ──────────► sast
+#  mvn verify       SonarQube (análise + Quality Gate)
+#  + JaCoCo         importa o jacoco.xml do maven-test
 #
-#  Só análise de código: sem SCA, sem build/push de imagem, sem deploy/DAST.
-#  O `test` é obrigatório: o sonar-sast precisa do jacoco.xml do maven-test
-#  (cobertura no Sonar).
+#  Só análise de código SonarQube: sem secrets, SCA, imagem, deploy/DAST,
+#  relatório nem archive. O `test` é obrigatório: o sonar-sast tem
+#  `needs: maven-test` (cobertura no Sonar).
+#  Resultados: UI do SonarQube + separadores Tests/cobertura do MR.
 #
 #  Pipelines:
 #    MR  feature/* → development      → code review (projeto Sonar *-dev)
 #    branch development               → code review após o merge
-#    branch feature/devsecops-*       → validação deste CI (comenta no MR)
+#    branch feature/devsecops-*       → validação deste CI
 #    branch deploy/*                  → releases (inalteradas) + code review
 #                                       no projeto Sonar da release
 #
-#  Variáveis CI/CD (grupo IGRP 3.0): SONAR_HOST_URL/TOKEN, MINIO_*,
-#  REPORT_GITLAB_TOKEN.
+#  Variáveis CI/CD (grupo IGRP 3.0): SONAR_HOST_URL/TOKEN.
 # =============================================
 
 include:
   - project: 'devsecops/gitlab-ci-templates'
     ref: 'v4.0.0-rc.9'
     file:
-      - '/templates/stages/secrets.yml'
       - '/templates/stages/test.yml'
       - '/templates/stages/sast.yml'
-      - '/templates/stages/report-html.yml'
-      - '/templates/stages/report.yml'
-      - '/templates/stages/archive.yml'
-      - '/templates/stages/publish.yml'
 
 variables:
   REGISTRY_URL: "registry.nosi.cv"
@@ -73,10 +68,6 @@ variables:
   # --- DevSecOps: gates em baseline (não bloqueiam) ---
   MAVEN_TEST_ALLOW_FAILURE: "true"
 
-  # report/archive: por defeito só em feature/devsecops-* → + development e deploy/*
-  REPORT_BRANCH_REGEX: "/^(feature\\/devsecops-|development$|deploy\\/)/"
-  ARCHIVE_BRANCH_REGEX: "/^(feature\\/devsecops-|development$|deploy\\/)/"
-
 # Cache .m2 partilhada pelos jobs Maven do DevSecOps
 cache:
   key: "$CI_COMMIT_REF_SLUG"
@@ -84,7 +75,7 @@ cache:
     - .m2/repository
 
 # O MR da própria branch devsecops não tem pipeline: a da branch já corre
-# tudo e comenta o relatório no MR (evita pipelines duplicadas).
+# tudo (evita pipelines duplicadas).
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^feature\/devsecops-/
@@ -97,12 +88,9 @@ workflow:
         SONAR_KEY: "igrp-access-management"
 
 stages:
-  - secrets
   - test
   - sast
   - build
-  - report
-  - archive
 
 # =============================================
 #  Release pipelines (NOSi Registry - JVM amd64 only)
