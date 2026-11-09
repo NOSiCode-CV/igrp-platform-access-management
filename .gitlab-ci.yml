@@ -1,11 +1,38 @@
-image: docker:28.2.2
-services:
-  - name: docker:28.2.2-dind
-    command: [ "--tls=false", "--mtu=1240" ]
+# =============================================
+#  DevSecOps "code review" (gitlab-ci-templates da NOSI, stages à-la-carte)
+#
+#  secrets → test → sast → report → archive (+ report-publish)
+#  Gitleaks  mvn verify  SonarQube  HTML/MD/   MinIO + comentário no MR
+#            + JaCoCo    (+ QG)     JSON
+#
+#  Só análise de código: sem SCA, sem build/push de imagem, sem deploy/DAST.
+#  O `test` é obrigatório: o sonar-sast precisa do jacoco.xml do maven-test
+#  (cobertura no Sonar).
+#
+#  Pipelines:
+#    MR  feature/* → development      → code review (projeto Sonar *-dev)
+#    branch development               → code review após o merge
+#    branch feature/devsecops-*       → validação deste CI (comenta no MR)
+#    branch deploy/*                  → releases (inalteradas) + code review
+#                                       no projeto Sonar da release
+#
+#  Variáveis CI/CD (grupo IGRP 3.0): SONAR_HOST_URL/TOKEN, MINIO_*,
+#  REPORT_GITLAB_TOKEN.
+# =============================================
+
+include:
+  - project: 'devsecops/gitlab-ci-templates'
+    ref: 'v4.0.0-rc.9'
+    file:
+      - '/templates/stages/secrets.yml'
+      - '/templates/stages/test.yml'
+      - '/templates/stages/sast.yml'
+      - '/templates/stages/report-html.yml'
+      - '/templates/stages/report.yml'
+      - '/templates/stages/archive.yml'
+      - '/templates/stages/publish.yml'
+
 variables:
-  DOCKER_DRIVER: overlay2
-  DOCKER_TLS_CERTDIR: ""
-  DOCKER_HOST: tcp://docker:2375
   REGISTRY_URL: "registry.nosi.cv"
   IMAGE_NAME: "access-management-api"
   CI_PROJECT: "igrp"
@@ -13,8 +40,69 @@ variables:
   PIPELINE_TAG: "$CI_PIPELINE_ID"
   IMAGE_NAME_FULL: "$REGISTRY_URL/$CI_PROJECT/$IMAGE_NAME"
 
+  # --- DevSecOps: projeto SonarQube ---
+  # O SonarQube Community não separa branches: cada linha tem o seu projeto.
+  # development (e MRs para ela) → *-dev; deploy/* → definido no workflow.
+  SONAR_KEY: "igrp-access-management-dev"
+
+  # --- DevSecOps: Maven (sem mexer no pom.xml) ---
+  # - dependency-check do pom está ligado ao `verify` (descarregaria a NVD)
+  #   → desligado: neste pipeline não há SCA.
+  # - maven.test.failure.ignore + jacoco.haltOnFailure=false: testes a falhar
+  #   ou cobertura < 76% não impedem o jacoco.xml → o Sonar recebe sempre a
+  #   cobertura. As falhas continuam visíveis no separador Tests e no relatório.
+  # - stdout dos testes → target/surefire-reports/*-output.txt (o log do job
+  #   passava os 4 MB).
+  MAVEN_OPTS: >-
+    -Dhttps.protocols=TLSv1.2
+    -Dmaven.repo.local=$CI_PROJECT_DIR/.m2/repository
+    -Dorg.slf4j.simpleLogger.log.org.apache.maven.cli.transfer.Slf4jMavenTransferListener=WARN
+    -Dorg.slf4j.simpleLogger.showDateTime=true
+    -Djava.awt.headless=true
+  MAVEN_CLI_OPTS: >-
+    --batch-mode
+    --errors
+    --fail-at-end
+    --show-version
+    -Ddependency-check.skip=true
+    -Dmaven.test.failure.ignore=true
+    -Djacoco.haltOnFailure=false
+    -Dmaven.test.redirectTestOutputToFile=true
+    -Dsonar.projectKey=$SONAR_KEY
+
+  # --- DevSecOps: gates em baseline (não bloqueiam) ---
+  MAVEN_TEST_ALLOW_FAILURE: "true"
+
+  # report/archive: por defeito só em feature/devsecops-* → + development e deploy/*
+  REPORT_BRANCH_REGEX: "/^(feature\\/devsecops-|development$|deploy\\/)/"
+  ARCHIVE_BRANCH_REGEX: "/^(feature\\/devsecops-|development$|deploy\\/)/"
+
+# Cache .m2 partilhada pelos jobs Maven do DevSecOps
+cache:
+  key: "$CI_COMMIT_REF_SLUG"
+  paths:
+    - .m2/repository
+
+# O MR da própria branch devsecops não tem pipeline: a da branch já corre
+# tudo e comenta o relatório no MR (evita pipelines duplicadas).
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^feature\/devsecops-/
+      when: never
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "development"
+    - if: $CI_COMMIT_BRANCH == "development"
+    - if: $CI_COMMIT_BRANCH =~ /^feature\/devsecops-/
+    - if: $CI_COMMIT_BRANCH =~ /^deploy\//
+      variables:
+        SONAR_KEY: "igrp-access-management"
+
 stages:
+  - secrets
+  - test
+  - sast
   - build
+  - report
+  - archive
 
 # =============================================
 #  Release pipelines (NOSi Registry - JVM amd64 only)
@@ -25,13 +113,28 @@ stages:
 #
 #  No pipeline runs on the mainline branch.
 #  Native (GraalVM) and Azure builds are disabled for now.
+#
+#  `needs: []`: as releases não esperam pelos stages DevSecOps (correm em
+#  paralelo, como até aqui).
 # =============================================
 
-build-jvm-amd64-pre-release:
+.release-build:
   stage: build
+  image: docker:28.2.2
+  services:
+    - name: docker:28.2.2-dind
+      command: [ "--tls=false", "--mtu=1240" ]
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ""
+    DOCKER_HOST: tcp://docker:2375
+  needs: []
   before_script:
     - apk add --no-cache curl bash
     - docker login -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD" "$REGISTRY_URL"
+
+build-jvm-amd64-pre-release:
+  extends: .release-build
   script:
     - docker buildx create --use --name releasebuilder || true
     - docker buildx inspect --bootstrap
@@ -40,10 +143,7 @@ build-jvm-amd64-pre-release:
     - deploy/pre-release
 
 build-jvm-amd64-0.1.0-beta:
-  stage: build
-  before_script:
-    - apk add --no-cache curl bash
-    - docker login -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD" "$REGISTRY_URL"
+  extends: .release-build
   script:
     - docker buildx create --use --name releasebuilder || true
     - docker buildx inspect --bootstrap
@@ -52,10 +152,7 @@ build-jvm-amd64-0.1.0-beta:
     - deploy/0.1.0-beta
 
 build-jvm-amd64-0.2.0-beta:
-  stage: build
-  before_script:
-    - apk add --no-cache curl bash
-    - docker login -u "$BASE_REGISTRY_USERNAME" -p "$BASE_REGISTRY_PASSWORD" "$REGISTRY_URL"
+  extends: .release-build
   script:
     - docker buildx create --use --name releasebuilder || true
     - docker buildx inspect --bootstrap
