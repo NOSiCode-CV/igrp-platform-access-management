@@ -77,7 +77,7 @@ public class SecurityAuditChainService {
         // waited for while the chain lock is held. A writer holding the chain lock
         // and waiting on a row lock can otherwise wait on a request that is itself
         // waiting for the chain lock in a REQUIRES_NEW access event.
-        flushPendingChanges();
+        entityManager.flush();
         acquireChainLock();
 
         // Must happen before the hash is computed — see normalizeTemporalPrecision.

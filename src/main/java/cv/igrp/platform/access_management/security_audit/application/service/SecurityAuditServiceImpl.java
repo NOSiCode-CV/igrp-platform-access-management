@@ -39,12 +39,12 @@ import java.util.Map;
  *
  * <p><strong>Every public access-event method must carry {@code @Transactional(REQUIRES_NEW)}.</strong>
  * {@link SecurityAuditChainService#append} is {@code MANDATORY}, so it needs a
- * transaction already open. The convenience methods reach the chain by calling
- * {@link #logEvent} on {@code this}, which does <em>not</em> pass through the
- * Spring AOP proxy — so an annotation on {@code logEvent} alone never applies and
- * every event is silently dropped by the fail-safe catch (R1.2). Annotating each
- * entry point makes the proxy start the transaction on the way in; the inner
- * self-invocation then simply joins it.
+ * transaction already open. A call on {@code this} does <em>not</em> pass through
+ * the Spring AOP proxy, so an annotation reached only that way never applies and
+ * every event would be silently dropped by the fail-safe catch (R1.2). Each entry
+ * point therefore opens the transaction through the proxy on the way in, then
+ * writes through the private, unannotated {@code writeAccessEvent}; no
+ * transactional method is ever called on {@code this}.
  * {@code SecurityAuditServiceTransactionBoundaryTest} guards this.
  */
 @Service
@@ -83,13 +83,23 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logEvent(AuditEventType type, AuditCategory category, Map<String, Object> context) {
-        logEvent(type, category, context, AuditReportContext.empty());
+        writeAccessEvent(type, category, context, AuditReportContext.empty());
     }
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logEvent(AuditEventType type, AuditCategory category, Map<String, Object> context,
                          AuditReportContext report) {
+        writeAccessEvent(type, category, context, report);
+    }
+
+    /**
+     * Writes one access event in the transaction the calling entry point opened.
+     * Deliberately not {@code @Transactional}: it is only ever called on
+     * {@code this}, where the annotation would never apply.
+     */
+    private void writeAccessEvent(AuditEventType type, AuditCategory category, Map<String, Object> context,
+                                  AuditReportContext report) {
         try {
             SecurityAuditLogEntity logEntity = buildBaseEntity(type, category, context, report);
 
@@ -231,13 +241,13 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logAuthenticationSuccess() {
-        logEvent(AuditEventType.LOGIN_SUCCESS, AuditCategory.AUTHENTICATION, Map.of());
+        writeAccessEvent(AuditEventType.LOGIN_SUCCESS, AuditCategory.AUTHENTICATION, Map.of(), AuditReportContext.empty());
     }
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logAuthenticationFailure(String reason) {
-        logEvent(AuditEventType.LOGIN_FAILURE, AuditCategory.AUTHENTICATION, Map.of("reason", reason));
+        writeAccessEvent(AuditEventType.LOGIN_FAILURE, AuditCategory.AUTHENTICATION, Map.of("reason", reason), AuditReportContext.empty());
     }
 
     @Override
@@ -246,23 +256,27 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
         Map<String, Object> context = new HashMap<>();
         context.put("oldRole", oldRole);
         context.put("newRole", newRole);
-        logEvent(AuditEventType.PROFILE_ACTIVATED, AuditCategory.PRIVILEGE, context);
+        writeAccessEvent(AuditEventType.PROFILE_ACTIVATED, AuditCategory.PRIVILEGE, context, AuditReportContext.empty());
     }
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logAccessDenied(String permission) {
-        logAccessDenied(permission, DEFAULT_DECISION_REASON);
+        writeAccessDenied(permission, DEFAULT_DECISION_REASON);
     }
 
     @Override
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void logAccessDenied(String permission, String reason) {
+        writeAccessDenied(permission, reason);
+    }
+
+    private void writeAccessDenied(String permission, String reason) {
         String resolvedReason = (reason == null || reason.isBlank()) ? DEFAULT_DECISION_REASON : reason;
-        logEvent(AuditEventType.ACCESS_DENIED, AuditCategory.AUTHORIZATION, Map.of(
+        writeAccessEvent(AuditEventType.ACCESS_DENIED, AuditCategory.AUTHORIZATION, Map.of(
                 "permission", permission,
                 "decisionReason", resolvedReason
-        ));
+        ), AuditReportContext.empty());
     }
 
     @Override
@@ -275,7 +289,7 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
             case "ACTIVE" -> AuditEventType.USER_ACTIVATED;
             default -> throw new IllegalArgumentException("Invalid user operation for auditing: " + operation);
         };
-        logEvent(eventType, AuditCategory.USER_MANAGEMENT, Map.of("targetUserId", targetUserId));
+        writeAccessEvent(eventType, AuditCategory.USER_MANAGEMENT, Map.of("targetUserId", targetUserId), AuditReportContext.empty());
     }
 
     @Override

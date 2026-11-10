@@ -559,6 +559,51 @@
                             <goal>check</goal>
                         </goals>
                         <configuration>
+                            <!--
+                              The 76% bundle rule keeps its exclusions; only it
+                              uses them. The agent and the report cover every
+                              class, so Sonar measures new code wherever it is.
+                            -->
+                                <excludes>
+                                    <!-- Boilerplate / value objects -->
+                                    <exclude>**/*DTO.class</exclude>
+                                    <exclude>**/*Command.class</exclude>
+                                    <exclude>**/*Query.class</exclude>
+                                    <exclude>**/*Event.class</exclude>
+                                    <!-- REST layer (integration-tested) -->
+                                    <exclude>**/interfaces/rest/**</exclude>
+                                    <exclude>**/controller/**</exclude>
+                                    <!-- Persistence (JPA entities + Spring Data repos) -->
+                                    <exclude>**/infrastructure/persistence/entity/**</exclude>
+                                    <exclude>**/infrastructure/persistence/repository/**</exclude>
+                                    <exclude>**/specs/**</exclude>
+                                    <exclude>**/mapper/**</exclude>
+                                    <!-- Spring config / bootstrap -->
+                                    <exclude>**/config/**</exclude>
+                                    <exclude>**/spring/**</exclude>
+                                    <exclude>**/IgrpPlatformAccessManagementApplication.class</exclude>
+                                    <exclude>**/infrastructure/bootstrap/**</exclude>
+                                    <exclude>**/infrastructure/scheduler/**</exclude>
+                                    <exclude>**/infrastructure/metrics/**</exclude>
+                                    <exclude>**/infrastructure/cache/**</exclude>
+                                    <!-- Security infrastructure (Spring Security filters/config) -->
+                                    <exclude>**/shared/security/**</exclude>
+                                    <exclude>**/oauth_server/**</exclude>
+                                    <!-- Bounded contexts integration-tested only -->
+                                    <exclude>**/session/**</exclude>
+                                    <exclude>**/security_audit/**</exclude>
+                                    <exclude>**/notification/domain/**</exclude>
+                                    <!-- Cross-cutting: exception handlers, constants/enums, audit POJOs -->
+                                    <exclude>**/shared/domain/exceptions/**</exclude>
+                                    <exclude>**/shared/domain/audit/**</exclude>
+                                    <exclude>**/shared/domain/converters/**</exclude>
+                                    <exclude>**/shared/domain/validation/**</exclude>
+                                    <exclude>**/shared/application/constants/**</exclude>
+                                    <exclude>**/shared/api/audit/**</exclude>
+                                    <exclude>**/shared/infrastructure/authorization/**</exclude>
+                                    <!-- Framework-generated code -->
+                                    <exclude>cv/igrp/framework/**</exclude>
+                                </excludes>
                             <rules>
                                 <rule>
                                     <element>BUNDLE</element>
@@ -574,48 +619,6 @@
                         </configuration>
                     </execution>
                 </executions>
-                <configuration>
-                    <excludes>
-                        <!-- Boilerplate / value objects -->
-                        <exclude>**/*DTO.class</exclude>
-                        <exclude>**/*Command.class</exclude>
-                        <exclude>**/*Query.class</exclude>
-                        <exclude>**/*Event.class</exclude>
-                        <!-- REST layer (integration-tested) -->
-                        <exclude>**/interfaces/rest/**</exclude>
-                        <exclude>**/controller/**</exclude>
-                        <!-- Persistence (JPA entities + Spring Data repos) -->
-                        <exclude>**/infrastructure/persistence/entity/**</exclude>
-                        <exclude>**/infrastructure/persistence/repository/**</exclude>
-                        <exclude>**/specs/**</exclude>
-                        <exclude>**/mapper/**</exclude>
-                        <!-- Spring config / bootstrap -->
-                        <exclude>**/config/**</exclude>
-                        <exclude>**/spring/**</exclude>
-                        <exclude>**/IgrpPlatformAccessManagementApplication.class</exclude>
-                        <exclude>**/infrastructure/bootstrap/**</exclude>
-                        <exclude>**/infrastructure/scheduler/**</exclude>
-                        <exclude>**/infrastructure/metrics/**</exclude>
-                        <exclude>**/infrastructure/cache/**</exclude>
-                        <!-- Security infrastructure (Spring Security filters/config) -->
-                        <exclude>**/shared/security/**</exclude>
-                        <exclude>**/oauth_server/**</exclude>
-                        <!-- Bounded contexts integration-tested only -->
-                        <exclude>**/session/**</exclude>
-                        <exclude>**/security_audit/**</exclude>
-                        <exclude>**/notification/domain/**</exclude>
-                        <!-- Cross-cutting: exception handlers, constants/enums, audit POJOs -->
-                        <exclude>**/shared/domain/exceptions/**</exclude>
-                        <exclude>**/shared/domain/audit/**</exclude>
-                        <exclude>**/shared/domain/converters/**</exclude>
-                        <exclude>**/shared/domain/validation/**</exclude>
-                        <exclude>**/shared/application/constants/**</exclude>
-                        <exclude>**/shared/api/audit/**</exclude>
-                        <exclude>**/shared/infrastructure/authorization/**</exclude>
-                        <!-- Framework-generated code -->
-                        <exclude>cv/igrp/framework/**</exclude>
-                    </excludes>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
