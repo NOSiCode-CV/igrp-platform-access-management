@@ -54,10 +54,11 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.time.Duration;
 import java.time.Instant;
+import cv.igrp.platform.access_management.shared.infrastructure.correlation.CorrelationIdFilter;
+import cv.igrp.platform.access_management.shared.infrastructure.correlation.CorrelationIds;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.List;
-import java.util.UUID;
 
 @Configuration
 @Profile("!basic-auth")
@@ -366,7 +367,7 @@ public class AuthorizationServerConfig {
      * tests) the response also carries {@code X-IGRP-Login-Failure-Reason}
      * with the OAuth2 error code so callers don't have to scrape the HTML.
      */
-    private static final class OidcLoginFailureHandler implements AuthenticationFailureHandler {
+    static final class OidcLoginFailureHandler implements AuthenticationFailureHandler {
 
         private static final Logger LOG = LoggerFactory.getLogger(OidcLoginFailureHandler.class);
 
@@ -379,8 +380,11 @@ public class AuthorizationServerConfig {
             // Correlation id ties the page the user is looking at to the log
             // line below. Without it "share the error code with the platform
             // team" is unactionable: the code alone can't locate one failure
-            // among thousands.
-            String correlationId = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+            // among thousands. It is the request's own id (v3-24), so it also
+            // finds the request's audit rows and its trace in Tempo.
+            Object bound = request.getAttribute(CorrelationIdFilter.REQUEST_ATTRIBUTE);
+            String correlationId = bound instanceof String id && !id.isBlank()
+                    ? id : CorrelationIds.resolve(request.getHeader(CorrelationIds.HEADER));
 
             // Log loud and structured — this is the failure that *used* to be
             // invisible behind the redirect loop. Operators triaging "site is

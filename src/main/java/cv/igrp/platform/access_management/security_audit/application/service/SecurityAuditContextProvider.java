@@ -9,8 +9,9 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
+import cv.igrp.platform.access_management.shared.infrastructure.correlation.CorrelationIdFilter;
+import cv.igrp.platform.access_management.shared.infrastructure.correlation.CorrelationIds;
 import jakarta.servlet.http.HttpServletRequest;
-import java.util.UUID;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
@@ -27,6 +28,9 @@ public class SecurityAuditContextProvider {
 
     /** Authority prefix applied to role codes by {@code IgrpJwtAuthenticationConverter}. */
     private static final String ROLE_PREFIX = "ROLE_";
+
+    /** Context key read by SecurityAuditServiceImpl into the correlation_id column. */
+    private static final String CORRELATION_ID = "correlationId";
 
     /** Matches the {@code access_role} column width (V11_1). */
     private static final int ACCESS_ROLE_MAX_LENGTH = 255;
@@ -69,8 +73,12 @@ public class SecurityAuditContextProvider {
             context.put("ipAddress", request.getRemoteAddr());
             context.put("userAgent", request.getHeader("User-Agent"));
             context.put("requestPath", request.getRequestURI());
-            context.put("correlationId", getCorrelationId(request));
+            context.put(CORRELATION_ID, getCorrelationId(request));
         });
+
+        // Outside a request (schedulers) the row still gets an id: the trace id, else a random one.
+        context.computeIfAbsent(CORRELATION_ID,
+                key -> CorrelationIds.current().orElseGet(() -> CorrelationIds.resolve(null)));
 
         return context;
     }
@@ -213,18 +221,20 @@ public class SecurityAuditContextProvider {
 
     }
 
+    /**
+     * The request's correlation id (v3-24): the one {@link CorrelationIdFilter}
+     * bound to the request, so every audit row of a request shares it; resolved
+     * here only for a request that did not pass through the filter.
+     */
     private String getCorrelationId(HttpServletRequest request) {
-        String requestCorrelationId = request.getHeader("X-Correlation-ID");
-        if (requestCorrelationId != null && !requestCorrelationId.isBlank()) {
-            return requestCorrelationId;
-        }
-
-        Object correlationIdAttribute = request.getAttribute("correlationId");
-        if (correlationIdAttribute instanceof String correlationId && !correlationId.isBlank()) {
+        Object bound = request.getAttribute(CorrelationIdFilter.REQUEST_ATTRIBUTE);
+        if (bound instanceof String correlationId && !correlationId.isBlank()) {
             return correlationId;
         }
-
-        return UUID.randomUUID().toString();
+        // Bind it, so every audit row of this request shares one id.
+        String resolved = CorrelationIds.resolve(request.getHeader(CorrelationIds.HEADER));
+        request.setAttribute(CorrelationIdFilter.REQUEST_ATTRIBUTE, resolved);
+        return resolved;
     }
 
 }
