@@ -10,6 +10,12 @@
 #  `needs: maven-test` (cobertura no Sonar).
 #  Resultados: UI do SonarQube + separadores Tests/cobertura do MR.
 #
+#  MODO RIGOROSO (bloqueante) — a pipeline FALHA se:
+#    - algum teste falhar (unitários + compat/*IT com Testcontainers/DinD);
+#    - a cobertura ficar abaixo do mínimo do pom (jacoco:check, 76%);
+#    - o Quality Gate do SonarQube falhar.
+#  Se o maven-test falhar, o sonar-sast não corre (needs).
+#
 #  Pipelines:
 #    MR  feature/* → development      → code review (projeto Sonar *-dev)
 #    branch development               → code review após o merge
@@ -43,9 +49,8 @@ variables:
   # --- DevSecOps: Maven (sem mexer no pom.xml) ---
   # - dependency-check do pom está ligado ao `verify` (descarregaria a NVD)
   #   → desligado: neste pipeline não há SCA.
-  # - maven.test.failure.ignore + jacoco.haltOnFailure=false: testes a falhar
-  #   ou cobertura < 76% não impedem o jacoco.xml → o Sonar recebe sempre a
-  #   cobertura. As falhas continuam visíveis no separador Tests e no relatório.
+  # - Sem maven.test.failure.ignore nem jacoco.haltOnFailure=false: testes a
+  #   falhar e o jacoco:check do pom (cobertura ≥ 76%) partem o build.
   # - stdout dos testes → target/surefire-reports/*-output.txt (o log do job
   #   passava os 4 MB).
   MAVEN_OPTS: >-
@@ -60,13 +65,12 @@ variables:
     --fail-at-end
     --show-version
     -Ddependency-check.skip=true
-    -Dmaven.test.failure.ignore=true
-    -Djacoco.haltOnFailure=false
     -Dmaven.test.redirectTestOutputToFile=true
     -Dsonar.projectKey=$SONAR_KEY
 
-  # --- DevSecOps: gates em baseline (não bloqueiam) ---
-  MAVEN_TEST_ALLOW_FAILURE: "true"
+  # --- DevSecOps: gates BLOQUEANTES ---
+  MAVEN_TEST_ALLOW_FAILURE: "false"   # testes / cobertura
+  SAST_ALLOW_FAILURE: "false"         # Quality Gate do SonarQube
 
   # Runner do maven-test (tags: [$RUNNER_DEFAULT_TAG]). No template esta
   # variável só é definida no secrets.yml, que aqui não é incluído → sem esta
@@ -92,6 +96,24 @@ workflow:
     - if: $CI_COMMIT_BRANCH =~ /^deploy\//
       variables:
         SONAR_KEY: "igrp-access-management"
+
+# maven-test (template) + ambiente que os testes do projeto precisam:
+# - DinD: os compat/*IT (gate da migração Boot 4) sobem Postgres, Redis e
+#   Keycloak com Testcontainers.
+# - SPRING_MAIN_CLOUD_PLATFORM=none: o runner corre em Kubernetes e o
+#   spring-cloud-starter-kubernetes-client ativaria sozinho o perfil
+#   "kubernetes" (o DefaultProfileTest falhava só no CI). Fora do pod, igual.
+maven-test:
+  services:
+    - name: docker:28.2.2-dind
+      alias: docker
+      command: [ "--tls=false", "--mtu=1240" ]
+  variables:
+    DOCKER_HOST: tcp://docker:2375
+    DOCKER_TLS_CERTDIR: ""
+    TESTCONTAINERS_HOST_OVERRIDE: docker
+    TESTCONTAINERS_RYUK_DISABLED: "true"
+    SPRING_MAIN_CLOUD_PLATFORM: none
 
 stages:
   - test
