@@ -31,4 +31,14 @@ class AuditRetentionPropertiesTest {
 
         assertThatCode(properties::afterPropertiesSet).doesNotThrowAnyException();
     }
+
+    @Test
+    void aBatchSizeBelowOneFailsStartup() {
+        AuditRetentionProperties properties = new AuditRetentionProperties();
+        properties.setBatchSize(0);
+
+        assertThatThrownBy(properties::afterPropertiesSet)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("igrp.audit.retention.batch-size");
+    }
 }
