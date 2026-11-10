@@ -86,11 +86,18 @@ cache:
 
 # O MR da própria branch devsecops não tem pipeline: a da branch já corre
 # tudo (evita pipelines duplicadas).
+# MRs para outras branches (staging, production, deploy/*, ...) têm só a
+# pipeline mínima `mr-gate` (PIPELINE_KIND=mr-gate): o projeto exige
+# "Pipelines must succeed" e um MR sem pipeline ficaria bloqueado. O code
+# review rigoroso corre só à entrada da development.
 workflow:
   rules:
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME =~ /^feature\/devsecops-/
       when: never
     - if: $CI_PIPELINE_SOURCE == "merge_request_event" && $CI_MERGE_REQUEST_TARGET_BRANCH_NAME == "development"
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+      variables:
+        PIPELINE_KIND: "mr-gate"
     - if: $CI_COMMIT_BRANCH == "development"
     - if: $CI_COMMIT_BRANCH =~ /^feature\/devsecops-/
     - if: $CI_COMMIT_BRANCH =~ /^deploy\//
@@ -114,6 +121,38 @@ maven-test:
     TESTCONTAINERS_HOST_OVERRIDE: docker
     TESTCONTAINERS_RYUK_DISABLED: "true"
     SPRING_MAIN_CLOUD_PLATFORM: none
+  # Mesmas regras do template (test.yml) + não corre na pipeline mr-gate.
+  rules:
+    - if: $PIPELINE_KIND == "mr-gate"
+      when: never
+    - if: $MAVEN_TEST_ALLOW_FAILURE == "true"
+      allow_failure: true
+    - when: on_success
+      allow_failure: false
+
+# Mesmas regras do template (sast.yml) + não corre na pipeline mr-gate.
+sonar-sast:
+  rules:
+    - if: $PIPELINE_KIND == "mr-gate"
+      when: never
+    - if: $SAST_ALLOW_FAILURE == "true"
+      allow_failure: true
+    - when: on_success
+
+# Pipeline mínima dos MRs que não vão para a development: passa sempre, em
+# segundos (sem clone nem cache), só para o MR ter uma pipeline verde.
+mr-gate:
+  stage: test
+  image: alpine:3.20
+  tags:
+    - $RUNNER_DEFAULT_TAG
+  variables:
+    GIT_STRATEGY: none
+  cache: []
+  rules:
+    - if: $PIPELINE_KIND == "mr-gate"
+  script:
+    - 'echo "MR $CI_MERGE_REQUEST_SOURCE_BRANCH_NAME → $CI_MERGE_REQUEST_TARGET_BRANCH_NAME: o code review corre à entrada da development."'
 
 stages:
   - test
