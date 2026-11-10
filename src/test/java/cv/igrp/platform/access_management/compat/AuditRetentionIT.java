@@ -8,11 +8,9 @@ import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCateg
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditStatus;
 import cv.igrp.platform.filemanager.StorageService;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionTemplate;
@@ -46,14 +44,6 @@ class AuditRetentionIT extends AbstractCompatIT {
     JdbcTemplate jdbc;
     @Autowired
     TransactionTemplate tx;
-
-    @Value("${igrp.minio.bucket-name}")
-    String bucket;
-
-    @BeforeEach
-    void bucketExists() throws Exception {
-        storage.createContainer(bucket);
-    }
 
     @Test
     @DisplayName("Rows past the period are archived to storage, then deleted; recent rows stay; the chain still validates")
