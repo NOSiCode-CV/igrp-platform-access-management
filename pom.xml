@@ -25,6 +25,44 @@
         <springdoc.version>3.2.0</springdoc.version>
         <otel.version>2.33.1</otel.version>
         <jacoco.version>0.8.16</jacoco.version>
+        <!--
+          Sonar must leave out of coverage exactly what the jacoco-maven-plugin
+          <excludes> below leave out of jacoco.xml. Without this, Sonar counts
+          every line of an excluded package as uncovered, and any change there
+          fails the "coverage on new code" condition at 0%. Keep both lists in step.
+        -->
+        <sonar.coverage.exclusions>
+            **/*DTO.java,
+            **/*Command.java,
+            **/*Query.java,
+            **/*Event.java,
+            **/interfaces/rest/**,
+            **/controller/**,
+            **/infrastructure/persistence/entity/**,
+            **/infrastructure/persistence/repository/**,
+            **/specs/**,
+            **/mapper/**,
+            **/config/**,
+            **/spring/**,
+            **/IgrpPlatformAccessManagementApplication.java,
+            **/infrastructure/bootstrap/**,
+            **/infrastructure/scheduler/**,
+            **/infrastructure/metrics/**,
+            **/infrastructure/cache/**,
+            **/shared/security/**,
+            **/oauth_server/**,
+            **/session/**,
+            **/security_audit/**,
+            **/notification/domain/**,
+            **/shared/domain/exceptions/**,
+            **/shared/domain/audit/**,
+            **/shared/domain/converters/**,
+            **/shared/domain/validation/**,
+            **/shared/application/constants/**,
+            **/shared/api/audit/**,
+            **/shared/infrastructure/authorization/**,
+            cv/igrp/framework/**
+        </sonar.coverage.exclusions>
         <dependency-check.version>12.1.6</dependency-check.version>
         <javadoc.plugin.version>3.12.0</javadoc.plugin.version>
         <igrp.framework.core.version>0.0.3-alpha</igrp.framework.core.version>
