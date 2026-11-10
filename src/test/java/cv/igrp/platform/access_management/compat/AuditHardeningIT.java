@@ -91,15 +91,15 @@ class AuditHardeningIT extends AbstractCompatIT {
 
     @Test
     @DisplayName("A settings change that rolls back leaves no audit row")
-    void rolledBackSettingsChangeIsNotAudited() throws InterruptedException {
+    void rolledBackSettingsChangeIsNotAudited() {
         String role = "it-role-" + UUID.randomUUID();
 
         tx.executeWithoutResult(status -> {
             events.publishEvent(new RoleCreatedEvent(role));
             status.setRollbackOnly();
         });
-        // A write that escaped the transaction (an async listener) would land shortly after.
-        Thread.sleep(1500);
+        // No wait is needed: the write is synchronous, and a listener that went
+        // async again would fail committedSettingsChangeIsAuditedInTheSameTransaction.
 
         assertThat(countByEntityName(role)).isZero();
     }

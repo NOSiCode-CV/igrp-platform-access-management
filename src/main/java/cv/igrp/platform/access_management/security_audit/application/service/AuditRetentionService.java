@@ -27,6 +27,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * Archive-then-delete retention for {@code t_security_audit_log} (v3-23).
@@ -110,8 +111,9 @@ public class AuditRetentionService {
      * @return the number of rows archived and deleted.
      */
     public int applyRetention() {
-        LocalDateTime cutoff = jdbc.queryForObject("SELECT localtimestamp", LocalDateTime.class)
-                .minusDays(properties.getDays());
+        LocalDateTime dbNow = Objects.requireNonNull(
+                jdbc.queryForObject("SELECT localtimestamp", LocalDateTime.class), "database clock");
+        LocalDateTime cutoff = dbNow.minusDays(properties.getDays());
         List<Long> eligible = jdbc.queryForList("""
                 SELECT l.sequence_number FROM t_security_audit_log l
                  WHERE l.sequence_number > 0
@@ -137,7 +139,7 @@ public class AuditRetentionService {
             throw new IllegalStateException("Could not archive audit rows " + first + "-" + last + " to " + key, e);
         }
 
-        Integer deleted = tx.execute(status -> {
+        return tx.execute(status -> {
             SecurityAuditArchiveEntity archive = new SecurityAuditArchiveEntity(first, last,
                     nz(rows.getFirst().getPreviousHash()), nz(rows.getLast().getCurrentHash()),
                     rows.size(), key, cutoff);
@@ -152,7 +154,6 @@ public class AuditRetentionService {
             jdbc.update("DELETE FROM t_security_audit_log WHERE sequence_number BETWEEN ? AND ?", first, last);
             return rows.size();
         });
-        return deleted == null ? 0 : deleted;
     }
 
     private boolean alreadyArchived(long first, long last) {
