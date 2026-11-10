@@ -110,6 +110,7 @@ class SessionLogoutHandlerTest {
         verify(sessionCacheEvictService).evictBySubject("00000000-0000-0000-0000-000000000099");
         verify(eventPublisher).publishEvent(any(SessionRevokedEvent.class));
         verify(authorizationService).remove(authorization);
+        verify(sessionAuditLogger).recordLogout(sid, "00000000-0000-0000-0000-000000000099");
 
         assertEquals(302, response.getStatus());
         assertEquals("https://app.igrp/post-logout?state=xyz", response.getRedirectedUrl());

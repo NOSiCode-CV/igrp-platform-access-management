@@ -64,7 +64,7 @@ class SecurityAuditChainServiceTest {
         // current_hash must recompute from the finalized fields (serialize excludes current_hash).
         assertThat(row.getCurrentHash())
                 .isEqualTo(chainService.computeHash(row.getPreviousHash(), row));
-        verify(repository).save(row);
+        verify(repository).saveAndFlush(row);
     }
 
     /**
@@ -104,7 +104,7 @@ class SecurityAuditChainServiceTest {
 
         assertThat(row.getSequenceNumber()).isEqualTo(6L);
         assertThat(row.getPreviousHash()).isEqualTo("deadbeef");
-        verify(repository).save(row);
+        verify(repository).saveAndFlush(row);
     }
 
     @Test

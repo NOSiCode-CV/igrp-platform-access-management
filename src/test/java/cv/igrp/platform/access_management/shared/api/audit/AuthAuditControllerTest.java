@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.shared.api.audit;
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.security_audit.application.dto.SecurityAuditLogDTO;
 import cv.igrp.platform.access_management.security_audit.application.queries.GetSecurityAuditLogsQuery;
-import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditChainService;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditChainValidator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,13 +30,12 @@ class AuthAuditControllerTest {
 
     @Mock private QueryBus queryBus;
     @Mock private SecurityAuditChainValidator chainValidator;
-    @Mock private SecurityAuditChainService chainService;
 
     private AuthAuditController controller;
 
     @BeforeEach
     void setUp() {
-        controller = new AuthAuditController(queryBus, chainValidator, chainService);
+        controller = new AuthAuditController(queryBus, chainValidator);
     }
 
     @Test
@@ -107,15 +105,5 @@ class AuthAuditControllerTest {
                 .containsEntry("valid", true)
                 .containsEntry("rows_checked", 4)
                 .containsEntry("unverifiable_legacy_rows", 4717);
-    }
-
-    @Test
-    void purgeReturnsRemovedCount() {
-        when(chainService.purge()).thenReturn(7L);
-
-        ResponseEntity<Map<String, Object>> response = controller.purge();
-
-        assertThat(response.getBody()).containsEntry("purged", 7L);
-        verify(chainService).purge();
     }
 }

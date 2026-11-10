@@ -263,7 +263,6 @@ sessionStoreConfig : cv.igrp.platform.access_management.shared.config.SessionSto
 setActiveCurrentUserRoleCommandHandler : cv.igrp.platform.access_management.users.application.commands.SetActiveCurrentUserRoleCommandHandler
 setActiveUserRoleCommandHandler : cv.igrp.platform.access_management.users.application.commands.SetActiveUserRoleCommandHandler
 setGlobalConfigurationCommandHandler : cv.igrp.platform.access_management.global_configuration.application.commands.SetGlobalConfigurationCommandHandler
-settingsAuditAsyncConfig : cv.igrp.platform.access_management.security_audit.application.config.SettingsAuditAsyncConfig
 settingsAuditEventListener : cv.igrp.platform.access_management.security_audit.application.config.SettingsAuditEventListener
 sharedAuthAuditController : cv.igrp.platform.access_management.shared.api.audit.AuthAuditController
 singleCheckAuthorizationHandler : cv.igrp.platform.access_management.authorization.application.commands.handler.SingleCheckAuthorizationHandler

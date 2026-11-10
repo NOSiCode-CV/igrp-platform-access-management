@@ -79,8 +79,9 @@ public class SecurityAuditLogEntity {
     // Typed columns backing the Audit / Access / Settings reports. Populated by
     // Phase 3 instrumentation; Phase 1 auth rows leave them null. All of these
     // (except the reserved, read-derived `device`) participate in the hash chain
-    // via SecurityAuditChainService#serialize — extending the input, which is why
-    // Phase 2 requires a rehash-on-boot pass in dev/staging (R2.2 / V11_1).
+    // via SecurityAuditChainService#serialize. Rows written before Phase 2 were
+    // hashed without them; the rehash that fixed those (V11_1) was removed in
+    // v3-23, because audit rows can no longer be updated.
 
     /** Audit + Access report: accessed application module. */
     @Column(name = "application_module", length = 100)

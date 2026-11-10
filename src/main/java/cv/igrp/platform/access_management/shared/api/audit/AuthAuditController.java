@@ -4,7 +4,6 @@ import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.framework.stereotype.IgrpController;
 import cv.igrp.platform.access_management.security_audit.application.dto.SecurityAuditLogDTO;
 import cv.igrp.platform.access_management.security_audit.application.queries.GetSecurityAuditLogsQuery;
-import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditChainService;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditChainValidator;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -22,8 +21,9 @@ import java.util.Map;
  *
  * <p>Phase 1 of the Unified Audit &amp; Reports feature collapsed the three legacy
  * GETs ({@code /}, {@code /{id}}, {@code /user/{userId}}) into a single filtered,
- * paginated list (R1.3 / N6) and added tamper-evidence controls: on-demand chain
- * validation and a gated purge.
+ * paginated list (R1.3 / N6) and on-demand chain validation. The trail is
+ * append-only (V18_1): there is no purge, and old rows leave only through
+ * archive-then-delete retention.
  */
 @RestController("sharedAuthAuditController")
 @IgrpController
@@ -32,14 +32,11 @@ public class AuthAuditController {
 
     private final QueryBus queryBus;
     private final SecurityAuditChainValidator chainValidator;
-    private final SecurityAuditChainService chainService;
 
     public AuthAuditController(QueryBus queryBus,
-                               SecurityAuditChainValidator chainValidator,
-                               SecurityAuditChainService chainService) {
+                               SecurityAuditChainValidator chainValidator) {
         this.queryBus = queryBus;
         this.chainValidator = chainValidator;
-        this.chainService = chainService;
     }
 
     /**
@@ -76,19 +73,6 @@ public class AuthAuditController {
         // Rows that predate the hash chain (V10_1 left them unhashed; prod never
         // rehashes). Skipped by the walk, reported here so the count stays honest.
         body.put("unverifiable_legacy_rows", result.unverifiableLegacyRows());
-        return ResponseEntity.ok(body);
-    }
-
-    /**
-     * Purge every audit row except the GENESIS anchor and restart the chain.
-     * Separately gated by {@code igrp.audit.purge} (R4.2).
-     */
-    @DeleteMapping("/purge")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_PURGE)")
-    public ResponseEntity<Map<String, Object>> purge() {
-        long removed = chainService.purge();
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("purged", removed);
         return ResponseEntity.ok(body);
     }
 }

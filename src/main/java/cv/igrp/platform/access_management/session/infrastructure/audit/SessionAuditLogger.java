@@ -74,6 +74,11 @@ public class SessionAuditLogger {
         emit(AuditEventType.SESSION_REVOKED, reason, actor, sid, userId, null, null);
     }
 
+    /** RP-initiated logout through {@code /connect/logout} (v3-23). */
+    public void recordLogout(UUID sid, String userId) {
+        emit(AuditEventType.LOGOUT, "USER_LOGOUT", USER, sid, userId, null, null);
+    }
+
     public void recordExpired(UUID sid, String userId, String reason) {
         emit(AuditEventType.SESSION_EXPIRED, reason, SYSTEM, sid, userId, null, null);
     }

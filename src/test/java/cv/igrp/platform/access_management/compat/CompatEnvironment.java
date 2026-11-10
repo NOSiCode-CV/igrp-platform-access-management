@@ -68,6 +68,16 @@ public final class CompatEnvironment {
                     .waitingFor(Wait.forHttp("/realms/compat/.well-known/openid-configuration")
                             .forPort(8080).withStartupTimeout(Duration.ofMinutes(3)));
 
+    /** Object storage, so audit retention can archive for real before it deletes. */
+    @SuppressWarnings("resource")
+    static final GenericContainer<?> MINIO =
+            new GenericContainer<>(DockerImageName.parse("minio/minio:latest"))
+                    .withExposedPorts(9000)
+                    .withEnv("MINIO_ROOT_USER", "compat")
+                    .withEnv("MINIO_ROOT_PASSWORD", "compat-secret")
+                    .withCommand("server", "/data")
+                    .waitingFor(Wait.forHttp("/minio/health/ready").forPort(9000));
+
     public static final String KEYCLOAK_CLIENT_ID = "igrp-access-management";
     public static final String KEYCLOAK_CLIENT_SECRET = "compat-keycloak-secret";
     public static final String KEYCLOAK_USER = "fulano";
@@ -78,6 +88,7 @@ public final class CompatEnvironment {
         POSTGRES.start();
         REDIS.start();
         KEYCLOAK.start();
+        MINIO.start();
     }
 
     public static String keycloakIssuer() {
@@ -119,9 +130,9 @@ public final class CompatEnvironment {
         p.put("spring.security.oauth2.client.registration.external-idp.client-secret", KEYCLOAK_CLIENT_SECRET);
         p.put("spring.security.oauth2.client.provider.external-idp.issuer-uri", keycloakIssuer());
 
-        // Storage is not exercised by the contract suite; the client is created lazily.
-        p.put("igrp.minio.endpoint", "localhost");
-        p.put("igrp.minio.port", "1");
+        // Real MinIO: audit retention archives to storage before it deletes.
+        p.put("igrp.minio.endpoint", MINIO.getHost());
+        p.put("igrp.minio.port", MINIO.getMappedPort(9000));
         p.put("igrp.minio.security", "false");
         p.put("igrp.minio.access-key", "compat");
         p.put("igrp.minio.secret-key", "compat-secret");

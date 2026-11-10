@@ -8,7 +8,6 @@ import org.hibernate.Session;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,7 +19,6 @@ import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.time.temporal.ChronoUnit;
 import java.util.HexFormat;
-import java.util.List;
 
 /**
  * Tamper-evident hash chain over {@link SecurityAuditLogEntity}.
@@ -75,6 +73,11 @@ public class SecurityAuditChainService {
      */
     @Transactional(propagation = Propagation.MANDATORY)
     public void append(SecurityAuditLogEntity entity) {
+        // Write the transaction's other pending changes first, so no row lock is
+        // waited for while the chain lock is held. A writer holding the chain lock
+        // and waiting on a row lock can otherwise wait on a request that is itself
+        // waiting for the chain lock in a REQUIRES_NEW access event.
+        flushPendingChanges();
         acquireChainLock();
 
         // Must happen before the hash is computed — see normalizeTemporalPrecision.
@@ -96,59 +99,15 @@ public class SecurityAuditChainService {
         entity.setIpHash(hashIp(entity.getIpAddress()));
         entity.setCurrentHash(computeHash(previousHash, entity));
 
-        repository.save(entity);
+        // Flushed here, not at commit, so a failed insert surfaces inside the
+        // caller's try block, where it is logged and counted.
+        repository.saveAndFlush(entity);
     }
 
-    /**
-     * Recompute {@code previous_hash}/{@code current_hash} for every row from the
-     * GENESIS anchor forward. Used only after a schema change that widens the
-     * hash input (guarded by {@code igrp.audit.chain.rehash-on-boot}, dev/staging
-     * only). Requires the append-only trigger to be bypassed via the
-     * {@code app.audit_purge} GUC, which is set here for the transaction.
-     */
-    @Transactional
-    public int rehashAll() {
-        setAuditPurgeGuc();
-
-        List<SecurityAuditLogEntity> rows = repository.findAll(Sort.by(Sort.Direction.ASC, "sequenceNumber"));
-        String previousHash = GENESIS_HASH;
-        int rewritten = 0;
-        for (SecurityAuditLogEntity row : rows) {
-            if (row.getSequenceNumber() != null && row.getSequenceNumber() == 0L) {
-                // GENESIS anchor — keep its fixed hash as the chain root.
-                previousHash = row.getCurrentHash() != null ? row.getCurrentHash() : GENESIS_HASH;
-                continue;
-            }
-            row.setPreviousHash(previousHash);
-            String recomputed = computeHash(previousHash, row);
-            row.setCurrentHash(recomputed);
-            previousHash = recomputed;
-            rewritten++;
-        }
-        repository.saveAll(rows);
-        log.info("[AUDIT] rehashAll rewrote {} audit rows.", rewritten);
-        return rewritten;
-    }
-
-    /**
-     * Purge all audit rows except the GENESIS anchor and let the chain restart
-     * from it. Gated at the endpoint by {@code igrp.audit.purge}. Bypasses the
-     * append-only trigger via the {@code app.audit_purge} GUC.
-     *
-     * @return number of rows removed.
-     */
-    @Transactional
-    public long purge() {
-        setAuditPurgeGuc();
-        Number before = (Number) entityManager
-                .createNativeQuery("SELECT count(*) FROM t_security_audit_log WHERE sequence_number <> 0")
-                .getSingleResult();
-        entityManager
-                .createNativeQuery("DELETE FROM t_security_audit_log WHERE sequence_number <> 0")
-                .executeUpdate();
-        long removed = before.longValue();
-        log.info("[AUDIT] purge removed {} audit rows (GENESIS anchor retained).", removed);
-        return removed;
+    /** Flushes the current transaction's pending changes to the database. */
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void flushPendingChanges() {
+        entityManager.flush();
     }
 
     /**
@@ -262,14 +221,6 @@ public class SecurityAuditChainService {
             try (var ps = connection.prepareStatement("SELECT pg_advisory_xact_lock(?)")) {
                 ps.setLong(1, CHAIN_LOCK_KEY);
                 ps.execute();
-            }
-        });
-    }
-
-    private void setAuditPurgeGuc() {
-        entityManager.unwrap(Session.class).doWork(connection -> {
-            try (var st = connection.createStatement()) {
-                st.execute("SET LOCAL app.audit_purge = 'true'");
             }
         });
     }
