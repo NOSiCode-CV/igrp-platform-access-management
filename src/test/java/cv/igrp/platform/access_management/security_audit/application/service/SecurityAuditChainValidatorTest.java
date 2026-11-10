@@ -1,8 +1,10 @@
 package cv.igrp.platform.access_management.security_audit.application.service;
 
+import cv.igrp.platform.access_management.security_audit.domain.entities.SecurityAuditArchiveEntity;
 import cv.igrp.platform.access_management.security_audit.domain.entities.SecurityAuditLogEntity;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
+import cv.igrp.platform.access_management.security_audit.infrastructure.persistence.SecurityAuditArchiveRepository;
 import cv.igrp.platform.access_management.security_audit.infrastructure.persistence.SecurityAuditLogRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +15,7 @@ import org.springframework.data.domain.Sort;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,6 +25,7 @@ import static org.mockito.Mockito.when;
 class SecurityAuditChainValidatorTest {
 
     @Mock private SecurityAuditLogRepository repository;
+    @Mock private SecurityAuditArchiveRepository archives;
 
     private SecurityAuditChainService chainService;
     private SecurityAuditChainValidator validator;
@@ -30,7 +34,7 @@ class SecurityAuditChainValidatorTest {
     void setUp() {
         // computeHash does not touch the EntityManager, so a bare service is enough.
         chainService = new SecurityAuditChainService(repository, "validator-secret");
-        validator = new SecurityAuditChainValidator(repository, chainService);
+        validator = new SecurityAuditChainValidator(repository, archives, chainService);
     }
 
     private SecurityAuditLogEntity genesis() {
@@ -71,6 +75,41 @@ class SecurityAuditChainValidatorTest {
         assertThat(result.valid()).isTrue();
         assertThat(result.rowsChecked()).isEqualTo(2);
         assertThat(result.brokenAt()).isNull();
+    }
+
+    @Test
+    void aGapCoveredByAnArchiveIsBridged() {
+        SecurityAuditLogEntity g = genesis();
+        SecurityAuditLogEntity r1 = chainedRow(1, g.getCurrentHash(), "alice");
+        SecurityAuditLogEntity r2 = chainedRow(2, r1.getCurrentHash(), "bob");
+        SecurityAuditLogEntity r3 = chainedRow(3, r2.getCurrentHash(), "carol");
+        SecurityAuditLogEntity r4 = chainedRow(4, r3.getCurrentHash(), "dave");
+        // Rows 2 and 3 were archived and deleted.
+        when(repository.findAll(any(Sort.class))).thenReturn(List.of(g, r1, r4));
+        when(archives.findByFirstSequence(2L)).thenReturn(Optional.of(new SecurityAuditArchiveEntity(
+                2, 3, r1.getCurrentHash(), r3.getCurrentHash(), 2, "private/audit-archive/x.jsonl",
+                LocalDateTime.of(2021, 1, 1, 0, 0))));
+
+        SecurityAuditChainValidator.Result result = validator.validate();
+
+        assertThat(result.valid()).isTrue();
+        assertThat(result.rowsChecked()).isEqualTo(2);
+    }
+
+    @Test
+    void aGapWithNoArchiveIsABreak() {
+        SecurityAuditLogEntity g = genesis();
+        SecurityAuditLogEntity r1 = chainedRow(1, g.getCurrentHash(), "alice");
+        SecurityAuditLogEntity r2 = chainedRow(2, r1.getCurrentHash(), "bob");
+        SecurityAuditLogEntity r3 = chainedRow(3, r2.getCurrentHash(), "carol");
+        // Row 2 disappeared without being archived.
+        when(repository.findAll(any(Sort.class))).thenReturn(List.of(g, r1, r3));
+        when(archives.findByFirstSequence(2L)).thenReturn(Optional.empty());
+
+        SecurityAuditChainValidator.Result result = validator.validate();
+
+        assertThat(result.valid()).isFalse();
+        assertThat(result.brokenAt()).isEqualTo(3L);
     }
 
     @Test

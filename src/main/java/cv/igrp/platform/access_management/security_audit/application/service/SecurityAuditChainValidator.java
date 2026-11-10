@@ -1,6 +1,8 @@
 package cv.igrp.platform.access_management.security_audit.application.service;
 
+import cv.igrp.platform.access_management.security_audit.domain.entities.SecurityAuditArchiveEntity;
 import cv.igrp.platform.access_management.security_audit.domain.entities.SecurityAuditLogEntity;
+import cv.igrp.platform.access_management.security_audit.infrastructure.persistence.SecurityAuditArchiveRepository;
 import cv.igrp.platform.access_management.security_audit.infrastructure.persistence.SecurityAuditLogRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,6 +31,11 @@ import java.util.List;
  * <p>The prefix allowance is strictly positional: once the chain has started, a
  * blank hash is a break like any other, so hashes cannot be blanked to evade
  * detection.
+ *
+ * <p><strong>Archived gaps.</strong> Retention deletes runs of rows after
+ * archiving them (v3-23). A gap in the sequence is valid only when archive records
+ * cover it exactly, back to back, starting from the hash the chain expects; the
+ * walk then resumes from the last archived hash. Any other gap is a break.
  */
 @Service
 public class SecurityAuditChainValidator {
@@ -36,11 +43,14 @@ public class SecurityAuditChainValidator {
     private static final Logger log = LoggerFactory.getLogger(SecurityAuditChainValidator.class);
 
     private final SecurityAuditLogRepository repository;
+    private final SecurityAuditArchiveRepository archives;
     private final SecurityAuditChainService chainService;
 
     public SecurityAuditChainValidator(SecurityAuditLogRepository repository,
+                                       SecurityAuditArchiveRepository archives,
                                        SecurityAuditChainService chainService) {
         this.repository = repository;
+        this.archives = archives;
         this.chainService = chainService;
     }
 
@@ -58,6 +68,7 @@ public class SecurityAuditChainValidator {
         int checked = 0;
         int legacy = 0;
         boolean anchored = false;
+        long lastSequence = -1L;
 
         for (SecurityAuditLogEntity row : rows) {
             long seq = row.getSequenceNumber() != null ? row.getSequenceNumber() : -1L;
@@ -66,8 +77,22 @@ public class SecurityAuditChainValidator {
             if (seq == 0L) {
                 expectedPrevious = SecurityAuditChainService.isBlank(row.getCurrentHash())
                         ? SecurityAuditChainService.GENESIS_HASH : row.getCurrentHash();
+                lastSequence = 0L;
                 continue;
             }
+
+            // Retention deletes archived runs. A gap is legitimate only when archive
+            // records cover it exactly and continue the chain from the expected hash.
+            if (lastSequence >= 0 && seq != lastSequence + 1) {
+                String bridged = bridgeArchivedGap(lastSequence + 1, seq - 1, expectedPrevious, anchored);
+                if (bridged == null) {
+                    log.error("[AUDIT][TAMPERING] Rows {}..{} are missing and no archive covers them.",
+                            lastSequence + 1, seq - 1);
+                    return Result.broken(seq, checked, legacy);
+                }
+                expectedPrevious = bridged;
+            }
+            lastSequence = seq;
 
             boolean hashed = !SecurityAuditChainService.isBlank(row.getCurrentHash());
 
@@ -113,6 +138,30 @@ public class SecurityAuditChainValidator {
         log.info("[AUDIT] Chain integrity verified — {} rows validated, {} unverifiable legacy rows skipped.",
                 checked, legacy);
         return Result.valid(checked, legacy);
+    }
+
+    /**
+     * Walks the archive records that cover {@code from..to}, back to back.
+     *
+     * @return the last archived hash, from which the chain resumes, or null when the
+     *         records do not cover the range exactly or do not continue from
+     *         {@code expectedPrevious} (checked only once the chain is anchored).
+     */
+    private String bridgeArchivedGap(long from, long to, String expectedPrevious, boolean anchored) {
+        long next = from;
+        String hash = expectedPrevious;
+        while (next <= to) {
+            SecurityAuditArchiveEntity archive = archives.findByFirstSequence(next).orElse(null);
+            if (archive == null || archive.getLastSequence() > to) {
+                return null;
+            }
+            if (anchored && !hash.equals(nz(archive.getPreviousHash()))) {
+                return null;
+            }
+            hash = nz(archive.getLastHash());
+            next = archive.getLastSequence() + 1;
+        }
+        return hash;
     }
 
     private static String nz(String value) {

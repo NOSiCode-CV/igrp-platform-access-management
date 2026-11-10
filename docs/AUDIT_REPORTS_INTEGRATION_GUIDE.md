@@ -56,14 +56,13 @@ Every endpoint in this guide requires a **Bearer JWT**:
 Authorization: Bearer <token>
 ```
 
-Two permissions gate the surface:
+One permission gates the surface:
 
 | Permission | Gates |
 |---|---|
 | `igrp.audit.view` | All 3 reports, all 9 exports, archive + archive list, and the raw audit log |
-| `igrp.audit.purge` | Only `DELETE /api/auth/audit/purge` |
 
-Both are seeded by Flyway and granted to `DEPT_IGRP.Administrator` on install. A user with the `DEPT_IGRP.superadmin` role bypasses permission checks entirely.
+It is seeded by Flyway and granted to `DEPT_IGRP.Administrator` on install. A user with the `DEPT_IGRP.superadmin` role bypasses permission checks entirely.
 
 **Without `igrp.audit.view` every endpoint returns `403`** — not an empty list. If you get a 403, it's your permissions, not your filters.
 
@@ -249,9 +248,9 @@ Most screens want the reports. Use these when you need the hash-chain columns th
 |---|---|
 | `GET /api/auth/audit` | Paginated raw log. Filters: `userId`, `username`, `eventType`, `category`, `ipAddress`, `startDate`, `endDate`. **Dates are optional here** (unlike the reports). |
 | `POST /api/auth/audit/validate` | Verify the tamper-evident hash chain |
-| `DELETE /api/auth/audit/purge` | **Destructive.** Deletes every row. Requires `igrp.audit.purge`. |
-
 Each row carries `sequenceNumber`, `previousHash`, `currentHash` — each row's `previousHash` equals the prior row's `currentHash`, so any post-hoc edit breaks the chain.
+
+The table is append-only, enforced by the database: `UPDATE` is always refused, and there is no purge. Rows leave only through **retention**: once a row is older than `IGRP_AUDIT_RETENTION_DAYS` (default 1825, minimum 365), a daily job writes it to object storage under `private/audit-archive/` as JSON lines (hashes included), records the archived range, appends an `AUDIT_ARCHIVED` row to the chain, and only then deletes it. The database refuses to delete any row that is not archived or is younger than 365 days. `validate` bridges archived ranges, so the chain still verifies after retention.
 
 `validate` returns **snake_case** (it predates the camelCase reports):
 
@@ -529,7 +528,6 @@ GET  /api/files/url               ?filePath=private/audit-reports/…   → pres
 GET    /api/auth/audit            ?userId&username&eventType&category&ipAddress
                                    &startDate&endDate&page&size&sort   (dates optional)
 POST   /api/auth/audit/validate   → {valid, rows_checked, broken_at, unverifiable_legacy_rows}
-DELETE /api/auth/audit/purge      → destructive; needs igrp.audit.purge
 ```
 
 | Status | Meaning |
@@ -537,4 +535,4 @@ DELETE /api/auth/audit/purge      → destructive; needs igrp.audit.purge
 | `200` | OK |
 | `400` | Missing/malformed date, inverted range, or a bad `format` on archive (e.g. `DOCX`) |
 | `401` | Token *or session* invalid — read `error_description` (§9.1) |
-| `403` | Missing `igrp.audit.view` (or `igrp.audit.purge` for purge) |
+| `403` | Missing `igrp.audit.view` |

@@ -49,7 +49,15 @@ public enum AuditEventType {
     PERMISSION_REVOKED,
     ACCESS_GRANTED,
     ACCESS_DENIED,
+    /** A user's permissions were computed for an application: the user entered it (v3, emitted by #14). */
+    APPLICATION_ACCESSED,
+    /** The row-visibility scope of a role permission changed (v3, emitted by #21). */
+    SCOPE_CHANGED,
+    /** Root (super-admin) moved to another user (v3, emitted by #20). */
+    ROOT_CHANGED,
 
     // System-level Events
-    SYSTEM_CONFIGURATION_CHANGED
+    SYSTEM_CONFIGURATION_CHANGED,
+    /** Retention archived a run of audit rows to storage before deleting them. */
+    AUDIT_ARCHIVED
 }

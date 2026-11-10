@@ -3,7 +3,6 @@ DELETE /api/applications/{applicationCode}/menus/{menuCode}/roles
 DELETE /api/applications/{code}
 DELETE /api/applications/{code}/custom-fields
 DELETE /api/applications/{code}/resources
-DELETE /api/auth/audit/purge
 DELETE /api/clients/{id}
 DELETE /api/departments/{code}
 DELETE /api/departments/{code}/applications
