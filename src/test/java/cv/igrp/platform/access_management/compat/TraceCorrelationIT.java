@@ -49,8 +49,10 @@ class TraceCorrelationIT extends AbstractCompatIT {
         assertThat(response.headers().firstValue(HEADER)).contains(correlationId);
 
         Map<String, Object> revision = jdbc.queryForMap(REVISION_OF_DEPARTMENT, code);
-        assertThat(revision.get("trace_id")).isEqualTo(correlationId);
-        assertThat(revision.get("username")).isNotNull().isEqualTo(revision.get("created_by"));
+        assertThat(revision.get("created_by")).isNotNull();
+        assertThat(revision)
+                .containsEntry("trace_id", correlationId)
+                .containsEntry("username", revision.get("created_by"));
 
         assertThat(jdbc.queryForObject(
                 "SELECT count(*) FROM t_security_audit_log WHERE correlation_id = ? AND entity_name IS NOT NULL",
