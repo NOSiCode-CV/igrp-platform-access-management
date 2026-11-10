@@ -185,6 +185,13 @@ public final class CompatSupport {
                 .POST(HttpRequest.BodyPublishers.ofString(json)).build());
     }
 
+    /** A JSON POST with extra headers (for example {@code X-Correlation-ID}). */
+    public HttpResponse<String> postJson(String path, String bearer, String json, Map<String, String> headers) {
+        HttpRequest.Builder builder = request(path, bearer).header("Content-Type", "application/json");
+        headers.forEach(builder::setHeader);
+        return send(builder.POST(HttpRequest.BodyPublishers.ofString(json)).build());
+    }
+
     public HttpResponse<String> putJson(String path, String bearer, String json) {
         return send(request(path, bearer)
                 .header("Content-Type", "application/json")
