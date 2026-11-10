@@ -68,6 +68,12 @@ variables:
   # --- DevSecOps: gates em baseline (não bloqueiam) ---
   MAVEN_TEST_ALLOW_FAILURE: "true"
 
+  # Runner do maven-test (tags: [$RUNNER_DEFAULT_TAG]). No template esta
+  # variável só é definida no secrets.yml, que aqui não é incluído → sem esta
+  # linha a tag fica literal "$RUNNER_DEFAULT_TAG" e o job fica preso na fila.
+  # (O sonar-sast usa SAST_RUNNER_TAG, que o sast.yml já define.)
+  RUNNER_DEFAULT_TAG: "nosi-runner"
+
 # Cache .m2 partilhada pelos jobs Maven do DevSecOps
 cache:
   key: "$CI_COMMIT_REF_SLUG"
