@@ -37,8 +37,16 @@ public class OAuthClientEntity {
     @Column(name = "client_id", unique = true, nullable = false, length = 120)
     private String clientId;
 
-    @Column(name = "client_secret", nullable = false)
+    /** BCrypt hash, only for AM-local (login) clients; {@code null} for a client federated in the IdP. */
+    @Column(name = "client_secret")
     private String clientSecret;
+
+    /**
+     * The IdP a federated service client lives in (e.g. {@code keycloak}); {@code null}
+     * for an AM-local client. AM never stores a federated client's secret (v3-17).
+     */
+    @Column(name = "idp", length = 40)
+    private String idp;
 
     @Column(name = "client_name", length = 180)
     private String clientName;

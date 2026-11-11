@@ -80,8 +80,14 @@ public final class CompatEnvironment {
         KEYCLOAK.start();
     }
 
+    public static final String KEYCLOAK_ADAPTER_CLIENT_ID = "igrp-am-adapter";
+
+    public static String keycloakServerUrl() {
+        return "http://localhost:" + KEYCLOAK.getMappedPort(8080);
+    }
+
     public static String keycloakIssuer() {
-        return "http://localhost:" + KEYCLOAK.getMappedPort(8080) + "/realms/compat";
+        return keycloakServerUrl() + "/realms/compat";
     }
 
     private CompatEnvironment() {
@@ -118,6 +124,12 @@ public final class CompatEnvironment {
         p.put("spring.security.oauth2.client.registration.external-idp.client-id", KEYCLOAK_CLIENT_ID);
         p.put("spring.security.oauth2.client.registration.external-idp.client-secret", KEYCLOAK_CLIENT_SECRET);
         p.put("spring.security.oauth2.client.provider.external-idp.issuer-uri", keycloakIssuer());
+
+        // Federated service clients (v3-17) live in the same realm, managed by AM's adapter account.
+        p.put("igrp.keycloak.server-url", keycloakServerUrl());
+        p.put("igrp.keycloak.realm", "compat");
+        p.put("igrp.keycloak.client-id", KEYCLOAK_ADAPTER_CLIENT_ID);
+        p.put("igrp.keycloak.client-secret", "compat-adapter-secret");
 
         // Storage is not exercised by the contract suite; the client is created lazily.
         p.put("igrp.minio.endpoint", "localhost");

@@ -1,6 +1,8 @@
 package cv.igrp.platform.access_management.oauth_server.application;
 
+import cv.igrp.framework.auth.core.model.IssuedClient;
 import cv.igrp.platform.access_management.oauth_server.application.dto.OAuthClientDTO;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.idp.FederatedClients;
 import cv.igrp.platform.access_management.oauth_server.application.dto.OAuthClientRequestDTO;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.OAuthClientEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
@@ -29,13 +31,16 @@ public class OAuthClientService {
     private final OAuthClientJpaRepository repository;
     private final ApplicationEntityRepository applicationRepository;
     private final PasswordEncoder passwordEncoder;
+    private final FederatedClients federatedClients;
 
     public OAuthClientService(OAuthClientJpaRepository repository,
                               ApplicationEntityRepository applicationRepository,
-                              PasswordEncoder passwordEncoder) {
+                              PasswordEncoder passwordEncoder,
+                              FederatedClients federatedClients) {
         this.repository = repository;
         this.applicationRepository = applicationRepository;
         this.passwordEncoder = passwordEncoder;
+        this.federatedClients = federatedClients;
     }
 
     @Transactional(readOnly = true)
@@ -53,6 +58,9 @@ public class OAuthClientService {
         if (repository.existsByClientId(request.getClientId())) {
             throw new IllegalArgumentException("clientId already exists: " + request.getClientId());
         }
+        if (FederatedClients.isServiceClient(normalizeGrantTypes(request.getGrantTypes()))) {
+            return createFederated(request);
+        }
 
         String rawSecret = generateClientSecret();
 
@@ -69,11 +77,49 @@ public class OAuthClientService {
         return dto;
     }
 
+    /**
+     * A service client (v3-17): created in the IdP, which generates and keeps the secret.
+     * AM stores the client without a secret and returns the IdP's secret exactly once.
+     * If AM cannot store the client, the IdP's client is deleted again.
+     */
+    private OAuthClientDTO createFederated(OAuthClientRequestDTO request) {
+        IssuedClient issued = federatedClients.create(request.getClientId(), request.getClientName());
+        OAuthClientEntity saved;
+        try {
+            OAuthClientEntity entity = new OAuthClientEntity();
+            entity.setId(UUID.randomUUID());
+            entity.setClientId(issued.clientId());
+            entity.setIdp(federatedClients.idp());
+            applyRequestOntoEntity(request, entity);
+            saved = repository.saveAndFlush(entity);
+        } catch (RuntimeException ex) {
+            try {
+                federatedClients.delete(issued.clientId());
+            } catch (RuntimeException cleanup) {
+                ex.addSuppressed(cleanup);
+            }
+            throw ex;
+        }
+        OAuthClientDTO dto = toDto(saved);
+        dto.setClientSecret(issued.clientSecret());
+        return dto;
+    }
+
     @Transactional
     public OAuthClientDTO update(UUID id, OAuthClientRequestDTO request) {
         OAuthClientEntity entity = require(id);
+        boolean federated = entity.getIdp() != null;
+        if (federated && !FederatedClients.isServiceClient(normalizeGrantTypes(request.getGrantTypes()))) {
+            throw new IllegalArgumentException(
+                    "A service client federated in the IdP can only have the client_credentials grant: "
+                            + entity.getClientId());
+        }
         applyRequestOntoEntity(request, entity);
-        return toDto(repository.save(entity));
+        OAuthClientEntity saved = repository.save(entity);
+        if (federated) {
+            federatedClients.update(entity.getClientId(), entity.getClientName());
+        }
+        return toDto(saved);
     }
 
     /**
@@ -99,6 +145,11 @@ public class OAuthClientService {
     @Transactional
     public OAuthClientDTO rotateSecret(UUID id) {
         OAuthClientEntity entity = require(id);
+        if (entity.getIdp() != null) {
+            OAuthClientDTO dto = toDto(entity);
+            dto.setClientSecret(federatedClients.rotateSecret(entity.getClientId()).clientSecret());
+            return dto;
+        }
 
         String rawSecret = generateClientSecret();
         entity.setClientSecret(passwordEncoder.encode(rawSecret));
@@ -113,6 +164,11 @@ public class OAuthClientService {
     public void delete(UUID id) {
         OAuthClientEntity entity = require(id);
         repository.delete(entity);
+        if (entity.getIdp() != null) {
+            // Flush first: a bound service account makes AM refuse (409) before the IdP loses the client.
+            repository.flush();
+            federatedClients.delete(entity.getClientId());
+        }
     }
 
     private OAuthClientEntity require(UUID id) {

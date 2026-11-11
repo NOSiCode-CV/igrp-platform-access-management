@@ -27,6 +27,23 @@
     </suppress>
 
     <!-- ============================================================
+         cv.igrp.framework.auth:keycloak / keycloak-spring-boot (0.3.x)
+         CPE false positive: the iGRP adapter artifact is named "keycloak",
+         so dependency-check matches it against Keycloak SERVER CVEs
+         (CVE-2014-3651, CVE-2014-3709, CVE-2017-12161, ...). The artifact
+         is AM's adapter around keycloak-admin-client, not the server.
+         The admin client itself (org.keycloak:*) is still checked.
+         Reviewed: 2026-11-11 (v3-17)
+    ============================================================ -->
+    <suppress>
+        <notes><![CDATA[
+        iGRP Keycloak adapter falsely matched against Keycloak server CPEs.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/cv\.igrp\.framework\.auth/keycloak(-spring-boot)?@.*$</packageUrl>
+        <cpe>cpe:/a:keycloak:keycloak</cpe>
+    </suppress>
+
+    <!-- ============================================================
          com.google.protobuf:protobuf-java:3.25.9
          CVE-2026-0994 fix is in protobuf-java 4.x. We cannot bump to
          4.x without breaking k8s client-java and other transitives
