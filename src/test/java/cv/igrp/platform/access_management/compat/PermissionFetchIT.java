@@ -81,7 +81,7 @@ class PermissionFetchIT extends AbstractCompatIT {
         Map<String, Object> body = fetch(userToken());
 
         assertThat(keys(body)).containsExactlyInAnyOrder(key("faturas.list"), key("faturas.create"));
-        assertThat(body.get("scopes")).isEqualTo(Map.of(key("faturas.list"), "all", key("faturas.create"), "all"));
+        assertThat(body).containsEntry("scopes", Map.of(key("faturas.list"), "all", key("faturas.create"), "all"));
         assertThat(redis.opsForSet().members(setKey(userId)))
                 .containsExactlyInAnyOrder(key("faturas.list"), key("faturas.create"), MARKER);
         assertThat(redis.<String, String>opsForHash().entries(setKey(userId) + ":scopes"))

@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -147,9 +148,9 @@ public class PermissionFetchService {
         }
         ResolvedActiveRole active = role.get();
         if (active.source() == Source.SUPER_ADMIN) {
-            return jdbc.queryForList(APPLICATION_KEYS, String.class, active.applicationId());
+            return list(APPLICATION_KEYS, String.class, active.applicationId());
         }
-        return jdbc.queryForList(ROLE_KEYS, String.class, active.roleId(), active.applicationId());
+        return list(ROLE_KEYS, String.class, active.roleId(), active.applicationId());
     }
 
     private List<String> serviceAccountKeys(String serviceAccountId, String applicationCode) {
@@ -160,16 +161,21 @@ public class PermissionFetchService {
             throw unauthorized("The service account or its client is not active");
         }
         int applicationId = applicationId(applicationCode);
-        return jdbc.queryForList(SERVICE_ACCOUNT_KEYS, String.class, applicationId, serviceAccountId, serviceAccountId);
+        return list(SERVICE_ACCOUNT_KEYS, String.class, applicationId, serviceAccountId, serviceAccountId);
     }
 
     private int applicationId(String applicationCode) {
-        List<Integer> ids = jdbc.queryForList(
+        List<Integer> ids = list(
                 "SELECT id FROM t_application WHERE code = ? AND status = 'ACTIVE'", Integer.class, applicationCode);
         if (ids.isEmpty()) {
             throw IgrpResponseStatusException.notFound("Application " + applicationCode + " not found");
         }
         return ids.getFirst();
+    }
+
+    /** {@code queryForList} is declared nullable; an absent result is an empty list. */
+    private <T> List<T> list(String sql, Class<T> type, Object... args) {
+        return Objects.requireNonNullElse(jdbc.queryForList(sql, type, args), List.of());
     }
 
     private static boolean isUuid(String value) {
