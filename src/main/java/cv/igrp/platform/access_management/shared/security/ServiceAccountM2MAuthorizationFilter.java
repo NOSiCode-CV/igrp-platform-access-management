@@ -1,7 +1,7 @@
 package cv.igrp.platform.access_management.shared.security;
 
 import cv.igrp.framework.auth.core.authorization.model.PermissionCheckRequest;
-import cv.igrp.platform.access_management.authorization.domain.service.PermissionCacheService;
+import cv.igrp.platform.access_management.authorization.domain.service.PermissionCheckService;
 import cv.igrp.platform.access_management.shared.infrastructure.authorization.permission.DepartmentPermissions;
 import cv.igrp.platform.access_management.shared.infrastructure.authorization.permission.M2MPermissions;
 import cv.igrp.platform.access_management.shared.infrastructure.authorization.permission.UserPermissions;
@@ -29,10 +29,10 @@ public class ServiceAccountM2MAuthorizationFilter extends OncePerRequestFilter {
 
     private static final String M2M_PREFIX = "/api/m2m/";
 
-    private final PermissionCacheService permissionCacheService;
+    private final PermissionCheckService permissionCheckService;
 
-    public ServiceAccountM2MAuthorizationFilter(PermissionCacheService permissionCacheService) {
-        this.permissionCacheService = permissionCacheService;
+    public ServiceAccountM2MAuthorizationFilter(PermissionCheckService permissionCheckService) {
+        this.permissionCheckService = permissionCheckService;
     }
 
     @Override
@@ -70,7 +70,7 @@ public class ServiceAccountM2MAuthorizationFilter extends OncePerRequestFilter {
         permissionRequest.setResource(request.getRequestURI());
         permissionRequest.setAction(requiredPermission(request));
 
-        if (!permissionCacheService.getOrLoadPermission(permissionRequest).allowed()) {
+        if (!permissionCheckService.getOrLoadPermission(permissionRequest).allowed()) {
             forbidden(response, "access_denied", "service_account_permission_denied");
             return;
         }

@@ -81,7 +81,7 @@ Commands are dispatched via `CommandBus`. Handlers are annotated with `@IgrpComm
 
 **Temporary Role Assignment** — `UserRoleAssignment` has a nullable `expiresAt` field. `ExpireRoleService` runs every 60s via `@Scheduled` to remove expired assignments and also schedules per-assignment `TaskScheduler` tasks for precision. `IGRPUserEntity.getRoles()` always filters out expired assignments client-side as well.
 
-**Permission Caching** — `PermissionCacheService` checks permissions via direct JDBC (not JPA) to avoid lazy-load issues in async contexts. Permission cache keys are user/permission combos stored in Redis. Cache is invalidated by `UserRoleChangedEvent` and `RolePermissionChangedEvent`.
+**Permission Caching** — The permission fetch writes each caller's keys for one application to the Redis set `permissions:user:{sub}:app:{appCode}`, listed in the per-user index `permissions:user:{sub}:apps` (`PermissionSetCache`). `PermissionSetEviction` resolves the users affected by a role, permission, department, active-role or status event inside the transaction, and deletes their sets through the index only after it commits. `PermissionCheckService` (behind `/api/authorize/check`) checks via direct JDBC and is not cached.
 
 **Two session mechanisms, easily confused:**
 1. `SPRING_SESSION` / `SPRING_SESSION_ATTRIBUTES` — the *browser* servlet session, shared across replicas via `spring-session-jdbc` so a login survives landing on another pod (fixes `authorization_request_not_found`). Holds the pending OAuth2 authorization request with its PKCE verifier, the `SecurityContext` and the saved request. Lifetime: `server.servlet.session.timeout` (`IGRP_SSO_SESSION_TIMEOUT_SECONDS`, 8h). Tables owned by `DatabaseMigrationRunner`; attributes stored as JSON via `SecurityStoreObjectMapperFactory`. Pruned by `spring.session.jdbc.cleanup-cron`.
@@ -96,7 +96,7 @@ Anything added to the servlet session must be on the Jackson allowlist in `Secur
 
 **M2M Authentication** — `/api/m2m/**` is served by the same OAuth2 resource-server chain as user endpoints. M2M clients obtain a JWT via the `client_credentials` grant at `/oauth2/token`; both `M2MTokenRejectionFilter` and `SessionEnforcementFilter` skip the `/api/m2m/` prefix so sid-less client_credentials tokens are admitted.
 
-**Superadmin Bypass** — Any user with the `SUPER_ADMIN_ROLE` constant role skips permission checks entirely in `PermissionCacheService`.
+**Superadmin Bypass** — Any user with the `SUPER_ADMIN_ROLE` constant role skips permission checks entirely in `PermissionCheckService`.
 
 **Domain Events** — Handlers publish domain events (`UserRoleChangedEvent`, `RolePermissionChangedEvent`) that are consumed by listeners to invalidate caches. Events are dispatched synchronously by default.
 

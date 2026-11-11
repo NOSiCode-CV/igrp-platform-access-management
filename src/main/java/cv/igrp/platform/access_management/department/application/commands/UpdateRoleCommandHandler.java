@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.department.application.commands;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
+import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -57,6 +58,7 @@ import java.util.Set;
 public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleCommand, ResponseEntity<RoleDTO>> {
 
    public static final String ERROR_TITLE = "Update Role";
+   private static final String ROLE_STATUS_CHANGED = "ROLE_STATUS_CHANGED";
    private final RoleEntityRepository roleRepository;
    private final DepartmentEntityRepository departmentRepository;
    private final RoleMapper roleMapper;
@@ -128,6 +130,11 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
       if(command.getRoledto().getStatus() != null &&
               !Objects.equals(command.getRoledto().getStatus(), roleToUpdate.getStatus())
       ) {
+         // Published before the assignments are touched: the event resolves the
+         // role's users where it is published, and their permission sets are
+         // deleted after commit (#18).
+         eventPublisher.publishRolePermissionChanged(new RolePermissionChangedEvent(
+                 roleToUpdate.getCode(), department.getCode(), ROLE_STATUS_CHANGED, null));
          updateChildrenStatus(department, roleToUpdate, command.getRoledto().getStatus());
       }
 
@@ -185,6 +192,8 @@ public class UpdateRoleCommandHandler implements CommandHandler<UpdateRoleComman
          if(status != Status.ACTIVE) {
 
             var childRole = roleRepository.findByDepartmentAndCodeAndStatusNotDeleted(department, child.getCode());
+            eventPublisher.publishRolePermissionChanged(new RolePermissionChangedEvent(
+                    child.getCode(), department.getCode(), ROLE_STATUS_CHANGED, null));
 
             String oldStatus = child.getStatus().getCode();
             String newStatus = status.getCode();

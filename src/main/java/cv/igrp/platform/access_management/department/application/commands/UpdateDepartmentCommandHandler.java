@@ -179,6 +179,11 @@ public class UpdateDepartmentCommandHandler implements CommandHandler<UpdateDepa
 
                childDepartment.setStatus(status);
 
+               // As the delete path does: findUserIdsByDepartment only sees roles
+               // directly in a department, so each child needs its own event (#18).
+               eventPublisher.publishDepartmentScopeChanged(new DepartmentScopeChangedEvent(
+                       childDepartment.getCode(), DepartmentScopeChangedEvent.CHANGE_STATUS, null));
+
                updateRelatedEntitiesStatus(childDepartment, status);
 
                departmentRepository.save(childDepartment);

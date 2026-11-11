@@ -63,16 +63,12 @@ public class ExpireRoleService {
      * {@code IGRPUserEntity.getRoles()} filters client-side. Deleting the row
      * only keeps the table tidy.
      *
-     * <p><b>Except through the cache.</b> Permission decisions are memoised in
-     * Redis by {@code PermissionCacheService.getOrLoadPermissionCached}, and
-     * that cache has no TTL. A decision cached as "granted" before expiry is
-     * never re-derived, so the SQL filter above is correct but never consulted
-     * again — the user keeps a privilege the expiry existed to remove. That is
-     * why this method must publish {@link UserRoleChangedEvent}: it is the only
-     * thing that reaches {@code PermissionCacheInvalidator} (which evicts the
-     * user's cached decisions) and {@code SessionInvalidationEventListener}.
-     * Every other path that changes role membership already publishes it; this
-     * one did not.
+     * <p><b>Except through the cache.</b> Each user's permission set is held
+     * in Redis for its TTL, so an expiry is only seen once the set is deleted.
+     * That is why this method must publish {@link UserRoleChangedEvent}: it
+     * reaches {@code PermissionSetEviction}, which deletes the user's sets
+     * after this transaction commits (#18), and
+     * {@code SessionInvalidationEventListener}.
      */
     @Scheduled(fixedRate = 60000) // Runs every minute
     @Transactional
@@ -109,9 +105,7 @@ public class ExpireRoleService {
         });
 
         // Published inside the transaction, as every other role-change path
-        // does. Safe here even though the delete has not committed: a concurrent
-        // read that re-populates the cache re-runs the expires_at filter, so the
-        // worst case is caching the correct "denied" answer.
+        // does; the sets are deleted only once the delete has committed.
         //
         // departmentCode is left null deliberately — no listener on this event
         // reads it, and resolving each role's department would mean a lazy load

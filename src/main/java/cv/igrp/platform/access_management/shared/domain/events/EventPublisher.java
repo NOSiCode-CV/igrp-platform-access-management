@@ -41,9 +41,9 @@ public class EventPublisher {
      * a permission row (or soft-deletes it via {@code Status.DELETED}),
      * immediately after the DB write commits. The matching listeners
      * ({@link cv.igrp.platform.access_management.session.application.listener.SessionInvalidationEventListener}
-     * and {@link cv.igrp.platform.access_management.shared.infrastructure.cache.PermissionCacheInvalidator})
+     * and {@link cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionSetEviction})
      * resolve the affected users and (a) revoke their server-side sessions
-     * and (b) evict their permission-cache entries.
+     * and (b) delete their permission sets after commit.
      * <p>
      * Wired today by:
      * <ul>

@@ -60,6 +60,19 @@ public class PermissionSetCache {
             return 0
             """, Long.class);
 
+    /**
+     * KEYS: the user's index. Deletes every set the index lists, with its
+     * scopes hash, then the index. The accessed guards stay (see the class).
+     */
+    private static final RedisScript<Long> EVICT_USER = new DefaultRedisScript<>("""
+            local sets = redis.call('SMEMBERS', KEYS[1])
+            for _, set in ipairs(sets) do
+              redis.call('DEL', set, set .. ':scopes')
+            end
+            redis.call('DEL', KEYS[1])
+            return #sets
+            """, Long.class);
+
     private final StringRedisTemplate redis;
     private final PermissionSetProperties properties;
 
@@ -108,5 +121,10 @@ public class PermissionSetCache {
     public void evict(String sub, String applicationCode) {
         redis.delete(List.of(setKey(sub, applicationCode), scopesKey(sub, applicationCode)));
         redis.opsForSet().remove(indexKey(sub), setKey(sub, applicationCode));
+    }
+
+    /** Deletes every set of the user, found through the per-user index, never a scan. */
+    public void evictUser(String sub) {
+        redis.execute(EVICT_USER, List.of(indexKey(sub)));
     }
 }

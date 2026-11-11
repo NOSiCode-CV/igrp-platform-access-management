@@ -16,18 +16,17 @@ import java.util.concurrent.TimeUnit;
 public class DatabaseAuthorizeApiAdapter implements AuthorizationCore {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(DatabaseAuthorizeApiAdapter.class);
-    private final PermissionCacheService permissionCacheService;
+    private final PermissionCheckService permissionCheckService;
 
-    public DatabaseAuthorizeApiAdapter(PermissionCacheService cacheService) {
-        this.permissionCacheService = cacheService;
+    public DatabaseAuthorizeApiAdapter(PermissionCheckService permissionCheckService) {
+        this.permissionCheckService = permissionCheckService;
     }
 
     @Override
     public CompletableFuture<PermissionCheckResponse> check(PermissionCheckRequest request) {
         return CompletableFuture.supplyAsync(() -> {
             long start = System.nanoTime();
-            permissionCacheService.setFromCacheAsTrue();
-            PermissionCacheEntryDTO dto = permissionCacheService.getOrLoadPermission(request);
+            PermissionCacheEntryDTO dto = permissionCheckService.getOrLoadPermission(request);
 
 
             PermissionCheckResponse response = new PermissionCheckResponse();
@@ -35,7 +34,8 @@ public class DatabaseAuthorizeApiAdapter implements AuthorizationCore {
             response.setAllowed(dto.allowed());
             response.setViaRoles(dto.viaRoles());
             response.setReason(dto.reason());
-            response.setCacheHit(permissionCacheService.isFromCache());
+            // Every check reads the database; the per-check cache is gone (#18).
+            response.setCacheHit(false);
             response.setResolutionTimeMs(TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - start));
 
             return response;

@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.shared.config;
 
-import cv.igrp.platform.access_management.authorization.application.dto.PermissionCacheEntryDTO;
 import cv.igrp.platform.access_management.session.application.dto.SessionResponseDTO;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import cv.igrp.platform.access_management.session.domain.service.SessionHeartbeatService;
@@ -36,41 +35,6 @@ class CacheValueSerializationTest {
         byte[] bytes = serializer.serialize(value);
         assertNotNull(bytes, "serialization produced no bytes");
         return serializer.deserialize(bytes);
-    }
-
-    @Test
-    @DisplayName("permissionCache: a granted entry with roles survives the round trip")
-    void permissionEntryWithRoles() {
-        PermissionCacheEntryDTO entry = new PermissionCacheEntryDTO(
-                true, new ArrayList<>(List.of("ADMIN", "MANAGER")), "Permission granted via role ADMIN");
-
-        PermissionCacheEntryDTO back = assertInstanceOf(PermissionCacheEntryDTO.class, roundTrip(entry));
-
-        assertEquals(entry, back);
-    }
-
-    @Test
-    @DisplayName("permissionCache: a denied entry with no roles survives the round trip")
-    void permissionEntryWithoutRoles() {
-        // The compact constructor turns null into Collections.emptyList(), the
-        // JDK sentinel class that has tripped typed deserialization before.
-        PermissionCacheEntryDTO entry = new PermissionCacheEntryDTO(false, null, "Permission denied");
-
-        PermissionCacheEntryDTO back = assertInstanceOf(PermissionCacheEntryDTO.class, roundTrip(entry));
-
-        assertFalse(back.allowed());
-        assertEquals(Collections.emptyList(), back.viaRoles());
-        assertEquals("Permission denied", back.reason());
-    }
-
-    @Test
-    @DisplayName("permissionCache: an entry built with List.of() survives the round trip")
-    void permissionEntryWithImmutableList() {
-        PermissionCacheEntryDTO entry = new PermissionCacheEntryDTO(true, List.of("ADMIN"), "granted");
-
-        PermissionCacheEntryDTO back = assertInstanceOf(PermissionCacheEntryDTO.class, roundTrip(entry));
-
-        assertEquals(List.of("ADMIN"), back.viaRoles());
     }
 
     @Test

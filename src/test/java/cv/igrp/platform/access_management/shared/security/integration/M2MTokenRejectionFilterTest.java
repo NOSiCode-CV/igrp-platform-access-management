@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.shared.security.integration;
 
-import cv.igrp.platform.access_management.authorization.domain.service.PermissionCacheService;
+import cv.igrp.platform.access_management.authorization.domain.service.PermissionCheckService;
 import cv.igrp.platform.access_management.session.config.SessionProperties;
 import cv.igrp.platform.access_management.session.domain.service.SessionHeartbeatService;
 import cv.igrp.platform.access_management.session.infrastructure.metrics.SessionMetrics;
@@ -65,7 +65,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
  *   Authorization: Bearer &lt;client_credentials JWT, sub == client_id&gt;
  * </pre>
  * Before G1: 500 {@link NumberFormatException} at
- * {@code PermissionCacheService:152}. After G1: 401 with
+ * {@code PermissionCheckService:152}. After G1: 401 with
  * {@code WWW-Authenticate: Bearer error="invalid_token", error_description="m2m_token_not_allowed"}.
  *
  * <p>The test also asserts the M2M token still works on {@code /api/m2m/**}
@@ -221,13 +221,13 @@ class M2MTokenRejectionFilterTest {
 
         @Bean
         ServiceAccountM2MAuthorizationFilter serviceAccountM2MAuthorizationFilter(
-                PermissionCacheService permissionCacheService) {
-            return new ServiceAccountM2MAuthorizationFilter(permissionCacheService);
+                PermissionCheckService permissionCheckService) {
+            return new ServiceAccountM2MAuthorizationFilter(permissionCheckService);
         }
 
         @Bean
-        PermissionCacheService permissionCacheService() {
-            return mock(PermissionCacheService.class);
+        PermissionCheckService permissionCheckService() {
+            return mock(PermissionCheckService.class);
         }
 
         @Bean

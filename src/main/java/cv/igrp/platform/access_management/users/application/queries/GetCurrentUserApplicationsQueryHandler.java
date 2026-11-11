@@ -58,7 +58,7 @@ public class GetCurrentUserApplicationsQueryHandler implements QueryHandler<GetC
 
         // Role-based superadmin check (replaces the previous username/external-id
         // equality test against igrp.superadmin.user-external-id). Same pattern as
-        // PermissionCacheService.isSuperAdmin: the user is treated as superadmin
+        // PermissionCheckService.isSuperAdmin: the user is treated as superadmin
         // when ANY of their assigned roles has the well-known code
         // ConfigurationService.SUPER_ADMIN_ROLE ("DEPT_IGRP.superadmin").
         //

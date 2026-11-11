@@ -26,19 +26,19 @@ import static org.mockito.Mockito.when;
  * Phase G3 — TEMPORARY users must be rejected by the permission check, the
  * same way DELETED / INACTIVE users already were.
  */
-class PermissionCacheServiceTest {
+class PermissionCheckServiceTest {
 
     private JdbcTemplate jdbcTemplate;
     private IGRPUserEntityRepository userRepository;
     private ServiceAccountJpaRepository serviceAccountRepository;
-    private PermissionCacheService service;
+    private PermissionCheckService service;
 
     @BeforeEach
     void setUp() {
         jdbcTemplate = mock(JdbcTemplate.class);
         userRepository = mock(IGRPUserEntityRepository.class);
         serviceAccountRepository = mock(ServiceAccountJpaRepository.class);
-        service = new PermissionCacheService(jdbcTemplate, userRepository, serviceAccountRepository);
+        service = new PermissionCheckService(jdbcTemplate, userRepository, serviceAccountRepository);
     }
 
     @Test

@@ -7,6 +7,7 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.events.DepartmentScopeChangedEvent;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService;
 import cv.igrp.platform.access_management.security_audit.domain.events.ApplicationAssociatedToRoleEvent;
@@ -68,6 +69,11 @@ public class AddApplicationsToDepartmentCommandHandler implements CommandHandler
                  new ApplicationAssociatedToRoleEvent(application.getName(), department.getCode()));
 
       }
+
+      // A new application changes which of the department's roles are valid in it,
+      // so its users' permission sets are deleted after commit (#18).
+      eventPublisher.publishDepartmentScopeChanged(new DepartmentScopeChangedEvent(
+              department.getCode(), DepartmentScopeChangedEvent.CHANGE_APPLICATIONS, null));
 
       return ResponseEntity.noContent().build();
 

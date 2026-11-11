@@ -8,10 +8,8 @@ import cv.igrp.platform.access_management.authorization.application.dto.Permissi
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.security.SubjectParser;
-import lombok.Getter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,12 +22,16 @@ import java.util.UUID;
 
 import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE;
 
+/**
+ * Decides one permission check against the database. Behind
+ * {@code /api/authorize/check} and the M2M filter until their removal; the
+ * per-check Redis cache it used to front was replaced by the per-user
+ * permission set (v3-10, #18).
+ */
 @Service
-public class PermissionCacheService {
+public class PermissionCheckService {
 
-    private static final String CACHE_NAME = "permissionCache";
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(PermissionCacheService.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(PermissionCheckService.class);
 
     private final JdbcTemplate jdbcTemplate;
 
@@ -37,10 +39,7 @@ public class PermissionCacheService {
 
     private final ServiceAccountJpaRepository serviceAccountRepository;
 
-    @Getter
-    private boolean fromCache;
-
-    public PermissionCacheService(JdbcTemplate jdbcTemplate,
+    public PermissionCheckService(JdbcTemplate jdbcTemplate,
                                   IGRPUserEntityRepository userRepository,
                                   ServiceAccountJpaRepository serviceAccountRepository) {
         this.userRepository = userRepository;
@@ -50,30 +49,14 @@ public class PermissionCacheService {
 
 
     /**
-     * Entry point. Superadmin grants are NOT cached — they're resolved fresh
-     * on every call so that promoting a user to superadmin (or fixing an
-     * existing one whose assignment was missing) takes effect immediately
-     * without a cache flush. Regular permission decisions go through the
-     * cached path below.
+     * Entry point. Superadmin is resolved first, so promoting a user takes
+     * effect at once; everyone else goes through a role/permission match.
      */
     public PermissionCacheEntryDTO getOrLoadPermission(PermissionCheckRequest request) {
         if (isSuperAdmin(request.getSubject())) {
-            setFromCacheAsFalse();
             return new PermissionCacheEntryDTO(true, Collections.emptyList(),
                     "Permission granted (superadmin)");
         }
-        return getOrLoadPermissionCached(request);
-    }
-
-    @Cacheable(value = CACHE_NAME,
-            keyGenerator = "permissionCacheKeyGenerator")
-    public PermissionCacheEntryDTO getOrLoadPermissionCached(PermissionCheckRequest request) {
-
-        LOGGER.info("Cache MISS - Checking in database: {}:{}:{}",
-                request.getSubject(),
-                request.getResource(),
-                request.getAction());
-
         return checkInternal(request);
     }
 
@@ -166,8 +149,6 @@ public class PermissionCacheService {
 
     @Transactional(readOnly = true)
     public PermissionCacheEntryDTO checkInternal(PermissionCheckRequest request) {
-        setFromCacheAsFalse();
-
         String subject = request.getSubject();
         String action = request.getAction();
 
@@ -182,7 +163,7 @@ public class PermissionCacheService {
     }
 
     private Boolean checkPermission(String subject, String permissionName) {
-        // Superadmin is resolved by the non-cached entry-point in
+        // Superadmin is resolved by the entry point,
         // getOrLoadPermission(...). By the time we reach here we are doing a
         // regular role/permission match.
 
@@ -308,10 +289,4 @@ public class PermissionCacheService {
         }
     }
 
-    private void setFromCacheAsFalse() {
-        this.fromCache = false;
-    }
-    public void setFromCacheAsTrue() {
-        this.fromCache = true;
-    }
 }

@@ -4,7 +4,7 @@ import cv.igrp.framework.auth.core.authorization.model.PermissionCheckRequest;
 import cv.igrp.framework.auth.core.authorization.model.PermissionCheckResponse;
 import cv.igrp.platform.access_management.authorization.application.dto.PermissionCacheEntryDTO;
 import cv.igrp.platform.access_management.authorization.domain.service.DatabaseAuthorizeApiAdapter;
-import cv.igrp.platform.access_management.authorization.domain.service.PermissionCacheService;
+import cv.igrp.platform.access_management.authorization.domain.service.PermissionCheckService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +25,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class DatabaseAuthorizeApiAdapterTest {
 
     @Mock
-    private PermissionCacheService permissionCacheService;
+    private PermissionCheckService permissionCheckService;
 
     @InjectMocks
     private DatabaseAuthorizeApiAdapter adapter;
@@ -42,8 +42,7 @@ class DatabaseAuthorizeApiAdapterTest {
     @Test
     void testCheck_ShouldReturnValidPermissionResponse() throws Exception {
         PermissionCacheEntryDTO cacheEntry = new PermissionCacheEntryDTO(true, List.of("ADMIN"), "Access granted");
-        when(permissionCacheService.getOrLoadPermission(request)).thenReturn(cacheEntry);
-        when(permissionCacheService.isFromCache()).thenReturn(true);
+        when(permissionCheckService.getOrLoadPermission(request)).thenReturn(cacheEntry);
 
         CompletableFuture<PermissionCheckResponse> future = adapter.check(request);
         PermissionCheckResponse response = future.get();
@@ -52,19 +51,16 @@ class DatabaseAuthorizeApiAdapterTest {
         assertTrue(response.isAllowed());
         assertEquals(List.of("ADMIN"), response.getViaRoles());
         assertEquals("Access granted", response.getReason());
-        assertTrue(response.isCacheHit());
+        assertFalse(response.isCacheHit(), "no per-check cache since #18");
         assertTrue(response.getResolutionTimeMs() >= 0);
 
-        verify(permissionCacheService).setFromCacheAsTrue();
-        verify(permissionCacheService).getOrLoadPermission(request);
-        verify(permissionCacheService).isFromCache();
+        verify(permissionCheckService).getOrLoadPermission(request);
     }
 
     @Test
     void testCheck_WhenPermissionDenied_ShouldReturnDeniedResponse() throws Exception {
         PermissionCacheEntryDTO cacheEntry = new PermissionCacheEntryDTO(false, List.of("USER"), "Access denied");
-        when(permissionCacheService.getOrLoadPermission(request)).thenReturn(cacheEntry);
-        when(permissionCacheService.isFromCache()).thenReturn(false);
+        when(permissionCheckService.getOrLoadPermission(request)).thenReturn(cacheEntry);
 
         PermissionCheckResponse response = adapter.check(request).get();
 
@@ -74,19 +70,17 @@ class DatabaseAuthorizeApiAdapterTest {
         assertEquals("Access denied", response.getReason());
         assertFalse(response.isCacheHit());
 
-        verify(permissionCacheService).setFromCacheAsTrue();
-        verify(permissionCacheService).getOrLoadPermission(request);
+        verify(permissionCheckService).getOrLoadPermission(request);
     }
 
     @Test
     void testCheck_WhenExceptionOccurs_ShouldPropagateException() {
-        when(permissionCacheService.getOrLoadPermission(request))
+        when(permissionCheckService.getOrLoadPermission(request))
                 .thenThrow(new RuntimeException("Cache service failure"));
 
         CompletableFuture<PermissionCheckResponse> future = adapter.check(request);
 
         assertThrows(Exception.class, future::get);
-        verify(permissionCacheService).setFromCacheAsTrue();
-        verify(permissionCacheService).getOrLoadPermission(request);
+        verify(permissionCheckService).getOrLoadPermission(request);
     }
 }
