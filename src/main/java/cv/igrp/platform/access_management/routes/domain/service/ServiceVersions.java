@@ -24,8 +24,15 @@ public final class ServiceVersions {
         if (core != 0) {
             return core;
         }
-        if (left[1] == null || right[1] == null) {
-            return left[1] == null ? (right[1] == null ? 0 : 1) : -1;
+        // Equal cores: a release is newer than any of its pre-releases.
+        if (left[1] == null && right[1] == null) {
+            return 0;
+        }
+        if (left[1] == null) {
+            return 1;
+        }
+        if (right[1] == null) {
+            return -1;
         }
         return left[1].compareTo(right[1]);
     }
