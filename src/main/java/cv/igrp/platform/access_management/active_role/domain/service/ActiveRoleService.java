@@ -18,6 +18,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 /**
@@ -194,7 +195,7 @@ public class ActiveRoleService {
 
     /** The stored choice when it is still valid, else null. */
     private RoleRow storedValidRole(String userId, int applicationId, List<RoleRow> valid) {
-        List<Integer> stored = jdbc.queryForList(STORED_ROLE, Integer.class, userId, applicationId);
+        List<Integer> stored = integers(STORED_ROLE, userId, applicationId);
         if (stored.isEmpty()) {
             return null;
         }
@@ -223,12 +224,17 @@ public class ActiveRoleService {
     }
 
     private int applicationId(String applicationCode) {
-        List<Integer> ids = jdbc.queryForList(
-                "SELECT id FROM t_application WHERE code = ? AND status = 'ACTIVE'", Integer.class, applicationCode);
+        List<Integer> ids = integers("SELECT id FROM t_application WHERE code = ? AND status = 'ACTIVE'",
+                applicationCode);
         if (ids.isEmpty()) {
             throw IgrpResponseStatusException.notFound("Application " + applicationCode + " not found");
         }
         return ids.getFirst();
+    }
+
+    /** {@code queryForList} is declared nullable; an absent result is an empty list. */
+    private List<Integer> integers(String sql, Object... args) {
+        return Objects.requireNonNullElse(jdbc.queryForList(sql, Integer.class, args), List.of());
     }
 
     private String currentUserId() {

@@ -2,7 +2,6 @@ package cv.igrp.platform.access_management.department.application.queries;
 
 import cv.igrp.platform.access_management.role.domain.service.PermissionMapper;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ResourceEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository;
 import org.slf4j.Logger;
