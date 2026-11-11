@@ -68,8 +68,8 @@ class FederatedClientAuthenticationProviderTest {
         when(repository.findByClientId("svc")).thenReturn(client("svc", true));
         when(federated.authenticate("svc", "bad")).thenReturn(false);
 
-        var failure = assertThrows(OAuth2AuthenticationException.class, () -> provider.authenticate(
-                presented("svc", ClientAuthenticationMethod.CLIENT_SECRET_BASIC, "bad")));
+        var token = presented("svc", ClientAuthenticationMethod.CLIENT_SECRET_BASIC, "bad");
+        var failure = assertThrows(OAuth2AuthenticationException.class, () -> provider.authenticate(token));
         assertEquals(OAuth2ErrorCodes.INVALID_CLIENT, failure.getError().getErrorCode());
     }
 
@@ -79,8 +79,8 @@ class FederatedClientAuthenticationProviderTest {
         when(repository.findByClientId("svc")).thenReturn(client("svc", true));
         when(federated.authenticate("svc", "good")).thenThrow(new IAMException("down"));
 
-        var failure = assertThrows(OAuth2AuthenticationException.class, () -> provider.authenticate(
-                presented("svc", ClientAuthenticationMethod.CLIENT_SECRET_BASIC, "good")));
+        var token = presented("svc", ClientAuthenticationMethod.CLIENT_SECRET_BASIC, "good");
+        var failure = assertThrows(OAuth2AuthenticationException.class, () -> provider.authenticate(token));
         assertEquals(OAuth2ErrorCodes.SERVER_ERROR, failure.getError().getErrorCode());
     }
 

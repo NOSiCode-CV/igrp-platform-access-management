@@ -108,7 +108,7 @@ public class AuthorizationServerConfig {
                                                                       SessionAwareIntrospector sessionAwareIntrospector,
                                                                       SessionLogoutHandler sessionLogoutHandler,
                                                                       RegisteredClientRepository registeredClientRepository,
-                                                                      FederatedClients federatedClients) throws Exception {
+                                                                      FederatedClients federatedClients) {
         var federatedClientAuthentication =
                 new FederatedClientAuthenticationProvider(registeredClientRepository, federatedClients);
         OAuth2AuthorizationServerConfigurer authServerConfigurer = new OAuth2AuthorizationServerConfigurer();

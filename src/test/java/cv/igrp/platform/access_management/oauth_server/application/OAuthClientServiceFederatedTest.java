@@ -105,8 +105,9 @@ class OAuthClientServiceFederatedTest {
         verify(federated).update("faturacao-api", "Faturação API v2");
 
         OAuthClientRequestDTO login = request("faturacao-api", Set.of("client_credentials", "authorization_code"));
+        UUID id = entity.getId();
         IllegalArgumentException refused = assertThrows(IllegalArgumentException.class,
-                () -> service.update(entity.getId(), login));
+                () -> service.update(id, login));
         assertTrue(refused.getMessage().contains("client_credentials"), refused.getMessage());
     }
 

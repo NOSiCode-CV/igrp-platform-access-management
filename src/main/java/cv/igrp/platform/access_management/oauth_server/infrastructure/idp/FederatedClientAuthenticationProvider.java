@@ -2,8 +2,6 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.idp;
 
 import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.security.IgrpRegisteredClientRepository;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
@@ -21,8 +19,6 @@ import org.springframework.security.oauth2.server.authorization.client.Registere
  */
 public class FederatedClientAuthenticationProvider implements AuthenticationProvider {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(FederatedClientAuthenticationProvider.class);
-
     private final RegisteredClientRepository clients;
     private final FederatedClients federatedClients;
 
@@ -39,7 +35,11 @@ public class FederatedClientAuthenticationProvider implements AuthenticationProv
                 && !ClientAuthenticationMethod.CLIENT_SECRET_POST.equals(method)) {
             return null;
         }
-        String clientId = token.getPrincipal().toString();
+        Object principal = token.getPrincipal();
+        if (principal == null) {
+            return null;
+        }
+        String clientId = principal.toString();
         RegisteredClient client = clients.findByClientId(clientId);
         if (client == null || !Boolean.TRUE.equals(client.getClientSettings()
                 .getSetting(IgrpRegisteredClientRepository.FEDERATED_IDP_SETTING))) {
@@ -53,9 +53,8 @@ public class FederatedClientAuthenticationProvider implements AuthenticationProv
         try {
             accepted = federatedClients.authenticate(clientId, secret);
         } catch (IAMException ex) {
-            LOGGER.error("The IdP could not check the credentials of client '{}'", clientId, ex);
             throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.SERVER_ERROR,
-                    "The identity provider could not be reached", null), ex);
+                    "The identity provider could not check the credentials of client " + clientId, null), ex);
         }
         if (!accepted) {
             throw invalidClient("Client authentication failed");

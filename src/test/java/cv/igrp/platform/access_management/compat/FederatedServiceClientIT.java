@@ -10,6 +10,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.simple.JdbcClient;
 
 import java.io.IOException;
 import java.net.URI;
@@ -74,8 +75,9 @@ class FederatedServiceClientIT extends AbstractCompatIT {
         assertEquals(200, response.statusCode(), response.body());
         Map<String, Object> claims = claims((String) jsonObject(response.body()).get("access_token"));
         assertEquals(CompatEnvironment.ISSUER, claims.get("iss"));
-        String serviceAccount = jdbc.queryForObject("select sa.id::text from t_service_account sa "
-                + "join t_oauth_client c on c.id = sa.oauth_client_id where c.client_id = ?", String.class, client.clientId());
+        String serviceAccount = JdbcClient.create(jdbc).sql("select sa.id::text from t_service_account sa "
+                        + "join t_oauth_client c on c.id = sa.oauth_client_id where c.client_id = ?")
+                .param(client.clientId()).query(String.class).single();
         assertEquals(serviceAccount, claims.get("sub"));
     }
 
