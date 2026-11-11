@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.HttpStatus;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -27,6 +28,7 @@ import cv.igrp.platform.access_management.shared.application.dto.MenuEntryDTO;
 import cv.igrp.platform.access_management.shared.application.dto.ResourceDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleDTO;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
+import cv.igrp.platform.access_management.shared.application.dto.RolePermissionScopeDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleChildHierarchyDTO;
 import cv.igrp.platform.access_management.shared.application.dto.RoleParentHierarchyDTO;
 
@@ -541,6 +543,42 @@ public class DepartmentController {
   {
 
       final var command = new AddPermissionsCommand(addPermissionsRequest, departmentCode, roleCode);
+
+      return commandBus.send(command);
+
+  }
+
+   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_MANAGE)")
+   @PutMapping(
+   value = "departments/{departmentCode}/roles/{roleCode}/permissions/scopes"
+  )
+  @Operation(
+    summary = "Update role permission scopes",
+    description = "Sets the row-visibility scope (all, own, by_role, department) of some of the role's permissions,"
+            + " by key. Every key must be held by the role. This Permission is required: igrp.departments.manage",
+    responses = {
+      @ApiResponse(
+          responseCode = "200",
+          description = "The role's permissions, each with its scope",
+          content = @Content(
+              mediaType = "application/json",
+              array = @ArraySchema(schema = @Schema(implementation = PermissionDTO.class))
+          )
+      ),
+      @ApiResponse(responseCode = "400",
+          description = "Empty request, missing key, unknown scope, duplicate key, or a key the role does not hold"),
+      @ApiResponse(responseCode = "403", description = "The department is outside the caller's scope"),
+      @ApiResponse(responseCode = "404", description = "Department or role not found")
+    }
+  )
+  public ResponseEntity<List<PermissionDTO>> updateRolePermissionScopes(
+          @RequestBody List<RolePermissionScopeDTO> updateRolePermissionScopesRequest,
+          @PathVariable(value = "departmentCode") String departmentCode,
+          @PathVariable(value = "roleCode") String roleCode)
+  {
+
+      final var command = new UpdateRolePermissionScopesCommand(updateRolePermissionScopesRequest, departmentCode,
+              roleCode);
 
       return commandBus.send(command);
 

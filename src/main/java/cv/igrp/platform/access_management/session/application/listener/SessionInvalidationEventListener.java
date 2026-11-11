@@ -56,6 +56,10 @@ public class SessionInvalidationEventListener {
      */
     @EventListener
     public void handleRolePermissionChanged(RolePermissionChangedEvent event) {
+        if (RolePermissionChangedEvent.CHANGE_SCOPES.equals(event.getChangeType())) {
+            // Scopes are not in the token or the session; the permission sets are evicted (#21).
+            return;
+        }
         String departmentCode = event.getDepartmentCode();
         String roleCode = event.getRoleCode();
         log.info("Role permissions changed for role={} dept={} ({}), invalidating sessions",

@@ -11,6 +11,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.repo
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.event.EventListener;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
@@ -41,12 +42,21 @@ public class PermissionSetEviction {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PermissionSetEviction.class);
 
+    /** Service accounts holding a role, by code, optionally in one department; their sub is their id. */
+    private static final String SERVICE_ACCOUNTS_WITH_ROLE = """
+            SELECT DISTINCT sara.service_account_id::text FROM t_service_account_role_assignment sara
+              JOIN t_role r ON r.id = sara.role_id
+              JOIN t_department d ON d.id = r.department
+             WHERE r.code = ? AND (CAST(? AS varchar) IS NULL OR d.code = ?)""";
+
     private final PermissionSetCache cache;
     private final IGRPUserEntityRepository users;
+    private final JdbcTemplate jdbc;
 
-    public PermissionSetEviction(PermissionSetCache cache, IGRPUserEntityRepository users) {
+    public PermissionSetEviction(PermissionSetCache cache, IGRPUserEntityRepository users, JdbcTemplate jdbc) {
         this.cache = cache;
         this.users = users;
+        this.jdbc = jdbc;
     }
 
     /** Roles assigned, removed or expired, and the global active role switched. */
@@ -61,10 +71,15 @@ public class PermissionSetEviction {
         evictAfterCommit(user(event.getUserId()));
     }
 
-    /** Permissions added to or removed from a role, or the role deleted. */
+    /**
+     * Permissions added to or removed from a role, their scopes changed (#21),
+     * or the role deleted: the role's users and the service accounts holding it.
+     */
     @EventListener
     public void onRolePermissionChanged(RolePermissionChangedEvent event) {
         evictAfterCommit(users.findUserIdsByRoleAndDepartment(event.getRoleCode(), event.getDepartmentCode()));
+        evictAfterCommit(jdbc.queryForList(SERVICE_ACCOUNTS_WITH_ROLE, String.class,
+                event.getRoleCode(), event.getDepartmentCode(), event.getDepartmentCode()));
     }
 
     /** A department's permissions, applications, menus, resources or status changed. */

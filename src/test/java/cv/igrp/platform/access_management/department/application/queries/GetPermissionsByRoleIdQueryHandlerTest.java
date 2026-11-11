@@ -1,6 +1,8 @@
 package cv.igrp.platform.access_management.department.application.queries;
 
 import cv.igrp.platform.access_management.role.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.role.domain.service.RolePermissionScopes;
+import cv.igrp.platform.access_management.role.domain.service.RolePermissionsView;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.application.dto.PermissionDTO;
@@ -10,9 +12,9 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.HttpStatus;
@@ -29,7 +31,6 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 public class GetPermissionsByRoleIdQueryHandlerTest {
 
-  @InjectMocks
   private GetPermissionsByRoleIdQueryHandler underTest;
   @Mock
   private RoleEntityRepository roleRepository;
@@ -37,6 +38,14 @@ public class GetPermissionsByRoleIdQueryHandlerTest {
   private DepartmentEntityRepository departmentRepository;
   @Mock
   private PermissionMapper permissionMapper;
+  @Mock
+  private RolePermissionScopes scopes;
+
+  @BeforeEach
+  void handler() {
+    underTest = new GetPermissionsByRoleIdQueryHandler(roleRepository, departmentRepository,
+            new RolePermissionsView(permissionMapper, scopes));
+  }
 
 
   @Test

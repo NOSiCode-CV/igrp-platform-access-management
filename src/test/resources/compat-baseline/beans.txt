@@ -234,6 +234,8 @@ respondUserInvitationCommandHandler : cv.igrp.platform.access_management.users.a
 revocationCascadeListener : cv.igrp.platform.access_management.oauth_server.infrastructure.security.RevocationCascadeListener
 roleEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository
 roleMapper : cv.igrp.platform.access_management.role.domain.service.RoleMapper
+rolePermissionScopes : cv.igrp.platform.access_management.role.domain.service.RolePermissionScopes
+rolePermissionsView : cv.igrp.platform.access_management.role.domain.service.RolePermissionsView
 roleSpecificationBuilder : cv.igrp.platform.access_management.role.specs.RoleSpecificationBuilder
 rolesController : cv.igrp.platform.access_management.role.interfaces.rest.RolesController
 routeRegistrationController : cv.igrp.platform.access_management.routes.interfaces.rest.RouteRegistrationController
@@ -294,6 +296,7 @@ updateCurrentUserLocaleCommandHandler : cv.igrp.platform.access_management.users
 updateDepartmentCommandHandler : cv.igrp.platform.access_management.department.application.commands.UpdateDepartmentCommandHandler
 updateMenuCommandHandler : cv.igrp.platform.access_management.app.application.commands.UpdateMenuCommandHandler
 updateRoleCommandHandler : cv.igrp.platform.access_management.department.application.commands.UpdateRoleCommandHandler
+updateRolePermissionScopesCommandHandler : cv.igrp.platform.access_management.department.application.commands.UpdateRolePermissionScopesCommandHandler
 updateUserCommandHandler : cv.igrp.platform.access_management.users.application.commands.UpdateUserCommandHandler
 updateUserMetadataCommandHandler : cv.igrp.platform.access_management.users.application.commands.UpdateUserMetadataCommandHandler
 updateUserStatusCommandHandler : cv.igrp.platform.access_management.users.application.commands.UpdateUserStatusCommandHandler
