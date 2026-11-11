@@ -144,19 +144,31 @@ public final class CompatSupport {
      * to it with the permissions the SDK's M2M calls require.
      */
     public M2MClient registerM2MClient(String clientId) {
+        return registerM2MClient(clientId, null);
+    }
+
+    /** As {@link #registerM2MClient(String)}, with the client owned by an application (null for none). */
+    public M2MClient registerM2MClient(String clientId, Integer applicationId) {
+        return registerM2MClient(clientId, applicationId,
+                List.of("igrp.m2m.sync", "igrp.users.list", "igrp.departments.list", "igrp.departments.view"));
+    }
+
+    /** As {@link #registerM2MClient(String, Integer)}, with exactly these permissions on the service account. */
+    public M2MClient registerM2MClient(String clientId, Integer applicationId, List<String> permissionNames) {
         String admin = superadminToken();
         HttpResponse<String> created = postJson("/api/clients", admin,
                 "{\"clientId\":" + q(clientId) + ",\"clientName\":" + q(clientId + " (compat)") + ","
+                        + (applicationId == null ? "" : "\"applicationId\":" + applicationId + ",")
                         + "\"scopes\":[\"igrp.m2m\"],\"grantTypes\":[\"client_credentials\"]}");
         if (created.statusCode() != 200 && created.statusCode() != 201) {
             throw new IllegalStateException("client registration failed: " + created.statusCode() + " " + created.body());
         }
         Map<String, Object> client = jsonObject(created.body());
 
-        List<Integer> permissionIds = jdbc.queryForList(
-                "select id from t_permission where name in "
-                        + "('igrp.m2m.sync','igrp.users.list','igrp.departments.list','igrp.departments.view')",
-                Integer.class);
+        List<Integer> permissionIds = permissionNames.isEmpty() ? List.of() : jdbc.queryForList(
+                "select id from t_permission where name in ("
+                        + String.join(",", permissionNames.stream().map(n -> "?").toList()) + ")",
+                Integer.class, permissionNames.toArray());
         HttpResponse<String> account = postJson("/api/service-accounts", admin,
                 "{\"name\":" + q(clientId + " SA") + ",\"oauthClientId\":" + q((String) client.get("id"))
                         + ",\"permissionIds\":" + permissionIds + "}");
@@ -164,6 +176,24 @@ public final class CompatSupport {
             throw new IllegalStateException("service account creation failed: " + account.statusCode() + " " + account.body());
         }
         return new M2MClient(clientId, (String) client.get("clientSecret"), "igrp.m2m");
+    }
+
+    /** Creates an internal application through the API and returns its id. */
+    public int createApplication(String code) {
+        HttpResponse<String> created = postJson("/api/applications", superadminToken(),
+                "{\"code\":" + q(code) + ",\"name\":" + q("App " + code)
+                        + ",\"type\":\"INTERNAL\",\"status\":\"ACTIVE\"}");
+        if (created.statusCode() != 200 && created.statusCode() != 201) {
+            throw new IllegalStateException("application creation failed: " + created.statusCode() + " " + created.body());
+        }
+        return ((Number) jsonObject(created.body()).get("id")).intValue();
+    }
+
+    /** A client_credentials access token for this client, as a service gets one at startup. */
+    public String serviceToken(M2MClient client) {
+        HttpResponse<String> token = postForm("/oauth2/token", client.clientId(), client.clientSecret(),
+                "grant_type=client_credentials&scope=" + client.scope());
+        return (String) jsonObject(token.body()).get("access_token");
     }
 
     // ---- HTTP ----
@@ -183,6 +213,13 @@ public final class CompatSupport {
         return send(request(path, bearer)
                 .header("Content-Type", "application/json")
                 .POST(HttpRequest.BodyPublishers.ofString(json)).build());
+    }
+
+    /** A JSON POST with extra headers (for example {@code X-Correlation-ID}). */
+    public HttpResponse<String> postJson(String path, String bearer, String json, Map<String, String> headers) {
+        HttpRequest.Builder builder = request(path, bearer).header("Content-Type", "application/json");
+        headers.forEach(builder::setHeader);
+        return send(builder.POST(HttpRequest.BodyPublishers.ofString(json)).build());
     }
 
     public HttpResponse<String> putJson(String path, String bearer, String json) {

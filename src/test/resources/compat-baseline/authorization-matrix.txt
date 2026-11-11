@@ -3,7 +3,6 @@ DELETE /api/applications/{applicationCode}/menus/{menuCode}/roles anonymous=401 
 DELETE /api/applications/{code} anonymous=401 roleless=403
 DELETE /api/applications/{code}/custom-fields anonymous=401 roleless=400
 DELETE /api/applications/{code}/resources anonymous=401 roleless=400
-DELETE /api/auth/audit/purge anonymous=401 roleless=403
 DELETE /api/clients/{id} anonymous=401 roleless=400
 DELETE /api/departments/{code} anonymous=401 roleless=403
 DELETE /api/departments/{code}/applications anonymous=401 roleless=400
@@ -79,6 +78,7 @@ GET /api/users/me/applications/{applicationCode}/menus anonymous=401 roleless=40
 GET /api/users/me/departments anonymous=401 roleless=401
 GET /api/users/me/departments/{departmentCode}/roles anonymous=401 roleless=401
 GET /api/users/me/permissions anonymous=401 roleless=404
+GET /api/users/me/role/active anonymous=401 roleless=400
 GET /api/users/me/roles anonymous=401 roleless=404
 GET /api/users/me/roles/active anonymous=401 roleless=404
 GET /api/users/{id} anonymous=401 roleless=403
@@ -126,6 +126,7 @@ POST /api/m2m/sync/applications/{code}/menus anonymous=401 roleless=403
 POST /api/m2m/sync/permissions anonymous=401 roleless=403
 POST /api/m2m/sync/resources anonymous=401 roleless=403
 POST /api/m2m/users anonymous=401 roleless=403
+POST /api/routes/register anonymous=401 roleless=403
 POST /api/service-accounts anonymous=401 roleless=400
 POST /api/session/close anonymous=401 roleless=204
 POST /api/session/refresh anonymous=401 roleless=200
@@ -148,6 +149,7 @@ PUT /api/service-accounts/{id} anonymous=401 roleless=400
 PUT /api/users/invite/{id} anonymous=401 roleless=403
 PUT /api/users/me anonymous=401 roleless=403
 PUT /api/users/me/locale anonymous=401 roleless=400
+PUT /api/users/me/role/active anonymous=401 roleless=400
 PUT /api/users/{id} anonymous=401 roleless=400
 PUT /api/users/{id}/metadata anonymous=401 roleless=400
 PUT /api/users/{id}/status anonymous=401 roleless=400

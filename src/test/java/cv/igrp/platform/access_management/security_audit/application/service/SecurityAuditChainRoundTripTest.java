@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.security_audit.application.service;
 import cv.igrp.platform.access_management.security_audit.domain.entities.SecurityAuditLogEntity;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
+import cv.igrp.platform.access_management.security_audit.infrastructure.persistence.SecurityAuditArchiveRepository;
 import cv.igrp.platform.access_management.security_audit.infrastructure.persistence.SecurityAuditLogRepository;
 import jakarta.persistence.EntityManager;
 import org.hibernate.Session;
@@ -49,6 +50,7 @@ class SecurityAuditChainRoundTripTest {
     private static final String SECRET = "round-trip-secret";
 
     @Mock private SecurityAuditLogRepository repository;
+    @Mock private SecurityAuditArchiveRepository archives;
     @Mock private EntityManager entityManager;
     @Mock private Session session;
 
@@ -65,7 +67,7 @@ class SecurityAuditChainRoundTripTest {
     void setUp() {
         chainService = new SecurityAuditChainService(repository, SECRET);
         ReflectionTestUtils.setField(chainService, "entityManager", entityManager);
-        validator = new SecurityAuditChainValidator(repository, chainService);
+        validator = new SecurityAuditChainValidator(repository, archives, chainService);
 
         genesis = new SecurityAuditLogEntity();
         genesis.setSequenceNumber(0L);
@@ -76,7 +78,7 @@ class SecurityAuditChainRoundTripTest {
         genesis.setEpochMs(0L);
 
         when(entityManager.unwrap(Session.class)).thenReturn(session);
-        when(repository.save(any())).thenAnswer(invocation -> {
+        when(repository.saveAndFlush(any())).thenAnswer(invocation -> {
             SecurityAuditLogEntity row = invocation.getArgument(0);
             submittedTimestamps.add(row.getTimestamp());
             storeLikePostgres(row);

@@ -3,7 +3,6 @@ DELETE /api/applications/{applicationCode}/menus/{menuCode}/roles
 DELETE /api/applications/{code}
 DELETE /api/applications/{code}/custom-fields
 DELETE /api/applications/{code}/resources
-DELETE /api/auth/audit/purge
 DELETE /api/clients/{id}
 DELETE /api/departments/{code}
 DELETE /api/departments/{code}/applications
@@ -79,6 +78,7 @@ GET /api/users/me/applications/{applicationCode}/menus
 GET /api/users/me/departments
 GET /api/users/me/departments/{departmentCode}/roles
 GET /api/users/me/permissions
+GET /api/users/me/role/active
 GET /api/users/me/roles
 GET /api/users/me/roles/active
 GET /api/users/{id}
@@ -126,6 +126,7 @@ POST /api/m2m/sync/applications/{code}/menus
 POST /api/m2m/sync/permissions
 POST /api/m2m/sync/resources
 POST /api/m2m/users
+POST /api/routes/register
 POST /api/service-accounts
 POST /api/session/close
 POST /api/session/refresh
@@ -148,6 +149,7 @@ PUT /api/service-accounts/{id}
 PUT /api/users/invite/{id}
 PUT /api/users/me
 PUT /api/users/me/locale
+PUT /api/users/me/role/active
 PUT /api/users/{id}
 PUT /api/users/{id}/metadata
 PUT /api/users/{id}/status

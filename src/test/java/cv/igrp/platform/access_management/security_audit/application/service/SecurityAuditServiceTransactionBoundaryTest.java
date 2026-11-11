@@ -7,6 +7,7 @@ import cv.igrp.platform.access_management.security_audit.domain.enums.SettingsAr
 import cv.igrp.platform.access_management.security_audit.domain.enums.SettingsEntityType;
 import cv.igrp.platform.access_management.security_audit.domain.enums.SettingsOperation;
 import cv.igrp.platform.access_management.security_audit.infrastructure.persistence.SecurityAuditLogRepository;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
@@ -42,10 +43,13 @@ import static org.mockito.Mockito.when;
  * alone never starts a transaction and {@code append} throws
  * {@code IllegalTransactionStateException}, swallowed by the fail-safe catch.
  *
+ * <p>Access events begin a {@code REQUIRES_NEW} transaction; settings events join
+ * the caller's with {@code REQUIRED} (v3-23).
+ *
  * <p>Unlike the plain-Mockito tests, this one wires the real bean through a
  * transactional proxy so the boundary is exercised: it asserts that <em>every</em>
- * public entry point causes the transaction manager to begin a
- * {@code REQUIRES_NEW} transaction on the way in. A new public method that forgets
+ * public entry point causes the transaction manager to begin a transaction with
+ * the propagation of its write path on the way in. A new public method that forgets
  * the annotation fails here.
  */
 @SpringJUnitConfig(SecurityAuditServiceTransactionBoundaryTest.TestConfig.class)
@@ -73,7 +77,7 @@ class SecurityAuditServiceTransactionBoundaryTest {
 
         @Bean
         SecurityAuditService securityAuditService() {
-            return new SecurityAuditServiceImpl(REPOSITORY, CONTEXT_PROVIDER, CHAIN_SERVICE);
+            return new SecurityAuditServiceImpl(REPOSITORY, CONTEXT_PROVIDER, CHAIN_SERVICE, new SimpleMeterRegistry());
         }
     }
 
@@ -90,35 +94,35 @@ class SecurityAuditServiceTransactionBoundaryTest {
 
     static Stream<Arguments> publicEntryPoints() {
         return Stream.of(
-                Arguments.of("logEvent", (Consumer<SecurityAuditService>) s ->
+                Arguments.of("logEvent", TransactionDefinition.PROPAGATION_REQUIRES_NEW, (Consumer<SecurityAuditService>) s ->
                         s.logEvent(AuditEventType.LOGIN_SUCCESS, AuditCategory.AUTHENTICATION, Map.of())),
-                Arguments.of("logEvent(with report context)", (Consumer<SecurityAuditService>) s ->
+                Arguments.of("logEvent(with report context)", TransactionDefinition.PROPAGATION_REQUIRES_NEW, (Consumer<SecurityAuditService>) s ->
                         s.logEvent(AuditEventType.LOGIN_SUCCESS, AuditCategory.AUTHENTICATION, Map.of(),
                                 AuditReportContext.builder().module("Transfers").build())),
-                Arguments.of("logAuthenticationSuccess", (Consumer<SecurityAuditService>)
+                Arguments.of("logAuthenticationSuccess", TransactionDefinition.PROPAGATION_REQUIRES_NEW, (Consumer<SecurityAuditService>)
                         SecurityAuditService::logAuthenticationSuccess),
-                Arguments.of("logAuthenticationFailure", (Consumer<SecurityAuditService>) s ->
+                Arguments.of("logAuthenticationFailure", TransactionDefinition.PROPAGATION_REQUIRES_NEW, (Consumer<SecurityAuditService>) s ->
                         s.logAuthenticationFailure("bad credentials")),
-                Arguments.of("logProfileSwitch", (Consumer<SecurityAuditService>) s ->
+                Arguments.of("logProfileSwitch", TransactionDefinition.PROPAGATION_REQUIRES_NEW, (Consumer<SecurityAuditService>) s ->
                         s.logProfileSwitch(1, 2)),
-                Arguments.of("logAccessDenied(permission)", (Consumer<SecurityAuditService>) s ->
+                Arguments.of("logAccessDenied(permission)", TransactionDefinition.PROPAGATION_REQUIRES_NEW, (Consumer<SecurityAuditService>) s ->
                         s.logAccessDenied("igrp.audit.view")),
-                Arguments.of("logAccessDenied(permission, reason)", (Consumer<SecurityAuditService>) s ->
+                Arguments.of("logAccessDenied(permission, reason)", TransactionDefinition.PROPAGATION_REQUIRES_NEW, (Consumer<SecurityAuditService>) s ->
                         s.logAccessDenied("igrp.audit.view", "no grant")),
-                Arguments.of("logUserChange", (Consumer<SecurityAuditService>) s ->
+                Arguments.of("logUserChange", TransactionDefinition.PROPAGATION_REQUIRES_NEW, (Consumer<SecurityAuditService>) s ->
                         s.logUserChange("user-1", "CREATE")),
-                Arguments.of("logSettingsEvent(7-arg)", (Consumer<SecurityAuditService>) s ->
+                Arguments.of("logSettingsEvent(7-arg)", TransactionDefinition.PROPAGATION_REQUIRED, (Consumer<SecurityAuditService>) s ->
                         s.logSettingsEvent(SettingsArea.ACCESS, SettingsEntityType.ROLE, SettingsOperation.CREATE,
                                 "TEST.Administrator", null, null, null)),
-                Arguments.of("logSettingsEvent(8-arg)", (Consumer<SecurityAuditService>) s ->
+                Arguments.of("logSettingsEvent(8-arg)", TransactionDefinition.PROPAGATION_REQUIRED, (Consumer<SecurityAuditService>) s ->
                         s.logSettingsEvent(SettingsArea.ACCESS, SettingsEntityType.ROLE, SettingsOperation.CREATE,
                                 "TEST.Administrator", null, null, null, AuditStatus.SUCCESS))
         );
     }
 
-    @ParameterizedTest(name = "{0} begins its own REQUIRES_NEW transaction")
+    @ParameterizedTest(name = "{0} begins the transaction its write path needs")
     @MethodSource("publicEntryPoints")
-    void everyPublicEntryPointBeginsItsOwnTransaction(String name, Consumer<SecurityAuditService> call) {
+    void everyPublicEntryPointBeginsItsOwnTransaction(String name, int propagation, Consumer<SecurityAuditService> call) {
         call.accept(service);
 
         ArgumentCaptor<TransactionDefinition> captor = ArgumentCaptor.forClass(TransactionDefinition.class);
@@ -126,13 +130,15 @@ class SecurityAuditServiceTransactionBoundaryTest {
         // self-invocation joins it rather than starting a second one.
         verify(transactionManager).getTransaction(captor.capture());
         assertThat(captor.getValue().getPropagationBehavior())
-                .as("%s must be proxied with REQUIRES_NEW so the MANDATORY chain append has a transaction", name)
-                .isEqualTo(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
+                // Access events: REQUIRES_NEW, so they survive the caller's rollback.
+                // Settings events: REQUIRED, so they commit or roll back with the change (v3-23).
+                .as("%s must be proxied with the propagation of its write path", name)
+                .isEqualTo(propagation);
     }
 
     @ParameterizedTest(name = "{0} reaches the hash chain")
     @MethodSource("publicEntryPoints")
-    void everyPublicEntryPointReachesTheChain(String name, Consumer<SecurityAuditService> call) {
+    void everyPublicEntryPointReachesTheChain(String name, int propagation, Consumer<SecurityAuditService> call) {
         call.accept(service);
 
         // Proves the event is actually appended rather than lost to the fail-safe catch.

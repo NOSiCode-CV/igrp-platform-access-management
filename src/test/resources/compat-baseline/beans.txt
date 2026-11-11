@@ -5,6 +5,8 @@ OAuthClientController : cv.igrp.platform.access_management.oauth_server.interfac
 OAuthClientJpaRepository : cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository
 OAuthClientService : cv.igrp.platform.access_management.oauth_server.application.OAuthClientService
 accessHistoryEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.AccessHistoryEntityRepository
+activeRoleController : cv.igrp.platform.access_management.active_role.interfaces.rest.ActiveRoleController
+activeRoleService : cv.igrp.platform.access_management.active_role.domain.service.ActiveRoleService
 addApplicationCustomFieldsCommandHandler : cv.igrp.platform.access_management.app.application.commands.AddApplicationCustomFieldsCommandHandler
 addApplicationsToDepartmentCommandHandler : cv.igrp.platform.access_management.department.application.commands.AddApplicationsToDepartmentCommandHandler
 addFavoriteApplicationCommandHandler : cv.igrp.platform.access_management.users.application.commands.AddFavoriteApplicationCommandHandler
@@ -74,11 +76,13 @@ excelTempDirStatus : cv.igrp.platform.access_management.security_audit.applicati
 expireRoleService : cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService
 exportTempFileConfig : cv.igrp.platform.access_management.security_audit.application.config.ExportTempFileConfig
 favoriteApplicationEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.FavoriteApplicationEntityRepository
+fetchPermissionsQueryHandler : cv.igrp.platform.access_management.permission_fetch.application.queries.FetchPermissionsQueryHandler
 fileManagerMinioApplication : cv.igrp.framework.filemanager.minio.FileManagerMinioApplication
 filesController : cv.igrp.platform.access_management.files.interfaces.rest.FilesController
 forcedReAuthService : cv.igrp.platform.access_management.session.domain.service.ForcedReAuthService
 getAccessReportQueryHandler : cv.igrp.platform.access_management.security_audit.application.queries.GetAccessReportQueryHandler
 getActiveCurrentUserRoleQueryHandler : cv.igrp.platform.access_management.users.application.queries.GetActiveCurrentUserRoleQueryHandler
+getActiveRoleQueryHandler : cv.igrp.platform.access_management.active_role.application.queries.GetActiveRoleQueryHandler
 getActiveUserRoleQueryHandler : cv.igrp.platform.access_management.users.application.queries.GetActiveUserRoleQueryHandler
 getApplicationByCodeQueryHandler : cv.igrp.platform.access_management.app.application.queries.GetApplicationByCodeQueryHandler
 getApplicationByIdQueryHandler : cv.igrp.platform.access_management.app.application.queries.GetApplicationByIdQueryHandler
@@ -149,6 +153,7 @@ igrp-cv.igrp.framework.filemanager.minio.MinioStorageProviderProperties : cv.igr
 igrp.i18n-cv.igrp.platform.access_management.shared.i18n.I18nProperties : cv.igrp.platform.access_management.shared.i18n.I18nProperties
 igrp.minio-cv.igrp.framework.filemanager.minio.MinioProperties : cv.igrp.framework.filemanager.minio.MinioProperties
 igrp.notification.service-cv.igrp.platform.access_management.shared.config.NotificationServiceProperties : cv.igrp.platform.access_management.shared.config.NotificationServiceProperties
+igrp.permissions.cache-cv.igrp.platform.access_management.permission_fetch.config.PermissionSetProperties : cv.igrp.platform.access_management.permission_fetch.config.PermissionSetProperties
 igrpAuditConfig : cv.igrp.platform.access_management.shared.config.IgrpAuditConfig
 igrpAuthorization : cv.igrp.platform.access_management.shared.security.IgrpAuthorizationService
 igrpJwtAuthenticationConverter : cv.igrp.platform.access_management.shared.security.IgrpJwtAuthenticationConverter
@@ -196,14 +201,21 @@ permissionCacheInvalidator : cv.igrp.platform.access_management.shared.infrastru
 permissionCacheKeyGenerator : cv.igrp.platform.access_management.authorization.domain.service.PermissionCacheKeyGenerator
 permissionCacheService : cv.igrp.platform.access_management.authorization.domain.service.PermissionCacheService
 permissionEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository
+permissionFetchConfig : cv.igrp.platform.access_management.permission_fetch.config.PermissionFetchConfig
+permissionFetchController : cv.igrp.platform.access_management.permission_fetch.interfaces.rest.PermissionFetchController
+permissionFetchService : cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionFetchService
 permissionMapper : cv.igrp.platform.access_management.role.domain.service.PermissionMapper
+permissionSetCache : cv.igrp.platform.access_management.permission_fetch.infrastructure.cache.PermissionSetCache
+permissionSetEviction : cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionSetEviction
 permissionSyncService : cv.igrp.platform.access_management.m2m.domain.service.PermissionSyncService
 postDepartmentCommandHandler : cv.igrp.platform.access_management.department.application.commands.PostDepartmentCommandHandler
 refreshSessionCommandHandler : cv.igrp.platform.access_management.session.application.commands.RefreshSessionCommandHandler
 refreshTokenReuseGuard : cv.igrp.platform.access_management.oauth_server.infrastructure.security.RefreshTokenReuseGuard
 refreshTokenTombstoneRepository : cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.RefreshTokenTombstoneRepository
 registerAccessHistoryCommandHandler : cv.igrp.platform.access_management.users.application.commands.RegisterAccessHistoryCommandHandler
+registerRoutesCommandHandler : cv.igrp.platform.access_management.routes.application.commands.RegisterRoutesCommandHandler
 registeredClientRepository : cv.igrp.platform.access_management.oauth_server.infrastructure.security.IgrpRegisteredClientRepository
+registeredServiceRepository : cv.igrp.platform.access_management.routes.infrastructure.persistence.RegisteredServiceRepository
 removeApplicationCustomFieldsCommandHandler : cv.igrp.platform.access_management.app.application.commands.RemoveApplicationCustomFieldsCommandHandler
 removeApplicationsFromDepartmentCommandHandler : cv.igrp.platform.access_management.department.application.commands.RemoveApplicationsFromDepartmentCommandHandler
 removeFavoriteApplicationCommandHandler : cv.igrp.platform.access_management.users.application.commands.RemoveFavoriteApplicationCommandHandler
@@ -228,6 +240,8 @@ roleEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.
 roleMapper : cv.igrp.platform.access_management.role.domain.service.RoleMapper
 roleSpecificationBuilder : cv.igrp.platform.access_management.role.specs.RoleSpecificationBuilder
 rolesController : cv.igrp.platform.access_management.role.interfaces.rest.RolesController
+routeRegistrationController : cv.igrp.platform.access_management.routes.interfaces.rest.RouteRegistrationController
+routeRegistrationService : cv.igrp.platform.access_management.routes.domain.service.RouteRegistrationService
 scopeAspect : cv.igrp.platform.access_management.shared.security.ScopeAspect
 scopeService : cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService
 scopedTarget.requestScopeCache : cv.igrp.platform.access_management.shared.security.RequestScopeCache
@@ -263,7 +277,6 @@ sessionStoreConfig : cv.igrp.platform.access_management.shared.config.SessionSto
 setActiveCurrentUserRoleCommandHandler : cv.igrp.platform.access_management.users.application.commands.SetActiveCurrentUserRoleCommandHandler
 setActiveUserRoleCommandHandler : cv.igrp.platform.access_management.users.application.commands.SetActiveUserRoleCommandHandler
 setGlobalConfigurationCommandHandler : cv.igrp.platform.access_management.global_configuration.application.commands.SetGlobalConfigurationCommandHandler
-settingsAuditAsyncConfig : cv.igrp.platform.access_management.security_audit.application.config.SettingsAuditAsyncConfig
 settingsAuditEventListener : cv.igrp.platform.access_management.security_audit.application.config.SettingsAuditEventListener
 sharedAuthAuditController : cv.igrp.platform.access_management.shared.api.audit.AuthAuditController
 singleCheckAuthorizationHandler : cv.igrp.platform.access_management.authorization.application.commands.handler.SingleCheckAuthorizationHandler
@@ -274,6 +287,7 @@ startupRunner : cv.igrp.platform.access_management.IgrpPlatformAccessManagementA
 storageClientTimeoutConfig : cv.igrp.platform.access_management.shared.config.StorageClientTimeoutConfig
 subjectGuard : cv.igrp.platform.access_management.shared.security.SubjectGuard
 swaggerConfig : cv.igrp.platform.access_management.shared.config.SwaggerConfig
+switchActiveRoleCommandHandler : cv.igrp.platform.access_management.active_role.application.commands.SwitchActiveRoleCommandHandler
 syncApplicationMenusCommandHandler : cv.igrp.platform.access_management.m2m.application.commands.SyncApplicationMenusCommandHandler
 syncApplicationsCommandHandler : cv.igrp.platform.access_management.m2m.application.commands.SyncApplicationsCommandHandler
 syncPermissionsCommandHandler : cv.igrp.platform.access_management.m2m.application.commands.SyncPermissionsCommandHandler

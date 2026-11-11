@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.compat;
 import org.junit.jupiter.api.Tag;
 import org.springframework.boot.test.context.filter.annotation.TypeExcludeFilters;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -14,11 +15,14 @@ import org.springframework.test.context.DynamicPropertySource;
  *
  * <p>All subclasses share one application context: they must not add
  * {@code @MockitoBean}s or extra properties, or Spring starts a second one.
+ * Object storage is the one replaced bean, declared here so every subclass
+ * shares it: see {@link CompatStorageConfiguration}.
  */
 @Tag("compat")
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @TypeExcludeFilters(NestedTestClassExcludeFilter.class)
 @ActiveProfiles(CompatEnvironment.PROFILE)
+@Import(CompatStorageConfiguration.class)
 public abstract class AbstractCompatIT {
 
     @DynamicPropertySource

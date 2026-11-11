@@ -178,6 +178,10 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
                     sid, len);
         }
         revokeBoundSession(sid);
+        // v3-23: the logout itself is an access decision, recorded apart from the
+        // session-row transition (sessions go away in v3; the logout row stays).
+        sessionAuditLogger.recordLogout(sid,
+                sessionOpt.map(SessionEntity::getUserId).orElseGet(idToken::getSubject));
 
         // R2.1 — and now every sibling application signed in under the same AM
         // sign-in. Reading the key from the row loaded above, which is why that

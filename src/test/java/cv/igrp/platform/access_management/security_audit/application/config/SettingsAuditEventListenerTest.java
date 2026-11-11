@@ -41,7 +41,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -167,13 +167,13 @@ class SettingsAuditEventListenerTest {
     }
 
     @Test
-    void listenerNeverPropagatesAuditFailures() {
+    void auditFailurePropagatesSoTheChangeRollsBack() {
         doThrow(new RuntimeException("db down"))
                 .when(securityAuditService)
                 .logSettingsEvent(any(), any(), any(), any(), any(), any(), any(), any());
 
-        assertThatCode(() -> new SettingsAuditEventListener(securityAuditService)
+        assertThatThrownBy(() -> new SettingsAuditEventListener(securityAuditService)
                 .onSettingsAuditEvent(new RoleCreatedEvent("Administrator")))
-                .doesNotThrowAnyException();
+                .hasMessage("db down");
     }
 }

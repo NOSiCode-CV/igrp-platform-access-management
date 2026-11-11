@@ -131,7 +131,8 @@ public final class CompatEnvironment {
         p.put("igrp.keycloak.client-id", KEYCLOAK_ADAPTER_CLIENT_ID);
         p.put("igrp.keycloak.client-secret", "compat-adapter-secret");
 
-        // Storage is not exercised by the contract suite; the client is created lazily.
+        // Storage is in memory (CompatStorageConfiguration); these only let the
+        // configured provider's beans start.
         p.put("igrp.minio.endpoint", "localhost");
         p.put("igrp.minio.port", "1");
         p.put("igrp.minio.security", "false");

@@ -8,6 +8,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -27,4 +28,6 @@ public interface SecurityAuditLogRepository
 
     /** Current chain tip — the row with the highest sequence number. */
     Optional<SecurityAuditLogEntity> findTopByOrderBySequenceNumberDesc();
+
+    List<SecurityAuditLogEntity> findBySequenceNumberBetweenOrderBySequenceNumberAsc(long first, long last);
 }

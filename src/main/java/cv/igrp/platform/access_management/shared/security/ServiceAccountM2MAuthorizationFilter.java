@@ -21,8 +21,8 @@ import java.io.IOException;
 
 /**
  * Enforces role/permission decisions for OAuth service-account tokens on the
- * generated M2M endpoints while leaving the legacy static-header M2M path
- * untouched.
+ * generated M2M endpoints, and on route registration (v3-02), while leaving the
+ * legacy static-header M2M path untouched.
  */
 @Component
 public class ServiceAccountM2MAuthorizationFilter extends OncePerRequestFilter {
@@ -37,7 +37,8 @@ public class ServiceAccountM2MAuthorizationFilter extends OncePerRequestFilter {
 
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) {
-        return !request.getRequestURI().startsWith(M2M_PREFIX);
+        String uri = request.getRequestURI();
+        return !uri.startsWith(M2M_PREFIX) && !uri.equals(RouteRegistrationPaths.REGISTER);
     }
 
     @Override
@@ -79,7 +80,7 @@ public class ServiceAccountM2MAuthorizationFilter extends OncePerRequestFilter {
 
     private static String requiredPermission(HttpServletRequest request) {
         String uri = request.getRequestURI();
-        if (uri.startsWith("/api/m2m/sync/")) {
+        if (uri.startsWith("/api/m2m/sync/") || uri.equals(RouteRegistrationPaths.REGISTER)) {
             return M2MPermissions.IGRP_M2M_SYNC;
         }
         if (uri.equals("/api/m2m/users")) {

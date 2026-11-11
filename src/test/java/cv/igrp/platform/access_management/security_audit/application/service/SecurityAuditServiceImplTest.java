@@ -8,12 +8,17 @@ import cv.igrp.platform.access_management.security_audit.domain.enums.SettingsAr
 import cv.igrp.platform.access_management.security_audit.domain.enums.SettingsEntityType;
 import cv.igrp.platform.access_management.security_audit.domain.enums.SettingsOperation;
 import cv.igrp.platform.access_management.security_audit.infrastructure.persistence.SecurityAuditLogRepository;
+import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.boot.test.system.CapturedOutput;
+import org.springframework.boot.test.system.OutputCaptureExtension;
 
 import java.time.Instant;
 import java.util.HashMap;
@@ -21,22 +26,24 @@ import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-@ExtendWith(MockitoExtension.class)
+@ExtendWith({MockitoExtension.class, OutputCaptureExtension.class})
 class SecurityAuditServiceImplTest {
 
     @Mock private SecurityAuditLogRepository repository;
     @Mock private SecurityAuditContextProvider contextProvider;
     @Mock private SecurityAuditChainService chainService;
 
+    private final MeterRegistry meterRegistry = new SimpleMeterRegistry();
     private SecurityAuditServiceImpl service;
 
     @BeforeEach
     void setUp() {
-        service = new SecurityAuditServiceImpl(repository, contextProvider, chainService);
+        service = new SecurityAuditServiceImpl(repository, contextProvider, chainService, meterRegistry);
     }
 
     private Map<String, Object> baseContext() {
@@ -76,13 +83,16 @@ class SecurityAuditServiceImplTest {
     }
 
     @Test
-    void auditWriteFailureNeverPropagatesToTheCaller() {
+    void accessEventWriteFailureIsLoggedAndCountedButNotRethrown(CapturedOutput output) {
         when(contextProvider.getContext()).thenReturn(baseContext());
         doThrow(new RuntimeException("db down")).when(chainService).append(org.mockito.ArgumentMatchers.any());
 
         assertThatCode(() ->
                 service.logEvent(AuditEventType.LOGIN_SUCCESS, AuditCategory.AUTHENTICATION, Map.of()))
                 .doesNotThrowAnyException();
+
+        assertThat(output).contains("Failed to save security audit log", "LOGIN_SUCCESS");
+        assertThat(failures("access")).isEqualTo(1.0);
     }
 
     @Test
@@ -253,13 +263,44 @@ class SecurityAuditServiceImplTest {
     }
 
     @Test
-    void logSettingsEventWriteFailureNeverPropagatesToTheCaller() {
+    void settingsEventWriteFailureIsLoggedCountedAndRethrown(CapturedOutput output) {
         when(contextProvider.getContext()).thenReturn(baseContext());
         doThrow(new RuntimeException("db down")).when(chainService).append(org.mockito.ArgumentMatchers.any());
 
-        assertThatCode(() -> service.logSettingsEvent(
+        assertThatThrownBy(() -> service.logSettingsEvent(
                 SettingsArea.ACCESS, SettingsEntityType.DEPARTMENT, SettingsOperation.CREATE,
                 "Finance", null, null, null))
-                .doesNotThrowAnyException();
+                .hasMessage("db down");
+
+        assertThat(output).contains("Failed to save settings audit log", "Finance");
+        assertThat(failures("settings")).isEqualTo(1.0);
+    }
+
+    @Test
+    void settingsEventIsAppendedJustBeforeCommitNotWhenLogged() {
+        when(contextProvider.getContext()).thenReturn(baseContext());
+        org.springframework.transaction.support.TransactionSynchronizationManager.initSynchronization();
+        try {
+            service.logSettingsEvent(SettingsArea.ACCESS, SettingsEntityType.ROLE, SettingsOperation.CREATE,
+                    "Auditor", null, null, null);
+
+            // Holding the chain lock from here to commit would block any access
+            // event the same request writes in its own transaction.
+            org.mockito.Mockito.verify(chainService, org.mockito.Mockito.never())
+                    .append(org.mockito.ArgumentMatchers.any());
+
+            org.springframework.transaction.support.TransactionSynchronizationManager.getSynchronizations()
+                    .forEach(sync -> sync.beforeCommit(false));
+
+            org.mockito.Mockito.verify(chainService).append(org.mockito.ArgumentMatchers.argThat(
+                    row -> "Auditor".equals(row.getEntityName())));
+        } finally {
+            org.springframework.transaction.support.TransactionSynchronizationManager.clearSynchronization();
+        }
+    }
+
+    private double failures(String path) {
+        Counter counter = meterRegistry.find("igrp.audit.write.failures").tag("path", path).counter();
+        return counter == null ? 0.0 : counter.count();
     }
 }

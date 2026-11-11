@@ -101,6 +101,11 @@ public class SessionEnforcementFilter extends OncePerRequestFilter {
             return true;
         }
         String uri = request.getRequestURI();
+        // v3-02: services register their routes with their own client_credentials token.
+        // Exact match, so no future path under it skips this filter by accident.
+        if (uri.equals(RouteRegistrationPaths.REGISTER)) {
+            return true;
+        }
         for (String prefix : SKIPPED_PREFIXES) {
             if (uri.startsWith(prefix)) {
                 return true;

@@ -61,6 +61,12 @@ class AuditTrailCoverageTest {
     }
 
     @Test
+    void logout_emitsOneRow_userActor() {
+        logger.recordLogout(UUID.randomUUID(), "00000000-0000-0000-0000-000000000042");
+        assertSingleRow(AuditEventType.LOGOUT, "USER_LOGOUT", "USER");
+    }
+
+    @Test
     void sessionCreated_emitsOneRow_userActor() {
         logger.recordCreated(UUID.randomUUID(), "00000000-0000-0000-0000-000000000042", "device-1", "web", SessionAuditLogger.USER);
         assertSingleRow(AuditEventType.SESSION_CREATED, "NEW_LOGIN", "USER");

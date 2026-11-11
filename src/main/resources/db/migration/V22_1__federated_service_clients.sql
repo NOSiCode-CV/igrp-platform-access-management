@@ -1,4 +1,4 @@
--- V18_1 — federated service clients (v3-17, #24).
+-- V22_1 — federated service clients (v3-17, #24).
 --
 -- A service client (grant client_credentials only) now lives in the IdP: AM
 -- keeps its client_id, application and service account, plus the IdP it lives
