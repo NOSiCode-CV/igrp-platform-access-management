@@ -15,15 +15,21 @@ import java.util.Map;
  * AM writes it.
  * <ul>
  *   <li>{@code permissions:user:{sub}:app:{appCode}}: a Set of permission keys
- *       plus the {@link #MARKER} member, so a user with no permissions is still
- *       a hit (Redis cannot store an empty Set). Readers ignore the marker.</li>
+ *       plus the {@link #MARKER} member, present in every set, so a user with
+ *       no permissions is still a hit (Redis cannot store an empty Set).
+ *       Readers check a key with SISMEMBER and treat "the key exists" as a hit;
+ *       the marker is never a permission key.</li>
  *   <li>{@code permissions:user:{sub}:app:{appCode}:scopes}: a Hash, key to
  *       scope. Absent when the set has no keys.</li>
  *   <li>{@code permissions:user:{sub}:apps}: the per-user index of the user's
  *       set keys, so eviction never scans Redis.</li>
+ *   <li>{@code permissions:user:{sub}:app:{appCode}:accessed}: AM's own
+ *       once-per-TTL guard for {@code APPLICATION_ACCESSED}; eviction leaves it,
+ *       so a refill after a change is not a second access. Not for readers.</li>
  * </ul>
- * One Lua script writes all three with their TTL, so a crash never leaves a
- * key without an expiry.
+ * One Lua script writes them all with their TTL, so a crash never leaves a key
+ * without an expiry. The script touches several keys, so it needs a single
+ * Redis node (standalone or Sentinel), not Redis Cluster.
  */
 @Component
 public class PermissionSetCache {
@@ -32,11 +38,10 @@ public class PermissionSetCache {
     public static final String MARKER = "~";
 
     /**
-     * KEYS: set, scopes hash, index. ARGV: ttl seconds, marker, then key/scope pairs.
-     * Returns 1 when the set existed before this write.
+     * KEYS: set, scopes hash, index, accessed guard. ARGV: ttl seconds, marker,
+     * then key/scope pairs. Returns 1 when this is the first access in the TTL.
      */
     private static final RedisScript<Long> WRITE = new DefaultRedisScript<>("""
-            local existed = redis.call('EXISTS', KEYS[1])
             redis.call('DEL', KEYS[1], KEYS[2])
             redis.call('SADD', KEYS[1], ARGV[2])
             for i = 3, #ARGV, 2 do
@@ -49,7 +54,10 @@ public class PermissionSetCache {
             end
             redis.call('SADD', KEYS[3], KEYS[1])
             redis.call('EXPIRE', KEYS[3], ARGV[1])
-            return existed
+            if redis.call('SET', KEYS[4], '1', 'NX', 'EX', ARGV[1]) then
+              return 1
+            end
+            return 0
             """, Long.class);
 
     private final StringRedisTemplate redis;
@@ -72,10 +80,14 @@ public class PermissionSetCache {
         return "permissions:user:" + sub + ":apps";
     }
 
+    static String accessedKey(String sub, String applicationCode) {
+        return setKey(sub, applicationCode) + ":accessed";
+    }
+
     /**
      * Replaces the caller's set for the application.
      *
-     * @return whether a set was already cached (a refresh rather than a first access in this TTL)
+     * @return whether this is the caller's first access to the application in the TTL
      */
     public boolean write(String sub, String applicationCode, Map<String, String> scopesByKey) {
         List<String> args = new ArrayList<>();
@@ -85,10 +97,11 @@ public class PermissionSetCache {
             args.add(key);
             args.add(scope);
         });
-        Long existed = redis.execute(WRITE,
-                List.of(setKey(sub, applicationCode), scopesKey(sub, applicationCode), indexKey(sub)),
+        Long firstAccess = redis.execute(WRITE,
+                List.of(setKey(sub, applicationCode), scopesKey(sub, applicationCode), indexKey(sub),
+                        accessedKey(sub, applicationCode)),
                 args.toArray());
-        return existed != null && existed == 1L;
+        return firstAccess != null && firstAccess == 1L;
     }
 
     /** Deletes the caller's set for the application, so the next request reads the change. */

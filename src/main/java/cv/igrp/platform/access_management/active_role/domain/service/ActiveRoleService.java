@@ -87,7 +87,8 @@ public class ActiveRoleService {
     }
 
     /** A user's active role in an application: stored, default or super-admin; empty when there is none. */
-    public record ResolvedActiveRole(int roleId, String code, String departmentCode, Source source) {
+    public record ResolvedActiveRole(int applicationId, int roleId, String code, String departmentCode,
+                                     Source source) {
     }
 
     /**
@@ -100,10 +101,10 @@ public class ActiveRoleService {
         int applicationId = applicationId(applicationCode);
         if (isRoot(userId)) {
             RoleRow root = superAdminRole();
-            return Optional.of(root.resolved(Source.SUPER_ADMIN));
+            return Optional.of(root.resolved(applicationId, Source.SUPER_ADMIN));
         }
         List<RoleRow> valid = validRoles(userId, applicationId);
-        return effectiveRole(valid, storedValidRole(userId, applicationId, valid));
+        return effectiveRole(applicationId, valid, storedValidRole(userId, applicationId, valid));
     }
 
     /** The caller's active role in the application, or its default, with the roles they can pick. */
@@ -163,12 +164,13 @@ public class ActiveRoleService {
     }
 
     /** The stored choice when valid, else the only valid role, else empty. */
-    private static Optional<ResolvedActiveRole> effectiveRole(List<RoleRow> valid, RoleRow stored) {
+    private static Optional<ResolvedActiveRole> effectiveRole(int applicationId, List<RoleRow> valid,
+                                                              RoleRow stored) {
         if (stored != null) {
-            return Optional.of(stored.resolved(Source.STORED));
+            return Optional.of(stored.resolved(applicationId, Source.STORED));
         }
         if (valid.size() == 1) {
-            return Optional.of(valid.getFirst().resolved(Source.DEFAULT));
+            return Optional.of(valid.getFirst().resolved(applicationId, Source.DEFAULT));
         }
         return Optional.empty();
     }
@@ -240,8 +242,8 @@ public class ActiveRoleService {
             return new RoleRefDTO(code, name, departmentCode);
         }
 
-        ResolvedActiveRole resolved(Source source) {
-            return new ResolvedActiveRole(id, code, departmentCode, source);
+        ResolvedActiveRole resolved(int applicationId, Source source) {
+            return new ResolvedActiveRole(applicationId, id, code, departmentCode, source);
         }
     }
 }

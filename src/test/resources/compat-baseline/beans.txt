@@ -201,6 +201,7 @@ permissionCacheInvalidator : cv.igrp.platform.access_management.shared.infrastru
 permissionCacheKeyGenerator : cv.igrp.platform.access_management.authorization.domain.service.PermissionCacheKeyGenerator
 permissionCacheService : cv.igrp.platform.access_management.authorization.domain.service.PermissionCacheService
 permissionEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository
+permissionFetchConfig : cv.igrp.platform.access_management.permission_fetch.config.PermissionFetchConfig
 permissionFetchController : cv.igrp.platform.access_management.permission_fetch.interfaces.rest.PermissionFetchController
 permissionFetchService : cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionFetchService
 permissionMapper : cv.igrp.platform.access_management.role.domain.service.PermissionMapper

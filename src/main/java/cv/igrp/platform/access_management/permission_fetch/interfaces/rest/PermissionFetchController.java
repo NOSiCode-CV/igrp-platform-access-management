@@ -4,13 +4,11 @@ import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.framework.stereotype.IgrpController;
 import cv.igrp.platform.access_management.permission_fetch.application.dto.PermissionSetDTO;
 import cv.igrp.platform.access_management.permission_fetch.application.queries.FetchPermissionsQuery;
-import cv.igrp.platform.access_management.permission_fetch.config.PermissionSetProperties;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -28,7 +26,6 @@ import org.springframework.web.bind.annotation.RestController;
 @IgrpController
 @RestController
 @RequestMapping(path = "api")
-@EnableConfigurationProperties(PermissionSetProperties.class)
 @Tag(name = "Permission fetch", description = "The caller's permission set for one application")
 public class PermissionFetchController {
 

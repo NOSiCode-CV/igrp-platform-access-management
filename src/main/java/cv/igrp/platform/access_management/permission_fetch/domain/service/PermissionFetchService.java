@@ -12,6 +12,9 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import cv.igrp.platform.access_management.shared.security.ServiceAccountTokenClaims;
 import cv.igrp.platform.access_management.shared.security.SubjectParser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -21,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 
 /**
  * The permission fetch (v3-06, spec "Permission fetch contract"): what the
@@ -37,11 +41,13 @@ import java.util.Optional;
  * A caller without an active authorization gets 401 and nothing is written:
  * the user must be active (and the session filter has already required a
  * live session); the service account and its client must be active.
- * {@code APPLICATION_ACCESSED} is audited when the set was not cached, so at
- * most once per user, application and TTL.
+ * {@code APPLICATION_ACCESSED} is audited at most once per user, application
+ * and TTL. While Redis is down the fetch still answers, from the database.
  */
 @Service
 public class PermissionFetchService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PermissionFetchService.class);
 
     /** Every scope is {@code all} until scopes on role permissions land (#21). */
     static final String DEFAULT_SCOPE = "all";
@@ -105,12 +111,27 @@ public class PermissionFetchService {
 
         Map<String, String> scopes = new LinkedHashMap<>();
         keys.forEach(key -> scopes.put(key, DEFAULT_SCOPE));
-        boolean refreshed = cache.write(sub, applicationCode, scopes);
-        if (!refreshed) {
+        if (cacheAndCheckFirstAccess(sub, applicationCode, scopes)) {
             audit.logEvent(AuditEventType.APPLICATION_ACCESSED, AuditCategory.AUTHORIZATION,
                     Map.of("applicationCode", applicationCode));
         }
         return new PermissionSetDTO(keys, scopes);
+    }
+
+    /**
+     * Writes the set. While Redis is down the starter calls this endpoint on
+     * every request (spec "Cache"), so the fetch still answers from the
+     * database; the access is then not audited, as it cannot be counted once
+     * per TTL.
+     */
+    private boolean cacheAndCheckFirstAccess(String sub, String applicationCode, Map<String, String> scopes) {
+        try {
+            return cache.write(sub, applicationCode, scopes);
+        } catch (DataAccessException e) {
+            LOGGER.warn("[PERMISSIONS] Redis unavailable; serving {} for {} without caching: {}",
+                    applicationCode, sub, e.getMessage());
+            return false;
+        }
     }
 
     private List<String> userKeys(String sub, String applicationCode) {
@@ -124,14 +145,17 @@ public class PermissionFetchService {
         if (role.isEmpty()) {
             return List.of();
         }
-        int applicationId = applicationId(applicationCode);
-        if (role.get().source() == Source.SUPER_ADMIN) {
-            return jdbc.queryForList(APPLICATION_KEYS, String.class, applicationId);
+        ResolvedActiveRole active = role.get();
+        if (active.source() == Source.SUPER_ADMIN) {
+            return jdbc.queryForList(APPLICATION_KEYS, String.class, active.applicationId());
         }
-        return jdbc.queryForList(ROLE_KEYS, String.class, role.get().roleId(), applicationId);
+        return jdbc.queryForList(ROLE_KEYS, String.class, active.roleId(), active.applicationId());
     }
 
     private List<String> serviceAccountKeys(String serviceAccountId, String applicationCode) {
+        if (!isUuid(serviceAccountId)) {
+            throw unauthorized("The service account token has no service account subject");
+        }
         if (!Boolean.TRUE.equals(jdbc.queryForObject(ACTIVE_SERVICE_ACCOUNT, Boolean.class, serviceAccountId))) {
             throw unauthorized("The service account or its client is not active");
         }
@@ -146,6 +170,15 @@ public class PermissionFetchService {
             throw IgrpResponseStatusException.notFound("Application " + applicationCode + " not found");
         }
         return ids.getFirst();
+    }
+
+    private static boolean isUuid(String value) {
+        try {
+            UUID.fromString(value);
+            return true;
+        } catch (IllegalArgumentException | NullPointerException e) {
+            return false;
+        }
     }
 
     private static IgrpResponseStatusException unauthorized(String reason) {

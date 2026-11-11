@@ -104,6 +104,7 @@ class PermissionFetchIT extends AbstractCompatIT {
         Map<String, Object> noChoice = fetch(token);
         assertThat(keys(noChoice)).isEmpty();
         assertThat(redis.opsForSet().members(setKey(userId))).containsExactly(MARKER);
+        assertThat(redis.getExpire(setKey(userId))).as("the marker-only set has a TTL too").isBetween(2600L, 2700L);
 
         HttpResponse<String> switched = api.putJson("/api/users/me/role/active?applicationCode=" + app, token,
                 "{\"roleCode\":" + CompatSupport.q(role("R2")) + "}");
@@ -112,6 +113,7 @@ class PermissionFetchIT extends AbstractCompatIT {
         assertThat(redis.hasKey(setKey(userId) + ":scopes")).isFalse();
 
         assertThat(keys(fetch(token))).containsExactly(key("faturas.delete"));
+        assertThat(accessedRows()).as("a refill after the switch is not a second access in the TTL").isOne();
     }
 
     @Test
@@ -138,12 +140,19 @@ class PermissionFetchIT extends AbstractCompatIT {
         String token = userToken();
 
         fetch(token);
+        // No permissions: the set still exists, holding only the marker, so a reader has a hit.
+        assertThat(redis.hasKey(setKey(userId))).isTrue();
+        assertThat(redis.opsForSet().members(setKey(userId))).containsExactly(MARKER);
         fetch(token);
 
-        assertThat(jdbc.queryForObject("""
+        assertThat(accessedRows()).isOne();
+    }
+
+    private long accessedRows() {
+        return jdbc.queryForObject("""
                 SELECT count(*) FROM t_security_audit_log
                  WHERE event_type = 'APPLICATION_ACCESSED' AND user_id = ? AND context_data LIKE ?""",
-                Long.class, userId, "%" + app + "%")).isOne();
+                Long.class, userId, "%" + app + "%");
     }
 
     @Test
@@ -157,7 +166,33 @@ class PermissionFetchIT extends AbstractCompatIT {
         HttpResponse<String> response = api.get(FETCH + app, token);
 
         assertThat(response.statusCode()).as(response.body()).isEqualTo(401);
-        assertThat(redis.hasKey(setKey(userId))).isFalse();
+        assertNothingWritten(userId);
+    }
+
+    @Test
+    @DisplayName("A service account whose client is disabled gets 401 and nothing is written")
+    void inactiveServiceAccountClientGets401() {
+        CompatSupport.M2MClient client = api.registerM2MClient(service + "-off", null, List.of(key("faturas.list")));
+        String token = api.serviceToken(client);
+        String serviceAccountId = serviceAccountId(client);
+        jdbc.update("UPDATE t_oauth_client SET active = FALSE WHERE client_id = ?", client.clientId());
+
+        HttpResponse<String> response = api.get(FETCH + app, token);
+
+        assertThat(response.statusCode()).as(response.body()).isEqualTo(401);
+        assertNothingWritten(serviceAccountId);
+    }
+
+    private void assertNothingWritten(String sub) {
+        assertThat(redis.hasKey(setKey(sub))).isFalse();
+        assertThat(redis.hasKey(setKey(sub) + ":scopes")).isFalse();
+        assertThat(redis.hasKey(indexKey(sub))).isFalse();
+    }
+
+    private String serviceAccountId(CompatSupport.M2MClient client) {
+        return jdbc.queryForObject("""
+                SELECT sa.id::text FROM t_service_account sa JOIN t_oauth_client oc ON oc.id = sa.oauth_client_id
+                 WHERE oc.client_id = ?""", String.class, client.clientId());
     }
 
     @Test
@@ -166,14 +201,13 @@ class PermissionFetchIT extends AbstractCompatIT {
         int otherApp = api.createApplication("PF_SA_" + suffix);
         CompatSupport.M2MClient client = api.registerM2MClient(service + "-caller", otherApp,
                 List.of(key("faturas.delete")));
-        String serviceAccountId = jdbc.queryForObject("""
-                SELECT sa.id::text FROM t_service_account sa JOIN t_oauth_client oc ON oc.id = sa.oauth_client_id
-                 WHERE oc.client_id = ?""", String.class, client.clientId());
+        String serviceAccountId = serviceAccountId(client);
 
         Map<String, Object> body = fetch(api.serviceToken(client));
 
         assertThat(keys(body)).containsExactly(key("faturas.delete"));
         assertThat(redis.opsForSet().members(setKey(serviceAccountId))).contains(key("faturas.delete"), MARKER);
+        assertThat(redis.getExpire(setKey(serviceAccountId))).isBetween(2600L, 2700L);
     }
 
     @Test
