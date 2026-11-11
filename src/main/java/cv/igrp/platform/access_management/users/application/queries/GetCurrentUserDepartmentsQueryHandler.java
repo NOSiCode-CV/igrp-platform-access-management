@@ -57,7 +57,7 @@ public class GetCurrentUserDepartmentsQueryHandler implements QueryHandler<GetCu
         LOGGER.info("Getting departments for user: {}", user.getExternalId());
 
         // Role-based superadmin check — see GetCurrentUserApplicationsQueryHandler
-        // for full rationale. Same pattern as PermissionCacheService.isSuperAdmin:
+        // for full rationale. Same pattern as PermissionCheckService.isSuperAdmin:
         // user is superadmin iff any of their assigned roles has the canonical
         // code ConfigurationService.SUPER_ADMIN_ROLE ("DEPT_IGRP.superadmin").
         boolean isSuperAdmin = user.getRoles() != null && user.getRoles().stream()

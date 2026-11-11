@@ -131,9 +131,16 @@ public class PermissionSyncService {
                 String incomingHash = computeStructuralHash(dto);
 
                 if (!existingHash.equals(incomingHash)) {
+                    Status newStatus = dto.getStatus() != null ? dto.getStatus() : Status.ACTIVE;
+                    boolean statusChanged = existing.getStatus() != newStatus;
                     existing.setDescription(dto.getDescription());
-                    existing.setStatus(dto.getStatus() != null ? dto.getStatus() : Status.ACTIVE);
+                    existing.setStatus(newStatus);
                     permissionRepository.save(existing);
+                    if (statusChanged) {
+                        // The fetch only counts ACTIVE permissions: the holders' sets
+                        // are deleted after commit, as for a deletion (#18).
+                        eventPublisher.publishPermissionDeleted(new DeletePermissionEvent(this, existing.getName()));
+                    }
                     LOGGER.info("[PermissionSync] Updated permission '{}'", dto.getName());
                 } else {
                     LOGGER.debug("[PermissionSync] Permission '{}' already up to date", dto.getName());

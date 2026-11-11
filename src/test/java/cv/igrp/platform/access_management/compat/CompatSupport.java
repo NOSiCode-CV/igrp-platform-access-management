@@ -232,6 +232,13 @@ public final class CompatSupport {
         return send(request(path, bearer).DELETE().build());
     }
 
+    /** A DELETE with a JSON body, as several AM endpoints take the codes to remove in the body. */
+    public HttpResponse<String> deleteJson(String path, String bearer, String json) {
+        return send(request(path, bearer)
+                .header("Content-Type", "application/json")
+                .method("DELETE", HttpRequest.BodyPublishers.ofString(json)).build());
+    }
+
     /** A form POST with HTTP Basic client authentication, as OAuth2 clients send it. */
     public HttpResponse<String> postForm(String path, String clientId, String clientSecret, String form) {
         String basic = Base64.getEncoder().encodeToString(

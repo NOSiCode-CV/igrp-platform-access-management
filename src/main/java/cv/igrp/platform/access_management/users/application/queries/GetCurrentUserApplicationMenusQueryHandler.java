@@ -66,7 +66,7 @@ public class GetCurrentUserApplicationMenusQueryHandler implements QueryHandler<
         var application = applicationRepository.findByCodeAndStatusNotDeleted(query.getApplicationCode());
 
         // Role-based superadmin check — see GetCurrentUserApplicationsQueryHandler
-        // for full rationale. Same pattern as PermissionCacheService.isSuperAdmin.
+        // for full rationale. Same pattern as PermissionCheckService.isSuperAdmin.
         boolean isSuperAdmin = user.getRoles() != null && user.getRoles().stream()
                 .map(r -> r != null ? r.getCode() : null)
                 .filter(Objects::nonNull)

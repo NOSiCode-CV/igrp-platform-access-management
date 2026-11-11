@@ -11,11 +11,16 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
+import cv.igrp.platform.access_management.shared.domain.events.DepartmentScopeChangedEvent;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.security_audit.domain.events.ApplicationEditedEvent;
 import cv.igrp.platform.access_management.security_audit.application.support.SettingsDiff;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
+
+import java.util.LinkedHashSet;
+import java.util.Objects;
+import java.util.Set;
 
 
 /**
@@ -84,6 +89,13 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
                 .compare("description", application.getDescription(), appDto.getDescription())
                 .compare("status", application.getStatus(), appDto.getStatus());
 
+        // Departments whose users' permission sets change with this edit (#18):
+        // all of them when the status changes, else the ones added below.
+        Set<String> affectedDepartments = new LinkedHashSet<>();
+        if (!Objects.equals(application.getStatus(), appDto.getStatus())) {
+            application.getDepartments().forEach(department -> affectedDepartments.add(department.getCode()));
+        }
+
         application.setName(appDto.getName());
         application.setDescription(appDto.getDescription());
         // TODO(catalog-gap): application activate/deactivate is folded into this status
@@ -112,10 +124,15 @@ public class UpdateApplicationCommandHandler implements CommandHandler<UpdateApp
                 }
             }
 
-            application.getDepartments().add(department);
+            if (application.getDepartments().add(department)) {
+                affectedDepartments.add(department.getCode());
+            }
         }
 
         ApplicationEntity updatedApplication = applicationRepository.save(application);
+
+        affectedDepartments.forEach(code -> eventPublisher.publishDepartmentScopeChanged(
+                new DepartmentScopeChangedEvent(code, DepartmentScopeChangedEvent.CHANGE_APPLICATIONS, null)));
 
         eventPublisher.publishSettingsAudit(new ApplicationEditedEvent(
                 updatedApplication.getName(), diff.previousValue(), diff.newValue()));

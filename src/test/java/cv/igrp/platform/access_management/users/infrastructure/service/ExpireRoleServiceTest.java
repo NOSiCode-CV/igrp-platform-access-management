@@ -115,10 +115,9 @@ class ExpireRoleServiceTest {
     @Test
     @DisplayName("removeExpiredRoles must publish UserRoleChangedEvent so the permission cache is evicted")
     void removeExpiredRoles_ShouldPublishUserRoleChangedEvent() {
-        // Without this event nothing reaches PermissionCacheInvalidator, and the
-        // permission cache has no TTL — so a decision cached as "granted" before
-        // expiry would outlive the assignment indefinitely. The SQL filter is
-        // correct but never re-consulted once a decision is memoised.
+        // Without this event nothing reaches PermissionSetEviction, and the
+        // user's permission sets would keep the expired role's keys until
+        // their TTL runs out.
         when(userRoleAssignmentRepository.findExpiredRoles()).thenReturn(List.of(assignment));
 
         expireRoleService.removeExpiredRoles();

@@ -43,7 +43,6 @@ authorizationService : cv.igrp.platform.access_management.oauth_server.infrastru
 authorizationSyncService : cv.igrp.platform.access_management.shared.infrastructure.service.AuthorizationSyncService
 batchCheckAuthorizationCommandHandler : cv.igrp.platform.access_management.authorization.application.commands.BatchCheckAuthorizationCommandHandler
 cacheConfig : cv.igrp.platform.access_management.shared.config.CacheConfig
-cacheEvictionInterceptor : cv.igrp.platform.access_management.shared.infrastructure.cache.CacheEvictionInterceptor
 cacheManager : cv.igrp.platform.access_management.shared.config.CacheConfig$FallbackCacheManager
 cancelUserInvitationCommandHandler : cv.igrp.platform.access_management.users.application.commands.CancelUserInvitationCommandHandler
 checkAuthorizationCommandHandler : cv.igrp.platform.access_management.authorization.application.commands.CheckAuthorizationCommandHandler
@@ -196,10 +195,7 @@ notificationServiceConfig : cv.igrp.platform.access_management.shared.config.Not
 otpEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.OtpEntityRepository
 ownershipPolicy : cv.igrp.platform.access_management.shared.security.policy.OwnershipPolicy
 pdfReportExporter : cv.igrp.platform.access_management.security_audit.application.export.PdfReportExporter
-permissionCacheEvictService : cv.igrp.platform.access_management.shared.infrastructure.cache.PermissionCacheEvictService
-permissionCacheInvalidator : cv.igrp.platform.access_management.shared.infrastructure.cache.PermissionCacheInvalidator
-permissionCacheKeyGenerator : cv.igrp.platform.access_management.authorization.domain.service.PermissionCacheKeyGenerator
-permissionCacheService : cv.igrp.platform.access_management.authorization.domain.service.PermissionCacheService
+permissionCheckService : cv.igrp.platform.access_management.authorization.domain.service.PermissionCheckService
 permissionEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository
 permissionFetchConfig : cv.igrp.platform.access_management.permission_fetch.config.PermissionFetchConfig
 permissionFetchController : cv.igrp.platform.access_management.permission_fetch.interfaces.rest.PermissionFetchController
@@ -316,4 +312,3 @@ userStatusGuard : cv.igrp.platform.access_management.shared.security.UserStatusG
 userUtils : cv.igrp.platform.access_management.shared.infrastructure.utils.UserUtils
 validateInvitationEmailCommandHandler : cv.igrp.platform.access_management.users.application.commands.ValidateInvitationEmailCommandHandler
 validateInvitationOtpCommandHandler : cv.igrp.platform.access_management.users.application.commands.ValidateInvitationOtpCommandHandler
-webConfig : cv.igrp.platform.access_management.shared.config.WebConfig

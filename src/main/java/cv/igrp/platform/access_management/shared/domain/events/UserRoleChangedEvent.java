@@ -10,7 +10,7 @@ import java.util.Set;
  *
  * Consumed by:
  * - SessionInvalidationEventListener (invalidates server-side sessions)
- * - PermissionCacheInvalidator (evicts permission cache entries)
+ * - PermissionSetEviction (deletes the user's permission sets after commit)
  */
 @Data
 public class UserRoleChangedEvent {

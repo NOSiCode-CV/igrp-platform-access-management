@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.shared.security.integration;
 
-import cv.igrp.platform.access_management.authorization.domain.service.PermissionCacheService;
+import cv.igrp.platform.access_management.authorization.domain.service.PermissionCheckService;
 import cv.igrp.platform.access_management.session.config.SessionProperties;
 import cv.igrp.platform.access_management.session.domain.service.SessionHeartbeatService;
 import cv.igrp.platform.access_management.session.infrastructure.metrics.SessionMetrics;
@@ -243,13 +243,13 @@ class SessionEnforcementWiringIntegrationTest {
 
         @Bean
         ServiceAccountM2MAuthorizationFilter serviceAccountM2MAuthorizationFilter(
-                PermissionCacheService permissionCacheService) {
-            return new ServiceAccountM2MAuthorizationFilter(permissionCacheService);
+                PermissionCheckService permissionCheckService) {
+            return new ServiceAccountM2MAuthorizationFilter(permissionCheckService);
         }
 
         @Bean
-        PermissionCacheService permissionCacheService() {
-            return mock(PermissionCacheService.class);
+        PermissionCheckService permissionCheckService() {
+            return mock(PermissionCheckService.class);
         }
 
         @Bean
