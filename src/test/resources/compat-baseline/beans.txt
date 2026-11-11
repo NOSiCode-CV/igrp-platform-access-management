@@ -5,6 +5,8 @@ OAuthClientController : cv.igrp.platform.access_management.oauth_server.interfac
 OAuthClientJpaRepository : cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository
 OAuthClientService : cv.igrp.platform.access_management.oauth_server.application.OAuthClientService
 accessHistoryEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.AccessHistoryEntityRepository
+activeRoleController : cv.igrp.platform.access_management.active_role.interfaces.rest.ActiveRoleController
+activeRoleService : cv.igrp.platform.access_management.active_role.domain.service.ActiveRoleService
 addApplicationCustomFieldsCommandHandler : cv.igrp.platform.access_management.app.application.commands.AddApplicationCustomFieldsCommandHandler
 addApplicationsToDepartmentCommandHandler : cv.igrp.platform.access_management.department.application.commands.AddApplicationsToDepartmentCommandHandler
 addFavoriteApplicationCommandHandler : cv.igrp.platform.access_management.users.application.commands.AddFavoriteApplicationCommandHandler
@@ -79,6 +81,7 @@ filesController : cv.igrp.platform.access_management.files.interfaces.rest.Files
 forcedReAuthService : cv.igrp.platform.access_management.session.domain.service.ForcedReAuthService
 getAccessReportQueryHandler : cv.igrp.platform.access_management.security_audit.application.queries.GetAccessReportQueryHandler
 getActiveCurrentUserRoleQueryHandler : cv.igrp.platform.access_management.users.application.queries.GetActiveCurrentUserRoleQueryHandler
+getActiveRoleQueryHandler : cv.igrp.platform.access_management.active_role.application.queries.GetActiveRoleQueryHandler
 getActiveUserRoleQueryHandler : cv.igrp.platform.access_management.users.application.queries.GetActiveUserRoleQueryHandler
 getApplicationByCodeQueryHandler : cv.igrp.platform.access_management.app.application.queries.GetApplicationByCodeQueryHandler
 getApplicationByIdQueryHandler : cv.igrp.platform.access_management.app.application.queries.GetApplicationByIdQueryHandler
@@ -277,6 +280,7 @@ startupRunner : cv.igrp.platform.access_management.IgrpPlatformAccessManagementA
 storageClientTimeoutConfig : cv.igrp.platform.access_management.shared.config.StorageClientTimeoutConfig
 subjectGuard : cv.igrp.platform.access_management.shared.security.SubjectGuard
 swaggerConfig : cv.igrp.platform.access_management.shared.config.SwaggerConfig
+switchActiveRoleCommandHandler : cv.igrp.platform.access_management.active_role.application.commands.SwitchActiveRoleCommandHandler
 syncApplicationMenusCommandHandler : cv.igrp.platform.access_management.m2m.application.commands.SyncApplicationMenusCommandHandler
 syncApplicationsCommandHandler : cv.igrp.platform.access_management.m2m.application.commands.SyncApplicationsCommandHandler
 syncPermissionsCommandHandler : cv.igrp.platform.access_management.m2m.application.commands.SyncPermissionsCommandHandler
