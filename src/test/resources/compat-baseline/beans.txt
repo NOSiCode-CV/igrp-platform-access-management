@@ -76,6 +76,7 @@ excelTempDirStatus : cv.igrp.platform.access_management.security_audit.applicati
 expireRoleService : cv.igrp.platform.access_management.users.infrastructure.service.ExpireRoleService
 exportTempFileConfig : cv.igrp.platform.access_management.security_audit.application.config.ExportTempFileConfig
 favoriteApplicationEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.FavoriteApplicationEntityRepository
+fetchPermissionsQueryHandler : cv.igrp.platform.access_management.permission_fetch.application.queries.FetchPermissionsQueryHandler
 fileManagerMinioApplication : cv.igrp.framework.filemanager.minio.FileManagerMinioApplication
 filesController : cv.igrp.platform.access_management.files.interfaces.rest.FilesController
 forcedReAuthService : cv.igrp.platform.access_management.session.domain.service.ForcedReAuthService
@@ -152,6 +153,7 @@ igrp-cv.igrp.framework.filemanager.minio.MinioStorageProviderProperties : cv.igr
 igrp.i18n-cv.igrp.platform.access_management.shared.i18n.I18nProperties : cv.igrp.platform.access_management.shared.i18n.I18nProperties
 igrp.minio-cv.igrp.framework.filemanager.minio.MinioProperties : cv.igrp.framework.filemanager.minio.MinioProperties
 igrp.notification.service-cv.igrp.platform.access_management.shared.config.NotificationServiceProperties : cv.igrp.platform.access_management.shared.config.NotificationServiceProperties
+igrp.permissions.cache-cv.igrp.platform.access_management.permission_fetch.config.PermissionSetProperties : cv.igrp.platform.access_management.permission_fetch.config.PermissionSetProperties
 igrpAuditConfig : cv.igrp.platform.access_management.shared.config.IgrpAuditConfig
 igrpAuthorization : cv.igrp.platform.access_management.shared.security.IgrpAuthorizationService
 igrpJwtAuthenticationConverter : cv.igrp.platform.access_management.shared.security.IgrpJwtAuthenticationConverter
@@ -199,7 +201,11 @@ permissionCacheInvalidator : cv.igrp.platform.access_management.shared.infrastru
 permissionCacheKeyGenerator : cv.igrp.platform.access_management.authorization.domain.service.PermissionCacheKeyGenerator
 permissionCacheService : cv.igrp.platform.access_management.authorization.domain.service.PermissionCacheService
 permissionEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository
+permissionFetchController : cv.igrp.platform.access_management.permission_fetch.interfaces.rest.PermissionFetchController
+permissionFetchService : cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionFetchService
 permissionMapper : cv.igrp.platform.access_management.role.domain.service.PermissionMapper
+permissionSetCache : cv.igrp.platform.access_management.permission_fetch.infrastructure.cache.PermissionSetCache
+permissionSetEviction : cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionSetEviction
 permissionSyncService : cv.igrp.platform.access_management.m2m.domain.service.PermissionSyncService
 postDepartmentCommandHandler : cv.igrp.platform.access_management.department.application.commands.PostDepartmentCommandHandler
 refreshSessionCommandHandler : cv.igrp.platform.access_management.session.application.commands.RefreshSessionCommandHandler
