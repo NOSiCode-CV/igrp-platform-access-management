@@ -554,13 +554,15 @@ CREATE TABLE t_oauth_client (
     authorization_code_ttl integer NOT NULL,
     client_id character varying(120) NOT NULL,
     client_name character varying(180),
-    client_secret character varying(255) NOT NULL,
+    client_secret character varying(255),
     created_at timestamp(6) without time zone,
     description character varying(500),
     refresh_token_ttl integer NOT NULL,
     require_pkce boolean DEFAULT true NOT NULL,
     updated_at timestamp(6) without time zone,
-    application_id integer
+    application_id integer,
+    idp character varying(40),
+    CONSTRAINT ck_oauth_client_secret_or_idp CHECK (((client_secret IS NULL) <> (idp IS NULL)))
 );
 
 --

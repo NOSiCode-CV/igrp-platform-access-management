@@ -29,7 +29,8 @@
         <javadoc.plugin.version>3.12.0</javadoc.plugin.version>
         <igrp.framework.core.version>0.0.3-alpha</igrp.framework.core.version>
         <igrp.framework.stereotype.version>0.1.0-beta-20251021.121417-2</igrp.framework.stereotype.version>
-        <framework.auth.version>0.1.0-beta.1</framework.auth.version>
+        <!-- 0.3: IAdapter's service client operations and the Keycloak adapter (v3-17). -->
+        <framework.auth.version>0.3.0-beta.1-SNAPSHOT</framework.auth.version>
         <!-- All three file-manager artifacts are released in lockstep and
              minio depends on the core, so they share one property. 0.2.0-beta.1
              carries minio 8.6.0, which fixes CVE-2026-45925. The StorageService
@@ -336,6 +337,14 @@
                     <artifactId>auto-service</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <!-- v3-17: service clients live in the IdP; AM reaches it only through
+             IAdapter (oauth_server.infrastructure.idp). The starter provides the
+             Keycloak adapter, configured with igrp.keycloak.*. -->
+        <dependency>
+            <groupId>cv.igrp.framework.auth</groupId>
+            <artifactId>keycloak-spring-boot</artifactId>
+            <version>${framework.auth.version}</version>
         </dependency>
         <dependency>
             <groupId>cv.igrp.platform</groupId>

@@ -1,5 +1,7 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 import tools.jackson.databind.json.JsonMapper;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.idp.FederatedClientAuthenticationProvider;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.idp.FederatedClients;
 import cv.igrp.platform.access_management.shared.security.SecurityStoreObjectMapperFactory;
 import cv.igrp.platform.access_management.shared.security.IgrpOidcUser;
 import cv.igrp.platform.access_management.shared.security.OidcContextAuthenticationToken;
@@ -104,7 +106,11 @@ public class AuthorizationServerConfig {
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http,
                                                                       IgrpOidcUserService igrpOidcUserService,
                                                                       SessionAwareIntrospector sessionAwareIntrospector,
-                                                                      SessionLogoutHandler sessionLogoutHandler) throws Exception {
+                                                                      SessionLogoutHandler sessionLogoutHandler,
+                                                                      RegisteredClientRepository registeredClientRepository,
+                                                                      FederatedClients federatedClients) {
+        var federatedClientAuthentication =
+                new FederatedClientAuthenticationProvider(registeredClientRepository, federatedClients);
         OAuth2AuthorizationServerConfigurer authServerConfigurer = new OAuth2AuthorizationServerConfigurer();
         var authorizationEndpoints = new OrRequestMatcher(
                 PathPatternRequestMatcher.withDefaults().matcher("/oauth2/authorize"),
@@ -121,6 +127,10 @@ public class AuthorizationServerConfig {
 
         http.securityMatcher(authorizationEndpoints)
                 .with(authServerConfigurer, cfg -> cfg
+                        // v3-18 — federated service clients: the IdP checks their
+                        // secret, ahead of the built-in check against AM's hash.
+                        .clientAuthentication(clientAuthentication -> clientAuthentication
+                                .authenticationProviders(providers -> providers.addFirst(federatedClientAuthentication)))
                         // Phase E2 — wrap the introspection response so iGRP-bound
                         // tokens with a dead session report active=false even when
                         // their JWT signature would still validate.

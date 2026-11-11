@@ -26,6 +26,9 @@ public class IgrpRegisteredClientRepository implements RegisteredClientRepositor
 
     private static final Logger LOGGER = LoggerFactory.getLogger(IgrpRegisteredClientRepository.class);
 
+    /** Client setting: {@code true} when the client lives in the IdP and AM holds no secret for it. */
+    public static final String FEDERATED_IDP_SETTING = "igrp.client.federated";
+
     private final OAuthClientJpaRepository repository;
 
     public IgrpRegisteredClientRepository(OAuthClientJpaRepository repository) {
@@ -77,6 +80,8 @@ public class IgrpRegisteredClientRepository implements RegisteredClientRepositor
                 .clientSettings(ClientSettings.builder()
                         .requireProofKey(client.isRequirePkce())
                         .requireAuthorizationConsent(false)
+                        // v3-18: a federated service client has no secret here; the IdP checks it.
+                        .setting(FEDERATED_IDP_SETTING, client.getIdp() != null)
                         .build());
 
         if (client.getScopes() != null) {

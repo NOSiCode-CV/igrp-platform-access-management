@@ -2,6 +2,7 @@ package cv.igrp.platform.access_management.oauth_server.application;
 
 import cv.igrp.platform.access_management.oauth_server.application.dto.OAuthClientDTO;
 import cv.igrp.platform.access_management.oauth_server.application.dto.OAuthClientRequestDTO;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.idp.FederatedClients;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.OAuthClientEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
@@ -30,12 +31,13 @@ class OAuthClientServiceTest {
     @Mock private OAuthClientJpaRepository repository;
     @Mock private ApplicationEntityRepository applicationRepository;
     @Mock private PasswordEncoder passwordEncoder;
+    @Mock private FederatedClients federatedClients;
 
     private OAuthClientService service;
 
     @BeforeEach
     void setUp() {
-        service = new OAuthClientService(repository, applicationRepository, passwordEncoder);
+        service = new OAuthClientService(repository, applicationRepository, passwordEncoder, federatedClients);
     }
 
     @Test
@@ -48,7 +50,7 @@ class OAuthClientServiceTest {
                 .refreshTokenTtl(86400)
                 .authorizationCodeTtl(300)
                 .scopes(new HashSet<>(Set.of("openid")))
-                .grantTypes(new HashSet<>(Set.of("client_credentials")))
+                .grantTypes(new HashSet<>(Set.of("authorization_code", "refresh_token")))
                 .build();
 
         when(repository.existsByClientId("acme")).thenReturn(false);
@@ -60,7 +62,7 @@ class OAuthClientServiceTest {
         assertNotNull(created.getClientSecret(), "raw secret must be returned once on creation");
         assertEquals("acme", created.getClientId());
         assertTrue(created.isActive());
-        assertTrue(created.getGrantTypes().contains("client_credentials"));
+        assertTrue(created.getGrantTypes().contains("authorization_code"));
 
         ArgumentCaptor<OAuthClientEntity> captor = ArgumentCaptor.forClass(OAuthClientEntity.class);
         verify(repository).save(captor.capture());

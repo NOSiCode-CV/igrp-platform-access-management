@@ -19,6 +19,9 @@ public class NoAdapterArchitectureTest {
             noClasses()
                     .that()
                     .resideInAPackage("cv.igrp.platform.access_management..")
+                    // v3-17: service clients live in the IdP, so creating, rotating and
+                    // authenticating them goes through IAdapter, in this package only.
+                    .and().resideOutsideOfPackage("cv.igrp.platform.access_management.oauth_server.infrastructure.idp..")
                     .should()
                     .dependOnClassesThat()
                     .haveFullyQualifiedName("cv.igrp.framework.auth.core.adapter.IAdapter")

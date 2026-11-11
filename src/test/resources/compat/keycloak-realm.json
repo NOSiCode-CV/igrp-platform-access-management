@@ -22,9 +22,29 @@
       "attributes": {
         "post.logout.redirect.uris": "https://app.example.cv/*##+"
       }
+    },
+    {
+      "clientId": "igrp-am-adapter",
+      "name": "AM's adapter account: manages federated service clients (v3-17)",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "compat-adapter-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true
     }
   ],
   "users": [
+    {
+      "username": "service-account-igrp-am-adapter",
+      "enabled": true,
+      "serviceAccountClientId": "igrp-am-adapter",
+      "clientRoles": {
+        "realm-management": ["manage-clients", "view-clients", "query-clients"]
+      }
+    },
     {
       "username": "fulano",
       "enabled": true,
