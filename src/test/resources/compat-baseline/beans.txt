@@ -203,7 +203,9 @@ refreshSessionCommandHandler : cv.igrp.platform.access_management.session.applic
 refreshTokenReuseGuard : cv.igrp.platform.access_management.oauth_server.infrastructure.security.RefreshTokenReuseGuard
 refreshTokenTombstoneRepository : cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.RefreshTokenTombstoneRepository
 registerAccessHistoryCommandHandler : cv.igrp.platform.access_management.users.application.commands.RegisterAccessHistoryCommandHandler
+registerRoutesCommandHandler : cv.igrp.platform.access_management.routes.application.commands.RegisterRoutesCommandHandler
 registeredClientRepository : cv.igrp.platform.access_management.oauth_server.infrastructure.security.IgrpRegisteredClientRepository
+registeredServiceRepository : cv.igrp.platform.access_management.routes.infrastructure.persistence.RegisteredServiceRepository
 removeApplicationCustomFieldsCommandHandler : cv.igrp.platform.access_management.app.application.commands.RemoveApplicationCustomFieldsCommandHandler
 removeApplicationsFromDepartmentCommandHandler : cv.igrp.platform.access_management.department.application.commands.RemoveApplicationsFromDepartmentCommandHandler
 removeFavoriteApplicationCommandHandler : cv.igrp.platform.access_management.users.application.commands.RemoveFavoriteApplicationCommandHandler
@@ -228,6 +230,8 @@ roleEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.
 roleMapper : cv.igrp.platform.access_management.role.domain.service.RoleMapper
 roleSpecificationBuilder : cv.igrp.platform.access_management.role.specs.RoleSpecificationBuilder
 rolesController : cv.igrp.platform.access_management.role.interfaces.rest.RolesController
+routeRegistrationController : cv.igrp.platform.access_management.routes.interfaces.rest.RouteRegistrationController
+routeRegistrationService : cv.igrp.platform.access_management.routes.domain.service.RouteRegistrationService
 scopeAspect : cv.igrp.platform.access_management.shared.security.ScopeAspect
 scopeService : cv.igrp.platform.access_management.shared.infrastructure.service.ScopeService
 scopedTarget.requestScopeCache : cv.igrp.platform.access_management.shared.security.RequestScopeCache
