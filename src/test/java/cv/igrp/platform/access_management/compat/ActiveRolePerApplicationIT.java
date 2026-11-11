@@ -171,7 +171,7 @@ class ActiveRolePerApplicationIT extends AbstractCompatIT {
 
         assertThat(ambiguous.statusCode()).as(ambiguous.body()).isEqualTo(409);
         assertThat(explicit.statusCode()).as(explicit.body()).isEqualTo(200);
-        assertThat(((Map<?, ?>) body(explicit).get("activeRole")).get("departmentCode")).isEqualTo(dept("D2"));
+        assertThat(body(explicit)).extracting("activeRole.departmentCode").isEqualTo(dept("D2"));
     }
 
     @Test
