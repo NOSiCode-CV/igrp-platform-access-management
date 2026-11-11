@@ -125,6 +125,7 @@ POST /api/m2m/sync/applications/{code}/menus
 POST /api/m2m/sync/permissions
 POST /api/m2m/sync/resources
 POST /api/m2m/users
+POST /api/routes/register
 POST /api/service-accounts
 POST /api/session/close
 POST /api/session/refresh

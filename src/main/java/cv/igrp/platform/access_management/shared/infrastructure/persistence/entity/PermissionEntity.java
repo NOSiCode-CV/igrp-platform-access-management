@@ -8,6 +8,7 @@ import cv.igrp.framework.stereotype.IgrpEntity;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import java.util.Set;
 import java.util.HashSet;
@@ -39,6 +40,24 @@ public class PermissionEntity extends AuditEntity {
     @Enumerated(EnumType.STRING)
     @Column(name="status")
     private Status status;
+
+    /** v3-02: the route key, {service}.{resource path}.{action}; immutable; null for legacy igrp.* permissions. */
+    @Column(name = "permission_key", length = 255, unique = true, updatable = false)
+    private String permissionKey;
+
+    /** v3-02: the service that registered the key. */
+    @Column(name = "service", length = 120)
+    private String service;
+
+    /** v3-02: the application of the client that registered the key. */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "application_id")
+    private ApplicationEntity application;
+
+    /** v3-02: the newest service version that reported the key. Not audited: it changes on every deploy. */
+    @NotAudited
+    @Column(name = "last_seen_version", length = 64)
+    private String lastSeenVersion;
 
   
 

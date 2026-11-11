@@ -1,5 +1,9 @@
 package cv.igrp.platform.access_management.shared.infrastructure.persistence.repository;
 
+import org.springframework.data.jpa.repository.Modifying;
+
+import java.util.Collection;
+
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
@@ -43,6 +47,14 @@ public interface PermissionEntityRepository extends
     Optional<PermissionEntity> findByIdAndStatusNot(Integer id, Status status);
 
     Optional<PermissionEntity> findByNameAndStatusNot(String name, Status status);
+
+    /** v3-02: the permissions already registered under these route keys. */
+    List<PermissionEntity> findByPermissionKeyIn(Collection<String> keys);
+
+    /** v3-02: marks the keys a registration reported. A bulk update: no Envers revision, as the field is not audited. */
+    @Modifying
+    @Query("UPDATE PermissionEntity p SET p.lastSeenVersion = :version WHERE p.permissionKey IN :keys")
+    int markSeenInVersion(@Param("keys") Collection<String> keys, @Param("version") String version);
 
     default PermissionEntity findByNameAndStatusNotDeleted(String name) {
         return findByNameAndStatusNot(name, Status.DELETED)
