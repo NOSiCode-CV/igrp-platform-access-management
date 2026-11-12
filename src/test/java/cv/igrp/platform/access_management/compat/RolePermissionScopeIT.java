@@ -172,9 +172,9 @@ class RolePermissionScopeIT extends AbstractCompatIT {
         ok(setScopes("R2", "[{\"key\":" + CompatSupport.q(key("list")) + ",\"scope\":\"by_role\"},"
                 + "{\"key\":" + CompatSupport.q(key("delete")) + ",\"scope\":\"own\"}]"));
         CompatSupport.M2MClient client = api.registerM2MClient(service + "-caller", null, List.of(key("delete")));
-        String serviceAccountId = jdbc.queryForObject("""
+        String serviceAccountId = jdbc.queryForList("""
                 SELECT sa.id::text FROM t_service_account sa JOIN t_oauth_client oc ON oc.id = sa.oauth_client_id
-                 WHERE oc.client_id = ?""", String.class, client.clientId());
+                 WHERE oc.client_id = ?""", String.class, client.clientId()).getFirst();
         for (String r : List.of("R1", "R2")) {
             jdbc.update("""
                     INSERT INTO t_service_account_role_assignment (service_account_id, role_id, assigned_at)
