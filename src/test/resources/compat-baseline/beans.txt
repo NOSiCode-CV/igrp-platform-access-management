@@ -303,6 +303,8 @@ updateUserStatusCommandHandler : cv.igrp.platform.access_management.users.applic
 uploadFileCommandHandler : cv.igrp.platform.access_management.files.application.commands.handler.UploadFileCommandHandler
 uploadPrivateFileCommandHandler : cv.igrp.platform.access_management.files.application.commands.UploadPrivateFileCommandHandler
 uploadPublicFileCommandHandler : cv.igrp.platform.access_management.files.application.commands.UploadPublicFileCommandHandler
+userAccessKill : cv.igrp.platform.access_management.session.domain.service.UserAccessKill
+userAuthorizations : cv.igrp.platform.access_management.oauth_server.infrastructure.security.UserAuthorizations
 userController : cv.igrp.platform.access_management.users.interfaces.rest.UserController
 userIdentifierEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.UserIdentifierEntityRepository
 userIdentityJpaRepository : cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.UserIdentityJpaRepository

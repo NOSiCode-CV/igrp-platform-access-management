@@ -362,29 +362,6 @@ public class SessionManagementService {
      */
 
     /**
-     * Kill specific session (admin operation)
-     */
-    public boolean killSession(UUID sessionId, String reason, String killedBy) {
-        log.info("Killing session {} by {} with reason: {}", sessionId, killedBy, reason);
-
-        Optional<SessionEntity> sessionOpt = sessionRepository.findBySessionId(sessionId);
-
-        if (sessionOpt.isEmpty()) {
-            log.warn("Session not found for killing: {}", sessionId);
-            return false;
-        }
-
-        SessionEntity session = sessionOpt.get();
-        session.revoke(reason, killedBy);
-        sessionRepository.save(session);
-
-        sessionCacheEvictService.evictBySubject(session.getUserId());
-
-        log.info("Killed session {} for user: {}", sessionId, session.getUserId());
-        return true;
-    }
-
-    /**
      * List sessions with pagination
      */
     @Transactional(readOnly = true)
@@ -494,30 +471,6 @@ public class SessionManagementService {
         Page<SessionEntity> sessions = sessionRepository.findByDepartment(departmentCode, status, pageable);
 
         return sessions.map(session -> buildSessionResponse(session, session.getUserId()));
-    }
-
-    /**
-     * Kill all sessions for users with a specific role (and optionally department)
-     */
-    @Transactional
-    public int killSessionsByRole(String roleCode, String departmentCode, String reason, String killedBy) {
-        log.info("Killing sessions for role: {} in department: {} by: {}", roleCode, departmentCode, killedBy);
-
-        Set<String> userIds = userRepository.findUserIdsByRoleAndDepartment(roleCode, departmentCode);
-
-        if (userIds.isEmpty()) {
-            log.info("No users found with role: {} in department: {}", roleCode, departmentCode);
-            return 0;
-        }
-
-        int killedCount = sessionRepository.invalidateUserSessions(
-                userIds, SessionStatus.ACTIVE, SessionStatus.REVOKED,
-                Instant.now(), Instant.now(), reason, killedBy);
-
-        sessionCacheEvictService.evictBySubjects(userIds);
-
-        log.info("Killed {} sessions for role: {} in department: {}", killedCount, roleCode, departmentCode);
-        return killedCount;
     }
 
     private String hashUserAgent(String userAgent) {

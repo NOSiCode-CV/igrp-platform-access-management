@@ -2,60 +2,45 @@ package cv.igrp.platform.access_management.session.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.session.domain.service.SessionManagementService;
+import cv.igrp.platform.access_management.session.domain.service.UserAccessKill;
+import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
+import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import java.util.Optional;
+import java.util.Set;
+
 /**
- * Command handler responsible for terminating a specific session by ID.
+ * Kills the user behind one session (#19): kill is always the whole platform,
+ * so every session, authorization and permission key of that user goes, not
+ * only the session named.
  *
- * <p>
- * This handler receives a {@link KillSessionCommand} containing session ID, reason, and killer details,
- * delegates to the {@link SessionManagementService} to terminate the session,
- * and returns a boolean indicating whether the session was successfully killed.
- * </p>
- *
- * @see KillSessionCommand
- * @see SessionManagementService
+ * @see UserAccessKill
  */
 @Slf4j
 @Component
 public class KillSessionCommandHandler implements CommandHandler<KillSessionCommand, Boolean> {
 
-    private final SessionManagementService sessionManagementService;
+    private final SessionRepository sessions;
+    private final UserAccessKill kill;
 
-    /**
-     * Constructs the handler with the required dependencies.
-     *
-     * @param sessionManagementService the service used to terminate and manage sessions
-     */
-    public KillSessionCommandHandler(SessionManagementService sessionManagementService) {
-        this.sessionManagementService = sessionManagementService;
+    public KillSessionCommandHandler(SessionRepository sessions, UserAccessKill kill) {
+        this.sessions = sessions;
+        this.kill = kill;
     }
 
-    /**
-     * Handles the command to terminate a specific session by ID.
-     *
-     * @param command the {@link KillSessionCommand} containing session termination details
-     * @return {@code true} if the session was successfully terminated, {@code false} otherwise
-     */
+    /** @return {@code false} when no session has that id */
     @IgrpCommandHandler
     public Boolean handle(KillSessionCommand command) {
-        log.info("Handling KillSessionCommand for session: {} with reason: {} by {}", 
-                command.getSessionId(), command.getReason(), command.getKilledBy());
-        
-        boolean killed = sessionManagementService.killSession(
-                command.getSessionId(),
-                command.getReason(),
-                command.getKilledBy()
-        );
-        
-        if (killed) {
-            log.info("Session {} terminated successfully", command.getSessionId());
-        } else {
-            log.debug("Session {} not found or already terminated", command.getSessionId());
+        Optional<SessionEntity> session = sessions.findBySessionId(command.getSessionId());
+        if (session.isEmpty()) {
+            log.debug("Session {} not found", command.getSessionId());
+            return false;
         }
-        
-        return killed;
+        log.info("Killing the user of session {} on the whole platform, reason {} by {}",
+                command.getSessionId(), command.getReason(), command.getKilledBy());
+        kill.kill(Set.of(session.get().getUserId()), command.getReason(), command.getKilledBy());
+        return true;
     }
 }

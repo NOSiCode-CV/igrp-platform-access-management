@@ -74,7 +74,7 @@ public class AdminUserSessionController {
     @PostMapping("/{userExternalId}/sessions/{sessionId}/kill")
     @Operation(
         summary = "Kill a specific session belonging to a user",
-        description = "Terminates the given session id only when it belongs to the user identified by "
+        description = "Kills the session's user on the whole platform (#19): every session, authorization and permission key when it belongs to the user identified by "
                 + "externalId. Returns 404 if the user does not exist, the session does not exist, or "
                 + "the session belongs to a different user."
     )

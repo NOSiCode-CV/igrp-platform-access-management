@@ -38,8 +38,9 @@ public class PermissionSetCache {
     public static final String MARKER = "~";
 
     /**
-     * KEYS: set, scopes hash, index, accessed guard. ARGV: ttl seconds, marker,
-     * then key/scope pairs. Returns 1 when this is the first access in the TTL.
+     * KEYS: set, scopes hash, index, and optionally the accessed guard. ARGV:
+     * ttl seconds, marker, then key/scope pairs. Returns 1 when the guard is
+     * given and this is the first access in the TTL.
      */
     private static final RedisScript<Long> WRITE = new DefaultRedisScript<>("""
             redis.call('DEL', KEYS[1], KEYS[2])
@@ -54,7 +55,7 @@ public class PermissionSetCache {
             end
             redis.call('SADD', KEYS[3], KEYS[1])
             redis.call('EXPIRE', KEYS[3], ARGV[1])
-            if redis.call('SET', KEYS[4], '1', 'NX', 'EX', ARGV[1]) then
+            if #KEYS >= 4 and redis.call('SET', KEYS[4], '1', 'NX', 'EX', ARGV[1]) then
               return 1
             end
             return 0
@@ -103,6 +104,24 @@ public class PermissionSetCache {
      * @return whether this is the caller's first access to the application in the TTL
      */
     public boolean write(String sub, String applicationCode, Map<String, String> scopesByKey) {
+        Long firstAccess = redis.execute(WRITE,
+                List.of(setKey(sub, applicationCode), scopesKey(sub, applicationCode), indexKey(sub),
+                        accessedKey(sub, applicationCode)),
+                args(scopesByKey));
+        return firstAccess != null && firstAccess == 1L;
+    }
+
+    /**
+     * Replaces a user's set for the application on an administrator's behalf
+     * (#19). Not an access by the user, so the accessed guard is left alone.
+     */
+    public void writeForRefresh(String sub, String applicationCode, Map<String, String> scopesByKey) {
+        redis.execute(WRITE,
+                List.of(setKey(sub, applicationCode), scopesKey(sub, applicationCode), indexKey(sub)),
+                args(scopesByKey));
+    }
+
+    private Object[] args(Map<String, String> scopesByKey) {
         List<String> args = new ArrayList<>();
         args.add(Long.toString(properties.getTtl().toSeconds()));
         args.add(MARKER);
@@ -110,11 +129,7 @@ public class PermissionSetCache {
             args.add(key);
             args.add(scope);
         });
-        Long firstAccess = redis.execute(WRITE,
-                List.of(setKey(sub, applicationCode), scopesKey(sub, applicationCode), indexKey(sub),
-                        accessedKey(sub, applicationCode)),
-                args.toArray());
-        return firstAccess != null && firstAccess == 1L;
+        return args.toArray();
     }
 
     /** Deletes the caller's set for the application, so the next request reads the change. */

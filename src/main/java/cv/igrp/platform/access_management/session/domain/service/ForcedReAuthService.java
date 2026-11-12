@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Set;
 
 /**
  * Phase F1 — bumps {@code IGRPUserEntity.tokensNotValidBefore} to {@code now} so
@@ -26,14 +27,14 @@ public class ForcedReAuthService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ForcedReAuthService.class);
 
     private final IGRPUserEntityRepository userRepository;
-    private final SessionInvalidationService sessionInvalidationService;
+    private final UserAccessKill kill;
     private final SessionAuditLogger sessionAuditLogger;
 
     public ForcedReAuthService(IGRPUserEntityRepository userRepository,
-                               SessionInvalidationService sessionInvalidationService,
+                               UserAccessKill kill,
                                SessionAuditLogger sessionAuditLogger) {
         this.userRepository = userRepository;
-        this.sessionInvalidationService = sessionInvalidationService;
+        this.kill = kill;
         this.sessionAuditLogger = sessionAuditLogger;
     }
 
@@ -56,7 +57,8 @@ public class ForcedReAuthService {
         int updated = userRepository.updateTokensNotValidBefore(userId, now);
         LOGGER.info("Forced re-auth for user={} reason={} actor={} floor={} rows={}",
                 userId, reason, actor, now, updated);
-        sessionInvalidationService.invalidateUserSession(userId, reason);
+        // A kill on the whole platform (#19): sessions, authorizations and keys.
+        kill.kill(Set.of(userId), reason, actor);
         sessionAuditLogger.recordForcedReauth(userId, actor);
     }
 }

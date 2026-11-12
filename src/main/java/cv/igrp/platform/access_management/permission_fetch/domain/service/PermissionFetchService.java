@@ -122,21 +122,61 @@ public class PermissionFetchService {
         String sub = jwt.getSubject();
         boolean serviceAccount = ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT
                 .equals(jwt.getClaimAsString(ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE));
-        List<ScopedKey> rows = serviceAccount
+        Map<String, String> scopes = scopesByKey(serviceAccount
                 ? serviceAccountKeys(sub, applicationCode)
-                : userKeys(sub, applicationCode);
-
-        // A key reached through several roles gets the union of their scopes.
-        Map<String, List<PermissionScope>> byKey = new LinkedHashMap<>();
-        rows.forEach(row -> byKey.computeIfAbsent(row.key(), k -> new ArrayList<>()).add(row.scope()));
-        Map<String, String> scopes = new LinkedHashMap<>();
-        byKey.forEach((key, keyScopes) -> scopes.put(key, PermissionScope.union(keyScopes)));
+                : userKeys(sub, applicationCode));
         List<String> keys = List.copyOf(scopes.keySet());
         if (cacheAndCheckFirstAccess(sub, applicationCode, scopes)) {
             audit.logEvent(AuditEventType.APPLICATION_ACCESSED, AuditCategory.AUTHORIZATION,
                     Map.of("applicationCode", applicationCode));
         }
         return new PermissionSetDTO(keys, scopes);
+    }
+
+    /**
+     * An administrator's refresh (#19): recomputes a user's set for the
+     * application from their current roles, exactly as their own fetch would,
+     * and writes it. Nothing comes from the caller. Not an access, so not
+     * audited as one.
+     *
+     * Like a cache miss, it writes only for a user who is still signed in: a
+     * killed or logged-out user is not given a key back.
+     *
+     * @throws IgrpResponseStatusException 404 for an unknown user or application;
+     *                                     409 when the user is not active or not signed in (nothing written);
+     *                                     503 when Redis is unavailable
+     */
+    public PermissionSetDTO refresh(String userId, String applicationCode) {
+        List<String> status = list("SELECT status FROM t_user WHERE id = ? AND status <> 'DELETED'",
+                String.class, userId);
+        if (status.isEmpty()) {
+            throw IgrpResponseStatusException.notFound("User " + userId + " not found");
+        }
+        // Until sessions are replaced by AM's authorization store (#33), a live
+        // sign-in is an active session.
+        if (!"ACTIVE".equals(status.getFirst()) || !Boolean.TRUE.equals(jdbc.queryForObject(
+                "SELECT EXISTS (SELECT 1 FROM t_user_session WHERE user_id = ? AND status = 'ACTIVE')",
+                Boolean.class, userId))) {
+            throw IgrpResponseStatusException.of(HttpStatus.CONFLICT, "No active authorization",
+                    "The user is not active or not signed in; nothing was written");
+        }
+        Map<String, String> scopes = scopesByKey(userKeys(userId, applicationCode));
+        try {
+            cache.writeForRefresh(userId, applicationCode, scopes);
+        } catch (DataAccessException e) {
+            throw IgrpResponseStatusException.of(HttpStatus.SERVICE_UNAVAILABLE, "Permission cache unavailable",
+                    "Redis is unavailable; nothing was written");
+        }
+        return new PermissionSetDTO(List.copyOf(scopes.keySet()), scopes);
+    }
+
+    /** A key reached through several roles gets the union of their scopes. */
+    private static Map<String, String> scopesByKey(List<ScopedKey> rows) {
+        Map<String, List<PermissionScope>> byKey = new LinkedHashMap<>();
+        rows.forEach(row -> byKey.computeIfAbsent(row.key(), k -> new ArrayList<>()).add(row.scope()));
+        Map<String, String> scopes = new LinkedHashMap<>();
+        byKey.forEach((key, keyScopes) -> scopes.put(key, PermissionScope.union(keyScopes)));
+        return scopes;
     }
 
     /**

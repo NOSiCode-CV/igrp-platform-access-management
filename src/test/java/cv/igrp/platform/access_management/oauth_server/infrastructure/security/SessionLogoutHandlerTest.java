@@ -60,6 +60,8 @@ class SessionLogoutHandlerTest {
     private cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger sessionAuditLogger;
     @Mock
     private SsoSessionCascadeService ssoSessionCascadeService;
+    @Mock
+    private UserAuthorizations userAuthorizations;
 
     private static final String USER_ID = "00000000-0000-0000-0000-000000000099";
 
@@ -76,7 +78,7 @@ class SessionLogoutHandlerTest {
         ObjectProvider<ClientRegistrationRepository> noClientRegistration = emptyProvider();
         handler = new SessionLogoutHandler(sessionRepository, sessionCacheEvictService,
                 heartbeatService, authorizationService, eventPublisher, sessionAuditLogger,
-                ssoSessionCascadeService, noClientRegistration, "external-idp", true);
+                ssoSessionCascadeService, userAuthorizations, noClientRegistration, "external-idp", true);
         request = new MockHttpServletRequest("POST", "/connect/logout");
         response = new MockHttpServletResponse();
     }

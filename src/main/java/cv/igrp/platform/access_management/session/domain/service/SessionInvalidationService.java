@@ -29,6 +29,11 @@ public class SessionInvalidationService {
      * Invalidate sessions for specific users
      */
     public void invalidateUserSessions(Set<String> userIds, String reason) {
+        invalidateUserSessions(userIds, reason, "SYSTEM");
+    }
+
+    /** As above, recording who closed the sessions (an administrator's kill, #19). */
+    public void invalidateUserSessions(Set<String> userIds, String reason, String closedBy) {
         if (userIds.isEmpty()) {
             log.debug("No users to invalidate sessions for");
             return;
@@ -44,7 +49,7 @@ public class SessionInvalidationService {
                 now,
                 now,
                 reason,
-                "SYSTEM"
+                closedBy != null ? closedBy : "SYSTEM"
         );
 
         // Evict from cache
