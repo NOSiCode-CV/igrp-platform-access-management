@@ -216,10 +216,14 @@ class RolePermissionScopeIT extends AbstractCompatIT {
         jdbc.execute(sql);
 
         assertThat(rolePermissionScopes("R1")).containsEntry(key("list"), "own").containsEntry(key("create"), "department");
-        assertThat(jdbc.queryForObject("""
-                SELECT count(*) FROM t_role_permission rp JOIN t_role r ON r.id = rp.role_id
-                 WHERE r.code = 'DEPT_IGRP.superadmin' AND rp.scope <> 'all'""", Long.class))
-                .as("root's assignments are all").isZero();
+        // Root's own assignment (created at startup, or converted by the
+        // migration) is all. Later rows on root's role take the default; the
+        // fetch gives root all whatever its rows say.
+        assertThat(jdbc.queryForList("""
+                SELECT rp.scope FROM t_role_permission rp
+                  JOIN t_role r ON r.id = rp.role_id JOIN t_permission p ON p.id = rp.permission
+                 WHERE r.code = 'DEPT_IGRP.superadmin' AND p.name = 'DEPT_IGRP.manage_access'""", String.class))
+                .as("root's own assignment is all").containsExactly("all");
         assertThat(jdbc.queryForObject("""
                 SELECT is_nullable || ':' || column_default FROM information_schema.columns
                  WHERE table_name = 't_role_permission' AND column_name = 'scope'""", String.class))
