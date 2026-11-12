@@ -15,6 +15,10 @@ import java.util.Set;
 @Transactional
 public class SessionInvalidationService {
 
+    /** Who closed a session when no person did. */
+    private static final String SYSTEM = "SYSTEM";
+
+
     private final SessionRepository sessionRepository;
     private final SessionCacheEvictService sessionCacheEvictService;
 
@@ -29,7 +33,7 @@ public class SessionInvalidationService {
      * Invalidate sessions for specific users
      */
     public void invalidateUserSessions(Set<String> userIds, String reason) {
-        invalidateUserSessions(userIds, reason, "SYSTEM");
+        invalidateUserSessions(userIds, reason, SYSTEM);
     }
 
     /** As above, recording who closed the sessions (an administrator's kill, #19). */
@@ -49,7 +53,7 @@ public class SessionInvalidationService {
                 now,
                 now,
                 reason,
-                closedBy != null ? closedBy : "SYSTEM"
+                closedBy != null ? closedBy : SYSTEM
         );
 
         // Evict from cache
@@ -83,7 +87,7 @@ public class SessionInvalidationService {
                 now,
                 now,
                 reason,
-                "SYSTEM"
+                SYSTEM
         );
 
         // Evict from cache
@@ -115,7 +119,7 @@ public class SessionInvalidationService {
                 now,
                 now,
                 reason,
-                "SYSTEM"
+                SYSTEM
         );
 
         // Evict from cache

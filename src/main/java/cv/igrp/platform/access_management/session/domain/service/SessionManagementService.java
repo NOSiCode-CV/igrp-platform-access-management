@@ -372,7 +372,7 @@ public class SessionManagementService {
 
         List<SessionResponseDTO> sessionDTOs = sessionPage.getContent().stream()
                 .map(session -> buildSessionResponse(session, session.getUserId()))
-                .collect(Collectors.toList());
+                .toList();
 
         return new PageImpl<>(sessionDTOs, pageable, sessionPage.getTotalElements());
     }

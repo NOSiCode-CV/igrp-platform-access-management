@@ -6,13 +6,11 @@ package cv.igrp.platform.access_management.global_configuration.interfaces.rest;
 import cv.igrp.framework.stereotype.IgrpController;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.http.HttpStatus;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
-import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
 import org.springframework.security.access.prepost.PreAuthorize;
 

@@ -82,7 +82,6 @@ public class GetCurrentUserPermissionsQueryHandler implements QueryHandler<GetCu
                 .filter(Objects::nonNull)
                 .map(RoleEntity::getPermissions)
                 .filter(Objects::nonNull)
-                .peek(perms -> LOGGER.info("Role has {} permissions", perms.size()))
                 .flatMap(Collection::stream)
                 .filter(p -> Objects.equals(p.getStatus(), Status.ACTIVE))
                 .collect(Collectors.toCollection(LinkedHashSet::new));
