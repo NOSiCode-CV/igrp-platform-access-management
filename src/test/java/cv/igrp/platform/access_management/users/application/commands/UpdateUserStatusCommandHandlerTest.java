@@ -28,6 +28,8 @@ class UpdateUserStatusCommandHandlerTest {
 
     @Mock
     private IGRPUserEntityRepository userRepository;
+    @Mock
+    private cv.igrp.platform.access_management.shared.infrastructure.service.RootUser rootUser;
 
     @Mock
     private JdbcTemplate jdbcTemplate;

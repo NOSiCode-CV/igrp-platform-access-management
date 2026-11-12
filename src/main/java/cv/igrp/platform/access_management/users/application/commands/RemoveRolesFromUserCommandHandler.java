@@ -1,5 +1,7 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
+import cv.igrp.platform.access_management.shared.infrastructure.service.RootUser;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleValidator;
@@ -111,6 +113,11 @@ public class RemoveRolesFromUserCommandHandler implements CommandHandler<RemoveR
          List<UserRoleAssignment> assignmentsToRemove = assignments.stream()
                  .filter(assignment -> roleIdsToRemove.contains(assignment.getRole().getCode()))
                  .toList();
+
+         if (assignmentsToRemove.stream().anyMatch(assignment -> RootUser.isRootRole(assignment.getRole()))) {
+            // Root moves only through IGRP_SUPERADMIN_EMAIL (#20).
+            throw IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_ROOT_PROTECTED);
+         }
 
          if (!assignmentsToRemove.isEmpty()) {
 

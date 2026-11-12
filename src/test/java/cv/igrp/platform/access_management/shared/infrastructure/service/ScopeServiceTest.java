@@ -79,7 +79,7 @@ class ScopeServiceTest {
                 new SimpleGrantedAuthority("USER")
         );
         doReturn(authorities).when(authentication).getAuthorities();
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString(), anyString()))
                 .thenReturn(List.of(1)); // Mock superadmin check
 
         // Act
@@ -118,7 +118,7 @@ class ScopeServiceTest {
         for (String subject : subjectIds) {
             when(authenticationHelper.getSub()).thenReturn(subject);
             when(authentication.getAuthorities()).thenReturn(List.of());
-            when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(subject), anyString()))
+            when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(subject), anyString(), anyString()))
                     .thenReturn(List.of());
 
             ScopeService.ActorPrincipal actor = scopeService.getActor();
@@ -134,14 +134,15 @@ class ScopeServiceTest {
         // joins t_user_role_assignment / t_role / t_user — no more t_role_users.
         String uid = "00000000-0000-0000-0000-000000000100";
         when(authenticationHelper.getSub()).thenReturn(uid);
-        when(jdbcTemplate.query(contains("t_user_role_assignment"), any(RowMapper.class), eq(uid), anyString()))
+        when(jdbcTemplate.query(contains("t_user_role_assignment"), any(RowMapper.class), eq(uid), anyString(), anyString()))
                 .thenReturn(List.of(1)); // Non-empty = superadmin
 
         boolean isSuperAdmin = scopeService.isSuperAdmin();
 
         assertTrue(isSuperAdmin);
         verify(jdbcTemplate).query(anyString(), any(RowMapper.class), eq(uid),
-                eq(cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE));
+                eq(cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.SUPER_ADMIN_ROLE),
+                eq(cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.IGRP_DEPARTMENT));
     }
 
     @Test
@@ -150,7 +151,7 @@ class ScopeServiceTest {
         // Arrange
         String uid = "00000000-0000-0000-0000-000000000200";
         when(authenticationHelper.getSub()).thenReturn(uid);
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString(), anyString()))
                 .thenReturn(List.of()); // Empty = not superadmin
 
         // Act
@@ -179,7 +180,7 @@ class ScopeServiceTest {
         // Arrange
         String uid = "00000000-0000-0000-0000-000000000300";
         when(authenticationHelper.getSub()).thenReturn(uid);
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString(), anyString()))
                 .thenReturn(List.of(1)); // superadmin
         when(cache.getVisibleDepartments()).thenReturn(null);
 
@@ -217,7 +218,7 @@ class ScopeServiceTest {
         // Arrange
         String uid = "00000000-0000-0000-0000-000000000400";
         when(authenticationHelper.getSub()).thenReturn(uid);
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString(), anyString()))
                 .thenReturn(List.of(1)); // superadmin
         when(cache.getVisibleRoles()).thenReturn(null);
 
@@ -241,7 +242,7 @@ class ScopeServiceTest {
         String uid = "00000000-0000-0000-0000-000000000700";
         when(authenticationHelper.getSub()).thenReturn(uid);
         doReturn(List.<GrantedAuthority>of()).when(authentication).getAuthorities();
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString(), anyString()))
                 .thenReturn(List.of()); // not superadmin
         when(cache.getVisibleDepartments()).thenReturn(null);
         when(departmentRepository.findActiveRoleDepartmentId(uid)).thenReturn(10);
@@ -267,7 +268,7 @@ class ScopeServiceTest {
         String uid = "00000000-0000-0000-0000-000000000701";
         when(authenticationHelper.getSub()).thenReturn(uid);
         doReturn(List.<GrantedAuthority>of()).when(authentication).getAuthorities();
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString(), anyString()))
                 .thenReturn(List.of()); // not superadmin
         when(cache.getVisibleDepartments()).thenReturn(null);
         when(departmentRepository.findActiveRoleDepartmentId(uid)).thenReturn(null);
@@ -288,7 +289,7 @@ class ScopeServiceTest {
         // the test focused on the role-resolution path.
         String uid = "00000000-0000-0000-0000-000000000702";
         when(authenticationHelper.getSub()).thenReturn(uid);
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString(), anyString()))
                 .thenReturn(List.of()); // not superadmin
         when(cache.getVisibleRoles()).thenReturn(null);
         Set<Integer> visibleDepts = Set.of(10, 11);
@@ -313,7 +314,7 @@ class ScopeServiceTest {
         // the DB with an empty IN clause and must still return an empty set.
         String uid = "00000000-0000-0000-0000-000000000703";
         when(authenticationHelper.getSub()).thenReturn(uid);
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString()))
+        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString(), anyString()))
                 .thenReturn(List.of()); // not superadmin
         when(cache.getVisibleRoles()).thenReturn(null);
         when(cache.getVisibleDepartments()).thenReturn(Set.of());

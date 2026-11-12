@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.authorization.domain.service;
 
 
+import cv.igrp.platform.access_management.shared.infrastructure.service.RootUser;
 import cv.igrp.framework.auth.core.authorization.model.PermissionCheckRequest;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.ServiceAccountEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.ServiceAccountJpaRepository;
@@ -82,10 +83,7 @@ public class PermissionCheckService {
                 && userOpt.get().getStatus() != Status.INACTIVE
                 && userOpt.get().getStatus() != Status.TEMPORARY) {
             var user = userOpt.get();
-            boolean hasRole = user.getRoles().stream()
-                    .map(r -> r != null ? r.getCode() : null)
-                    .filter(Objects::nonNull)
-                    .anyMatch(SUPER_ADMIN_ROLE::equals);
+            boolean hasRole = user.getRoles().stream().anyMatch(RootUser::isRootRole);
             if (hasRole) {
                 LOGGER.debug("Superadmin shortcut hit (entity) for user id={}", user.getId());
                 return true;
@@ -102,6 +100,7 @@ public class PermissionCheckService {
         String sql = """
                 SELECT 1 FROM t_user_role_assignment ura
                 JOIN t_role r ON r.id = ura.role_id
+                JOIN t_department d ON d.id = r.department AND d.code = 'DEPT_IGRP'
                 JOIN t_user u ON u.id = ura.user_id
                 WHERE ura.user_id = ? AND r.code = ?
                   AND u.status NOT IN ('DELETED', 'INACTIVE', 'TEMPORARY')
@@ -122,6 +121,7 @@ public class PermissionCheckService {
                 JOIN t_oauth_client oc ON oc.id = sa.oauth_client_id
                 JOIN t_service_account_role_assignment sara ON sara.service_account_id = sa.id
                 JOIN t_role r ON r.id = sara.role_id
+                JOIN t_department d ON d.id = r.department AND d.code = 'DEPT_IGRP'
                 WHERE sa.id = ? AND r.code = ?
                   AND sa.active = TRUE
                   AND oc.active = TRUE
@@ -138,6 +138,7 @@ public class PermissionCheckService {
                 SELECT 1 FROM t_user u
                 JOIN t_user_role_assignment ura ON ura.user_id = u.id
                 JOIN t_role r ON r.id = ura.role_id
+                JOIN t_department d ON d.id = r.department AND d.code = 'DEPT_IGRP'
                 WHERE u.username = ? AND r.code = ?
                   AND u.status NOT IN ('DELETED', 'INACTIVE', 'TEMPORARY')
                   AND (ura.expires_at IS NULL OR ura.expires_at > NOW())

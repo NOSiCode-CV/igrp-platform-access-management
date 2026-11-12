@@ -34,6 +34,7 @@ The application requires these at startup; without them it will fail:
 | `DATABASE_URL` | PostgreSQL JDBC URL | `jdbc:postgresql://localhost:5432/postgres` |
 | `REDIS_HOST` | Redis hostname | (none — required) |
 | `REDIS_PORT` | Redis port | `6379` |
+| `IGRP_SUPERADMIN_EMAIL` | Root: the one user with this email is made ACTIVE root at every startup (`RootUser`) | (none — required) |
 
 Optional (default to disabled/dev values): `EUREKA_CLIENT_ENABLED`, `IGRP_STORAGE_PROVIDER`, `SMTP_HOST`, `OTEL_COLLECTOR_ENDPOINT`, `ENABLE_SWAGGER`.
 

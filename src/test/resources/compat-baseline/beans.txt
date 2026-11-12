@@ -238,6 +238,7 @@ rolePermissionScopes : cv.igrp.platform.access_management.role.domain.service.Ro
 rolePermissionsView : cv.igrp.platform.access_management.role.domain.service.RolePermissionsView
 roleSpecificationBuilder : cv.igrp.platform.access_management.role.specs.RoleSpecificationBuilder
 rolesController : cv.igrp.platform.access_management.role.interfaces.rest.RolesController
+rootUser : cv.igrp.platform.access_management.shared.infrastructure.service.RootUser
 routeRegistrationController : cv.igrp.platform.access_management.routes.interfaces.rest.RouteRegistrationController
 routeRegistrationService : cv.igrp.platform.access_management.routes.domain.service.RouteRegistrationService
 scopeAspect : cv.igrp.platform.access_management.shared.security.ScopeAspect

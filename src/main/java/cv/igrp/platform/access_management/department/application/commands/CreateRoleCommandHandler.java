@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.department.application.commands;
 
+import cv.igrp.platform.access_management.shared.infrastructure.service.RootUser;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.role.domain.service.RoleMapper;
@@ -98,6 +99,8 @@ public class CreateRoleCommandHandler implements CommandHandler<CreateRoleComman
       String roleCode = RoleValidator.normalizeRoleCode(command.getRoledto().getCode(), command.getRoledto().getParentCode());
 
       command.getRoledto().setCode(roleCode);
+      // A role with the super-admin code would pass for root in other checks (#20).
+      RootUser.refuseIfRootCode(java.util.Collections.singleton(roleCode));
 
       log.info("Create Role with code: {}.", command.getRoledto().getCode());
 

@@ -37,6 +37,7 @@ public final class CompatEnvironment {
 
     /** The superadmin bootstrapped by {@code ConfigurationService} at startup. */
     public static final String SUPERADMIN_ID = "0b6c1b8e-8d3e-4b0a-9a4f-000000000001";
+    public static final String SUPERADMIN_EMAIL = "superadmin@igrp.cv";
 
     /** The suite runs the configuration that is deployed, not the bare default. */
     public static final String PROFILE = "production";
@@ -116,6 +117,7 @@ public final class CompatEnvironment {
         p.put("igrp.access.api.base-url", ISSUER);
 
         p.put("igrp.superadmin.user-external-id", SUPERADMIN_ID);
+        p.put("igrp.superadmin.email", SUPERADMIN_EMAIL);
         p.put("igrp.app-center.url", "http://localhost:3000");
 
         // Federated login through the Keycloak container.

@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
+import cv.igrp.platform.access_management.shared.infrastructure.service.RootUser;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.OAuthClientEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.ServiceAccountEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.UserIdentityEntity;
@@ -270,8 +271,7 @@ public class ClaimsEnrichmentService {
 
     private boolean isActiveSuperAdminAssignment(UserRoleAssignment assignment, LocalDateTime now) {
         return assignment != null
-                && assignment.getRole() != null
-                && SUPER_ADMIN_ROLE.equals(assignment.getRole().getCode())
+                && RootUser.isRootRole(assignment.getRole())
                 && (assignment.getExpiresAt() == null || assignment.getExpiresAt().isAfter(now));
     }
 

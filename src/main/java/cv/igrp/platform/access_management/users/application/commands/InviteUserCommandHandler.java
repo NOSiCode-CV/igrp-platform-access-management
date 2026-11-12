@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
+import cv.igrp.platform.access_management.shared.infrastructure.service.RootUser;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.notification.domain.service.InvitationNotificationSender;
@@ -98,6 +99,9 @@ public class InviteUserCommandHandler implements CommandHandler<InviteUserComman
         });
 
         LOGGER.info("Inviting new user: type=EMAIL, value={}", dto.getEmail());
+
+        // Root comes from IGRP_SUPERADMIN_EMAIL only (#20): refused before anything changes.
+        RootUser.refuseIfRootCode(dto.getRoles());
 
         // Cancel any previous pending invitations
         var previousInvitationOpt = invitationRepository.findByIdentifierTypeAndIdentifierValueAndStatus(

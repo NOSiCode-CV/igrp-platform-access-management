@@ -121,6 +121,11 @@ public class PermissionSetEviction {
         return userId == null ? Set.of() : Set.of(userId);
     }
 
+    /** Deletes these subjects' sets after the current transaction commits (at once without one). */
+    public void evictUsersAfterCommit(Collection<String> userIds) {
+        evictAfterCommit(userIds);
+    }
+
     private void evictAfterCommit(Collection<String> userIds) {
         if (!TransactionSynchronizationManager.isSynchronizationActive()) {
             evictNow(userIds);
