@@ -145,6 +145,7 @@ PUT /api/applications/{code}
 PUT /api/clients/{id}
 PUT /api/departments/{code}
 PUT /api/departments/{departmentCode}/roles/{roleCode}
+PUT /api/departments/{departmentCode}/roles/{roleCode}/permissions/scopes
 PUT /api/service-accounts/{id}
 PUT /api/users/invite/{id}
 PUT /api/users/me

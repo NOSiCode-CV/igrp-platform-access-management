@@ -28,6 +28,7 @@ public class PermissionMapper {
         PermissionDTO permissionDTO = new PermissionDTO();
         permissionDTO.setId(permission.getId());
         permissionDTO.setName(permission.getName());
+        permissionDTO.setKey(permission.getPermissionKey());
         permissionDTO.setDescription(permission.getDescription());
         permissionDTO.setStatus(permission.getStatus());
         if(permission.getDepartments() != null) {

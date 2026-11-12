@@ -12,6 +12,9 @@ import java.time.Instant;
 @EqualsAndHashCode(callSuper = true)
 public class RolePermissionChangedEvent extends SessionEvent {
 
+    /** The scopes of some of the role's permissions changed (#21): which rows, not which routes. */
+    public static final String CHANGE_SCOPES = "SCOPES_CHANGED";
+
     private String roleCode;
     private String departmentCode;
     private String changeType; // PERMISSIONS_ADDED, PERMISSIONS_REMOVED, ROLE_STATUS_CHANGED

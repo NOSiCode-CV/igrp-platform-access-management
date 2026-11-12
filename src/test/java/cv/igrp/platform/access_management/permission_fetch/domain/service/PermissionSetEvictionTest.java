@@ -15,13 +15,17 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.RedisConnectionFailureException;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.util.List;
 import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -41,6 +45,8 @@ class PermissionSetEvictionTest {
     PermissionSetCache cache;
     @Mock
     IGRPUserEntityRepository users;
+    @Mock
+    JdbcTemplate jdbc;
     @InjectMocks
     PermissionSetEviction eviction;
 
@@ -55,11 +61,14 @@ class PermissionSetEvictionTest {
     @Test
     void outsideATransactionTheChangeIsCommittedSoItEvictsAtOnce() {
         when(users.findUserIdsByRoleAndDepartment("R1", "D1")).thenReturn(Set.of("u1", "u2"));
+        when(jdbc.queryForList(anyString(), eq(String.class), eq("R1"), eq("D1"), eq("D1")))
+                .thenReturn(List.of("sa-1"));
 
         eviction.onRolePermissionChanged(new RolePermissionChangedEvent("R1", "D1", "PERMISSIONS_ADDED", null));
 
         verify(cache).evictUser("u1");
         verify(cache).evictUser("u2");
+        verify(cache).evictUser("sa-1");
     }
 
     @Test

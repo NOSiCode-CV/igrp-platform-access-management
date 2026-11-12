@@ -11,13 +11,16 @@ import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import cv.igrp.platform.access_management.shared.security.ServiceAccountTokenClaims;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentMatchers;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.data.redis.RedisConnectionFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.oauth2.jwt.Jwt;
 
+import java.sql.ResultSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -27,6 +30,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyMap;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -54,14 +58,20 @@ class PermissionFetchServiceTest {
         activeUser();
         when(activeRoles.resolve(USER_ID, "APP")).thenReturn(Optional.of(
                 new ResolvedActiveRole(7, 41, "R1", "D1", Source.STORED)));
-        when(jdbc.queryForList(anyString(), eq(String.class), eq(41), eq(7))).thenReturn(List.of("svc.faturas.list"));
+        // One row of the role-keys query: the key and its scope in the role (#21).
+        when(jdbc.query(anyString(), ArgumentMatchers.<RowMapper<Object>>any(), eq(41), eq(7))).thenAnswer(call -> {
+            ResultSet row = mock(ResultSet.class);
+            when(row.getString(1)).thenReturn("svc.faturas.list");
+            when(row.getString(2)).thenReturn("own");
+            return List.of(call.<RowMapper<Object>>getArgument(1).mapRow(row, 0));
+        });
         when(cache.write(anyString(), anyString(), anyMap()))
                 .thenThrow(new RedisConnectionFailureException("Redis down"));
 
         PermissionSetDTO set = service.fetch("APP");
 
         assertThat(set.keys()).containsExactly("svc.faturas.list");
-        assertThat(set.scopes()).containsEntry("svc.faturas.list", "all");
+        assertThat(set.scopes()).containsEntry("svc.faturas.list", "own");
         verifyNoInteractions(audit);
     }
 

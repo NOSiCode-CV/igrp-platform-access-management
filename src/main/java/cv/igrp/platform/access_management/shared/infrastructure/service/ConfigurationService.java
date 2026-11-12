@@ -247,8 +247,8 @@ public class ConfigurationService {
         // Step 1: Insert role-permission relation
         String sqlRolePerm = """
                     INSERT INTO t_role_permission
-                    (role_id, permission)
-                    SELECT ?, ?
+                    (role_id, permission, scope)
+                    SELECT ?, ?, 'all'
                     WHERE NOT EXISTS (
                         SELECT 1 FROM t_role_permission WHERE role_id=? AND permission=?
                     )

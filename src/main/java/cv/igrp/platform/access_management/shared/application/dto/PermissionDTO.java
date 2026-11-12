@@ -39,4 +39,13 @@ public class PermissionDTO  {
   
   private List<String> departments = new ArrayList<>();
 
+  /** The immutable route key ({@code service.resource.action}); null for legacy permissions. Read-only. */
+  private String key ;
+
+  /**
+   * Row visibility in the role, in {@code GET .../roles/{roleCode}/permissions}
+   * only (#21): {@code all}, {@code own}, {@code by_role} or {@code department}. Read-only.
+   */
+  private String scope ;
+
 }

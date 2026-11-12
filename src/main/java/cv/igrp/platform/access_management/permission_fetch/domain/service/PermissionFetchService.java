@@ -8,6 +8,7 @@ import cv.igrp.platform.access_management.permission_fetch.infrastructure.cache.
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
 import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
+import cv.igrp.platform.access_management.shared.application.constants.PermissionScope;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import cv.igrp.platform.access_management.shared.security.ServiceAccountTokenClaims;
@@ -17,9 +18,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Service;
 
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -50,34 +53,47 @@ public class PermissionFetchService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PermissionFetchService.class);
 
-    /** Every scope is {@code all} until scopes on role permissions land (#21). */
-    static final String DEFAULT_SCOPE = "all";
-
+    /** Key and scope of each permission of the active role in the application (#21). */
     private static final String ROLE_KEYS = """
-            SELECT DISTINCT p.permission_key FROM t_permission p
+            SELECT p.permission_key, rp.scope FROM t_permission p
               JOIN t_role_permission rp ON rp.permission = p.id
              WHERE rp.role_id = ? AND p.application_id = ?
                AND p.permission_key IS NOT NULL AND p.status = 'ACTIVE'
              ORDER BY 1""";
 
+    /** Root: every key of the application, scope all. */
     private static final String APPLICATION_KEYS = """
-            SELECT p.permission_key FROM t_permission p
+            SELECT p.permission_key, 'all' AS scope FROM t_permission p
              WHERE p.application_id = ?
                AND p.permission_key IS NOT NULL AND p.status = 'ACTIVE'
              ORDER BY 1""";
 
+    /**
+     * A service account: each role's permissions with their scope, and its
+     * direct grants, which have no role and so are scope all. A key reached
+     * several ways appears once per way; the fetch combines them.
+     */
     private static final String SERVICE_ACCOUNT_KEYS = """
-            SELECT DISTINCT p.permission_key FROM t_permission p
-             WHERE p.application_id = ?
+            SELECT p.permission_key, rp.scope FROM t_permission p
+              JOIN t_role_permission rp ON rp.permission = p.id
+              JOIN t_role r ON r.id = rp.role_id
+              JOIN t_service_account_role_assignment sara ON sara.role_id = r.id
+             WHERE p.application_id = ? AND sara.service_account_id = ?::uuid
+               AND p.permission_key IS NOT NULL AND p.status = 'ACTIVE' AND r.status = 'ACTIVE'
+               AND (sara.expires_at IS NULL OR sara.expires_at > now())
+            UNION ALL
+            SELECT p.permission_key, 'all' FROM t_permission p
+              JOIN t_service_account_permission_grant g ON g.permission_id = p.id
+             WHERE p.application_id = ? AND g.service_account_id = ?::uuid
                AND p.permission_key IS NOT NULL AND p.status = 'ACTIVE'
-               AND (p.id IN (SELECT rp.permission FROM t_service_account_role_assignment sara
-                               JOIN t_role r ON r.id = sara.role_id
-                               JOIN t_role_permission rp ON rp.role_id = r.id
-                              WHERE sara.service_account_id = ?::uuid AND r.status = 'ACTIVE'
-                                AND (sara.expires_at IS NULL OR sara.expires_at > now()))
-                    OR p.id IN (SELECT g.permission_id FROM t_service_account_permission_grant g
-                                 WHERE g.service_account_id = ?::uuid))
              ORDER BY 1""";
+
+    private static final RowMapper<ScopedKey> SCOPED_KEY = (rs, i) ->
+            new ScopedKey(rs.getString(1), PermissionScope.fromCode(rs.getString(2)));
+
+    /** One row of the queries above. */
+    private record ScopedKey(String key, PermissionScope scope) {
+    }
 
     private static final String ACTIVE_SERVICE_ACCOUNT = """
             SELECT EXISTS (SELECT 1 FROM t_service_account sa JOIN t_oauth_client oc ON oc.id = sa.oauth_client_id
@@ -106,12 +122,16 @@ public class PermissionFetchService {
         String sub = jwt.getSubject();
         boolean serviceAccount = ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT
                 .equals(jwt.getClaimAsString(ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE));
-        List<String> keys = serviceAccount
+        List<ScopedKey> rows = serviceAccount
                 ? serviceAccountKeys(sub, applicationCode)
                 : userKeys(sub, applicationCode);
 
+        // A key reached through several roles gets the union of their scopes.
+        Map<String, List<PermissionScope>> byKey = new LinkedHashMap<>();
+        rows.forEach(row -> byKey.computeIfAbsent(row.key(), k -> new ArrayList<>()).add(row.scope()));
         Map<String, String> scopes = new LinkedHashMap<>();
-        keys.forEach(key -> scopes.put(key, DEFAULT_SCOPE));
+        byKey.forEach((key, keyScopes) -> scopes.put(key, PermissionScope.union(keyScopes)));
+        List<String> keys = List.copyOf(scopes.keySet());
         if (cacheAndCheckFirstAccess(sub, applicationCode, scopes)) {
             audit.logEvent(AuditEventType.APPLICATION_ACCESSED, AuditCategory.AUTHORIZATION,
                     Map.of("applicationCode", applicationCode));
@@ -135,7 +155,7 @@ public class PermissionFetchService {
         }
     }
 
-    private List<String> userKeys(String sub, String applicationCode) {
+    private List<ScopedKey> userKeys(String sub, String applicationCode) {
         String userId = SubjectParser.parseUserSubjectOrThrow(sub);
         if (!Boolean.TRUE.equals(jdbc.queryForObject(
                 "SELECT EXISTS (SELECT 1 FROM t_user WHERE id = ? AND status = 'ACTIVE')", Boolean.class, userId))) {
@@ -148,12 +168,12 @@ public class PermissionFetchService {
         }
         ResolvedActiveRole active = role.get();
         if (active.source() == Source.SUPER_ADMIN) {
-            return list(APPLICATION_KEYS, String.class, active.applicationId());
+            return rows(APPLICATION_KEYS, active.applicationId());
         }
-        return list(ROLE_KEYS, String.class, active.roleId(), active.applicationId());
+        return rows(ROLE_KEYS, active.roleId(), active.applicationId());
     }
 
-    private List<String> serviceAccountKeys(String serviceAccountId, String applicationCode) {
+    private List<ScopedKey> serviceAccountKeys(String serviceAccountId, String applicationCode) {
         if (!isUuid(serviceAccountId)) {
             throw unauthorized("The service account token has no service account subject");
         }
@@ -161,7 +181,7 @@ public class PermissionFetchService {
             throw unauthorized("The service account or its client is not active");
         }
         int applicationId = applicationId(applicationCode);
-        return list(SERVICE_ACCOUNT_KEYS, String.class, applicationId, serviceAccountId, serviceAccountId);
+        return rows(SERVICE_ACCOUNT_KEYS, applicationId, serviceAccountId, applicationId, serviceAccountId);
     }
 
     private int applicationId(String applicationCode) {
@@ -171,6 +191,10 @@ public class PermissionFetchService {
             throw IgrpResponseStatusException.notFound("Application " + applicationCode + " not found");
         }
         return ids.getFirst();
+    }
+
+    private List<ScopedKey> rows(String sql, Object... args) {
+        return jdbc.query(sql, SCOPED_KEY, args);
     }
 
     /** {@code queryForList} is declared nullable; an absent result is an empty list. */

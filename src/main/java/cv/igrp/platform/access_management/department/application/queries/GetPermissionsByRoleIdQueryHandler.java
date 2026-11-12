@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.department.application.queries;
 
-import cv.igrp.platform.access_management.role.domain.service.PermissionMapper;
+import cv.igrp.platform.access_management.role.domain.service.RolePermissionsView;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
@@ -36,7 +36,7 @@ import org.springframework.transaction.annotation.Transactional;
  * @see GetPermissionsByRoleIdQuery
  * @see PermissionDTO
  * @see RoleEntityRepository
- * @see PermissionMapper
+ * @see RolePermissionsView
  * @see Status
  * @see IgrpResponseStatusException
  */
@@ -46,20 +46,20 @@ public class GetPermissionsByRoleIdQueryHandler implements QueryHandler<GetPermi
 
   private final RoleEntityRepository roleRepository;
   private final DepartmentEntityRepository departmentRepository;
-  private final PermissionMapper permissionMapper;
+  private final RolePermissionsView rolePermissionsView;
 
   /**
    * Constructs the handler with necessary dependencies.
    *
    * @param roleRepository       repository to retrieve roles from the database
    * @param departmentRepository repository to retrieve departments from the database
-   * @param permissionMapper     mapper to convert permission entities to DTOs
+   * @param rolePermissionsView  the role's permissions as DTOs, with their scopes
    */
-  public GetPermissionsByRoleIdQueryHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, PermissionMapper permissionMapper) {
+  public GetPermissionsByRoleIdQueryHandler(RoleEntityRepository roleRepository, DepartmentEntityRepository departmentRepository, RolePermissionsView rolePermissionsView) {
 
     this.roleRepository = roleRepository;
     this.departmentRepository = departmentRepository;
-    this.permissionMapper = permissionMapper;
+    this.rolePermissionsView = rolePermissionsView;
   }
 
   /**
@@ -83,12 +83,8 @@ public class GetPermissionsByRoleIdQueryHandler implements QueryHandler<GetPermi
                       HttpStatus.NOT_FOUND, "Get Permission By Role code", "Role with code: " + query.getRoleCode() + " not found."
               );
             });
-    List<PermissionDTO> permissionList = foundRole.getPermissions()
-            .stream()
-            .filter(permission -> !permission.getStatus().equals(Status.DELETED))
-            .map(permissionMapper::mapToDTO)
-            .toList();
-    return new ResponseEntity<>(permissionList, HttpStatus.OK);
+    // Each permission with its scope in the role (#21).
+    return new ResponseEntity<>(rolePermissionsView.of(foundRole), HttpStatus.OK);
   }
 
 }
