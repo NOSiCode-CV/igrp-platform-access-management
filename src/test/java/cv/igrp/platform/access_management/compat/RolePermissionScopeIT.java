@@ -241,7 +241,9 @@ class RolePermissionScopeIT extends AbstractCompatIT {
     }
 
     private int rootRoleId() {
-        return jdbc.queryForObject("SELECT id FROM t_role WHERE code = 'DEPT_IGRP.superadmin'", Integer.class);
+        return jdbc.queryForObject("""
+                SELECT r.id FROM t_role r JOIN t_department d ON d.id = r.department
+                 WHERE r.code = 'DEPT_IGRP.superadmin' AND d.code = 'DEPT_IGRP'""", Integer.class);
     }
 
     private int roleId(String name) {

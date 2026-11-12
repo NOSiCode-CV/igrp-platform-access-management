@@ -53,6 +53,11 @@ class RootUserIT extends AbstractCompatIT {
     @AfterEach
     void restoreTheConfiguredRootAndRetireTestUsers() {
         root.sync(ROOT_EMAIL, CompatEnvironment.SUPERADMIN_ID);
+        // Look-alike roles made by a test (sync has already stripped their holders):
+        // other tests look the real role up, and must find one.
+        jdbc.update("""
+                DELETE FROM t_role WHERE code = ? AND department IN
+                       (SELECT id FROM t_department WHERE code <> 'DEPT_IGRP')""", ROOT_ROLE);
         jdbc.update("UPDATE t_user SET status = 'DELETED' WHERE lower(email) LIKE ? AND id <> ?",
                 "%-" + suffix + "@example.cv", api.superadminId());
     }
