@@ -207,27 +207,49 @@ class RolePermissionScopeIT extends AbstractCompatIT {
     }
 
     @Test
-    @DisplayName("The migration is idempotent: a rerun keeps set scopes; root is all; the column defaults to department")
-    void migrationIsIdempotent() throws IOException {
+    @DisplayName("The migration converts rows without a scope (all for root, department otherwise) and a rerun keeps set scopes")
+    void migrationConvertsAndIsIdempotent() throws IOException {
         String sql = new ClassPathResource(MIGRATION).getContentAsString(StandardCharsets.UTF_8);
         ok(setScopes("R1", "[{\"key\":" + CompatSupport.q(key("list")) + ",\"scope\":\"own\"}]"));
+        // Rows as a 0.2 database has them, without a scope: one on root's role, one on R1.
+        jdbc.execute("ALTER TABLE t_role_permission ALTER COLUMN scope DROP NOT NULL");
+        try {
+            jdbc.update("UPDATE t_role_permission SET scope = NULL WHERE role_id = ? AND permission = ?",
+                    roleId("R1"), permissionId("create"));
+            jdbc.update("INSERT INTO t_role_permission (role_id, permission, scope) VALUES (?, ?, NULL)",
+                    rootRoleId(), permissionId("delete"));
 
-        jdbc.execute(sql);
-        jdbc.execute(sql);
+            jdbc.execute(sql);
+            jdbc.execute(sql);
 
-        assertThat(rolePermissionScopes("R1")).containsEntry(key("list"), "own").containsEntry(key("create"), "department");
-        // Root's own assignment (created at startup, or converted by the
-        // migration) is all. Later rows on root's role take the default; the
-        // fetch gives root all whatever its rows say.
-        assertThat(jdbc.queryForList("""
-                SELECT rp.scope FROM t_role_permission rp
-                  JOIN t_role r ON r.id = rp.role_id JOIN t_permission p ON p.id = rp.permission
-                 WHERE r.code = 'DEPT_IGRP.superadmin' AND p.name = 'DEPT_IGRP.manage_access'""", String.class))
-                .as("root's own assignment is all").containsExactly("all");
-        assertThat(jdbc.queryForObject("""
-                SELECT is_nullable || ':' || column_default FROM information_schema.columns
-                 WHERE table_name = 't_role_permission' AND column_name = 'scope'""", String.class))
-                .startsWith("NO:'department'");
+            assertThat(rolePermissionScopes("R1"))
+                    .as("set scopes are kept").containsEntry(key("list"), "own")
+                    .as("a non-root row without a scope gets department").containsEntry(key("create"), "department");
+            assertThat(jdbc.queryForObject("SELECT scope FROM t_role_permission WHERE role_id = ? AND permission = ?",
+                    String.class, rootRoleId(), permissionId("delete")))
+                    .as("a root row without a scope gets all").isEqualTo("all");
+            assertThat(jdbc.queryForObject("""
+                    SELECT is_nullable || ':' || column_default FROM information_schema.columns
+                     WHERE table_name = 't_role_permission' AND column_name = 'scope'""", String.class))
+                    .startsWith("NO:'department'");
+        } finally {
+            jdbc.update("DELETE FROM t_role_permission WHERE role_id = ? AND permission = ?",
+                    rootRoleId(), permissionId("delete"));
+            jdbc.update("UPDATE t_role_permission SET scope = 'department' WHERE scope IS NULL");
+            jdbc.execute("ALTER TABLE t_role_permission ALTER COLUMN scope SET NOT NULL");
+        }
+    }
+
+    private int rootRoleId() {
+        return jdbc.queryForObject("SELECT id FROM t_role WHERE code = 'DEPT_IGRP.superadmin'", Integer.class);
+    }
+
+    private int roleId(String name) {
+        return jdbc.queryForObject("SELECT id FROM t_role WHERE code = ?", Integer.class, role(name));
+    }
+
+    private int permissionId(String action) {
+        return jdbc.queryForObject("SELECT id FROM t_permission WHERE permission_key = ?", Integer.class, key(action));
     }
 
     // ---- fixtures ----
