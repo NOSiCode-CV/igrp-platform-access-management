@@ -88,6 +88,53 @@ public class PermissionFetchService {
                AND p.permission_key IS NOT NULL AND p.status = 'ACTIVE'
              ORDER BY 1""";
 
+    /** A department and every department under it, by code (#39). */
+    private static final String SUBTREE = """
+            WITH RECURSIVE tree AS (
+                SELECT d.id, d.code FROM t_department d WHERE d.code = ? AND d.status <> 'DELETED'
+                UNION
+                SELECT c.id, c.code FROM t_department c JOIN tree t ON c.parent_id = t.id WHERE c.status <> 'DELETED')
+            SELECT code FROM tree ORDER BY code""";
+
+    /**
+     * The roles a service account holds now in the application (#39): in an
+     * active department linked to it, as a user's valid roles are.
+     */
+    private static final String SERVICE_ACCOUNT_ROLES = """
+            SELECT DISTINCT r.code FROM t_service_account_role_assignment sara
+              JOIN t_role r ON r.id = sara.role_id
+              JOIN t_department d ON d.id = r.department
+              JOIN t_department_application da ON da.department_id = d.id
+             WHERE sara.service_account_id = ?::uuid AND da.application_id = ?
+               AND r.status = 'ACTIVE' AND d.status = 'ACTIVE'
+               AND (sara.expires_at IS NULL OR sara.expires_at > now())
+             ORDER BY 1""";
+
+    /** The union of the subtrees under those roles' departments (#39). */
+    private static final String SERVICE_ACCOUNT_DEPARTMENTS = """
+            WITH RECURSIVE tree AS (
+                SELECT d.id, d.code FROM t_department d
+                  JOIN t_role r ON r.department = d.id
+                  JOIN t_service_account_role_assignment sara ON sara.role_id = r.id
+                  JOIN t_department_application da ON da.department_id = d.id
+                 WHERE sara.service_account_id = ?::uuid AND da.application_id = ?
+                   AND r.status = 'ACTIVE' AND d.status = 'ACTIVE'
+                   AND (sara.expires_at IS NULL OR sara.expires_at > now())
+                UNION
+                SELECT c.id, c.code FROM t_department c JOIN tree t ON c.parent_id = t.id WHERE c.status <> 'DELETED')
+            SELECT DISTINCT code FROM tree ORDER BY code""";
+
+    /** What a caller may do in one application, before the scopes are combined. */
+    private record Computed(List<ScopedKey> rows, List<String> roles, List<String> departments) {
+
+        static final Computed NOTHING = new Computed(List.of(), List.of(), List.of());
+
+        PermissionSetDTO toSet() {
+            Map<String, String> scopes = scopesByKey(rows);
+            return new PermissionSetDTO(List.copyOf(scopes.keySet()), scopes, roles, departments);
+        }
+    }
+
     private static final RowMapper<ScopedKey> SCOPED_KEY = (rs, i) ->
             new ScopedKey(rs.getString(1), PermissionScope.fromCode(rs.getString(2)));
 
@@ -122,15 +169,14 @@ public class PermissionFetchService {
         String sub = jwt.getSubject();
         boolean serviceAccount = ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT
                 .equals(jwt.getClaimAsString(ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE));
-        Map<String, String> scopes = scopesByKey(serviceAccount
-                ? serviceAccountKeys(sub, applicationCode)
-                : userKeys(sub, applicationCode));
-        List<String> keys = List.copyOf(scopes.keySet());
-        if (cacheAndCheckFirstAccess(sub, applicationCode, scopes)) {
+        PermissionSetDTO set = (serviceAccount
+                ? serviceAccountSet(sub, applicationCode)
+                : userSet(sub, applicationCode)).toSet();
+        if (cacheAndCheckFirstAccess(sub, applicationCode, set)) {
             audit.logEvent(AuditEventType.APPLICATION_ACCESSED, AuditCategory.AUTHORIZATION,
                     Map.of("applicationCode", applicationCode));
         }
-        return new PermissionSetDTO(keys, scopes);
+        return set;
     }
 
     /**
@@ -160,14 +206,14 @@ public class PermissionFetchService {
             throw IgrpResponseStatusException.of(HttpStatus.CONFLICT, "No active authorization",
                     "The user is not active or not signed in; nothing was written");
         }
-        Map<String, String> scopes = scopesByKey(userKeys(userId, applicationCode));
+        PermissionSetDTO set = userSet(userId, applicationCode).toSet();
         try {
-            cache.writeForRefresh(userId, applicationCode, scopes);
+            cache.writeForRefresh(userId, applicationCode, set);
         } catch (DataAccessException e) {
             throw IgrpResponseStatusException.of(HttpStatus.SERVICE_UNAVAILABLE, "Permission cache unavailable",
                     "Redis is unavailable; nothing was written");
         }
-        return new PermissionSetDTO(List.copyOf(scopes.keySet()), scopes);
+        return set;
     }
 
     /** A key reached through several roles gets the union of their scopes. */
@@ -185,9 +231,9 @@ public class PermissionFetchService {
      * database; the access is then not audited, as it cannot be counted once
      * per TTL.
      */
-    private boolean cacheAndCheckFirstAccess(String sub, String applicationCode, Map<String, String> scopes) {
+    private boolean cacheAndCheckFirstAccess(String sub, String applicationCode, PermissionSetDTO set) {
         try {
-            return cache.write(sub, applicationCode, scopes);
+            return cache.write(sub, applicationCode, set);
         } catch (DataAccessException e) {
             LOGGER.warn("[PERMISSIONS] Redis unavailable; serving {} for {} without caching: {}",
                     applicationCode, sub, e.getMessage());
@@ -195,7 +241,7 @@ public class PermissionFetchService {
         }
     }
 
-    private List<ScopedKey> userKeys(String sub, String applicationCode) {
+    private Computed userSet(String sub, String applicationCode) {
         String userId = SubjectParser.parseUserSubjectOrThrow(sub);
         if (!Boolean.TRUE.equals(jdbc.queryForObject(
                 "SELECT EXISTS (SELECT 1 FROM t_user WHERE id = ? AND status = 'ACTIVE')", Boolean.class, userId))) {
@@ -204,16 +250,18 @@ public class PermissionFetchService {
         // resolve() also answers 404 for an unknown application.
         Optional<ResolvedActiveRole> role = activeRoles.resolve(userId, applicationCode);
         if (role.isEmpty()) {
-            return List.of();
+            return Computed.NOTHING;
         }
         ResolvedActiveRole active = role.get();
         if (active.source() == Source.SUPER_ADMIN) {
-            return rows(APPLICATION_KEYS, active.applicationId());
+            // Root's scope is all on every key, so no rows are filtered: no departments to compare.
+            return new Computed(rows(APPLICATION_KEYS, active.applicationId()), List.of(active.code()), List.of());
         }
-        return rows(ROLE_KEYS, active.roleId(), active.applicationId());
+        return new Computed(rows(ROLE_KEYS, active.roleId(), active.applicationId()), List.of(active.code()),
+                list(SUBTREE, String.class, active.departmentCode()));
     }
 
-    private List<ScopedKey> serviceAccountKeys(String serviceAccountId, String applicationCode) {
+    private Computed serviceAccountSet(String serviceAccountId, String applicationCode) {
         if (!isUuid(serviceAccountId)) {
             throw unauthorized("The service account token has no service account subject");
         }
@@ -221,7 +269,9 @@ public class PermissionFetchService {
             throw unauthorized("The service account or its client is not active");
         }
         int applicationId = applicationId(applicationCode);
-        return rows(SERVICE_ACCOUNT_KEYS, applicationId, serviceAccountId, applicationId, serviceAccountId);
+        return new Computed(rows(SERVICE_ACCOUNT_KEYS, applicationId, serviceAccountId, applicationId, serviceAccountId),
+                list(SERVICE_ACCOUNT_ROLES, String.class, serviceAccountId, applicationId),
+                list(SERVICE_ACCOUNT_DEPARTMENTS, String.class, serviceAccountId, applicationId));
     }
 
     private int applicationId(String applicationCode) {

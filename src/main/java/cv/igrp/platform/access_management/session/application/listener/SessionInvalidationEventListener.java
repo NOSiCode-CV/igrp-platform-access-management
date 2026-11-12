@@ -89,6 +89,10 @@ public class SessionInvalidationEventListener {
      */
     @EventListener
     public void handleDepartmentScopeChanged(DepartmentScopeChangedEvent event) {
+        if (DepartmentScopeChangedEvent.CHANGE_STRUCTURE.equals(event.getChangeType())) {
+            // A new department below changes no one's roles or tokens; the permission sets are evicted (#39).
+            return;
+        }
         String departmentCode = event.getDepartmentCode();
         if (departmentCode == null || departmentCode.isBlank()) {
             log.warn("DepartmentScopeChangedEvent received without departmentCode; skipping invalidation");

@@ -111,6 +111,8 @@ public class DeleteDepartmentCommandHandler implements CommandHandler<DeleteDepa
       // active session for users belonging to this department.
       eventPublisher.publishDepartmentScopeChanged(new DepartmentScopeChangedEvent(
               department.getCode(), DepartmentScopeChangedEvent.CHANGE_STATUS, null));
+      // Every department above it sees fewer departments now (#39).
+      eventPublisher.publishSubtreeChanged(department.getParentId());
 
       logger.info("Successfully deleted department with code={}", code);
       return ResponseEntity.noContent().build();

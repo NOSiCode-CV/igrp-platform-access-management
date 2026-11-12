@@ -49,6 +49,13 @@ public class PermissionSetEviction {
               JOIN t_department d ON d.id = r.department
              WHERE r.code = ? AND (CAST(? AS varchar) IS NULL OR d.code = ?)""";
 
+    /** Service accounts holding a role in a department; their sub is their id. */
+    private static final String SERVICE_ACCOUNTS_IN_DEPARTMENT = """
+            SELECT DISTINCT sara.service_account_id::text FROM t_service_account_role_assignment sara
+              JOIN t_role r ON r.id = sara.role_id
+              JOIN t_department d ON d.id = r.department
+             WHERE d.code = ?""";
+
     private final PermissionSetCache cache;
     private final IGRPUserEntityRepository users;
     private final JdbcTemplate jdbc;
@@ -92,6 +99,8 @@ public class PermissionSetEviction {
     @EventListener
     public void onDepartmentScopeChanged(DepartmentScopeChangedEvent event) {
         evictAfterCommit(users.findUserIdsByDepartment(event.getDepartmentCode()));
+        // Service accounts holding a role there: their visible departments too (#39).
+        evictAfterCommit(jdbc.queryForList(SERVICE_ACCOUNTS_IN_DEPARTMENT, String.class, event.getDepartmentCode()));
     }
 
     /** A permission deleted: every user who held it through a role. */
