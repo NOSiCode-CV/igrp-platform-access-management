@@ -74,6 +74,10 @@ public class IgrpOidcUserService extends OidcUserService {
      * When {@code true} (default), logins whose upstream ID Token does not
      * carry {@code email_verified: true} are rejected.
      */
+    /** Root (#20): its first federated login links to the row created at startup. */
+    @Value("${igrp.superadmin.email:}")
+    private String rootEmail;
+
     @Value("${igrp.oauth.external-idp.require-email-verified:true}")
     private boolean requireEmailVerified;
 
@@ -338,6 +342,14 @@ public class IgrpOidcUserService extends OidcUserService {
     // User provisioning
     // -------------------------------------------------------------------------
 
+    /** The root row, when this login's email is IGRP_SUPERADMIN_EMAIL. */
+    Optional<IGRPUserEntity> configuredRoot(String email) {
+        if (email == null || rootEmail == null || !email.trim().equalsIgnoreCase(rootEmail.trim())) {
+            return Optional.empty();
+        }
+        return userRepository.findByEmailIgnoreCase(email.trim());
+    }
+
     private IGRPUserEntity provisionUser(String provider, String externalUserId, Map<String, Object> attributes) {
         String preferredUsername = (String) attributes.getOrDefault("preferred_username", externalUserId);
         String email = (String) attributes.get("email");
@@ -354,6 +366,9 @@ public class IgrpOidcUserService extends OidcUserService {
         anonymiseConflictingDeletedRecords(provider, externalUserId, preferredUsername);
 
         IGRPUserEntity user = userRepository.findByUsername(externalUserId)
+                // The configured root (#20) may already exist, created at startup
+                // under its email: its first federated login links to that row.
+                .or(() -> configuredRoot(email))
                 .orElseGet(IGRPUserEntity::new);
         if (user.getId() == null) {
             user.setUsername(preferredUsername);

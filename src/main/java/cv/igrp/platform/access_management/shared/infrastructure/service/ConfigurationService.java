@@ -7,6 +7,7 @@ import cv.igrp.platform.access_management.shared.application.constants.MenuEntry
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -16,7 +17,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.io.InputStream;
-import java.util.Objects;
 import java.util.UUID;
 
 @Service
@@ -25,11 +25,13 @@ public class ConfigurationService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ConfigurationService.class);
     private static final String SYSTEM_USER = "system";
 
-    @Value("${igrp.superadmin.user-external-id}")
+    /** Optional (#20): the username of a root created at startup. */
+    @Value("${igrp.superadmin.user-external-id:}")
     public String SUPER_ADMIN_EXTERNAL_ID = "";
 
-    @Value("${igrp.superadmin.email}")
-    private String SUPER_ADMIN_EMAIL = "superadmin@igrp.cv";
+    /** Required (#20): root is the one user with this email. */
+    @Value("${igrp.superadmin.email:}")
+    private String superAdminEmail = "";
 
     public static final String IGRP_DEPARTMENT = "DEPT_IGRP";
     public static final String SUPER_ADMIN_ROLE = IGRP_DEPARTMENT + ".superadmin";
@@ -40,9 +42,24 @@ public class ConfigurationService {
     private final JdbcTemplate jdbcTemplate;
     private final JsonMapper objectMapper;
 
-    public ConfigurationService(JdbcTemplate jdbcTemplate, JsonMapper objectMapper) {
+    private final RootUser rootUser;
+
+    public ConfigurationService(JdbcTemplate jdbcTemplate, JsonMapper objectMapper, RootUser rootUser) {
         this.jdbcTemplate = jdbcTemplate;
         this.objectMapper = objectMapper;
+        this.rootUser = rootUser;
+    }
+
+    /** AM refuses to start without {@code IGRP_SUPERADMIN_EMAIL}: there would be no root (#20). */
+    @PostConstruct
+    void requireRootEmail() {
+        requireRootEmail(superAdminEmail);
+    }
+
+    static void requireRootEmail(String email) {
+        if (email == null || email.isBlank() || !email.trim().contains("@")) {
+            throw new IllegalStateException("IGRP_SUPERADMIN_EMAIL is required: root is the user with that email");
+        }
     }
 
     @Transactional
@@ -51,15 +68,9 @@ public class ConfigurationService {
         long startTime = System.currentTimeMillis();
         LOGGER.info("[Startup Config] Starting system initialization...");
 
-        if(SUPER_ADMIN_EXTERNAL_ID.isBlank()) {
-            LOGGER.warn("[Startup Config] System admin external ID is not set. Skipping system initialization.");
-            throw new RuntimeException("No superadmin user external ID provided. Please set IGRP_SUPERADMIN_USER_EXTERNAL_ID in your environment variables.");
-        }
-
         try {
             // 1. Check existence in database
-            boolean superAdminExists = exists("SELECT 1 FROM t_user WHERE username='%s' LIMIT 1".formatted(SUPER_ADMIN_EXTERNAL_ID));
-            boolean departmentExists = exists("SELECT 1 FROM t_department WHERE code='%s' LIMIT 1".formatted(IGRP_DEPARTMENT));
+                boolean departmentExists = exists("SELECT 1 FROM t_department WHERE code='%s' LIMIT 1".formatted(IGRP_DEPARTMENT));
             boolean appExists = exists("SELECT 1 FROM t_application WHERE type='SYSTEM' LIMIT 1");
             boolean permissionExists = exists("SELECT 1 FROM t_permission WHERE name='%s' LIMIT 1".formatted(IGRP_PERMISSION));
             boolean resourceExists = exists("SELECT 1 FROM t_resource WHERE name='%s' LIMIT 1".formatted(IGRP_RESOURCE));
@@ -81,17 +92,10 @@ public class ConfigurationService {
             Long roleId = roleExists ? getId("SELECT id FROM t_role WHERE code='%s'".formatted(SUPER_ADMIN_ROLE)) :
                     createDefaultRoleInDB(departmentId, permissionId, appId);
 
-            String userId = superAdminExists ? getUserId("SELECT id FROM t_user WHERE username='%s'".formatted(SUPER_ADMIN_EXTERNAL_ID)) :
-                    createSuperAdminUserInDB();
-
-            // 3. Assign role to superadmin user in DB and force the active role
-            //    to the superadmin role so the runtime permission checks
-            //    (which require r.id = u.active_role_id) succeed even when
-            //    the user already existed without an active role configured.
-            if (userId != null && roleId != null) {
-                assignRoleToSuperAdminUserInDB(roleId, userId);
-                ensureSuperAdminActiveRole(roleId, userId);
-            }
+            // 3. Root (#20): the one user with the configured email, ACTIVE and
+            //    holding the role (pinned as its active role); every other user
+            //    and service account loses the role.
+            rootUser.sync(superAdminEmail, SUPER_ADMIN_EXTERNAL_ID);
 
             // 4. Create default menus
             if (appId != null) {
@@ -267,90 +271,6 @@ public class ConfigurationService {
         return roleId;
     }
 
-    String createSuperAdminUserInDB() {
-        // Phase G2: t_user.id is VARCHAR(36) NOT NULL with no DB-side default —
-        // Hibernate's @UuidGenerator only fires through JPA, not raw JdbcTemplate.
-        // Generate the UUID here and pass it explicitly so the INSERT satisfies
-        // the NOT NULL constraint.
-        String newUserId = UUID.randomUUID().toString();
-        String sql = """
-                    INSERT INTO t_user
-                    (id, name, username, email, status,
-                     created_by, created_date, last_modified_by, last_modified_date)
-                    VALUES (?, ?, ?, ?, ?, ?, now(), ?, now())
-                    RETURNING id
-                """;
-        LOGGER.info("[Startup Config] Super admin user created in DB with id={}", newUserId);
-        return jdbcTemplate.queryForObject(sql,
-                String.class,
-                newUserId,
-                "iGRP Super Admin", SUPER_ADMIN_EXTERNAL_ID, SUPER_ADMIN_EMAIL, "ACTIVE",
-                SYSTEM_USER, SYSTEM_USER);
-    }
-
-    void assignRoleToSuperAdminUserInDB(Long roleId, String userId) {
-        // Assign role in database via the canonical t_user_role_assignment table.
-        // The legacy t_role_users many-to-many table was deprecated when role
-        // assignments gained an expiry / audit lifecycle — see migration V4.
-        String sql = """
-                    INSERT INTO t_user_role_assignment
-                    (user_id, role_id, assigned_at)
-                    SELECT ?, ?, NOW()
-                    WHERE NOT EXISTS (
-                        SELECT 1 FROM t_user_role_assignment WHERE user_id = ? AND role_id = ?
-                    )
-                """;
-        int inserted = jdbcTemplate.update(sql, userId, roleId, userId, roleId);
-
-        // Re-read so we log the actual landed state, not just whether we
-        // inserted on this run (which is false on every restart after the
-        // first one).
-        Integer assigned = jdbcTemplate.queryForObject(
-                """
-                SELECT COUNT(*) FROM t_user_role_assignment
-                 WHERE user_id = ? AND role_id = ?
-                   AND (expires_at IS NULL OR expires_at > NOW())
-                """,
-                Integer.class, userId, roleId);
-
-        if (assigned != null && assigned > 0) {
-            LOGGER.info("[Startup Config] Superadmin user={} role={} assignment present (insertedNow={})",
-                    userId, roleId, inserted);
-        } else {
-            LOGGER.error("[Startup Config] Superadmin user={} role={} assignment MISSING after INSERT — " +
-                    "permission checks will fail. Inspect t_user_role_assignment.",
-                    userId, roleId);
-        }
-    }
-
-    /**
-     * Make sure the superadmin user's {@code active_role_id} is pinned to the
-     * superadmin role. The runtime permission resolution requires
-     * {@code r.id = u.active_role_id} for the role-permission join to succeed,
-     * so a superadmin without an active role would fail every permission
-     * check despite owning the role.
-     *
-     * <p>This method is idempotent and intentionally overwrites any
-     * pre-existing {@code active_role_id} value on the superadmin user — if
-     * something else changed it the user would be locked out.
-     */
-    void ensureSuperAdminActiveRole(Long roleId, String userId) {
-        String sql = """
-                    UPDATE t_user
-                       SET active_role_id = ?,
-                           last_modified_by = ?,
-                           last_modified_date = NOW()
-                     WHERE id = ?
-                       AND (active_role_id IS DISTINCT FROM ?)
-                """;
-        int updated = jdbcTemplate.update(sql, roleId, SYSTEM_USER, userId, roleId);
-        if (updated > 0) {
-            LOGGER.info("[Startup Config] Superadmin user {} active_role_id set to {}", userId, roleId);
-        } else {
-            LOGGER.debug("[Startup Config] Superadmin user {} active_role_id already {}", userId, roleId);
-        }
-    }
-
     // =====================================================
     // Existing Menu Creation Methods (Unchanged)
     // =====================================================
@@ -494,9 +414,5 @@ public class ConfigurationService {
 
     Long getId(String sql) {
         return jdbcTemplate.query(sql, rs -> rs.next() ? rs.getLong(1) : null);
-    }
-
-    String getUserId(String sql) {
-        return jdbcTemplate.query(sql, rs -> rs.next() ? rs.getString(1) : null);
     }
 }

@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.oauth_server.application;
 
+import cv.igrp.platform.access_management.shared.infrastructure.service.RootUser;
 import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAccountDTO;
 import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAccountPermissionDTO;
 import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAccountRequestDTO;
@@ -141,6 +142,8 @@ public class ServiceAccountService {
         if (!missing.isEmpty()) {
             throw new EntityNotFoundException("Role not found: " + missing);
         }
+        // Root is one user, from IGRP_SUPERADMIN_EMAIL; never a service account (#20).
+        RootUser.refuseIfRoot(roles);
         return new HashSet<>(roles);
     }
 

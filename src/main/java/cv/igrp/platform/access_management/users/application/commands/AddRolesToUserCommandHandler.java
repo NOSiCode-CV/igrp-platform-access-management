@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
+import cv.igrp.platform.access_management.shared.infrastructure.service.RootUser;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.users.application.commands.AddRolesToUserCommand;
@@ -120,6 +121,9 @@ public class AddRolesToUserCommandHandler implements CommandHandler<AddRolesToUs
       if (department != null) {
          scopeService.assertInScope(department.getId());
       }
+
+      // Root comes from IGRP_SUPERADMIN_EMAIL only (#20): refused before anything changes.
+      RootUser.refuseIfRootCode(command.getAddRolesToUserRequest());
 
       List<RoleEntity> successfullyAssignedRoles = new ArrayList<>();
 

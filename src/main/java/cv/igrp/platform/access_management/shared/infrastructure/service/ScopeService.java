@@ -75,13 +75,15 @@ public class ScopeService {
         String sql = """
                 SELECT 1 FROM t_user_role_assignment ura
                 JOIN t_role r ON r.id = ura.role_id
+                JOIN t_department d ON d.id = r.department
                 JOIN t_user u ON u.id = ura.user_id
-                WHERE u.id = ? AND r.code = ?
+                WHERE u.id = ? AND r.code = ? AND d.code = ?
                   AND (ura.expires_at IS NULL OR ura.expires_at > NOW())
                 LIMIT 1
                 """;
 
-        var results = jdbcTemplate.query(sql, (rs, rowNum) -> 1, SubjectParser.parseUserSubjectOrThrow(sub), SUPER_ADMIN_ROLE);
+        var results = jdbcTemplate.query(sql, (rs, rowNum) -> 1, SubjectParser.parseUserSubjectOrThrow(sub),
+                SUPER_ADMIN_ROLE, ConfigurationService.IGRP_DEPARTMENT);
 
         return !results.isEmpty();
 

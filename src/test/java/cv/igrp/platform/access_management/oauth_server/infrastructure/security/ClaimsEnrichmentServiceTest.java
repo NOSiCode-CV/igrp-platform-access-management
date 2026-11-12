@@ -194,6 +194,10 @@ class ClaimsEnrichmentServiceTest {
         RoleEntity superAdminRole = new RoleEntity();
         superAdminRole.setId(1);
         superAdminRole.setCode(SUPER_ADMIN_ROLE);
+        // The role itself, in the iGRP department: a look-alike elsewhere is not root (#20).
+        DepartmentEntity igrpDepartment = new DepartmentEntity();
+        igrpDepartment.setCode("DEPT_IGRP");
+        superAdminRole.setDepartment(igrpDepartment);
 
         IGRPUserEntity user = new IGRPUserEntity();
         String userId = "00000000-0000-0000-0000-0000000000ad";

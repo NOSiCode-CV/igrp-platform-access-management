@@ -193,7 +193,8 @@ The application fails at startup without these.
 | `AUTH_JWT_ISSUER` | Issuer URI whose JWKS validates incoming JWTs |
 | `IGRP_OAUTH_ISSUER` | Issuer this service stamps on the tokens it mints |
 | `REDIS_HOST` | Redis host |
-| `IGRP_SUPERADMIN_USER_EXTERNAL_ID` | External subject seeded as the first superadmin |
+| `IGRP_SUPERADMIN_EMAIL` | Root: the one user with this email gets the super-admin role at every startup (AM does not start without it) |
+| `IGRP_SUPERADMIN_USER_EXTERNAL_ID` | Optional: the username of a root created at startup (else its email) |
 | `IGRP_APP_CENTER_URL` | Application Center base URL |
 | `IGRP_OAUTH_EXTERNAL_IDP_ISSUER_URI` | External OIDC provider issuer |
 | `IGRP_OAUTH_EXTERNAL_IDP_CLIENT_ID` / `_SECRET` | This service's client registration at that provider |

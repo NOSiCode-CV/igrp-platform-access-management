@@ -154,7 +154,7 @@ class ScopeServiceAssertionsTest {
     private void stubSuperAdmin(boolean isSuperAdmin) {
         List result = isSuperAdmin ? List.of(1) : List.of();
         when(jdbcTemplate.query(any(String.class), any(org.springframework.jdbc.core.RowMapper.class),
-                any(Object.class), any(Object.class)))
+                any(Object.class), any(Object.class), any(Object.class)))
                 .thenReturn(result);
     }
 }

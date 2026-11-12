@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
+import cv.igrp.platform.access_management.shared.infrastructure.service.RootUser;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.notification.domain.service.InvitationNotificationSender;
@@ -259,6 +260,14 @@ public class RespondUserInvitationCommandHandler
             }
          }
 
+         // An invitation sent before #20 may carry the super-admin role: root comes
+         // from configuration only, so it is dropped before anything uses the roles.
+         if (invitation.getRoles() != null && invitation.getRoles().stream().anyMatch(RootUser::hasRootCode)) {
+            invitation.setRoles(invitation.getRoles().stream()
+                    .filter(role -> !RootUser.hasRootCode(role))
+                    .collect(java.util.stream.Collectors.toCollection(java.util.HashSet::new)));
+            LOGGER.warn("Invitation {} carried the super-admin role; not granted", invitation.getId());
+         }
          for (var role : invitation.getRoles()) {
             var roleEntity = roleRepository.findById(role.getId()).orElseThrow(() -> IgrpResponseStatusException.of(IgrpErrorCode.IGRP_AUTH_ROLE_NOT_FOUND_BY_ID, role.getId()));
 

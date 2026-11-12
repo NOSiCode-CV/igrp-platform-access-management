@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.users.application.commands;
 
+import cv.igrp.platform.access_management.shared.infrastructure.service.RootUser;
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
@@ -38,6 +39,7 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
    private final SecurityAuditService auditService;
    private final EventPublisher eventPublisher;
    private final SessionAuditLogger sessionAuditLogger;
+   private final RootUser rootUser;
 
 
    public UpdateUserStatusCommandHandler(
@@ -46,7 +48,8 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
            UserUtils utils,
            SecurityAuditService auditService,
            EventPublisher eventPublisher,
-           SessionAuditLogger sessionAuditLogger
+           SessionAuditLogger sessionAuditLogger,
+           RootUser rootUser
    ) {
        this.userRepository = userRepository;
        this.userMapper = userMapper;
@@ -54,6 +57,7 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
        this.auditService = auditService;
        this.eventPublisher = eventPublisher;
        this.sessionAuditLogger = sessionAuditLogger;
+       this.rootUser = rootUser;
    }
 
    /**
@@ -84,6 +88,10 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
               });
 
       Status status = Status.fromCodeOrThrow(command.getValue());
+      if (status != Status.ACTIVE) {
+         // Root is disabled only by configuring another user as root (#20).
+         rootUser.refuseIfRootUser(command.getId());
+      }
 
       // Phase G3: TEMPORARY is only set by the invitation flow. Admins MUST NOT
       // promote to TEMPORARY or transition a TEMPORARY user themselves.
