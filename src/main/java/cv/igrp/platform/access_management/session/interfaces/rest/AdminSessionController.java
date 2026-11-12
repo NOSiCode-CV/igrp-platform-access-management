@@ -4,7 +4,8 @@ import cv.igrp.framework.stereotype.IgrpController;
 import cv.igrp.platform.access_management.session.application.dto.SessionKillRequestDTO;
 import cv.igrp.platform.access_management.session.application.dto.SessionResponseDTO;
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
-import cv.igrp.platform.access_management.session.domain.service.SessionInvalidationService;
+import cv.igrp.platform.access_management.permission_fetch.application.dto.PermissionSetDTO;
+import cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionFetchService;
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.platform.access_management.session.application.queries.ListSessionsQuery;
@@ -49,15 +50,15 @@ public class AdminSessionController {
 
     private final QueryBus queryBus;
     private final CommandBus commandBus;
-    private final SessionInvalidationService sessionInvalidationService;
+    private final PermissionFetchService permissionFetch;
 
     public AdminSessionController(
             QueryBus queryBus,
             CommandBus commandBus,
-            SessionInvalidationService sessionInvalidationService) {
+            PermissionFetchService permissionFetch) {
         this.queryBus = queryBus;
         this.commandBus = commandBus;
-        this.sessionInvalidationService = sessionInvalidationService;
+        this.permissionFetch = permissionFetch;
     }
 
     
@@ -120,7 +121,7 @@ public class AdminSessionController {
     @PostMapping("/{sessionId}/kill")
     @Operation(
         summary = "Kill session",
-        description = "Terminates a specific session by ID"
+        description = "Kills the session's user on the whole platform (#19): every session, authorization and permission key"
     )
     @ApiResponse(
         responseCode = "204",
@@ -193,7 +194,7 @@ public class AdminSessionController {
     )
     @ApiResponse(
         responseCode = "404",
-        description = "No sessions found for role"
+        description = "No user holds the role"
     )
     @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Void> killSessionsByRole(
@@ -219,7 +220,7 @@ public class AdminSessionController {
     @PostMapping("/departments/{departmentCode}/kill")
     @Operation(
         summary = "Kill sessions by department",
-        description = "Terminates all active sessions for users in a specific department"
+        description = "Kills every user with a role in the department, each on the whole platform (#19)"
     )
     @ApiResponse(
         responseCode = "204",
@@ -234,9 +235,9 @@ public class AdminSessionController {
         log.info("Admin killing sessions for department: {} with reason: {}", 
                 departmentCode, request.getReason());
         
-        sessionInvalidationService.invalidateSessionsByDepartment(
-                departmentCode, request.getReason());
-        
+        // A kill on the whole platform for every user in the department (#19).
+        commandBus.send(new KillSessionsByDepartmentCommand(departmentCode, request.getReason(), request.getKilledBy()));
+
         return ResponseEntity.noContent().build();
     }
 
@@ -267,5 +268,25 @@ public class AdminSessionController {
         };
         
         return ResponseEntity.ok(stats);
+    }
+
+    @PostMapping("/users/{userId}/refresh")
+    @Operation(
+        summary = "Refresh a user's permissions in one application",
+        description = "Recomputes the user's permission key for the application from their current roles and "
+                + "assignments and writes it, exactly as the user's own permission fetch would (#19). "
+                + "Nothing is taken from the request: there is no body."
+    )
+    @ApiResponse(responseCode = "200", description = "The written permission set")
+    @ApiResponse(responseCode = "404", description = "User or application not found")
+    @ApiResponse(responseCode = "409", description = "The user is not active or not signed in: nothing is written")
+    @ApiResponse(responseCode = "503", description = "Redis is unavailable: nothing is written")
+    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
+    public ResponseEntity<PermissionSetDTO> refreshUserPermissions(
+            @Parameter(description = "User id") @PathVariable String userId,
+            @Parameter(description = "Application code") @RequestParam String applicationCode) {
+
+        log.info("Admin refreshing the permissions of user {} in {}", userId, applicationCode);
+        return ResponseEntity.ok(permissionFetch.refresh(userId, applicationCode));
     }
 }

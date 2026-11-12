@@ -2,58 +2,34 @@ package cv.igrp.platform.access_management.session.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.session.domain.service.SessionManagementService;
+import cv.igrp.platform.access_management.session.domain.service.UserAccessKill;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * Command handler responsible for terminating all sessions for users belonging to a specific role/department.
+ * Kills every user holding a role (#19), each on the whole platform.
  *
- * <p>
- * This handler receives a {@link KillSessionsByRoleCommand} containing role code, department code, reason, and killer details,
- * delegates to the {@link SessionManagementService} to terminate the sessions,
- * and returns the number of sessions that were successfully killed.
- * </p>
- *
- * @see KillSessionsByRoleCommand
- * @see SessionManagementService
+ * @see UserAccessKill
  */
 @Slf4j
 @Component
 public class KillSessionsByRoleCommandHandler implements CommandHandler<KillSessionsByRoleCommand, Integer> {
 
-    private final SessionManagementService sessionManagementService;
+    private final IGRPUserEntityRepository users;
+    private final UserAccessKill kill;
 
-    /**
-     * Constructs the handler with the required dependencies.
-     *
-     * @param sessionManagementService the service used to terminate and manage sessions
-     */
-    public KillSessionsByRoleCommandHandler(SessionManagementService sessionManagementService) {
-        this.sessionManagementService = sessionManagementService;
+    public KillSessionsByRoleCommandHandler(IGRPUserEntityRepository users, UserAccessKill kill) {
+        this.users = users;
+        this.kill = kill;
     }
 
-    /**
-     * Handles the command to terminate all sessions for users belonging to a specific role/department.
-     *
-     * @param command the {@link KillSessionsByRoleCommand} containing role, department, and termination details
-     * @return the number of sessions that were successfully terminated
-     */
+    /** @return how many users were killed */
     @IgrpCommandHandler
     public Integer handle(KillSessionsByRoleCommand command) {
-        log.info("Handling KillSessionsByRoleCommand for role: {} in department: {} with reason: {} by {}", 
-                command.getRoleCode(), command.getDepartmentCode(), command.getReason(), command.getKilledBy());
-        
-        int killedCount = sessionManagementService.killSessionsByRole(
-                command.getRoleCode(),
-                command.getDepartmentCode(),
-                command.getReason(),
-                command.getKilledBy()
-        );
-        
-        log.info("Successfully terminated {} sessions for role: {} in department: {}", 
-                killedCount, command.getRoleCode(), command.getDepartmentCode());
-        
-        return killedCount;
+        log.info("Killing the users of role {} in {}, reason {} by {}", command.getRoleCode(),
+                command.getDepartmentCode(), command.getReason(), command.getKilledBy());
+        return kill.kill(users.findUserIdsByRoleAndDepartment(command.getRoleCode(), command.getDepartmentCode()),
+                command.getReason(), command.getKilledBy());
     }
 }

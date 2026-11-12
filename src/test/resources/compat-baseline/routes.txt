@@ -92,6 +92,7 @@ GET /api/users/{id}/roles
 GET /api/users/{id}/roles/active
 POST /api/admin/sessions/departments/{departmentCode}/kill
 POST /api/admin/sessions/roles/{roleCode}/kill
+POST /api/admin/sessions/users/{userId}/refresh
 POST /api/admin/sessions/{sessionId}/kill
 POST /api/admin/users/{userExternalId}/force-reauth
 POST /api/admin/users/{userExternalId}/logout-all

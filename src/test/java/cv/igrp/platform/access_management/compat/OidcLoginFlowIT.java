@@ -9,6 +9,7 @@ import org.junit.jupiter.api.TestInstance;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.net.URLEncoder;
@@ -18,6 +19,7 @@ import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
 import java.util.Map;
+import java.util.UUID;
 
 import static cv.igrp.platform.access_management.compat.CompatSupport.jsonObject;
 import static cv.igrp.platform.access_management.compat.CompatSupport.q;
@@ -48,6 +50,8 @@ class OidcLoginFlowIT extends AbstractCompatIT {
     ApplicationContext context;
     @Autowired
     JdbcTemplate jdbc;
+    @Autowired
+    StringRedisTemplate redis;
 
     CompatSupport api;
     String clientSecret;
@@ -72,6 +76,11 @@ class OidcLoginFlowIT extends AbstractCompatIT {
     @Order(1)
     @DisplayName("authorization_code + PKCE through the external IdP yields this service's tokens")
     void login() throws Exception {
+        tokens = signIn();
+    }
+
+    /** authorization_code + PKCE through the external IdP; the token response. */
+    private Map<String, Object> signIn() throws Exception {
         TestBrowser browser = new TestBrowser();
         codeVerifier = randomUrlSafe(48);
         String state = randomUrlSafe(16);
@@ -116,11 +125,12 @@ class OidcLoginFlowIT extends AbstractCompatIT {
                         "redirect_uri", REDIRECT_URI,
                         "code_verifier", codeVerifier)));
         assertEquals(200, token.statusCode(), token.body());
-        tokens = jsonObject(token.body());
-        assertNotNull(tokens.get("access_token"));
-        assertNotNull(tokens.get("refresh_token"));
-        assertNotNull(tokens.get("id_token"));
-        assertEquals("Bearer", tokens.get("token_type"));
+        Map<String, Object> issued = jsonObject(token.body());
+        assertNotNull(issued.get("access_token"));
+        assertNotNull(issued.get("refresh_token"));
+        assertNotNull(issued.get("id_token"));
+        assertEquals("Bearer", issued.get("token_type"));
+        return issued;
     }
 
     @Test
@@ -155,10 +165,23 @@ class OidcLoginFlowIT extends AbstractCompatIT {
 
     @Test
     @Order(4)
-    @DisplayName("RP-initiated logout ends the session; its tokens stop working")
-    void logout() {
-        Map<String, Object> current = refreshed != null ? refreshed : tokens;
-        String idToken = (String) (current.get("id_token") != null ? current.get("id_token") : tokens.get("id_token"));
+    @DisplayName("RP-initiated logout ends the session and its authorizations, deletes the user's keys; its tokens stop working")
+    void logout() throws Exception {
+        // A fresh sign-in: the replay in refresh() revoked the first one on purpose.
+        Map<String, Object> current = signIn();
+        String idToken = (String) current.get("id_token");
+        String accessToken = (String) current.get("access_token");
+        // v3-11 (#19): the user has a permission key before logging out.
+        String application = "OIDC_APP_" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        api.createApplication(application);
+        String sub = subject(accessToken);
+        // First login provisions a TEMPORARY user; an accepted invitation makes it ACTIVE.
+        jdbc.update("UPDATE t_user SET status = 'ACTIVE' WHERE id = ?", sub);
+        String key = "permissions:user:" + sub + ":app:" + application;
+        HttpResponse<String> before = api.get("/api/users/me/permissions?applicationCode=" + application, accessToken);
+        assertEquals(200, before.statusCode(), before.body());
+        assertEquals(Boolean.TRUE, redis.hasKey(key), "the fetch wrote the key");
+        assertEquals(1, thisSignIn(accessToken), "the sign-in has an authorization to revoke");
 
         TestBrowser browser = new TestBrowser();
         String logout = CompatEnvironment.ISSUER + "/connect/logout?id_token_hint=" + idToken
@@ -168,8 +191,27 @@ class OidcLoginFlowIT extends AbstractCompatIT {
         assertNotNull(hop.stoppedAt(), "logout did not return to the client; trail: " + hop.trail()
                 + "\nlast: " + hop.response().statusCode() + " " + hop.response().body());
 
-        HttpResponse<String> me = api.get("/api/users/me", (String) current.get("access_token"));
+        HttpResponse<String> me = api.get("/api/users/me", accessToken);
         assertEquals(401, me.statusCode(), me.body());
+        assertEquals(Boolean.FALSE, redis.hasKey(key), "logout deletes the user's keys");
+        assertEquals(0, thisSignIn(accessToken), "logout revokes the authorization of this sign-in");
+        assertEquals(401, api.get("/api/users/me/permissions?applicationCode=" + application, accessToken)
+                .statusCode(), "the next miss is 401");
+    }
+
+    /**
+     * The authorization behind this access token. Other sign-ins of the same
+     * user (the first one in this class, on another "browser") keep theirs.
+     */
+    private int thisSignIn(String accessToken) {
+        return jdbc.queryForObject("SELECT count(*) FROM oauth2_authorization WHERE access_token_value = ?",
+                Integer.class, accessToken);
+    }
+
+    /** The {@code sub} claim of a JWT, read without verifying it (it came from this service). */
+    private static String subject(String jwt) {
+        String payload = new String(Base64.getUrlDecoder().decode(jwt.split("\\.")[1]), StandardCharsets.UTF_8);
+        return (String) jsonObject(payload).get("sub");
     }
 
     private static String randomUrlSafe(int bytes) {

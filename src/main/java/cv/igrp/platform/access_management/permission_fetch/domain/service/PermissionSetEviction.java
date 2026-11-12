@@ -5,6 +5,7 @@ import cv.igrp.platform.access_management.permission_fetch.infrastructure.cache.
 import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import cv.igrp.platform.access_management.shared.domain.events.DeletePermissionEvent;
 import cv.igrp.platform.access_management.shared.domain.events.DepartmentScopeChangedEvent;
+import cv.igrp.platform.access_management.shared.domain.events.UserAccessEndedEvent;
 import cv.igrp.platform.access_management.shared.domain.events.UserRoleChangedEvent;
 import cv.igrp.platform.access_management.shared.domain.events.UserStatusChangedEvent;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
@@ -34,8 +35,7 @@ import java.util.Set;
  * outside a transaction is already committed, so it is evicted at once.
  * <p>
  * A fetch already in flight with the old permissions can still write them
- * back; the spec accepts that race, bounded by the TTL. Logout and kill come
- * with #19.
+ * back; the spec accepts that race, bounded by the TTL.
  */
 @Component
 public class PermissionSetEviction {
@@ -63,6 +63,12 @@ public class PermissionSetEviction {
     @EventListener
     public void onUserRoleChanged(UserRoleChangedEvent event) {
         evictAfterCommit(user(event.getUserId()));
+    }
+
+    /** A logout or a kill (#19): every key of the user, so the next miss gets 401. */
+    @EventListener
+    public void onUserAccessEnded(UserAccessEndedEvent event) {
+        evictAfterCommit(event.userIds());
     }
 
     /** A user disabled, deleted or otherwise changing status. */

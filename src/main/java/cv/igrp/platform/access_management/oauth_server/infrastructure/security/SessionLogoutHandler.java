@@ -1,6 +1,7 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
+import cv.igrp.platform.access_management.shared.domain.events.UserAccessEndedEvent;
 import cv.igrp.platform.access_management.session.domain.event.SessionRevokedEvent;
 import cv.igrp.platform.access_management.session.domain.service.SessionHeartbeatService;
 import cv.igrp.platform.access_management.session.domain.service.SsoSessionCascadeService;
@@ -39,8 +40,11 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -78,6 +82,7 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
     private final ApplicationEventPublisher eventPublisher;
     private final SessionAuditLogger sessionAuditLogger;
     private final SsoSessionCascadeService ssoSessionCascadeService;
+    private final UserAuthorizations userAuthorizations;
     private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
     private final SecurityContextLogoutHandler springLogoutHandler = new SecurityContextLogoutHandler();
 
@@ -110,6 +115,7 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
                                 ApplicationEventPublisher eventPublisher,
                                 SessionAuditLogger sessionAuditLogger,
                                 SsoSessionCascadeService ssoSessionCascadeService,
+                                UserAuthorizations userAuthorizations,
                                 ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider,
                                 @Value("${igrp.oauth.external-idp.registration-id:external-idp}") String upstreamRegistrationId,
                                 @Value("${igrp.oauth.external-idp.logout-cascade:true}") boolean cascadeLogoutToIdp) {
@@ -120,6 +126,7 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         this.eventPublisher = eventPublisher;
         this.sessionAuditLogger = sessionAuditLogger;
         this.ssoSessionCascadeService = ssoSessionCascadeService;
+        this.userAuthorizations = userAuthorizations;
         this.clientRegistrationRepositoryProvider = clientRegistrationRepositoryProvider;
         this.upstreamRegistrationId = upstreamRegistrationId;
         this.cascadeLogoutToIdp = cascadeLogoutToIdp;
@@ -213,6 +220,12 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         // 2. Spring AS-side cleanup — remove the OAuth2Authorization so any
         //    refresh-token / introspection replay is denied.
         removeAuthorization(idToken);
+        // v3-11 (#19): and the authorizations of every application signed in
+        // under this sign-in (other devices keep theirs), then every
+        // permission key of the user, after commit, so the next request that
+        // misses the cache gets 401.
+        endAccessOfThisSignIn(sid, ssoSessionKey,
+                sessionOpt.map(SessionEntity::getUserId).orElseGet(idToken::getSubject));
 
         // 3. Spring Security cleanup — invalidate the HttpSession that backs
         //    the user's SecurityContext and clear SecurityContextHolder.
@@ -440,6 +453,36 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         ));
         LOGGER.info("OIDC logout: revoked session {} (user={}) with reason USER_LOGOUT",
                 sid, session.getUserId());
+    }
+
+    private void endAccessOfThisSignIn(UUID sid, String ssoSessionKey, String userId) {
+        if (userId == null) {
+            return;
+        }
+        try {
+            // The bound session's authorization is already removed above, in
+            // this transaction; the siblings' are removed in their own.
+            Set<String> siblingIds = new HashSet<>();
+            if (ssoSessionKey != null) {
+                // Still ACTIVE too: the sibling revocation above may have failed.
+                for (SessionStatus status : List.of(SessionStatus.REVOKED, SessionStatus.ACTIVE)) {
+                    sessionRepository.findByUserIdAndSsoSessionKeyAndStatus(userId, ssoSessionKey, status)
+                            .forEach(session -> siblingIds.add(session.getSessionId().toString()));
+                }
+            }
+            if (sid != null) {
+                siblingIds.remove(sid.toString());
+            }
+            if (!siblingIds.isEmpty()) {
+                int removed = userAuthorizations.removeForSessions(userId, siblingIds);
+                LOGGER.info("OIDC logout: removed {} sibling authorization(s) for user={}", removed, userId);
+            }
+        } catch (RuntimeException ex) {
+            // The bound authorization is already removed above; siblings keep a
+            // refresh token, but their sessions are revoked, so the token is refused.
+            LOGGER.warn("OIDC logout: could not remove the sibling authorizations of user={}", userId, ex);
+        }
+        eventPublisher.publishEvent(new UserAccessEndedEvent(Set.of(userId), "USER_LOGOUT"));
     }
 
     private void removeAuthorization(OidcIdToken idToken) {

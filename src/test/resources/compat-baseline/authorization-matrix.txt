@@ -92,6 +92,7 @@ GET /api/users/{id}/roles anonymous=401 roleless=403
 GET /api/users/{id}/roles/active anonymous=401 roleless=403
 POST /api/admin/sessions/departments/{departmentCode}/kill anonymous=401 roleless=400
 POST /api/admin/sessions/roles/{roleCode}/kill anonymous=401 roleless=400
+POST /api/admin/sessions/users/{userId}/refresh anonymous=401 roleless=400
 POST /api/admin/sessions/{sessionId}/kill anonymous=401 roleless=400
 POST /api/admin/users/{userExternalId}/force-reauth anonymous=401 roleless=400
 POST /api/admin/users/{userExternalId}/logout-all anonymous=401 roleless=400

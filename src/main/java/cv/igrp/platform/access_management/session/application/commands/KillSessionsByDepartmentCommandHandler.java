@@ -2,72 +2,36 @@ package cv.igrp.platform.access_management.session.application.commands;
 
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
-import cv.igrp.platform.access_management.session.domain.service.SessionManagementService;
+import cv.igrp.platform.access_management.session.domain.service.UserAccessKill;
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
 /**
- * Command handler responsible for terminating all sessions for users belonging to a specific department.
+ * Kills every user with a role in a department (#19), each on the whole
+ * platform.
  *
- * <p>
- * This handler receives a {@link KillSessionsByDepartmentCommand} containing department code, reason, and killer details,
- * delegates to the {@link SessionManagementService} to terminate the sessions,
- * and returns the number of sessions that were successfully killed.
- * </p>
- *
- * @see KillSessionsByDepartmentCommand
- * @see SessionManagementService
+ * @see UserAccessKill
  */
 @Slf4j
 @Component
-public class KillSessionsByDepartmentCommandHandler implements CommandHandler<KillSessionsByDepartmentCommand, Integer> {
+public class KillSessionsByDepartmentCommandHandler
+        implements CommandHandler<KillSessionsByDepartmentCommand, Integer> {
 
-    private final SessionManagementService sessionManagementService;
+    private final IGRPUserEntityRepository users;
+    private final UserAccessKill kill;
 
-    /**
-     * Constructs the handler with the required dependencies.
-     *
-     * @param sessionManagementService the service used to terminate and manage sessions
-     */
-    public KillSessionsByDepartmentCommandHandler(SessionManagementService sessionManagementService) {
-        this.sessionManagementService = sessionManagementService;
+    public KillSessionsByDepartmentCommandHandler(IGRPUserEntityRepository users, UserAccessKill kill) {
+        this.users = users;
+        this.kill = kill;
     }
 
-    /**
-     * Handles the command to terminate all sessions for users belonging to a specific department.
-     * Since killSessionsByDepartment is not available in the service, this implementation
-     * uses a workaround by finding all active sessions in the department and killing them individually.
-     *
-     * @param command the {@link KillSessionsByDepartmentCommand} containing department and termination details
-     * @return the number of sessions that were successfully terminated
-     */
+    /** @return how many users were killed */
     @IgrpCommandHandler
     public Integer handle(KillSessionsByDepartmentCommand command) {
-        log.info("Handling KillSessionsByDepartmentCommand for department: {} with reason: {} by {}", 
-                command.getDepartmentCode(), command.getReason(), command.getKilledBy());
-        
-        // Get all active sessions for the department
-        var activeSessions = sessionManagementService.listSessionsByDepartment(
-                command.getDepartmentCode(),
-                cv.igrp.platform.access_management.session.domain.constants.SessionStatus.ACTIVE,
-                org.springframework.data.domain.PageRequest.of(0, 1000) // Large page size to get all sessions
-        );
-        
-        int killedCount = 0;
-        for (var session : activeSessions.getContent()) {
-            boolean killed = sessionManagementService.killSession(
-                    session.getSessionId(),
-                    command.getReason(),
-                    command.getKilledBy()
-            );
-            if (killed) {
-                killedCount++;
-            }
-        }
-        
-        log.info("Successfully terminated {} sessions for department: {}", 
-                killedCount, command.getDepartmentCode());
-        
-        return killedCount;
+        log.info("Killing the users of department {}, reason {} by {}", command.getDepartmentCode(),
+                command.getReason(), command.getKilledBy());
+        return kill.kill(users.findUserIdsByDepartment(command.getDepartmentCode()), command.getReason(),
+                command.getKilledBy());
     }
 }
