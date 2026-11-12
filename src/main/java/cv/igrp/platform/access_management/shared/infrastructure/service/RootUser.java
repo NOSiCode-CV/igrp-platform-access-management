@@ -17,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 
 import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.IGRP_DEPARTMENT;
@@ -46,6 +47,30 @@ public class RootUser {
     private static final String BY_EMAIL = """
             SELECT id, status FROM t_user WHERE lower(email) = lower(?) AND status <> 'DELETED'
              ORDER BY CASE status WHEN 'ACTIVE' THEN 0 ELSE 1 END, created_date LIMIT 1""";
+
+    /** Users holding the super-admin code (the role or a look-alike), except root's own assignment. */
+    private static final String HOLDERS_BUT_ROOT = """
+            SELECT DISTINCT ura.user_id FROM t_user_role_assignment ura JOIN t_role r ON r.id = ura.role_id
+             WHERE r.code = ? AND NOT (ura.user_id = ? AND ura.role_id = ?)""";
+
+    private static final String DELETE_ASSIGNMENTS_BUT_ROOT = """
+            DELETE FROM t_user_role_assignment
+             WHERE role_id IN (SELECT id FROM t_role WHERE code = ?) AND NOT (user_id = ? AND role_id = ?)""";
+
+    private static final String DELETE_APPLICATION_ROLES_BUT_ROOT = """
+            DELETE FROM t_user_application_role
+             WHERE role_id IN (SELECT id FROM t_role WHERE code = ?) AND NOT (user_id = ? AND role_id = ?)""";
+
+    private static final String CLEAR_ACTIVE_ROLES_BUT_ROOT = """
+            UPDATE t_user SET active_role_id = NULL, last_modified_by = ?, last_modified_date = now()
+             WHERE active_role_id IN (SELECT id FROM t_role WHERE code = ?) AND NOT (id = ? AND active_role_id = ?)""";
+
+    private static final String SERVICE_ACCOUNT_HOLDERS = """
+            SELECT DISTINCT sara.service_account_id::text FROM t_service_account_role_assignment sara
+              JOIN t_role r ON r.id = sara.role_id WHERE r.code = ?""";
+
+    private static final String DELETE_SERVICE_ACCOUNT_ASSIGNMENTS = """
+            DELETE FROM t_service_account_role_assignment WHERE role_id IN (SELECT id FROM t_role WHERE code = ?)""";
 
     private final JdbcTemplate jdbc;
     private final EventPublisher events;
@@ -115,10 +140,11 @@ public class RootUser {
      */
     @Transactional
     public String sync(String email, String externalId) {
-        Integer roleId = jdbc.queryForList(ROOT_ROLE_ID, Integer.class, SUPER_ADMIN_ROLE, IGRP_DEPARTMENT)
-                .stream().findFirst()
-                .orElseThrow(() -> new IllegalStateException("The super-admin role " + SUPER_ADMIN_ROLE
-                        + " does not exist"));
+        List<Integer> roleIds = list(ROOT_ROLE_ID, Integer.class, SUPER_ADMIN_ROLE, IGRP_DEPARTMENT);
+        if (roleIds.isEmpty()) {
+            throw new IllegalStateException("The super-admin role " + SUPER_ADMIN_ROLE + " does not exist");
+        }
+        int roleId = roleIds.getFirst();
         String rootId = activeUser(email.trim(), externalId);
         List<String> changed = new ArrayList<>();
         if (grantRoot(rootId, roleId)) {
@@ -132,7 +158,7 @@ public class RootUser {
     }
 
     private String activeUser(String email, String externalId) {
-        List<Map<String, Object>> found = jdbc.queryForList(BY_EMAIL, email);
+        List<Map<String, Object>> found = Objects.requireNonNullElse(jdbc.queryForList(BY_EMAIL, email), List.of());
         if (found.isEmpty()) {
             String id = UUID.randomUUID().toString();
             jdbc.update("""
@@ -145,8 +171,9 @@ public class RootUser {
         }
         String id = (String) found.getFirst().get("id");
         if (!"ACTIVE".equals(found.getFirst().get("status"))) {
-            jdbc.update("UPDATE t_user SET status = 'ACTIVE', last_modified_by = ?, last_modified_date = now() "
-                    + "WHERE id = ?", SYSTEM_USER, id);
+            jdbc.update("""
+                    UPDATE t_user SET status = 'ACTIVE', last_modified_by = ?, last_modified_date = now()
+                     WHERE id = ?""", SYSTEM_USER, id);
             LOGGER.info("[Root] Made the root user {} ACTIVE (was {})", id, found.getFirst().get("status"));
         }
         return id;
@@ -191,19 +218,11 @@ public class RootUser {
      * active roles and per-application choices that point at them.
      */
     private List<String> demoteUsers(String rootId, int roleId) {
-        List<String> others = jdbc.queryForList("""
-                SELECT DISTINCT ura.user_id FROM t_user_role_assignment ura JOIN t_role r ON r.id = ura.role_id
-                 WHERE r.code = ? AND NOT (ura.user_id = ? AND ura.role_id = ?)""",
-                String.class, SUPER_ADMIN_ROLE, rootId, roleId);
-        String rootCodeRoles = "SELECT id FROM t_role WHERE code = ?";
-        jdbc.update("DELETE FROM t_user_role_assignment WHERE role_id IN (" + rootCodeRoles + ")"
-                + " AND NOT (user_id = ? AND role_id = ?)", SUPER_ADMIN_ROLE, rootId, roleId);
-        jdbc.update("DELETE FROM t_user_application_role WHERE role_id IN (" + rootCodeRoles + ")"
-                + " AND NOT (user_id = ? AND role_id = ?)", SUPER_ADMIN_ROLE, rootId, roleId);
+        List<String> others = list(HOLDERS_BUT_ROOT, String.class, SUPER_ADMIN_ROLE, rootId, roleId);
+        jdbc.update(DELETE_ASSIGNMENTS_BUT_ROOT, SUPER_ADMIN_ROLE, rootId, roleId);
+        jdbc.update(DELETE_APPLICATION_ROLES_BUT_ROOT, SUPER_ADMIN_ROLE, rootId, roleId);
         // Also users who never held it: an active role is not a grant, but must not point at root.
-        jdbc.update("UPDATE t_user SET active_role_id = NULL, last_modified_by = ?, last_modified_date = now()"
-                + " WHERE active_role_id IN (" + rootCodeRoles + ") AND NOT (id = ? AND active_role_id = ?)",
-                SYSTEM_USER, SUPER_ADMIN_ROLE, rootId, roleId);
+        jdbc.update(CLEAR_ACTIVE_ROLES_BUT_ROOT, SYSTEM_USER, SUPER_ADMIN_ROLE, rootId, roleId);
         for (String userId : others) {
             events.publishSettingsAudit(new RoleUnassignedFromUserEvent(SUPER_ADMIN_ROLE, userId));
             LOGGER.warn("[Root] User {} is no longer root: {} is configured as root", userId, rootId);
@@ -212,17 +231,19 @@ public class RootUser {
     }
 
     private List<String> demoteServiceAccounts() {
-        List<String> accounts = jdbc.queryForList("""
-                SELECT DISTINCT sara.service_account_id::text FROM t_service_account_role_assignment sara
-                  JOIN t_role r ON r.id = sara.role_id WHERE r.code = ?""", String.class, SUPER_ADMIN_ROLE);
+        List<String> accounts = list(SERVICE_ACCOUNT_HOLDERS, String.class, SUPER_ADMIN_ROLE);
         if (!accounts.isEmpty()) {
-            jdbc.update("DELETE FROM t_service_account_role_assignment WHERE role_id IN "
-                    + "(SELECT id FROM t_role WHERE code = ?)", SUPER_ADMIN_ROLE);
+            jdbc.update(DELETE_SERVICE_ACCOUNT_ASSIGNMENTS, SUPER_ADMIN_ROLE);
             accounts.forEach(account -> {
                 events.publishSettingsAudit(new RoleUnassignedFromUserEvent(SUPER_ADMIN_ROLE, account));
                 LOGGER.warn("[Root] Service account {} is no longer root", account);
             });
         }
         return accounts;
+    }
+
+    /** {@code queryForList} is declared nullable; an absent result is an empty list. */
+    private <T> List<T> list(String sql, Class<T> type, Object... args) {
+        return Objects.requireNonNullElse(jdbc.queryForList(sql, type, args), List.of());
     }
 }
