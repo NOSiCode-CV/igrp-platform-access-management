@@ -69,8 +69,8 @@ public class RootUser {
             SELECT DISTINCT sara.service_account_id::text FROM t_service_account_role_assignment sara
               JOIN t_role r ON r.id = sara.role_id WHERE r.code = ?""";
 
-    private static final String DELETE_SERVICE_ACCOUNT_ASSIGNMENTS = """
-            DELETE FROM t_service_account_role_assignment WHERE role_id IN (SELECT id FROM t_role WHERE code = ?)""";
+    private static final String DELETE_SERVICE_ACCOUNT_ASSIGNMENTS =
+            "DELETE FROM t_service_account_role_assignment WHERE role_id IN (SELECT id FROM t_role WHERE code = ?)";
 
     private final JdbcTemplate jdbc;
     private final EventPublisher events;
