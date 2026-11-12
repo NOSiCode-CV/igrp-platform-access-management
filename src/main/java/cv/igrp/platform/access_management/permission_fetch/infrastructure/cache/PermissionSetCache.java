@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.permission_fetch.infrastructure.cache;
 
+import cv.igrp.platform.access_management.permission_fetch.application.dto.PermissionSetDTO;
 import cv.igrp.platform.access_management.permission_fetch.config.PermissionSetProperties;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -8,7 +9,6 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The shared-Redis contract with the 0.3 starter (v3-06, spec "Cache"). Only
@@ -38,24 +38,37 @@ public class PermissionSetCache {
     public static final String MARKER = "~";
 
     /**
-     * KEYS: set, scopes hash, index, and optionally the accessed guard. ARGV:
-     * ttl seconds, marker, then key/scope pairs. Returns 1 when the guard is
-     * given and this is the first access in the TTL.
+     * KEYS: set, scopes hash, index, roles set, departments set, and optionally
+     * the accessed guard. ARGV: ttl seconds, marker, number of roles, number of
+     * departments, the roles, the departments, then key/scope pairs. Returns 1
+     * when the guard is given and this is the first access in the TTL.
      */
     private static final RedisScript<Long> WRITE = new DefaultRedisScript<>("""
-            redis.call('DEL', KEYS[1], KEYS[2])
+            redis.call('DEL', KEYS[1], KEYS[2], KEYS[4], KEYS[5])
             redis.call('SADD', KEYS[1], ARGV[2])
-            for i = 3, #ARGV, 2 do
+            local i = 5
+            for _ = 1, tonumber(ARGV[3]) do
+              redis.call('SADD', KEYS[4], ARGV[i])
+              i = i + 1
+            end
+            for _ = 1, tonumber(ARGV[4]) do
+              redis.call('SADD', KEYS[5], ARGV[i])
+              i = i + 1
+            end
+            while i <= #ARGV do
               redis.call('SADD', KEYS[1], ARGV[i])
               redis.call('HSET', KEYS[2], ARGV[i], ARGV[i + 1])
+              i = i + 2
             end
             redis.call('EXPIRE', KEYS[1], ARGV[1])
-            if redis.call('EXISTS', KEYS[2]) == 1 then
-              redis.call('EXPIRE', KEYS[2], ARGV[1])
+            for _, key in ipairs({KEYS[2], KEYS[4], KEYS[5]}) do
+              if redis.call('EXISTS', key) == 1 then
+                redis.call('EXPIRE', key, ARGV[1])
+              end
             end
             redis.call('SADD', KEYS[3], KEYS[1])
             redis.call('EXPIRE', KEYS[3], ARGV[1])
-            if #KEYS >= 4 and redis.call('SET', KEYS[4], '1', 'NX', 'EX', ARGV[1]) then
+            if #KEYS >= 6 and redis.call('SET', KEYS[6], '1', 'NX', 'EX', ARGV[1]) then
               return 1
             end
             return 0
@@ -63,12 +76,13 @@ public class PermissionSetCache {
 
     /**
      * KEYS: the user's index. Deletes every set the index lists, with its
-     * scopes hash, then the index. The accessed guards stay (see the class).
+     * scopes hash and its roles and departments sets, then the index. The
+     * accessed guards stay (see the class).
      */
     private static final RedisScript<Long> EVICT_USER = new DefaultRedisScript<>("""
             local sets = redis.call('SMEMBERS', KEYS[1])
             for _, set in ipairs(sets) do
-              redis.call('DEL', set, set .. ':scopes')
+              redis.call('DEL', set, set .. ':scopes', set .. ':roles', set .. ':departments')
             end
             redis.call('DEL', KEYS[1])
             return #sets
@@ -98,16 +112,26 @@ public class PermissionSetCache {
         return setKey(sub, applicationCode) + ":accessed";
     }
 
+    /** The caller's role codes, for the {@code by_role} scope (#39). Absent when there are none. */
+    public static String rolesKey(String sub, String applicationCode) {
+        return setKey(sub, applicationCode) + ":roles";
+    }
+
+    /** The caller's visible department codes, for the {@code department} scope (#39). Absent when there are none. */
+    public static String departmentsKey(String sub, String applicationCode) {
+        return setKey(sub, applicationCode) + ":departments";
+    }
+
     /**
-     * Replaces the caller's set for the application.
+     * Replaces the caller's set for the application, with its scopes, roles
+     * and departments.
      *
      * @return whether this is the caller's first access to the application in the TTL
      */
-    public boolean write(String sub, String applicationCode, Map<String, String> scopesByKey) {
-        Long firstAccess = redis.execute(WRITE,
-                List.of(setKey(sub, applicationCode), scopesKey(sub, applicationCode), indexKey(sub),
-                        accessedKey(sub, applicationCode)),
-                args(scopesByKey));
+    public boolean write(String sub, String applicationCode, PermissionSetDTO set) {
+        List<String> keys = new ArrayList<>(keys(sub, applicationCode));
+        keys.add(accessedKey(sub, applicationCode));
+        Long firstAccess = redis.execute(WRITE, keys, args(set));
         return firstAccess != null && firstAccess == 1L;
     }
 
@@ -115,17 +139,24 @@ public class PermissionSetCache {
      * Replaces a user's set for the application on an administrator's behalf
      * (#19). Not an access by the user, so the accessed guard is left alone.
      */
-    public void writeForRefresh(String sub, String applicationCode, Map<String, String> scopesByKey) {
-        redis.execute(WRITE,
-                List.of(setKey(sub, applicationCode), scopesKey(sub, applicationCode), indexKey(sub)),
-                args(scopesByKey));
+    public void writeForRefresh(String sub, String applicationCode, PermissionSetDTO set) {
+        redis.execute(WRITE, keys(sub, applicationCode), args(set));
     }
 
-    private Object[] args(Map<String, String> scopesByKey) {
+    private static List<String> keys(String sub, String applicationCode) {
+        return List.of(setKey(sub, applicationCode), scopesKey(sub, applicationCode), indexKey(sub),
+                rolesKey(sub, applicationCode), departmentsKey(sub, applicationCode));
+    }
+
+    private Object[] args(PermissionSetDTO set) {
         List<String> args = new ArrayList<>();
         args.add(Long.toString(properties.getTtl().toSeconds()));
         args.add(MARKER);
-        scopesByKey.forEach((key, scope) -> {
+        args.add(Integer.toString(set.roles().size()));
+        args.add(Integer.toString(set.departments().size()));
+        args.addAll(set.roles());
+        args.addAll(set.departments());
+        set.scopes().forEach((key, scope) -> {
             args.add(key);
             args.add(scope);
         });
@@ -134,7 +165,8 @@ public class PermissionSetCache {
 
     /** Deletes the caller's set for the application, so the next request reads the change. */
     public void evict(String sub, String applicationCode) {
-        redis.delete(List.of(setKey(sub, applicationCode), scopesKey(sub, applicationCode)));
+        redis.delete(List.of(setKey(sub, applicationCode), scopesKey(sub, applicationCode),
+                rolesKey(sub, applicationCode), departmentsKey(sub, applicationCode)));
         redis.opsForSet().remove(indexKey(sub), setKey(sub, applicationCode));
     }
 

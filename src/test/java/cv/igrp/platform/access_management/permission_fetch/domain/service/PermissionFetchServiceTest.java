@@ -65,7 +65,7 @@ class PermissionFetchServiceTest {
             when(row.getString(2)).thenReturn("own");
             return List.of(call.<RowMapper<Object>>getArgument(1).mapRow(row, 0));
         });
-        when(cache.write(anyString(), anyString(), anyMap()))
+        when(cache.write(anyString(), anyString(), any()))
                 .thenThrow(new RedisConnectionFailureException("Redis down"));
 
         PermissionSetDTO set = service.fetch("APP");
@@ -81,7 +81,7 @@ class PermissionFetchServiceTest {
         token(Jwt.withTokenValue("t").header("alg", "none").subject(USER_ID).build());
         activeUser();
         when(activeRoles.resolve(USER_ID, "APP")).thenReturn(Optional.empty());
-        when(cache.write(anyString(), anyString(), anyMap())).thenReturn(true, false);
+        when(cache.write(anyString(), anyString(), any())).thenReturn(true, false);
 
         service.fetch("APP");
         service.fetch("APP");
@@ -100,7 +100,7 @@ class PermissionFetchServiceTest {
         assertThatThrownBy(() -> service.fetch("APP"))
                 .isInstanceOfSatisfying(IgrpResponseStatusException.class,
                         e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
-        verify(cache, never()).write(anyString(), anyString(), anyMap());
+        verify(cache, never()).write(anyString(), anyString(), any());
     }
 
     private PermissionFetchService service() {

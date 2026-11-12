@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.shared.domain.events;
 
+import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.session.domain.event.RolePermissionChangedEvent;
 import cv.igrp.platform.access_management.security_audit.domain.events.SettingsAuditEvent;
 import org.springframework.context.ApplicationEventPublisher;
@@ -60,6 +61,18 @@ public class EventPublisher {
 
     public void publishDepartmentScopeChanged(DepartmentScopeChangedEvent event) {
         applicationEventPublisher.publishEvent(event);
+    }
+
+    /**
+     * The subtree of every department above {@code ancestor} (itself included)
+     * changed: a department was created or deleted below it (#39). Their
+     * users' and service accounts' cached visible departments are evicted.
+     */
+    public void publishSubtreeChanged(DepartmentEntity ancestor) {
+        for (DepartmentEntity department = ancestor; department != null; department = department.getParentId()) {
+            applicationEventPublisher.publishEvent(new DepartmentScopeChangedEvent(
+                    department.getCode(), DepartmentScopeChangedEvent.CHANGE_STRUCTURE, null));
+        }
     }
 
     /**

@@ -20,6 +20,8 @@ public class DepartmentScopeChangedEvent {
     public static final String CHANGE_APPLICATIONS = "APPLICATIONS_CHANGED";
     public static final String CHANGE_MENUS = "MENUS_CHANGED";
     public static final String CHANGE_RESOURCES = "RESOURCES_CHANGED";
+    /** A department was created under this one: its subtree grew (#39). */
+    public static final String CHANGE_STRUCTURE = "STRUCTURE_CHANGED";
 
     private final String departmentCode;
     private final String changeType;

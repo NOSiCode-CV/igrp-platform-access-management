@@ -122,6 +122,8 @@ public class PostDepartmentCommandHandler implements CommandHandler<PostDepartme
       logger.info("Department created successfully: code={}", saved.getCode());
 
       eventPublisher.publishSettingsAudit(new DepartmentCreatedEvent(saved.getName()));
+      // Every department above it sees one more department now (#39).
+      eventPublisher.publishSubtreeChanged(saved.getParentId());
 
       DepartmentDTO result = departmentMapper.toDto(saved);
       return ResponseEntity.status(HttpStatus.CREATED).body(result);

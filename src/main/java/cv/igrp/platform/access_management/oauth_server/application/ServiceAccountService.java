@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.oauth_server.application;
 
+import cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionSetEviction;
 import cv.igrp.platform.access_management.shared.infrastructure.service.RootUser;
 import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAccountDTO;
 import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAccountPermissionDTO;
@@ -37,17 +38,20 @@ public class ServiceAccountService {
     private final ApplicationEntityRepository applicationRepository;
     private final RoleEntityRepository roleRepository;
     private final PermissionEntityRepository permissionRepository;
+    private final PermissionSetEviction eviction;
 
     public ServiceAccountService(ServiceAccountJpaRepository repository,
                                  OAuthClientJpaRepository oauthClientRepository,
                                  ApplicationEntityRepository applicationRepository,
                                  RoleEntityRepository roleRepository,
-                                 PermissionEntityRepository permissionRepository) {
+                                 PermissionEntityRepository permissionRepository,
+                                 PermissionSetEviction eviction) {
         this.repository = repository;
         this.oauthClientRepository = oauthClientRepository;
         this.applicationRepository = applicationRepository;
         this.roleRepository = roleRepository;
         this.permissionRepository = permissionRepository;
+        this.eviction = eviction;
     }
 
     @Transactional(readOnly = true)
@@ -83,12 +87,16 @@ public class ServiceAccountService {
         }
 
         applyRequestOntoEntity(request, entity);
-        return toDto(repository.save(entity));
+        ServiceAccountDTO saved = toDto(repository.save(entity));
+        // Its roles, grants or status may have changed: its permission sets are stale (#18, #39).
+        eviction.evictUsersAfterCommit(Set.of(id.toString()));
+        return saved;
     }
 
     @Transactional
     public void delete(UUID id) {
         repository.delete(requireWithRoles(id));
+        eviction.evictUsersAfterCommit(Set.of(id.toString()));
     }
 
     /**

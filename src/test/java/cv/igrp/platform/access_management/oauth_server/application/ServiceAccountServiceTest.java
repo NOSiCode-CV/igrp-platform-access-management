@@ -1,5 +1,6 @@
 package cv.igrp.platform.access_management.oauth_server.application;
 
+import cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionSetEviction;
 import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAccountDTO;
 import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAccountRequestDTO;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.OAuthClientEntity;
@@ -48,7 +49,8 @@ class ServiceAccountServiceTest {
     @BeforeEach
     void setUp() {
         service = new ServiceAccountService(repository, oauthClientRepository,
-                applicationRepository, roleRepository, permissionRepository);
+                applicationRepository, roleRepository, permissionRepository,
+                mock(PermissionSetEviction.class));
     }
 
     // ─── paired views (the reason ServiceAccountRoleDTO exists) ─────────
