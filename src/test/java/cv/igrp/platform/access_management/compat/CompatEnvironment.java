@@ -118,6 +118,8 @@ public final class CompatEnvironment {
 
         p.put("igrp.superadmin.user-external-id", SUPERADMIN_ID);
         p.put("igrp.superadmin.email", SUPERADMIN_EMAIL);
+        // RouteVersionGateIT runs the deletion job itself; the scheduled run would race it.
+        p.put("igrp.routes.deletion-check-interval", "365d");
         p.put("igrp.app-center.url", "http://localhost:3000");
 
         // Federated login through the Keycloak container.

@@ -153,6 +153,7 @@ igrp.i18n-cv.igrp.platform.access_management.shared.i18n.I18nProperties : cv.igr
 igrp.minio-cv.igrp.framework.filemanager.minio.MinioProperties : cv.igrp.framework.filemanager.minio.MinioProperties
 igrp.notification.service-cv.igrp.platform.access_management.shared.config.NotificationServiceProperties : cv.igrp.platform.access_management.shared.config.NotificationServiceProperties
 igrp.permissions.cache-cv.igrp.platform.access_management.permission_fetch.config.PermissionSetProperties : cv.igrp.platform.access_management.permission_fetch.config.PermissionSetProperties
+igrp.routes-cv.igrp.platform.access_management.routes.config.RouteRegistrationProperties : cv.igrp.platform.access_management.routes.config.RouteRegistrationProperties
 igrpAuditConfig : cv.igrp.platform.access_management.shared.config.IgrpAuditConfig
 igrpAuthorization : cv.igrp.platform.access_management.shared.security.IgrpAuthorizationService
 igrpJwtAuthenticationConverter : cv.igrp.platform.access_management.shared.security.IgrpJwtAuthenticationConverter
@@ -195,11 +196,13 @@ notificationServiceConfig : cv.igrp.platform.access_management.shared.config.Not
 otpEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.OtpEntityRepository
 ownershipPolicy : cv.igrp.platform.access_management.shared.security.policy.OwnershipPolicy
 pdfReportExporter : cv.igrp.platform.access_management.security_audit.application.export.PdfReportExporter
+pendingKeyDeletions : cv.igrp.platform.access_management.routes.domain.service.PendingKeyDeletions
 permissionCheckService : cv.igrp.platform.access_management.authorization.domain.service.PermissionCheckService
 permissionEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository
 permissionFetchConfig : cv.igrp.platform.access_management.permission_fetch.config.PermissionFetchConfig
 permissionFetchController : cv.igrp.platform.access_management.permission_fetch.interfaces.rest.PermissionFetchController
 permissionFetchService : cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionFetchService
+permissionHolders : cv.igrp.platform.access_management.routes.domain.service.PermissionHolders
 permissionMapper : cv.igrp.platform.access_management.role.domain.service.PermissionMapper
 permissionSetCache : cv.igrp.platform.access_management.permission_fetch.infrastructure.cache.PermissionSetCache
 permissionSetEviction : cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionSetEviction
@@ -239,6 +242,7 @@ rolePermissionsView : cv.igrp.platform.access_management.role.domain.service.Rol
 roleSpecificationBuilder : cv.igrp.platform.access_management.role.specs.RoleSpecificationBuilder
 rolesController : cv.igrp.platform.access_management.role.interfaces.rest.RolesController
 rootUser : cv.igrp.platform.access_management.shared.infrastructure.service.RootUser
+routeRegistrationConfig : cv.igrp.platform.access_management.routes.config.RouteRegistrationConfig
 routeRegistrationController : cv.igrp.platform.access_management.routes.interfaces.rest.RouteRegistrationController
 routeRegistrationService : cv.igrp.platform.access_management.routes.domain.service.RouteRegistrationService
 scopeAspect : cv.igrp.platform.access_management.shared.security.ScopeAspect

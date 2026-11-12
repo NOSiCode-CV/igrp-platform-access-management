@@ -15,6 +15,12 @@ public class RolePermissionChangedEvent extends SessionEvent {
     /** The scopes of some of the role's permissions changed (#21): which rows, not which routes. */
     public static final String CHANGE_SCOPES = "SCOPES_CHANGED";
 
+    /** The role's permission keys were renamed with their service (#11): the same permissions. */
+    public static final String CHANGE_KEYS_RENAMED = "KEYS_RENAMED";
+
+    /** A route key the service no longer declares was deleted after its grace period (#11). */
+    public static final String CHANGE_KEYS_DELETED = "KEYS_DELETED";
+
     private String roleCode;
     private String departmentCode;
     private String changeType; // PERMISSIONS_ADDED, PERMISSIONS_REMOVED, ROLE_STATUS_CHANGED

@@ -42,6 +42,7 @@ public class PermissionEntity extends AuditEntity {
     private Status status;
 
     /** v3-02: the route key, {service}.{resource path}.{action}; immutable; null for legacy igrp.* permissions. */
+    // Immutable for JPA: only a service rename (#11) rewrites it, through JDBC in RouteRegistrationService.
     @Column(name = "permission_key", length = 255, unique = true, updatable = false)
     private String permissionKey;
 
