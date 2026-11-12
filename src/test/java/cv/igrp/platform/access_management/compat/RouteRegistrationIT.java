@@ -98,16 +98,18 @@ class RouteRegistrationIT extends AbstractCompatIT {
     }
 
     @Test
-    @DisplayName("A client that registers one service cannot register another name until rename exists (#11)")
-    void knownClientUnderANewNameIsRefused() {
+    @DisplayName("A client that registers one service under another name renames it (#11)")
+    void knownClientUnderANewNameRenames() {
         register(token, "1.0.0", route("GET", "/api/v1/faturas", key("faturas.list"), false, null, null));
         String renamed = service + "-v2";
 
         HttpResponse<String> response = registerAs(renamed, token, "1.0.0",
                 route("GET", "/api/v1/faturas", renamed + ".faturas.list", false, null, null));
 
-        assertThat(response.statusCode()).as(response.body()).isEqualTo(409);
-        assertThat(count(renamed + ".faturas.list")).isZero();
+        assertThat(response.statusCode()).as(response.body()).isEqualTo(200);
+        assertThat(CompatSupport.jsonObject(response.body())).containsEntry("renamed", 1).containsEntry("created", 0);
+        assertThat(count(renamed + ".faturas.list")).isOne();
+        assertThat(count(key("faturas.list"))).isZero();
     }
 
     @Test
