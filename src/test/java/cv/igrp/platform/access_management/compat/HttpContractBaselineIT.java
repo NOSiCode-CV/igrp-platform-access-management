@@ -6,6 +6,7 @@ import org.junit.jupiter.api.TestFactory;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
@@ -58,8 +59,14 @@ class HttpContractBaselineIT extends AbstractCompatIT {
         api = new CompatSupport(context);
         api.ensureBusinessData();
         admin = api.superadminToken();
-        // A valid token and live session for a subject with no roles at all.
-        unprivileged = api.userToken(UUID.randomUUID().toString(), "nobody@example.cv");
+        // A valid token and live session for an existing, active user with no roles at all.
+        // v3 (#36): an unknown subject is no longer authorized by AM (401), so the user must exist.
+        String userId = UUID.randomUUID().toString();
+        String email = "nobody-" + userId + "@example.cv";
+        context.getBean(JdbcTemplate.class).update("""
+                INSERT INTO t_user (id, created_by, created_date, email, username, name, status)
+                VALUES (?, 'compat', now(), ?, ?, 'Unprivileged User', 'ACTIVE')""", userId, email, email);
+        unprivileged = api.userToken(userId, email);
         m2m = api.registerM2MClient("compat-contract");
     }
 
