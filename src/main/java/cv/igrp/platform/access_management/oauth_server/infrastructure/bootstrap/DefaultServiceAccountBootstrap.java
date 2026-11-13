@@ -21,40 +21,16 @@ import java.util.UUID;
  *
  * <p>Runs on {@link ApplicationReadyEvent} — one phase after
  * {@link DefaultOAuthClientBootstrap}'s {@link org.springframework.boot.CommandLineRunner}
- * — so the linked OAuth client already exists, and the {@code igrp.client.*}
- * permission rows have been seeded by whichever mechanism your deployment uses
- * (Flyway migration or an in-process sync). Missing permission rows are skipped
- * with a WARN and the SA is still created; the grants can be re-attempted on
- * the next boot.
+ * — so the linked OAuth client already exists — and after AM has registered
+ * its own routes ({@code AmRouteRegistrar}), so the keys it grants exist.
+ * Missing keys are skipped with a WARN and the SA is still created; the
+ * grants are re-attempted on the next boot.
  *
- * <p>The manual equivalent this replaces:
- *
- * <pre>
- *   INSERT INTO t_service_account
- *     (id, active, created_at, description, name, updated_at, oauth_client_id)
- *   VALUES (gen_random_uuid(), true, NOW(),
- *           'iGRP Access Management Service Account',
- *           'igrp-access-management-sa',
- *           NOW(),
- *           &lt;UUID of the OAuth client with client_id='igrp-access-management'&gt;);
- *
- *   INSERT INTO t_service_account_permission_grant (granted_at, permission_id, service_account_id)
- *   VALUES (NOW(), &lt;id of igrp.client.list&gt;,          &lt;SA UUID&gt;),
- *          (NOW(), &lt;id of igrp.client.view&gt;,          &lt;SA UUID&gt;),
- *          (NOW(), &lt;id of igrp.client.create&gt;,        &lt;SA UUID&gt;),
- *          (NOW(), &lt;id of igrp.client.update&gt;,        &lt;SA UUID&gt;),
- *          (NOW(), &lt;id of igrp.client.delete&gt;,        &lt;SA UUID&gt;),
- *          (NOW(), &lt;id of igrp.client.manage&gt;,        &lt;SA UUID&gt;);
- * </pre>
- *
- * <p><b>Why by name, not by id.</b> The infra team's script grants
- * "permissions with ids 19-24". Row ids drift with migration order and
- * environment reseeding, so this bootstrap looks permissions up by their
- * canonical {@code name} column. The set granted is fixed in
- * {@link #DEFAULT_PERMISSION_NAMES}: all {@code igrp.client.*} permissions,
- * giving the SA the minimum privilege needed to provision downstream clients
- * and service accounts for each API/UI service — the service-account endpoints
- * gate on the same {@code igrp.client.*} set.
+ * <p>The set granted is fixed in {@link #DEFAULT_PERMISSION_NAMES}: the keys
+ * of AM's client and service-account routes (#36, formerly the
+ * {@code igrp.client.*} permissions), the minimum privilege needed to
+ * provision downstream clients and service accounts for each API/UI service.
+ * They are looked up by key, never by id: ids drift between environments.
  *
  * <p><b>Config surface</b> (all optional):
  * <ul>
@@ -78,21 +54,22 @@ public class DefaultServiceAccountBootstrap {
     private static final Logger LOGGER = LoggerFactory.getLogger(DefaultServiceAccountBootstrap.class);
 
     /**
-     * Full permission set granted to the default SA. Kept as a plain list of
-     * canonical permission names so a rename (e.g. adding an
-     * {@code igrp.client.rotate_secret} in future) is a one-line change here
-     * and does NOT require touching migration ids.
+     * The keys granted to the default SA (#36): those of AM's client and
+     * service-account routes, the routes the old {@code igrp.client.*}
+     * permissions guarded. AM registers them at startup, before this runs.
      */
     private static final List<String> DEFAULT_PERMISSION_NAMES = List.of(
-            // OAuth2 client CRUD. Also covers the service-account endpoints:
-            // ServiceAccountController gates on igrp.client.* (see its javadoc),
-            // so no separate service-account grants are needed here.
-            "igrp.client.list",
-            "igrp.client.view",
-            "igrp.client.create",
-            "igrp.client.update",
-            "igrp.client.delete",
-            "igrp.client.manage"
+            "access-management-api.clients.list",
+            "access-management-api.clients.read",
+            "access-management-api.clients.create",
+            "access-management-api.clients.update",
+            "access-management-api.clients.delete",
+            "access-management-api.clients.rotate-secret.create",
+            "access-management-api.service-accounts.list",
+            "access-management-api.service-accounts.read",
+            "access-management-api.service-accounts.create",
+            "access-management-api.service-accounts.update",
+            "access-management-api.service-accounts.delete"
     );
 
     private final JdbcTemplate jdbcTemplate;
@@ -282,7 +259,7 @@ public class DefaultServiceAccountBootstrap {
     private Long findPermissionIdByName(String name) {
         try {
             return jdbcTemplate.queryForObject(
-                    "SELECT id FROM t_permission WHERE name = ? LIMIT 1",
+                    "SELECT id FROM t_permission WHERE permission_key = ? AND status <> 'DELETED' LIMIT 1",
                     Long.class,
                     name);
         } catch (EmptyResultDataAccessException e) {

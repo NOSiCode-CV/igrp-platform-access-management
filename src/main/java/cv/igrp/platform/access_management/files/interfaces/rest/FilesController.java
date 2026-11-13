@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.files.application.queries.*;
@@ -37,7 +36,6 @@ public class FilesController {
           this.queryBus = queryBus;
           this.commandBus = commandBus;
   }
-   @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_USERS_VIEW, T(Permission).IGRP_APPLICATIONS_VIEW)")
    @GetMapping(
    value = "files/url"
   )
@@ -69,7 +67,6 @@ public class FilesController {
       return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_USERS_UPDATE, T(Permission).IGRP_APPLICATIONS_UPDATE)")
    @PostMapping(
    value = "files/public"
   )
@@ -102,7 +99,6 @@ public class FilesController {
        return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkAnyPermission(T(Permission).IGRP_USERS_UPDATE, T(Permission).IGRP_APPLICATIONS_UPDATE)")
    @PostMapping(
    value = "files/private"
   )

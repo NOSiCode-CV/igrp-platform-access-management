@@ -72,6 +72,12 @@ public class RouteRegistrationService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RouteRegistrationService.class);
 
+    /** The owner of AM's own routes (#36). A client with this id is refused, so no service can take AM's routes. */
+    public static final String AM_OWNER = "~access-management";
+
+    /** AM's own service name (#36): only AM registers it, in-process. */
+    public static final String AM_SERVICE = "access-management-api";
+
     /** First half of the two-int advisory lock key, distinct from the audit chain's lock. */
     private static final int LOCK_CLASS = 0x524F5554; // "ROUT"
 
@@ -131,12 +137,31 @@ public class RouteRegistrationService {
     private record Binding(boolean newest, int renamed) {
     }
 
+    /** A service's registration, with the calling service account's token. */
     @Transactional
     public RouteRegistrationResultDTO register(RouteRegistrationRequestDTO registration) {
+        if (AM_SERVICE.equalsIgnoreCase(registration.getService())) {
+            throw IgrpResponseStatusException.forbidden("Service name " + AM_SERVICE + " is reserved for AM's own routes");
+        }
+        String clientId = callerClientId();
+        return register(registration, clientId, applicationOf(clientId));
+    }
+
+    /**
+     * AM's own registration (#36), in-process at startup: AM has no service
+     * account of its own, so its routes are owned by {@link #AM_OWNER}, a value
+     * no client id can take, and belong to the given application.
+     */
+    @Transactional
+    public RouteRegistrationResultDTO registerOwn(RouteRegistrationRequestDTO registration,
+                                                  ApplicationEntity application) {
+        return register(registration, AM_OWNER, application);
+    }
+
+    private RouteRegistrationResultDTO register(RouteRegistrationRequestDTO registration, String clientId,
+                                                ApplicationEntity application) {
         String service = registration.getService();
         Map<String, RegisteredRouteDTO> routes = validatedRoutes(service, registration);
-        String clientId = callerClientId();
-        ApplicationEntity application = applicationOf(clientId);
 
         jdbc.queryForObject("SELECT pg_advisory_xact_lock(?, hashtext(?))::text", String.class, LOCK_CLASS, clientId);
         Binding binding = bindOwner(service, clientId, registration.getVersion());
@@ -219,6 +244,9 @@ public class RouteRegistrationService {
         String clientId = authenticationHelper.getJwtToken().getClaimAsString(ServiceAccountTokenClaims.CLAIM_CLIENT_ID);
         if (clientId == null || clientId.isBlank()) {
             throw IgrpResponseStatusException.forbidden("Route registration needs a service account token");
+        }
+        if (AM_OWNER.equals(clientId)) {
+            throw IgrpResponseStatusException.forbidden("Client id " + AM_OWNER + " is reserved for AM's own routes");
         }
         return clientId;
     }

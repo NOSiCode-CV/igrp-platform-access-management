@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.springframework.security.access.prepost.PreAuthorize;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.platform.access_management.authorization.application.commands.*;
 import cv.igrp.platform.access_management.authorization.application.dto.PermissionCheckRequestDTO;

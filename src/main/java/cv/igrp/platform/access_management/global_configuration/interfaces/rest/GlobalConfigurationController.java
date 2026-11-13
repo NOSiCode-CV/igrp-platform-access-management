@@ -12,7 +12,6 @@ import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import jakarta.validation.Valid;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.global_configuration.application.queries.*;
@@ -34,7 +33,6 @@ public class GlobalConfigurationController {
           this.queryBus = queryBus;
           this.commandBus = commandBus;
   }
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_APPLICATIONS_CUSTOMIZE)")
    @PostMapping(
    value = "global-configuration"
   )

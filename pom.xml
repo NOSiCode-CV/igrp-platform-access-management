@@ -346,6 +346,16 @@
             <artifactId>keycloak-spring-boot</artifactId>
             <version>${framework.auth.version}</version>
         </dependency>
+        <!-- v3-28 (#36): AM protects its own routes with the 0.3 starter's route
+             filter, like every service. Its permission set comes in-process
+             (InProcessPermissionFetch) and its routes register in-process
+             (AmRouteRegistrar); the starter's audit and revision stay off,
+             because AM has its own. -->
+        <dependency>
+            <groupId>cv.igrp.framework.auth</groupId>
+            <artifactId>core-spring-boot</artifactId>
+            <version>${framework.auth.version}</version>
+        </dependency>
         <dependency>
             <groupId>cv.igrp.platform</groupId>
             <artifactId>filemanager</artifactId>

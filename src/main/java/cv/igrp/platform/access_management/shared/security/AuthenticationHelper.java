@@ -10,7 +10,8 @@ import org.springframework.stereotype.Component;
 /**
  * Helper class for extracting information from the authentication token in the security context.
  */
-@Component
+// Named: the 0.3 starter defines its own bean called "authenticationHelper" (#36).
+@Component("amAuthenticationHelper")
 public class AuthenticationHelper {
 
     /**

@@ -1,7 +1,11 @@
 package cv.igrp.platform.access_management.shared.security.integration;
 
+import org.springframework.test.context.TestPropertySource;
+import cv.igrp.platform.access_management.permission_fetch.application.dto.PermissionSetDTO;
+import cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionFetchService;
+import java.util.List;
+import static org.mockito.ArgumentMatchers.any;
 import cv.igrp.platform.access_management.shared.security.BasicAuthSecurityConfiguration;
-import cv.igrp.platform.access_management.shared.security.OAuth2SecurityConfiguration;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -104,24 +108,32 @@ class ActuatorSecurityIntegrationTest {
     @WebAppConfiguration
     @ContextConfiguration(classes = {SessionEnforcementWiringIntegrationTest.TestApp.class,
             FakeActuatorEndpoints.class})
+    // AM's real igrp.security.public-paths and application code (#36).
+    @TestPropertySource(locations = "classpath:application.properties")
     class OAuth2Chain extends ChainContract {
 
         @Autowired
         JwtDecoder jwtDecoder;
 
+        @Autowired
+        PermissionFetchService permissionFetch;
+
         /**
-         * Opted-in endpoints (e.g. {@code resources}) are reachable with an
-         * operator's {@code client_credentials} token.
+         * v3 (#36): being signed in is no longer enough. Outside the public
+         * paths, a caller needs the route's key (root aside): a
+         * {@code client_credentials} token without it is refused.
          */
         @Test
-        void authenticatedClientReachesProtectedActuatorPath() throws Exception {
+        void authenticatedClientWithoutTheKeyIsForbidden() throws Exception {
             Instant now = Instant.now();
             Jwt jwt = new Jwt("ops-cc", now, now.plusSeconds(300), Map.of("alg", "RS256"),
                     Map.of("sub", "igrp-ops", "iss", "http://localhost", "jti", "ops-jti"));
             when(jwtDecoder.decode("ops-cc")).thenReturn(jwt);
+            when(permissionFetch.fetch(any(Jwt.class), any(String.class))).thenReturn(
+                    new PermissionSetDTO(List.of(), Map.of(), List.of(), List.of()));
 
             mockMvc.perform(get("/actuator/resources").header("Authorization", "Bearer ops-cc"))
-                    .andExpect(status().isOk());
+                    .andExpect(status().isForbidden());
         }
     }
 

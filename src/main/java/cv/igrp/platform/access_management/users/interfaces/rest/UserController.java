@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.users.application.queries.*;
@@ -56,7 +55,6 @@ public class UserController {
           this.commandBus = commandBus;
           this.authenticationHelper = authenticationHelper;
   }
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}"
   )
@@ -87,7 +85,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @PostMapping(
    value = "users/{id}/departments/{departmentCode}/roles"
   )
@@ -128,7 +125,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @DeleteMapping(
    value = "users/{id}/departments/{departmentCode}/roles"
   )
@@ -159,7 +155,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}/roles"
   )
@@ -190,7 +185,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}/permissions"
   )
@@ -221,7 +215,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_LIST)")
    @GetMapping(
    value = "users"
   )
@@ -256,7 +249,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@userStatusGuard.requiresActiveOrTemporary(authentication)")
    @PostMapping(
    value = "users/invite/response"
   )
@@ -287,7 +279,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_UPDATE)")
    @PutMapping(
    value = "users/{id}"
   )
@@ -318,7 +309,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@userStatusGuard.requiresActiveOrTemporary(authentication)")
    @GetMapping(
    value = "users/me"
   )
@@ -372,7 +362,6 @@ public class UserController {
       )
     }
   )
-  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<IGRPUserDTO> updateCurrentUser(@Valid @RequestBody IGRPUserDTO updateUserRequest)
   {
       // Get current user to find their internal ID
@@ -408,13 +397,11 @@ public class UserController {
       )
     }
   )
-  @PreAuthorize("isAuthenticated()")
   public ResponseEntity<Void> updateCurrentUserLocale(@RequestBody UpdateCurrentUserLocaleCommand updateCurrentUserLocaleRequest)
   {
       return commandBus.send(updateCurrentUserLocaleRequest);
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_CREATE)")
    @PostMapping(
    value = "users/invite"
   )
@@ -445,7 +432,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@userStatusGuard.requiresActiveOrTemporary(authentication)")
    @PostMapping(
    value = "users/invite/validate-email"
   )
@@ -471,7 +457,6 @@ public class UserController {
       return commandBus.send(validateInvitationEmailCommand);
   }
 
-   @PreAuthorize("@userStatusGuard.requiresActiveOrTemporary(authentication)")
    @PostMapping(
    value = "users/invite/validate-otp"
   )
@@ -497,7 +482,6 @@ public class UserController {
       return commandBus.send(validateInvitationOtpCommand);
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @DeleteMapping(
    value = "users/invite/{id}"
   )
@@ -528,7 +512,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @PutMapping(
    value = "users/invite/{id}"
   )
@@ -559,7 +542,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @PutMapping(
    value = "users/{id}/status"
   )
@@ -771,7 +753,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}/applications"
   )
@@ -803,7 +784,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}/applications/{applicationCode}/menus"
   )
@@ -834,7 +814,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}/departments"
   )
@@ -865,7 +844,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}/departments/{departmentCode}/roles"
   )
@@ -1049,7 +1027,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @GetMapping(
    value = "users/invite"
   )
@@ -1110,7 +1087,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@userStatusGuard.requiresActiveOrTemporary(authentication)")
    @GetMapping(
    value = "users/invite/by-token/{token}"
   )
@@ -1171,7 +1147,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @GetMapping(
    value = "users/{id}/roles/active"
   )
@@ -1232,7 +1207,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_MANAGE)")
    @PostMapping(
    value = "users/{id}/roles/active"
   )
@@ -1263,7 +1237,6 @@ public class UserController {
 
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_VIEW)")
    @GetMapping(
    value = "users/{id}/metadata"
   )
@@ -1289,7 +1262,6 @@ public class UserController {
       return queryBus.handle(query);
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_USERS_UPDATE)")
    @PutMapping(
    value = "users/{id}/metadata"
   )

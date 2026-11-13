@@ -1,6 +1,5 @@
 package cv.igrp.platform.access_management.session.interfaces.rest;
 
-import cv.igrp.framework.auth.generated.PermissionsRegistry;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.stereotype.IgrpController;
 import cv.igrp.platform.access_management.session.application.commands.KillAllUserSessionsCommand;
@@ -19,7 +18,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -45,12 +43,6 @@ import java.util.UUID;
     name = "Admin User Session Management",
     description = "Per-user administrative session operations (Phase E4/E5)"
 )
-// Phase G1 / FR-13 — Layer 3 belt-and-suspenders: reject any principal without a
-// sid claim (i.e. M2M client_credentials tokens) before method execution. The
-// preceding M2MTokenRejectionFilter on the OAuth2 chain is the primary defense;
-// this @PreAuthorize is the static-analysis-visible guarantee for this admin
-// surface.
-@PreAuthorize("@subjectGuard.requiresUser(authentication)")
 public class AdminUserSessionController {
 
     private final CommandBus commandBus;
@@ -80,7 +72,6 @@ public class AdminUserSessionController {
     )
     @ApiResponse(responseCode = "204", description = "Session killed")
     @ApiResponse(responseCode = "404", description = "Session not found or does not belong to user")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Void> killUserSession(
             @Parameter(description = "User external id") @PathVariable String userExternalId,
             @Parameter(description = "Session id (UUID)") @PathVariable UUID sessionId,
@@ -116,7 +107,6 @@ public class AdminUserSessionController {
     )
     @ApiResponse(responseCode = "204", description = "Sessions revoked")
     @ApiResponse(responseCode = "404", description = "User not found")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Void> logoutAll(
             @Parameter(description = "User external id") @PathVariable String userExternalId,
             @Valid @RequestBody SessionKillRequestDTO request) {
@@ -150,7 +140,6 @@ public class AdminUserSessionController {
     )
     @ApiResponse(responseCode = "204", description = "Re-auth enforced")
     @ApiResponse(responseCode = "404", description = "User not found")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(PermissionsRegistry.Permission).IGRP_SESSION_ADMIN)")
     public ResponseEntity<Void> forceReauth(
             @Parameter(description = "User external id") @PathVariable String userExternalId,
             @Valid @RequestBody SessionKillRequestDTO request) {

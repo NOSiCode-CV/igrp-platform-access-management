@@ -9,7 +9,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -43,7 +42,6 @@ public class AuthAuditController {
      * Paginated, filtered view of the unified audit log. All filters are optional.
      */
     @GetMapping
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<Page<SecurityAuditLogDTO>> list(
             @RequestParam(required = false) String userId,
             @RequestParam(required = false) String username,
@@ -63,7 +61,6 @@ public class AuthAuditController {
      * {@code {valid, rows_checked, broken_at}}.
      */
     @PostMapping("/validate")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<Map<String, Object>> validate() {
         SecurityAuditChainValidator.Result result = chainValidator.validate();
         Map<String, Object> body = new LinkedHashMap<>();
