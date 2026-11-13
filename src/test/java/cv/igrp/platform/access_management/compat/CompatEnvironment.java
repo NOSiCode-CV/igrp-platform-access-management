@@ -49,9 +49,22 @@ public final class CompatEnvironment {
     static final PostgreSQLContainer<?> POSTGRES =
             new PostgreSQLContainer<>(DockerImageName.parse("postgres:16-alpine"));
 
+    /** v3-09 (#17): AM's own Redis user, with every right; the default user is off, as in production. */
+    public static final String REDIS_AM_USER = "igrp-am";
+    public static final String REDIS_AM_PASSWORD = "am-secret";
+    /** The read-only user services get: reads on the permission keys only. */
+    public static final String REDIS_READER = "igrp-reader";
+    public static final String REDIS_READER_PASSWORD = "reader-secret";
+
     @SuppressWarnings("resource")
     static final GenericContainer<?> REDIS =
-            new GenericContainer<>(DockerImageName.parse("redis:7-alpine")).withExposedPorts(6379);
+            new GenericContainer<>(DockerImageName.parse("redis:7-alpine"))
+                    .withExposedPorts(6379)
+                    .withCommand("redis-server",
+                            "--user", "default", "off",
+                            "--user", REDIS_AM_USER, "on", ">" + REDIS_AM_PASSWORD, "~*", "&*", "+@all",
+                            "--user", REDIS_READER, "on", ">" + REDIS_READER_PASSWORD,
+                            "resetkeys", "~permissions:*", "resetchannels", "-@all", "+@read", "+ping");
 
     /**
      * The external IdP users log in through, as Autentika/WSO2 are in
@@ -106,6 +119,9 @@ public final class CompatEnvironment {
         p.put("spring.datasource.password", POSTGRES.getPassword());
         p.put("spring.data.redis.host", REDIS.getHost());
         p.put("spring.data.redis.port", REDIS.getMappedPort(6379));
+        // v3-09: AM writes as its own user, as REDIS_USERNAME / REDIS_PASSWORD set it.
+        p.put("spring.data.redis.username", REDIS_AM_USER);
+        p.put("spring.data.redis.password", REDIS_AM_PASSWORD);
 
         // Everything else (JPA ddl-auto=validate, lazy loading, actuator
         // exposure, discovery) comes from the production profile itself, which

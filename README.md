@@ -231,6 +231,33 @@ are different things.
 > user)*. Every application sign-in costs one session against the cap, and the oldest is
 > evicted when it is exceeded.
 
+### Redis users (ACL)
+
+AM is the only writer of the permission sets (`permissions:user:{sub}:app:{appCode}`) that
+every service reads (Authorization v3, #17). Redis ACLs enforce it, with two users:
+
+| User | Who | Rights |
+|---|---|---|
+| `igrp-am` | AM (`REDIS_USERNAME` / `REDIS_PASSWORD`) | every command, every key |
+| `igrp-reader` | services on the 0.3 starter (`IGRP_SECURITY_REDIS_USERNAME` / `_PASSWORD`, with `IGRP_SECURITY_REDIS_HOST` / `_PORT`) | `-@all +@read +ping`, keys `~permissions:*` only |
+
+The default user is off, or kept only for the Redis chart's own probes. Without an ACL,
+leave `REDIS_USERNAME` unset (`default`, plain AUTH).
+
+- **Dev (`docker-compose.yml`):** set `REDIS_USERNAME=igrp-am`, `REDIS_PASSWORD` and
+  `REDIS_READER_PASSWORD` in `.env`. The Redis container then starts with both users and
+  the default user off. With either password blank it starts with no AUTH, as before.
+- **Kubernetes (`igrp-stack` Helm chart):** `igrp-redis.redis.auth.acl.enabled: true` with
+  both users' passwords in `values.<env>.yaml`. The chart writes them to the Secret
+  `igrp-redis-acl` (one key per user). Point AM at it with `igrp-access-management.redis`:
+  `username: igrp-am`, `existingSecret: igrp-redis-acl`, `passwordKey: igrp-am`. Services
+  read `igrp-reader` from the same Secret. Do not use the Bitnami `auth.acl.userSecret`:
+  it is read with `lookup`, which returns nothing under ArgoCD and on a first install, and
+  the users would be created with no password.
+- **Any other Redis:** create the same two users, e.g.
+  `ACL SETUSER igrp-am on >… ~* &* +@all` and
+  `ACL SETUSER igrp-reader on >… resetkeys ~permissions:* resetchannels -@all +@read +ping`.
+
 ### Other groups
 
 `IGRP_OAUTH_*` (keys, default client, external IdP, login policy) ·
