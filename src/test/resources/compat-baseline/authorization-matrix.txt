@@ -26,6 +26,8 @@ GET /api/applications/{code}/custom-fields anonymous=401 roleless=403
 GET /api/applications/{code}/menus anonymous=401 roleless=403
 GET /api/applications/{id} anonymous=401 roleless=403
 GET /api/auth/audit anonymous=401 roleless=403
+GET /api/auth/audit/business anonymous=401 roleless=403
+GET /api/auth/audit/business/validate anonymous=401 roleless=403
 GET /api/auth/reports/access anonymous=401 roleless=403
 GET /api/auth/reports/access.csv anonymous=401 roleless=403
 GET /api/auth/reports/access.pdf anonymous=401 roleless=403

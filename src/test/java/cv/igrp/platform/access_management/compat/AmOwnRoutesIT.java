@@ -75,7 +75,7 @@ class AmOwnRoutesIT extends AbstractCompatIT {
                 SELECT p.permission_key FROM t_permission p JOIN t_application a ON a.id = p.application_id
                  WHERE p.service = ? AND p.status = 'ACTIVE' AND a.code = ?""", String.class, SERVICE, APP);
 
-        assertThat(expected).hasSize(134);
+        assertThat(expected).hasSize(136);
         assertThat(registered).containsExactlyInAnyOrderElementsOf(expected);
         assertThat(jdbc.queryForObject("SELECT owner_client_id FROM t_registered_service WHERE service = ?",
                 String.class, SERVICE)).isEqualTo(RouteRegistrationService.AM_OWNER);
