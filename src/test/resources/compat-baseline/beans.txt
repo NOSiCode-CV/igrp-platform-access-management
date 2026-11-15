@@ -191,6 +191,7 @@ killSessionCommandHandler : cv.igrp.platform.access_management.session.applicati
 killSessionsByDepartmentCommandHandler : cv.igrp.platform.access_management.session.application.commands.KillSessionsByDepartmentCommandHandler
 killSessionsByRoleCommandHandler : cv.igrp.platform.access_management.session.application.commands.KillSessionsByRoleCommandHandler
 linkResourceToApplicationCommandHandler : cv.igrp.platform.access_management.app.application.commands.LinkResourceToApplicationCommandHandler
+listPermissionsQueryHandler : cv.igrp.platform.access_management.permissions.application.queries.ListPermissionsQueryHandler
 listSessionsQueryHandler : cv.igrp.platform.access_management.session.application.queries.ListSessionsQueryHandler
 localeResolver : cv.igrp.platform.access_management.shared.i18n.IgrpLocaleResolver
 m2MController : cv.igrp.platform.access_management.m2m.interfaces.rest.M2MController
@@ -211,12 +212,14 @@ ownershipPolicy : cv.igrp.platform.access_management.shared.security.policy.Owne
 pdfReportExporter : cv.igrp.platform.access_management.security_audit.application.export.PdfReportExporter
 pendingKeyDeletions : cv.igrp.platform.access_management.routes.domain.service.PendingKeyDeletions
 permissionCheckService : cv.igrp.platform.access_management.authorization.domain.service.PermissionCheckService
+permissionController : cv.igrp.platform.access_management.permissions.interfaces.rest.PermissionController
 permissionEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.PermissionEntityRepository
 permissionFetchConfig : cv.igrp.platform.access_management.permission_fetch.config.PermissionFetchConfig
 permissionFetchController : cv.igrp.platform.access_management.permission_fetch.interfaces.rest.PermissionFetchController
 permissionFetchService : cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionFetchService
 permissionHolders : cv.igrp.platform.access_management.routes.domain.service.PermissionHolders
 permissionMapper : cv.igrp.platform.access_management.role.domain.service.PermissionMapper
+permissionNames : cv.igrp.platform.access_management.permissions.domain.service.PermissionNames
 permissionSetCache : cv.igrp.platform.access_management.permission_fetch.infrastructure.cache.PermissionSetCache
 permissionSetEviction : cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionSetEviction
 permissionSyncService : cv.igrp.platform.access_management.m2m.domain.service.PermissionSyncService
@@ -311,6 +314,7 @@ updateApplicationCommandHandler : cv.igrp.platform.access_management.app.applica
 updateCurrentUserLocaleCommandHandler : cv.igrp.platform.access_management.users.application.commands.UpdateCurrentUserLocaleCommandHandler
 updateDepartmentCommandHandler : cv.igrp.platform.access_management.department.application.commands.UpdateDepartmentCommandHandler
 updateMenuCommandHandler : cv.igrp.platform.access_management.app.application.commands.UpdateMenuCommandHandler
+updatePermissionNameCommandHandler : cv.igrp.platform.access_management.permissions.application.commands.UpdatePermissionNameCommandHandler
 updateRoleCommandHandler : cv.igrp.platform.access_management.department.application.commands.UpdateRoleCommandHandler
 updateRolePermissionScopesCommandHandler : cv.igrp.platform.access_management.department.application.commands.UpdateRolePermissionScopesCommandHandler
 updateUserCommandHandler : cv.igrp.platform.access_management.users.application.commands.UpdateUserCommandHandler
