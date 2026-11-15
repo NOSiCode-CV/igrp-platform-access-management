@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.routes.domain.service;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.OAuthClientEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
 import cv.igrp.platform.access_management.routes.application.dto.RouteRegistrationRequestDTO;
+import cv.igrp.platform.access_management.routes.application.dto.RouteRegistrationRequestDTO.RegisteredFieldDTO;
 import cv.igrp.platform.access_management.routes.application.dto.RouteRegistrationRequestDTO.RegisteredRouteDTO;
 import cv.igrp.platform.access_management.routes.application.dto.RouteRegistrationResultDTO;
 import cv.igrp.platform.access_management.routes.infrastructure.persistence.RegisteredServiceEntity;
@@ -51,6 +52,10 @@ import java.util.stream.Collectors;
  * cancels the pending deletion of the keys it declares (a rollback, or an old
  * pod restarting mid-deploy), and nothing else: only the newest schedules.
  * A deleted key declared again comes back with no assignments.
+ *
+ * <p>Field keys (#40): the {@code @FieldPermission} keys a registration sends
+ * as {@code fields} are declared like its route keys, so every rule above and
+ * below applies to them too.
  *
  * <p>Rename (#11): a registration from a client that already registers another
  * service, under a new name, renames that service: its keys are rewritten with
@@ -197,7 +202,7 @@ public class RouteRegistrationService {
             pending = Objects.requireNonNullElse(jdbc.queryForObject(PENDING_COUNT, Integer.class, service), 0);
         }
 
-        LOGGER.info("[ROUTES] {} {} registered {} routes: {} created, {} unchanged, {} pending deletion, {} renamed",
+        LOGGER.info("[ROUTES] {} {} registered {} keys (routes and fields): {} created, {} unchanged, {} pending deletion, {} renamed",
                 service, registration.getVersion(), routes.size(), created, routes.size() - created, pending,
                 binding.renamed());
         return new RouteRegistrationResultDTO(created, routes.size() - created, pending, binding.renamed());
@@ -228,16 +233,32 @@ public class RouteRegistrationService {
             if (route == null) {
                 throw IgrpResponseStatusException.badRequest("Invalid route registration: a route is null");
             }
-            String problem = RouteKeys.problem(service, route.getKey());
-            if (problem == null) {
-                problem = RouteKeys.nameProblem(route.getName());
-            }
-            if (problem != null) {
-                throw IgrpResponseStatusException.badRequest("Invalid route registration: " + problem);
-            }
+            checkKey(service, route.getKey(), route.getName(), "");
             routes.putIfAbsent(route.getKey(), route);
         }
+        // v3-32 (#40): field keys are declared like route keys. A key that is also
+        // a route's is one permission, named by the route.
+        for (RegisteredFieldDTO field : Objects.requireNonNullElse(registration.getFields(), List.<RegisteredFieldDTO>of())) {
+            if (field == null) {
+                throw IgrpResponseStatusException.badRequest("Invalid route registration: a field key is null");
+            }
+            checkKey(service, field.getKey(), field.getName(), "field ");
+            // A field key has no method or path: only its key, name and description are used.
+            routes.putIfAbsent(field.getKey(), new RegisteredRouteDTO(null, null, field.getKey(), true,
+                    field.getName(), field.getDescription(), null));
+        }
         return routes;
+    }
+
+    /** Refuses a key outside the service's namespace or action set, or a name in the reserved namespace. */
+    private static void checkKey(String service, String key, String name, String label) {
+        String problem = RouteKeys.problem(service, key);
+        if (problem == null) {
+            problem = RouteKeys.nameProblem(name);
+        }
+        if (problem != null) {
+            throw IgrpResponseStatusException.badRequest("Invalid route registration: " + label + problem);
+        }
     }
 
     private String callerClientId() {
