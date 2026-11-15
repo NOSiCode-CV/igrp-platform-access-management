@@ -72,7 +72,7 @@ class OidcLoginFlowIT extends AbstractCompatIT {
                         + "\"grantTypes\":[\"authorization_code\",\"refresh_token\"],"
                         + "\"redirectUris\":[" + q(REDIRECT_URI) + "," + q(OTHER_APP_REDIRECT_URI) + "],"
                         + "\"postLogoutRedirectUris\":[" + q(POST_LOGOUT_URI) + "]}");
-        assertTrue(created.statusCode() / 100 == 2, created.statusCode() + " " + created.body());
+        assertEquals(2, created.statusCode() / 100, created.statusCode() + " " + created.body());
         clientSecret = (String) jsonObject(created.body()).get("clientSecret");
     }
 

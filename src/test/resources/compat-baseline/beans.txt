@@ -183,7 +183,7 @@ igrpPlatformAccessManagementApplication : cv.igrp.platform.access_management.Igr
 igrpRouteSecurity : cv.igrp.framework.auth.core.route.RouteSecurity
 igrpRouteSecurityCheck : cv.igrp.framework.auth.core.route.RouteSecurityAutoConfiguration
 igrpScopeJpaHooks : cv.igrp.framework.auth.core.scope.ScopeAutoConfiguration$1
-igrpTokenCustomizer : cv.igrp.platform.access_management.oauth_server.infrastructure.security.JwtTokenConfig
+igrpTokenCustomizer : cv.igrp.platform.access_management.oauth_server.infrastructure.security.IgrpTokenCustomizer
 invitationEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.InvitationEntityRepository
 invitationMapper : cv.igrp.platform.access_management.users.mapper.InvitationMapper
 invitationNotificationSender : cv.igrp.platform.access_management.notification.domain.service.InvitationNotificationSender

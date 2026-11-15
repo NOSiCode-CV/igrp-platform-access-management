@@ -49,13 +49,12 @@ class JwtTokenConfigTest {
 
     @BeforeEach
     void setUp() {
-        JwtTokenConfig config = new JwtTokenConfig(null,
+        config = new JwtTokenConfig(null,
                 "http://localhost:8090",
                 "test-key",
                 "",
                 "",
                 "");
-        this.config = config;
         customizer = config.igrpTokenCustomizer(claimsService, auditService, sessionIssuanceService,
                 300, 28800);
         claims = JwtClaimsSet.builder().id("jti-1").issuedAt(ISSUED_AT);
