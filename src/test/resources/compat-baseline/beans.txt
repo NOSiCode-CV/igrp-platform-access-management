@@ -50,6 +50,7 @@ cacheConfig : cv.igrp.platform.access_management.shared.config.CacheConfig
 cacheManager : cv.igrp.platform.access_management.shared.config.CacheConfig$FallbackCacheManager
 cancelUserInvitationCommandHandler : cv.igrp.platform.access_management.users.application.commands.CancelUserInvitationCommandHandler
 checkAuthorizationCommandHandler : cv.igrp.platform.access_management.authorization.application.commands.CheckAuthorizationCommandHandler
+checkPageAccessQueryHandler : cv.igrp.platform.access_management.page_access.application.queries.CheckPageAccessQueryHandler
 claimsEnrichmentService : cv.igrp.platform.access_management.oauth_server.infrastructure.security.ClaimsEnrichmentService
 closeSessionCommandHandler : cv.igrp.platform.access_management.session.application.commands.CloseSessionCommandHandler
 configurationService : cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService
@@ -209,6 +210,8 @@ notificationConfig : cv.igrp.platform.access_management.shared.config.Notificati
 notificationServiceConfig : cv.igrp.platform.access_management.shared.config.NotificationServiceConfig
 otpEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.OtpEntityRepository
 ownershipPolicy : cv.igrp.platform.access_management.shared.security.policy.OwnershipPolicy
+pageAccessController : cv.igrp.platform.access_management.page_access.interfaces.rest.PageAccessController
+pageAccessService : cv.igrp.platform.access_management.page_access.domain.service.PageAccessService
 pdfReportExporter : cv.igrp.platform.access_management.security_audit.application.export.PdfReportExporter
 pendingKeyDeletions : cv.igrp.platform.access_management.routes.domain.service.PendingKeyDeletions
 permissionCheckService : cv.igrp.platform.access_management.authorization.domain.service.PermissionCheckService
