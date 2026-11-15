@@ -132,7 +132,8 @@ public class JwtTokenConfig {
     @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> igrpTokenCustomizer(ClaimsEnrichmentService claimsService,
                                                                          SecurityAuditService auditService,
-                                                                         SessionIssuanceService sessionIssuanceService) {
+                                                                         SessionIssuanceService sessionIssuanceService,
+                                                                         TokenExchangeClaimsService tokenExchangeClaimsService) {
         return context -> {
             // ID_TOKEN branch — copy our SessionEntity binding id and device id
             // from the already-issued access token onto the id_token under
@@ -190,6 +191,18 @@ public class JwtTokenConfig {
                 return;
             }
             if (!OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
+                return;
+            }
+
+            if (AuthorizationGrantType.TOKEN_EXCHANGE.equals(context.getAuthorizationGrantType())) {
+                tokenExchangeClaimsService.customize(context);
+                auditService.logEvent(
+                        cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType.TOKEN_ISSUED,
+                        AuditCategory.AUTHENTICATION,
+                        Map.of("clientId", context.getRegisteredClient().getClientId(),
+                                "grantType", AuthorizationGrantType.TOKEN_EXCHANGE.getValue(),
+                                "sub", context.getClaims().build().getSubject(),
+                                "audience", context.getClaims().build().getAudience()));
                 return;
             }
 

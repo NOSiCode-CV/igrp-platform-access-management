@@ -32,6 +32,7 @@ class JwtTokenConfigTest {
     @Mock private ClaimsEnrichmentService claimsService;
     @Mock private SecurityAuditService auditService;
     @Mock private SessionIssuanceService sessionIssuanceService;
+    @Mock private TokenExchangeClaimsService tokenExchangeClaimsService;
     @Mock private JwtEncodingContext context;
 
     private OAuth2TokenCustomizer<JwtEncodingContext> customizer;
@@ -45,7 +46,8 @@ class JwtTokenConfigTest {
                 "",
                 "",
                 "");
-        customizer = config.igrpTokenCustomizer(claimsService, auditService, sessionIssuanceService);
+        customizer = config.igrpTokenCustomizer(claimsService, auditService, sessionIssuanceService,
+                tokenExchangeClaimsService);
         claims = JwtClaimsSet.builder().id("jti-1");
     }
 

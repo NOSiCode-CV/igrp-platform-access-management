@@ -60,7 +60,10 @@ public class FederatedClients {
 
     /** A client whose only grant is {@code client_credentials} is a service client, federated in the IdP. */
     public static boolean isServiceClient(Set<String> grantTypes) {
-        return grantTypes != null && grantTypes.equals(Set.of(CLIENT_CREDENTIALS));
+        // Token exchange is served locally by AM; the IdP registration remains client_credentials.
+        return grantTypes != null && grantTypes.contains(CLIENT_CREDENTIALS)
+                && Set.of(CLIENT_CREDENTIALS, "urn:ietf:params:oauth:grant-type:token-exchange")
+                        .containsAll(grantTypes);
     }
 
     public IssuedClient create(String clientId, String clientName) {

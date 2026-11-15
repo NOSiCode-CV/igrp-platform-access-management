@@ -111,7 +111,7 @@ public class OAuthClientService {
         boolean federated = entity.getIdp() != null;
         if (federated && !FederatedClients.isServiceClient(normalizeGrantTypes(request.getGrantTypes()))) {
             throw new IllegalArgumentException(
-                    "A service client federated in the IdP can only have the client_credentials grant: "
+                    "A federated service client requires client_credentials and may also enable token-exchange: "
                             + entity.getClientId());
         }
         applyRequestOntoEntity(request, entity);
