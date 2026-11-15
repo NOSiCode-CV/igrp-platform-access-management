@@ -69,7 +69,10 @@ public class RouteRegistrationRequestDTO {
         @Size(max = 255, message = "The field length <description> cannot be more than 255 characters")
         private String description;
 
-        /** The legacy permission of the route's {@code @PreAuthorize}. Not sent yet; used by the migration review (#37). */
+        /**
+         * The legacy permission of the route's {@code @PreAuthorize}, when it had one: the migration
+         * review suggests copying its assignments to the key (#37).
+         */
         private String legacyKey;
     }
 

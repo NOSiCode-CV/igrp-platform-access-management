@@ -29,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -108,6 +109,24 @@ public class RouteRegistrationService {
     private static final String CANCEL = """
             DELETE FROM t_permission_pending_deletion
              WHERE permission_id IN (SELECT id FROM t_permission WHERE permission_key IN (:keys))""";
+
+    /**
+     * #37: a suggestion to copy a live legacy permission's assignments to the
+     * route key that names it as its legacyKey, when a role or department of the
+     * key's application holds it. Once per pair, whatever was decided.
+     */
+    private static final String SUGGEST = """
+            INSERT INTO t_migration_suggestion (permission_id, legacy_permission_id)
+            SELECT k.id, l.id FROM t_permission k, t_permission l
+             WHERE k.permission_key = ? AND l.name = ? AND l.permission_key IS NULL AND l.status <> 'DELETED'
+               AND (EXISTS (SELECT 1 FROM t_role_permission rp
+                              JOIN t_role r ON r.id = rp.role_id
+                              JOIN t_department_application da ON da.department_id = r.department
+                             WHERE rp.permission = l.id AND da.application_id = k.application_id)
+                    OR EXISTS (SELECT 1 FROM t_permission_department pd
+                                 JOIN t_department_application da ON da.department_id = pd.department
+                                WHERE pd.permission_id = l.id AND da.application_id = k.application_id))
+            ON CONFLICT (permission_id, legacy_permission_id) DO NOTHING""";
 
     private static final String PENDING_COUNT =
             "SELECT count(*) FROM t_permission_pending_deletion WHERE service = ?";
@@ -209,10 +228,22 @@ public class RouteRegistrationService {
             pending = Objects.requireNonNullElse(jdbc.queryForObject(PENDING_COUNT, Integer.class, service), 0);
         }
 
+        suggestLegacyCopies(routes.values());
+
         LOGGER.info("[ROUTES] {} {} registered {} keys (routes and fields): {} created, {} unchanged, {} pending deletion, {} renamed",
                 service, registration.getVersion(), routes.size(), created, routes.size() - created, pending,
                 binding.renamed());
         return new RouteRegistrationResultDTO(created, routes.size() - created, pending, binding.renamed());
+    }
+
+    /** #37: the migration review suggestions for the routes that name their legacy permission. */
+    private void suggestLegacyCopies(Collection<RegisteredRouteDTO> routes) {
+        for (RegisteredRouteDTO route : routes) {
+            String legacy = route.getLegacyKey();
+            if (legacy != null && !legacy.isBlank() && !legacy.equals(route.getKey())) {
+                jdbc.update(SUGGEST, route.getKey(), legacy.trim());
+            }
+        }
     }
 
     /** Schedules the service's live keys this registration does not declare. */
