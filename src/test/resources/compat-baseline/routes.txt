@@ -109,6 +109,7 @@ POST /api/auth/reports/audit/archive
 POST /api/auth/reports/settings/archive
 POST /api/authorize/batch-check
 POST /api/authorize/check
+POST /api/authorize/page
 POST /api/clients
 POST /api/clients/{id}/rotate-secret
 POST /api/departments

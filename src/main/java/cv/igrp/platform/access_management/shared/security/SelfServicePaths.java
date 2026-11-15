@@ -13,9 +13,10 @@ import java.util.List;
  * AM's self-service routes (#36): any signed-in user reaches them, with no
  * permission key. They are what a user needs before, or regardless of, any
  * role: their own profile, applications, roles and permission set, the
- * invitation steps, the session endpoints and the branding every App Center
- * page loads. {@code GET /api/users/me/permissions} computes the keys, so it
- * cannot need one.
+ * invitation steps, the session endpoints, the branding every App Center
+ * page loads, and the page check every frontend middleware makes (#34).
+ * {@code GET /api/users/me/permissions} computes the keys, so it cannot need
+ * one.
  *
  * <p>This list is the documented exception to the route filter: these paths
  * are served by AM's own chain ({@code OAuth2SecurityConfiguration}), and are
@@ -39,6 +40,8 @@ public final class SelfServicePaths {
     static final List<Entry> ENTRIES = List.of(
             route(HttpMethod.DELETE, "/api/users/me/applications/favorites/{applicationCode}"),
             route(HttpMethod.GET, "/api/global-configuration"),
+            // #34: the page check, about the caller themselves.
+            route(HttpMethod.POST, "/api/authorize/page"),
             route(HttpMethod.GET, "/api/session"),
             route(HttpMethod.GET, "/api/session/check"),
             route(HttpMethod.GET, "/api/users/invite/by-token/{token}"),
