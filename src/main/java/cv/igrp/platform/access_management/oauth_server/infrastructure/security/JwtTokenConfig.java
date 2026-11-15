@@ -22,6 +22,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationCode;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
@@ -30,6 +31,8 @@ import org.springframework.security.oauth2.server.authorization.token.OAuth2Toke
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -129,46 +132,33 @@ public class JwtTokenConfig {
                 .build();
     }
 
+    /**
+     * @param userAccessTokenTtlSeconds a user's access token lifetime (#33): 5 minutes by default,
+     *                                  {@code IGRP_OAUTH_ACCESS_TOKEN_TTL_SECONDS}; a client with a shorter one keeps it
+     * @param refreshMaxLifetimeSeconds how long after signing in a refresh is still accepted (#33): the
+     *                                  user's session, {@code IGRP_SSO_SESSION_TIMEOUT_SECONDS}, 8 hours by default
+     */
     @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> igrpTokenCustomizer(ClaimsEnrichmentService claimsService,
                                                                          SecurityAuditService auditService,
-                                                                         SessionIssuanceService sessionIssuanceService) {
+                                                                         SessionIssuanceService sessionIssuanceService,
+                                                                         @Value("${igrp.oauth.access-token-ttl-seconds:300}")
+                                                                         long userAccessTokenTtlSeconds,
+                                                                         @Value("${igrp.oauth.refresh-max-lifetime-seconds:28800}")
+                                                                         long refreshMaxLifetimeSeconds) {
+        TokenLifetimes lifetimes = new TokenLifetimes(Duration.ofSeconds(userAccessTokenTtlSeconds),
+                Duration.ofSeconds(refreshMaxLifetimeSeconds));
         return context -> {
-            // ID_TOKEN branch — copy our SessionEntity binding id and device id
-            // from the already-issued access token onto the id_token under
-            // {@code igrp_session_id}, NOT under the OIDC-standard {@code sid}
-            // claim.
+            // ID_TOKEN branch: the user's profile, the device id, and our session
+            // binding id under {@code igrp_session_id} (until sessions go, #33 part 2).
             //
-            // Why a custom claim instead of the standard `sid`:
-            //
-            // Spring AS's {@code OidcLogoutAuthenticationProvider} (in
-            // spring-security-oauth2-authorization-server 1.5.x) compares the
-            // id_token's `sid` claim against {@code base64url(SHA-256(JSESSIONID))}
-            // — its own representation of "the current servlet session". When
-            // the values disagree it throws OAuth2AuthenticationException
-            // ("OpenID Connect 1.0 Logout Request Parameter: sid"), which
-            // ExceptionTranslationFilter resolves to a bare 401 Bearer because
-            // the auto-installed BearerTokenAuthenticationEntryPoint (MediaType.ALL
-            // matcher) wins the entry-point race. The browser-initiated POST
-            // /connect/logout then 401s on every logged-in user, while
-            // unauthenticated cURL (no JSESSIONID) succeeds because the
-            // provider's null-sessionId guard skips the check.
-            //
-            // Our `binding.sid()` is the SessionEntity UUID — never equal to
-            // Spring's hashed JSESSIONID by construction. Setting `sid` to it
-            // breaks RP-initiated logout 100% of the time for browsers and
-            // hides the failure on cURL.
-            //
-            // Resolution: keep our binding id in a separate claim
-            // ({@code igrp_session_id}). Spring AS sees no `sid` on the id_token,
-            // skips its check, and the logout request flows through to our
-            // SessionLogoutHandler — which now reads {@code igrp_session_id}
-            // to find the SessionEntity (see SessionLogoutHandler.extractSid).
-            //
-            // Note: we still record `sid` on the ACCESS token via the binding
-            // path below (line 234), because SessionEnforcementFilter resolves
-            // it from the access token JWT and never trips Spring AS's logout
-            // provider check (the provider only reads the id_token).
+            // The OIDC-standard {@code sid} that Spring AS writes stays as it is: it is
+            // base64url(SHA-256(the AM browser session id)), and Spring AS's
+            // OidcLogoutAuthenticationProvider compares it with the browser's AM session
+            // on /connect/logout. Removing it, or putting our binding id there, makes
+            // logout from the browser that signed in fail with a bare 401
+            // (OidcLoginFlowIT.logoutFromTheSameBrowser). It carries no authorization
+            // data, so the thin-token rule (#33) keeps it on the ID token only.
             if ("id_token".equals(context.getTokenType().getValue())) {
                 OAuth2Authorization auth = context.getAuthorization();
                 if (auth != null && auth.getAccessToken() != null
@@ -182,9 +172,12 @@ public class JwtTokenConfig {
                     if (deviceClaim != null) {
                         context.getClaims().claim("device_id", deviceClaim);
                     }
-                    Object superAdminClaim = accessClaims.get("is_super_admin");
-                    if (superAdminClaim != null) {
-                        context.getClaims().claim("is_super_admin", superAdminClaim);
+                    // The profile the scopes allow, for the frontend and userinfo (#33), of the
+                    // user the access token names.
+                    Object accessSubject = accessClaims.get("sub");
+                    if (accessSubject != null) {
+                        claimsService.buildIdTokenClaims(String.valueOf(accessSubject), context.getAuthorizedScopes())
+                                .forEach((key, value) -> context.getClaims().claim(key, value));
                     }
                 }
                 return;
@@ -251,6 +244,9 @@ public class JwtTokenConfig {
             String clientId = context.getRegisteredClient().getClientId();
             boolean isClientCredentials = AuthorizationGrantType.CLIENT_CREDENTIALS
                     .equals(context.getAuthorizationGrantType());
+            if (AuthorizationGrantType.REFRESH_TOKEN.equals(context.getAuthorizationGrantType())) {
+                lifetimes.checkRefreshAllowed(context.getAuthorization());
+            }
             if (isClientCredentials) {
                 internalSub = claimsService.resolveServiceAccountSubject(clientId)
                         .orElse(internalSub);
@@ -264,6 +260,10 @@ public class JwtTokenConfig {
                     context.getAuthorizedScopes()
             );
             claims.forEach((key, value) -> context.getClaims().claim(key, value));
+            context.getClaims().claim("azp", clientId);
+            if (!isClientCredentials) {
+                lifetimes.capUserAccessToken(context);
+            }
 
             // Phase B — bind the JWT to a server-side session and add sid/device_id claims.
             // Skipped for client_credentials (M2M) where there is no end-user subject.
@@ -326,6 +326,33 @@ public class JwtTokenConfig {
                     auditContext
             );
         };
+    }
+
+    /** A user's access token lifetime and the refresh token's maximum lifetime (#33). */
+    record TokenLifetimes(Duration userAccessToken, Duration refreshMax) {
+
+        /** A user's access token lives {@code userAccessToken}, or less when its client says so. */
+        void capUserAccessToken(JwtEncodingContext context) {
+            Duration clientTtl = context.getRegisteredClient().getTokenSettings().getAccessTokenTimeToLive();
+            Duration ttl = clientTtl != null && clientTtl.compareTo(userAccessToken) < 0 ? clientTtl : userAccessToken;
+            Instant issuedAt = context.getClaims().build().getIssuedAt();
+            context.getClaims().expiresAt((issuedAt != null ? issuedAt : Instant.now()).plus(ttl));
+        }
+
+        /**
+         * A refresh more than {@code refreshMax} after the sign-in (the authorization code's
+         * issue) is refused: the session is over. So is one with no sign-in to count from (a
+         * grant without a code): its refresh chain could otherwise last forever.
+         */
+        void checkRefreshAllowed(OAuth2Authorization authorization) {
+            OAuth2Authorization.Token<OAuth2AuthorizationCode> code = authorization == null ? null
+                    : authorization.getToken(OAuth2AuthorizationCode.class);
+            Instant signedIn = code == null ? null : code.getToken().getIssuedAt();
+            if (signedIn == null || Instant.now().isAfter(signedIn.plus(refreshMax))) {
+                throw new OAuth2AuthenticationException(new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT,
+                        "The sign-in is older than the refresh token's maximum lifetime; sign in again.", null));
+            }
+        }
     }
 
     private static String parseUserId(String sub) {

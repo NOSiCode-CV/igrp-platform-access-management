@@ -140,7 +140,7 @@ public class SessionIssuanceService {
         String deviceId = resolveDeviceId(request, clientId);
         AuthorizationGrantType grantType = context.getAuthorizationGrantType();
         Instant now = Instant.now();
-        long ttlSeconds = effectiveSlideSeconds(context.getRegisteredClient());
+        long ttlSeconds = effectiveSlideSeconds(context.getRegisteredClient(), issuedLifetimeSeconds(context));
 
         if (grantType != null && AuthorizationGrantType.REFRESH_TOKEN.equals(grantType)) {
             Optional<SessionEntity> existing = locateSessionForRefresh(context, userId, deviceId);
@@ -174,15 +174,34 @@ public class SessionIssuanceService {
      * longer tokens are covered, not just the seeded default client.
      */
     long effectiveSlideSeconds(RegisteredClient client) {
+        return effectiveSlideSeconds(client, null);
+    }
+
+    /**
+     * As {@link #effectiveSlideSeconds(RegisteredClient)}, from the lifetime of the token
+     * being issued when it is known: a user's token may live less than its client allows
+     * (v3-25, #33, 5 minutes by default), and the slide follows the token, not the client.
+     */
+    long effectiveSlideSeconds(RegisteredClient client, Long issuedLifetimeSeconds) {
         long idle = sessionProperties.getTimeoutSeconds();
-        if (client == null
-                || client.getTokenSettings() == null
-                || client.getTokenSettings().getAccessTokenTimeToLive() == null) {
+        Long lifetime = issuedLifetimeSeconds;
+        if (lifetime == null && client != null && client.getTokenSettings() != null
+                && client.getTokenSettings().getAccessTokenTimeToLive() != null) {
+            lifetime = client.getTokenSettings().getAccessTokenTimeToLive().toSeconds();
+        }
+        if (lifetime == null) {
             return idle;
         }
-        long floor = client.getTokenSettings().getAccessTokenTimeToLive().toSeconds()
-                + sessionProperties.getRefreshGraceSeconds();
-        return Math.max(idle, floor);
+        return Math.max(idle, lifetime + sessionProperties.getRefreshGraceSeconds());
+    }
+
+    /** The token's {@code exp - iat}, or null when either is not set yet. */
+    private static Long issuedLifetimeSeconds(JwtEncodingContext context) {
+        var claims = context.getClaims().build();
+        if (claims.getIssuedAt() == null || claims.getExpiresAt() == null) {
+            return null;
+        }
+        return claims.getExpiresAt().getEpochSecond() - claims.getIssuedAt().getEpochSecond();
     }
 
     private Optional<SessionEntity> locateSessionForRefresh(JwtEncodingContext context,

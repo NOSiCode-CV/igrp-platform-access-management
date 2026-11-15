@@ -65,4 +65,11 @@ class SessionIssuanceSlideTest {
     void noClient_fallsBackToIdleTimeout() {
         assertEquals(1800L, service(1800).effectiveSlideSeconds(null));
     }
+
+    @Test
+    void issuedTokenLifetimeWinsOverTheClients() {
+        // v3-25 (#33): a user's token lives 5 minutes though the client allows 60.
+        assertEquals(1800L, service(1800).effectiveSlideSeconds(client(Duration.ofMinutes(60)), 300L));
+        assertEquals(3900L, service(1800).effectiveSlideSeconds(client(Duration.ofMinutes(60)), null));
+    }
 }

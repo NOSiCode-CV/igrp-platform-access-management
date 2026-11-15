@@ -17,6 +17,10 @@ import java.util.UUID;
  * Seeds the default iGRP OAuth client on first startup when it does not
  * already exist. The seeded secret comes from configuration and is BCrypt-
  * encoded before being persisted.
+ *
+ * <p>Every frontend signs in through this one client, which gives single
+ * sign-on (v3-25, #33): its redirect and post-logout URIs are comma-separated
+ * lists, one per frontend.
  */
 @Configuration
 public class DefaultOAuthClientBootstrap {
@@ -39,7 +43,7 @@ public class DefaultOAuthClientBootstrap {
             PasswordEncoder passwordEncoder,
             @Value("${igrp.oauth.default-client.client-id:" + DEFAULT_CLIENT_ID + "}") String defaultClientId,
             @Value("${igrp.oauth.default-client.secret:}") String defaultClientSecret,
-            @Value("${igrp.oauth.default-client.access-token-ttl:3600}") int accessTokenTtl,
+            @Value("${igrp.oauth.default-client.access-token-ttl:300}") int accessTokenTtl,
             @Value("${igrp.oauth.default-client.refresh-token-ttl:86400}") int refreshTokenTtl,
             @Value("${igrp.oauth.default-client.authorization-code-ttl:300}") int authorizationCodeTtl,
             @Value("${igrp.oauth.default-client.redirect-uri:}") String redirectUri,
@@ -78,15 +82,24 @@ public class DefaultOAuthClientBootstrap {
             client.setRefreshTokenTtl(refreshTokenTtl);
             client.setAuthorizationCodeTtl(authorizationCodeTtl);
             client.setScopes(new HashSet<>(Set.of("openid", "profile", "email")));
-            client.setRedirectUris(redirectUri != null && !redirectUri.isBlank()
-                    ? new HashSet<>(Set.of(redirectUri))
-                    : new HashSet<>());
-            client.setPostLogoutRedirectUris(postLogoutRedirectUri != null && !postLogoutRedirectUri.isBlank()
-                    ? new HashSet<>(Set.of(postLogoutRedirectUri))
-                    : new HashSet<>());
+            client.setRedirectUris(uris(redirectUri));
+            client.setPostLogoutRedirectUris(uris(postLogoutRedirectUri));
             client.setGrantTypes(new HashSet<>(Set.of("authorization_code", "refresh_token", "client_credentials")));
             repository.save(client);
             LOGGER.info("Seeded default OAuth client '{}'", defaultClientId);
         };
+    }
+
+    /** A comma-separated list of URIs; blanks are ignored. */
+    private static Set<String> uris(String list) {
+        Set<String> uris = new HashSet<>();
+        if (list != null) {
+            for (String uri : list.split(",")) {
+                if (!uri.isBlank()) {
+                    uris.add(uri.trim());
+                }
+            }
+        }
+        return uris;
     }
 }

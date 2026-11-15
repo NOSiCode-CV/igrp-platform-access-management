@@ -190,7 +190,6 @@ invitationNotificationSender : cv.igrp.platform.access_management.notification.d
 inviteUserCommandHandler : cv.igrp.platform.access_management.users.application.commands.InviteUserCommandHandler
 jpaConfig : cv.igrp.platform.access_management.shared.config.JpaConfig
 jwkSource : cv.igrp.platform.access_management.oauth_server.infrastructure.security.RotatingJWKSource
-jwtAuthenticationConverterConfig : cv.igrp.platform.access_management.shared.security.JwtAuthenticationConverterConfig
 jwtDecoderConfiguration : cv.igrp.platform.access_management.shared.security.JwtDecoderConfiguration
 jwtTokenConfig : cv.igrp.platform.access_management.oauth_server.infrastructure.security.JwtTokenConfig
 keyUtils : cv.igrp.platform.access_management.oauth_server.infrastructure.security.KeyUtils

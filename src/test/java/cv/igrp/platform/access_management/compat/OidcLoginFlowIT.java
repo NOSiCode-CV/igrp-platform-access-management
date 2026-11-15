@@ -18,7 +18,9 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static cv.igrp.platform.access_management.compat.CompatSupport.jsonObject;
@@ -44,6 +46,8 @@ class OidcLoginFlowIT extends AbstractCompatIT {
 
     static final String CLIENT_ID = "compat-web";
     static final String REDIRECT_URI = "https://app.example.cv/callback";
+    /** A second frontend on the same client: one client for every frontend gives single sign-on (#33). */
+    static final String OTHER_APP_REDIRECT_URI = "https://other.example.cv/callback";
     static final String POST_LOGOUT_URI = "https://app.example.cv/logged-out";
 
     @Autowired
@@ -66,7 +70,7 @@ class OidcLoginFlowIT extends AbstractCompatIT {
                 "{\"clientId\":" + q(CLIENT_ID) + ",\"clientName\":\"Compat Web App\",\"requirePkce\":true,"
                         + "\"scopes\":[\"openid\",\"profile\",\"email\"],"
                         + "\"grantTypes\":[\"authorization_code\",\"refresh_token\"],"
-                        + "\"redirectUris\":[" + q(REDIRECT_URI) + "],"
+                        + "\"redirectUris\":[" + q(REDIRECT_URI) + "," + q(OTHER_APP_REDIRECT_URI) + "],"
                         + "\"postLogoutRedirectUris\":[" + q(POST_LOGOUT_URI) + "]}");
         assertTrue(created.statusCode() / 100 == 2, created.statusCode() + " " + created.body());
         clientSecret = (String) jsonObject(created.body()).get("clientSecret");
@@ -79,19 +83,15 @@ class OidcLoginFlowIT extends AbstractCompatIT {
         tokens = signIn();
     }
 
-    /** authorization_code + PKCE through the external IdP; the token response. */
+    /** authorization_code + PKCE through the external IdP, in a new browser; the token response. */
     private Map<String, Object> signIn() throws Exception {
-        TestBrowser browser = new TestBrowser();
+        return signIn(new TestBrowser());
+    }
+
+    private Map<String, Object> signIn(TestBrowser browser) throws Exception {
         codeVerifier = randomUrlSafe(48);
         String state = randomUrlSafe(16);
-
-        String authorize = CompatEnvironment.ISSUER + "/oauth2/authorize?response_type=code"
-                + "&client_id=" + CLIENT_ID
-                + "&redirect_uri=" + URLEncoder.encode(REDIRECT_URI, StandardCharsets.UTF_8)
-                + "&scope=" + URLEncoder.encode("openid profile email", StandardCharsets.UTF_8)
-                + "&state=" + state
-                + "&code_challenge=" + s256(codeVerifier)
-                + "&code_challenge_method=S256";
+        String authorize = authorizeUrl(REDIRECT_URI, state);
 
         // To the IdP's login page: /oauth2/authorize -> /oauth2/authorization/external-idp -> Keycloak.
         TestBrowser.Hop toLogin = browser.followUntil(browser.get(authorize), url -> false);
@@ -113,16 +113,31 @@ class OidcLoginFlowIT extends AbstractCompatIT {
         assertNotNull(toClient.stoppedAt(), "never reached the client; trail: " + toClient.trail()
                 + "\nlast body: " + toClient.response().body());
 
-        Map<String, String> callback = TestBrowser.queryParameters(toClient.stoppedAt());
+        return exchange(toClient.stoppedAt(), state, REDIRECT_URI);
+    }
+
+    private String authorizeUrl(String redirectUri, String state) throws Exception {
+        return CompatEnvironment.ISSUER + "/oauth2/authorize?response_type=code"
+                + "&client_id=" + CLIENT_ID
+                + "&redirect_uri=" + URLEncoder.encode(redirectUri, StandardCharsets.UTF_8)
+                + "&scope=" + URLEncoder.encode("openid profile email", StandardCharsets.UTF_8)
+                + "&state=" + state
+                + "&code_challenge=" + s256(codeVerifier)
+                + "&code_challenge_method=S256";
+    }
+
+    /** The code in the redirect back to the client, exchanged for tokens. */
+    private Map<String, Object> exchange(String callbackUrl, String state, String redirectUri) {
+        Map<String, String> callback = TestBrowser.queryParameters(callbackUrl);
         assertEquals(state, callback.get("state"));
         String code = callback.get("code");
-        assertNotNull(code, toClient.stoppedAt());
+        assertNotNull(code, callbackUrl);
 
         HttpResponse<String> token = api.postForm("/oauth2/token", CLIENT_ID, clientSecret,
                 TestBrowser.encode(Map.of(
                         "grant_type", "authorization_code",
                         "code", code,
-                        "redirect_uri", REDIRECT_URI,
+                        "redirect_uri", redirectUri,
                         "code_verifier", codeVerifier)));
         assertEquals(200, token.statusCode(), token.body());
         Map<String, Object> issued = jsonObject(token.body());
@@ -197,6 +212,109 @@ class OidcLoginFlowIT extends AbstractCompatIT {
         assertEquals(0, thisSignIn(accessToken), "logout revokes the authorization of this sign-in");
         assertEquals(401, api.get("/api/users/me/permissions?applicationCode=" + application, accessToken)
                 .statusCode(), "the next miss is 401");
+    }
+
+    @Test
+    @Order(5)
+    @DisplayName("Access and ID tokens say only who the caller is (#33)")
+    void thinTokens() {
+        Map<String, Object> access = claims((String) tokens.get("access_token"));
+        // sid goes with the sessions, in the second part of #33.
+        assertEquals(Set.of("sub", "iss", "aud", "azp", "exp", "iat", "nbf", "jti", "scope", "device_id", "email",
+                "name", "preferred_username", "is_super_admin", "sid"), access.keySet(), access.toString());
+        assertEquals(CLIENT_ID, access.get("azp"));
+        assertEquals(CompatEnvironment.KEYCLOAK_EMAIL, access.get("email"));
+
+        Map<String, Object> id = claims((String) tokens.get("id_token"));
+        assertTrue(Collections.disjoint(id.keySet(), Set.of("permissions", "resource_access", "selectedRole", "org",
+                "metadata")), id.toString());
+        // Spring's OIDC sid, which RP-initiated logout checks, is not the iGRP session id.
+        assertNotNull(id.get("sid"), id.toString());
+        assertNotEquals(access.get("sid"), id.get("sid"));
+        // The ID token carries the profile the frontend shows (also served by userinfo).
+        assertEquals(CompatEnvironment.KEYCLOAK_EMAIL, id.get("email"));
+        assertTrue(id.containsKey("preferred_username") && id.containsKey("is_super_admin"), id.toString());
+    }
+
+    @Test
+    @Order(6)
+    @DisplayName("A user's access token lives 5 minutes by default, also after a refresh (#33)")
+    void fiveMinuteAccessToken() throws Exception {
+        Map<String, Object> current = signIn();
+        assertEquals(300, lifetime((String) current.get("access_token")));
+        // expires_in is counted when the response is written: a second may have passed.
+        assertTrue(((Number) current.get("expires_in")).intValue() >= 298, current.toString());
+
+        HttpResponse<String> response = api.postForm("/oauth2/token", CLIENT_ID, clientSecret,
+                TestBrowser.encode(Map.of("grant_type", "refresh_token",
+                        "refresh_token", (String) current.get("refresh_token"))));
+        assertEquals(200, response.statusCode(), response.body());
+        assertEquals(300, lifetime((String) jsonObject(response.body()).get("access_token")));
+    }
+
+    @Test
+    @Order(7)
+    @DisplayName("One login: a second frontend on the shared client signs in without the IdP (#33)")
+    void singleSignOn() throws Exception {
+        TestBrowser browser = new TestBrowser();
+        signIn(browser);
+
+        String state = randomUrlSafe(16);
+        codeVerifier = randomUrlSafe(48);
+        TestBrowser.Hop toOther = browser.followUntil(browser.get(authorizeUrl(OTHER_APP_REDIRECT_URI, state)),
+                url -> url.startsWith(OTHER_APP_REDIRECT_URI));
+        assertNotNull(toOther.stoppedAt(), "never reached the second frontend; trail: " + toOther.trail());
+        assertTrue(toOther.trail().stream().noneMatch(hop -> hop.contains(CompatEnvironment.keycloakIssuer())),
+                "the second frontend went to the IdP again: " + toOther.trail());
+        Map<String, Object> other = exchange(toOther.stoppedAt(), state, OTHER_APP_REDIRECT_URI);
+        assertEquals(subject((String) tokens.get("access_token")), subject((String) other.get("access_token")));
+    }
+
+    @Test
+    @Order(8)
+    @DisplayName("Silent refresh works until the refresh token's maximum lifetime, then is refused (#33)")
+    void refreshUntilMaximumLifetime() throws Exception {
+        Map<String, Object> current = signIn();
+        String accessToken = (String) current.get("access_token");
+        // The sign-in happened 8 hours and a minute ago: past IGRP_SSO_SESSION_TIMEOUT_SECONDS (8h).
+        assertEquals(1, jdbc.update("""
+                UPDATE oauth2_authorization
+                   SET authorization_code_issued_at = authorization_code_issued_at - interval '8 hours 1 minute'
+                 WHERE access_token_value = ?""", accessToken));
+
+        HttpResponse<String> late = api.postForm("/oauth2/token", CLIENT_ID, clientSecret,
+                TestBrowser.encode(Map.of("grant_type", "refresh_token",
+                        "refresh_token", (String) current.get("refresh_token"))));
+        assertEquals(400, late.statusCode(), late.body());
+        assertEquals("invalid_grant", jsonObject(late.body()).get("error"));
+    }
+
+    @Test
+    @Order(9)
+    @DisplayName("Logout from the browser that signed in, its AM session cookie included, works (#33)")
+    void logoutFromTheSameBrowser() throws Exception {
+        TestBrowser browser = new TestBrowser();
+        Map<String, Object> current = signIn(browser);
+        String accessToken = (String) current.get("access_token");
+
+        String logout = CompatEnvironment.ISSUER + "/connect/logout?id_token_hint=" + current.get("id_token")
+                + "&client_id=" + CLIENT_ID
+                + "&post_logout_redirect_uri=" + URLEncoder.encode(POST_LOGOUT_URI, StandardCharsets.UTF_8);
+        TestBrowser.Hop hop = browser.followUntil(browser.get(logout), url -> url.startsWith(POST_LOGOUT_URI));
+
+        assertNotNull(hop.stoppedAt(), "logout did not return to the client; trail: " + hop.trail()
+                + "\nlast: " + hop.response().statusCode() + " " + hop.response().body());
+        assertEquals(401, api.get("/api/users/me", accessToken).statusCode());
+    }
+
+    /** A JWT's claims, read without verifying it (it came from this service). */
+    private static Map<String, Object> claims(String jwt) {
+        return jsonObject(new String(Base64.getUrlDecoder().decode(jwt.split("\\.")[1]), StandardCharsets.UTF_8));
+    }
+
+    private static long lifetime(String jwt) {
+        Map<String, Object> claims = claims(jwt);
+        return ((Number) claims.get("exp")).longValue() - ((Number) claims.get("iat")).longValue();
     }
 
     /**
