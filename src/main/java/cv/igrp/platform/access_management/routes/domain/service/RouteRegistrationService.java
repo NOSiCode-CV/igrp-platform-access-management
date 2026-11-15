@@ -182,7 +182,14 @@ public class RouteRegistrationService {
         for (RegisteredRouteDTO route : routes.values()) {
             PermissionEntity permission = existing.get(route.getKey());
             if (permission == null) {
-                permissions.save(newPermission(service, application, registration.getVersion(), route));
+                PermissionEntity fresh = newPermission(service, application, registration.getVersion(), route);
+                // Names are unique (#12: the grant endpoints look permissions up by name). A
+                // declared name another permission already has gives way to the key.
+                if (!fresh.getName().equals(route.getKey())
+                        && permissions.findByNameAndStatusNot(fresh.getName(), Status.DELETED).isPresent()) {
+                    fresh.setName(route.getKey());
+                }
+                permissions.save(fresh);
             } else if (permission.getStatus() == Status.DELETED) {
                 // Deleted after its grace period, declared again (a rollback): back, with no assignments.
                 permission.setStatus(Status.ACTIVE);

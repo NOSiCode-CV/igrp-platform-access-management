@@ -43,7 +43,8 @@ import static cv.igrp.platform.access_management.shared.infrastructure.service.C
  *         when the caller authenticated through a federated provider.</li>
  *     <li>{@code selectedRole} — the user's active role code.</li>
  *     <li>{@code org} — the interactive user's active role department.</li>
- *     <li>{@code permissions} — flattened permission codes for the active role.</li>
+ *     <li>{@code permissions} — flattened permission codes for the active role: each permission's key,
+ *         or its legacy name when it has none (#12).</li>
  *     <li>{@code resource_access} — Keycloak-compatible per-client role map.</li>
  *     <li>Standard identity claims — {@code name}, {@code given_name},
  *         {@code family_name}, {@code preferred_username}, {@code email},
@@ -56,16 +57,24 @@ import static cv.igrp.platform.access_management.shared.infrastructure.service.C
 public class ClaimsEnrichmentService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(ClaimsEnrichmentService.class);
+    private static final String CLAIM_GIVEN_NAME = "given_name";
+    private static final String CLAIM_FAMILY_NAME = "family_name";
+    private static final String CLAIM_PREFERRED_USERNAME = "preferred_username";
+    private static final String CLAIM_EMAIL = "email";
+    private static final String CLAIM_EMAIL_VERIFIED = "email_verified";
+    private static final String CLAIM_PICTURE = "picture";
+    private static final String CLAIM_PHONE_NUMBER = "phone_number";
+    private static final String CLAIM_LOCALE = "locale";
     private static final Set<String> RESERVED_METADATA_KEYS = Set.of(
             "name",
-            "given_name",
-            "family_name",
-            "preferred_username",
-            "email",
-            "email_verified",
-            "picture",
-            "phone_number",
-            "locale",
+            CLAIM_GIVEN_NAME,
+            CLAIM_FAMILY_NAME,
+            CLAIM_PREFERRED_USERNAME,
+            CLAIM_EMAIL,
+            CLAIM_EMAIL_VERIFIED,
+            CLAIM_PICTURE,
+            CLAIM_PHONE_NUMBER,
+            CLAIM_LOCALE,
             "nic",
             "is_super_admin"
     );
@@ -291,44 +300,39 @@ public class ClaimsEnrichmentService {
                     igrpUser.getName(),
                     asString(metadata.get("name"))
             ));
-            putIfPresent(claims, "given_name", firstNonBlank(
-                    asString(metadata.get("given_name"))
+            putIfPresent(claims, CLAIM_GIVEN_NAME, firstNonBlank(
+                    asString(metadata.get(CLAIM_GIVEN_NAME))
             ));
-            putIfPresent(claims, "family_name", firstNonBlank(
-                    asString(metadata.get("family_name"))
+            putIfPresent(claims, CLAIM_FAMILY_NAME, firstNonBlank(
+                    asString(metadata.get(CLAIM_FAMILY_NAME))
             ));
-            putIfPresent(claims, "preferred_username", firstNonBlank(
+            putIfPresent(claims, CLAIM_PREFERRED_USERNAME, firstNonBlank(
                     igrpUser.getUsername(),
-                    asString(metadata.get("preferred_username"))
+                    asString(metadata.get(CLAIM_PREFERRED_USERNAME))
             ));
-            putIfPresent(claims, "picture", firstNonBlank(
+            putIfPresent(claims, CLAIM_PICTURE, firstNonBlank(
                     igrpUser.getPicture(),
-                    asString(metadata.get("picture"))
+                    asString(metadata.get(CLAIM_PICTURE))
             ));
-            putIfPresent(claims, "locale", firstNonBlank(
-                    asString(metadata.get("locale"))
+            putIfPresent(claims, CLAIM_LOCALE, firstNonBlank(
+                    asString(metadata.get(CLAIM_LOCALE))
             ));
         }
 
-        if (hasScope(scopes, "email")) {
-            putIfPresent(claims, "email", firstNonBlank(
+        if (hasScope(scopes, CLAIM_EMAIL)) {
+            putIfPresent(claims, CLAIM_EMAIL, firstNonBlank(
                     igrpUser.getEmail(),
-                    asString(metadata.get("email"))
+                    asString(metadata.get(CLAIM_EMAIL))
             ));
 
-            Boolean emailVerified = firstNonNullBoolean(
-                    igrpUser.getEmailVerified(),
-                    metadata.get("email_verified")
-            );
-            if (emailVerified != null) {
-                claims.put("email_verified", emailVerified);
-            }
+            firstNonNullBoolean(igrpUser.getEmailVerified(), metadata.get(CLAIM_EMAIL_VERIFIED))
+                    .ifPresent(emailVerified -> claims.put(CLAIM_EMAIL_VERIFIED, emailVerified));
         }
 
         if (hasScope(scopes, "phone")) {
-            putIfPresent(claims, "phone_number", firstNonBlank(
+            putIfPresent(claims, CLAIM_PHONE_NUMBER, firstNonBlank(
                     igrpUser.getPhoneNumber(),
-                    asString(metadata.get("phone_number"))
+                    asString(metadata.get(CLAIM_PHONE_NUMBER))
             ));
         }
 
@@ -357,6 +361,16 @@ public class ClaimsEnrichmentService {
                 ));
     }
 
+    /**
+     * A permission as the {@code permissions} claim names it: its key when it
+     * has one (#12), otherwise its legacy name. Display names are edited by
+     * administrators, so they must never decide authorization.
+     */
+    static String permissionCode(PermissionEntity permission) {
+        String key = permission.getPermissionKey();
+        return key != null && !key.isBlank() ? key : permission.getName();
+    }
+
     private Set<String> permissions(Optional<IGRPUserEntity> user,
                                     Optional<ServiceAccountEntity> serviceAccount) {
         if (user.isPresent()) {
@@ -375,7 +389,7 @@ public class ClaimsEnrichmentService {
             return Collections.emptySet();
         }
         return perms.stream()
-                .map(PermissionEntity::getName)
+                .map(ClaimsEnrichmentService::permissionCode)
                 .filter(code -> code != null && !code.isBlank())
                 .collect(Collectors.toSet());
     }
@@ -393,7 +407,7 @@ public class ClaimsEnrichmentService {
                         ? role.getPermissions().stream()
                         : Set.<PermissionEntity>of().stream())
                 .filter(this::isActivePermission)
-                .map(PermissionEntity::getName)
+                .map(ClaimsEnrichmentService::permissionCode)
                 .filter(code -> code != null && !code.isBlank())
                 .collect(Collectors.toCollection(HashSet::new));
 
@@ -403,7 +417,7 @@ public class ClaimsEnrichmentService {
         if (directGrants != null) {
             directGrants.stream()
                     .filter(this::isActivePermission)
-                    .map(PermissionEntity::getName)
+                    .map(ClaimsEnrichmentService::permissionCode)
                     .filter(code -> code != null && !code.isBlank())
                     .forEach(result::add);
         }
@@ -471,15 +485,15 @@ public class ClaimsEnrichmentService {
         return value != null ? String.valueOf(value) : null;
     }
 
-    private Boolean firstNonNullBoolean(Object... values) {
+    private Optional<Boolean> firstNonNullBoolean(Object... values) {
         for (Object value : values) {
             if (value instanceof Boolean bool) {
-                return bool;
+                return Optional.of(bool);
             }
             if (value instanceof String str && !str.isBlank()) {
-                return Boolean.valueOf(str);
+                return Optional.of(Boolean.valueOf(str));
             }
         }
-        return null;
+        return Optional.empty();
     }
 }
