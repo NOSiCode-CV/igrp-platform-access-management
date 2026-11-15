@@ -66,6 +66,7 @@ cv.igrp.framework.auth.core.config.MethodSecurityEnableConfig : cv.igrp.framewor
 cv.igrp.framework.auth.core.route.RouteSecurityAutoConfiguration : cv.igrp.framework.auth.core.route.RouteSecurityAutoConfiguration
 cv.igrp.framework.auth.core.scope.ScopeAutoConfiguration : cv.igrp.framework.auth.core.scope.ScopeAutoConfiguration
 databaseMigrationRunner : cv.igrp.platform.access_management.shared.config.DatabaseMigrationRunner
+decideMigrationSuggestionCommandHandler : cv.igrp.platform.access_management.migration_review.application.commands.DecideMigrationSuggestionCommandHandler
 defaultOAuthClientBootstrap : cv.igrp.platform.access_management.oauth_server.infrastructure.bootstrap.DefaultOAuthClientBootstrap
 defaultServiceAccountBootstrap : cv.igrp.platform.access_management.oauth_server.infrastructure.bootstrap.DefaultServiceAccountBootstrap
 deleteApplicationCommandHandler : cv.igrp.platform.access_management.app.application.commands.DeleteApplicationCommandHandler
@@ -192,6 +193,7 @@ killSessionCommandHandler : cv.igrp.platform.access_management.session.applicati
 killSessionsByDepartmentCommandHandler : cv.igrp.platform.access_management.session.application.commands.KillSessionsByDepartmentCommandHandler
 killSessionsByRoleCommandHandler : cv.igrp.platform.access_management.session.application.commands.KillSessionsByRoleCommandHandler
 linkResourceToApplicationCommandHandler : cv.igrp.platform.access_management.app.application.commands.LinkResourceToApplicationCommandHandler
+listMigrationSuggestionsQueryHandler : cv.igrp.platform.access_management.migration_review.application.queries.ListMigrationSuggestionsQueryHandler
 listPermissionsQueryHandler : cv.igrp.platform.access_management.permissions.application.queries.ListPermissionsQueryHandler
 listSessionsQueryHandler : cv.igrp.platform.access_management.session.application.queries.ListSessionsQueryHandler
 localeResolver : cv.igrp.platform.access_management.shared.i18n.IgrpLocaleResolver
@@ -202,6 +204,8 @@ menuEntrySyncService : cv.igrp.platform.access_management.m2m.domain.service.Men
 menuEntryValidator : cv.igrp.platform.access_management.app.domain.service.MenuEntryValidator
 menuSpecificationBuilder : cv.igrp.platform.access_management.app.specs.MenuSpecificationBuilder
 messages : cv.igrp.platform.access_management.shared.i18n.Messages
+migrationReviewController : cv.igrp.platform.access_management.migration_review.interfaces.rest.MigrationReviewController
+migrationSuggestions : cv.igrp.platform.access_management.migration_review.domain.service.MigrationSuggestions
 minioAutoConfiguration : cv.igrp.framework.filemanager.minio.MinioAutoConfiguration
 minioService : cv.igrp.framework.filemanager.minio.MinioService
 minioStorageProviderProperties : cv.igrp.framework.filemanager.minio.MinioStorageProviderProperties

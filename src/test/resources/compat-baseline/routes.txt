@@ -60,6 +60,7 @@ GET /api/departments/{id}
 GET /api/files/url
 GET /api/global-configuration
 GET /api/m2m/global-configuration
+GET /api/migration/suggestions
 GET /api/permissions
 GET /api/roles/by-code/{code}
 GET /api/roles/{id}
@@ -129,6 +130,8 @@ POST /api/m2m/sync/applications/{code}/menus
 POST /api/m2m/sync/permissions
 POST /api/m2m/sync/resources
 POST /api/m2m/users
+POST /api/migration/suggestions/{id}/confirm
+POST /api/migration/suggestions/{id}/dismiss
 POST /api/routes/register
 POST /api/service-accounts
 POST /api/session/close
