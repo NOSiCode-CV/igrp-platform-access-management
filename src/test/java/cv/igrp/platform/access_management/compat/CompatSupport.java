@@ -149,11 +149,26 @@ public final class CompatSupport {
 
     /** As {@link #registerM2MClient(String)}, with the client owned by an application (null for none). */
     public M2MClient registerM2MClient(String clientId, Integer applicationId) {
-        return registerM2MClient(clientId, applicationId,
-                List.of("igrp.m2m.sync", "igrp.users.list", "igrp.departments.list", "igrp.departments.view"));
+        return registerM2MClient(clientId, applicationId, M2M_KEYS);
     }
 
-    /** As {@link #registerM2MClient(String, Integer)}, with exactly these permissions on the service account. */
+    /**
+     * What the SDK's M2M calls and the starter's route registration need (#36):
+     * the keys of AM's routes that were guarded by igrp.m2m.sync, igrp.users.list,
+     * igrp.departments.list and igrp.departments.view.
+     */
+    public static final List<String> M2M_KEYS = List.of(
+            "access-management-api.m2m.sync.applications.create",
+            "access-management-api.m2m.sync.applications.menus.create",
+            "access-management-api.m2m.sync.permissions.create",
+            "access-management-api.m2m.sync.resources.create",
+            "access-management-api.m2m.global-configuration.list",
+            "access-management-api.m2m.users.create",
+            "access-management-api.m2m.departments.create",
+            "access-management-api.m2m.roles.create",
+            "access-management-api.routes.register.create");
+
+    /** As {@link #registerM2MClient(String, Integer)}, with exactly these permissions (keys or legacy names). */
     public M2MClient registerM2MClient(String clientId, Integer applicationId, List<String> permissionNames) {
         String admin = superadminToken();
         HttpResponse<String> created = postJson("/api/clients", admin,
@@ -166,7 +181,7 @@ public final class CompatSupport {
         Map<String, Object> client = jsonObject(created.body());
 
         List<Integer> permissionIds = permissionNames.isEmpty() ? List.of() : jdbc.queryForList(
-                "select id from t_permission where name in ("
+                "select id from t_permission where coalesce(permission_key, name) in ("
                         + String.join(",", permissionNames.stream().map(n -> "?").toList()) + ")",
                 Integer.class, permissionNames.toArray());
         HttpResponse<String> account = postJson("/api/service-accounts", admin,

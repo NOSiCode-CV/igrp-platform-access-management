@@ -3,7 +3,6 @@ package cv.igrp.platform.access_management.oauth_server.interfaces.rest;
 import cv.igrp.platform.access_management.oauth_server.application.ServiceAccountService;
 import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAccountDTO;
 import cv.igrp.platform.access_management.oauth_server.application.dto.ServiceAccountRequestDTO;
-import cv.igrp.framework.auth.generated.PermissionsRegistry.Permission;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -12,7 +11,6 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -54,7 +52,6 @@ public class ServiceAccountController {
     @GetMapping
     @Operation(summary = "List service accounts",
             description = "This Permission is required: igrp.client.list")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_LIST)")
     public ResponseEntity<List<ServiceAccountDTO>> findAll() {
         return ResponseEntity.ok(service.findAll());
     }
@@ -62,7 +59,6 @@ public class ServiceAccountController {
     @GetMapping("/{id}")
     @Operation(summary = "Get service account by id",
             description = "This Permission is required: igrp.client.view")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_VIEW)")
     public ResponseEntity<ServiceAccountDTO> findById(@PathVariable UUID id) {
         return ResponseEntity.ok(service.findById(id));
     }
@@ -83,7 +79,6 @@ public class ServiceAccountController {
             @ApiResponse(responseCode = "409", description = "This OAuth client already has a service account",
                     content = @Content)
     })
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_CREATE)")
     public ResponseEntity<ServiceAccountDTO> create(@Valid @RequestBody ServiceAccountRequestDTO request) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.create(request));
     }
@@ -105,7 +100,6 @@ public class ServiceAccountController {
                     description = "Reassigning to an OAuth client that already has a service account",
                     content = @Content)
     })
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_UPDATE)")
     public ResponseEntity<ServiceAccountDTO> update(@PathVariable UUID id,
                                                     @Valid @RequestBody ServiceAccountRequestDTO request) {
         return ResponseEntity.ok(service.update(id, request));
@@ -118,7 +112,6 @@ public class ServiceAccountController {
             @ApiResponse(responseCode = "204", description = "Deleted", content = @Content),
             @ApiResponse(responseCode = "404", description = "No service account with this id", content = @Content)
     })
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_CLIENT_DELETE)")
     public ResponseEntity<Void> delete(@PathVariable UUID id) {
         service.delete(id);
         return ResponseEntity.noContent().build();

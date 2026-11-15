@@ -19,8 +19,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 /**
  * v3-02 (#10): services register their routes at startup with their own
- * client_credentials token. Guarded like the M2M sync: service accounts only,
- * with {@code igrp.m2m.sync} (see {@code ServiceAccountM2MAuthorizationFilter}).
+ * client_credentials token. The caller needs the route's key,
+ * {@code access-management-api.routes.register.create} (#36), which the
+ * clients that held {@code igrp.m2m.sync} received with the migration.
  */
 @IgrpController
 @RestController

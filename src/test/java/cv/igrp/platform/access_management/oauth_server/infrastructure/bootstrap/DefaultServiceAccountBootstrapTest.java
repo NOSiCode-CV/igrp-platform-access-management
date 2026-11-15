@@ -104,12 +104,7 @@ class DefaultServiceAccountBootstrapTest {
                 .thenThrow(new EmptyResultDataAccessException(1));
 
         // permission lookups: the 6 client.* rows start at 19
-        stubPermissionId("igrp.client.list",   19L);
-        stubPermissionId("igrp.client.view",   20L);
-        stubPermissionId("igrp.client.create", 21L);
-        stubPermissionId("igrp.client.update", 22L);
-        stubPermissionId("igrp.client.delete", 23L);
-        stubPermissionId("igrp.client.manage", 24L);
+        stubAllPermissionIds();
 
         // grants return 1 (inserted) each time
         when(jdbcTemplate.update(
@@ -128,7 +123,7 @@ class DefaultServiceAccountBootstrapTest {
                 eq(clientUuid));
 
         // Verify grants fired 6 times (once per permission)
-        verify(jdbcTemplate, times(6)).update(
+        verify(jdbcTemplate, times(KEYS.size())).update(
                 startsWith("INSERT INTO t_service_account_permission_grant"),
                 any(Object.class), any(Object.class), any(Object.class), any(Object.class));
     }
@@ -170,7 +165,7 @@ class DefaultServiceAccountBootstrapTest {
                 any(UUID.class), any(String.class), any(String.class), any(UUID.class));
 
         // Grants still attempted 6 times (idempotent no-ops)
-        verify(jdbcTemplate, times(6)).update(
+        verify(jdbcTemplate, times(KEYS.size())).update(
                 startsWith("INSERT INTO t_service_account_permission_grant"),
                 any(Object.class), any(Object.class), any(Object.class), any(Object.class));
     }
@@ -222,7 +217,7 @@ class DefaultServiceAccountBootstrapTest {
                 any(UUID.class), any(String.class), any(String.class), any(UUID.class));
 
         // Grants still reconciled on the existing SA (idempotent no-ops here).
-        verify(jdbcTemplate, times(6)).update(
+        verify(jdbcTemplate, times(KEYS.size())).update(
                 startsWith("INSERT INTO t_service_account_permission_grant"),
                 any(Object.class), any(Object.class), any(Object.class), any(Object.class));
     }
@@ -243,15 +238,11 @@ class DefaultServiceAccountBootstrapTest {
                 eq(DEFAULT_SA_NAME)))
                 .thenThrow(new EmptyResultDataAccessException(1));
 
-        // The CRUD rows exist, but igrp.client.manage hasn't been synced yet —
+        // The CRUD rows exist, but the last key isn't registered yet —
         // the case where the SA is seeded before the permission catalog has
         // caught up. The boot must not fail on it.
-        stubPermissionId("igrp.client.list",   19L);
-        stubPermissionId("igrp.client.view",   20L);
-        stubPermissionId("igrp.client.create", 21L);
-        stubPermissionId("igrp.client.update", 22L);
-        stubPermissionId("igrp.client.delete", 23L);
-        stubPermissionMissing("igrp.client.manage");
+        stubAllPermissionIds();
+        stubPermissionMissing(KEYS.get(KEYS.size() - 1));
 
         when(jdbcTemplate.update(
                 startsWith("INSERT INTO t_service_account_permission_grant"),
@@ -265,13 +256,33 @@ class DefaultServiceAccountBootstrapTest {
                 startsWith("INSERT INTO t_service_account\n"),
                 any(UUID.class), eq(DEFAULT_SA_DESCRIPTION), eq(DEFAULT_SA_NAME), eq(clientUuid));
 
-        // Only 5 grants fired — the unresolvable igrp.client.manage was skipped
-        verify(jdbcTemplate, times(5)).update(
+        // Only 5 grants fired — the unresolvable key was skipped
+        verify(jdbcTemplate, times(KEYS.size() - 1)).update(
                 startsWith("INSERT INTO t_service_account_permission_grant"),
                 any(Object.class), any(Object.class), any(Object.class), any(Object.class));
     }
 
     // ─── helpers ────────────────────────────────────────────────────────
+
+    private static final java.util.List<String> KEYS = java.util.List.of(
+            "access-management-api.clients.list",
+            "access-management-api.clients.read",
+            "access-management-api.clients.create",
+            "access-management-api.clients.update",
+            "access-management-api.clients.delete",
+            "access-management-api.clients.rotate-secret.create",
+            "access-management-api.service-accounts.list",
+            "access-management-api.service-accounts.read",
+            "access-management-api.service-accounts.create",
+            "access-management-api.service-accounts.update",
+            "access-management-api.service-accounts.delete");
+
+    /** Every default key resolves, ids from 19 up. */
+    private void stubAllPermissionIds() {
+        for (int i = 0; i < KEYS.size(); i++) {
+            stubPermissionId(KEYS.get(i), 19L + i);
+        }
+    }
 
     private void stubPermissionId(String name, long id) {
         when(jdbcTemplate.queryForObject(
@@ -291,7 +302,6 @@ class DefaultServiceAccountBootstrapTest {
 
     private static java.util.List<String> allDefaultPermissionNames() {
         return java.util.List.of(
-                "igrp.client.list", "igrp.client.view", "igrp.client.create",
-                "igrp.client.update", "igrp.client.delete", "igrp.client.manage");
+                KEYS.toArray(String[]::new));
     }
 }

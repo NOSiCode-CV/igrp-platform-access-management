@@ -29,6 +29,25 @@ public class PermissionHolders {
     private static final String GRANTED_SERVICE_ACCOUNTS =
             "SELECT service_account_id::text FROM t_service_account_permission_grant WHERE permission_id = ?";
 
+    /**
+     * Every user and service account reaching a key of the service: through a
+     * role, or a direct grant. Their sub is their id.
+     */
+    private static final String HOLDERS_OF_SERVICE = """
+            SELECT ura.user_id FROM t_user_role_assignment ura
+              JOIN t_role_permission rp ON rp.role_id = ura.role_id
+              JOIN t_permission p ON p.id = rp.permission
+             WHERE p.service = ?
+            UNION
+            SELECT sara.service_account_id::text FROM t_service_account_role_assignment sara
+              JOIN t_role_permission rp ON rp.role_id = sara.role_id
+              JOIN t_permission p ON p.id = rp.permission
+             WHERE p.service = ?
+            UNION
+            SELECT g.service_account_id::text FROM t_service_account_permission_grant g
+              JOIN t_permission p ON p.id = g.permission_id
+             WHERE p.service = ?""";
+
     private final JdbcTemplate jdbc;
     private final EventPublisher events;
     private final PermissionSetEviction eviction;
@@ -48,5 +67,15 @@ public class PermissionHolders {
         }
         eviction.evictUsersAfterCommit(Objects.requireNonNullElse(
                 jdbc.queryForList(GRANTED_SERVICE_ACCOUNTS, String.class, permissionId), List.of()));
+    }
+
+    /**
+     * Evicts the cached sets of everyone holding a key of the service (#36).
+     * AM calls it after registering its own routes: a set cached before an
+     * upgrade that moved assignments to new keys would deny them until its TTL.
+     */
+    public void evictHoldersOf(String service) {
+        eviction.evictUsersAfterCommit(Objects.requireNonNullElse(
+                jdbc.queryForList(HOLDERS_OF_SERVICE, String.class, service, service, service), List.of()));
     }
 }

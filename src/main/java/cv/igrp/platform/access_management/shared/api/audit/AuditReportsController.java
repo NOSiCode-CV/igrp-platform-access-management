@@ -20,7 +20,6 @@ import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -67,7 +66,6 @@ public class AuditReportsController {
     // ----------------------------------------------------------------- JSON
 
     @GetMapping("/audit")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<Page<AuditReportRowDTO>> auditReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -84,7 +82,6 @@ public class AuditReportsController {
     }
 
     @GetMapping("/access")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<Page<AccessReportRowDTO>> accessReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -100,7 +97,6 @@ public class AuditReportsController {
     }
 
     @GetMapping("/settings")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<Page<SettingsReportRowDTO>> settingsReport(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -118,7 +114,6 @@ public class AuditReportsController {
     // ------------------------------------------------------- Audit exports
 
     @GetMapping("/audit.xlsx")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<StreamingResponseBody> auditReportXlsx(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -134,7 +129,6 @@ public class AuditReportsController {
     }
 
     @GetMapping("/audit.pdf")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<StreamingResponseBody> auditReportPdf(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -150,7 +144,6 @@ public class AuditReportsController {
     }
 
     @GetMapping("/audit.csv")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<StreamingResponseBody> auditReportCsv(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -168,7 +161,6 @@ public class AuditReportsController {
     // ------------------------------------------------------ Access exports
 
     @GetMapping("/access.xlsx")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<StreamingResponseBody> accessReportXlsx(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -182,7 +174,6 @@ public class AuditReportsController {
     }
 
     @GetMapping("/access.pdf")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<StreamingResponseBody> accessReportPdf(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -196,7 +187,6 @@ public class AuditReportsController {
     }
 
     @GetMapping("/access.csv")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<StreamingResponseBody> accessReportCsv(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -212,7 +202,6 @@ public class AuditReportsController {
     // ---------------------------------------------------- Settings exports
 
     @GetMapping("/settings.xlsx")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<StreamingResponseBody> settingsReportXlsx(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -226,7 +215,6 @@ public class AuditReportsController {
     }
 
     @GetMapping("/settings.pdf")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<StreamingResponseBody> settingsReportPdf(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
@@ -240,7 +228,6 @@ public class AuditReportsController {
     }
 
     @GetMapping("/settings.csv")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<StreamingResponseBody> settingsReportCsv(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant endDate,
