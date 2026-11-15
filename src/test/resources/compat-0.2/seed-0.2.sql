@@ -29,15 +29,16 @@ VALUES (900, 'system', now(), 'DEPT_IGRP.manage_access', 'iGRP Manage Access Per
        (905, 'system', now(), 'igrp.users.pii.view', 'View PII', 'ACTIVE'),
        -- Another service's legacy permission: a business permission
        (906, 'system', now(), 'igrp.notification.send', 'Send notifications', 'ACTIVE'),
-       (907, 'system', now(), 'igrp.applications.view', 'View applications', 'ACTIVE');
+       (907, 'system', now(), 'igrp.applications.view', 'View applications', 'ACTIVE'),
+       (908, 'system', now(), 'igrp.audit.view', 'View audit', 'ACTIVE');
 
 INSERT INTO t_role_permission (role_id, permission)
 VALUES (900, 900), (900, 901),
-       (901, 901), (901, 902), (901, 903), (901, 905), (901, 907),
+       (901, 901), (901, 902), (901, 903), (901, 905), (901, 907), (901, 908),
        (902, 906);
 
 INSERT INTO t_permission_department (permission_id, department)
-VALUES (900, 900), (901, 901), (902, 901), (903, 901), (906, 901);
+VALUES (900, 900), (901, 901), (902, 901), (903, 901), (906, 901), (908, 901);
 
 INSERT INTO t_application_role (application_id, roles) VALUES (900, 900), (900, 901), (901, 902);
 

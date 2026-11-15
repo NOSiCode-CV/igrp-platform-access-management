@@ -26,6 +26,8 @@ GET /api/applications/{code}/custom-fields
 GET /api/applications/{code}/menus
 GET /api/applications/{id}
 GET /api/auth/audit
+GET /api/auth/audit/business
+GET /api/auth/audit/business/validate
 GET /api/auth/reports/access
 GET /api/auth/reports/access.csv
 GET /api/auth/reports/access.pdf

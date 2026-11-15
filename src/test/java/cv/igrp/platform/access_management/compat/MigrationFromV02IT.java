@@ -98,7 +98,7 @@ class MigrationFromV02IT {
         assertThat(migrated.queryForList("""
                 SELECT version FROM flyway_schema_history WHERE success ORDER BY installed_rank""", String.class))
                 .containsSubsequence("16.1", "17.1", "18.1", "19.1", "20.1", "21.1", "22.1", "23.1", "24.1", "25.1",
-                        "26.1", "27.1");
+                        "26.1", "27.1", "28.1");
         assertThat(migrated.queryForObject("SELECT count(*) FROM flyway_schema_history WHERE NOT success",
                 Integer.class)).isZero();
     }
@@ -165,6 +165,19 @@ class MigrationFromV02IT {
                   JOIN t_permission p ON p.id = pd.permission_id
                  WHERE p.permission_key = 'access-management-api.users.read'""",
                 String.class)).containsExactly("DEPT_RH");
+        // V28_1: who reads the security audit reads the business audit too (#32).
+        assertThat(adminKeys).contains("access-management-api.auth.audit.list");
+        assertThat(migrated.queryForList("""
+                SELECT p.permission_key FROM t_role_permission rp JOIN t_role r ON r.id = rp.role_id
+                  JOIN t_permission p ON p.id = rp.permission
+                 WHERE r.code = 'RH_ADMIN' AND p.permission_key LIKE 'access-management-api.auth.audit.business.%'""",
+                String.class)).containsExactlyInAnyOrder("access-management-api.auth.audit.business.list",
+                "access-management-api.auth.audit.business.validate.list");
+        assertThat(migrated.queryForList("""
+                SELECT d.code FROM t_permission_department pd JOIN t_department d ON d.id = pd.department
+                  JOIN t_permission p ON p.id = pd.permission_id
+                 WHERE p.permission_key = 'access-management-api.auth.audit.business.list'""",
+                String.class)).containsExactly("DEPT_RH");
     }
 
     @Test
@@ -178,6 +191,11 @@ class MigrationFromV02IT {
         // The grants REVOKE leaves (a superuser, as in this container, bypasses them, but they are set).
         assertThat(privileges("t_security_audit_log")).isNotEmpty().doesNotContain("UPDATE");
         assertThat(privileges("t_security_audit_archive")).isNotEmpty().doesNotContain("UPDATE", "DELETE");
+        assertThat(migrated.queryForList("""
+                SELECT tgname FROM pg_trigger WHERE NOT tgisinternal
+                   AND tgrelid = 't_business_audit_event'::regclass""", String.class))
+                .contains("no_update_delete_business_audit", "no_truncate_business_audit");
+        assertThat(privileges("t_business_audit_event")).isNotEmpty().doesNotContain("UPDATE", "DELETE", "TRUNCATE");
     }
 
     @Test

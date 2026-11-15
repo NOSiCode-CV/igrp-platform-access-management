@@ -88,10 +88,14 @@ public final class CompatEnvironment {
     public static final String KEYCLOAK_PASSWORD = "compat-password";
     public static final String KEYCLOAK_EMAIL = "fulano@example.cv";
 
+    /** v3-22 (#32): the broker services relay their business audit events to. */
+    static final KafkaBroker KAFKA = new KafkaBroker();
+
     static {
         POSTGRES.start();
         REDIS.start();
         KEYCLOAK.start();
+        KAFKA.start();
     }
 
     public static final String KEYCLOAK_ADAPTER_CLIENT_ID = "igrp-am-adapter";
@@ -134,6 +138,9 @@ public final class CompatEnvironment {
 
         p.put("igrp.superadmin.user-external-id", SUPERADMIN_ID);
         p.put("igrp.superadmin.email", SUPERADMIN_EMAIL);
+        // v3-22: the broker is there; the listener stays off (production default), and
+        // BusinessAuditIT starts and stops it itself.
+        p.put("spring.kafka.bootstrap-servers", KAFKA.bootstrapServers());
         // RouteVersionGateIT runs the deletion job itself; the scheduled run would race it.
         p.put("igrp.routes.deletion-check-interval", "365d");
         p.put("igrp.app-center.url", "http://localhost:3000");
