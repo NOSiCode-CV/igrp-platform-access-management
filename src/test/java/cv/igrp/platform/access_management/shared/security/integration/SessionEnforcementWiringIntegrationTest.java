@@ -1,14 +1,20 @@
 package cv.igrp.platform.access_management.shared.security.integration;
 
-import cv.igrp.platform.access_management.authorization.domain.service.PermissionCheckService;
+import cv.igrp.framework.auth.core.route.AccessAudit;
+import cv.igrp.framework.auth.core.route.PermissionLookup;
+import cv.igrp.framework.auth.core.route.RouteResolver;
+import cv.igrp.framework.auth.core.route.RouteSecurity;
+import cv.igrp.framework.auth.core.security.PermissionAuthenticationConverter;
+import cv.igrp.platform.access_management.permission_fetch.application.dto.PermissionSetDTO;
+import cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionFetchService;
+import cv.igrp.platform.access_management.shared.security.AmRouteSecurityConfig;
 import cv.igrp.platform.access_management.session.config.SessionProperties;
 import cv.igrp.platform.access_management.session.domain.service.SessionHeartbeatService;
 import cv.igrp.platform.access_management.session.infrastructure.metrics.SessionMetrics;
 import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
-import cv.igrp.platform.access_management.shared.security.M2MTokenRejectionFilter;
 import cv.igrp.platform.access_management.shared.security.OAuth2SecurityConfiguration;
-import cv.igrp.platform.access_management.shared.security.ServiceAccountM2MAuthorizationFilter;
+import cv.igrp.platform.access_management.shared.security.ServiceAccountTokenClaims;
 import cv.igrp.platform.access_management.shared.security.SessionEnforcementFilter;
 import cv.igrp.platform.access_management.shared.security.UserStatusGuard;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,7 +24,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.context.properties.bind.Bindable;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Import;
+import org.springframework.core.annotation.AnnotationAwareOrderComparator;
+import org.springframework.web.client.RestClient;
+import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -40,6 +52,7 @@ import org.springframework.web.context.WebApplicationContext;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,6 +61,8 @@ import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
@@ -93,15 +108,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @WebAppConfiguration
 @ContextConfiguration(classes = SessionEnforcementWiringIntegrationTest.TestApp.class)
 @TestPropertySource(properties = {
-        "igrp.session.enforcement-enabled=true"
+        "igrp.session.enforcement-enabled=true",
+        "igrp.security.application-code=" + SessionEnforcementWiringIntegrationTest.APP
 })
 class SessionEnforcementWiringIntegrationTest {
 
     @Autowired
     private WebApplicationContext webApplicationContext;
 
+    static final String APP = "TEST_APP";
+    private static final String PING_KEY = "test-api.m2m.ping.create";
+
     @Autowired
     private JwtDecoder jwtDecoder;
+
+    @Autowired
+    private PermissionFetchService permissionFetch;
 
     private MockMvc mockMvc;
 
@@ -181,21 +203,58 @@ class SessionEnforcementWiringIntegrationTest {
     }
 
     /**
-     * FR-11 — {@code /api/m2m/**} is now served by the single OAuth2 resource
-     * server chain (the static-token chain has been removed). The
-     * {@link SessionEnforcementFilter} explicitly skips the prefix, so a
-     * sid-less {@code client_credentials} JWT must reach the controller and
-     * succeed.
+     * FR-11 — {@code /api/m2m/**} is served by the same chain as every AM
+     * route. The {@link SessionEnforcementFilter} skips the prefix, so a
+     * sid-less {@code client_credentials} JWT reaches the route filter (#36),
+     * which lets it through with the route's key, asked of AM in-process.
      */
     @Test
     void m2mPathWithCcJwtIsNotAffectedByEnforcementFilter() throws Exception {
-        when(jwtDecoder.decode("test-cc")).thenReturn(sidlessJwt("test-cc"));
+        when(jwtDecoder.decode("test-cc")).thenReturn(serviceAccountJwt("test-cc"));
+        when(permissionFetch.fetch(any(Jwt.class), eq(APP))).thenReturn(
+                new PermissionSetDTO(List.of(PING_KEY), Map.of(PING_KEY, "all"), List.of(), List.of()));
 
         mockMvc.perform(post("/api/m2m/ping")
                         .header("Authorization", "Bearer test-cc")
                         .contentType("application/json")
                         .content("{}"))
                 .andExpect(status().isOk());
+    }
+
+    /** #36 — without the route's key, a service token on {@code /api/m2m/**} is refused by the route filter. */
+    @Test
+    void m2mPathWithoutTheRouteKeyIsForbidden() throws Exception {
+        when(jwtDecoder.decode("test-cc")).thenReturn(serviceAccountJwt("test-cc"));
+        when(permissionFetch.fetch(any(Jwt.class), eq(APP))).thenReturn(
+                new PermissionSetDTO(List.of(), Map.of(), List.of(), List.of()));
+
+        mockMvc.perform(post("/api/m2m/ping")
+                        .header("Authorization", "Bearer test-cc")
+                        .contentType("application/json")
+                        .content("{}"))
+                .andExpect(status().isForbidden());
+    }
+
+    /** #36 — a user who holds the route's key is still refused on {@code /api/m2m/**}: service accounts only. */
+    @Test
+    void m2mPathRefusesAUserTokenEvenWithTheKey() throws Exception {
+        when(jwtDecoder.decode("test-user")).thenReturn(sidlessJwt("test-user"));
+        when(permissionFetch.fetch(any(Jwt.class), eq(APP))).thenReturn(
+                new PermissionSetDTO(List.of(PING_KEY), Map.of(PING_KEY, "all"), List.of(), List.of()));
+
+        mockMvc.perform(post("/api/m2m/ping")
+                        .header("Authorization", "Bearer test-user")
+                        .contentType("application/json")
+                        .content("{}"))
+                .andExpect(status().isForbidden());
+    }
+
+    /** A client_credentials token of a service account: sid-less, with its principal type. */
+    private static Jwt serviceAccountJwt(String tokenValue) {
+        Jwt jwt = sidlessJwt(tokenValue);
+        Map<String, Object> claims = new HashMap<>(jwt.getClaims());
+        claims.put(ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE, ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT);
+        return new Jwt(tokenValue, jwt.getIssuedAt(), jwt.getExpiresAt(), jwt.getHeaders(), claims);
     }
 
     private static Jwt sidlessJwt(String tokenValue) {
@@ -223,7 +282,7 @@ class SessionEnforcementWiringIntegrationTest {
     @EnableWebMvc
     @EnableWebSecurity
     @EnableMethodSecurity
-    @Import(OAuth2SecurityConfiguration.class)
+    @Import({OAuth2SecurityConfiguration.class, AmRouteSecurityConfig.class})
     static class TestApp {
 
         @Bean
@@ -237,19 +296,27 @@ class SessionEnforcementWiringIntegrationTest {
         }
 
         @Bean
-        M2MTokenRejectionFilter m2mTokenRejectionFilter() {
-            return new M2MTokenRejectionFilter();
+        PermissionFetchService permissionFetchService() {
+            return mock(PermissionFetchService.class);
         }
 
+        /** The starter's lookup; AM's post-processor rebuilds it with the in-process fetch. */
         @Bean
-        ServiceAccountM2MAuthorizationFilter serviceAccountM2MAuthorizationFilter(
-                PermissionCheckService permissionCheckService) {
-            return new ServiceAccountM2MAuthorizationFilter(permissionCheckService);
+        PermissionLookup igrpPermissionLookup() {
+            return new PermissionLookup(null, RestClient.create("http://unused.invalid"), APP);
         }
 
+        /** The starter's route security, as its auto-configuration builds it. */
         @Bean
-        PermissionCheckService permissionCheckService() {
-            return mock(PermissionCheckService.class);
+        RouteSecurity routeSecurity(ApplicationContext context, PermissionLookup igrpPermissionLookup) {
+            List<String> publicPaths = Binder.get(context.getEnvironment())
+                    .bind("igrp.security.public-paths", Bindable.listOf(String.class)).orElse(List.of());
+            return new RouteSecurity(() -> {
+                List<HandlerMapping> mappings = new ArrayList<>(context.getBeansOfType(HandlerMapping.class).values());
+                AnnotationAwareOrderComparator.sort(mappings);
+                return new RouteResolver("test-api", mappings, publicPaths);
+            }, igrpPermissionLookup, new PermissionAuthenticationConverter(igrpPermissionLookup),
+                    new AccessAudit(null, null));
         }
 
         @Bean

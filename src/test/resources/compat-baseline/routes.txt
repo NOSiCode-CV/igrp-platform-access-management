@@ -26,6 +26,8 @@ GET /api/applications/{code}/custom-fields
 GET /api/applications/{code}/menus
 GET /api/applications/{id}
 GET /api/auth/audit
+GET /api/auth/audit/business
+GET /api/auth/audit/business/validate
 GET /api/auth/reports/access
 GET /api/auth/reports/access.csv
 GET /api/auth/reports/access.pdf
@@ -60,6 +62,8 @@ GET /api/departments/{id}
 GET /api/files/url
 GET /api/global-configuration
 GET /api/m2m/global-configuration
+GET /api/migration/suggestions
+GET /api/permissions
 GET /api/roles/by-code/{code}
 GET /api/roles/{id}
 GET /api/service-accounts
@@ -108,6 +112,7 @@ POST /api/auth/reports/audit/archive
 POST /api/auth/reports/settings/archive
 POST /api/authorize/batch-check
 POST /api/authorize/check
+POST /api/authorize/page
 POST /api/clients
 POST /api/clients/{id}/rotate-secret
 POST /api/departments
@@ -127,6 +132,8 @@ POST /api/m2m/sync/applications/{code}/menus
 POST /api/m2m/sync/permissions
 POST /api/m2m/sync/resources
 POST /api/m2m/users
+POST /api/migration/suggestions/{id}/confirm
+POST /api/migration/suggestions/{id}/dismiss
 POST /api/routes/register
 POST /api/service-accounts
 POST /api/session/close
@@ -147,6 +154,7 @@ PUT /api/clients/{id}
 PUT /api/departments/{code}
 PUT /api/departments/{departmentCode}/roles/{roleCode}
 PUT /api/departments/{departmentCode}/roles/{roleCode}/permissions/scopes
+PUT /api/permissions/{key}
 PUT /api/service-accounts/{id}
 PUT /api/users/invite/{id}
 PUT /api/users/me

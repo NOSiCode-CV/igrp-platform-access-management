@@ -182,6 +182,11 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-session-jdbc</artifactId>
         </dependency>
+        <!-- v3-22 (#32): AM consumes every service's business audit events from Kafka (igrp.audit). -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-kafka</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-flyway</artifactId>
@@ -344,6 +349,16 @@
         <dependency>
             <groupId>cv.igrp.framework.auth</groupId>
             <artifactId>keycloak-spring-boot</artifactId>
+            <version>${framework.auth.version}</version>
+        </dependency>
+        <!-- v3-28 (#36): AM protects its own routes with the 0.3 starter's route
+             filter, like every service. Its permission set comes in-process
+             (InProcessPermissionFetch) and its routes register in-process
+             (AmRouteRegistrar); the starter's audit and revision stay off,
+             because AM has its own. -->
+        <dependency>
+            <groupId>cv.igrp.framework.auth</groupId>
+            <artifactId>core-spring-boot</artifactId>
             <version>${framework.auth.version}</version>
         </dependency>
         <dependency>

@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.springframework.security.access.prepost.PreAuthorize;
 import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.m2m.application.commands.*;
@@ -58,15 +57,13 @@ public class M2MController {
    * default colours and logos there until some signed-in request warms its
    * cache.
    *
-   * <p>Adding the user-scoped path to {@code M2MTokenRejectionFilter}'s skip
-   * list was the alternative and is unsafe — that filter exists precisely
-   * because a sid-less M2M token reaching user-scoped code blows up in the
-   * permission cache on {@code Integer.parseInt(jwt.getSubject())}. A separate
-   * endpoint under {@code /api/m2m/} keeps machine tokens out of the user path,
-   * and is already covered by the existing skip prefix.
+   * <p>A separate endpoint under {@code /api/m2m/} keeps machine tokens out of
+   * the user path: the session filter skips that prefix for sid-less
+   * client_credentials tokens.
    *
-   * <p>Authorized like every other {@code /api/m2m/} endpoint: being a
-   * registered M2M client is enough. No permission is checked, because the
+   * <p>Authorized like every other route (#36): the caller needs its key,
+   * {@code access-management-api.m2m.global-configuration.list}, which the
+   * clients that held {@code igrp.m2m.sync} received with the migration. The
    * payload is branding — colours and public logo URLs — and is not secret.
    * Writes are unaffected: {@code POST /api/global-configuration} still
    * requires a user token and {@code igrp.applications.customize}.

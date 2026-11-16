@@ -26,7 +26,6 @@ import lombok.extern.slf4j.Slf4j;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Optional;
@@ -69,7 +68,6 @@ public class SessionController {
         responseCode = "204",
         description = "No active session found"
     )
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SessionResponseDTO> getCurrentSession() {
         String userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         UUID sid = extractSid();
@@ -114,7 +112,6 @@ public class SessionController {
         description = "Session check result",
         content = @Content(schema = @Schema(implementation = SessionCheckResponseDTO.class))
     )
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SessionCheckResponseDTO> checkSession() {
         Jwt jwt = authenticationHelper.getJwtToken();
         String sub = jwt.getClaimAsString("sub");
@@ -148,7 +145,6 @@ public class SessionController {
         responseCode = "404",
         description = "No active session to refresh"
     )
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SessionResponseDTO> refreshSession(
             @Valid @RequestBody(required = false) SessionRefreshRequestDTO request) {
 
@@ -185,7 +181,6 @@ public class SessionController {
         description = "Rotation is not available over REST — use the refresh grant",
         content = @Content
     )
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<SessionResponseDTO> rotateSession(
             @Valid @RequestBody SessionInitRequestDTO request,
             HttpServletRequest httpRequest) {
@@ -219,7 +214,6 @@ public class SessionController {
         @ApiResponse(responseCode = "204", description = "Session closed", content = @Content),
         @ApiResponse(responseCode = "404", description = "The caller has no active session", content = @Content)
     })
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<Void> closeSession() {
         String userId = SubjectParser.parseUserSubjectOrThrow(authenticationHelper.getSub());
         log.info("Closing session for user: {}", userId);

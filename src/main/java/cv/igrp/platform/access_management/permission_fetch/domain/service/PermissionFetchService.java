@@ -165,7 +165,15 @@ public class PermissionFetchService {
     }
 
     public PermissionSetDTO fetch(String applicationCode) {
-        Jwt jwt = authenticationHelper.getJwtToken();
+        return fetch(authenticationHelper.getJwtToken(), applicationCode);
+    }
+
+    /**
+     * The fetch for a given caller's token: also AM's own route filter on a
+     * cache miss (#36), which asks in-process, before the token is in the
+     * security context.
+     */
+    public PermissionSetDTO fetch(Jwt jwt, String applicationCode) {
         String sub = jwt.getSubject();
         boolean serviceAccount = ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT
                 .equals(jwt.getClaimAsString(ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE));

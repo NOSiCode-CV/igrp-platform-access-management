@@ -17,7 +17,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -72,7 +71,6 @@ public class AuditReportArchiveController {
     }
 
     @PostMapping("/audit/archive")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<AuditReportFileDTO> archiveAuditReport(
             @RequestParam ReportFormat format,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
@@ -93,7 +91,6 @@ public class AuditReportArchiveController {
     }
 
     @PostMapping("/access/archive")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<AuditReportFileDTO> archiveAccessReport(
             @RequestParam ReportFormat format,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
@@ -112,7 +109,6 @@ public class AuditReportArchiveController {
     }
 
     @PostMapping("/settings/archive")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<AuditReportFileDTO> archiveSettingsReport(
             @RequestParam ReportFormat format,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) Instant startDate,
@@ -132,7 +128,6 @@ public class AuditReportArchiveController {
 
     /** Lists archived exports, newest first. */
     @GetMapping("/archives")
-    @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_AUDIT_VIEW)")
     public ResponseEntity<Page<AuditReportFileDTO>> listArchives(
             @RequestParam(required = false) String reportType,
             @RequestParam(required = false) String format,

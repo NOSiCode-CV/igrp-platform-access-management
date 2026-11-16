@@ -140,6 +140,18 @@ class ClaimsEnrichmentServiceTest {
     }
 
     @Test
+    void permissionCodeIsTheKeyWhenThereIsOneAndTheNameOtherwise() {
+        PermissionEntity keyed = new PermissionEntity();
+        keyed.setPermissionKey("access-management-api.departments.list");
+        keyed.setName("Ver departamentos (edited by an administrator)");
+        PermissionEntity legacy = new PermissionEntity();
+        legacy.setName("igrp.notification.send");
+
+        assertEquals("access-management-api.departments.list", ClaimsEnrichmentService.permissionCode(keyed));
+        assertEquals("igrp.notification.send", ClaimsEnrichmentService.permissionCode(legacy));
+    }
+
+    @Test
     void buildClaimsEnrichesRolePermissionsAndMetadata() {
         PermissionEntity perm = new PermissionEntity();
         perm.setName("IGRP_USERS_VIEW");

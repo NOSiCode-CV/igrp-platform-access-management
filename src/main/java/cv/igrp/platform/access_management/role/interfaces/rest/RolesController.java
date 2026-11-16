@@ -14,7 +14,6 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import jakarta.validation.Valid;
-import org.springframework.security.access.prepost.PreAuthorize;
 
 import cv.igrp.framework.core.domain.QueryBus;
 import cv.igrp.platform.access_management.role.application.queries.*;
@@ -34,7 +33,6 @@ public class RolesController {
           this.queryBus = queryBus;
           
   }
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_VIEW)")
    @GetMapping(
    value = "roles/by-code/{code}"
   )
@@ -66,7 +64,6 @@ public class RolesController {
       return response;
   }
 
-   @PreAuthorize("@igrpAuthorization.checkPermission(T(Permission).IGRP_DEPARTMENTS_VIEW)")
    @GetMapping(
    value = "roles/{id}"
   )

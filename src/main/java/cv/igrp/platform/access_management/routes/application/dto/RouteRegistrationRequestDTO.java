@@ -32,6 +32,20 @@ public class RouteRegistrationRequestDTO {
     @Valid
     private List<RegisteredRouteDTO> routes;
 
+    /**
+     * v3-32 (#40): the service's {@code @FieldPermission} keys, collected by the
+     * starter at startup (v3-16). Optional: a starter older than #23 sends none,
+     * which declares no field keys.
+     */
+    @Size(max = 5000, message = "A registration cannot have more than 5000 field keys")
+    @Valid
+    private List<RegisteredFieldDTO> fields;
+
+    /** For a registration with routes only. */
+    public RouteRegistrationRequestDTO(String service, String version, List<RegisteredRouteDTO> routes) {
+        this(service, version, routes, null);
+    }
+
     /** One route: its handler mapping and the key the starter derived or read from {@code @Permission}. */
     @Data
     @NoArgsConstructor
@@ -55,7 +69,26 @@ public class RouteRegistrationRequestDTO {
         @Size(max = 255, message = "The field length <description> cannot be more than 255 characters")
         private String description;
 
-        /** The legacy permission of the route's {@code @PreAuthorize}. Not sent yet; used by the migration review (#37). */
+        /**
+         * The legacy permission of the route's {@code @PreAuthorize}, when it had one: the migration
+         * review suggests copying its assignments to the key (#37).
+         */
         private String legacyKey;
+    }
+
+    /** One field key: the key of a {@code @FieldPermission}, with the name and description of its first declaration. */
+    @Data
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class RegisteredFieldDTO {
+
+        @NotBlank(message = "The field <key> is required")
+        private String key;
+
+        @Size(max = 255, message = "The field length <name> cannot be more than 255 characters")
+        private String name;
+
+        @Size(max = 255, message = "The field length <description> cannot be more than 255 characters")
+        private String description;
     }
 }

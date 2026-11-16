@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.routes.domain.service;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.OAuthClientEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
 import cv.igrp.platform.access_management.routes.application.dto.RouteRegistrationRequestDTO;
+import cv.igrp.platform.access_management.routes.application.dto.RouteRegistrationRequestDTO.RegisteredFieldDTO;
 import cv.igrp.platform.access_management.routes.application.dto.RouteRegistrationRequestDTO.RegisteredRouteDTO;
 import cv.igrp.platform.access_management.routes.application.dto.RouteRegistrationResultDTO;
 import cv.igrp.platform.access_management.routes.infrastructure.persistence.RegisteredServiceEntity;
@@ -28,6 +29,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -52,6 +54,10 @@ import java.util.stream.Collectors;
  * pod restarting mid-deploy), and nothing else: only the newest schedules.
  * A deleted key declared again comes back with no assignments.
  *
+ * <p>Field keys (#40): the {@code @FieldPermission} keys a registration sends
+ * as {@code fields} are declared like its route keys, so every rule above and
+ * below applies to them too.
+ *
  * <p>Rename (#11): a registration from a client that already registers another
  * service, under a new name, renames that service: its keys are rewritten with
  * the new prefix, keeping every assignment.
@@ -71,6 +77,12 @@ import java.util.stream.Collectors;
 public class RouteRegistrationService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RouteRegistrationService.class);
+
+    /** The owner of AM's own routes (#36). A client with this id is refused, so no service can take AM's routes. */
+    public static final String AM_OWNER = "~access-management";
+
+    /** AM's own service name (#36): only AM registers it, in-process. */
+    public static final String AM_SERVICE = "access-management-api";
 
     /** First half of the two-int advisory lock key, distinct from the audit chain's lock. */
     private static final int LOCK_CLASS = 0x524F5554; // "ROUT"
@@ -97,6 +109,24 @@ public class RouteRegistrationService {
     private static final String CANCEL = """
             DELETE FROM t_permission_pending_deletion
              WHERE permission_id IN (SELECT id FROM t_permission WHERE permission_key IN (:keys))""";
+
+    /**
+     * #37: a suggestion to copy a live legacy permission's assignments to the
+     * route key that names it as its legacyKey, when a role or department of the
+     * key's application holds it. Once per pair, whatever was decided.
+     */
+    private static final String SUGGEST = """
+            INSERT INTO t_migration_suggestion (permission_id, legacy_permission_id)
+            SELECT k.id, l.id FROM t_permission k, t_permission l
+             WHERE k.permission_key = ? AND l.name = ? AND l.permission_key IS NULL AND l.status <> 'DELETED'
+               AND (EXISTS (SELECT 1 FROM t_role_permission rp
+                              JOIN t_role r ON r.id = rp.role_id
+                              JOIN t_department_application da ON da.department_id = r.department
+                             WHERE rp.permission = l.id AND da.application_id = k.application_id)
+                    OR EXISTS (SELECT 1 FROM t_permission_department pd
+                                 JOIN t_department_application da ON da.department_id = pd.department
+                                WHERE pd.permission_id = l.id AND da.application_id = k.application_id))
+            ON CONFLICT (permission_id, legacy_permission_id) DO NOTHING""";
 
     private static final String PENDING_COUNT =
             "SELECT count(*) FROM t_permission_pending_deletion WHERE service = ?";
@@ -131,12 +161,31 @@ public class RouteRegistrationService {
     private record Binding(boolean newest, int renamed) {
     }
 
+    /** A service's registration, with the calling service account's token. */
     @Transactional
     public RouteRegistrationResultDTO register(RouteRegistrationRequestDTO registration) {
+        if (AM_SERVICE.equalsIgnoreCase(registration.getService())) {
+            throw IgrpResponseStatusException.forbidden("Service name " + AM_SERVICE + " is reserved for AM's own routes");
+        }
+        String clientId = callerClientId();
+        return register(registration, clientId, applicationOf(clientId));
+    }
+
+    /**
+     * AM's own registration (#36), in-process at startup: AM has no service
+     * account of its own, so its routes are owned by {@link #AM_OWNER}, a value
+     * no client id can take, and belong to the given application.
+     */
+    @Transactional
+    public RouteRegistrationResultDTO registerOwn(RouteRegistrationRequestDTO registration,
+                                                  ApplicationEntity application) {
+        return register(registration, AM_OWNER, application);
+    }
+
+    private RouteRegistrationResultDTO register(RouteRegistrationRequestDTO registration, String clientId,
+                                                ApplicationEntity application) {
         String service = registration.getService();
         Map<String, RegisteredRouteDTO> routes = validatedRoutes(service, registration);
-        String clientId = callerClientId();
-        ApplicationEntity application = applicationOf(clientId);
 
         jdbc.queryForObject("SELECT pg_advisory_xact_lock(?, hashtext(?))::text", String.class, LOCK_CLASS, clientId);
         Binding binding = bindOwner(service, clientId, registration.getVersion());
@@ -152,7 +201,14 @@ public class RouteRegistrationService {
         for (RegisteredRouteDTO route : routes.values()) {
             PermissionEntity permission = existing.get(route.getKey());
             if (permission == null) {
-                permissions.save(newPermission(service, application, registration.getVersion(), route));
+                PermissionEntity fresh = newPermission(service, application, registration.getVersion(), route);
+                // Names are unique (#12: the grant endpoints look permissions up by name). A
+                // declared name another permission already has gives way to the key.
+                if (!fresh.getName().equals(route.getKey())
+                        && permissions.findByNameAndStatusNot(fresh.getName(), Status.DELETED).isPresent()) {
+                    fresh.setName(route.getKey());
+                }
+                permissions.save(fresh);
             } else if (permission.getStatus() == Status.DELETED) {
                 // Deleted after its grace period, declared again (a rollback): back, with no assignments.
                 permission.setStatus(Status.ACTIVE);
@@ -172,10 +228,22 @@ public class RouteRegistrationService {
             pending = Objects.requireNonNullElse(jdbc.queryForObject(PENDING_COUNT, Integer.class, service), 0);
         }
 
-        LOGGER.info("[ROUTES] {} {} registered {} routes: {} created, {} unchanged, {} pending deletion, {} renamed",
+        suggestLegacyCopies(routes.values());
+
+        LOGGER.info("[ROUTES] {} {} registered {} keys (routes and fields): {} created, {} unchanged, {} pending deletion, {} renamed",
                 service, registration.getVersion(), routes.size(), created, routes.size() - created, pending,
                 binding.renamed());
         return new RouteRegistrationResultDTO(created, routes.size() - created, pending, binding.renamed());
+    }
+
+    /** #37: the migration review suggestions for the routes that name their legacy permission. */
+    private void suggestLegacyCopies(Collection<RegisteredRouteDTO> routes) {
+        for (RegisteredRouteDTO route : routes) {
+            String legacy = route.getLegacyKey();
+            if (legacy != null && !legacy.isBlank() && !legacy.equals(route.getKey())) {
+                jdbc.update(SUGGEST, route.getKey(), legacy.trim());
+            }
+        }
     }
 
     /** Schedules the service's live keys this registration does not declare. */
@@ -203,22 +271,41 @@ public class RouteRegistrationService {
             if (route == null) {
                 throw IgrpResponseStatusException.badRequest("Invalid route registration: a route is null");
             }
-            String problem = RouteKeys.problem(service, route.getKey());
-            if (problem == null) {
-                problem = RouteKeys.nameProblem(route.getName());
-            }
-            if (problem != null) {
-                throw IgrpResponseStatusException.badRequest("Invalid route registration: " + problem);
-            }
+            checkKey(service, route.getKey(), route.getName(), "");
             routes.putIfAbsent(route.getKey(), route);
         }
+        // v3-32 (#40): field keys are declared like route keys. A key that is also
+        // a route's is one permission, named by the route.
+        for (RegisteredFieldDTO field : Objects.requireNonNullElse(registration.getFields(), List.<RegisteredFieldDTO>of())) {
+            if (field == null) {
+                throw IgrpResponseStatusException.badRequest("Invalid route registration: a field key is null");
+            }
+            checkKey(service, field.getKey(), field.getName(), "field ");
+            // A field key has no method or path: only its key, name and description are used.
+            routes.putIfAbsent(field.getKey(), new RegisteredRouteDTO(null, null, field.getKey(), true,
+                    field.getName(), field.getDescription(), null));
+        }
         return routes;
+    }
+
+    /** Refuses a key outside the service's namespace or action set, or a name in the reserved namespace. */
+    private static void checkKey(String service, String key, String name, String label) {
+        String problem = RouteKeys.problem(service, key);
+        if (problem == null) {
+            problem = RouteKeys.nameProblem(name);
+        }
+        if (problem != null) {
+            throw IgrpResponseStatusException.badRequest("Invalid route registration: " + label + problem);
+        }
     }
 
     private String callerClientId() {
         String clientId = authenticationHelper.getJwtToken().getClaimAsString(ServiceAccountTokenClaims.CLAIM_CLIENT_ID);
         if (clientId == null || clientId.isBlank()) {
             throw IgrpResponseStatusException.forbidden("Route registration needs a service account token");
+        }
+        if (AM_OWNER.equals(clientId)) {
+            throw IgrpResponseStatusException.forbidden("Client id " + AM_OWNER + " is reserved for AM's own routes");
         }
         return clientId;
     }
