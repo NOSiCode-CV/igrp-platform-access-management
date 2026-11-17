@@ -17,7 +17,7 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
+import cv.igrp.platform.access_management.security_audit.application.service.AccessAuditLogger;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.domain.events.EventPublisher;
 import cv.igrp.platform.access_management.shared.domain.events.UserStatusChangedEvent;
@@ -38,7 +38,7 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
    private final UserUtils utils;
    private final SecurityAuditService auditService;
    private final EventPublisher eventPublisher;
-   private final SessionAuditLogger sessionAuditLogger;
+   private final AccessAuditLogger sessionAuditLogger;
    private final RootUser rootUser;
 
 
@@ -48,7 +48,7 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
            UserUtils utils,
            SecurityAuditService auditService,
            EventPublisher eventPublisher,
-           SessionAuditLogger sessionAuditLogger,
+           AccessAuditLogger sessionAuditLogger,
            RootUser rootUser
    ) {
        this.userRepository = userRepository;
@@ -133,7 +133,7 @@ public class UpdateUserStatusCommandHandler implements CommandHandler<UpdateUser
          eventPublisher.publishUserStatusChanged(new UserStatusChangedEvent(
                  userId, oldStatus, newStatus, reason));
          try {
-            String actor = SessionAuditLogger.adminActor(resolveAdminExternalId());
+            String actor = AccessAuditLogger.adminActor(resolveAdminExternalId());
             sessionAuditLogger.recordUserStatusTransitioned(
                     userId, oldStatus, newStatus, actor, reason);
          } catch (Exception ex) {

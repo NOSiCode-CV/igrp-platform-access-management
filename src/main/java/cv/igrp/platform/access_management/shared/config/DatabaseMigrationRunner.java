@@ -20,7 +20,6 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
     @Override
     public void run(String... args) {
         cleanupRemovedColumns();
-        ensureUserSessionSchema();
         ensureUserTokensFloor();
         ensureUserStatusCheckConstraint();
         ensureSpringSessionSchema();
@@ -39,10 +38,9 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
      * idempotent against tables that already exist.
      *
      * <p>Not JPA entities, so Hibernate's {@code ddl-auto} never touches them.
-     * Rows are pruned by {@code spring.session.jdbc.cleanup-cron} — which is a
-     * different mechanism from {@code SessionCleanupScheduler}, and a different
-     * table: {@code SPRING_SESSION} holds the browser-side SSO session,
-     * {@code t_user_session} holds iGRP's own per-application sessions.
+     * Rows are pruned by {@code spring.session.jdbc.cleanup-cron}. {@code SPRING_SESSION}
+     * holds the browser-side SSO session; iGRP's own per-application sessions are
+     * gone (#33).
      *
      * <p>Unlike the other migrations here, a failure is <b>not</b> swallowed. If
      * these tables are missing, every login fails on the first session write,
@@ -106,75 +104,6 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
         } catch (Exception e) {
             LOGGER.warn("Could not ensure t_user.tokens_not_valid_before (may not exist yet): {}",
                     e.getMessage());
-        }
-    }
-
-    /**
-     * Phase B (session-management) migrations on {@code t_user_session}:
-     * <ul>
-     *   <li>Drop the legacy single-active-session-per-user unique constraint.</li>
-     *   <li>Rename the legacy {@code user_external_id} column to {@code user_id}
-     *       and retype it from {@code VARCHAR} to {@code INTEGER} so it lines up
-     *       with {@code IGRPUserEntity.id}. Stored values were already integer
-     *       strings on this branch (see commit {@code 648d4f4c}).</li>
-     *   <li>Replace the legacy active-per-user uniqueness with a per-(user, device)
-     *       partial unique index so the same user can hold concurrent sessions
-     *       across distinct devices.</li>
-     * </ul>
-     */
-    private void ensureUserSessionSchema() {
-        try {
-            jdbcTemplate.execute(
-                    "ALTER TABLE t_user_session DROP CONSTRAINT IF EXISTS ux_one_active_session_per_user");
-            jdbcTemplate.execute(
-                    "DROP INDEX IF EXISTS ux_one_active_session_per_user");
-            // Rename legacy column if still present.
-            jdbcTemplate.execute(
-                    "DO $$ BEGIN " +
-                    "  IF EXISTS (SELECT 1 FROM information_schema.columns " +
-                    "             WHERE table_name='t_user_session' AND column_name='user_external_id') " +
-                    "  AND NOT EXISTS (SELECT 1 FROM information_schema.columns " +
-                    "                  WHERE table_name='t_user_session' AND column_name='user_id') THEN " +
-                    "    ALTER TABLE t_user_session RENAME COLUMN user_external_id TO user_id; " +
-                    "  END IF; " +
-                    "END $$;");
-            // Phase G2 superseded the Phase B "retype to INTEGER" step: t_user.id
-            // and t_user_session.user_id are now VARCHAR(36) UUID. Flyway V8 does
-            // the actual type migration. Keeping a retype-to-INTEGER block here
-            // would crash on every boot post-G2 (cast UUID strings to integer
-            // fails). Block intentionally removed.
-            // One ACTIVE session per (user, device) is NO LONGER true, so the
-            // partial unique index that enforced it must go.
-            //
-            // Several IGRP applications share one browser, each runs its own
-            // authorization_code exchange, and all of them derive the same
-            // device_id — it is hashed from (User-Agent, client_ip, client_id)
-            // of the SERVER-TO-SERVER token call, so every login through one
-            // Next.js app server lands on the same value. The application stopped
-            // closing the previous row for that pair, which is correct: closing
-            // it signed sibling applications out. But this index still rejected
-            // the insert, so the second login failed with a duplicate-key error
-            // that surfaced to users as a bare 401 at /oauth2/token.
-            //
-            // Dropped rather than reinstating the close: the constraint encodes
-            // the one-application-per-browser assumption the platform has
-            // outgrown. The per-user cap in SessionIssuanceService is what bounds
-            // sessions now. ix_session_user_device (non-unique, declared on the
-            // entity) still serves the lookups.
-            jdbcTemplate.execute(
-                    "DROP INDEX IF EXISTS ux_session_user_device_active");
-            // R1.1 — sso_session_key links every application session opened
-            // under one AM sign-in, so RP-initiated logout can revoke them
-            // together. Nullable with no backfill (N2): rows predating it have
-            // none and keep the old single-row logout behaviour.
-            jdbcTemplate.execute(
-                    "ALTER TABLE t_user_session ADD COLUMN IF NOT EXISTS sso_session_key VARCHAR(64)");
-            jdbcTemplate.execute(
-                    "CREATE INDEX IF NOT EXISTS ix_session_sso_key "
-                            + "ON t_user_session (user_id, sso_session_key, status)");
-            LOGGER.debug("t_user_session schema migrations ensured.");
-        } catch (Exception e) {
-            LOGGER.warn("Could not ensure t_user_session schema (may not exist yet): {}", e.getMessage());
         }
     }
 

@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.permission_fetch.domain.service;
 import cv.igrp.platform.access_management.active_role.application.dto.ActiveRoleDTO.Source;
 import cv.igrp.platform.access_management.active_role.domain.service.ActiveRoleService;
 import cv.igrp.platform.access_management.active_role.domain.service.ActiveRoleService.ResolvedActiveRole;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.security.UserAuthorizations;
 import cv.igrp.platform.access_management.permission_fetch.application.dto.PermissionSetDTO;
 import cv.igrp.platform.access_management.permission_fetch.infrastructure.cache.PermissionSetCache;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
@@ -151,17 +152,20 @@ public class PermissionFetchService {
     private final PermissionSetCache cache;
     private final AuthenticationHelper authenticationHelper;
     private final SecurityAuditService audit;
+    private final UserAuthorizations authorizations;
 
     public PermissionFetchService(JdbcTemplate jdbc,
                                   ActiveRoleService activeRoles,
                                   PermissionSetCache cache,
                                   AuthenticationHelper authenticationHelper,
-                                  SecurityAuditService audit) {
+                                  SecurityAuditService audit,
+                                  UserAuthorizations authorizations) {
         this.jdbc = jdbc;
         this.activeRoles = activeRoles;
         this.cache = cache;
         this.authenticationHelper = authenticationHelper;
         this.audit = audit;
+        this.authorizations = authorizations;
     }
 
     public PermissionSetDTO fetch(String applicationCode) {
@@ -177,6 +181,11 @@ public class PermissionFetchService {
         String sub = jwt.getSubject();
         boolean serviceAccount = ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT
                 .equals(jwt.getClaimAsString(ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE));
+        // Spec "Logout, kill and refresh": a cache miss writes the key only for a
+        // user who is still signed in; after a logout or kill it answers 401.
+        if (!serviceAccount && !authorizations.hasActive(SubjectParser.parseUserSubjectOrThrow(sub))) {
+            throw unauthorized("No active authorization: signed out or access ended");
+        }
         PermissionSetDTO set = (serviceAccount
                 ? serviceAccountSet(sub, applicationCode)
                 : userSet(sub, applicationCode)).toSet();
@@ -206,11 +215,8 @@ public class PermissionFetchService {
         if (status.isEmpty()) {
             throw IgrpResponseStatusException.notFound("User " + userId + " not found");
         }
-        // Until sessions are replaced by AM's authorization store (#33), a live
-        // sign-in is an active session.
-        if (!"ACTIVE".equals(status.getFirst()) || !Boolean.TRUE.equals(jdbc.queryForObject(
-                "SELECT EXISTS (SELECT 1 FROM t_user_session WHERE user_id = ? AND status = 'ACTIVE')",
-                Boolean.class, userId))) {
+        // A live sign-in is an active authorization in AM's store (#33).
+        if (!"ACTIVE".equals(status.getFirst()) || !authorizations.hasActive(userId)) {
             throw IgrpResponseStatusException.of(HttpStatus.CONFLICT, "No active authorization",
                     "The user is not active or not signed in; nothing was written");
         }

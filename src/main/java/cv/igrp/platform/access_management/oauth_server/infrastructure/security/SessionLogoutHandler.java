@@ -1,15 +1,7 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
-import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
+import cv.igrp.platform.access_management.security_audit.application.service.AccessAuditLogger;
 import cv.igrp.platform.access_management.shared.domain.events.UserAccessEndedEvent;
-import cv.igrp.platform.access_management.session.domain.event.SessionRevokedEvent;
-import cv.igrp.platform.access_management.session.domain.service.SessionHeartbeatService;
-import cv.igrp.platform.access_management.session.domain.service.SsoSessionCascadeService;
-import cv.igrp.platform.access_management.session.domain.service.SsoSessionKey;
-import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
-import cv.igrp.platform.access_management.session.infrastructure.cache.SessionCacheEvictService;
-import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
-import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -20,9 +12,11 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.client.registration.ClientRegistration;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
@@ -40,27 +34,20 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.HashSet;
-import java.util.List;
+import java.security.Principal;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 
 /**
- * Phase E3 — OIDC RP-initiated logout cascade.
+ * OIDC RP-initiated logout ({@code /connect/logout}), wired as the logout response handler.
  *
- * <p>Wired as the {@code logoutResponseHandler} on
- * {@code OidcLogoutEndpointConfigurer}. When {@code /connect/logout} succeeds
- * we mark the bound {@link SessionEntity} as {@link SessionStatus#REVOKED}
- * with reason {@code USER_LOGOUT}, evict caches, publish
- * {@link SessionRevokedEvent}, and remove the underlying
- * {@link OAuth2Authorization} so subsequent JWT introspections /
- * resource-server requests are denied immediately by the enforcement chain.
+ * <p>Spec "Logout, kill and refresh" (#33): the user's access ends on the whole platform. AM
+ * revokes every authorization of the user and deletes all of their permission keys
+ * ({@link UserAccessEndedEvent}, after commit), ends AM's browser session, and cascades the
+ * logout to the upstream IdP. There are no iGRP sessions.
  *
- * <p>The default redirect behavior of the OIDC logout endpoint is preserved:
- * when {@code post_logout_redirect_uri} was supplied we issue a 302 to it;
- * otherwise we return a bare 200.
+ * <p>The default redirect behaviour of the OIDC logout endpoint is preserved: with a
+ * {@code post_logout_redirect_uri} we answer 302 to it; otherwise a bare 200.
  */
 @Component
 public class SessionLogoutHandler implements AuthenticationSuccessHandler {
@@ -75,13 +62,9 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
      */
     private static final String[] CLEARABLE_COOKIES = { "JSESSIONID", "SESSION", "XSRF-TOKEN" };
 
-    private final SessionRepository sessionRepository;
-    private final SessionCacheEvictService sessionCacheEvictService;
-    private final SessionHeartbeatService heartbeatService;
     private final OAuth2AuthorizationService authorizationService;
     private final ApplicationEventPublisher eventPublisher;
-    private final SessionAuditLogger sessionAuditLogger;
-    private final SsoSessionCascadeService ssoSessionCascadeService;
+    private final AccessAuditLogger accessAuditLogger;
     private final UserAuthorizations userAuthorizations;
     private final RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
     private final SecurityContextLogoutHandler springLogoutHandler = new SecurityContextLogoutHandler();
@@ -108,24 +91,16 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
      */
     private final boolean cascadeLogoutToIdp;
 
-    public SessionLogoutHandler(SessionRepository sessionRepository,
-                                SessionCacheEvictService sessionCacheEvictService,
-                                SessionHeartbeatService heartbeatService,
-                                OAuth2AuthorizationService authorizationService,
+    public SessionLogoutHandler(OAuth2AuthorizationService authorizationService,
                                 ApplicationEventPublisher eventPublisher,
-                                SessionAuditLogger sessionAuditLogger,
-                                SsoSessionCascadeService ssoSessionCascadeService,
+                                AccessAuditLogger accessAuditLogger,
                                 UserAuthorizations userAuthorizations,
                                 ObjectProvider<ClientRegistrationRepository> clientRegistrationRepositoryProvider,
                                 @Value("${igrp.oauth.external-idp.registration-id:external-idp}") String upstreamRegistrationId,
                                 @Value("${igrp.oauth.external-idp.logout-cascade:true}") boolean cascadeLogoutToIdp) {
-        this.sessionRepository = sessionRepository;
-        this.sessionCacheEvictService = sessionCacheEvictService;
-        this.heartbeatService = heartbeatService;
         this.authorizationService = authorizationService;
         this.eventPublisher = eventPublisher;
-        this.sessionAuditLogger = sessionAuditLogger;
-        this.ssoSessionCascadeService = ssoSessionCascadeService;
+        this.accessAuditLogger = accessAuditLogger;
         this.userAuthorizations = userAuthorizations;
         this.clientRegistrationRepositoryProvider = clientRegistrationRepositoryProvider;
         this.upstreamRegistrationId = upstreamRegistrationId;
@@ -153,79 +128,25 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         // replayable logout credential carrying the subject's identity claims
         // into INFO-level logs, which are shipped, indexed and retained far
         // beyond this debugging need. The fingerprint still answers "same hint
-        // or different?" across lines; for claim-level inspection, read the
-        // session row rather than the log.
+        // or different?" across lines.
         LOGGER.info("Incoming /connect/logout: post_logout_redirect_uri={}, state={}, id_token_hint={}",
                 token.getPostLogoutRedirectUri(),
                 token.getState(),
                 describeIdToken(idToken));
 
-        // 1. iGRP-side cleanup — load the bound SessionEntity ONCE so we can
-        //    extract the upstream id_token (needed for the cascade hint
-        //    below) before the revoke step writes back. WSO2 IS refuses to
-        //    honor post_logout_redirect_uri without id_token_hint, and that
-        //    hint is the IdP's original id_token stashed at issuance time.
-        UUID sid = extractSid(idToken);
-        Optional<SessionEntity> sessionOpt = sid != null
-                ? sessionRepository.findBySessionId(sid)
-                : Optional.empty();
-        String upstreamIdToken = sessionOpt.map(SessionEntity::getUpstreamIdToken).orElse(null);
-        // Surface every step of the lookup so when id_token_hint comes out
-        // OMITTED we know exactly which step failed (sid missing, sid present
-        // but session row absent, or row present with the column unpopulated).
-        if (sid == null) {
-            LOGGER.warn("External IDP Logout: cannot capture upstream id_token — sid claim "
-                    + "missing on the iGRP id_token presented at /connect/logout");
-        } else if (sessionOpt.isEmpty()) {
-            LOGGER.warn("External IDP Logout: cannot capture upstream id_token — no t_user_session "
-                    + "row found for sid={}", sid);
-        } else {
-            int len = upstreamIdToken == null ? 0 : upstreamIdToken.length();
-            LOGGER.info("External IDP Logout: session sid={} loaded; upstream_id_token length = {} chars",
-                    sid, len);
-        }
-        revokeBoundSession(sid);
-        // v3-23: the logout itself is an access decision, recorded apart from the
-        // session-row transition (sessions go away in v3; the logout row stays).
-        sessionAuditLogger.recordLogout(sid,
-                sessionOpt.map(SessionEntity::getUserId).orElseGet(idToken::getSubject));
+        // 1. The upstream IdP's ID token, replayed as id_token_hint on the cascade below: strict
+        //    IdPs (WSO2 IS, Autentika) ignore post_logout_redirect_uri without it. It is on the
+        //    sign-in Spring AS stored with this authorization, so read it before removing it.
+        OAuth2Authorization authorization = idToken == null ? null
+                : authorizationService.findByToken(idToken.getTokenValue(), null);
+        String upstreamIdToken = upstreamIdToken(authorization);
+        String userId = userId(authorization, idToken);
+        accessAuditLogger.recordLogout(userId);
 
-        // R2.1 — and now every sibling application signed in under the same AM
-        // sign-in. Reading the key from the row loaded above, which is why that
-        // read happens before the revoke writes back.
-        //
-        // R2.4 — in its own transaction, and wrapped: a failure to revoke
-        // siblings must not undo the bound row's revocation or stop the servlet
-        // session invalidation and upstream cascade below. The worst case is the
-        // behaviour that existed before this feature, which is a degradation
-        // rather than a new failure. Logged at WARN because it is invisible to
-        // the user: they asked to sign out of everything and some applications
-        // stayed signed in.
-        String ssoSessionKey = sessionOpt.map(SessionEntity::getSsoSessionKey).orElse(null);
-        String cascadeUserId = sessionOpt.map(SessionEntity::getUserId).orElse(null);
-        if (ssoSessionKey != null && cascadeUserId != null) {
-            try {
-                ssoSessionCascadeService.revokeSiblings(cascadeUserId, ssoSessionKey, sid);
-            } catch (RuntimeException ex) {
-                LOGGER.warn("Logout cascade failed for user={} ssoKey={}; sibling applications may stay "
-                                + "signed in until their own timeout. The bound session was still revoked.",
-                        cascadeUserId, SsoSessionKey.fingerprint(ssoSessionKey), ex);
-            }
-        } else if (sessionOpt.isPresent()) {
-            // Expected for rows created before R1.1, and for any grant with no
-            // browser sign-in behind it (R1.5). Not a fault.
-            LOGGER.debug("No SSO session key on sid={}; revoking that session alone", sid);
-        }
-
-        // 2. Spring AS-side cleanup — remove the OAuth2Authorization so any
-        //    refresh-token / introspection replay is denied.
-        removeAuthorization(idToken);
-        // v3-11 (#19): and the authorizations of every application signed in
-        // under this sign-in (other devices keep theirs), then every
-        // permission key of the user, after commit, so the next request that
-        // misses the cache gets 401.
-        endAccessOfThisSignIn(sid, ssoSessionKey,
-                sessionOpt.map(SessionEntity::getUserId).orElseGet(idToken::getSubject));
+        // 2. End the user's access on the whole platform: every authorization, on every device
+        //    and application, then every permission key after commit, so the next request that
+        //    misses the cache gets 401.
+        endAccess(userId);
 
         // 3. Spring Security cleanup — invalidate the HttpSession that backs
         //    the user's SecurityContext and clear SecurityContextHolder.
@@ -284,8 +205,8 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
      *
      * <p>We pass {@code client_id} (our registration at the IdP),
      * {@code post_logout_redirect_uri} (the caller's final destination), and
-     * {@code id_token_hint} (the upstream IdP's original id_token, captured
-     * at federated-login time and stashed on the SessionEntity). The hint is
+     * {@code id_token_hint} (the upstream IdP's original id_token, from the
+     * sign-in Spring AS stored with the authorization). The hint is
      * critical for strict IdPs like WSO2 Identity Server which refuse to
      * honor post_logout_redirect_uri when it's missing, falling back to a
      * built-in "logged out" page instead of redirecting back to the caller.
@@ -321,20 +242,10 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         if (StringUtils.hasText(upstreamIdToken)) {
             url.queryParam("id_token_hint", upstreamIdToken);
         } else {
-            // WARN, not DEBUG — strict IdPs (WSO2 IS, Autentika, older Keycloak)
-            // refuse to honor post_logout_redirect_uri without id_token_hint
-            // and fall back to their built-in "logged out" page. The most
-            // common cause is a session created BEFORE the V9 deploy that
-            // added t_user_session.upstream_id_token + the JwtTokenConfig
-            // capture: pre-V9 sessions can never have the column populated
-            // because we don't have a copy of the IdP's id_token to backfill
-            // with. The fix is to re-login (the new session captures it) and
-            // the symptom self-resolves as the pre-V9 cohort cycles out.
-            LOGGER.warn("External IDP Logout: no upstream id_token on file for this session — "
-                    + "id_token_hint will be OMITTED. Strict IdPs (Autentika, WSO2 IS) will "
-                    + "ignore post_logout_redirect_uri and show their built-in 'logged out' "
-                    + "page. Most likely cause: this session was issued before the upstream-"
-                    + "id-token capture was deployed (re-login to fix).");
+            // Strict IdPs (WSO2 IS, Autentika, older Keycloak) then show their own "logged out"
+            // page instead of redirecting back.
+            LOGGER.warn("External IDP Logout: id_token_hint omitted; strict IdPs will ignore "
+                    + "post_logout_redirect_uri");
         }
         if (StringUtils.hasText(finalRedirectUri)) {
             url.queryParam("post_logout_redirect_uri", finalRedirectUri);
@@ -425,106 +336,38 @@ public class SessionLogoutHandler implements AuthenticationSuccessHandler {
         return proto != null && proto.equalsIgnoreCase("https");
     }
 
-    private void revokeBoundSession(UUID sid) {
-        if (sid == null) {
-            return;
-        }
-        Optional<SessionEntity> entity = sessionRepository.findBySessionId(sid);
-        if (entity.isEmpty()) {
-            heartbeatService.evict(sid);
-            return;
-        }
-        SessionEntity session = entity.get();
-        if (SessionStatus.ACTIVE.equals(session.getStatus())) {
-            session.revoke("USER_LOGOUT", "USER");
-            sessionRepository.save(session);
-        }
-        heartbeatService.evict(sid);
-        if (session.getUserId() != null) {
-            sessionCacheEvictService.evictBySubject(session.getUserId());
-        }
-        sessionAuditLogger.recordRevoked(session.getSessionId(), session.getUserId(),
-                "USER_LOGOUT", SessionAuditLogger.USER);
-        eventPublisher.publishEvent(new SessionRevokedEvent(
-                session.getSessionId(),
-                session.getUserId(),
-                "USER_LOGOUT",
-                "USER"
-        ));
-        LOGGER.info("OIDC logout: revoked session {} (user={}) with reason USER_LOGOUT",
-                sid, session.getUserId());
-    }
-
-    private void endAccessOfThisSignIn(UUID sid, String ssoSessionKey, String userId) {
+    private void endAccess(String userId) {
         if (userId == null) {
             return;
         }
-        try {
-            // The bound session's authorization is already removed above, in
-            // this transaction; the siblings' are removed in their own.
-            Set<String> siblingIds = new HashSet<>();
-            if (ssoSessionKey != null) {
-                // Still ACTIVE too: the sibling revocation above may have failed.
-                for (SessionStatus status : List.of(SessionStatus.REVOKED, SessionStatus.ACTIVE)) {
-                    sessionRepository.findByUserIdAndSsoSessionKeyAndStatus(userId, ssoSessionKey, status)
-                            .forEach(session -> siblingIds.add(session.getSessionId().toString()));
-                }
-            }
-            if (sid != null) {
-                siblingIds.remove(sid.toString());
-            }
-            if (!siblingIds.isEmpty()) {
-                int removed = userAuthorizations.removeForSessions(userId, siblingIds);
-                LOGGER.info("OIDC logout: removed {} sibling authorization(s) for user={}", removed, userId);
-            }
-        } catch (RuntimeException ex) {
-            // The bound authorization is already removed above; siblings keep a
-            // refresh token, but their sessions are revoked, so the token is refused.
-            LOGGER.warn("OIDC logout: could not remove the sibling authorizations of user={}", userId, ex);
-        }
+        int removed = userAuthorizations.removeAll(userId);
+        LOGGER.info("OIDC logout: removed {} authorization(s) of user={}", removed, userId);
         eventPublisher.publishEvent(new UserAccessEndedEvent(Set.of(userId), "USER_LOGOUT"));
     }
 
-    private void removeAuthorization(OidcIdToken idToken) {
-        if (idToken == null) {
-            return;
+    /**
+     * AM's internal user id: the subject of the sign-in's access token. The ID token's own
+     * subject is the authorization's principal name, which for a federated sign-in is the
+     * upstream IdP's subject, so it is only the fallback.
+     */
+    private static String userId(OAuth2Authorization authorization, OidcIdToken idToken) {
+        OAuth2Authorization.Token<?> access = authorization == null ? null : authorization.getAccessToken();
+        Map<String, Object> claims = access == null ? null : access.getClaims();
+        Object subject = claims == null ? null : claims.get("sub");
+        if (subject != null) {
+            return subject.toString();
         }
-        OAuth2Authorization authorization = authorizationService.findByToken(
-                idToken.getTokenValue(), null);
-        if (authorization != null) {
-            authorizationService.remove(authorization);
-        }
+        return idToken == null ? null : idToken.getSubject();
     }
 
-    private static UUID extractSid(OidcIdToken idToken) {
-        if (idToken == null) {
-            return null;
+    /** The upstream IdP's ID token of the sign-in behind {@code authorization}, or null. */
+    private String upstreamIdToken(OAuth2Authorization authorization) {
+        Object principal = authorization == null ? null : authorization.getAttribute(Principal.class.getName());
+        if (principal instanceof OAuth2AuthenticationToken signIn && signIn.getPrincipal() instanceof OidcUser user) {
+            return user.getIdToken().getTokenValue();
         }
-        Map<String, Object> claims = idToken.getClaims();
-        if (claims == null) {
-            return null;
-        }
-        // Read the iGRP-specific session binding from `igrp_session_id`, NOT
-        // the OIDC-standard `sid` claim. JwtTokenConfig deliberately routes the
-        // SessionEntity UUID to a custom claim so it doesn't collide with
-        // Spring AS's OidcLogoutAuthenticationProvider, which interprets the
-        // `sid` claim as base64url(SHA-256(JSESSIONID)) and rejects logout
-        // requests whose id_token sid disagrees with the live servlet session.
-        // See the long-form comment in JwtTokenConfig#igrpTokenCustomizer for
-        // the full failure-mode write-up. Falling back to the legacy `sid`
-        // name keeps tokens issued before this rename usable until they expire.
-        Object raw = claims.get("igrp_session_id");
-        if (raw == null) {
-            raw = claims.get("sid");
-        }
-        if (raw == null) {
-            return null;
-        }
-        try {
-            return UUID.fromString(raw.toString());
-        } catch (IllegalArgumentException ex) {
-            return null;
-        }
+        LOGGER.warn("External IDP Logout: no upstream id_token for this sign-in; id_token_hint will be omitted");
+        return null;
     }
 
     private static String appendQueryParam(String url, String name, String value) {

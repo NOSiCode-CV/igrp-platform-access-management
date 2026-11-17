@@ -2,12 +2,8 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.RefreshTokenTombstoneEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.RefreshTokenTombstoneRepository;
-import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
-import cv.igrp.platform.access_management.session.domain.event.SessionRevokedEvent;
-import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
-import cv.igrp.platform.access_management.session.infrastructure.cache.SessionCacheEvictService;
-import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
-import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
+import cv.igrp.platform.access_management.security_audit.application.service.AccessAuditLogger;
+import cv.igrp.platform.access_management.shared.domain.events.UserAccessEndedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationEventPublisher;
@@ -21,30 +17,26 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.Base64;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 /**
- * FR-8 (see {@code _specs/session/requirements.md}) — detect replay of a
- * refresh token that has already been rotated out by Spring Authorization
- * Server, revoke the linked {@link SessionEntity}, and publish a
- * {@link SessionRevokedEvent} with reason {@code REFRESH_TOKEN_REUSE}.
+ * Detects a replay of a refresh token that Spring Authorization Server has already rotated
+ * out, and then ends the user's access on the whole platform (#33): every authorization is
+ * removed and their permission keys are deleted after commit, as a kill does.
  *
  * <p>The guard collaborates with {@link CascadingAuthorizationService}:
  * <ul>
- *   <li>{@link #recordRotation(OAuth2Authorization, OAuth2Authorization)}
- *       is called on every successful refresh-token rotation
- *       ({@code reuseRefreshTokens(false)}) to tombstone the OLD token value.</li>
+ *   <li>{@link #recordRotation(OAuth2Authorization, OAuth2Authorization)} is called on every
+ *       successful rotation ({@code reuseRefreshTokens(false)}) to tombstone the old value;</li>
  *   <li>{@link #detectReplay(String)} is called whenever the wrapper's
- *       {@code findByToken(token, REFRESH_TOKEN)} returns {@code null}. A hit
- *       means the caller presented a previously-rotated value, which is the
- *       canonical replay signature.</li>
+ *       {@code findByToken(token, REFRESH_TOKEN)} returns {@code null}. A hit means the caller
+ *       presented a previously rotated value, which is the canonical replay signature.</li>
  * </ul>
  *
- * <p>Both methods are best-effort: failures inside the guard never throw out
- * of the authorization-server pipeline — they're logged so the upstream
- * {@code invalid_grant} response still reaches the attacker on schedule.
+ * <p>Both methods are best-effort: failures inside the guard never throw out of the
+ * authorization-server pipeline, so the upstream {@code invalid_grant} still goes out.
  */
 @Component
 public class RefreshTokenReuseGuard {
@@ -54,28 +46,24 @@ public class RefreshTokenReuseGuard {
     static final String REVOKE_REASON = "REFRESH_TOKEN_REUSE";
 
     private final RefreshTokenTombstoneRepository tombstoneRepository;
-    private final SessionRepository sessionRepository;
-    private final SessionCacheEvictService sessionCacheEvictService;
+    private final UserAuthorizations userAuthorizations;
     private final ApplicationEventPublisher eventPublisher;
-    private final SessionAuditLogger sessionAuditLogger;
+    private final AccessAuditLogger accessAuditLogger;
 
     public RefreshTokenReuseGuard(RefreshTokenTombstoneRepository tombstoneRepository,
-                                  SessionRepository sessionRepository,
-                                  SessionCacheEvictService sessionCacheEvictService,
+                                  UserAuthorizations userAuthorizations,
                                   ApplicationEventPublisher eventPublisher,
-                                  SessionAuditLogger sessionAuditLogger) {
+                                  AccessAuditLogger accessAuditLogger) {
         this.tombstoneRepository = tombstoneRepository;
-        this.sessionRepository = sessionRepository;
-        this.sessionCacheEvictService = sessionCacheEvictService;
+        this.userAuthorizations = userAuthorizations;
         this.eventPublisher = eventPublisher;
-        this.sessionAuditLogger = sessionAuditLogger;
+        this.accessAuditLogger = accessAuditLogger;
     }
 
     /**
      * Tombstone the previous refresh-token value when rotation has just occurred.
-     * No-op when the previous authorization has no refresh token, when the value
-     * is unchanged (no rotation actually happened), or when the sid claim cannot
-     * be resolved (non-iGRP authorization).
+     * No-op when the previous authorization has no refresh token, or when the value
+     * is unchanged (no rotation actually happened).
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void recordRotation(OAuth2Authorization previous, OAuth2Authorization next) {
@@ -98,7 +86,6 @@ public class RefreshTokenReuseGuard {
             return; // not a rotation
         }
 
-        UUID sid = extractSid(next, previous);
         String userId = extractUserId(next, previous);
         Instant expiresAt = Optional.ofNullable(previousRefresh.getToken().getExpiresAt())
                 .orElseGet(() -> Instant.now().plusSeconds(86_400));
@@ -109,93 +96,52 @@ public class RefreshTokenReuseGuard {
                     .findByTokenHash(hash)
                     .orElseGet(RefreshTokenTombstoneEntity::new);
             entity.setTokenHash(hash);
-            entity.setSessionId(sid);
             entity.setUserId(userId);
             entity.setInvalidatedAt(Instant.now());
             entity.setExpiresAt(expiresAt);
             tombstoneRepository.save(entity);
-            LOGGER.debug("Tombstoned rotated refresh token (sid={} user={} exp={})",
-                    sid, userId, expiresAt);
+            LOGGER.debug("Tombstoned rotated refresh token (user={} exp={})", userId, expiresAt);
         } catch (RuntimeException ex) {
             // Rotation must not fail because we couldn't write a tombstone.
-            LOGGER.warn("Could not tombstone rotated refresh token (sid={}): {}",
-                    sid, ex.getMessage());
+            LOGGER.warn("Could not tombstone rotated refresh token (user={}): {}", userId, ex.getMessage());
         }
     }
 
     /**
-     * Detect a replay of a previously rotated refresh token. On a hit, revoke
-     * the linked session (idempotently) and publish {@link SessionRevokedEvent}.
+     * Detect a replay of a previously rotated refresh token. On a hit, end the user's access on
+     * the whole platform.
      *
-     * @return {@code true} when a tombstone matched (replay detected),
-     *         {@code false} otherwise.
+     * @return {@code true} when a tombstone matched (replay detected), {@code false} otherwise.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public boolean detectReplay(String presentedTokenValue) {
         if (presentedTokenValue == null || presentedTokenValue.isBlank()) {
             return false;
         }
-        String hash = sha256(presentedTokenValue);
-        Optional<RefreshTokenTombstoneEntity> hit = tombstoneRepository.findByTokenHash(hash);
+        Optional<RefreshTokenTombstoneEntity> hit = tombstoneRepository.findByTokenHash(sha256(presentedTokenValue));
         if (hit.isEmpty()) {
             return false;
         }
-        RefreshTokenTombstoneEntity tombstone = hit.get();
-        UUID sid = tombstone.getSessionId();
-        String userId = tombstone.getUserId();
-        LOGGER.warn("Detected refresh-token replay (sid={} user={}); revoking session", sid, userId);
-
+        String userId = hit.get().getUserId();
+        LOGGER.warn("Detected refresh-token replay (user={}); ending the user's access", userId);
+        if (userId == null) {
+            return true;
+        }
         try {
-            if (sid != null) {
-                Optional<SessionEntity> sessionOpt = sessionRepository.findBySessionId(sid);
-                sessionOpt.ifPresent(session -> {
-                    if (SessionStatus.ACTIVE.equals(session.getStatus())) {
-                        session.revoke(REVOKE_REASON, "SYSTEM");
-                        sessionRepository.save(session);
-                    }
-                });
-                if (userId != null) {
-                    sessionCacheEvictService.evictBySubject(userId);
-                }
-                sessionAuditLogger.recordRevoked(sid, userId, REVOKE_REASON, SessionAuditLogger.SYSTEM);
-                eventPublisher.publishEvent(new SessionRevokedEvent(sid, userId, REVOKE_REASON, "SYSTEM"));
-            } else {
-                LOGGER.debug("Replay tombstone hit without a sid — nothing to revoke");
-            }
+            int removed = userAuthorizations.removeAll(userId);
+            accessAuditLogger.recordAccessEnded(userId, REVOKE_REASON, AccessAuditLogger.SYSTEM);
+            eventPublisher.publishEvent(new UserAccessEndedEvent(Set.of(userId), REVOKE_REASON));
+            LOGGER.info("Refresh-token replay: removed {} authorization(s) of user={}", removed, userId);
         } catch (RuntimeException ex) {
             // Never poison the upstream invalid_grant response.
-            LOGGER.warn("Replay-detection side effects failed for sid={}: {}", sid, ex.getMessage());
+            LOGGER.warn("Replay-detection side effects failed for user={}: {}", userId, ex.getMessage());
         }
         return true;
-    }
-
-    private static UUID extractSid(OAuth2Authorization next, OAuth2Authorization previous) {
-        UUID sid = sidFromAccessToken(next);
-        return sid != null ? sid : sidFromAccessToken(previous);
     }
 
     private static String extractUserId(OAuth2Authorization next, OAuth2Authorization previous) {
         String userId = userIdFrom(next);
         return userId != null ? userId : userIdFrom(previous);
-    }
-
-    private static UUID sidFromAccessToken(OAuth2Authorization authorization) {
-        if (authorization == null || authorization.getAccessToken() == null) {
-            return null;
-        }
-        Map<String, Object> claims = authorization.getAccessToken().getClaims();
-        if (claims == null) {
-            return null;
-        }
-        Object raw = claims.get("sid");
-        if (raw == null) {
-            return null;
-        }
-        try {
-            return UUID.fromString(raw.toString());
-        } catch (IllegalArgumentException ex) {
-            return null;
-        }
     }
 
     private static String userIdFrom(OAuth2Authorization authorization) {

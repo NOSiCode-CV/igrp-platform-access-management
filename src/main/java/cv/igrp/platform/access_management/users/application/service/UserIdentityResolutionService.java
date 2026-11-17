@@ -1,6 +1,6 @@
 package cv.igrp.platform.access_management.users.application.service;
 
-import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
+import cv.igrp.platform.access_management.security_audit.application.service.AccessAuditLogger;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
@@ -33,7 +33,7 @@ import java.util.function.Supplier;
 public class UserIdentityResolutionService {
 
     private final IGRPUserEntityRepository userRepository;
-    private final SessionAuditLogger sessionAuditLogger;
+    private final AccessAuditLogger sessionAuditLogger;
 
     // -------------------------------------------------------------------------
     // INVITE-ACCEPT FLOW — may create user
@@ -78,7 +78,7 @@ public class UserIdentityResolutionService {
             try {
                 sessionAuditLogger.recordUserStatusTransitioned(
                         saved.getId(), null, Status.TEMPORARY.getCode(),
-                        SessionAuditLogger.SYSTEM, "FIRST_LOGIN");
+                        AccessAuditLogger.SYSTEM, "FIRST_LOGIN");
             } catch (Exception auditEx) {
                 log.warn("[IDENTITY] first-login audit failed: {}", auditEx.getMessage());
             }

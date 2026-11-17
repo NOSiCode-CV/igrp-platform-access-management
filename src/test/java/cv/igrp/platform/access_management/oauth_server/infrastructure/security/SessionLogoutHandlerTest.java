@@ -1,304 +1,202 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
-import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
-import cv.igrp.platform.access_management.session.domain.event.SessionRevokedEvent;
-import cv.igrp.platform.access_management.session.domain.service.SessionHeartbeatService;
-import cv.igrp.platform.access_management.session.domain.service.SsoSessionCascadeService;
-import cv.igrp.platform.access_management.session.infrastructure.cache.SessionCacheEvictService;
-import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
-import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
-import org.junit.jupiter.api.BeforeEach;
+import cv.igrp.platform.access_management.security_audit.application.service.AccessAuditLogger;
+import cv.igrp.platform.access_management.shared.domain.events.UserAccessEndedEvent;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.context.ApplicationEventPublisher;
-import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
+import org.springframework.security.oauth2.client.registration.ClientRegistration;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
+import org.springframework.security.oauth2.core.AuthorizationGrantType;
+import org.springframework.security.oauth2.core.ClientAuthenticationMethod;
+import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.oidc.OidcIdToken;
+import org.springframework.security.oauth2.core.oidc.user.DefaultOidcUser;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClient;
 import org.springframework.security.oauth2.server.authorization.oidc.authentication.OidcLogoutAuthenticationToken;
 
+import java.security.Principal;
 import java.time.Instant;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.never;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
- * Unit-level coverage for the OIDC RP-initiated logout cascade. Asserts the
- * happy-path side effects (session revoke, cache evict, event publish, auth
- * removal, redirect) and the no-op branches that protect against double-revoke
- * and missing/non-iGRP id tokens.
+ * RP-initiated logout (#33; spec "Logout, kill and refresh"): the user's access ends on the whole
+ * platform (every authorization, then every key after commit), the logout is audited, and the
+ * response either cascades to the upstream IdP or redirects back to the caller.
  */
 @ExtendWith(MockitoExtension.class)
 class SessionLogoutHandlerTest {
 
-    @Mock
-    private SessionRepository sessionRepository;
-    @Mock
-    private SessionCacheEvictService sessionCacheEvictService;
-    @Mock
-    private SessionHeartbeatService heartbeatService;
+    private static final String USER_ID = "00000000-0000-0000-0000-000000000099";
+    private static final String POST_LOGOUT = "https://app.igrp/post-logout";
+
     @Mock
     private OAuth2AuthorizationService authorizationService;
     @Mock
     private ApplicationEventPublisher eventPublisher;
     @Mock
-    private cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger sessionAuditLogger;
-    @Mock
-    private SsoSessionCascadeService ssoSessionCascadeService;
+    private AccessAuditLogger accessAuditLogger;
     @Mock
     private UserAuthorizations userAuthorizations;
 
-    private static final String USER_ID = "00000000-0000-0000-0000-000000000099";
-
-    private SessionLogoutHandler handler;
-    private MockHttpServletRequest request;
-    private MockHttpServletResponse response;
-
-    @BeforeEach
-    void setUp() {
-        // Federation isn't configured in this unit test, so the IdP-cascade
-        // resolver gets an ObjectProvider that yields null — the handler
-        // falls back to the direct redirect path the existing assertions
-        // were written against.
-        ObjectProvider<ClientRegistrationRepository> noClientRegistration = emptyProvider();
-        handler = new SessionLogoutHandler(sessionRepository, sessionCacheEvictService,
-                heartbeatService, authorizationService, eventPublisher, sessionAuditLogger,
-                ssoSessionCascadeService, userAuthorizations, noClientRegistration, "external-idp", true);
-        request = new MockHttpServletRequest("POST", "/connect/logout");
-        response = new MockHttpServletResponse();
-    }
-
-    @SuppressWarnings("unchecked")
-    private static <T> ObjectProvider<T> emptyProvider() {
-        ObjectProvider<T> provider = org.mockito.Mockito.mock(ObjectProvider.class);
-        org.mockito.Mockito.when(provider.getIfAvailable()).thenReturn(null);
-        return provider;
-    }
+    private final MockHttpServletRequest request = new MockHttpServletRequest("POST", "/connect/logout");
+    private final MockHttpServletResponse response = new MockHttpServletResponse();
 
     @Test
-    void revokesActiveSession_evictsCache_publishesEvent_andRedirects() throws Exception {
-        UUID sid = UUID.randomUUID();
-        OidcIdToken idToken = idTokenWithSid(sid);
-        SessionEntity session = activeSession(sid, "00000000-0000-0000-0000-000000000099");
-        when(sessionRepository.findBySessionId(sid)).thenReturn(Optional.of(session));
-        OAuth2Authorization authorization = stubAuthorization(idToken);
-        when(authorizationService.findByToken(idToken.getTokenValue(), null)).thenReturn(authorization);
+    void endsTheUsersAccessAuditsAndRedirectsBack() throws Exception {
+        OidcIdToken idToken = idToken();
 
-        handler.onAuthenticationSuccess(request, response,
-                logoutToken(idToken, "https://app.igrp/post-logout", "xyz"));
+        handler(null, true).onAuthenticationSuccess(request, response, logoutToken(idToken, POST_LOGOUT, "xyz"));
 
-        ArgumentCaptor<SessionEntity> saved = ArgumentCaptor.forClass(SessionEntity.class);
-        verify(sessionRepository).save(saved.capture());
-        assertEquals(SessionStatus.REVOKED, saved.getValue().getStatus());
-        assertEquals("USER_LOGOUT", saved.getValue().getClosedReason());
-        assertEquals("USER", saved.getValue().getClosedBy());
-
-        verify(heartbeatService).evict(sid);
-        verify(sessionCacheEvictService).evictBySubject("00000000-0000-0000-0000-000000000099");
-        verify(eventPublisher).publishEvent(any(SessionRevokedEvent.class));
-        verify(authorizationService).remove(authorization);
-        verify(sessionAuditLogger).recordLogout(sid, "00000000-0000-0000-0000-000000000099");
-
-        assertEquals(302, response.getStatus());
-        assertEquals("https://app.igrp/post-logout?state=xyz", response.getRedirectedUrl());
+        verify(userAuthorizations).removeAll(USER_ID);
+        verify(eventPublisher).publishEvent(new UserAccessEndedEvent(Set.of(USER_ID), "USER_LOGOUT"));
+        verify(accessAuditLogger).recordLogout(USER_ID);
+        assertThat(response.getStatus()).isEqualTo(302);
+        assertThat(response.getRedirectedUrl()).isEqualTo(POST_LOGOUT + "?state=xyz");
     }
 
     @Test
     void noPostLogoutRedirect_yields200() throws Exception {
-        UUID sid = UUID.randomUUID();
-        OidcIdToken idToken = idTokenWithSid(sid);
-        SessionEntity session = activeSession(sid, "00000000-0000-0000-0000-000000000099");
-        when(sessionRepository.findBySessionId(sid)).thenReturn(Optional.of(session));
-        when(authorizationService.findByToken(idToken.getTokenValue(), null)).thenReturn(null);
+        handler(null, true).onAuthenticationSuccess(request, response, logoutToken(idToken(), null, null));
 
-        handler.onAuthenticationSuccess(request, response, logoutToken(idToken, null, null));
-
-        assertEquals(200, response.getStatus());
+        assertThat(response.getStatus()).isEqualTo(200);
     }
 
     @Test
-    void doesNotResaveAlreadyRevokedSession_butStillEvictsAndPublishes() throws Exception {
-        UUID sid = UUID.randomUUID();
-        OidcIdToken idToken = idTokenWithSid(sid);
-        SessionEntity session = activeSession(sid, "00000000-0000-0000-0000-000000000099");
-        session.setStatus(SessionStatus.REVOKED);
-        when(sessionRepository.findBySessionId(sid)).thenReturn(Optional.of(session));
+    void cascadesToTheIdpWithTheSignInsUpstreamIdToken() throws Exception {
+        OidcIdToken idToken = idToken();
+        when(authorizationService.findByToken(idToken.getTokenValue(), null))
+                .thenReturn(authorizationSignedInWith("upstream-id-token"));
 
-        handler.onAuthenticationSuccess(request, response, logoutToken(idToken, null, null));
+        handler(idpRegistrations(), true).onAuthenticationSuccess(request, response,
+                logoutToken(idToken, POST_LOGOUT, "xyz"));
 
-        verify(sessionRepository, never()).save(any(SessionEntity.class));
-        verify(heartbeatService).evict(sid);
-        verify(sessionCacheEvictService).evictBySubject("00000000-0000-0000-0000-000000000099");
-        verify(eventPublisher).publishEvent(any(SessionRevokedEvent.class));
+        assertThat(response.getRedirectedUrl())
+                .startsWith("https://idp.example/logout?client_id=am-at-idp")
+                .contains("id_token_hint=upstream-id-token")
+                .contains("post_logout_redirect_uri=" + POST_LOGOUT)
+                .contains("state=xyz");
+        verify(userAuthorizations).removeAll(USER_ID);
     }
 
     @Test
-    void noSidClaim_isSafelyIgnoredButStillRespondsAndRemovesAuthorization() throws Exception {
-        OidcIdToken idToken = idToken(Map.of("sub", "42"));
-        OAuth2Authorization authorization = stubAuthorization(idToken);
-        when(authorizationService.findByToken(idToken.getTokenValue(), null)).thenReturn(authorization);
+    void aFederatedSignInEndsTheInternalUsersAccess() throws Exception {
+        // The ID token's subject is the authorization's principal: the upstream IdP's subject.
+        OidcIdToken idToken = new OidcIdToken("tok-" + UUID.randomUUID(), Instant.now().minusSeconds(30),
+                Instant.now().plusSeconds(30), Map.of("sub", "upstream-subject"));
+        when(authorizationService.findByToken(idToken.getTokenValue(), null))
+                .thenReturn(authorizationSignedInWith("upstream-id-token"));
 
-        handler.onAuthenticationSuccess(request, response, logoutToken(idToken, null, null));
+        handler(null, true).onAuthenticationSuccess(request, response, logoutToken(idToken, POST_LOGOUT, null));
 
-        verify(sessionRepository, never()).findBySessionId(any());
-        verify(authorizationService).remove(authorization);
-        assertEquals(200, response.getStatus());
+        verify(userAuthorizations).removeAll(USER_ID);
+        verify(eventPublisher).publishEvent(new UserAccessEndedEvent(Set.of(USER_ID), "USER_LOGOUT"));
+        verify(accessAuditLogger).recordLogout(USER_ID);
     }
 
     @Test
-    void sessionNotFound_evictsCacheKeyButDoesNotSave() throws Exception {
-        UUID sid = UUID.randomUUID();
-        OidcIdToken idToken = idTokenWithSid(sid);
-        when(sessionRepository.findBySessionId(sid)).thenReturn(Optional.empty());
+    void cascadesWithoutAHintWhenTheSignInIsUnknown() throws Exception {
+        handler(idpRegistrations(), true).onAuthenticationSuccess(request, response,
+                logoutToken(idToken(), POST_LOGOUT, null));
 
-        handler.onAuthenticationSuccess(request, response, logoutToken(idToken, null, null));
-
-        verify(sessionRepository, never()).save(any(SessionEntity.class));
-        verify(heartbeatService).evict(sid);
-        verify(sessionCacheEvictService, never()).evictBySubject(eq("00000000-0000-0000-0000-000000000099"));
-    }
-
-    // ─── R2.1-R2.4: the logout cascade ──────────────────────────────────────
-
-    @Test
-    void cascadesToSiblingSessionsSharingTheSignIn() throws Exception {
-        UUID sid = UUID.randomUUID();
-        OidcIdToken idToken = idTokenWithSid(sid);
-        SessionEntity session = activeSession(sid, USER_ID);
-        session.setSsoSessionKey("hashed-sign-in-key");
-        when(sessionRepository.findBySessionId(sid)).thenReturn(Optional.of(session));
-
-        handler.onAuthenticationSuccess(request, response, logoutToken(idToken, null, null));
-
-        // The bound sid is passed so the cascade skips it rather than revoking
-        // it twice and duplicating its audit entry and event.
-        verify(ssoSessionCascadeService).revokeSiblings(USER_ID, "hashed-sign-in-key", sid);
+        assertThat(response.getRedirectedUrl())
+                .startsWith("https://idp.example/logout?client_id=am-at-idp")
+                .doesNotContain("id_token_hint");
     }
 
     @Test
-    void doesNotCascadeWhenTheSessionHasNoSignInKey() throws Exception {
-        // Rows created before R1.1, and any grant with no browser sign-in behind
-        // it, have no key. They must keep the pre-cascade behaviour of revoking
-        // one row (R1.5/N2) — not cascade on a null key, which would match every
-        // other keyless row the user owns.
-        UUID sid = UUID.randomUUID();
-        OidcIdToken idToken = idTokenWithSid(sid);
-        SessionEntity session = activeSession(sid, USER_ID);
-        session.setSsoSessionKey(null);
-        when(sessionRepository.findBySessionId(sid)).thenReturn(Optional.of(session));
+    void noCascadeWhenTurnedOff() throws Exception {
+        handler(idpRegistrations(), false).onAuthenticationSuccess(request, response,
+                logoutToken(idToken(), POST_LOGOUT, null));
 
-        handler.onAuthenticationSuccess(request, response, logoutToken(idToken, null, null));
-
-        verify(ssoSessionCascadeService, never()).revokeSiblings(any(), any(), any());
-        // The bound row is still revoked.
-        verify(sessionRepository).save(any(SessionEntity.class));
+        assertThat(response.getRedirectedUrl()).isEqualTo(POST_LOGOUT);
     }
 
     @Test
-    void cascadeFailureDoesNotBreakTheRestOfLogout() throws Exception {
-        // R2.4. The cascade is the one step whose failure must not take the
-        // others with it: the bound row stays revoked, the authorization is
-        // still removed and the user still gets their redirect. Degrading to the
-        // old single-app behaviour beats failing the sign-out outright.
-        UUID sid = UUID.randomUUID();
-        OidcIdToken idToken = idTokenWithSid(sid);
-        SessionEntity session = activeSession(sid, USER_ID);
-        session.setSsoSessionKey("hashed-sign-in-key");
-        when(sessionRepository.findBySessionId(sid)).thenReturn(Optional.of(session));
-        OAuth2Authorization authorization = stubAuthorization(idToken);
-        when(authorizationService.findByToken(idToken.getTokenValue(), null)).thenReturn(authorization);
-        when(ssoSessionCascadeService.revokeSiblings(any(), any(), any()))
-                .thenThrow(new RuntimeException("database unavailable"));
+    void clearsTheAuthServerCookies() throws Exception {
+        request.setCookies(new jakarta.servlet.http.Cookie("JSESSIONID", "abc"),
+                new jakarta.servlet.http.Cookie("other", "keep"));
 
-        handler.onAuthenticationSuccess(request, response,
-                logoutToken(idToken, "https://app.igrp/post-logout", "xyz"));
+        handler(null, true).onAuthenticationSuccess(request, response, logoutToken(idToken(), null, null));
 
-        ArgumentCaptor<SessionEntity> saved = ArgumentCaptor.forClass(SessionEntity.class);
-        verify(sessionRepository).save(saved.capture());
-        assertEquals(SessionStatus.REVOKED, saved.getValue().getStatus());
-        verify(authorizationService).remove(authorization);
-        assertEquals(302, response.getStatus());
-        assertEquals("https://app.igrp/post-logout?state=xyz", response.getRedirectedUrl());
+        assertThat(response.getHeaders("Set-Cookie"))
+                .singleElement().asString().startsWith("JSESSIONID=; Path=/; Max-Age=0");
     }
 
-    @Test
-    void doesNotCascadeWhenTheBoundSessionIsMissing() throws Exception {
-        UUID sid = UUID.randomUUID();
-        when(sessionRepository.findBySessionId(sid)).thenReturn(Optional.empty());
+    // ---- helpers ----
 
-        handler.onAuthenticationSuccess(request, response,
-                logoutToken(idTokenWithSid(sid), null, null));
-
-        // No row means no key to cascade on. Guessing from the user alone would
-        // sign them out of their other browsers, which D1 explicitly rules out.
-        verify(ssoSessionCascadeService, never()).revokeSiblings(any(), any(), any());
+    private SessionLogoutHandler handler(ClientRegistrationRepository registrations, boolean cascade) {
+        return new SessionLogoutHandler(authorizationService, eventPublisher, accessAuditLogger, userAuthorizations,
+                provider(registrations), "external-idp", cascade);
     }
 
-    private SessionEntity activeSession(UUID sid, String userId) {
-        SessionEntity entity = new SessionEntity();
-        entity.setSessionId(sid);
-        entity.setUserId(userId);
-        entity.setStatus(SessionStatus.ACTIVE);
-        entity.setStartedAt(Instant.now().minusSeconds(60));
-        entity.setLastSeenAt(Instant.now());
-        entity.setExpiresAt(Instant.now().plusSeconds(60));
-        entity.setAbsoluteExpiresAt(Instant.now().plusSeconds(3600));
-        return entity;
+    @SuppressWarnings("unchecked")
+    private static ObjectProvider<ClientRegistrationRepository> provider(ClientRegistrationRepository value) {
+        ObjectProvider<ClientRegistrationRepository> provider = mock(ObjectProvider.class);
+        org.mockito.Mockito.lenient().when(provider.getIfAvailable()).thenReturn(value);
+        return provider;
     }
 
-    private OidcIdToken idTokenWithSid(UUID sid) {
-        Map<String, Object> claims = new HashMap<>();
-        claims.put("sub", "42");
-        claims.put("sid", sid.toString());
-        return idToken(claims);
+    private static ClientRegistrationRepository idpRegistrations() {
+        ClientRegistration registration = ClientRegistration.withRegistrationId("external-idp")
+                .clientId("am-at-idp")
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .redirectUri("https://am/login/oauth2/code/external-idp")
+                .authorizationUri("https://idp.example/auth")
+                .tokenUri("https://idp.example/token")
+                .providerConfigurationMetadata(Map.of("end_session_endpoint", "https://idp.example/logout"))
+                .build();
+        return id -> "external-idp".equals(id) ? registration : null;
     }
 
-    private OidcIdToken idToken(Map<String, Object> claims) {
-        return new OidcIdToken(
-                "tok-" + UUID.randomUUID(),
-                Instant.now().minusSeconds(30),
-                Instant.now().plusSeconds(30),
-                claims);
+    private static OidcIdToken idToken() {
+        return new OidcIdToken("tok-" + UUID.randomUUID(), Instant.now().minusSeconds(30),
+                Instant.now().plusSeconds(30), Map.of("sub", USER_ID));
     }
 
-    private OAuth2Authorization stubAuthorization(OidcIdToken idToken) {
+    /** An authorization whose sign-in, stored by Spring AS, carries the upstream IdP's ID token. */
+    private static OAuth2Authorization authorizationSignedInWith(String upstreamIdToken) {
+        OidcIdToken upstream = new OidcIdToken(upstreamIdToken, Instant.now().minusSeconds(60),
+                Instant.now().plusSeconds(60), Map.of("sub", "upstream-subject"));
+        OAuth2AuthenticationToken signIn = new OAuth2AuthenticationToken(
+                new DefaultOidcUser(List.of(), upstream), List.of(), "external-idp");
         RegisteredClient client = RegisteredClient.withId("test-client")
                 .clientId("test-client")
-                .clientAuthenticationMethod(org.springframework.security.oauth2.core.ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
-                .authorizationGrantType(org.springframework.security.oauth2.core.AuthorizationGrantType.AUTHORIZATION_CODE)
+                .clientAuthenticationMethod(ClientAuthenticationMethod.CLIENT_SECRET_BASIC)
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .redirectUri("https://app/cb")
                 .build();
+        OAuth2AccessToken access = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, "access",
+                Instant.now().minusSeconds(60), Instant.now().plusSeconds(240));
         return OAuth2Authorization.withRegisteredClient(client)
-                .principalName("42")
-                .authorizationGrantType(org.springframework.security.oauth2.core.AuthorizationGrantType.AUTHORIZATION_CODE)
-                .token(idToken)
+                .principalName("upstream-subject")
+                .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .attribute(Principal.class.getName(), signIn)
+                .token(access, metadata -> metadata.put(OAuth2Authorization.Token.CLAIMS_METADATA_NAME,
+                        Map.of("sub", USER_ID)))
                 .build();
     }
 
-    private OidcLogoutAuthenticationToken logoutToken(OidcIdToken idToken,
-                                                      String postLogoutRedirectUri,
-                                                      String state) {
-        return new OidcLogoutAuthenticationToken(
-                idToken,
-                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken("42", "n/a"),
-                "JSESSIONID-test",
-                "test-client",
-                postLogoutRedirectUri,
-                state);
+    private static OidcLogoutAuthenticationToken logoutToken(OidcIdToken idToken, String postLogoutRedirectUri,
+                                                             String state) {
+        return new OidcLogoutAuthenticationToken(idToken, new UsernamePasswordAuthenticationToken(USER_ID, "n/a"),
+                "JSESSIONID-test", "test-client", postLogoutRedirectUri, state);
     }
 }

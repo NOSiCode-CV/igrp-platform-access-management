@@ -213,23 +213,15 @@ POSTGRES_USER=postgres
 POSTGRES_PASSWORD=...
 ```
 
-### Session configuration
+### Sign-in configuration
 
-Two independent mechanisms. See [Session Management](#session-management) for why they
-are different things.
+There are no application sessions (#33). A user is signed in while they hold an active
+authorization in AM's authorization store. See [Session Management](#session-management).
 
 | Variable | Default | Governs |
 |---|---|---|
-| `IGRP_SESSION_TIMEOUT_SECONDS` | `1800` | Idle timeout of an application session |
-| `IGRP_SESSION_ABSOLUTE_TIMEOUT_SECONDS` | `28800` | Hard ceiling on an application session |
-| `IGRP_SESSION_MAX_PER_USER` | `5` | Concurrent active sessions per user, LRU-evicted beyond |
-| `IGRP_SESSION_REFRESH_GRACE_SECONDS` | `300` | Added to access-token TTL when sliding the idle deadline |
-| `IGRP_SESSION_ENFORCEMENT_ENABLED` | `true` | Kill switch for `SessionEnforcementFilter` |
-| `IGRP_SSO_SESSION_TIMEOUT_SECONDS` | `28800` | Idle timeout of the **browser SSO session** |
-
-> `IGRP_SESSION_MAX_PER_USER` must be at least *(applications per host × devices per
-> user)*. Every application sign-in costs one session against the cap, and the oldest is
-> evicted when it is exceeded.
+| `IGRP_OAUTH_ACCESS_TOKEN_TTL_SECONDS` | `300` | A user's access token lifetime |
+| `IGRP_SSO_SESSION_TIMEOUT_SECONDS` | `28800` | Idle timeout of the **browser SSO session**, and how long after sign-in a refresh is still accepted |
 
 ### Redis users (ACL)
 
@@ -310,8 +302,9 @@ sequenceDiagram
     AM->>App: access + refresh + ID token
 ```
 
-Token issuance also opens a server-side session row and stamps `sid` and `device_id`
-claims onto the access token.
+The access token says only who the caller is (`sub`, `azp`, `email`, `name`,
+`preferred_username`, `is_super_admin`, `device_id`) and lives 5 minutes. There is no
+session row and no `sid` (#33).
 
 ### Client credentials (machine-to-machine)
 
@@ -321,8 +314,8 @@ curl -X POST http://localhost:8080/oauth2/token \
   -d "grant_type=client_credentials&scope=<scope>"
 ```
 
-M2M tokens carry no `sid`. Both `M2MTokenRejectionFilter` and `SessionEnforcementFilter`
-skip the `/api/m2m/` prefix so these tokens are admitted there and rejected elsewhere.
+M2M tokens carry `principal_type` = `service_account`. `/api/m2m/**` and the route
+registration take service-account tokens only.
 
 ### Calling the API
 
@@ -378,8 +371,7 @@ and cannot drift from it.
 | Global configuration | `/api/global-configuration` |
 | OAuth clients | `/api/clients` |
 | Service accounts | `/api/service-accounts` |
-| Sessions (caller's own) | `/api/session` |
-| Sessions (administrative) | `/api/admin/sessions`, `/api/admin/users` |
+| Kill a user, refresh their permissions | `/api/admin/sessions` |
 | Audit log | `/api/auth/audit` |
 | Audit reports and archive | `/api/auth/reports` |
 | M2M synchronisation | `/api/m2m` |
@@ -388,8 +380,8 @@ and cannot drift from it.
 
 ## Session Management
 
-Two mechanisms share the word "session" and are routinely confused. They have different
-tables, lifetimes and owners.
+The only session is the browser's SSO session below. iGRP's own per-application sessions
+(`t_user_session`, the `sid` claim, `/api/session`) were removed (#33).
 
 ### 1. `SPRING_SESSION` — the browser SSO session
 
@@ -414,42 +406,25 @@ added to this session must be on that allowlist**, or it fails to deserialise du
 login. Lifetime: `IGRP_SSO_SESSION_TIMEOUT_SECONDS`. Pruned by
 `spring.session.jdbc.cleanup-cron`.
 
-### 2. `t_user_session` — application sessions
+### 2. Signed in, logout and kill
 
-One row per application sign-in, carrying the `sid` claim stamped on that application's
-access token. Sliding idle timeout, absolute ceiling, per-user cap with LRU eviction.
-Pruned by `SessionCleanupScheduler`.
+A user is signed in while they hold an active authorization in AM's store
+(`oauth2_authorization`): a refresh or access token that is issued, not expired and not
+revoked. Access tokens live 5 minutes; a refresh more than `IGRP_SSO_SESSION_TIMEOUT_SECONDS`
+after sign-in gets `invalid_grant`.
 
-`SessionEnforcementFilter` checks the `sid` on every API request and answers
-`401 session_revoked` when the row is no longer active. `/api/session/check` is
-**exempt** from that filter, so a client holding a revoked token can ask why instead of
-receiving an opaque 401:
-
-```bash
-curl /api/session/check -H "Authorization: Bearer <token>"
-# → 200 {"valid": false, "reason": "USER_LOGOUT"}
-```
-
-Reasons include `USER_LOGOUT`, `IDLE_TIMEOUT`, `ABSOLUTE_TIMEOUT`, `USER_CLOSED`,
-`SESSION_LIMIT_EXCEEDED` and `SESSION_NOT_FOUND`. Clients should distinguish
-`USER_LOGOUT` (sign out) from `SESSION_LIMIT_EXCEEDED` (cap eviction — not a sign-out).
-
-### Logout cascade
-
-Several iGRP applications typically run on one host, each with its own session row, the
-later ones signing in silently via `prompt=none`. RP-initiated logout revokes **all
-sessions opened under the same AM sign-in**, not only the application that logged out.
-
-The link is a per-sign-in login id carried on the authentication principal, stored as a
-SHA-256 digest in `t_user_session.sso_session_key`. Rows without a key — client-credentials
-grants, and rows created before the column existed — are revoked alone.
+- **Logout** (`/connect/logout`) ends AM's browser session, revokes every authorization of
+  the user, deletes all of their permission keys after commit, and cascades the logout to the
+  upstream IdP with the sign-in's ID token as `id_token_hint`.
+- **Kill** (`POST /api/admin/sessions/users/{userId}/kill`, or by role or department) does
+  the same for the users, on the whole platform, and is audited (`TOKEN_REVOKED`).
+- After either, a route with a key answers 401 on the cache miss, and AM's self-service
+  routes answer 401 at once. Elsewhere the 5-minute access token bounds the window.
 
 > **Caveat when testing.** If an application runs on a different site from this service
 > (for example `localhost` against a remote deployment), `/connect/logout` is a cross-site
-> POST and the `SameSite=Lax` session cookie is not sent. The sign-in cannot be resolved,
-> so **nothing cascades and the servlet session survives**. Test the cascade same-site.
-
-Specification: [`plans/sso-session-logout-cascade/requirements.md`](plans/sso-session-logout-cascade/requirements.md).
+> POST and the `SameSite=Lax` session cookie is not sent, so the browser session survives.
+> Test logout same-site.
 
 ---
 
@@ -470,7 +445,8 @@ All errors use RFC 7807 `application/problem+json`, produced by
 ```
 
 OAuth2 endpoints instead return the error format their specifications require — for
-example `{"error": "invalid_grant", "error_description": "session_not_active"}`.
+example `{"error": "invalid_grant", "error_description": "..."}` for a refresh after the
+refresh token's maximum lifetime.
 
 Internally, exceptions are raised through `IgrpResponseStatusException.of()`,
 `.notFound()` and `.badRequest()`.
@@ -515,7 +491,6 @@ Notable guard tests, which exist because the thing they assert has broken before
 | `NoAdapterArchitectureTest` | No class touches `IAdapter` or Keycloak admin APIs |
 | `ResourceServerChainStatelessTest` | The API chain stays `STATELESS` |
 | `SessionStoreConversionTest` | Session attributes round-trip through the JSON allowlist |
-| `SessionRepositoryBeanNameTest` | The session repository bean does not collide with Spring Session's |
 | `IgrpOidcUserSerializationTest` | The SSO login id survives serialisation |
 
 Guide: [`docs/TESTING.md`](docs/TESTING.md).
@@ -550,7 +525,7 @@ in doubt, prefer Flyway for a one-time change and the runner for an invariant.
 | `ExceptionInInitializerError: com.sun.tools.javac.tree.EndPosTable` at build | Lombok predates the JDK. Lombok patches javac internals, so it must be new enough for the compiler in use. Pin the toolchain rather than floating it. |
 | `authorization_request_not_found` at login | The shared servlet session store is not active, or `SPRING_SESSION` tables are missing. |
 | `... is not in the allowlist` during login | A type reachable from a session or authorization attribute is missing from `SecurityStoreObjectMapperFactory`. |
-| `401` with `session_revoked` on every API call | The caller's `t_user_session` row is not `ACTIVE`. Ask `/api/session/check` for the reason. |
+| `401` on every call right after signing in again elsewhere | The user was logged out or killed: their authorizations were revoked. Sign in again. |
 
 ---
 

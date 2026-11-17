@@ -106,7 +106,7 @@ class ActuatorSecurityIntegrationTest {
     @Nested
     @ExtendWith(SpringExtension.class)
     @WebAppConfiguration
-    @ContextConfiguration(classes = {SessionEnforcementWiringIntegrationTest.TestApp.class,
+    @ContextConfiguration(classes = {SecurityChainWiringIntegrationTest.TestApp.class,
             FakeActuatorEndpoints.class})
     // AM's real igrp.security.public-paths and application code (#36).
     @TestPropertySource(locations = "classpath:application.properties")

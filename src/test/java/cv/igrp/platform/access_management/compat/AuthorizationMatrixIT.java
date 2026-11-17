@@ -73,7 +73,7 @@ class AuthorizationMatrixIT extends AbstractCompatIT {
         for (Map.Entry<String, Object> path : paths.entrySet()) {
             for (String method : ((Map<String, Object>) path.getValue()).keySet()) {
                 String url = path.getKey().replaceAll("\\{[^}]+}", "1");
-                // A fresh session per route: POST /api/session/close ends the one it runs on.
+                // A fresh sign-in per route, so no route can end the one the next runs on.
                 String nobody = api.userToken(rolelessId, rolelessEmail);
                 lines.add(method.toUpperCase() + " " + path.getKey()
                         + " anonymous=" + status(method, url, null)

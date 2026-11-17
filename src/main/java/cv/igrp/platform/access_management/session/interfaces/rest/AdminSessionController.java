@@ -1,272 +1,101 @@
 package cv.igrp.platform.access_management.session.interfaces.rest;
 
+import cv.igrp.framework.core.domain.CommandBus;
 import cv.igrp.framework.stereotype.IgrpController;
-import cv.igrp.platform.access_management.session.application.dto.SessionKillRequestDTO;
-import cv.igrp.platform.access_management.session.application.dto.SessionResponseDTO;
-import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
 import cv.igrp.platform.access_management.permission_fetch.application.dto.PermissionSetDTO;
 import cv.igrp.platform.access_management.permission_fetch.domain.service.PermissionFetchService;
-import cv.igrp.framework.core.domain.QueryBus;
-import cv.igrp.framework.core.domain.CommandBus;
-import cv.igrp.platform.access_management.session.application.queries.ListSessionsQuery;
-import cv.igrp.platform.access_management.session.application.queries.GetUserSessionQuery;
-import cv.igrp.platform.access_management.session.application.queries.GetSessionsByRoleQuery;
-import cv.igrp.platform.access_management.session.application.queries.GetSessionsByDepartmentQuery;
-import cv.igrp.platform.access_management.session.application.commands.KillSessionCommand;
-import cv.igrp.platform.access_management.session.application.commands.KillSessionsByRoleCommand;
+import cv.igrp.platform.access_management.session.application.commands.KillAllUserSessionsCommand;
 import cv.igrp.platform.access_management.session.application.commands.KillSessionsByDepartmentCommand;
+import cv.igrp.platform.access_management.session.application.commands.KillSessionsByRoleCommand;
+import cv.igrp.platform.access_management.session.application.dto.SessionKillRequestDTO;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.util.Optional;
-import java.util.UUID;
-
+/**
+ * An administrator ending or refreshing users' access (spec "Logout, kill and refresh", #33).
+ * There are no sessions: a kill revokes every authorization of the user and deletes all of
+ * their permission keys, always on the whole platform; a refresh recomputes a user's key for
+ * one application from their current roles.
+ */
 @Slf4j
 @IgrpController
 @RestController
 @RequestMapping("/api/admin/sessions")
-@Tag(
-    name = "Admin Session Management",
-    description = "Administrative session management endpoints"
-)
+@Tag(name = "Admin Session Management", description = "Kill a user's access, or refresh their permissions")
 public class AdminSessionController {
 
-
-    private final QueryBus queryBus;
     private final CommandBus commandBus;
     private final PermissionFetchService permissionFetch;
 
-    public AdminSessionController(
-            QueryBus queryBus,
-            CommandBus commandBus,
-            PermissionFetchService permissionFetch) {
-        this.queryBus = queryBus;
+    public AdminSessionController(CommandBus commandBus, PermissionFetchService permissionFetch) {
         this.commandBus = commandBus;
         this.permissionFetch = permissionFetch;
     }
 
-    
-    @GetMapping
-    @Operation(
-        summary = "List sessions",
-        description = "Lists sessions with optional status filtering and pagination"
-    )
-    @ApiResponse(
-        responseCode = "200",
-        description = "Sessions retrieved successfully",
-        content = @Content(schema = @Schema(implementation = Page.class))
-    )
-    
-    public ResponseEntity<Page<SessionResponseDTO>> listSessions(
-            @Parameter(description = "Session status filter") 
-            @RequestParam(required = false) SessionStatus status,
-            @Parameter(description = "Page number (0-based)") 
-            @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Page size") 
-            @RequestParam(defaultValue = "20") int size) {
-        
-        
-        Pageable pageable = PageRequest.of(page, size);
-        var query = new ListSessionsQuery(status, pageable);
-        Page<SessionResponseDTO> sessions = queryBus.handle(query);
-        
-        return ResponseEntity.ok(sessions);
-    }
-
-    @GetMapping("/users/{userId}")
-    @Operation(
-        summary = "Get user session",
-        description = "Retrieves the current active session for a specific user"
-    )
-    @ApiResponse(
-        responseCode = "200",
-        description = "Session found",
-        content = @Content(schema = @Schema(implementation = SessionResponseDTO.class))
-    )
-    @ApiResponse(
-        responseCode = "204",
-        description = "No active session found for user"
-    )
-    public ResponseEntity<SessionResponseDTO> getUserSession(
-            @Parameter(description = "User id")
-            @PathVariable String userId) {
-
-        log.debug("Admin getting session for user: {}", userId);
-
-        var query = new GetUserSessionQuery(userId);
-        Optional<SessionResponseDTO> session = queryBus.handle(query);
-        
-        return session.map(ResponseEntity::ok)
-                .orElse(ResponseEntity.noContent().build());
-    }
-
-    @PostMapping("/{sessionId}/kill")
-    @Operation(
-        summary = "Kill session",
-        description = "Kills the session's user on the whole platform (#19): every session, authorization and permission key"
-    )
-    @ApiResponse(
-        responseCode = "204",
-        description = "Session killed successfully"
-    )
-    @ApiResponse(
-        responseCode = "404",
-        description = "Session not found"
-    )
-    public ResponseEntity<Void> killSession(
-            @Parameter(description = "Session ID") 
-            @PathVariable UUID sessionId,
+    @PostMapping("/users/{userId}/kill")
+    @Operation(summary = "Kill a user",
+            description = "Ends the user's access on the whole platform: every authorization and permission key")
+    @ApiResponse(responseCode = "204", description = "The user's access ended")
+    @ApiResponse(responseCode = "404", description = "User not found")
+    public ResponseEntity<Void> killUser(
+            @Parameter(description = "User id") @PathVariable String userId,
             @Valid @RequestBody SessionKillRequestDTO request) {
-        
-        log.info("Admin killing session: {} with reason: {}", sessionId, request.getReason());
-        
-        var command = new KillSessionCommand(sessionId, request.getReason(), request.getKilledBy());
-        boolean killed = commandBus.send(command);
-        
-        return killed ? ResponseEntity.noContent().build()
-                : ResponseEntity.notFound().build();
-    }
 
-    @GetMapping("/roles/{roleCode}")
-    @Operation(
-        summary = "List sessions by role",
-        description = "Retrieves sessions for users belonging to a specific role/department"
-    )
-    @ApiResponse(
-        responseCode = "200",
-        description = "Sessions retrieved successfully",
-        content = @Content(schema = @Schema(implementation = Page.class))
-    )
-    @ApiResponse(
-        responseCode = "204",
-        description = "No sessions found for role"
-    )
-    public ResponseEntity<Page<SessionResponseDTO>> listSessionsByRole(
-            @Parameter(description = "Role code") 
-            @PathVariable String roleCode,
-            @Parameter(description = "Department code (optional)") 
-            @RequestParam(required = false) String departmentCode,
-            @Parameter(description = "Session status filter") 
-            @RequestParam(required = false) SessionStatus status,
-            @Parameter(description = "Page number (0-based)") 
-            @RequestParam(defaultValue = "0") int page,
-            @Parameter(description = "Page size") 
-            @RequestParam(defaultValue = "20") int size) {
-        
-        log.info("Admin listing sessions for role: {} in department: {} with status: {}", 
-                roleCode, departmentCode, status);
-        
-        Pageable pageable = PageRequest.of(page, size);
-        var query = new GetSessionsByRoleQuery(roleCode, departmentCode, status, pageable);
-        Page<SessionResponseDTO> sessions = queryBus.handle(query);
-        
-        return ResponseEntity.ok(sessions);
+        log.info("Admin killing user {} with reason: {}", userId, request.getReason());
+        boolean killed = commandBus.send(new KillAllUserSessionsCommand(userId, request.getReason(),
+                request.getKilledBy()));
+        return killed ? ResponseEntity.noContent().build() : ResponseEntity.notFound().build();
     }
 
     @PostMapping("/roles/{roleCode}/kill")
-    @Operation(
-        summary = "Kill sessions by role",
-        description = "Terminates all active sessions for users with a specific role"
-    )
-    @ApiResponse(
-        responseCode = "204",
-        description = "Sessions killed successfully"
-    )
-    @ApiResponse(
-        responseCode = "404",
-        description = "No user holds the role"
-    )
+    @Operation(summary = "Kill the users of a role",
+            description = "Kills every user holding the role, each on the whole platform")
+    @ApiResponse(responseCode = "204", description = "The users' access ended")
+    @ApiResponse(responseCode = "404", description = "No user holds the role")
     public ResponseEntity<Void> killSessionsByRole(
-            @Parameter(description = "Role code") 
-            @PathVariable String roleCode,
-            @Parameter(description = "Department code (role codes are department-scoped)") 
+            @Parameter(description = "Role code") @PathVariable String roleCode,
+            @Parameter(description = "Department code (role codes are department-scoped)")
             @RequestParam(required = false) String departmentCode,
             @Valid @RequestBody SessionKillRequestDTO request) {
-        
-        log.info("Admin killing sessions for role: {} in department: {} with reason: {}", 
+
+        log.info("Admin killing the users of role {} in department {} with reason: {}",
                 roleCode, departmentCode, request.getReason());
-        
-        var command = new KillSessionsByRoleCommand(roleCode, departmentCode, request.getReason(), request.getKilledBy());
-        int killedCount = commandBus.send(command);
-        
-        if (killedCount == 0) {
-            return ResponseEntity.notFound().build();
-        }
-        
-        return ResponseEntity.noContent().build();
+        int killed = commandBus.send(new KillSessionsByRoleCommand(roleCode, departmentCode, request.getReason(),
+                request.getKilledBy()));
+        return killed == 0 ? ResponseEntity.notFound().build() : ResponseEntity.noContent().build();
     }
 
     @PostMapping("/departments/{departmentCode}/kill")
-    @Operation(
-        summary = "Kill sessions by department",
-        description = "Kills every user with a role in the department, each on the whole platform (#19)"
-    )
-    @ApiResponse(
-        responseCode = "204",
-        description = "Sessions killed successfully"
-    )
+    @Operation(summary = "Kill the users of a department",
+            description = "Kills every user with a role in the department, each on the whole platform")
+    @ApiResponse(responseCode = "204", description = "The users' access ended")
     public ResponseEntity<Void> killSessionsByDepartment(
-            @Parameter(description = "Department code") 
-            @PathVariable String departmentCode,
+            @Parameter(description = "Department code") @PathVariable String departmentCode,
             @Valid @RequestBody SessionKillRequestDTO request) {
-        
-        log.info("Admin killing sessions for department: {} with reason: {}", 
-                departmentCode, request.getReason());
-        
-        // A kill on the whole platform for every user in the department (#19).
-        commandBus.send(new KillSessionsByDepartmentCommand(departmentCode, request.getReason(), request.getKilledBy()));
 
+        log.info("Admin killing the users of department {} with reason: {}", departmentCode, request.getReason());
+        commandBus.send(new KillSessionsByDepartmentCommand(departmentCode, request.getReason(),
+                request.getKilledBy()));
         return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping("/statistics")
-    @Operation(
-        summary = "Get session statistics",
-        description = "Retrieves statistics about current sessions and invalidation operations"
-    )
-    @ApiResponse(
-        responseCode = "200",
-        description = "Statistics retrieved successfully"
-    )
-    public ResponseEntity<Object> getSessionStatistics() {
-        log.debug("Admin getting session statistics");
-        
-        // This could be expanded to provide more detailed statistics
-        var activeQuery = new ListSessionsQuery(SessionStatus.ACTIVE, PageRequest.of(0, 1));
-        var expiredQuery = new ListSessionsQuery(SessionStatus.EXPIRED, PageRequest.of(0, 1));
-        var closedQuery = new ListSessionsQuery(SessionStatus.CLOSED, PageRequest.of(0, 1));
-        var revokedQuery = new ListSessionsQuery(SessionStatus.REVOKED, PageRequest.of(0, 1));
-        
-        var stats = new Object() {
-            public final long activeSessions = ((org.springframework.data.domain.Page<SessionResponseDTO>) queryBus.handle(activeQuery)).getTotalElements();
-            public final long expiredSessions = ((org.springframework.data.domain.Page<SessionResponseDTO>) queryBus.handle(expiredQuery)).getTotalElements();
-            public final long closedSessions = ((org.springframework.data.domain.Page<SessionResponseDTO>) queryBus.handle(closedQuery)).getTotalElements();
-            public final long revokedSessions = ((org.springframework.data.domain.Page<SessionResponseDTO>) queryBus.handle(revokedQuery)).getTotalElements();
-        };
-        
-        return ResponseEntity.ok(stats);
     }
 
     @PostMapping("/users/{userId}/refresh")
     @Operation(
-        summary = "Refresh a user's permissions in one application",
-        description = "Recomputes the user's permission key for the application from their current roles and "
-                + "assignments and writes it, exactly as the user's own permission fetch would (#19). "
-                + "Nothing is taken from the request: there is no body."
+            summary = "Refresh a user's permissions in one application",
+            description = "Recomputes the user's permission key for the application from their current roles and "
+                    + "assignments and writes it, exactly as the user's own permission fetch would (#19). "
+                    + "Nothing is taken from the request: there is no body."
     )
     @ApiResponse(responseCode = "200", description = "The written permission set")
     @ApiResponse(responseCode = "404", description = "User or application not found")

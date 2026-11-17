@@ -105,7 +105,6 @@ public class AuthorizationServerConfig {
     @Order(0)
     public SecurityFilterChain authorizationServerSecurityFilterChain(HttpSecurity http,
                                                                       IgrpOidcUserService igrpOidcUserService,
-                                                                      SessionAwareIntrospector sessionAwareIntrospector,
                                                                       SessionLogoutHandler sessionLogoutHandler,
                                                                       RegisteredClientRepository registeredClientRepository,
                                                                       FederatedClients federatedClients) {
@@ -131,11 +130,6 @@ public class AuthorizationServerConfig {
                         // secret, ahead of the built-in check against AM's hash.
                         .clientAuthentication(clientAuthentication -> clientAuthentication
                                 .authenticationProviders(providers -> providers.addFirst(federatedClientAuthentication)))
-                        // Phase E2 — wrap the introspection response so iGRP-bound
-                        // tokens with a dead session report active=false even when
-                        // their JWT signature would still validate.
-                        .tokenIntrospectionEndpoint(introspection ->
-                                introspection.introspectionResponseHandler(sessionAwareIntrospector))
                         .oidc(oidc -> oidc
                                 // Phase E3 — RP-initiated logout cascades to a
                                 // SessionEntity revoke + OAuth2Authorization remove.
@@ -607,7 +601,6 @@ public class AuthorizationServerConfig {
     @Bean
     public OAuth2AuthorizationService authorizationService(JdbcTemplate jdbcTemplate,
                                                            RegisteredClientRepository registeredClientRepository,
-                                                           RevocationCascadeListener revocationCascadeListener,
                                                            RefreshTokenReuseGuard refreshTokenReuseGuard,
                                                            AuthorizationServerSettings authorizationServerSettings) {
         JdbcOAuth2AuthorizationService delegate =
@@ -623,16 +616,13 @@ public class AuthorizationServerConfig {
         var parametersMapper = new JdbcOAuth2AuthorizationService.JsonMapperOAuth2AuthorizationParametersMapper(jsonMapper);
         delegate.setAuthorizationParametersMapper(parametersMapper);
 
-        // Phase C3 — every remove() (revoke / logout / one-shot consume) cascades
-        // into a SessionEntity revocation so the enforcement filter (Phase C1)
-        // denies the next request carrying the same sid.
         // FR-8 — save() tombstones rotated refresh tokens; findByToken() consults
-        // those tombstones on a miss so replays revoke the session and publish
-        // SessionRevokedEvent before Spring AS returns invalid_grant.
+        // those tombstones on a miss so a replay ends the user's access before
+        // Spring AS returns invalid_grant.
         // The token endpoint path lets findByToken tell a GRANT (where a replayed
         // refresh token is an attack) from introspection/revocation (where a miss
         // is routine and must stay a no-op).
-        return new CascadingAuthorizationService(delegate, revocationCascadeListener, refreshTokenReuseGuard,
+        return new CascadingAuthorizationService(delegate, refreshTokenReuseGuard,
                 authorizationServerSettings.getTokenEndpoint());
     }
 

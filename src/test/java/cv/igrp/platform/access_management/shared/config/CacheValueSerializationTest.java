@@ -1,17 +1,10 @@
 package cv.igrp.platform.access_management.shared.config;
 
-import cv.igrp.platform.access_management.session.application.dto.SessionResponseDTO;
-import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
-import cv.igrp.platform.access_management.session.domain.service.SessionHeartbeatService;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.cache.support.NullValue;
 import org.springframework.data.redis.serializer.RedisSerializer;
 
-import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.ArrayList;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -41,36 +34,5 @@ class CacheValueSerializationTest {
         // sessionCache's @Cacheable method returns null, so RedisCacheManager
         // stores NullValue for it.
         assertInstanceOf(NullValue.class, roundTrip(NullValue.INSTANCE));
-    }
-
-    @Test
-    @DisplayName("SID hot-path Snapshot survives the round trip")
-    void sidSnapshot() {
-        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-        SessionHeartbeatService.Snapshot snapshot = new SessionHeartbeatService.Snapshot(
-                UUID.randomUUID(), "user-1", SessionStatus.ACTIVE,
-                now, now.plusSeconds(1800), now.plusSeconds(28800));
-
-        // The enforcement filter accepts only this exact type back.
-        assertEquals(snapshot, assertInstanceOf(SessionHeartbeatService.Snapshot.class, roundTrip(snapshot)));
-    }
-
-    @Test
-    @DisplayName("sessionCache: SessionResponseDTO survives the round trip")
-    void sessionResponse() {
-        Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
-        SessionResponseDTO session = new SessionResponseDTO();
-        session.setSessionId(UUID.randomUUID());
-        session.setStatus(SessionStatus.ACTIVE);
-        session.setStartedAt(now);
-        session.setLastSeenAt(now);
-        session.setExpiresAt(now.plusSeconds(1800));
-        session.setClientIp("10.0.0.1");
-        session.setDeviceId("device-1");
-        session.setRoles(new ArrayList<>());
-        session.setDepartments(new ArrayList<>());
-
-        SessionResponseDTO back = assertInstanceOf(SessionResponseDTO.class, roundTrip(session));
-        assertEquals(session, back);
     }
 }

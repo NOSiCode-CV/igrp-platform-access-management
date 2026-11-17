@@ -1,7 +1,7 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.UserIdentityJpaRepository;
-import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
+import cv.igrp.platform.access_management.security_audit.application.service.AccessAuditLogger;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,7 +27,7 @@ class IgrpOidcUserServiceRootTest {
 
     @BeforeEach
     void service() {
-        service = new IgrpOidcUserService(mock(UserIdentityJpaRepository.class), users, mock(SessionAuditLogger.class));
+        service = new IgrpOidcUserService(mock(UserIdentityJpaRepository.class), users, mock(AccessAuditLogger.class));
         ReflectionTestUtils.setField(service, "rootEmail", "Root@Example.cv");
     }
 
