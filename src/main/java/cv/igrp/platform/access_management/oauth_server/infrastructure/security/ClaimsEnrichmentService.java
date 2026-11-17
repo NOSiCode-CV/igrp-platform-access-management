@@ -165,7 +165,8 @@ public class ClaimsEnrichmentService {
                 ? Optional.empty()
                 : resolveServiceAccount(subject);
 
-        claims.put(CLAIM_IS_SUPER_ADMIN, isSuperAdmin(user));
+        // A service account carries what identifies it instead of the user claims (spec "Tokens").
+        user.ifPresent(found -> claims.put(CLAIM_IS_SUPER_ADMIN, isSuperAdmin(user)));
         Map<String, Object> identity = standardIdentityClaims(user, scopes);
         ACCESS_TOKEN_IDENTITY_CLAIMS.forEach(name -> {
             if (identity.containsKey(name)) {

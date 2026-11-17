@@ -67,6 +67,13 @@ class SessionIssuanceSlideTest {
     }
 
     @Test
+    void clientWithoutTokenSettings_fallsBackToIdleTimeout() {
+        org.springframework.security.oauth2.server.authorization.client.RegisteredClient bare =
+                org.mockito.Mockito.mock(org.springframework.security.oauth2.server.authorization.client.RegisteredClient.class);
+        assertEquals(1800L, service(1800).effectiveSlideSeconds(bare));
+    }
+
+    @Test
     void issuedTokenLifetimeWinsOverTheClients() {
         // v3-25 (#33): a user's token lives 5 minutes though the client allows 60.
         assertEquals(1800L, service(1800).effectiveSlideSeconds(client(Duration.ofMinutes(60)), 300L));

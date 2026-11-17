@@ -227,7 +227,7 @@ class ClaimsEnrichmentServiceTest {
 
     @Test
     void buildClaimsToleratesMissingUserOrClient() {
-        assertEquals(Map.of("is_super_admin", false), service.buildClaims(null, "no-such", Set.of("openid")));
+        assertEquals(Map.of(), service.buildClaims(null, "no-such", Set.of("openid")));
         assertEquals(Map.of(), service.buildIdTokenClaims(null, Set.of("openid")));
     }
 
@@ -269,7 +269,8 @@ class ClaimsEnrichmentServiceTest {
 
         Map<String, Object> claims = service.buildClaims(serviceAccountId.toString(), "client-a", Set.of());
 
-        assertEquals(Map.of("is_super_admin", false,
+        // #33: a service account carries what identifies it, not the user claims (no is_super_admin).
+        assertEquals(Map.of(
                 ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE, ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT,
                 ServiceAccountTokenClaims.CLAIM_SERVICE_ACCOUNT_ID, serviceAccountId.toString(),
                 ServiceAccountTokenClaims.CLAIM_CLIENT_ID, "client-a",

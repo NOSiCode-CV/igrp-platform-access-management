@@ -187,7 +187,8 @@ public class SessionIssuanceService {
     long effectiveSlideSeconds(RegisteredClient client, Long issuedLifetimeSeconds) {
         long idle = sessionProperties.getTimeoutSeconds();
         Long lifetime = issuedLifetimeSeconds;
-        if (lifetime == null && client != null) {
+        if (lifetime == null && client != null && client.getTokenSettings() != null
+                && client.getTokenSettings().getAccessTokenTimeToLive() != null) {
             lifetime = client.getTokenSettings().getAccessTokenTimeToLive().toSeconds();
         }
         if (lifetime == null) {

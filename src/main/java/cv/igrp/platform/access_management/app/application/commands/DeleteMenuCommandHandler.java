@@ -90,8 +90,8 @@ public class DeleteMenuCommandHandler implements CommandHandler<DeleteMenuComman
 
       // Fix (P1 gap): the menu used to be marked DELETED without touching its departments
       // or roles. Roles kept granting a deleted menu via t_menuentry_role, and
-      // dept.getMenuentries() still surfaced it — so JWT menus/resource_access claims for
-      // users assigned to those roles kept the deleted menu until token refresh. Clear
+      // dept.getMenuentries() still surfaced it — so users assigned to those roles
+      // kept seeing the deleted menu. Clear
       // both sides and fire per-dept scope-change events so sessions are invalidated.
       if (menuEntry.getDepartments() != null) {
          for (DepartmentEntity dept : menuEntry.getDepartments()) {
