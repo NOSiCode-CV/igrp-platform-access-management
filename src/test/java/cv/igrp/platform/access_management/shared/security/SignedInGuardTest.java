@@ -43,8 +43,9 @@ class SignedInGuardTest {
     void aSignedOutUserIs401NotForbidden() {
         when(authorizations.hasActive(USER)).thenReturn(false);
         SignedInGuard guard = new SignedInGuard(authorizations);
+        JwtAuthenticationToken user = token(Map.of("sub", USER));
 
-        assertThatThrownBy(() -> guard.check(token(Map.of("sub", USER))))
+        assertThatThrownBy(() -> guard.check(user))
                 .isInstanceOf(CredentialsExpiredException.class);
     }
 
