@@ -5,7 +5,6 @@ import cv.igrp.platform.access_management.role.specs.RoleSpecificationBuilder;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
-import cv.igrp.platform.access_management.shared.security.ScopeContext;
 import lombok.extern.slf4j.Slf4j;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
@@ -72,7 +71,7 @@ public class GetRolesQueryHandler implements QueryHandler<GetRolesQuery, Respons
   @Transactional(readOnly = true)
   public ResponseEntity<List<RoleDTO>> handle(GetRolesQuery query) {
     log.info("Get Roles with filters - departmentCode: {}, code: {}", query.getCode(), query.getCode());
-    Specification<RoleEntity> specs = specification.buildSpecification(query, new ScopeContext());
+    Specification<RoleEntity> specs = specification.buildSpecification(query);
     List<RoleEntity> allRoles = roleRepository.findAll(specs);
     List<RoleDTO> collectedRole = allRoles.stream()
             .map(roleMapper::mapToDto)

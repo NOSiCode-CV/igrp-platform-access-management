@@ -4,8 +4,6 @@ import cv.igrp.platform.access_management.department.application.queries.GetRole
 import cv.igrp.platform.access_management.m2m.application.commands.GetRolesForBusinessCommand;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.spring.Scoped;
-import cv.igrp.platform.access_management.shared.security.ScopeContext;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
@@ -14,15 +12,15 @@ import static cv.igrp.platform.access_management.shared.infrastructure.service.C
 @Component
 public class RoleSpecificationBuilder {
 
+    private static final String STATUS = "status";
+
     /**
      * Builds a dynamic JPA {@link Specification} based on optional code and code filters.
      *
      * @param query the query object containing departmentCode and code filters (optional)
-     * @param context the scope context containing the current user's departments, applications and roles (optional)
      * @return a {@link Specification} representing the composed query filters
      */
-    @Scoped
-    public Specification<RoleEntity> buildSpecification(GetRolesQuery query, ScopeContext context) {
+    public Specification<RoleEntity> buildSpecification(GetRolesQuery query) {
 
         Specification<RoleEntity> specs = Specification.allOf();
 
@@ -37,15 +35,13 @@ public class RoleSpecificationBuilder {
         }
 
         specs = specs.and((root, criteriaQuery, criteriaBuilder) ->
-                root.get("status").in(Status.ACTIVE, Status.INACTIVE)
+                root.get(STATUS).in(Status.ACTIVE, Status.INACTIVE)
         );
 
         specs = specs.and((root, criteriaQuery, criteriaBuilder) ->
                 criteriaBuilder.notEqual(root.get("code"), SUPER_ADMIN_ROLE)
         );
 
-        // Apply scope
-        specs = applyScope(specs, context);
 
         return specs;
 
@@ -75,12 +71,12 @@ public class RoleSpecificationBuilder {
 
         if (query.isActiveOnly()) {
             specs = specs.and((root, criteriaQuery, cb) ->
-                    cb.equal(root.get("status"), Status.ACTIVE)
+                    cb.equal(root.get(STATUS), Status.ACTIVE)
             );
         }
 
         specs = specs.and((root, criteriaQuery, criteriaBuilder) ->
-                criteriaBuilder.notEqual(root.get("status"), Status.DELETED)
+                criteriaBuilder.notEqual(root.get(STATUS), Status.DELETED)
         );
 
         specs = specs.and((root, criteriaQuery, criteriaBuilder) ->
@@ -89,17 +85,6 @@ public class RoleSpecificationBuilder {
 
         return specs;
 
-    }
-
-    private Specification<RoleEntity> applyScope(Specification<RoleEntity> spec, ScopeContext context) {
-
-        if(!context.isSuperAdmin()) {
-            return spec.and((root, criteriaQuery, cb) ->
-                    root.get("id").in(context.getRoleIds())
-            );
-        }
-
-        return spec;
     }
 
 }

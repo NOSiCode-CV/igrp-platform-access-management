@@ -8,6 +8,8 @@ import jakarta.persistence.*;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
 import org.hibernate.annotations.JdbcTypeCode;
+import cv.igrp.framework.auth.core.scope.IgrpScope;
+import org.hibernate.annotations.Filter;
 import org.hibernate.envers.Audited;
 import org.hibernate.type.SqlTypes;
 import jakarta.validation.constraints.NotBlank;
@@ -22,6 +24,7 @@ import java.util.*;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
+@Filter(name = IgrpScope.FILTER, condition = AmScopes.USER, deduceAliasInjectionPoints = false)
 @Table(name = "t_user")
 public class IGRPUserEntity extends AuditEntity implements UserIdentity {
 

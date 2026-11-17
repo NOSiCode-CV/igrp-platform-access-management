@@ -3,8 +3,6 @@ package cv.igrp.platform.access_management.users.specs;
 import cv.igrp.platform.access_management.m2m.application.commands.GetUsersForBusinessCommand;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.spring.Scoped;
-import cv.igrp.platform.access_management.shared.security.ScopeContext;
 import cv.igrp.platform.access_management.users.application.queries.GetUsersQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Join;
@@ -16,6 +14,9 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class UserSpecificationBuilder {
+
+    private static final String STATUS = "status";
+    private static final String DEPARTMENT = "department";
 
     /**
      * Join {@code IGRPUserEntity → userRoleAssignments → role} and return the
@@ -39,15 +40,14 @@ public class UserSpecificationBuilder {
         return uraJoin.join("role", joinType);
     }
 
-    @Scoped
-    public Specification<IGRPUserEntity> buildSpecification(GetUsersQuery query, ScopeContext context) {
+    public Specification<IGRPUserEntity> buildSpecification(GetUsersQuery query) {
         Specification<IGRPUserEntity> spec = Specification.anyOf();
 
         if (query.getApplicationCode() != null) {
             spec = spec.and((root, criteriaQuery, cb) -> {
                 java.util.List<Predicate> preds = new java.util.ArrayList<>();
                 Join<Object, Object> roleJoin = joinActiveRole(root, JoinType.INNER, cb, preds);
-                Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
+                Join<Object, Object> departmentJoin = roleJoin.join(DEPARTMENT, JoinType.INNER);
                 Join<Object, Object> applicationJoin = departmentJoin.join("applications", JoinType.INNER);
                 preds.add(cb.equal(applicationJoin.get("code"), query.getApplicationCode()));
                 return cb.and(preds.toArray(Predicate[]::new));
@@ -58,7 +58,7 @@ public class UserSpecificationBuilder {
             spec = spec.and((root, criteriaQuery, cb) -> {
                 java.util.List<Predicate> preds = new java.util.ArrayList<>();
                 Join<Object, Object> roleJoin = joinActiveRole(root, JoinType.INNER, cb, preds);
-                Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
+                Join<Object, Object> departmentJoin = roleJoin.join(DEPARTMENT, JoinType.INNER);
                 preds.add(cb.equal(departmentJoin.get("code"), query.getDepartmentCode()));
                 return cb.and(preds.toArray(Predicate[]::new));
             });
@@ -81,11 +81,9 @@ public class UserSpecificationBuilder {
         // admin UIs until they accept the invitation; DELETED users are
         // soft-deletes that must never resurface in normal listings.
         spec = spec.and((root, criteriaQuery, cb) ->
-                root.get("status").in(Status.ACTIVE, Status.INACTIVE)
+                root.get(STATUS).in(Status.ACTIVE, Status.INACTIVE)
         );
 
-        // Apply scope
-        spec = applyScope(spec, context);
 
         return spec;
     }
@@ -98,7 +96,7 @@ public class UserSpecificationBuilder {
             spec = spec.and((root, criteriaQuery, cb) -> {
                 java.util.List<Predicate> preds = new java.util.ArrayList<>();
                 Join<Object, Object> roleJoin = joinActiveRole(root, JoinType.INNER, cb, preds);
-                Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
+                Join<Object, Object> departmentJoin = roleJoin.join(DEPARTMENT, JoinType.INNER);
                 Join<Object, Object> applicationJoin = departmentJoin.join("applications", JoinType.INNER);
                 preds.add(cb.equal(applicationJoin.get("code"), query.getApplicationCode()));
                 return cb.and(preds.toArray(Predicate[]::new));
@@ -109,7 +107,7 @@ public class UserSpecificationBuilder {
             spec = spec.and((root, criteriaQuery, cb) -> {
                 java.util.List<Predicate> preds = new java.util.ArrayList<>();
                 Join<Object, Object> roleJoin = joinActiveRole(root, JoinType.INNER, cb, preds);
-                Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
+                Join<Object, Object> departmentJoin = roleJoin.join(DEPARTMENT, JoinType.INNER);
                 preds.add(cb.equal(departmentJoin.get("code"), query.getDepartmentCode()));
                 return cb.and(preds.toArray(Predicate[]::new));
             });
@@ -138,7 +136,7 @@ public class UserSpecificationBuilder {
             spec = spec.or((root, criteriaQuery, cb) -> {
                 java.util.List<Predicate> preds = new java.util.ArrayList<>();
                 Join<Object, Object> roleJoin = joinActiveRole(root, JoinType.LEFT, cb, preds);
-                Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.LEFT);
+                Join<Object, Object> departmentJoin = roleJoin.join(DEPARTMENT, JoinType.LEFT);
                 Join<Object, Object> parentDepartmentJoin = departmentJoin.join("parentId", JoinType.LEFT);
                 preds.add(cb.equal(parentDepartmentJoin.get("code"), query.getDepartmentCode()));
                 return cb.and(preds.toArray(Predicate[]::new));
@@ -166,7 +164,7 @@ public class UserSpecificationBuilder {
         }
 
         if (query.isActiveOnly()) {
-            spec = spec.and((root, criteriaQuery, cb) -> cb.equal(root.get("status"), Status.ACTIVE));
+            spec = spec.and((root, criteriaQuery, cb) -> cb.equal(root.get(STATUS), Status.ACTIVE));
         }
 
         // Same restriction as the GetUsersQuery path: TEMPORARY accounts are
@@ -175,26 +173,10 @@ public class UserSpecificationBuilder {
         // design — direct id resolution can return any status (callers may
         // need to detect a deleted/temporary user explicitly).
         spec = spec.and((root, criteriaQuery, cb) ->
-                root.get("status").in(Status.ACTIVE, Status.INACTIVE)
+                root.get(STATUS).in(Status.ACTIVE, Status.INACTIVE)
         );
 
         return spec;
-    }
-
-    private Specification<IGRPUserEntity> applyScope(Specification<IGRPUserEntity> spec, ScopeContext context) {
-
-        if(!context.isSuperAdmin()) {
-            return spec.and((root, criteriaQuery, cb) -> {
-                java.util.List<Predicate> preds = new java.util.ArrayList<>();
-                Join<Object, Object> roleJoin = joinActiveRole(root, JoinType.INNER, cb, preds);
-                Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
-                preds.add(departmentJoin.get("id").in(context.getDepartmentIds()));
-                return cb.and(preds.toArray(Predicate[]::new));
-            });
-        }
-
-        return spec;
-
     }
 
 

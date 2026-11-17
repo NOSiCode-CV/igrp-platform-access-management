@@ -9,7 +9,6 @@ import cv.igrp.platform.access_management.shared.application.constants.Departmen
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
-import cv.igrp.platform.access_management.shared.security.ScopeContext;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -25,7 +24,7 @@ import java.util.List;
 
 @SuppressWarnings("unchecked")
 @ExtendWith(MockitoExtension.class)
-public class GetDepartmentsQueryHandlerTest {
+class GetDepartmentsQueryHandlerTest {
 
     @Mock
     DepartmentEntityRepository departmentRepository;
@@ -87,7 +86,7 @@ public class GetDepartmentsQueryHandlerTest {
         // Arrange
         GetDepartmentsQuery query = getDepartmentsQuery("finance", DepartmentStatus.ACTIVE.name());
 
-        when(specification.buildSpecification(eq(query), any(ScopeContext.class))).thenReturn(specs);
+        when(specification.buildSpecification(query)).thenReturn(specs);
         when(departmentRepository.findAll(specs)).thenReturn(List.of(departmentA, departmentB));
         when(departmentMapper.toDto(departmentA)).thenReturn(departmentDTOA);
         when(departmentMapper.toDto(departmentB)).thenReturn(departmentDTOB);
@@ -117,7 +116,7 @@ public class GetDepartmentsQueryHandlerTest {
         // Arrange
         GetDepartmentsQuery query = getDepartmentsQuery("nonexistent", DepartmentStatus.ACTIVE.name());
 
-        when(specification.buildSpecification(eq(query), any(ScopeContext.class))).thenReturn(specs);
+        when(specification.buildSpecification(query)).thenReturn(specs);
         when(departmentRepository.findAll(specs)).thenReturn(List.of());
 
         // Act
@@ -142,7 +141,7 @@ public class GetDepartmentsQueryHandlerTest {
         // Arrange
         GetDepartmentsQuery query = getDepartmentsQuery(null, null);
 
-        when(specification.buildSpecification(eq(query), any(ScopeContext.class))).thenReturn(specs);
+        when(specification.buildSpecification(query)).thenReturn(specs);
         when(departmentRepository.findAll(specs)).thenReturn(List.of(departmentA, departmentB));
         when(departmentMapper.toDto(departmentA)).thenReturn(departmentDTOA);
         when(departmentMapper.toDto(departmentB)).thenReturn(departmentDTOB);
