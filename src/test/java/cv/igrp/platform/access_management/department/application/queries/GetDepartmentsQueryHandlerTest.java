@@ -24,7 +24,7 @@ import java.util.List;
 
 @SuppressWarnings("unchecked")
 @ExtendWith(MockitoExtension.class)
-public class GetDepartmentsQueryHandlerTest {
+class GetDepartmentsQueryHandlerTest {
 
     @Mock
     DepartmentEntityRepository departmentRepository;

@@ -20,6 +20,9 @@ import static cv.igrp.platform.access_management.shared.infrastructure.service.C
 @Component
 public class DepartmentSpecificationBuilder {
 
+    private static final String STATUS = "status";
+    private static final String PARENT = "parentId";
+
     Logger logger = LoggerFactory.getLogger(DepartmentSpecificationBuilder.class);
 
     public Specification<DepartmentEntity> buildSpecification(GetDepartmentsQuery query) {
@@ -32,7 +35,7 @@ public class DepartmentSpecificationBuilder {
 
             if (query.getStatus() != null) {
                 DepartmentStatus departmentStatus = resolveDepartmentStatus(query.getStatus());
-                predicates.add(cb.equal(root.get("status"), departmentStatus));
+                predicates.add(cb.equal(root.get(STATUS), departmentStatus));
             }
 
             if (query.getCode() != null) {
@@ -40,12 +43,12 @@ public class DepartmentSpecificationBuilder {
             }
 
             if (query.getParentCode() != null) {
-                Join<DepartmentEntity, DepartmentEntity> parentJoin = root.join("parentId");
+                Join<DepartmentEntity, DepartmentEntity> parentJoin = root.join(PARENT);
                 predicates.add(cb.equal(parentJoin.get("code"), query.getParentCode()));
             }
 
             // Exclude deleted departments
-            predicates.add(cb.notEqual(root.get("status"), DepartmentStatus.DELETED));
+            predicates.add(cb.notEqual(root.get(STATUS), DepartmentStatus.DELETED));
             predicates.add(cb.notEqual(root.get("code"), IGRP_DEPARTMENT));
 
 
@@ -60,12 +63,12 @@ public class DepartmentSpecificationBuilder {
             List<Predicate> predicates = new ArrayList<>();
 
             if (query.getParentCode() != null) {
-                Join<DepartmentEntity, DepartmentEntity> parentJoin = root.join("parentId", JoinType.INNER);
+                Join<DepartmentEntity, DepartmentEntity> parentJoin = root.join(PARENT, JoinType.INNER);
                 predicates.add(cb.equal(parentJoin.get("code"), query.getParentCode()));
             }
 
             if (!query.isIncludeChildrenDepartments() && query.getParentCode() == null) {
-                predicates.add(cb.isNull(root.get("parentId")));
+                predicates.add(cb.isNull(root.get(PARENT)));
             }
 
             if (query.getGetDepartmentForBusinessRequest() != null && !query.getGetDepartmentForBusinessRequest().isEmpty()) {
@@ -73,10 +76,10 @@ public class DepartmentSpecificationBuilder {
             }
 
             if (query.isActiveOnly()) {
-                predicates.add(cb.equal(root.get("status"), DepartmentStatus.ACTIVE));
+                predicates.add(cb.equal(root.get(STATUS), DepartmentStatus.ACTIVE));
             }
 
-            predicates.add(cb.notEqual(root.get("status"), DepartmentStatus.DELETED));
+            predicates.add(cb.notEqual(root.get(STATUS), DepartmentStatus.DELETED));
             predicates.add(cb.notEqual(root.get("code"), IGRP_DEPARTMENT));
 
             return cb.and(predicates.toArray(new Predicate[0]));

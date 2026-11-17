@@ -57,10 +57,6 @@ public class ApplicationSpecificationBuilder {
                 cb.notEqual(root.get("status"), Status.DELETED)
         );
 
-        // Exclude system applications
-        //spec = spec.and((root, _, cb) ->
-        //        cb.notEqual(root.get("type"), AppType.SYSTEM)
-        //);
 
 
         return spec;

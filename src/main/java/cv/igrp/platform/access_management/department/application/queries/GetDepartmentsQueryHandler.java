@@ -2,26 +2,19 @@ package cv.igrp.platform.access_management.department.application.queries;
 
 import cv.igrp.platform.access_management.department.mapper.DepartmentMapper;
 import cv.igrp.platform.access_management.department.specs.DepartmentSpecificationBuilder;
-import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import cv.igrp.platform.access_management.shared.application.dto.DepartmentDTO;
-import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.spring.Scoped;
-import jakarta.persistence.criteria.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
 import org.springframework.data.jpa.domain.Specification;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import static cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService.IGRP_DEPARTMENT;
 
 /**
  * Query handler responsible for retrieving a list of {@link DepartmentEntity} entities

@@ -21,7 +21,7 @@ import org.springframework.http.ResponseEntity;
 
 @SuppressWarnings("unchecked")
 @ExtendWith(MockitoExtension.class)
-public class GetUsersQueryHandlerTest {
+class GetUsersQueryHandlerTest {
 
   @Mock
   private IGRPUserEntityRepository userRepository;

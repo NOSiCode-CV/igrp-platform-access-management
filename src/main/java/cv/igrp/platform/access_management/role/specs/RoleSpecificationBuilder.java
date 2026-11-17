@@ -12,6 +12,8 @@ import static cv.igrp.platform.access_management.shared.infrastructure.service.C
 @Component
 public class RoleSpecificationBuilder {
 
+    private static final String STATUS = "status";
+
     /**
      * Builds a dynamic JPA {@link Specification} based on optional code and code filters.
      *
@@ -33,7 +35,7 @@ public class RoleSpecificationBuilder {
         }
 
         specs = specs.and((root, criteriaQuery, criteriaBuilder) ->
-                root.get("status").in(Status.ACTIVE, Status.INACTIVE)
+                root.get(STATUS).in(Status.ACTIVE, Status.INACTIVE)
         );
 
         specs = specs.and((root, criteriaQuery, criteriaBuilder) ->
@@ -69,12 +71,12 @@ public class RoleSpecificationBuilder {
 
         if (query.isActiveOnly()) {
             specs = specs.and((root, criteriaQuery, cb) ->
-                    cb.equal(root.get("status"), Status.ACTIVE)
+                    cb.equal(root.get(STATUS), Status.ACTIVE)
             );
         }
 
         specs = specs.and((root, criteriaQuery, criteriaBuilder) ->
-                criteriaBuilder.notEqual(root.get("status"), Status.DELETED)
+                criteriaBuilder.notEqual(root.get(STATUS), Status.DELETED)
         );
 
         specs = specs.and((root, criteriaQuery, criteriaBuilder) ->
