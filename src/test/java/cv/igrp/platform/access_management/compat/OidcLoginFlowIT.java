@@ -219,18 +219,16 @@ class OidcLoginFlowIT extends AbstractCompatIT {
     @DisplayName("Access and ID tokens say only who the caller is (#33)")
     void thinTokens() {
         Map<String, Object> access = claims((String) tokens.get("access_token"));
-        // sid goes with the sessions, in the second part of #33.
         assertEquals(Set.of("sub", "iss", "aud", "azp", "exp", "iat", "nbf", "jti", "scope", "device_id", "email",
-                "name", "preferred_username", "is_super_admin", "sid"), access.keySet(), access.toString());
+                "name", "preferred_username", "is_super_admin"), access.keySet(), access.toString());
         assertEquals(CLIENT_ID, access.get("azp"));
         assertEquals(CompatEnvironment.KEYCLOAK_EMAIL, access.get("email"));
 
         Map<String, Object> id = claims((String) tokens.get("id_token"));
         assertTrue(Collections.disjoint(id.keySet(), Set.of("permissions", "resource_access", "selectedRole", "org",
-                "metadata")), id.toString());
-        // Spring's OIDC sid, which RP-initiated logout checks, is not the iGRP session id.
+                "metadata", "igrp_session_id")), id.toString());
+        // Only Spring's OIDC sid, which RP-initiated logout checks: no iGRP session id.
         assertNotNull(id.get("sid"), id.toString());
-        assertNotEquals(access.get("sid"), id.get("sid"));
         // The ID token carries the profile the frontend shows (also served by userinfo).
         assertEquals(CompatEnvironment.KEYCLOAK_EMAIL, id.get("email"));
         assertTrue(id.containsKey("preferred_username") && id.containsKey("is_super_admin"), id.toString());

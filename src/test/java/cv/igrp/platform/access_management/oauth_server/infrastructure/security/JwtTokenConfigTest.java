@@ -30,6 +30,8 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -41,7 +43,6 @@ class JwtTokenConfigTest {
 
     @Mock private ClaimsEnrichmentService claimsService;
     @Mock private SecurityAuditService auditService;
-    @Mock private SessionIssuanceService sessionIssuanceService;
     @Mock private JwtEncodingContext context;
 
     private OAuth2TokenCustomizer<JwtEncodingContext> customizer;
@@ -55,7 +56,7 @@ class JwtTokenConfigTest {
                 "",
                 "",
                 "");
-        customizer = config.igrpTokenCustomizer(claimsService, auditService, sessionIssuanceService,
+        customizer = config.igrpTokenCustomizer(claimsService, auditService,
                 300, 28800);
         claims = JwtClaimsSet.builder().id("jti-1").issuedAt(ISSUED_AT);
     }
@@ -70,12 +71,37 @@ class JwtTokenConfigTest {
         when(claimsService.mapEmail("autentika", "demo@nosi.cv")).thenReturn("email-user");
         when(claimsService.buildClaims("email-user", "client-a", Set.of("openid"))).thenReturn(Map.of());
         // The client allows 5 minutes (its default); the platform says 2.
-        config.igrpTokenCustomizer(claimsService, auditService, sessionIssuanceService,
+        config.igrpTokenCustomizer(claimsService, auditService,
                 120, 28800).customize(context);
 
         JwtClaimsSet built = claims.build();
         assertEquals("client-a", built.getClaimAsString("azp"));
         assertEquals(ISSUED_AT.plus(Duration.ofMinutes(2)), built.getExpiresAt());
+        // #33: the device id stays in the token; there is no sid.
+        assertTrue(built.getClaimAsString("device_id").startsWith("derived:"));
+        assertNull(built.getClaims().get("sid"));
+    }
+
+    @Test
+    @DisplayName("#33: a refresh keeps the device id of the token it replaces")
+    void refreshKeepsTheDeviceId() {
+        stubOAuthContext(Map.of("sub", "external-sub", "email", "demo@nosi.cv"));
+        when(claimsService.mapEmail("autentika", "demo@nosi.cv")).thenReturn("email-user");
+        when(claimsService.buildClaims("email-user", "client-a", Set.of("openid"))).thenReturn(Map.of());
+        when(context.getAuthorizationGrantType()).thenReturn(AuthorizationGrantType.REFRESH_TOKEN);
+        Instant at = Instant.now().minus(Duration.ofHours(1));
+        OAuth2AccessToken previous = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, "at", at,
+                at.plusSeconds(300));
+        when(context.getAuthorization()).thenReturn(OAuth2Authorization.withRegisteredClient(client())
+                .principalName("fulano").authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
+                .token(new OAuth2AuthorizationCode("code", at, at.plusSeconds(300)))
+                .token(previous, metadata -> metadata.put(OAuth2Authorization.Token.CLAIMS_METADATA_NAME,
+                        Map.of("sub", "email-user", "device_id", "device-9")))
+                .build());
+
+        customizer.customize(context);
+
+        assertEquals("device-9", claims.build().getClaimAsString("device_id"));
     }
 
     @Test
@@ -84,7 +110,7 @@ class JwtTokenConfigTest {
         stubOAuthContext(Map.of("sub", "external-sub", "email", "demo@nosi.cv"));
         when(claimsService.mapEmail("autentika", "demo@nosi.cv")).thenReturn("email-user");
         when(claimsService.buildClaims("email-user", "client-a", Set.of("openid"))).thenReturn(Map.of());
-        config.igrpTokenCustomizer(claimsService, auditService, sessionIssuanceService,
+        config.igrpTokenCustomizer(claimsService, auditService,
                 1800, 28800).customize(context);
 
         assertEquals(ISSUED_AT.plus(Duration.ofMinutes(5)), claims.build().getExpiresAt());

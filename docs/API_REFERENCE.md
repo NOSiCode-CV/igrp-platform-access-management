@@ -7,9 +7,9 @@
 > produced from the code and cannot drift. Prefer it when the two disagree, and
 > please update this file alongside any endpoint change.
 >
-> Not covered here yet: the OAuth2 authorization-server endpoints, session
-> management (`/api/session/**`), service accounts, OAuth clients and audit
-> reports. See the README for those, or the OpenAPI spec.
+> Not covered here yet: the OAuth2 authorization-server endpoints, the admin
+> kill and refresh (`/api/admin/sessions/**`), service accounts, OAuth clients and
+> audit reports. See the README for those, or the OpenAPI spec.
 
 ## API Endpoints - Deep Dive
 

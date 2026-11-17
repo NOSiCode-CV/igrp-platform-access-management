@@ -90,17 +90,12 @@ public class UserIdentityResolutionListener implements ApplicationListener<Authe
         if (ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT.equals(principalType)) {
             return true;
         }
-        // Fallback: a JWT carrying client_id with no sid is the canonical M2M
-        // shape even when the principalType marker isn't present yet (e.g.
-        // tokens issued before V9 / for clients without a service account
-        // record yet).
-        String sid = jwt.getClaimAsString("sid");
+        // Fallback: a JWT whose subject is its own client_id is the canonical
+        // M2M shape even when the principalType marker isn't present (a client
+        // without a service account record yet). A user's token never is.
         String clientId = jwt.getClaimAsString(ServiceAccountTokenClaims.CLAIM_CLIENT_ID);
         String sub = jwt.getSubject();
-        return (sid == null || sid.isBlank())
-                && clientId != null
-                && sub != null
-                && sub.equals(clientId);
+        return clientId != null && sub != null && sub.equals(clientId);
     }
 
     private static Jwt extractJwt(Authentication authentication) {

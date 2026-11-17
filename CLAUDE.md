@@ -57,7 +57,7 @@ Each top-level package under `cv.igrp.platform.access_management` is a bounded c
 - **`notification`** — Email/notification delivery adapters
 - **`role`** — Role hierarchy and assignment management
 - **`security_audit`** — Immutable security event log (logins, access denials, role changes)
-- **`session`** — Session lifecycle (one active session per user, Redis-backed, IP/device tracking)
+- **`session`** — Ending a user's access: the admin kill (by user, role or department) and permission refresh. There are no iGRP sessions (#33): a user is signed in while they hold an active authorization (`UserAuthorizations`)
 - **`users`** — User lifecycle including temporary role assignment with automatic expiration
 - **`shared`** — Cross-cutting: entities, DTOs, security config, exception handling, audit base
 
@@ -84,18 +84,18 @@ Commands are dispatched via `CommandBus`. Handlers are annotated with `@IgrpComm
 
 **Permission Caching** — The permission fetch writes each caller's keys for one application to the Redis set `permissions:user:{sub}:app:{appCode}`, listed in the per-user index `permissions:user:{sub}:apps` (`PermissionSetCache`), with its `:scopes` hash and the `:roles` / `:departments` sets the starter's data scopes compare rows with. `PermissionSetEviction` resolves the users affected by a role, permission, department, active-role or status event inside the transaction, and deletes their sets through the index only after it commits. `PermissionCheckService` (behind `/api/authorize/check`) checks via direct JDBC and is not cached.
 
-**Two session mechanisms, easily confused:**
+**Sessions:**
 1. `SPRING_SESSION` / `SPRING_SESSION_ATTRIBUTES` — the *browser* servlet session, shared across replicas via `spring-session-jdbc` so a login survives landing on another pod (fixes `authorization_request_not_found`). Holds the pending OAuth2 authorization request with its PKCE verifier, the `SecurityContext` and the saved request. Lifetime: `server.servlet.session.timeout` (`IGRP_SSO_SESSION_TIMEOUT_SECONDS`, 8h). Tables owned by `DatabaseMigrationRunner`; attributes stored as JSON via `SecurityStoreObjectMapperFactory`. Pruned by `spring.session.jdbc.cleanup-cron`.
-2. `t_user_session` / `igrp.session.*` — iGRP's own *per-application* sessions, one row per app sign-in. Pruned by `SessionCleanupScheduler`.
+2. iGRP's own per-application sessions (`t_user_session`, `sid`, `/api/session`) were removed in #33. Logout and kill revoke the user's authorizations and delete their permission keys; self-service routes check `SignedInGuard`.
 Anything added to the servlet session must be on the Jackson allowlist in `SecurityStoreObjectMapperFactory`, or it fails to deserialize during a login.
 
-**Session Management** — One active session per user enforced at DB level (unique constraint). `SessionCleanupScheduler` expires sessions every 5 min and purges old records daily at 2 AM. Redis is the primary lookup path; DB is the source of truth.
+**Tokens** — Access tokens say only who the caller is and live 5 minutes (`IGRP_OAUTH_ACCESS_TOKEN_TTL_SECONDS`); a refresh more than `IGRP_SSO_SESSION_TIMEOUT_SECONDS` after sign-in is refused.
 
 **Audit Trail — Two layers:**
 1. Hibernate Envers (`@Audited`) on all entities for schema-level history
 2. `SecurityAuditLogEntity` for security-semantic events (LOGIN_SUCCESS, ROLE_EXPIRED, ACCESS_DENIED, etc.). Duplicate login events are suppressed via a 1-hour Caffeine cache keyed on JWT token ID.
 
-**M2M Authentication** — `/api/m2m/**` is served by the same OAuth2 resource-server chain as user endpoints. M2M clients obtain a JWT via the `client_credentials` grant at `/oauth2/token`; both `M2MTokenRejectionFilter` and `SessionEnforcementFilter` skip the `/api/m2m/` prefix so sid-less client_credentials tokens are admitted.
+**M2M Authentication** — `/api/m2m/**` is served by the same OAuth2 resource-server chain as user endpoints. M2M clients obtain a JWT via the `client_credentials` grant at `/oauth2/token`; their tokens carry `principal_type` = `service_account`, and `/api/m2m/**` takes service-account tokens only.
 
 **Superadmin Bypass** — Any user with the `SUPER_ADMIN_ROLE` constant role skips permission checks entirely in `PermissionCheckService`.
 

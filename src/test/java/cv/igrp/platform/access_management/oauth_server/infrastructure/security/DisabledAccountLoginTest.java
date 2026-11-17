@@ -2,7 +2,7 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.UserIdentityEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.UserIdentityJpaRepository;
-import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
+import cv.igrp.platform.access_management.security_audit.application.service.AccessAuditLogger;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
@@ -45,7 +45,7 @@ class DisabledAccountLoginTest {
     void setUp() {
         identityRepository = mock(UserIdentityJpaRepository.class);
         userRepository = mock(IGRPUserEntityRepository.class);
-        service = new IgrpOidcUserService(identityRepository, userRepository, mock(SessionAuditLogger.class));
+        service = new IgrpOidcUserService(identityRepository, userRepository, mock(AccessAuditLogger.class));
     }
 
     private void identityLinkedTo(Status status) {

@@ -1,9 +1,8 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
-import cv.igrp.platform.access_management.session.domain.service.SsoSessionKey;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.UserIdentityEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.UserIdentityJpaRepository;
-import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
+import cv.igrp.platform.access_management.security_audit.application.service.AccessAuditLogger;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
@@ -66,7 +65,7 @@ public class IgrpOidcUserService extends OidcUserService {
 
     private final UserIdentityJpaRepository userIdentityRepository;
     private final IGRPUserEntityRepository userRepository;
-    private final SessionAuditLogger sessionAuditLogger;
+    private final AccessAuditLogger sessionAuditLogger;
 
     // --- OWASP A04/A07 security gate configuration ---
 
@@ -99,7 +98,7 @@ public class IgrpOidcUserService extends OidcUserService {
 
     public IgrpOidcUserService(UserIdentityJpaRepository userIdentityRepository,
                                IGRPUserEntityRepository userRepository,
-                               SessionAuditLogger sessionAuditLogger) {
+                               AccessAuditLogger sessionAuditLogger) {
         this.userIdentityRepository = userIdentityRepository;
         this.userRepository = userRepository;
         this.sessionAuditLogger = sessionAuditLogger;
@@ -165,7 +164,7 @@ public class IgrpOidcUserService extends OidcUserService {
                 authorities,
                 request.getIdToken(),
                 buildUserProfile(oidcUser),
-                SsoSessionKey.newLoginId()
+                UUID.randomUUID().toString()
         );
     }
 
@@ -385,7 +384,7 @@ public class IgrpOidcUserService extends OidcUserService {
             try {
                 sessionAuditLogger.recordUserStatusTransitioned(
                         user.getId(), null, Status.TEMPORARY.getCode(),
-                        SessionAuditLogger.SYSTEM, "FIRST_LOGIN");
+                        AccessAuditLogger.SYSTEM, "FIRST_LOGIN");
             } catch (Exception auditEx) {
                 LOGGER.warn("[G3] first-login audit failed for sub={}: {}", externalUserId, auditEx.getMessage());
             }

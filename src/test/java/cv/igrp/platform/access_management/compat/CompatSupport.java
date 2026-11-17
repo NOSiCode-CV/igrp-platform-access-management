@@ -1,8 +1,5 @@
 package cv.igrp.platform.access_management.compat;
 
-import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
-import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
-import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
 import org.springframework.boot.json.JsonParser;
 import org.springframework.boot.json.JsonParserFactory;
 import org.springframework.context.ApplicationContext;
@@ -19,6 +16,7 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.Base64;
 import java.util.List;
@@ -31,8 +29,8 @@ import java.util.UUID;
  *
  * <p>User tokens are signed with the application's own {@link JwtEncoder} (same
  * key and {@code kid} as tokens it issues at {@code /oauth2/token}) and are
- * backed by a real ACTIVE {@code t_user_session} row, so
- * {@code SessionEnforcementFilter} admits them exactly as it would a login.
+ * backed by an active authorization in {@code oauth2_authorization}, so AM
+ * treats them as signed in exactly as it would after a login.
  *
  * <p>JSON is parsed with Spring Boot's {@link JsonParser} and written by hand,
  * so the suite does not depend on Jackson 2 or Jackson 3 and runs unchanged
@@ -43,13 +41,11 @@ public final class CompatSupport {
     private static final JsonParser JSON = JsonParserFactory.getJsonParser();
 
     private final JwtEncoder jwtEncoder;
-    private final SessionRepository sessionRepository;
     private final JdbcTemplate jdbc;
     private final HttpClient http = HttpClient.newHttpClient();
 
     public CompatSupport(ApplicationContext context) {
         this.jwtEncoder = context.getBean(JwtEncoder.class);
-        this.sessionRepository = context.getBean(SessionRepository.class);
         this.jdbc = context.getBean(JdbcTemplate.class);
     }
 
@@ -64,22 +60,12 @@ public final class CompatSupport {
         return userToken(superadminId(), "superadmin@igrp.cv");
     }
 
-    /** A user access token with a live session behind it. */
+    /**
+     * A user access token with an active authorization behind it in AM's store, as a sign-in
+     * leaves: the user is signed in (#33).
+     */
     public String userToken(String userId, String email) {
         Instant now = Instant.now();
-        UUID sid = UUID.randomUUID();
-
-        SessionEntity session = new SessionEntity();
-        session.setSessionId(sid);
-        session.setUserId(userId);
-        session.setStatus(SessionStatus.ACTIVE);
-        session.setStartedAt(now);
-        session.setLastSeenAt(now);
-        session.setExpiresAt(now.plusSeconds(1800));
-        session.setAbsoluteExpiresAt(now.plusSeconds(28800));
-        session.setClientId("igrp-access-management");
-        sessionRepository.save(session);
-
         JwtClaimsSet claims = JwtClaimsSet.builder()
                 .issuer(CompatEnvironment.ISSUER)
                 .subject(userId)
@@ -87,12 +73,21 @@ public final class CompatSupport {
                 .issuedAt(now)
                 .expiresAt(now.plusSeconds(900))
                 .id(UUID.randomUUID().toString())
-                .claim("sid", sid.toString())
                 .claim("email", email)
                 .claim("name", "Compat Test User")
                 .build();
         JwsHeader header = JwsHeader.with(SignatureAlgorithm.RS256).build();
-        return jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+        String token = jwtEncoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
+        int signedIn = jdbc.update("""
+                INSERT INTO oauth2_authorization (id, registered_client_id, principal_name, authorization_grant_type,
+                                                  access_token_value, access_token_issued_at, access_token_expires_at,
+                                                  access_token_type)
+                VALUES (?, 'compat-client', ?, 'authorization_code', ?, ?, ?, 'Bearer')""",
+                UUID.randomUUID().toString(), userId, token, Timestamp.from(now), Timestamp.from(now.plusSeconds(900)));
+        if (signedIn != 1) {
+            throw new IllegalStateException("the test sign-in was not stored");
+        }
+        return token;
     }
 
     public static final String BUSINESS_DEPARTMENT = "COMPAT_DEPT";
