@@ -270,7 +270,7 @@ Caller              Auth Server         RevocationCascadeListener   DB        Re
 | `exp`       | Spring Auth Server      | Token-level lifetime. |
 | `sid`       | `SessionIssuanceService` | UUID — canonical session id. |
 | `device_id` | `SessionIssuanceService` | Client header `X-Device-Id` or a SHA-256 hash of `(User-Agent, IP, client_id)`. |
-| `selectedRole`, `org`, `permissions`, `resource_access` | `ClaimsEnrichmentService` | Existing iGRP enrichment, unchanged. |
+| `azp`, `email`, `name`, `preferred_username`, `is_super_admin` | `ClaimsEnrichmentService`, `IgrpTokenCustomizer` | Who the caller is (v3-25, #33). Permissions, roles and `org` are no longer in the token: services read the permission set. |
 
 ---
 

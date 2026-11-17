@@ -77,8 +77,9 @@ class SessionMultiAppIssuanceTest {
     private SessionEntity openSession(String deviceId, HttpServletRequest request, String ssoLoginId) {
         return (SessionEntity) ReflectionTestUtils.invokeMethod(
                 service, "openNewSession",
-                USER, deviceId, CLIENT, UUID.randomUUID().toString(),
-                request, Instant.now(), 1800L, null, ssoLoginId);
+                new SessionIssuanceService.NewSession(USER, deviceId, CLIENT, UUID.randomUUID().toString(), null,
+                        ssoLoginId),
+                request, Instant.now(), 1800L);
     }
 
     // ─── R1.4/R1.5: the SSO session key ─────────────────────────────────

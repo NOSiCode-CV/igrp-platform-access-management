@@ -25,6 +25,7 @@ import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
+import java.util.Map;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -55,6 +56,7 @@ public class SessionIssuanceService {
     private static final Logger LOGGER = LoggerFactory.getLogger(SessionIssuanceService.class);
 
     static final String CLAIM_SID = "sid";
+    private static final String SESSION = "Session ";
     static final String CLAIM_DEVICE_ID = "device_id";
     static final String DEVICE_ID_HEADER = "X-Device-Id";
 
@@ -140,7 +142,7 @@ public class SessionIssuanceService {
         String deviceId = resolveDeviceId(request, clientId);
         AuthorizationGrantType grantType = context.getAuthorizationGrantType();
         Instant now = Instant.now();
-        long ttlSeconds = effectiveSlideSeconds(context.getRegisteredClient());
+        long ttlSeconds = effectiveSlideSeconds(context.getRegisteredClient(), issuedLifetimeSeconds(context));
 
         if (grantType != null && AuthorizationGrantType.REFRESH_TOKEN.equals(grantType)) {
             Optional<SessionEntity> existing = locateSessionForRefresh(context, userId, deviceId);
@@ -153,8 +155,8 @@ public class SessionIssuanceService {
                     userId, deviceId);
         }
 
-        SessionEntity created = openNewSession(userId, deviceId, clientId, jti, request, now, ttlSeconds,
-                upstreamIdToken, ssoLoginId);
+        SessionEntity created = openNewSession(
+                new NewSession(userId, deviceId, clientId, jti, upstreamIdToken, ssoLoginId), request, now, ttlSeconds);
         return new IssuanceBinding(created.getSessionId(), created.getDeviceId());
     }
 
@@ -174,25 +176,45 @@ public class SessionIssuanceService {
      * longer tokens are covered, not just the seeded default client.
      */
     long effectiveSlideSeconds(RegisteredClient client) {
+        return effectiveSlideSeconds(client, null);
+    }
+
+    /**
+     * As {@link #effectiveSlideSeconds(RegisteredClient)}, from the lifetime of the token
+     * being issued when it is known: a user's token may live less than its client allows
+     * (v3-25, #33, 5 minutes by default), and the slide follows the token, not the client.
+     */
+    long effectiveSlideSeconds(RegisteredClient client, Long issuedLifetimeSeconds) {
         long idle = sessionProperties.getTimeoutSeconds();
-        if (client == null
-                || client.getTokenSettings() == null
-                || client.getTokenSettings().getAccessTokenTimeToLive() == null) {
+        Long lifetime = issuedLifetimeSeconds;
+        if (lifetime == null && client != null) {
+            lifetime = client.getTokenSettings().getAccessTokenTimeToLive().toSeconds();
+        }
+        if (lifetime == null) {
             return idle;
         }
-        long floor = client.getTokenSettings().getAccessTokenTimeToLive().toSeconds()
-                + sessionProperties.getRefreshGraceSeconds();
-        return Math.max(idle, floor);
+        return Math.max(idle, lifetime + sessionProperties.getRefreshGraceSeconds());
+    }
+
+    /** The token's {@code exp - iat}, or null when either is not set yet. */
+    private static Long issuedLifetimeSeconds(JwtEncodingContext context) {
+        var claims = context.getClaims().build();
+        Instant issuedAt = claims.getIssuedAt();
+        Instant expiresAt = claims.getExpiresAt();
+        if (issuedAt == null || expiresAt == null) {
+            return null;
+        }
+        return expiresAt.getEpochSecond() - issuedAt.getEpochSecond();
     }
 
     private Optional<SessionEntity> locateSessionForRefresh(JwtEncodingContext context,
                                                             String userId,
                                                             String deviceId) {
         OAuth2Authorization authorization = context.getAuthorization();
-        if (authorization != null && authorization.getAccessToken() != null) {
-            Object previousSid = authorization.getAccessToken().getClaims() != null
-                    ? authorization.getAccessToken().getClaims().get(CLAIM_SID)
-                    : null;
+        OAuth2Authorization.Token<?> previousAccess = authorization == null ? null : authorization.getAccessToken();
+        if (previousAccess != null) {
+            Map<String, Object> previousClaims = previousAccess.getClaims();
+            Object previousSid = previousClaims != null ? previousClaims.get(CLAIM_SID) : null;
             if (previousSid != null) {
                 try {
                     UUID parsed = UUID.fromString(previousSid.toString());
@@ -234,7 +256,7 @@ public class SessionIssuanceService {
         if (!SessionStatus.ACTIVE.equals(session.getStatus())) {
             sessionMetrics.recordRefreshRejected("session_not_active");
             throw new SessionRefreshRejectedException(
-                    "session_not_active", "Session " + session.getSessionId() + " is no longer active");
+                    "session_not_active", SESSION + session.getSessionId() + " is no longer active");
         }
         Instant absolute = session.getAbsoluteExpiresAt();
         if (absolute != null && !now.isBefore(absolute)) {
@@ -244,7 +266,7 @@ public class SessionIssuanceService {
             sessionMetrics.recordRefreshRejected("absolute_lifetime_exceeded");
             throw new SessionRefreshRejectedException(
                     "absolute_lifetime_exceeded",
-                    "Session " + session.getSessionId() + " hit its absolute lifetime ceiling");
+                    SESSION + session.getSessionId() + " hit its absolute lifetime ceiling");
         }
 
         // Idle deadline. Refresh used to check only status and the absolute
@@ -264,7 +286,7 @@ public class SessionIssuanceService {
             sessionMetrics.recordRefreshRejected("idle_timeout_exceeded");
             throw new SessionRefreshRejectedException(
                     "idle_timeout_exceeded",
-                    "Session " + session.getSessionId() + " passed its idle deadline");
+                    SESSION + session.getSessionId() + " passed its idle deadline");
         }
 
         Instant slid = now.plusSeconds(ttlSeconds);
@@ -300,15 +322,19 @@ public class SessionIssuanceService {
         return saved;
     }
 
-    private SessionEntity openNewSession(String userId,
-                                         String deviceId,
-                                         String clientId,
-                                         String jti,
-                                         HttpServletRequest request,
-                                         Instant now,
-                                         long ttlSeconds,
-                                         String upstreamIdToken,
-                                         String ssoLoginId) {
+    /** Who a new session is for, and what its sign-in carried. */
+    record NewSession(String userId, String deviceId, String clientId, String jti,
+                              String upstreamIdToken, String ssoLoginId) {
+    }
+
+    private SessionEntity openNewSession(NewSession session, HttpServletRequest request, Instant now,
+                                         long ttlSeconds) {
+        String userId = session.userId();
+        String deviceId = session.deviceId();
+        String clientId = session.clientId();
+        String jti = session.jti();
+        String upstreamIdToken = session.upstreamIdToken();
+        String ssoLoginId = session.ssoLoginId();
         // FR-1 (revised): a new session no longer closes the previous session on
         // the same device.
         //

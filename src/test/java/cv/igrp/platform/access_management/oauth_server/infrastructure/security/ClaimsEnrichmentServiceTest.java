@@ -2,7 +2,6 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.OAuthClientEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.ServiceAccountEntity;
-import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.ServiceAccountPermissionGrant;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.ServiceAccountRoleAssignment;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.entity.UserIdentityEntity;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
@@ -18,6 +17,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
 import cv.igrp.platform.access_management.shared.security.ServiceAccountTokenClaims;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
@@ -25,6 +25,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -140,65 +141,60 @@ class ClaimsEnrichmentServiceTest {
     }
 
     @Test
-    void permissionCodeIsTheKeyWhenThereIsOneAndTheNameOtherwise() {
-        PermissionEntity keyed = new PermissionEntity();
-        keyed.setPermissionKey("access-management-api.departments.list");
-        keyed.setName("Ver departamentos (edited by an administrator)");
-        PermissionEntity legacy = new PermissionEntity();
-        legacy.setName("igrp.notification.send");
+    @DisplayName("#33: a user's access token says who the user is, never their roles, permissions or metadata")
+    void buildClaimsIsIdentityOnly() {
+        IGRPUserEntity user = userWithRolePermissionsAndMetadata();
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
 
-        assertEquals("access-management-api.departments.list", ClaimsEnrichmentService.permissionCode(keyed));
-        assertEquals("igrp.notification.send", ClaimsEnrichmentService.permissionCode(legacy));
+        Map<String, Object> claims = service.buildClaims(user.getId(), "igrp-access-management",
+                Set.of("openid", "profile", "email"));
+
+        assertEquals(Map.of("is_super_admin", false, "name", "Demo User", "preferred_username", "demo",
+                "email", "demo@nosi.cv"), claims);
     }
 
     @Test
-    void buildClaimsEnrichesRolePermissionsAndMetadata() {
+    @DisplayName("#33: the ID token carries the profile the scopes allow, and no roles or permissions")
+    void buildIdTokenClaimsIsTheProfile() {
+        IGRPUserEntity user = userWithRolePermissionsAndMetadata();
+        when(userRepository.findById(user.getId())).thenReturn(Optional.of(user));
+
+        Map<String, Object> claims = service.buildIdTokenClaims(user.getId(), Set.of("openid", "profile"));
+
+        assertEquals("pt-CV", claims.get("locale"));
+        assertEquals("demo", claims.get("preferred_username"));
+        assertEquals(false, claims.get("is_super_admin"));
+        assertFalse(claims.containsKey("email"), "no email scope");
+        assertTrue(Collections.disjoint(claims.keySet(),
+                Set.of("permissions", "resource_access", "selectedRole", "org", "metadata")));
+    }
+
+    private static IGRPUserEntity userWithRolePermissionsAndMetadata() {
         PermissionEntity perm = new PermissionEntity();
         perm.setName("IGRP_USERS_VIEW");
-
         RoleEntity role = new RoleEntity();
         role.setCode("ROLE_ADMIN");
         role.setPermissions(new HashSet<>(Set.of(perm)));
-
         DepartmentEntity department = new DepartmentEntity();
         department.setCode("IGRP_ORG");
         role.setDepartment(department);
 
         IGRPUserEntity user = new IGRPUserEntity();
-        String uid7 = "00000000-0000-0000-0000-000000000007";
-        user.setId(uid7);
+        user.setId("00000000-0000-0000-0000-000000000007");
         user.setUsername("demo");
+        user.setName("Demo User");
+        user.setEmail("demo@nosi.cv");
         user.setActiveRole(role);
         Map<String, Object> md = new LinkedHashMap<>();
         md.put("locale", "pt-CV");
         md.put("is_super_admin", true);
         user.setMetadata(md);
-
         UserRoleAssignment assignment = new UserRoleAssignment();
         assignment.setRole(role);
         List<UserRoleAssignment> assignments = new ArrayList<>();
         assignments.add(assignment);
         user.setUserRoleAssignments(assignments);
-
-        when(userRepository.findById(uid7)).thenReturn(Optional.of(user));
-
-        Map<String, Object> claims = service.buildClaims(
-                uid7,
-                "igrp-access-management",
-                Set.of("openid", "profile")
-        );
-
-        assertEquals("ROLE_ADMIN", claims.get("selectedRole"));
-        assertEquals("IGRP_ORG", claims.get("org"));
-        @SuppressWarnings("unchecked")
-        Set<String> permissions = (Set<String>) claims.get("permissions");
-        assertTrue(permissions.contains("IGRP_USERS_VIEW"));
-        @SuppressWarnings("unchecked")
-        Map<String, Object> resourceAccess = (Map<String, Object>) claims.get("resource_access");
-        assertNotNull(resourceAccess.get("igrp-access-management"));
-        assertEquals("pt-CV", claims.get("locale"));
-        assertEquals(false, claims.get("is_super_admin"));
-        assertFalse(claims.containsKey("metadata"));
+        return user;
     }
 
     @Test
@@ -231,17 +227,13 @@ class ClaimsEnrichmentServiceTest {
 
     @Test
     void buildClaimsToleratesMissingUserOrClient() {
-        Map<String, Object> claims = service.buildClaims(null, "no-such", Set.of("openid"));
-
-        assertEquals("", claims.get("selectedRole"));
-        assertEquals("", claims.get("org"));
-        assertEquals(false, claims.get("is_super_admin"));
-        assertNotNull(claims.get("permissions"));
-        assertNotNull(claims.get("resource_access"));
+        assertEquals(Map.of(), service.buildClaims(null, "no-such", Set.of("openid")));
+        assertEquals(Map.of(), service.buildIdTokenClaims(null, Set.of("openid")));
     }
 
     @Test
-    void buildClaimsEnrichesServiceAccountRolesAndPermissions() {
+    @DisplayName("#33: a service account's token identifies it as one and lists no permissions")
+    void buildClaimsIdentifiesServiceAccount() {
         UUID serviceAccountId = UUID.fromString("00000000-0000-0000-0000-000000000123");
 
         PermissionEntity permission = new PermissionEntity();
@@ -277,65 +269,11 @@ class ClaimsEnrichmentServiceTest {
 
         Map<String, Object> claims = service.buildClaims(serviceAccountId.toString(), "client-a", Set.of());
 
-        assertEquals(ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT,
-                claims.get(ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE));
-        assertEquals(serviceAccountId.toString(), claims.get(ServiceAccountTokenClaims.CLAIM_SERVICE_ACCOUNT_ID));
-        assertEquals("", claims.get("org"));
-        assertEquals(false, claims.get("is_super_admin"));
-        @SuppressWarnings("unchecked")
-        Set<String> permissions = (Set<String>) claims.get("permissions");
-        assertTrue(permissions.contains("igrp.m2m.sync"));
-        @SuppressWarnings("unchecked")
-        Map<String, Object> resourceAccess = (Map<String, Object>) claims.get("resource_access");
-        assertTrue(resourceAccess.containsKey("client-a"));
-    }
-
-    @Test
-    void buildClaimsUnionsDirectPermissionGrantsWithRoleDerived() {
-        UUID serviceAccountId = UUID.fromString("00000000-0000-0000-0000-000000000124");
-
-        // Role-derived permission
-        PermissionEntity rolePerm = new PermissionEntity();
-        rolePerm.setName("igrp.m2m.sync");
-        rolePerm.setStatus(Status.ACTIVE);
-
-        RoleEntity role = new RoleEntity();
-        role.setId(7);
-        role.setCode("M2M_SYNC");
-        role.setStatus(Status.ACTIVE);
-        role.setPermissions(new HashSet<>(Set.of(rolePerm)));
-
-        // Direct grant — bypasses the role layer
-        PermissionEntity directPerm = new PermissionEntity();
-        directPerm.setName("igrp.client.view");
-        directPerm.setStatus(Status.ACTIVE);
-
-        OAuthClientEntity client = new OAuthClientEntity();
-        client.setId(UUID.randomUUID());
-        client.setClientId("client-b");
-        client.setActive(true);
-
-        ServiceAccountEntity serviceAccount = new ServiceAccountEntity();
-        serviceAccount.setId(serviceAccountId);
-        serviceAccount.setName("Client B");
-        serviceAccount.setActive(true);
-        serviceAccount.setOauthClient(client);
-        serviceAccount.setRoleAssignments(new HashSet<>());
-        serviceAccount.getRoleAssignments().add(new ServiceAccountRoleAssignment(serviceAccount, role, null));
-        serviceAccount.setPermissionGrants(new HashSet<>());
-        serviceAccount.getPermissionGrants().add(new ServiceAccountPermissionGrant(serviceAccount, directPerm));
-
-        when(userRepository.findById(serviceAccountId.toString())).thenReturn(Optional.empty());
-        when(serviceAccountRepository.findByIdWithRolesAndPermissions(serviceAccountId))
-                .thenReturn(Optional.of(serviceAccount));
-
-        Map<String, Object> claims = service.buildClaims(serviceAccountId.toString(), "client-b", Set.of());
-
-        @SuppressWarnings("unchecked")
-        Set<String> permissions = (Set<String>) claims.get("permissions");
-        assertTrue(permissions.contains("igrp.m2m.sync"),
-                "Role-derived permission should still appear in claims");
-        assertTrue(permissions.contains("igrp.client.view"),
-                "Direct grant should be included in the union, bypassing the role layer");
+        // #33: a service account carries what identifies it, not the user claims (no is_super_admin).
+        assertEquals(Map.of(
+                ServiceAccountTokenClaims.CLAIM_PRINCIPAL_TYPE, ServiceAccountTokenClaims.PRINCIPAL_TYPE_SERVICE_ACCOUNT,
+                ServiceAccountTokenClaims.CLAIM_SERVICE_ACCOUNT_ID, serviceAccountId.toString(),
+                ServiceAccountTokenClaims.CLAIM_CLIENT_ID, "client-a",
+                ServiceAccountTokenClaims.CLAIM_APPLICATION_CODE, "M2M_APP"), claims);
     }
 }
