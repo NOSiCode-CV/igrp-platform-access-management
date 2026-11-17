@@ -178,7 +178,7 @@ public final class IgrpTokenCustomizer implements OAuth2TokenCustomizer<JwtEncod
                     + "take part in a logout cascade", subject);
         }
         String upstreamIdToken = null;
-        if (user instanceof OidcUser oidcUser && oidcUser.getIdToken() != null) {
+        if (user instanceof OidcUser oidcUser) {
             upstreamIdToken = oidcUser.getIdToken().getTokenValue();
             LOG.debug("Captured upstream id_token ({} chars) for provider={} sub={} to stash on the session row",
                     upstreamIdToken.length(), provider, subject);

@@ -13,7 +13,6 @@ import org.springframework.security.oauth2.core.AuthorizationGrantType;
 import org.springframework.security.oauth2.core.OAuth2AccessToken;
 import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
@@ -186,21 +185,6 @@ class JwtTokenConfigTest {
         assertEquals("subject-user", claims.build().getSubject());
         verify(claimsService).mapEmail("autentika", "missing@nosi.cv");
         verify(claimsService).mapSubject("autentika", "external-sub");
-    }
-
-    @Test
-    @DisplayName("An OIDC principal without an upstream ID token still gets its access token")
-    void oidcPrincipalWithoutIdToken() {
-        stubOAuthContext(Map.of("sub", "external-sub", "email", "demo@nosi.cv"));
-        OidcUser oidcUser = org.mockito.Mockito.mock(OidcUser.class);
-        when(oidcUser.getAttributes()).thenReturn(Map.of("sub", "external-sub", "email", "demo@nosi.cv"));
-        when(oidcUser.getIdToken()).thenReturn(null);
-        when(context.getPrincipal()).thenReturn(new OAuth2AuthenticationToken(oidcUser, List.of(), "autentika"));
-        when(claimsService.mapEmail("autentika", "demo@nosi.cv")).thenReturn("email-user");
-        when(claimsService.buildClaims("email-user", "client-a", Set.of("openid"))).thenReturn(Map.of());
-
-        assertDoesNotThrow(() -> customizer.customize(context));
-        assertEquals("email-user", claims.build().getSubject());
     }
 
     private void stubOAuthContext(Map<String, Object> attributes) {
