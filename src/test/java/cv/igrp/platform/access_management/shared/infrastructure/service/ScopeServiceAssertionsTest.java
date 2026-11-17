@@ -2,9 +2,7 @@ package cv.igrp.platform.access_management.shared.infrastructure.service;
 
 import cv.igrp.platform.access_management.department.domain.exceptions.OutOfScopeException;
 import cv.igrp.platform.access_management.department.domain.exceptions.RootDepartmentForbiddenException;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import cv.igrp.platform.access_management.shared.security.RequestScopeCache;
 import org.junit.jupiter.api.BeforeEach;
@@ -44,8 +42,6 @@ class ScopeServiceAssertionsTest {
     private AuthenticationHelper authHelper;
     private RequestScopeCache cache;
     private DepartmentEntityRepository departmentRepository;
-    private ApplicationEntityRepository applicationRepository;
-    private RoleEntityRepository roleRepository;
     private JdbcTemplate jdbcTemplate;
 
     private ScopeService scopeService;
@@ -55,8 +51,6 @@ class ScopeServiceAssertionsTest {
         authHelper = mock(AuthenticationHelper.class);
         cache = mock(RequestScopeCache.class);
         departmentRepository = mock(DepartmentEntityRepository.class);
-        applicationRepository = mock(ApplicationEntityRepository.class);
-        roleRepository = mock(RoleEntityRepository.class);
         jdbcTemplate = mock(JdbcTemplate.class);
 
         when(authHelper.getSub()).thenReturn(SUBJECT);
@@ -66,8 +60,7 @@ class ScopeServiceAssertionsTest {
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(SUBJECT, "n/a"));
 
-        scopeService = new ScopeService(authHelper, cache, departmentRepository,
-                applicationRepository, roleRepository, jdbcTemplate);
+        scopeService = new ScopeService(authHelper, cache, departmentRepository, jdbcTemplate);
     }
 
     // ─── superadmin ────────────────────────────────────────────────────

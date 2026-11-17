@@ -3,8 +3,6 @@ package cv.igrp.platform.access_management.users.specs;
 import cv.igrp.platform.access_management.m2m.application.commands.GetUsersForBusinessCommand;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.spring.Scoped;
-import cv.igrp.platform.access_management.shared.security.ScopeContext;
 import cv.igrp.platform.access_management.users.application.queries.GetUsersQuery;
 import jakarta.persistence.criteria.CriteriaBuilder;
 import jakarta.persistence.criteria.Join;
@@ -39,8 +37,7 @@ public class UserSpecificationBuilder {
         return uraJoin.join("role", joinType);
     }
 
-    @Scoped
-    public Specification<IGRPUserEntity> buildSpecification(GetUsersQuery query, ScopeContext context) {
+    public Specification<IGRPUserEntity> buildSpecification(GetUsersQuery query) {
         Specification<IGRPUserEntity> spec = Specification.anyOf();
 
         if (query.getApplicationCode() != null) {
@@ -84,8 +81,6 @@ public class UserSpecificationBuilder {
                 root.get("status").in(Status.ACTIVE, Status.INACTIVE)
         );
 
-        // Apply scope
-        spec = applyScope(spec, context);
 
         return spec;
     }
@@ -179,22 +174,6 @@ public class UserSpecificationBuilder {
         );
 
         return spec;
-    }
-
-    private Specification<IGRPUserEntity> applyScope(Specification<IGRPUserEntity> spec, ScopeContext context) {
-
-        if(!context.isSuperAdmin()) {
-            return spec.and((root, criteriaQuery, cb) -> {
-                java.util.List<Predicate> preds = new java.util.ArrayList<>();
-                Join<Object, Object> roleJoin = joinActiveRole(root, JoinType.INNER, cb, preds);
-                Join<Object, Object> departmentJoin = roleJoin.join("department", JoinType.INNER);
-                preds.add(departmentJoin.get("id").in(context.getDepartmentIds()));
-                return cb.and(preds.toArray(Predicate[]::new));
-            });
-        }
-
-        return spec;
-
     }
 
 

@@ -8,7 +8,6 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.spring.Scoped;
-import cv.igrp.platform.access_management.shared.security.ScopeContext;
 import jakarta.persistence.criteria.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +75,7 @@ public class GetDepartmentsQueryHandler implements QueryHandler<GetDepartmentsQu
         logger.info("Handling GetDepartmentsQuery: name={}, status={}, parentCode={}",
                 query.getName(), query.getStatus(), query.getParentCode());
 
-        var spec = specification.buildSpecification(query, new ScopeContext());
+        var spec = specification.buildSpecification(query);
 
         List<DepartmentEntity> departments = departmentRepository.findAll(spec);
         List<DepartmentDTO> dtos = departments.stream()

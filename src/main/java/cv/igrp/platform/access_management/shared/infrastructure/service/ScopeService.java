@@ -4,9 +4,7 @@ import cv.igrp.platform.access_management.department.domain.exceptions.OutOfScop
 import cv.igrp.platform.access_management.department.domain.exceptions.RootDepartmentForbiddenException;
 import cv.igrp.platform.access_management.department.infrastructure.metrics.DepartmentScopeMetrics;
 import org.springframework.beans.factory.annotation.Autowired;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
 import cv.igrp.platform.access_management.shared.security.RequestScopeCache;
 import cv.igrp.platform.access_management.shared.security.SubjectParser;
@@ -32,8 +30,6 @@ public class ScopeService {
     private final AuthenticationHelper authenticationHelper;
     private final RequestScopeCache cache;
     private final DepartmentEntityRepository departmentRepository;
-    private final ApplicationEntityRepository applicationRepository;
-    private final RoleEntityRepository roleRepository;
     private final JdbcTemplate jdbcTemplate;
 
     // Optional so tests using the direct-constructor form don't have to
@@ -46,15 +42,11 @@ public class ScopeService {
             AuthenticationHelper authenticationHelper,
             RequestScopeCache cache,
             DepartmentEntityRepository departmentRepository,
-            ApplicationEntityRepository applicationRepository,
-            RoleEntityRepository roleRepository,
             JdbcTemplate jdbcTemplate
     ) {
         this.authenticationHelper = authenticationHelper;
         this.cache = cache;
         this.departmentRepository = departmentRepository;
-        this.applicationRepository = applicationRepository;
-        this.roleRepository = roleRepository;
         this.jdbcTemplate = jdbcTemplate;
     }
 
@@ -165,49 +157,6 @@ public class ScopeService {
             result.addAll(resolveDescendants(c));
         }
         return result;
-    }
-
-    /**
-     * APPLICATION ACCESS SCOPE LOGIC
-     */
-    public Set<Integer> getVisibleApplicationIds() {
-        if (cache.getVisibleApplications() != null)
-            return cache.getVisibleApplications();
-
-        Set<Integer> deptIds = getVisibleDepartmentIds();
-
-        Set<Integer> appIds = applicationRepository.findByDepartmentIds(deptIds);
-
-        cache.setVisibleApplications(appIds);
-        return appIds;
-    }
-
-    /**
-     * ROLE ACCESS SCOPE LOGIC
-     *
-     * <p>Visible roles are all non-deleted roles that belong to any visible
-     * department (which, for non-super-admins, is the active role's department
-     * subtree). Derived from {@link #getVisibleDepartmentIds()} so any future
-     * adjustment to how departments are scoped flows through automatically.
-     */
-    public Set<Integer> getVisibleRoleIds() {
-        if (cache.getVisibleRoles() != null)
-            return cache.getVisibleRoles();
-
-        if (this.isSuperAdmin()) {
-            Set<Integer> all = new HashSet<>();
-            roleRepository.findAll().forEach(d -> all.add(d.getId()));
-            cache.setVisibleRoles(all);
-            return all;
-        }
-
-        Set<Integer> deptIds = getVisibleDepartmentIds();
-        Set<Integer> ids = deptIds.isEmpty()
-                ? new HashSet<>()
-                : roleRepository.findIdsByDepartmentIdIn(deptIds);
-
-        cache.setVisibleRoles(ids);
-        return ids;
     }
 
     public record ActorPrincipal(

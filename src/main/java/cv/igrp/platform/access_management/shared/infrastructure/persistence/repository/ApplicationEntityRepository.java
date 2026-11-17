@@ -101,14 +101,6 @@ public interface ApplicationEntityRepository extends
     List<ApplicationEntity> findByIdInAndStatusNot(Collection<Integer> ids, Status status);
 
     @Query("""
-                select a.id
-                from ApplicationEntity a
-                join a.departments d
-                where d.id in :departmentIds
-            """)
-    Set<Integer> findByDepartmentIds(Set<Integer> departmentIds);
-
-    @Query("""
         select a
         from ApplicationEntity a
         join a.departments d

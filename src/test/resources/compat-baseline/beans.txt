@@ -83,7 +83,6 @@ departmentController : cv.igrp.platform.access_management.department.interfaces.
 departmentEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository
 departmentMapper : cv.igrp.platform.access_management.department.mapper.DepartmentMapper
 departmentScopeMetrics : cv.igrp.platform.access_management.department.infrastructure.metrics.DepartmentScopeMetrics
-departmentScopePolicy : cv.igrp.platform.access_management.shared.security.policy.DepartmentScopePolicy
 departmentSpecificationBuilder : cv.igrp.platform.access_management.department.specs.DepartmentSpecificationBuilder
 enversHints : cv.igrp.platform.access_management.shared.config.EnversHints
 eventPublisher : cv.igrp.platform.access_management.shared.domain.events.EventPublisher
@@ -219,7 +218,6 @@ noopNotificationAdapter : cv.igrp.platform.access_management.notification.domain
 notificationConfig : cv.igrp.platform.access_management.shared.config.NotificationConfig
 notificationServiceConfig : cv.igrp.platform.access_management.shared.config.NotificationServiceConfig
 otpEntityRepository : cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.OtpEntityRepository
-ownershipPolicy : cv.igrp.platform.access_management.shared.security.policy.OwnershipPolicy
 pageAccessController : cv.igrp.platform.access_management.page_access.interfaces.rest.PageAccessController
 pageAccessService : cv.igrp.platform.access_management.page_access.domain.service.PageAccessService
 pdfReportExporter : cv.igrp.platform.access_management.security_audit.application.export.PdfReportExporter

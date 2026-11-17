@@ -8,7 +8,6 @@ import java.util.List;
 import cv.igrp.platform.access_management.shared.application.dto.IGRPUserDTO;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
-import cv.igrp.platform.access_management.shared.security.ScopeContext;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
 import cv.igrp.platform.access_management.users.specs.UserSpecificationBuilder;
 import org.junit.jupiter.api.BeforeEach;
@@ -68,7 +67,7 @@ public class GetUsersQueryHandlerTest {
             "jdoe@example.com"
     );
 
-    when(specification.buildSpecification(eq(query), any(ScopeContext.class))).thenReturn(specs);
+    when(specification.buildSpecification(query)).thenReturn(specs);
     when(userRepository.findAll(specs)).thenReturn(List.of(mockUser));
     when(userMapper.toDto(mockUser)).thenReturn(mockUserDTO);
 

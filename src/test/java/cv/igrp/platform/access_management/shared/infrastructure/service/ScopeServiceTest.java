@@ -1,8 +1,6 @@
 package cv.igrp.platform.access_management.shared.infrastructure.service;
 
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.DepartmentEntityRepository;
-import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.RoleEntityRepository;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
 import cv.igrp.platform.access_management.shared.security.AuthenticationHelper;
@@ -43,12 +41,6 @@ class ScopeServiceTest {
 
     @Mock
     private DepartmentEntityRepository departmentRepository;
-
-    @Mock
-    private ApplicationEntityRepository applicationRepository;
-
-    @Mock
-    private RoleEntityRepository roleRepository;
 
     @Mock
     private JdbcTemplate jdbcTemplate;
@@ -213,28 +205,6 @@ class ScopeServiceTest {
     }
 
     @Test
-    @DisplayName("Should return all roles for superadmin")
-    void testGetVisibleRoleIdsForSuperAdmin() {
-        // Arrange
-        String uid = "00000000-0000-0000-0000-000000000400";
-        when(authenticationHelper.getSub()).thenReturn(uid);
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString(), anyString()))
-                .thenReturn(List.of(1)); // superadmin
-        when(cache.getVisibleRoles()).thenReturn(null);
-
-        var role1 = mock(RoleEntity.class);
-        var role2 = mock(RoleEntity.class);
-        when(roleRepository.findAll()).thenReturn(List.of(role1, role2));
-
-        // Act
-        Set<Integer> visibleRoles = scopeService.getVisibleRoleIds();
-
-        // Assert
-        assertNotNull(visibleRoles);
-        verify(cache).setVisibleRoles(any());
-    }
-
-    @Test
     @DisplayName("Should resolve visible departments from active role (DB) and expand descendants for non-superadmin")
     void testGetVisibleDepartmentIdsForRegularUser() {
         // Arrange — not a superadmin, has an active role pinned to department 10,
@@ -280,72 +250,6 @@ class ScopeServiceTest {
         assertTrue(visibleDepts.isEmpty());
         verify(departmentRepository, never()).findDirectChildren(anyInt());
         verify(cache).setVisibleDepartments(visibleDepts);
-    }
-
-    @Test
-    @DisplayName("Should resolve visible roles from visible departments for non-superadmin")
-    void testGetVisibleRoleIdsForRegularUser() {
-        // Arrange — non-superadmin, visible departments come from cache to keep
-        // the test focused on the role-resolution path.
-        String uid = "00000000-0000-0000-0000-000000000702";
-        when(authenticationHelper.getSub()).thenReturn(uid);
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString(), anyString()))
-                .thenReturn(List.of()); // not superadmin
-        when(cache.getVisibleRoles()).thenReturn(null);
-        Set<Integer> visibleDepts = Set.of(10, 11);
-        when(cache.getVisibleDepartments()).thenReturn(visibleDepts);
-        Set<Integer> expectedRoleIds = Set.of(100, 101, 102);
-        when(roleRepository.findIdsByDepartmentIdIn(visibleDepts)).thenReturn(expectedRoleIds);
-
-        // Act
-        Set<Integer> visibleRoles = scopeService.getVisibleRoleIds();
-
-        // Assert
-        assertEquals(expectedRoleIds, visibleRoles);
-        verify(roleRepository).findIdsByDepartmentIdIn(visibleDepts);
-        verify(cache).setVisibleRoles(expectedRoleIds);
-        verify(roleRepository, never()).findAll();
-    }
-
-    @Test
-    @DisplayName("Should short-circuit visible roles when visible departments are empty (no DB call)")
-    void testGetVisibleRoleIdsEmptyDepartmentsSkipsQuery() {
-        // Arrange — non-superadmin with no visible departments; we must not hit
-        // the DB with an empty IN clause and must still return an empty set.
-        String uid = "00000000-0000-0000-0000-000000000703";
-        when(authenticationHelper.getSub()).thenReturn(uid);
-        when(jdbcTemplate.query(anyString(), any(RowMapper.class), eq(uid), anyString(), anyString()))
-                .thenReturn(List.of()); // not superadmin
-        when(cache.getVisibleRoles()).thenReturn(null);
-        when(cache.getVisibleDepartments()).thenReturn(Set.of());
-
-        // Act
-        Set<Integer> visibleRoles = scopeService.getVisibleRoleIds();
-
-        // Assert
-        assertTrue(visibleRoles.isEmpty());
-        verify(roleRepository, never()).findIdsByDepartmentIdIn(anySet());
-        verify(cache).setVisibleRoles(visibleRoles);
-    }
-
-    @Test
-    @DisplayName("Should get visible applications for departments")
-    void testGetVisibleApplicationIds() {
-        // Arrange
-        Set<Integer> visibleDepts = Set.of(5, 6);
-        Set<Integer> visibleApps = Set.of(50, 51, 52);
-
-        when(cache.getVisibleApplications()).thenReturn(null);
-        when(cache.getVisibleDepartments()).thenReturn(visibleDepts);
-        when(applicationRepository.findByDepartmentIds(visibleDepts)).thenReturn(visibleApps);
-
-        // Act
-        Set<Integer> apps = scopeService.getVisibleApplicationIds();
-
-        // Assert
-        assertEquals(visibleApps, apps);
-        verify(applicationRepository).findByDepartmentIds(visibleDepts);
-        verify(cache).setVisibleApplications(visibleApps);
     }
 
     @Test

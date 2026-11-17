@@ -7,6 +7,8 @@ import cv.igrp.platform.access_management.shared.config.AuditEntity;
 import cv.igrp.framework.stereotype.IgrpEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import cv.igrp.framework.auth.core.scope.IgrpScope;
+import org.hibernate.annotations.Filter;
 import org.hibernate.envers.Audited;
 import jakarta.validation.constraints.NotBlank;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
@@ -24,6 +26,7 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
+@Filter(name = IgrpScope.FILTER, condition = AmScopes.ROLE, deduceAliasInjectionPoints = false)
 @Table(name = "t_role",
   uniqueConstraints = {
     @UniqueConstraint(

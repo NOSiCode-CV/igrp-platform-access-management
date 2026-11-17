@@ -4,8 +4,6 @@ import cv.igrp.platform.access_management.department.application.queries.GetRole
 import cv.igrp.platform.access_management.m2m.application.commands.GetRolesForBusinessCommand;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.RoleEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.spring.Scoped;
-import cv.igrp.platform.access_management.shared.security.ScopeContext;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
@@ -18,11 +16,9 @@ public class RoleSpecificationBuilder {
      * Builds a dynamic JPA {@link Specification} based on optional code and code filters.
      *
      * @param query the query object containing departmentCode and code filters (optional)
-     * @param context the scope context containing the current user's departments, applications and roles (optional)
      * @return a {@link Specification} representing the composed query filters
      */
-    @Scoped
-    public Specification<RoleEntity> buildSpecification(GetRolesQuery query, ScopeContext context) {
+    public Specification<RoleEntity> buildSpecification(GetRolesQuery query) {
 
         Specification<RoleEntity> specs = Specification.allOf();
 
@@ -44,8 +40,6 @@ public class RoleSpecificationBuilder {
                 criteriaBuilder.notEqual(root.get("code"), SUPER_ADMIN_ROLE)
         );
 
-        // Apply scope
-        specs = applyScope(specs, context);
 
         return specs;
 
@@ -89,17 +83,6 @@ public class RoleSpecificationBuilder {
 
         return specs;
 
-    }
-
-    private Specification<RoleEntity> applyScope(Specification<RoleEntity> spec, ScopeContext context) {
-
-        if(!context.isSuperAdmin()) {
-            return spec.and((root, criteriaQuery, cb) ->
-                    root.get("id").in(context.getRoleIds())
-            );
-        }
-
-        return spec;
     }
 
 }

@@ -6,8 +6,6 @@ import cv.igrp.platform.access_management.shared.application.constants.Departmen
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.DepartmentEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.spring.Scoped;
-import cv.igrp.platform.access_management.shared.security.ScopeContext;
 import jakarta.persistence.criteria.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -24,8 +22,7 @@ public class DepartmentSpecificationBuilder {
 
     Logger logger = LoggerFactory.getLogger(DepartmentSpecificationBuilder.class);
 
-    @Scoped
-    public Specification<DepartmentEntity> buildSpecification(GetDepartmentsQuery query, ScopeContext context) {
+    public Specification<DepartmentEntity> buildSpecification(GetDepartmentsQuery query) {
         return (root, criteriaQuery, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
@@ -51,8 +48,6 @@ public class DepartmentSpecificationBuilder {
             predicates.add(cb.notEqual(root.get("status"), DepartmentStatus.DELETED));
             predicates.add(cb.notEqual(root.get("code"), IGRP_DEPARTMENT));
 
-            // Apply scope
-            applyScope(predicates, root, context);
 
             return cb.and(predicates.toArray(new Predicate[0]));
         };
@@ -87,16 +82,6 @@ public class DepartmentSpecificationBuilder {
             return cb.and(predicates.toArray(new Predicate[0]));
 
         };
-
-    }
-
-    private void applyScope(List<Predicate> predicates, Root<DepartmentEntity> root, ScopeContext context) {
-        Expression<Integer> deptIdPath = root.get("id");
-
-        // Add scope filter if available
-        if (!context.isSuperAdmin()) {
-            predicates.add(deptIdPath.in(context.getDepartmentIds()));
-        }
 
     }
 

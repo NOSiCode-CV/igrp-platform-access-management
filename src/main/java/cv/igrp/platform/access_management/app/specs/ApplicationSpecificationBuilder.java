@@ -4,8 +4,6 @@ import cv.igrp.platform.access_management.app.application.queries.GetApplication
 import cv.igrp.platform.access_management.shared.application.constants.AppType;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.ApplicationEntity;
-import cv.igrp.platform.access_management.shared.infrastructure.spring.Scoped;
-import cv.igrp.platform.access_management.shared.security.ScopeContext;
 import jakarta.persistence.criteria.Join;
 import jakarta.persistence.criteria.JoinType;
 import org.slf4j.Logger;
@@ -22,11 +20,9 @@ public class ApplicationSpecificationBuilder {
      * Builds a dynamic JPA {@link Specification} based on optional code and name filters.
      *
      * @param query   the get applications query
-     * @param context the user scope context
      * @return a {@link Specification} representing the composed query filters
      */
-    @Scoped
-    public Specification<ApplicationEntity> buildSpecification(GetApplicationsQuery query, ScopeContext context) {
+    public Specification<ApplicationEntity> buildSpecification(GetApplicationsQuery query) {
         Specification<ApplicationEntity> spec = Specification.allOf();
         if (query.getCode() != null && !query.getCode().isEmpty()) {
             spec = spec.and((root, criteriaQuery, cb) ->
@@ -66,22 +62,8 @@ public class ApplicationSpecificationBuilder {
         //        cb.notEqual(root.get("type"), AppType.SYSTEM)
         //);
 
-        // Apply scope
-        spec = applyScope(spec, context);
 
         return spec;
-    }
-
-    private Specification<ApplicationEntity> applyScope(Specification<ApplicationEntity> spec, ScopeContext context) {
-
-        if (!context.isSuperAdmin()) {
-            return spec.and((root, criteriaQuery, cb) ->
-                    root.get("id").in(context.getApplicationIds())
-            );
-        }
-
-        return spec;
-
     }
 
 
