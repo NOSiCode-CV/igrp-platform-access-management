@@ -20,6 +20,7 @@ GET /api/applications/by-code/{code}
 GET /api/applications/by-user/{uid}
 GET /api/applications/{code}/custom-fields
 GET /api/applications/{code}/menus
+GET /api/applications/{code}/pages
 GET /api/applications/{id}
 GET /api/auth/audit
 GET /api/auth/audit/business
@@ -112,6 +113,7 @@ POST /api/departments/{code}/permissions
 POST /api/departments/{code}/roles
 POST /api/departments/{departmentCode}/applications/{applicationCode}/menus
 POST /api/departments/{departmentCode}/resources
+POST /api/departments/{departmentCode}/roles/{roleCode}/pages
 POST /api/departments/{departmentCode}/roles/{roleCode}/permissions
 POST /api/files/private
 POST /api/files/public
@@ -123,6 +125,7 @@ POST /api/m2m/sync/applications/{code}/menus
 POST /api/m2m/sync/permissions
 POST /api/m2m/sync/resources
 POST /api/m2m/users
+POST /api/manifests/register
 POST /api/migration/suggestions/{id}/confirm
 POST /api/migration/suggestions/{id}/dismiss
 POST /api/routes/register
