@@ -161,7 +161,8 @@ public final class CompatSupport {
             "access-management-api.m2m.users.create",
             "access-management-api.m2m.departments.create",
             "access-management-api.m2m.roles.create",
-            "access-management-api.routes.register.create");
+            "access-management-api.routes.register.create",
+            "access-management-api.manifests.register.create");
 
     /** As {@link #registerM2MClient(String, Integer)}, with exactly these permissions (keys or legacy names). */
     public M2MClient registerM2MClient(String clientId, Integer applicationId, List<String> permissionNames) {
