@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
+import java.util.regex.Pattern;
 
 /**
  * Stores a frontend's page manifests (v3-27, #35; spec "Frontend", page model),
@@ -56,6 +57,10 @@ public class PageManifestService {
 
     /** First half of the two-int advisory lock key, distinct from route registration's. */
     private static final int LOCK_CLASS = 0x50414745; // "PAGE"
+
+    private static final String PERMISSION_KEY = "permission_key";
+    private static final String PAGE_KEY = "page_key";
+    private static final Pattern PAGE_NAME = Pattern.compile("[A-Za-z0-9_-]+");
 
     private static final String PAGES = """
             SELECT p.id, p.page_key, p.path, p.status, p.last_seen_version
@@ -129,25 +134,11 @@ public class PageManifestService {
         int created = 0;
         int updated = 0;
         for (PageManifestDTO manifest : declared.values()) {
-            Stored page = stored.get(manifest.page());
-            Definition definition = Definition.of(manifest);
-            if (page != null && page.live()) {
-                if (newest && !definition.equals(page.definition())) {
-                    write(page.id(), definition, version);
-                    updated++;
-                } else if (newest) {
-                    jdbc.update("UPDATE t_application_page SET last_seen_version = ? WHERE id = ?", version,
-                            page.id());
-                }
-            } else if (newest || pathFree(definition.path(), page, stored)) {
-                // Missing, or deleted and declared again: it comes back as this version declares it.
-                // An older version never takes a path a live page has.
-                if (page == null) {
-                    insert(application.getId(), manifest.page(), definition, version);
-                } else {
-                    write(page.id(), definition, newest ? version : page.version());
-                }
+            Outcome outcome = apply(application.getId(), manifest, stored, version, newest);
+            if (outcome == Outcome.CREATED) {
                 created++;
+            } else if (outcome == Outcome.UPDATED) {
+                updated++;
             }
         }
 
@@ -155,6 +146,38 @@ public class PageManifestService {
         LOGGER.info("[PAGES] {} {} registered {} pages: {} created, {} updated, {} unchanged, {} deleted",
                 application.getCode(), version, declared.size(), created, updated, unchanged, deleted);
         return new ManifestRegistrationResultDTO(created, updated, unchanged, deleted);
+    }
+
+    /** What a registration did to one declared page. */
+    private enum Outcome { CREATED, UPDATED, UNCHANGED }
+
+    /** Writes one declared page as the version rules say. */
+    private Outcome apply(int applicationId, PageManifestDTO manifest, Map<String, Stored> stored, String version,
+                          boolean newest) {
+        Stored page = stored.get(manifest.page());
+        Definition definition = Definition.of(manifest);
+        if (page != null && page.live()) {
+            if (!newest) {
+                return Outcome.UNCHANGED;
+            }
+            if (!definition.equals(page.definition())) {
+                write(page.id(), definition, version);
+                return Outcome.UPDATED;
+            }
+            jdbc.update("UPDATE t_application_page SET last_seen_version = ? WHERE id = ?", version, page.id());
+            return Outcome.UNCHANGED;
+        }
+        // Missing, or deleted and declared again: it comes back as this version declares it.
+        // An older version never takes a path a live page has.
+        if (!newest && !pathFree(definition.path(), page, stored)) {
+            return Outcome.UNCHANGED;
+        }
+        if (page == null) {
+            insert(applicationId, manifest.page(), definition, version);
+        } else {
+            write(page.id(), definition, newest ? version : page.version());
+        }
+        return Outcome.CREATED;
     }
 
     /** The application's live pages, by path, with their keys. */
@@ -165,15 +188,15 @@ public class PageManifestService {
         jdbc.query(LIVE_PAGE_PERMISSIONS, rs -> {
             int pageId = rs.getInt("page_id");
             if (rs.getBoolean("required")) {
-                required.computeIfAbsent(pageId, id -> new ArrayList<>()).add(rs.getString("permission_key"));
+                required.computeIfAbsent(pageId, id -> new ArrayList<>()).add(rs.getString(PERMISSION_KEY));
             } else {
                 optional.computeIfAbsent(pageId, id -> new ArrayList<>())
-                        .add(new OptionalPermissionDTO(rs.getString("permission_key"), rs.getString("label")));
+                        .add(new OptionalPermissionDTO(rs.getString(PERMISSION_KEY), rs.getString("label")));
             }
         }, applicationCode);
         return jdbc.query(LIVE_PAGES, (rs, i) -> {
             int id = rs.getInt("id");
-            return new ApplicationPageDTO(rs.getString("page_key"), rs.getString("path"),
+            return new ApplicationPageDTO(rs.getString(PAGE_KEY), rs.getString("path"),
                     required.getOrDefault(id, List.of()), optional.getOrDefault(id, List.of()));
         }, applicationCode);
     }
@@ -243,17 +266,17 @@ public class PageManifestService {
         jdbc.query(PAGE_PERMISSIONS, rs -> {
             int pageId = rs.getInt("page_id");
             if (rs.getBoolean("required")) {
-                required.computeIfAbsent(pageId, id -> new HashSet<>()).add(rs.getString("permission_key"));
+                required.computeIfAbsent(pageId, id -> new HashSet<>()).add(rs.getString(PERMISSION_KEY));
             } else {
                 optional.computeIfAbsent(pageId, id -> new TreeMap<>())
-                        .put(rs.getString("permission_key"), rs.getString("label"));
+                        .put(rs.getString(PERMISSION_KEY), rs.getString("label"));
             }
         }, applicationId);
         Map<String, Stored> pages = new LinkedHashMap<>();
         jdbc.query(PAGES, rs -> {
             int id = rs.getInt("id");
             String path = rs.getString("path");
-            pages.put(rs.getString("page_key"), new Stored(id, rs.getString("page_key"), path,
+            pages.put(rs.getString(PAGE_KEY), new Stored(id, rs.getString(PAGE_KEY), path,
                     "ACTIVE".equals(rs.getString("status")), rs.getString("last_seen_version"),
                     new Definition(path, required.getOrDefault(id, Set.of()), optional.getOrDefault(id, Map.of()))));
         }, applicationId);
@@ -287,7 +310,7 @@ public class PageManifestService {
                     + ", not the caller's " + applicationCode;
         }
         String name = manifest.page().startsWith(prefix) ? manifest.page().substring(prefix.length()) : "";
-        if (name.isEmpty() || !name.matches("[A-Za-z0-9_-]+(\\.[A-Za-z0-9_-]+)*")) {
+        if (!isPageName(name)) {
             return "page key " + manifest.page() + " is not " + prefix + "<page>";
         }
         if (!isSafePath(manifest.path())) {
@@ -308,6 +331,19 @@ public class PageManifestService {
         return null;
     }
 
+    /** Dot-separated segments of letters, digits, '-' or '_'. */
+    private static boolean isPageName(String name) {
+        if (name.isEmpty()) {
+            return false;
+        }
+        for (String segment : name.split("\\.", -1)) {
+            if (!PAGE_NAME.matcher(segment).matches()) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /** An absolute App Router path, catch-alls last, with no segment a router could resolve elsewhere. */
     static boolean isSafePath(String path) {
         if (!PagePaths.isValid(path) || path.contains("\\") || path.contains("%") || path.contains("//")) {
@@ -323,7 +359,10 @@ public class PageManifestService {
 
     /** A permission key of any service: {@code <service>.<resource...>.<action>}. */
     static String keyProblem(String key) {
-        int dot = key == null ? -1 : key.indexOf('.');
+        if (key == null) {
+            return "a key is missing";
+        }
+        int dot = key.indexOf('.');
         if (dot <= 0) {
             return "key " + key + " is not <service>.<resource>.<action>";
         }

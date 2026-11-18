@@ -8,6 +8,7 @@ import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseS
 import jakarta.persistence.EntityManager;
 import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,8 +30,8 @@ import java.util.TreeSet;
  * ({@link AddPermissionsCommandHandler}, called directly: the command bus
  * depends on every handler, so a handler cannot depend on it), so its rules
  * hold: the caller's department scope, the parent role's permissions, and the
- * keys available to the role's department. All or nothing: when the role cannot hold every key, nothing is
- * granted and the answer names the keys.
+ * keys available to the role's department. All or nothing: when the role
+ * cannot hold every key, nothing is granted and the answer names the keys.
  */
 @Service
 public class PageGrantService {
@@ -51,6 +52,8 @@ public class PageGrantService {
               JOIN t_permission p ON p.id = rp.permission
              WHERE d.code = :department AND r.code = :role AND r.status <> 'DELETED'
                AND p.permission_key IN (:keys)""";
+
+    private static final String PERMISSION_KEY = "permission_key";
 
     private final JdbcTemplate jdbc;
     private final NamedParameterJdbcTemplate named;
@@ -76,9 +79,9 @@ public class PageGrantService {
         Set<String> optional = new HashSet<>();
         jdbc.query(PAGE_KEYS, rs -> {
             if (rs.getBoolean("required")) {
-                keys.add(rs.getString("permission_key"));
+                keys.add(rs.getString(PERMISSION_KEY));
             } else {
-                optional.add(rs.getString("permission_key"));
+                optional.add(rs.getString(PERMISSION_KEY));
             }
         }, request.page());
         for (String chosen : request.optionalKeys()) {
@@ -94,9 +97,7 @@ public class PageGrantService {
 
         Map<String, String> names = new HashMap<>();
         named.query(NAMES, Map.of("keys", keys),
-                rs -> {
-                    names.put(rs.getString("permission_key"), rs.getString("name"));
-                });
+                (RowCallbackHandler) rs -> names.put(rs.getString(PERMISSION_KEY), rs.getString("name")));
         Set<String> unregistered = new TreeSet<>(keys);
         unregistered.removeAll(names.keySet());
         if (!unregistered.isEmpty()) {
