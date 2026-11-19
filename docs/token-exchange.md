@@ -2,7 +2,7 @@
 
 ## Estado
 
-Implementado no AM (v3-20, #28): a política de troca no `TokenExchangeClaimsService`, aplicada pelo `IgrpTokenCustomizer`. O provider e o endpoint continuam a ser os do Spring Security. O token trocado é fino como todos os outros (#33, spec "Tokens"). A parte do starter fica por fazer: troca automática ao chamar outro serviço, cache por utilizador e destino, e métrica por agente.
+Implementado no AM (v3-20, #28): a política de troca no `TokenExchangeClaimsService`, aplicada pelo `IgrpTokenCustomizer`. O provider e o endpoint continuam a ser os do Spring Security. O token trocado é fino como todos os outros (#33, spec "Tokens"). O lado do serviço que chama está no starter ([igrp-framework-auth-backend-monorepo!25](https://git.nosi.cv/igrp-3_0/igrp-auth/backend/igrp-framework-auth-backend-monorepo/-/merge_requests/25)): `TokenExchangeClients` faz a troca na primeira chamada a outro serviço e `ExchangedTokenCache` guarda o token trocado por token de entrada, destino e scopes. O starter usa o token trocado só como bearer e não lê claims dele, por isso é compatível com o token fino. Configuração e comportamento da cache: `docs/token-exchange-cache.md` no monorepo.
 
 ## Comportamento herdado
 
