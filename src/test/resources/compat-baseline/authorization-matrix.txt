@@ -102,8 +102,6 @@ POST /api/auth/audit/validate anonymous=401 roleless=403
 POST /api/auth/reports/access/archive anonymous=401 roleless=403
 POST /api/auth/reports/audit/archive anonymous=401 roleless=403
 POST /api/auth/reports/settings/archive anonymous=401 roleless=403
-POST /api/authorize/batch-check anonymous=401 roleless=403
-POST /api/authorize/check anonymous=401 roleless=403
 POST /api/authorize/page anonymous=401 roleless=400
 POST /api/clients anonymous=401 roleless=403
 POST /api/clients/{id}/rotate-secret anonymous=401 roleless=403

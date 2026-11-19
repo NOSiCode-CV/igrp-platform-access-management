@@ -366,7 +366,8 @@ and cannot drift from it.
 | Users | `/api/users` |
 | Roles | `/api/roles` |
 | Departments | `/api/departments` |
-| Permission checks | `/api/authorize/check` |
+| Page access (frontend middleware) | `/api/authorize/page` |
+| A caller's permission set | `/api/users/me/permissions` |
 | Files | `/api/files` |
 | Global configuration | `/api/global-configuration` |
 | OAuth clients | `/api/clients` |
