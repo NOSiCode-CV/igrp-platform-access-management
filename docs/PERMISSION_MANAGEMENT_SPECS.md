@@ -172,6 +172,8 @@ CREATE INDEX idx_user_perms ON user_effective_permissions (user_id);
 
 ## Authorization Service API
 
+> **Removed in AM 0.3 (#38).** `POST /api/authorize/check` and `POST /api/authorize/batch-check` no longer exist and answer 404. Services decide from the caller's permission set (`GET /api/users/me/permissions`, cached in Redis by the starter); frontends ask `POST /api/authorize/page`. The section below describes the 0.2 contract.
+
 ### Check Permission Endpoint
 `POST /api/authorize/check`
 

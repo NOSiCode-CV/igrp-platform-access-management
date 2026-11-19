@@ -125,23 +125,8 @@ class SdkClientCompatIT extends AbstractCompatIT {
             assertFalse(users.isEmpty(), sdk + ": the superadmin holds the business role");
             assertNotNull(invoke(users.getFirst(), "getId"));
 
-            // Authorization checks, as a frontend backend-for-frontend does with a user token.
-            Object userClient = newInstance(loader, "ApiClient");
-            invoke(userClient, "setBaseUrl", CompatEnvironment.ISSUER);
-            invoke(userClient, "setAuthToken", api.superadminToken());
-            Object authorizeApi = loader.loadClass(PKG + "api.AuthorizeApi")
-                    .getConstructor(loader.loadClass(PKG + "IApiClient"))
-                    .newInstance(userClient);
-
-            Object check = loader.loadClass(PKG + "model.PermissionCheckRequestDTO")
-                    .getConstructor(String.class, String.class)
-                    .newInstance("igrp-access-management", "igrp.users.list");
-            Object decision = invoke(authorizeApi, "checkAuthorization", check);
-            assertEquals(Boolean.TRUE, invoke(decision, "isAllowed"), sdk + ": superadmin is allowed");
-
-            List<?> decisions = (List<?>) invoke(authorizeApi, "batchCheckAuthorization",
-                    new ArrayList<>(List.of(check, check)));
-            assertEquals(2, decisions.size());
+            // The SDK's AuthorizeApi (/api/authorize/check, batch-check) is not exercised:
+            // AM 0.3 removed both (#38). Services decide from the permission set.
         }
     }
 

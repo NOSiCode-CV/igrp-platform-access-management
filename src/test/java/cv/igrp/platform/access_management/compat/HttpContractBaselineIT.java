@@ -122,11 +122,6 @@ class HttpContractBaselineIT extends AbstractCompatIT {
                 new Case("role-by-code", t -> t.api.get("/api/roles/by-code/" + role + "?departmentCode=" + dept, t.admin)),
                 new Case("users-me", t -> t.api.get("/api/users/me", t.admin)),
                 new Case("users-me-departments", t -> t.api.get("/api/users/me/departments", t.admin)),
-                new Case("authorize-check", t -> t.api.postJson("/api/authorize/check", t.admin,
-                        "{\"resource\":\"igrp-access-management\",\"action\":\"igrp.users.list\"}")),
-                new Case("authorize-batch-check", t -> t.api.postJson("/api/authorize/batch-check", t.admin,
-                        "[{\"resource\":\"igrp-access-management\",\"action\":\"igrp.users.list\"},"
-                                + "{\"resource\":\"igrp-access-management\",\"action\":\"igrp.no.such.permission\"}]")),
                 new Case("m2m-departments", t -> t.api.postJson("/api/m2m/departments?activeOnly=true", t.m2mToken(),
                         "[\"" + dept + "\"]")),
                 new Case("m2m-roles", t -> t.api.postJson("/api/m2m/roles?activeOnly=true", t.m2mToken(),

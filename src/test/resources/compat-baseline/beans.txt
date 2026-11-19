@@ -40,11 +40,9 @@ auditReportFileRepository : cv.igrp.platform.access_management.security_audit.in
 auditReportsController : cv.igrp.platform.access_management.shared.api.audit.AuditReportsController
 authenticationHelper : cv.igrp.framework.auth.core.security.AuthenticationHelper
 authorizationConfig : cv.igrp.platform.access_management.shared.config.AuthorizationConfig
-authorizationController : cv.igrp.platform.access_management.authorization.interfaces.rest.AuthorizationController
 authorizationCore : cv.igrp.platform.access_management.authorization.domain.service.DatabaseAuthorizeApiAdapter
 authorizationServerConfig : cv.igrp.platform.access_management.oauth_server.infrastructure.security.AuthorizationServerConfig
 authorizationService : cv.igrp.platform.access_management.oauth_server.infrastructure.security.CascadingAuthorizationService
-batchCheckAuthorizationCommandHandler : cv.igrp.platform.access_management.authorization.application.commands.BatchCheckAuthorizationCommandHandler
 businessAuditChain : cv.igrp.platform.access_management.central_audit.domain.service.BusinessAuditChain
 businessAuditController : cv.igrp.platform.access_management.central_audit.interfaces.rest.BusinessAuditController
 businessAuditListener : cv.igrp.platform.access_management.central_audit.infrastructure.kafka.BusinessAuditListener
@@ -54,7 +52,6 @@ businessAuditValidator : cv.igrp.platform.access_management.central_audit.domain
 cacheConfig : cv.igrp.platform.access_management.shared.config.CacheConfig
 cacheManager : cv.igrp.platform.access_management.shared.config.CacheConfig$FallbackCacheManager
 cancelUserInvitationCommandHandler : cv.igrp.platform.access_management.users.application.commands.CancelUserInvitationCommandHandler
-checkAuthorizationCommandHandler : cv.igrp.platform.access_management.authorization.application.commands.CheckAuthorizationCommandHandler
 checkPageAccessQueryHandler : cv.igrp.platform.access_management.page_access.application.queries.CheckPageAccessQueryHandler
 claimsEnrichmentService : cv.igrp.platform.access_management.oauth_server.infrastructure.security.ClaimsEnrichmentService
 configurationService : cv.igrp.platform.access_management.shared.infrastructure.service.ConfigurationService
@@ -279,7 +276,6 @@ setActiveUserRoleCommandHandler : cv.igrp.platform.access_management.users.appli
 setGlobalConfigurationCommandHandler : cv.igrp.platform.access_management.global_configuration.application.commands.SetGlobalConfigurationCommandHandler
 settingsAuditEventListener : cv.igrp.platform.access_management.security_audit.application.config.SettingsAuditEventListener
 sharedAuthAuditController : cv.igrp.platform.access_management.shared.api.audit.AuthAuditController
-singleCheckAuthorizationHandler : cv.igrp.platform.access_management.authorization.application.commands.handler.SingleCheckAuthorizationHandler
 springCommandBus : cv.igrp.platform.access_management.shared.infrastructure.spring.SpringCommandBus
 springQueryBus : cv.igrp.platform.access_management.shared.infrastructure.spring.SpringQueryBus
 startupRunner : cv.igrp.platform.access_management.IgrpPlatformAccessManagementApplication
