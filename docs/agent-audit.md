@@ -1,6 +1,6 @@
 # Auditoria e métrica por agente
 
-> **Estado (2026-11-19):** a parte do AM (colunas `agent` e `act`, receção na auditoria central) está implementada e testada. A parte do starter descrita abaixo (`V2__actor_chain.sql`, `igrp.agent.calls`) ainda não está no monorepo: é o desenho a seguir, num ticket do starter.
+> **Estado (2026-11-19):** implementado e testado nas duas partes. O AM guarda `agent` e `act` na auditoria de segurança e na auditoria central (igrp-platform-access-management!509). O starter grava-os no `audit_event` e na outbox, e conta as chamadas em `igrp.agent.calls` ([igrp-framework-auth-backend-monorepo!25](https://git.nosi.cv/igrp-3_0/igrp-auth/backend/igrp-framework-auth-backend-monorepo/-/merge_requests/25)).
 
 ## Dados registados
 
@@ -13,7 +13,7 @@ Para delegação, `agent` é `act.sub`. Para service accounts autónomas, sem `a
 ## Migrações e compatibilidade
 
 - AM: `V31_1__audit_actor_chain.sql`.
-- Starter: `V2__actor_chain.sql`, no histórico Flyway próprio `igrp_audit_schema_history`.
+- Starter: `V3__actor_chain.sql` (`db/igrp-audit`), no histórico Flyway próprio `igrp_audit_schema_history`.
 - Eventos antigos, sem `act`, continuam aceites.
 - Os hashes antigos são preservados. Novos hashes incluem a extensão quando os campos de actor estão presentes; modificar ou remover a cadeia invalida o hash.
 - Atualizar o AM antes dos serviços produtores. Um AM antigo não sabe persistir o novo campo recebido.
@@ -41,4 +41,4 @@ O contador aparece após a primeira chamada desse agente. Trata-se de um contado
 
 ## Validação
 
-No AM: `ActorAuditTest`, `SecurityAuditChainServiceTest` (preservação da cadeia, detecção de adulteração e compatibilidade dos eventos antigos) e `TokenExchangeIT` (coluna `agent`/`act` preenchida na emissão de um token trocado). Os testes do starter ficam com o ticket do starter.
+No AM: `ActorAuditTest`, `SecurityAuditChainServiceTest` (preservação da cadeia, detecção de adulteração e compatibilidade dos eventos antigos) e `TokenExchangeIT` (coluna `agent`/`act` preenchida na emissão de um token trocado). No starter: `AgentIdentityTest` e `AgentCallMetricsFilterTest`.
