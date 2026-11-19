@@ -4,6 +4,7 @@ import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.auth.core.model.ClientRegistration;
 import cv.igrp.framework.auth.core.model.IssuedClient;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -68,6 +69,8 @@ public class FederatedClients {
             return adapter.createClient(registration(clientId, clientName));
         } catch (IAMException ex) {
             throw idpFailure("Could not create the client in the IdP", ex);
+        } catch (UnsupportedOperationException ex) {
+            throw unsupported("create a client", ex);
         }
     }
 
@@ -77,6 +80,8 @@ public class FederatedClients {
             return adapter.rotateClientSecret(clientId);
         } catch (IAMException ex) {
             throw idpFailure("Could not rotate the client secret in the IdP", ex);
+        } catch (UnsupportedOperationException ex) {
+            throw unsupported("rotate a client secret", ex);
         }
     }
 
@@ -85,6 +90,8 @@ public class FederatedClients {
             adapter.updateClient(clientId, registration(clientId, clientName));
         } catch (IAMException ex) {
             throw idpFailure("Could not update the client in the IdP", ex);
+        } catch (UnsupportedOperationException ex) {
+            throw unsupported("update a client", ex);
         }
     }
 
@@ -94,6 +101,8 @@ public class FederatedClients {
             adapter.deleteClient(clientId);
         } catch (IAMException ex) {
             throw idpFailure("Could not delete the client in the IdP", ex);
+        } catch (UnsupportedOperationException ex) {
+            throw unsupported("delete a client", ex);
         }
     }
 
@@ -131,6 +140,14 @@ public class FederatedClients {
 
     private static ClientRegistration registration(String clientId, String clientName) {
         return new ClientRegistration(clientId, clientName, Set.of(CLIENT_CREDENTIALS), List.of());
+    }
+
+    /**
+     * The IdP cannot do this at all (Autentika's gateway cannot rotate a secret yet, v3-36):
+     * 501 with a stable code, never an unhandled 500. Nothing was changed in the IdP.
+     */
+    private IgrpResponseStatusException unsupported(String operation, UnsupportedOperationException cause) {
+        return IgrpResponseStatusException.ofWithCause(IgrpErrorCode.IGRP_AUTH_IDP_OPERATION_UNSUPPORTED, cause, idp, operation);
     }
 
     private static IgrpResponseStatusException idpFailure(String title, IAMException cause) {

@@ -4,6 +4,7 @@ import cv.igrp.framework.auth.core.adapter.IAdapter;
 import cv.igrp.framework.auth.core.exception.IAMException;
 import cv.igrp.framework.auth.core.model.ClientRegistration;
 import cv.igrp.framework.auth.core.model.IssuedClient;
+import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpErrorCode;
 import cv.igrp.platform.access_management.shared.domain.exceptions.IgrpResponseStatusException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -91,6 +92,24 @@ class FederatedClientsTest {
             assertEquals(502, failure.getStatusCode().value());
             assertEquals("Keycloak said no", failure.getBody().getDetail());
             assertSame(down, failure.getCause());
+        }
+    }
+
+    @Test
+    @DisplayName("v3-36: an operation the IdP cannot do becomes 501 IGRP_AUTH_IDP_OPERATION_UNSUPPORTED, never a 500")
+    void unsupportedOperations() throws IAMException {
+        UnsupportedOperationException no = new UnsupportedOperationException("not on this gateway");
+        when(adapter.createClient(any())).thenThrow(no);
+        when(adapter.rotateClientSecret(anyString())).thenThrow(no);
+        doThrow(no).when(adapter).updateClient(anyString(), any());
+        doThrow(no).when(adapter).deleteClient(anyString());
+
+        for (Executable call : List.<Executable>of(() -> clients.create("svc", "Svc"),
+                () -> clients.rotateSecret("svc"), () -> clients.update("svc", "Svc"), () -> clients.delete("svc"))) {
+            IgrpResponseStatusException failure = assertThrows(IgrpResponseStatusException.class, call);
+            assertEquals(501, failure.getStatusCode().value());
+            assertEquals(IgrpErrorCode.IGRP_AUTH_IDP_OPERATION_UNSUPPORTED, failure.getCode());
+            assertSame(no, failure.getCause());
         }
     }
 

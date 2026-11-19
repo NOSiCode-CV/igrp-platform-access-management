@@ -351,6 +351,12 @@
             <artifactId>keycloak-spring-boot</artifactId>
             <version>${framework.auth.version}</version>
         </dependency>
+        <!-- v3-36 (#44): service clients in Autentika, when igrp.oauth.service-clients.idp=autentika -->
+        <dependency>
+            <groupId>cv.igrp.framework.auth</groupId>
+            <artifactId>autentika-spring-boot</artifactId>
+            <version>${framework.auth.version}</version>
+        </dependency>
         <!-- v3-28 (#36): AM protects its own routes with the 0.3 starter's route
              filter, like every service. Its permission set comes in-process
              (InProcessPermissionFetch) and its routes register in-process
