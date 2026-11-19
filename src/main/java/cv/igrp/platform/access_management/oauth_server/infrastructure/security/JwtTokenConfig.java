@@ -202,7 +202,9 @@ public class JwtTokenConfig {
                         Map.of("clientId", context.getRegisteredClient().getClientId(),
                                 "grantType", AuthorizationGrantType.TOKEN_EXCHANGE.getValue(),
                                 "sub", context.getClaims().build().getSubject(),
-                                "audience", context.getClaims().build().getAudience()));
+                                "audience", context.getClaims().build().getAudience(),
+                                "act", context.getClaims().build().getClaim("act"),
+                                "userId", context.getClaims().build().getSubject()));
                 return;
             }
 

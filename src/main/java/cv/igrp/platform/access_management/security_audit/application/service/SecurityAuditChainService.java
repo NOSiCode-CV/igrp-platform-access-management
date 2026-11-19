@@ -168,7 +168,7 @@ public class SecurityAuditChainService {
      * {@code sequence_number} anchors row identity instead.
      */
     private String serialize(SecurityAuditLogEntity e) {
-        return String.join(FIELD_SEP,
+        String legacy = String.join(FIELD_SEP,
                 nullSafe(e.getSequenceNumber()),
                 nullSafe(e.getEventType()),
                 nullSafe(e.getCategory()),
@@ -202,6 +202,11 @@ public class SecurityAuditChainService {
                 nullSafe(e.getNewValue()),
                 nullSafe(e.getPeriodStart()),
                 nullSafe(e.getPeriodEnd()));
+        if (e.getAct() == null && e.getAgent() == null) return legacy;
+        // Length-prefix the extension and preserve historical row hashes unchanged.
+        String agent = nullSafe(e.getAgent());
+        String act = nullSafe(e.getAct());
+        return legacy + FIELD_SEP + "actor-v1:" + agent.length() + ":" + agent + act.length() + ":" + act;
     }
 
     private String hmac(String input) {

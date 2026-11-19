@@ -1,6 +1,6 @@
 # Plano de execução — Token Exchange no AM
 
-Estado: etapas 2–3 implementadas; etapa 1 analisada por inspeção do provider Spring, com teste de caracterização escrito. Compilação e testes não executados por indicação do utilizador. Validação HTTP/base de dados pendente. Ver [contrato e configuração](../../docs/token-exchange.md).
+Estado: etapas 2–3 implementadas; etapa 1 analisada por inspeção do provider Spring, com teste de caracterização executado. `clean compile test` passou no AM em 2026-11-19: 1162 testes, zero falhas, erros ou testes ignorados. Validação HTTP/base de dados via Failsafe pendente. Ver [contrato e configuração](../../docs/token-exchange.md).
 
 ## Objetivo e âmbito
 
@@ -87,7 +87,7 @@ sessão de origem
 
 ### Entrega das etapas 1–3
 
-- Provider Spring reutilizado e inspecionado; teste de caracterização escrito, ainda não executado.
+- Provider Spring reutilizado e inspecionado; teste de caracterização executado com sucesso.
 - Audiência resolvida pelo client ID do destino, sem allowlist por cliente.
 - Actor opcional, validação da sua service account quando apresentado e limite da cadeia.
 - Scopes limitados pelo subject, cliente solicitante e destino.

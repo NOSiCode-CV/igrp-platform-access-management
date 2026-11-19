@@ -57,6 +57,15 @@ public class SecurityAuditLogEntity {
     private String sessionId;
     private String ipAddress;
     private String userAgent;
+    @Column(name = "agent", length = 255)
+    private String agent;
+    @Column(name = "act", columnDefinition = "TEXT")
+    private String act;
+
+    public String getAgent() { return agent; }
+    public void setAgent(String agent) { this.agent = agent; }
+    public String getAct() { return act; }
+    public void setAct(String act) { this.act = act; }
     private String correlationId;
     private String requestPath;
     private String decisionReason;

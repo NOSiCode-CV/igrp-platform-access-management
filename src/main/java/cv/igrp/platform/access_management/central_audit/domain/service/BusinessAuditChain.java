@@ -59,6 +59,8 @@ public class BusinessAuditChain {
                 input.append(field.length()).append(':').append(field);
             }
         }
+        // Preserve historical hashes when act is absent; protect the new field when present.
+        if (event.act() != null) input.append("act:").append(event.act().length()).append(':').append(event.act());
         return hmac(input.toString());
     }
 

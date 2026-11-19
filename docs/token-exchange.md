@@ -2,7 +2,7 @@
 
 ## Estado
 
-Implementadas a política de troca e a seleção de claims por audiência no customizador JWT. O provider e o endpoint continuam a ser os do Spring Security. Foram adicionados testes para execução posterior; não foram executados testes nem compilação nesta entrega, por indicação do utilizador.
+Implementadas a política de troca e a seleção de claims por audiência no customizador JWT. O provider e o endpoint continuam a ser os do Spring Security. Em 2026-11-19, `mvnw.cmd -B clean compile test` passou no AM com Java 26.0.2: 1162 testes, zero falhas, erros ou testes ignorados. Os testes de integração Failsafe não fazem parte da fase `test`.
 
 ## Comportamento herdado
 
@@ -61,7 +61,7 @@ Somente access tokens são aceites como entrada e saída. Não há suporte a tok
 
 Para compatibilidade com o AM, exige-se uma sessão original ativa, reutiliza-se `sid`/`device_id` e não se chama o fluxo de criação de sessão interativa. A expiração é limitada pelos tokens apresentados, TTL do destino e prazos da sessão.
 
-A auditoria existente recebe o evento TOKEN_ISSUED, utilizador, cliente e audiência. A coluna `agent`, a auditoria completa da cadeia e a avaliação integral da revogação de tokens derivados permanecem nas etapas 4–5 do plano. O starter não foi alterado.
+A auditoria recebe o evento TOKEN_ISSUED, utilizador, cliente, audiência, `agent` e a cadeia `act`. A persistência e a métrica por agente no starter são descritas em [agent-audit.md](agent-audit.md). A avaliação integral da revogação de tokens derivados continua pendente.
 
 ## Erros
 

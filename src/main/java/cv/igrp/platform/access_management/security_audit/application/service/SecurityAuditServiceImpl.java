@@ -148,7 +148,15 @@ public class SecurityAuditServiceImpl implements SecurityAuditService {
         logEntity.setDecisionReason(resolveDecisionReason(category, fullContext));
 
         try {
-            logEntity.setContextData(PersistedJson.MAPPER.writeValueAsString(fullContext));
+            if (fullContext.get("act") instanceof Map<?, ?> act && act.get("sub") instanceof String agent) {
+                logEntity.setAgent(agent);
+                logEntity.setAct(PersistedJson.MAPPER.writeValueAsString(act));
+            } else {
+                logEntity.setAgent(asString(fullContext.get("agent")));
+            }
+            Map<String, Object> compactContext = new HashMap<>(fullContext);
+            compactContext.remove("act"); // Stored in TEXT, not the bounded context_data column.
+            logEntity.setContextData(PersistedJson.MAPPER.writeValueAsString(compactContext));
         } catch (Exception e) {
             logger.error("[Security audit] Failed to serialize audit context to JSON", e);
             logEntity.setContextData("{\"error\":\"Failed to serialize context\"}");

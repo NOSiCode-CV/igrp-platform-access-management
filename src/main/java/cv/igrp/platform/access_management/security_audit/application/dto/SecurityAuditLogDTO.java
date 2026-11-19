@@ -24,6 +24,8 @@ public class SecurityAuditLogDTO {
     private String sessionId;
     private String ipAddress;
     private String userAgent;
+    private String agent;
+    private String act;
     private String correlationId;
     private String requestPath;
     private String decisionReason;

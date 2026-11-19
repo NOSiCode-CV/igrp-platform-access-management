@@ -19,7 +19,7 @@ public class BusinessAuditQueries {
 
     private static final String SEARCH = """
             SELECT id, service, sequence_number, event, resource, payload, username, agent, result, trace_id,
-                   occurred_at, received_at
+                   occurred_at, received_at, act
               FROM t_business_audit_event
              WHERE (CAST(? AS varchar) IS NULL OR service = ?)
                AND (CAST(? AS varchar) IS NULL OR username = ?)
@@ -53,7 +53,7 @@ public class BusinessAuditQueries {
                         rs.getString("service"), rs.getLong("sequence_number"), rs.getString("event"),
                         rs.getString("resource"), rs.getString("payload"), rs.getString("username"),
                         rs.getString("agent"), rs.getString("result"), rs.getString("trace_id"),
-                        rs.getTimestamp("occurred_at").toInstant(), rs.getTimestamp("received_at").toInstant()),
+                        rs.getTimestamp("occurred_at").toInstant(), rs.getTimestamp("received_at").toInstant(), rs.getString("act")),
                 filter.service(), filter.service(), filter.username(), filter.username(), filter.event(),
                 filter.event(), filter.resource(), filter.resource(), filter.traceId(), filter.traceId(), from, from,
                 to, to, size, (long) page * size);
