@@ -210,6 +210,10 @@ public enum IgrpErrorCode {
     IGRP_AUTH_M2M_FILTER_REQUIRED(HttpStatus.BAD_REQUEST,
             "At least one filter must be provided: applicationCode, departmentCode, roleCode or permissionName"),
 
+    // ─── Federated service clients ───────────────────────────────────────────
+    IGRP_AUTH_IDP_OPERATION_UNSUPPORTED(HttpStatus.NOT_IMPLEMENTED,
+            "The identity provider {0} does not support this operation: {1}"),
+
     // ─── Configuration / Infrastructure ──────────────────────────────────────
     IGRP_AUTH_APP_CENTER_URL_REQUIRED(HttpStatus.BAD_REQUEST,
             "Application Center URL is not configured"),
