@@ -122,11 +122,12 @@ public class JwtTokenConfig {
     @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> igrpTokenCustomizer(ClaimsEnrichmentService claimsService,
                                                                          SecurityAuditService auditService,
+                                                                         TokenExchangeClaimsService tokenExchange,
                                                                          @Value("${igrp.oauth.access-token-ttl-seconds:300}")
                                                                          long userAccessTokenTtlSeconds,
                                                                          @Value("${igrp.oauth.refresh-max-lifetime-seconds:28800}")
                                                                          long refreshMaxLifetimeSeconds) {
-        return new IgrpTokenCustomizer(claimsService, auditService,
+        return new IgrpTokenCustomizer(claimsService, auditService, tokenExchange,
                 Duration.ofSeconds(userAccessTokenTtlSeconds), Duration.ofSeconds(refreshMaxLifetimeSeconds));
     }
 

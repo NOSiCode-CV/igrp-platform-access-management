@@ -95,6 +95,8 @@ public class GetSecurityAuditLogsQueryHandler implements QueryHandler<GetSecurit
         dto.setSessionId(entity.getSessionId());
         dto.setIpAddress(entity.getIpAddress());
         dto.setUserAgent(entity.getUserAgent());
+        dto.setAgent(entity.getAgent());
+        dto.setAct(entity.getAct());
         dto.setCorrelationId(entity.getCorrelationId());
         dto.setRequestPath(entity.getRequestPath());
         dto.setDecisionReason(entity.getDecisionReason());

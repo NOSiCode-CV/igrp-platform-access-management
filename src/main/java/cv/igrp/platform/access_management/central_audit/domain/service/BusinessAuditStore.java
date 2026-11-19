@@ -55,8 +55,8 @@ public class BusinessAuditStore {
     private static final String INSERT = """
             INSERT INTO t_business_audit_event (id, service, sequence_number, event, resource, payload, username,
                                                 agent, result, trace_id, occurred_at, received_at, previous_hash,
-                                                current_hash)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
+                                                current_hash, act)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""";
 
     /** A message that is not an audit event: it can never be stored, so it is not retried. */
     public static final class InvalidEventException extends RuntimeException {
@@ -108,10 +108,30 @@ public class BusinessAuditStore {
                     text(node, USERNAME), text(node, SERVICE), text(node, AGENT), text(node, RESULT),
                     text(node, TRACE_ID),
                     // Postgres keeps microseconds: the hash must be of what is stored.
-                    Instant.parse(text(node, OCCURRED_AT)).truncatedTo(ChronoUnit.MICROS));
+                    Instant.parse(text(node, OCCURRED_AT)).truncatedTo(ChronoUnit.MICROS), actorChain(node));
         } catch (IllegalArgumentException | java.time.format.DateTimeParseException ex) {
             throw new InvalidEventException("The audit event has an invalid id or time: " + ex.getMessage());
         }
+    }
+
+    private static String actorChain(JsonNode node) {
+        JsonNode act = node.get("act");
+        if (act == null || act.isNull()) return null; // older producers
+        JsonNode current = act;
+        int depth = 0;
+        while (current != null && !current.isNull()) {
+            if (++depth > 20 || !current.isObject() || !current.hasNonNull("sub")
+                    || !current.get("sub").isString() || current.get("sub").asString().isBlank()) {
+                throw new InvalidEventException("Invalid actor chain");
+            }
+            current = current.get("act");
+        }
+        if (!act.get("sub").asString().equals(text(node, AGENT))) {
+            throw new InvalidEventException("agent must match act.sub");
+        }
+        String value = JSON.writeValueAsString(act);
+        if (value.length() > 16384) throw new InvalidEventException("Actor chain is too large");
+        return value;
     }
 
     private static JsonNode readTree(String message) {
@@ -164,7 +184,7 @@ public class BusinessAuditStore {
         jdbc.update(INSERT, event.id(), event.service(), sequence, event.event(), event.resource(), event.payload(),
                 event.username(), event.agent(), event.result(), event.traceId(),
                 Timestamp.from(event.occurredAt()), Timestamp.from(received), previous,
-                chain.hash(previous, sequence, event, received));
+                chain.hash(previous, sequence, event, received), event.act());
         return true;
     }
 }

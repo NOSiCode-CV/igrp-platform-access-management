@@ -1,6 +1,8 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
+import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
+import cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -34,6 +36,8 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -43,6 +47,7 @@ class JwtTokenConfigTest {
 
     @Mock private ClaimsEnrichmentService claimsService;
     @Mock private SecurityAuditService auditService;
+    @Mock private TokenExchangeClaimsService tokenExchange;
     @Mock private JwtEncodingContext context;
 
     private OAuth2TokenCustomizer<JwtEncodingContext> customizer;
@@ -56,7 +61,7 @@ class JwtTokenConfigTest {
                 "",
                 "",
                 "");
-        customizer = config.igrpTokenCustomizer(claimsService, auditService,
+        customizer = config.igrpTokenCustomizer(claimsService, auditService, tokenExchange,
                 300, 28800);
         claims = JwtClaimsSet.builder().id("jti-1").issuedAt(ISSUED_AT);
     }
@@ -71,7 +76,7 @@ class JwtTokenConfigTest {
         when(claimsService.mapEmail("autentika", "demo@nosi.cv")).thenReturn("email-user");
         when(claimsService.buildClaims("email-user", "client-a", Set.of("openid"))).thenReturn(Map.of());
         // The client allows 5 minutes (its default); the platform says 2.
-        config.igrpTokenCustomizer(claimsService, auditService,
+        config.igrpTokenCustomizer(claimsService, auditService, tokenExchange,
                 120, 28800).customize(context);
 
         JwtClaimsSet built = claims.build();
@@ -110,7 +115,7 @@ class JwtTokenConfigTest {
         stubOAuthContext(Map.of("sub", "external-sub", "email", "demo@nosi.cv"));
         when(claimsService.mapEmail("autentika", "demo@nosi.cv")).thenReturn("email-user");
         when(claimsService.buildClaims("email-user", "client-a", Set.of("openid"))).thenReturn(Map.of());
-        config.igrpTokenCustomizer(claimsService, auditService,
+        config.igrpTokenCustomizer(claimsService, auditService, tokenExchange,
                 1800, 28800).customize(context);
 
         assertEquals(ISSUED_AT.plus(Duration.ofMinutes(5)), claims.build().getExpiresAt());
@@ -162,6 +167,51 @@ class JwtTokenConfigTest {
         assertEquals("spring-session", built.getClaimAsString("sid"));
         assertEquals("fulano", built.getClaimAsString("preferred_username"));
         assertEquals("device-1", built.getClaimAsString("device_id"));
+    }
+
+    @Test
+    @DisplayName("v3-20: an exchanged token takes the policy's sub/aud/act, the user's identity claims and azp, "
+            + "and is audited with its actors")
+    void tokenExchange() {
+        when(context.getTokenType()).thenReturn(OAuth2TokenType.ACCESS_TOKEN);
+        when(context.getRegisteredClient()).thenReturn(client());
+        when(context.getAuthorizationGrantType()).thenReturn(AuthorizationGrantType.TOKEN_EXCHANGE);
+        when(context.getClaims()).thenReturn(claims);
+        when(context.getAuthorizedScopes()).thenReturn(Set.of("read"));
+        Map<String, Object> act = Map.of("sub", "client-a", "iss", "https://am");
+        when(tokenExchange.customize(context)).thenAnswer(invocation -> {
+            claims.subject("u-1").audience(List.of("billing")).expiresAt(ISSUED_AT.plusSeconds(60)).claim("act", act);
+            return "u-1";
+        });
+        when(claimsService.buildClaims("u-1", "client-a", Set.of("read")))
+                .thenReturn(Map.of("is_super_admin", false));
+
+        customizer.customize(context);
+
+        JwtClaimsSet built = claims.build();
+        assertEquals("u-1", built.getSubject());
+        assertEquals("client-a", built.getClaimAsString("azp"));
+        assertEquals(false, built.getClaim("is_super_admin"));
+        // The policy's expiry stands: not reset to the user token lifetime, and no new device id.
+        assertEquals(ISSUED_AT.plusSeconds(60), built.getExpiresAt());
+        assertNull(built.getClaims().get("device_id"));
+        verify(context, never()).getPrincipal();
+        verify(auditService).logEvent(eq(AuditEventType.TOKEN_ISSUED), eq(AuditCategory.AUTHENTICATION),
+                argThat(audit -> act.equals(audit.get("act")) && List.of("billing").equals(audit.get("audience"))
+                        && "u-1".equals(audit.get("sub"))));
+    }
+
+    @Test
+    @DisplayName("v3-20: a refused exchange issues nothing and audits nothing")
+    void tokenExchangeRefused() {
+        when(context.getTokenType()).thenReturn(OAuth2TokenType.ACCESS_TOKEN);
+        when(context.getRegisteredClient()).thenReturn(client());
+        when(context.getAuthorizationGrantType()).thenReturn(AuthorizationGrantType.TOKEN_EXCHANGE);
+        when(tokenExchange.customize(context)).thenThrow(new OAuth2AuthenticationException("invalid_target"));
+
+        assertThrows(OAuth2AuthenticationException.class, () -> customizer.customize(context));
+        verify(claimsService, never()).buildClaims(any(), any(), any());
+        verify(auditService, never()).logEvent(any(), any(), any());
     }
 
     private OAuth2Authorization signedIn(Duration ago) {

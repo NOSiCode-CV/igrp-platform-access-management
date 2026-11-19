@@ -51,6 +51,8 @@ class FederatedClientsTest {
     @DisplayName("Only a client whose sole grant is client_credentials is a service client")
     void serviceClient() {
         assertTrue(FederatedClients.isServiceClient(Set.of("client_credentials")));
+        assertTrue(FederatedClients.isServiceClient(Set.of("client_credentials",
+                "urn:ietf:params:oauth:grant-type:token-exchange")));
         assertFalse(FederatedClients.isServiceClient(Set.of("client_credentials", "refresh_token")));
         assertFalse(FederatedClients.isServiceClient(Set.of("authorization_code")));
         assertFalse(FederatedClients.isServiceClient(Set.of()));

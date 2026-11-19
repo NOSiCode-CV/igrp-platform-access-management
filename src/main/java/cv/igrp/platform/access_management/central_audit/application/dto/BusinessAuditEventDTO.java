@@ -11,5 +11,9 @@ import java.util.UUID;
  */
 public record BusinessAuditEventDTO(UUID id, String event, String resource, String payload, String username,
                                     String service, String agent, String result, String traceId,
-                                    Instant occurredAt) {
+                                    Instant occurredAt, String act) {
+    public BusinessAuditEventDTO(UUID id, String event, String resource, String payload, String username,
+                                String service, String agent, String result, String traceId, Instant occurredAt) {
+        this(id, event, resource, payload, username, service, agent, result, traceId, occurredAt, null);
+    }
 }

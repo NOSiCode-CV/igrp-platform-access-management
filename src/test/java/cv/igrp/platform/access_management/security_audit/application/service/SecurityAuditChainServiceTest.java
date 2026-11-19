@@ -26,6 +26,21 @@ class SecurityAuditChainServiceTest {
 
     private static final String SECRET = "unit-test-secret";
 
+    @Test
+    void actorFieldsAreProtectedWithoutChangingLegacyHashes() {
+        var row = sampleRow();
+        String legacy = chainService.computeHash("previous", row);
+        row.setAgent("agent-a");
+        row.setAct("{\"sub\":\"agent-a\"}");
+        String delegated = chainService.computeHash("previous", row);
+        assertThat(delegated).isNotEqualTo(legacy);
+        row.setAct("{\"sub\":\"agent-a\",\"act\":{\"sub\":\"agent-b\"}}");
+        assertThat(chainService.computeHash("previous", row)).isNotEqualTo(delegated);
+        row.setAgent(null);
+        row.setAct(null);
+        assertThat(chainService.computeHash("previous", row)).isEqualTo(legacy);
+    }
+
     @Mock private SecurityAuditLogRepository repository;
     @Mock private EntityManager entityManager;
     @Mock private Session session;

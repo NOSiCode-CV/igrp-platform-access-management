@@ -66,6 +66,19 @@ public class SecurityAuditContextProvider {
             context.put("userId", getSub(auth));
             context.put("username", getUsername(auth));
             context.put("accessRole", getAccessRole(auth));
+            Object principal = auth.getPrincipal();
+            Map<String, Object> claims = Map.of();
+            if (principal instanceof Jwt jwt) {
+                claims = jwt.getClaims();
+            } else if (principal instanceof OidcUser oidc) {
+                claims = oidc.getClaims();
+            }
+            if (claims.get("act") instanceof Map<?, ?> act && act.get("sub") instanceof String agent) {
+                context.put("act", act);
+                context.put("agent", agent);
+            } else if ("SERVICE_ACCOUNT".equals(claims.get("principal_type"))) {
+                context.put("agent", claims.get("client_id"));
+            }
         });
 
         getRequest().ifPresent(request -> {

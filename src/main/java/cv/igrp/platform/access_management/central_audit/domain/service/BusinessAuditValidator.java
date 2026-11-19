@@ -23,7 +23,7 @@ public class BusinessAuditValidator {
 
     private static final String ROWS = """
             SELECT id, service, sequence_number, event, resource, payload, username, agent, result, trace_id,
-                   occurred_at, received_at, previous_hash, current_hash
+                   occurred_at, received_at, previous_hash, current_hash, act
               FROM t_business_audit_event WHERE service = ? ORDER BY sequence_number""";
 
     /** Rows read from the database at a time: a long chain is walked, never held whole. */
@@ -64,7 +64,7 @@ public class BusinessAuditValidator {
             BusinessAuditEventDTO event = new BusinessAuditEventDTO(rs.getObject("id", UUID.class),
                     rs.getString("event"), rs.getString("resource"), rs.getString("payload"),
                     rs.getString("username"), rs.getString("service"), rs.getString("agent"), rs.getString("result"),
-                    rs.getString("trace_id"), rs.getTimestamp("occurred_at").toInstant());
+                    rs.getString("trace_id"), rs.getTimestamp("occurred_at").toInstant(), rs.getString("act"));
             Instant received = rs.getTimestamp("received_at").toInstant();
             String previous = rs.getString("previous_hash");
             String current = rs.getString("current_hash");
