@@ -6,9 +6,6 @@ import cv.igrp.platform.access_management.oauth_server.infrastructure.persistenc
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.*;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
-import cv.igrp.platform.access_management.session.domain.constants.SessionStatus;
-import cv.igrp.platform.access_management.session.infrastructure.persistence.entity.SessionEntity;
-import cv.igrp.platform.access_management.session.infrastructure.persistence.repository.SessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,28 +23,25 @@ import java.util.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+/** v3-20 (#28): AM's token-exchange policy; the exchanged token is thin (spec "Tokens"). */
 class TokenExchangeClaimsServiceTest {
     private final OAuthClientJpaRepository clients = mock(OAuthClientJpaRepository.class);
     private final IGRPUserEntityRepository users = mock(IGRPUserEntityRepository.class);
     private final OAuth2AuthorizationService authorizations = mock(OAuth2AuthorizationService.class);
-    private final SessionRepository sessions = mock(SessionRepository.class);
     private final ServiceAccountJpaRepository accounts = mock(ServiceAccountJpaRepository.class);
     private final TokenExchangeProperties properties = new TokenExchangeProperties();
     private final String userId = UUID.randomUUID().toString();
-    private final UUID sid = UUID.randomUUID();
     private final Instant now = Instant.now();
     private TokenExchangeClaimsService service;
     private JwtEncodingContext context;
     private JwtClaimsSet.Builder claims;
-    private RoleEntity role;
     private OAuthClientEntity target;
     private IGRPUserEntity user;
-    private SessionEntity session;
 
     @BeforeEach
     void setup() {
         service = new TokenExchangeClaimsService(properties, clients, accounts,
-                users, authorizations, sessions);
+                users, authorizations);
         var app = new ApplicationEntity();
         app.setId(2);
         app.setStatus(Status.ACTIVE);
@@ -56,42 +50,17 @@ class TokenExchangeClaimsServiceTest {
         target.setApplication(app);
         when(clients.findByClientId("a")).thenReturn(Optional.of(source));
         when(clients.findByClientId("b")).thenReturn(Optional.of(target));
-        role = new RoleEntity();
-        role.setId(7);
-        role.setCode("reader");
-        role.setStatus(Status.ACTIVE);
-        role.setApplications(Set.of(app));
-        var permission = new PermissionEntity();
-        permission.setName("b.read");
-        permission.setStatus(Status.ACTIVE);
-        permission.setApplication(app);
-        var foreign = new PermissionEntity();
-        foreign.setName("c.write");
-        foreign.setStatus(Status.ACTIVE);
-        var otherApp = new ApplicationEntity();
-        otherApp.setId(3);
-        foreign.setApplication(otherApp);
-        role.setPermissions(Set.of(permission, foreign));
         user = new IGRPUserEntity();
         user.setId(userId);
-        user.setActiveRole(role);
-        var assignment = new UserRoleAssignment();
-        assignment.setRole(role);
-        user.setUserRoleAssignments(List.of(assignment));
+        user.setStatus(Status.ACTIVE);
         when(users.findById(userId)).thenReturn(Optional.of(user));
-        session = new SessionEntity();
-        session.setSessionId(sid);
-        session.setUserId(userId);
-        session.setStatus(SessionStatus.ACTIVE);
-        session.setExpiresAt(now.plusSeconds(600));
-        when(sessions.findBySessionId(sid)).thenReturn(Optional.of(session));
         RegisteredClient registered = RegisteredClient.withId(source.getId().toString()).clientId("a")
                 .authorizationGrantType(AuthorizationGrantType.TOKEN_EXCHANGE).scope("read").build();
         var subject = OAuth2Authorization.withRegisteredClient(registered).principalName(userId)
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE).authorizedScopes(Set.of("read"))
                 .token(new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER, "subject", now, now.plusSeconds(300)),
                         metadata -> metadata.put(OAuth2Authorization.Token.CLAIMS_METADATA_NAME,
-                                Map.of("sub", userId, "iss", "https://am", "selectedRole", "reader", "org", "", "sid", sid.toString())))
+                                Map.of("sub", userId, "iss", "https://am", "device_id", "device-1")))
                 .build();
         var principal = UsernamePasswordAuthenticationToken.authenticated("a", "", List.of());
         var request = new OAuth2TokenExchangeAuthenticationToken(
@@ -111,39 +80,87 @@ class TokenExchangeClaimsServiceTest {
     }
 
     @Test
-    void acceptsKnownDestinationWithoutAllowlistAndIncludesOnlyTargetRights() {
-        service.customize(context);
+    void thinTokenForTheTarget() {
+        assertEquals(userId, service.customize(context));
         var result = claims.build();
         assertEquals(userId, result.getSubject());
         assertEquals(List.of("b"), result.getAudience());
-        assertEquals(Set.of("b.read"), result.getClaim("permissions"));
-        assertEquals(Map.of("b", Map.of("roles", List.of("reader"))), result.getClaim("resource_access"));
         assertEquals(Map.of("sub", "a", "iss", "https://am"), result.getClaim("act"));
-        assertEquals(false, result.getClaim("is_super_admin"));
+        assertEquals("device-1", result.getClaim("device_id"));
+        // No longer than the subject token (300 s), the target's lifetime (600 s) or the default (900 s).
         assertEquals(now.plusSeconds(300), result.getExpiresAt());
-        assertEquals(sid.toString(), result.getClaim("sid"));
+        // #33: no permission, role, organisation or session in a token.
+        for (String fat : List.of("permissions", "resource_access", "selectedRole", "org", "sid")) {
+            assertFalse(result.getClaims().containsKey(fat), fat);
+        }
         verifyNoInteractions(authorizations);
     }
 
+    @Test void targetLifetimeCapsTheToken() {
+        target.setAccessTokenTtl(60);
+        service.customize(context);
+        Instant exp = claims.build().getExpiresAt();
+        assertTrue(!exp.isAfter(Instant.now().plusSeconds(60)) && exp.isAfter(now), exp.toString());
+    }
     @Test void deniesUnknownDestination() {
         when(clients.findByClientId("b")).thenReturn(Optional.empty());
         assertError("invalid_target");
     }
-    @Test void deniesRoleFromAnotherApplication() {
-        role.setApplications(Set.of());
-        assertError("access_denied");
+    @Test void deniesUnknownCaller() {
+        when(clients.findByClientId("a")).thenReturn(Optional.empty());
+        assertError("invalid_target");
     }
-    @Test void deniesExpiredAssignment() {
-        user.getUserRoleAssignments().getFirst().setExpiresAt(java.time.LocalDateTime.now().minusMinutes(1));
-        assertError("access_denied");
+    @Test void deniesCallerWithoutTheGrant() {
+        clients.findByClientId("a").orElseThrow().setGrantTypes(Set.of("client_credentials"));
+        assertError("unauthorized_client");
+    }
+    @Test void deniesTargetWithoutApplication() {
+        target.setApplication(null);
+        assertError("invalid_target");
+    }
+    @Test void deniesInactiveTargetApplication() {
+        target.getApplication().setStatus(Status.INACTIVE);
+        assertError("invalid_target");
+    }
+    @Test void deniesSeveralAudiences() {
+        exchange(new LinkedHashSet<>(List.of("b", "c")), "urn:ietf:params:oauth:token-type:access_token");
+        assertError("invalid_target");
+    }
+    @Test void deniesOtherTokenTypes() {
+        exchange(Set.of("b"), "urn:ietf:params:oauth:token-type:id_token");
+        assertError("invalid_request");
+    }
+    @Test void deniesForeignIssuer() {
+        subjectClaims(Map.of("sub", userId, "iss", "https://elsewhere"));
+        assertError("invalid_grant");
+    }
+    @Test void acceptsIssuerReadBackAsUrl() throws Exception {
+        subjectClaims(Map.of("sub", userId, "iss", java.net.URI.create("https://am").toURL()));
+        assertEquals(userId, service.customize(context));
+    }
+    @Test void deniesSubjectWithoutIssuer() {
+        subjectClaims(Map.of("sub", userId));
+        assertError("invalid_grant");
+    }
+    @Test void deniesSubjectWithoutUser() {
+        subjectClaims(Map.of("iss", "https://am"));
+        assertError("invalid_grant");
+    }
+    @Test void deniesUnknownUser() {
+        when(users.findById(userId)).thenReturn(Optional.empty());
+        assertError("invalid_grant");
+    }
+    @Test void acceptsTemporaryUser() {
+        user.setStatus(Status.TEMPORARY);
+        assertEquals(userId, service.customize(context));
     }
     @Test void deniesScopeExpansionAtTarget() {
         target.setScopes(Set.of());
         assertError("invalid_scope");
     }
-    @Test void deniesRevokedSession() {
-        session.setStatus(SessionStatus.REVOKED);
-        assertError("invalid_grant");
+    @Test void deniesTargetWithoutLifetime() {
+        target.setAccessTokenTtl(0);
+        assertError("invalid_target");
     }
     @Test void deniesDisabledUser() {
         user.setStatus(Status.INACTIVE);
@@ -193,6 +210,46 @@ class TokenExchangeClaimsServiceTest {
                 "urn:ietf:params:oauth:token-type:access_token",
                 UsernamePasswordAuthenticationToken.authenticated("a", "", List.of()),
                 "actor", "urn:ietf:params:oauth:token-type:access_token", Set.of(), Set.of("b"), Set.of("read"), Map.of());
+        when(context.getAuthorizationGrant()).thenReturn(request);
+    }
+    @Test void deniesActorOfAnotherType() {
+        actorRequest(false);
+        actorExchange("actor", "urn:ietf:params:oauth:token-type:id_token");
+        assertError("invalid_request");
+    }
+    @Test void deniesActorTypeWithoutActor() {
+        actorExchange(null, "urn:ietf:params:oauth:token-type:access_token");
+        assertError("invalid_request");
+    }
+    @Test void deniesActorWithoutServiceAccount() {
+        actorRequest(false);
+        when(accounts.findByOauthClient_ClientId("a")).thenReturn(Optional.empty());
+        assertError("invalid_grant");
+    }
+    @Test void deniesMalformedActorChain() {
+        subjectClaims(Map.of("sub", userId, "iss", "https://am", "act", Map.of("iss", "https://am")));
+        assertError("invalid_grant");
+    }
+    private void subjectClaims(Map<String, Object> values) {
+        var subject = context.getAuthorization();
+        var replaced = OAuth2Authorization.from(subject)
+                .token(subject.getAccessToken().getToken(), metadata ->
+                        metadata.put(OAuth2Authorization.Token.CLAIMS_METADATA_NAME, values)).build();
+        when(context.getAuthorization()).thenReturn(replaced);
+    }
+    private void exchange(Set<String> audiences, String subjectType) {
+        var request = new OAuth2TokenExchangeAuthenticationToken(
+                "urn:ietf:params:oauth:token-type:access_token", "subject", subjectType,
+                UsernamePasswordAuthenticationToken.authenticated("a", "", List.of()),
+                null, null, Set.of(), audiences, Set.of("read"), Map.of());
+        when(context.getAuthorizationGrant()).thenReturn(request);
+    }
+    private void actorExchange(String actorToken, String actorType) {
+        var request = new OAuth2TokenExchangeAuthenticationToken(
+                "urn:ietf:params:oauth:token-type:access_token", "subject",
+                "urn:ietf:params:oauth:token-type:access_token",
+                UsernamePasswordAuthenticationToken.authenticated("a", "", List.of()),
+                actorToken, actorType, Set.of(), Set.of("b"), Set.of("read"), Map.of());
         when(context.getAuthorizationGrant()).thenReturn(request);
     }
     private void assertError(String code) {

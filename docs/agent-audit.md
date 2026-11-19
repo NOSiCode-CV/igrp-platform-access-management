@@ -1,5 +1,7 @@
 # Auditoria e métrica por agente
 
+> **Estado (2026-11-19):** a parte do AM (colunas `agent` e `act`, receção na auditoria central) está implementada e testada. A parte do starter descrita abaixo (`V2__actor_chain.sql`, `igrp.agent.calls`) ainda não está no monorepo: é o desenho a seguir, num ticket do starter.
+
 ## Dados registados
 
 O starter guarda `agent` (actor atual) e `act` (cadeia com `sub`, `iss` e actores anteriores) em `audit_event` e no evento da outbox. O AM recebe ambos em `t_business_audit_event`. A API de consulta central expõe `act` como texto JSON, tal como `payload`.
@@ -10,7 +12,7 @@ Para delegação, `agent` é `act.sub`. Para service accounts autónomas, sem `a
 
 ## Migrações e compatibilidade
 
-- AM: `V29_1__audit_actor_chain.sql`.
+- AM: `V31_1__audit_actor_chain.sql`.
 - Starter: `V2__actor_chain.sql`, no histórico Flyway próprio `igrp_audit_schema_history`.
 - Eventos antigos, sem `act`, continuam aceites.
 - Os hashes antigos são preservados. Novos hashes incluem a extensão quando os campos de actor estão presentes; modificar ou remover a cadeia invalida o hash.
@@ -39,4 +41,4 @@ O contador aparece após a primeira chamada desse agente. Trata-se de um contado
 
 ## Validação
 
-Em 2026-11-19, `mvnw.cmd -B clean compile test` passou no AM com Java 26.0.2: 1162 testes, zero falhas, erros ou testes ignorados, incluindo preservação da cadeia, detecção de adulteração e compatibilidade dos eventos antigos. Esta execução não inclui os testes Failsafe nem os testes do repositório do starter. O teste de contagem de chamadas recusadas está no starter e continua por executar.
+No AM: `ActorAuditTest`, `SecurityAuditChainServiceTest` (preservação da cadeia, detecção de adulteração e compatibilidade dos eventos antigos) e `TokenExchangeIT` (coluna `agent`/`act` preenchida na emissão de um token trocado). Os testes do starter ficam com o ticket do starter.

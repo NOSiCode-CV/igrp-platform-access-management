@@ -11,6 +11,7 @@ import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.oauth2.jwt.JwtClaimsSet;
 import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
 import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationCode;
 import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
@@ -33,6 +34,8 @@ import java.util.Map;
  *       ({@link ClaimsEnrichmentService#buildClaims}), {@code azp}, and for a user a 5-minute
  *       lifetime and the {@code device_id}. There is no session and no iGRP {@code sid}: a user is
  *       signed in while they hold an active authorization ({@link UserAuthorizations});</li>
+ *   <li>a token exchange (RFC 8693, v3-20): the user, the one target service as {@code aud} and
+ *       the chain of actors as {@code act}, checked and written by {@link TokenExchangeClaimsService};</li>
  *   <li>a refresh after the refresh token's maximum lifetime is refused.</li>
  * </ul>
  *
@@ -49,6 +52,7 @@ public final class IgrpTokenCustomizer implements OAuth2TokenCustomizer<JwtEncod
 
     private final ClaimsEnrichmentService claimsService;
     private final SecurityAuditService auditService;
+    private final TokenExchangeClaimsService tokenExchange;
     private final Duration userAccessTokenTtl;
     private final Duration refreshMaxLifetime;
 
@@ -59,9 +63,11 @@ public final class IgrpTokenCustomizer implements OAuth2TokenCustomizer<JwtEncod
      *                           session, 8 hours by default
      */
     public IgrpTokenCustomizer(ClaimsEnrichmentService claimsService, SecurityAuditService auditService,
+                               TokenExchangeClaimsService tokenExchange,
                                Duration userAccessTokenTtl, Duration refreshMaxLifetime) {
         this.claimsService = claimsService;
         this.auditService = auditService;
+        this.tokenExchange = tokenExchange;
         this.userAccessTokenTtl = userAccessTokenTtl;
         this.refreshMaxLifetime = refreshMaxLifetime;
     }
@@ -98,6 +104,10 @@ public final class IgrpTokenCustomizer implements OAuth2TokenCustomizer<JwtEncod
     private void customizeAccessToken(JwtEncodingContext context) {
         String clientId = context.getRegisteredClient().getClientId();
         AuthorizationGrantType grant = context.getAuthorizationGrantType();
+        if (AuthorizationGrantType.TOKEN_EXCHANGE.equals(grant)) {
+            customizeExchangedToken(context, clientId);
+            return;
+        }
         boolean clientCredentials = AuthorizationGrantType.CLIENT_CREDENTIALS.equals(grant);
         String principal = principal(context);
         if (AuthorizationGrantType.REFRESH_TOKEN.equals(grant)) {
@@ -117,6 +127,26 @@ public final class IgrpTokenCustomizer implements OAuth2TokenCustomizer<JwtEncod
             context.getClaims().claim(CLAIM_DEVICE_ID, deviceId(context, clientId));
         }
         audit(grant, clientId, subject);
+    }
+
+    /**
+     * An exchanged token: the policy and {@code sub}/{@code aud}/{@code exp}/{@code act} come from
+     * {@link TokenExchangeClaimsService}; the user's identity claims and {@code azp} are those of
+     * any user token. Its lifetime is already no longer than the subject token's.
+     */
+    private void customizeExchangedToken(JwtEncodingContext context, String clientId) {
+        String subject = tokenExchange.customize(context);
+        claimsService.buildClaims(subject, clientId, context.getAuthorizedScopes())
+                .forEach((key, value) -> context.getClaims().claim(key, value));
+        context.getClaims().claim("azp", clientId);
+        JwtClaimsSet built = context.getClaims().build();
+        Map<String, Object> auditContext = new HashMap<>();
+        auditContext.put("clientId", clientId);
+        auditContext.put("grantType", AuthorizationGrantType.TOKEN_EXCHANGE.getValue());
+        auditContext.put(CLAIM_SUB, subject);
+        auditContext.put("audience", built.getAudience());
+        auditContext.put(TokenExchangeClaimsService.CLAIM_ACT, built.getClaim(TokenExchangeClaimsService.CLAIM_ACT));
+        auditService.logEvent(AuditEventType.TOKEN_ISSUED, AuditCategory.AUTHENTICATION, auditContext);
     }
 
     /** Who signed in, as the token's subject. */

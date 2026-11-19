@@ -2,7 +2,7 @@
 
 ## Estado
 
-Implementadas a política de troca e a seleção de claims por audiência no customizador JWT. O provider e o endpoint continuam a ser os do Spring Security. Em 2026-11-19, `mvnw.cmd -B clean compile test` passou no AM com Java 26.0.2: 1162 testes, zero falhas, erros ou testes ignorados. Os testes de integração Failsafe não fazem parte da fase `test`.
+Implementado no AM (v3-20, #28): a política de troca no `TokenExchangeClaimsService`, aplicada pelo `IgrpTokenCustomizer`. O provider e o endpoint continuam a ser os do Spring Security. O token trocado é fino como todos os outros (#33, spec "Tokens"). A parte do starter fica por fazer: troca automática ao chamar outro serviço, cache por utilizador e destino, e métrica por agente.
 
 ## Comportamento herdado
 
@@ -10,7 +10,7 @@ A inspeção do provider Spring Security 7.1.2 confirmou que ele autentica o cli
 
 Fonte: [OAuth2TokenExchangeAuthenticationProvider 7.1.2](https://github.com/spring-projects/spring-security/blob/7.1.2/oauth2/oauth2-authorization-server/src/main/java/org/springframework/security/oauth2/server/authorization/authentication/OAuth2TokenExchangeAuthenticationProvider.java).
 
-`SpringTokenExchangeProviderTest` caracteriza o provider real sem HTTP/base de dados. A certificação ponta a ponta do endpoint continua pendente de testes de integração.
+`SpringTokenExchangeProviderTest` caracteriza o provider real sem HTTP/base de dados. `TokenExchangeIT` testa o endpoint de ponta a ponta, com Postgres e a auditoria.
 
 ## Configuração
 
@@ -24,7 +24,7 @@ O limite da cadeia de actores pode ser configurado em `application.properties` o
 igrp.oauth2.token-exchange.max-actor-depth=5
 ```
 
-Não é necessária uma lista de destinos permitidos por cliente. Um cliente autorizado para o grant pode solicitar uma troca para um destino conhecido e ativo, sujeita às validações dos tokens, scopes e direitos do utilizador nessa aplicação.
+Não é necessária uma lista de destinos permitidos por cliente. Um cliente autorizado para o grant pode solicitar uma troca para um destino conhecido e ativo, sujeita às validações dos tokens e scopes. O que o utilizador pode fazer em B decide-o B, pelo conjunto de permissões do utilizador na aplicação de B.
 
 ## Pedido sem actor token
 
@@ -42,34 +42,25 @@ O AM deriva o actor do client ID autenticado. Se existir `actor_token`, também 
 
 Somente access tokens são aceites como entrada e saída. Não há suporte a tokens externos ou ID tokens nesta versão.
 
-## Direitos e claims
+## Claims do token trocado
 
-- O utilizador deve estar ACTIVE ou TEMPORARY.
-- A role ativa deve estar ACTIVE, ter uma atribuição não expirada e estar associada à aplicação B.
-- A role e organização atuais devem corresponder aos claims do subject token; se mudaram, é necessário obter um novo subject token.
-- Apenas a role ativa é utilizada. Não há união automática das restantes roles do utilizador.
-- Permissões devem estar ACTIVE e pertencer à aplicação B, diretamente ou, para permissões legadas sem aplicação explícita, através de recursos ativos ligados a B.
-- `permissions` contém `permission_key` quando existente; para permissões legadas, usa `name`.
-- `resource_access` usa a chave B e contém apenas a role ativa autorizada.
-- `is_super_admin` é false: a troca não transporta um bypass global.
-- Scopes devem estar autorizados no subject, no cliente A e no cliente B. Scopes OAuth e permissões da aplicação são conceitos distintos; não há mapeamento implícito entre nomes de scopes e permission keys.
-- Se `scope` não for enviado, o Spring tenta reutilizar os scopes originais; se não forem aceites no destino, enviar explicitamente o subconjunto pretendido.
-- `sub` preserva o utilizador, `aud` identifica B e `act` identifica o actor atual, preservando os anteriores em objetos aninhados. O limite de profundidade inclui o actor atual.
-- Não são copiados indiscriminadamente os claims originais, metadata ou atributos pessoais.
+- O utilizador deve estar ACTIVE ou TEMPORARY. Depois de um logout ou kill, o token do utilizador deixa de estar no armazém de autorizações e o Spring recusa a troca com `invalid_grant`.
+- `sub` é o utilizador, `aud` é B (só B) e `azp` é o cliente A.
+- `act` identifica o actor atual e preserva os anteriores em objetos aninhados. O limite de profundidade inclui o actor atual. `act` não conta para a autorização: fica na auditoria.
+- Os claims de identidade são os de qualquer token de utilizador (`is_super_admin` e, conforme os scopes, `name`, `preferred_username`, `email`), e o `device_id` do token original é mantido.
+- **Não há** `permissions`, `resource_access`, `selectedRole`, `org` nem `sid`. B lê as permissões do utilizador para a sua aplicação através do starter (Redis, e `GET /api/users/me/permissions` numa falha).
+- Scopes devem estar autorizados no subject, no cliente A e no cliente B. Scopes OAuth e permissões da aplicação são conceitos distintos.
+- A expiração é a mais curta entre a do token do utilizador, a do actor token e o TTL de acesso do cliente B.
+- Não há refresh token.
 
-## Sessão e limites desta entrega
-
-Para compatibilidade com o AM, exige-se uma sessão original ativa, reutiliza-se `sid`/`device_id` e não se chama o fluxo de criação de sessão interativa. A expiração é limitada pelos tokens apresentados, TTL do destino e prazos da sessão.
-
-A auditoria recebe o evento TOKEN_ISSUED, utilizador, cliente, audiência, `agent` e a cadeia `act`. A persistência e a métrica por agente no starter são descritas em [agent-audit.md](agent-audit.md). A avaliação integral da revogação de tokens derivados continua pendente.
+A auditoria regista TOKEN_ISSUED com o utilizador, o cliente, a audiência, `agent` e a cadeia `act`. A persistência está descrita em [agent-audit.md](agent-audit.md).
 
 ## Erros
 
 - `unauthorized_client`: cliente sem grant de troca.
 - `invalid_target`: destino desconhecido, inativo ou sem aplicação ativa; formato de destino não suportado.
 - `invalid_scope`: scopes fora dos limites do subject/cliente/destino.
-- `invalid_grant`: token/actor/utilizador/sessão inválidos ou contexto de role alterado.
-- `access_denied`: role ativa sem atribuição válida ou sem acesso à aplicação B.
+- `invalid_grant`: token do utilizador ou actor inválido, revogado ou expirado; utilizador indisponível; issuer diferente.
 - `invalid_request`: tipos de token não suportados ou cadeia demasiado profunda.
 
 O Spring pode rejeitar o pedido antes do customizador, incluindo erros de autenticação, conversão de parâmetros e validação de `may_act`.
