@@ -4,7 +4,7 @@ import cv.igrp.platform.access_management.shared.infrastructure.service.RootUser
 import cv.igrp.framework.core.domain.CommandHandler;
 import cv.igrp.framework.stereotype.IgrpCommandHandler;
 import cv.igrp.platform.access_management.notification.domain.service.InvitationNotificationSender;
-import cv.igrp.platform.access_management.session.infrastructure.audit.SessionAuditLogger;
+import cv.igrp.platform.access_management.security_audit.application.service.AccessAuditLogger;
 import cv.igrp.platform.access_management.shared.application.constants.InvitationStatus;
 import cv.igrp.platform.access_management.shared.application.constants.Status;
 import cv.igrp.platform.access_management.shared.domain.events.UserStatusChangedEvent;
@@ -46,6 +46,8 @@ public class RespondUserInvitationCommandHandler
       implements CommandHandler<RespondUserInvitationCommand, ResponseEntity<InvitationDTO>> {
 
    private static final Logger LOGGER = LoggerFactory.getLogger(RespondUserInvitationCommandHandler.class);
+   private static final String INVITATION_ACCEPTED = "INVITATION_ACCEPTED";
+   private static final String INVITATION_REJECTED = "INVITATION_REJECTED";
 
    private final InvitationNotificationSender invitationSender;
    private final IGRPUserEntityRepository userRepository;
@@ -59,7 +61,7 @@ public class RespondUserInvitationCommandHandler
    private final UserRoleAssignmentRepository userRoleAssignmentRepository;
    private final ExpireRoleService expireRoleService;
    private final EventPublisher eventPublisher;
-   private final SessionAuditLogger sessionAuditLogger;
+   private final AccessAuditLogger sessionAuditLogger;
 
    public RespondUserInvitationCommandHandler(
          InvitationNotificationSender invitationSender,
@@ -74,7 +76,7 @@ public class RespondUserInvitationCommandHandler
          UserRoleAssignmentRepository userRoleAssignmentRepository,
          ExpireRoleService expireRoleService,
          EventPublisher eventPublisher,
-         SessionAuditLogger sessionAuditLogger) {
+         AccessAuditLogger sessionAuditLogger) {
       this.invitationSender = invitationSender;
       this.userRepository = userRepository;
       this.roleRepository = roleRepository;
@@ -250,11 +252,11 @@ public class RespondUserInvitationCommandHandler
          if (statusChangedToActive) {
             String oldCode = oldStatusForAudit == null ? null : oldStatusForAudit.getCode();
             eventPublisher.publishUserStatusChanged(new UserStatusChangedEvent(
-                  auditUserId, oldCode, Status.ACTIVE.getCode(), "INVITATION_ACCEPTED"));
+                  auditUserId, oldCode, Status.ACTIVE.getCode(), INVITATION_ACCEPTED));
             try {
                sessionAuditLogger.recordUserStatusTransitioned(
                      auditUserId, oldCode, Status.ACTIVE.getCode(),
-                     SessionAuditLogger.USER, "INVITATION_ACCEPTED");
+                     AccessAuditLogger.USER, INVITATION_ACCEPTED);
             } catch (Exception ex) {
                LOGGER.warn("[G3 audit] recordUserStatusTransitioned failed (accept): {}", ex.getMessage());
             }
@@ -386,7 +388,7 @@ public class RespondUserInvitationCommandHandler
                           java.util.Set.of(chosenActiveRole.getCode()),
                           chosenActiveRole.getDepartment() != null ? chosenActiveRole.getDepartment().getCode() : null,
                           UserRoleChangedEvent.CHANGE_ACTIVE_ROLE_CHANGED,
-                          "INVITATION_ACCEPTED"));
+                          INVITATION_ACCEPTED));
                } else {
                   LOGGER.warn("Invitation {} has roles but none could be resolved to a RoleEntity — leaving active role unchanged for user id={}",
                           command.getToken(), savedUserId);
@@ -456,11 +458,11 @@ public class RespondUserInvitationCommandHandler
                userRepository.save(rejectedUser);
                eventPublisher.publishUserStatusChanged(new UserStatusChangedEvent(
                      userId, Status.TEMPORARY.getCode(), Status.DELETED.getCode(),
-                     "INVITATION_REJECTED"));
+                     INVITATION_REJECTED));
                try {
                   sessionAuditLogger.recordUserStatusTransitioned(
                         userId, Status.TEMPORARY.getCode(), Status.DELETED.getCode(),
-                        SessionAuditLogger.USER, "INVITATION_REJECTED");
+                        AccessAuditLogger.USER, INVITATION_REJECTED);
                } catch (Exception ex) {
                   LOGGER.warn("[G3 audit] recordUserStatusTransitioned failed (reject): {}", ex.getMessage());
                }

@@ -2,7 +2,6 @@ package cv.igrp.platform.access_management.users.application.queries;
 
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.entity.IGRPUserEntity;
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.IGRPUserEntityRepository;
-import cv.igrp.platform.access_management.shared.security.ScopeContext;
 import cv.igrp.platform.access_management.users.mapper.IGRPUserMapper;
 import cv.igrp.platform.access_management.users.specs.UserSpecificationBuilder;
 import org.slf4j.Logger;
@@ -37,7 +36,7 @@ public class GetUsersQueryHandler implements QueryHandler<GetUsersQuery, Respons
              query.getApplicationCode(), query.getDepartmentCode(), query.getName(),
              query.getId(), query.getEmail());
 
-     Specification<IGRPUserEntity> spec = specification.buildSpecification(query, new ScopeContext());
+     Specification<IGRPUserEntity> spec = specification.buildSpecification(query);
      List<IGRPUserDTO> users = userRepository.findAll(spec)
              .stream()
              .map(userMapper::toDto)

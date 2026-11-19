@@ -13,7 +13,7 @@ import java.util.List;
  * AM's self-service routes (#36): any signed-in user reaches them, with no
  * permission key. They are what a user needs before, or regardless of, any
  * role: their own profile, applications, roles and permission set, the
- * invitation steps, the session endpoints, the branding every App Center
+ * invitation steps, the branding every App Center
  * page loads, and the page check every frontend middleware makes (#34).
  * {@code GET /api/users/me/permissions} computes the keys, so it cannot need
  * one.
@@ -42,8 +42,6 @@ public final class SelfServicePaths {
             route(HttpMethod.GET, "/api/global-configuration"),
             // #34: the page check, about the caller themselves.
             route(HttpMethod.POST, "/api/authorize/page"),
-            route(HttpMethod.GET, "/api/session"),
-            route(HttpMethod.GET, "/api/session/check"),
             route(HttpMethod.GET, "/api/users/invite/by-token/{token}"),
             route(HttpMethod.GET, "/api/users/me"),
             route(HttpMethod.GET, "/api/users/me/applications"),
@@ -56,9 +54,6 @@ public final class SelfServicePaths {
             route(HttpMethod.GET, "/api/users/me/role/active"),
             route(HttpMethod.GET, "/api/users/me/roles"),
             route(HttpMethod.GET, "/api/users/me/roles/active"),
-            route(HttpMethod.POST, "/api/session/close"),
-            route(HttpMethod.POST, "/api/session/refresh"),
-            route(HttpMethod.POST, "/api/session/rotate"),
             route(HttpMethod.POST, "/api/users/invite/response"),
             route(HttpMethod.POST, "/api/users/invite/validate-email"),
             route(HttpMethod.POST, "/api/users/invite/validate-otp"),

@@ -3,6 +3,7 @@ package cv.igrp.platform.access_management.permission_fetch.domain.service;
 import cv.igrp.platform.access_management.active_role.application.dto.ActiveRoleDTO.Source;
 import cv.igrp.platform.access_management.active_role.domain.service.ActiveRoleService;
 import cv.igrp.platform.access_management.active_role.domain.service.ActiveRoleService.ResolvedActiveRole;
+import cv.igrp.platform.access_management.oauth_server.infrastructure.security.UserAuthorizations;
 import cv.igrp.platform.access_management.permission_fetch.application.dto.PermissionSetDTO;
 import cv.igrp.platform.access_management.permission_fetch.infrastructure.cache.PermissionSetCache;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
@@ -50,6 +51,7 @@ class PermissionFetchServiceTest {
     @Mock private PermissionSetCache cache;
     @Mock private AuthenticationHelper authenticationHelper;
     @Mock private SecurityAuditService audit;
+    @Mock private UserAuthorizations authorizations;
 
     @Test
     void whileRedisIsDownTheFetchStillAnswersAndAuditsNothing() {
@@ -90,6 +92,19 @@ class PermissionFetchServiceTest {
     }
 
     @Test
+    void aUserWhoIsNoLongerSignedInIs401AndNothingIsWritten() {
+        PermissionFetchService service = service();
+        token(Jwt.withTokenValue("t").header("alg", "none").subject(USER_ID).build());
+        when(authorizations.hasActive(USER_ID)).thenReturn(false);
+
+        assertThatThrownBy(() -> service.fetch("APP"))
+                .isInstanceOfSatisfying(IgrpResponseStatusException.class,
+                        e -> assertThat(e.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED));
+        verify(cache, never()).write(anyString(), anyString(), any());
+        verifyNoInteractions(activeRoles);
+    }
+
+    @Test
     void aServiceAccountTokenWithoutAUuidSubjectIs401() {
         PermissionFetchService service = service();
         token(Jwt.withTokenValue("t").header("alg", "none").subject("legacy-client-id")
@@ -104,7 +119,7 @@ class PermissionFetchServiceTest {
     }
 
     private PermissionFetchService service() {
-        return new PermissionFetchService(jdbc, activeRoles, cache, authenticationHelper, audit);
+        return new PermissionFetchService(jdbc, activeRoles, cache, authenticationHelper, audit, authorizations);
     }
 
     private void token(Jwt jwt) {
@@ -112,6 +127,7 @@ class PermissionFetchServiceTest {
     }
 
     private void activeUser() {
+        when(authorizations.hasActive(USER_ID)).thenReturn(true);
         when(jdbc.queryForObject(anyString(), eq(Boolean.class), eq(USER_ID))).thenReturn(true);
     }
 }

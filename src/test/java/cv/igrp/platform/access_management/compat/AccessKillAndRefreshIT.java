@@ -27,10 +27,11 @@ import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
 
 /**
- * v3-11 (#19): kill ends a user's access on the whole platform (every
- * session and authorization revoked, every permission key deleted); refresh
- * recomputes one application's key from current roles, accepting nothing
- * from the caller.
+ * v3-11 (#19), #33: kill ends a user's access on the whole platform (every
+ * authorization revoked, every permission key deleted); refresh recomputes one
+ * application's key from current roles, accepting nothing from the caller.
+ * There are no sessions: a user is signed in while they hold an active
+ * authorization.
  */
 class AccessKillAndRefreshIT extends AbstractCompatIT {
 
@@ -98,18 +99,14 @@ class AccessKillAndRefreshIT extends AbstractCompatIT {
         assertThat(fetch(token, otherApp).statusCode()).isEqualTo(200);
         assertThat(redis.hasKey(setKey(app))).isTrue();
         assertThat(redis.hasKey(setKey(otherApp))).isTrue();
-        // One authorization bound to the user's live session (as a real sign-in
-        // has), one from another device whose session is not in this database.
-        authorization(jdbc.queryForObject(
-                "SELECT session_id::text FROM t_user_session WHERE user_id = ? AND status = 'ACTIVE'",
-                String.class, userId));
-        authorization(UUID.randomUUID().toString());
+        // The token's sign-in (CompatSupport.userToken), and one from another device.
+        authorization(userId);
         // A federated sign-in stores the upstream IdP subject as principal name.
         String upstreamSubject = "upstream-" + suffix.toLowerCase();
         jdbc.update("""
                 INSERT INTO t_user_identity (id, provider, user_id, igrp_user_id) VALUES (?, 'external-idp', ?, ?)""",
                 UUID.randomUUID(), upstreamSubject, userId);
-        authorization(UUID.randomUUID().toString(), upstreamSubject);
+        authorization(upstreamSubject);
         assertThat(authorizations()).isEqualTo(3);
     }
 
@@ -119,25 +116,33 @@ class AccessKillAndRefreshIT extends AbstractCompatIT {
     }
 
     @Test
-    @DisplayName("Logout-all kills the user: every key, authorization and session gone; the next miss is 401")
-    void logoutAll() {
-        ok(api.postJson("/api/admin/users/" + userId + "/logout-all", admin, KILL_BODY));
+    @DisplayName("Killing a user ends every sign-in: every key and authorization gone; the next miss is 401")
+    void killUser() {
+        String secondToken = api.userToken(userId, email);
+
+        ok(api.postJson("/api/admin/sessions/users/" + userId + "/kill", admin, KILL_BODY));
 
         assertKilled();
+        assertThat(fetch(secondToken, app).statusCode()).as("the other sign-in ends too").isEqualTo(401);
     }
 
     @Test
-    @DisplayName("Killing one session kills the user on the whole platform, other sessions included")
-    void killOneSessionIsPlatformWide() {
-        String secondToken = api.userToken(userId, email);
-        UUID firstSession = jdbc.queryForObject("""
-                SELECT session_id FROM t_user_session WHERE user_id = ? ORDER BY started_at LIMIT 1""",
-                UUID.class, userId);
+    @DisplayName("Killing an unknown user answers 404")
+    void killUnknownUser() {
+        assertThat(api.postJson("/api/admin/sessions/users/" + UUID.randomUUID() + "/kill", admin, KILL_BODY)
+                .statusCode()).isEqualTo(404);
+    }
 
-        ok(api.postJson("/api/admin/sessions/" + firstSession + "/kill", admin, KILL_BODY));
-
-        assertKilled();
-        assertThat(fetch(secondToken, app).statusCode()).as("the other session ends too").isEqualTo(401);
+    @Test
+    @DisplayName("The session routes are gone (#33)")
+    void sessionRoutesAreGone() {
+        assertThat(api.postJson("/api/admin/users/" + userId + "/logout-all", admin, KILL_BODY).statusCode())
+                .isEqualTo(404);
+        assertThat(api.postJson("/api/admin/users/" + userId + "/force-reauth", admin, KILL_BODY).statusCode())
+                .isEqualTo(404);
+        assertThat(api.get("/api/admin/sessions", admin).statusCode()).isIn(404, 405);
+        assertThat(api.get("/api/session/check", token).statusCode()).isIn(403, 404);
+        assertThat(redis.hasKey(setKey(app))).as("nothing was killed").isTrue();
     }
 
     @Test
@@ -153,14 +158,6 @@ class AccessKillAndRefreshIT extends AbstractCompatIT {
     @DisplayName("Killing by department kills every user in it")
     void killByDepartment() {
         ok(api.postJson("/api/admin/sessions/departments/" + dept() + "/kill", admin, KILL_BODY));
-
-        assertKilled();
-    }
-
-    @Test
-    @DisplayName("Force re-auth kills the user too")
-    void forceReauth() {
-        ok(api.postJson("/api/admin/users/" + userId + "/force-reauth", admin, KILL_BODY));
 
         assertKilled();
     }
@@ -190,19 +187,20 @@ class AccessKillAndRefreshIT extends AbstractCompatIT {
     @Test
     @DisplayName("Refresh does not give a killed user their key back")
     void refreshAfterKillWritesNothing() {
-        ok(api.postJson("/api/admin/users/" + userId + "/logout-all", admin, KILL_BODY));
+        ok(api.postJson("/api/admin/sessions/users/" + userId + "/kill", admin, KILL_BODY));
 
         assertThat(refresh(userId, app, "").statusCode()).isEqualTo(409);
         assertThat(redis.hasKey(setKey(app))).isFalse();
     }
 
     @Test
-    @DisplayName("The admin who killed is recorded on the revoked sessions")
+    @DisplayName("The kill and the admin who asked are in the audit trail")
     void killedByIsRecorded() {
-        ok(api.postJson("/api/admin/users/" + userId + "/logout-all", admin, KILL_BODY));
+        ok(api.postJson("/api/admin/sessions/users/" + userId + "/kill", admin, KILL_BODY));
 
-        assertThat(jdbc.queryForList("SELECT DISTINCT closed_by FROM t_user_session WHERE user_id = ?",
-                String.class, userId)).containsExactly("compat");
+        assertThat(jdbc.queryForList("""
+                SELECT context_data FROM t_security_audit_log WHERE user_id = ? AND event_type = 'TOKEN_REVOKED'""",
+                String.class, userId)).singleElement().asString().contains("\"actor\":\"compat\"");
     }
 
     @Test
@@ -235,17 +233,10 @@ class AccessKillAndRefreshIT extends AbstractCompatIT {
         assertThat(redis.hasKey(setKey(otherApp))).as("key of the second application").isFalse();
         assertThat(redis.hasKey("permissions:user:" + userId + ":apps")).as("the index").isFalse();
         assertThat(authorizations()).as("every authorization revoked").isZero();
-        assertThat(jdbc.queryForObject(
-                "SELECT count(*) FROM t_user_session WHERE user_id = ? AND status = 'ACTIVE'", Long.class, userId))
-                .as("every session revoked").isZero();
         assertThat(fetch(token, app).statusCode()).as("the next miss").isEqualTo(401);
     }
 
-    private void authorization(String sid) {
-        authorization(sid, userId);
-    }
-
-    private void authorization(String sid, String principalName) {
+    private void authorization(String principalName) {
         Instant now = Instant.now().truncatedTo(ChronoUnit.MILLIS);
         OAuth2AccessToken access = new OAuth2AccessToken(OAuth2AccessToken.TokenType.BEARER,
                 "access-" + UUID.randomUUID(), now, now.plusSeconds(300), Set.of("openid"));
@@ -255,7 +246,7 @@ class AccessKillAndRefreshIT extends AbstractCompatIT {
                 .authorizationGrantType(AuthorizationGrantType.AUTHORIZATION_CODE)
                 .authorizedScopes(Set.of("openid"))
                 .token(access, metadata -> metadata.put(OAuth2Authorization.Token.CLAIMS_METADATA_NAME,
-                        Map.of("sub", userId, "sid", sid)))
+                        Map.of("sub", userId)))
                 .refreshToken(new OAuth2RefreshToken("refresh-" + UUID.randomUUID(), now, now.plusSeconds(3600)))
                 .build());
     }

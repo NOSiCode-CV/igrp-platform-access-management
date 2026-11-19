@@ -35,16 +35,14 @@ class CascadingAuthorizationServiceTest {
     private static final String TOKEN_ENDPOINT = "/oauth2/token";
 
     private OAuth2AuthorizationService delegate;
-    private RevocationCascadeListener cascadeListener;
     private RefreshTokenReuseGuard reuseGuard;
     private CascadingAuthorizationService service;
 
     @BeforeEach
     void setUp() {
         delegate = mock(OAuth2AuthorizationService.class);
-        cascadeListener = mock(RevocationCascadeListener.class);
         reuseGuard = mock(RefreshTokenReuseGuard.class);
-        service = new CascadingAuthorizationService(delegate, cascadeListener, reuseGuard, TOKEN_ENDPOINT);
+        service = new CascadingAuthorizationService(delegate, reuseGuard, TOKEN_ENDPOINT);
     }
 
     @AfterEach
@@ -85,51 +83,29 @@ class CascadingAuthorizationServiceTest {
         return builder.build();
     }
 
-    // ─── finding 4: /oauth2/revoke must reach the session ───────────────
+    // ─── saves: only a rotation is tombstoned (#33: no session to cascade to) ──
 
     @Test
-    @DisplayName("revoking the refresh token cascades to the bound session")
-    void refreshTokenRevocation_revokesSession() {
-        OAuth2Authorization before = authorization("rt-1", false);
+    @DisplayName("revoking the refresh token is saved as is: there is no session to revoke")
+    void refreshTokenRevocation_savesOnly() {
         OAuth2Authorization after = authorization("rt-1", true);
-        when(delegate.findById("auth-1")).thenReturn(before);
+        when(delegate.findById("auth-1")).thenReturn(authorization("rt-1", false));
 
         service.save(after);
 
-        verify(cascadeListener).revokeBoundSession(after, "TOKEN_REVOKED");
+        verify(delegate).save(after);
+        verify(reuseGuard, never()).recordRotation(any(), any());
     }
 
     @Test
-    @DisplayName("an ordinary save does not revoke anything")
-    void ordinarySave_doesNotRevoke() {
-        OAuth2Authorization unchanged = authorization("rt-1", false);
-        when(delegate.findById("auth-1")).thenReturn(authorization("rt-1", false));
-
-        service.save(unchanged);
-
-        verify(cascadeListener, never()).revokeBoundSession(any(), anyString());
-    }
-
-    @Test
-    @DisplayName("a rotation tombstones the old token but does not revoke the session")
-    void rotation_tombstonesWithoutRevoking() {
+    @DisplayName("a rotation tombstones the old token")
+    void rotation_tombstones() {
         when(delegate.findById("auth-1")).thenReturn(authorization("rt-1", false));
         OAuth2Authorization rotated = authorization("rt-2", false);
 
         service.save(rotated);
 
         verify(reuseGuard).recordRotation(any(), eq(rotated));
-        verify(cascadeListener, never()).revokeBoundSession(any(), anyString());
-    }
-
-    @Test
-    @DisplayName("an already-invalidated token is not revoked twice")
-    void alreadyInvalidated_doesNotRevokeAgain() {
-        when(delegate.findById("auth-1")).thenReturn(authorization("rt-1", true));
-
-        service.save(authorization("rt-1", true));
-
-        verify(cascadeListener, never()).revokeBoundSession(any(), anyString());
     }
 
     // ─── finding 5: replay detection belongs to the grant ───────────────
@@ -203,13 +179,12 @@ class CascadingAuthorizationServiceTest {
     // ─── remove() keeps its own cascade ─────────────────────────────────
 
     @Test
-    @DisplayName("remove still cascades, with its own reason")
-    void remove_stillCascades() {
+    @DisplayName("remove goes to the store only")
+    void remove_delegates() {
         OAuth2Authorization authorization = authorization("rt-1", false);
 
         service.remove(authorization);
 
         verify(delegate).remove(authorization);
-        verify(cascadeListener).onAuthorizationRemoved(authorization);
     }
 }

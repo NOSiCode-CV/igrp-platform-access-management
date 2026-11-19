@@ -37,8 +37,7 @@ import java.util.Set;
  * granted it (owning side {@code t_application_role}) and every department that exposed it
  * (owning side {@code t_department_application}), then publishes
  * {@link DepartmentScopeChangedEvent}({@link DepartmentScopeChangedEvent#CHANGE_APPLICATIONS})
- * per affected department so users' JWT {@code resource_access} claims are refreshed on
- * their next authenticated request.
+ * per affected department so the affected users' cached permission sets are dropped.
  * </p>
  *
  * <p>
@@ -102,8 +101,8 @@ public class DeleteApplicationCommandHandler implements CommandHandler<DeleteApp
 
       // Fix (P1 gap): the app used to be marked DELETED without touching the role-side or
       // department-side joins. Roles kept granting a deleted app via t_application_role,
-      // and dept.getApplications() still listed it — so JWT resource_access claims for
-      // holders of those roles kept the deleted app until token refresh. Clear both sides
+      // and dept.getApplications() still listed it — so holders of those roles kept
+      // seeing the deleted app. Clear both sides
       // and fire per-dept scope-change events so sessions are invalidated.
       Set<String> touchedDeptCodes = new HashSet<>();
       if (application.getDepartments() != null) {

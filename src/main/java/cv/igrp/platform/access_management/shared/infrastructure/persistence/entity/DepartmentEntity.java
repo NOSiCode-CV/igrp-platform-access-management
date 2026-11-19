@@ -7,6 +7,8 @@ import cv.igrp.platform.access_management.shared.config.AuditEntity;
 import cv.igrp.framework.stereotype.IgrpEntity;
 import jakarta.persistence.*;
 import lombok.*;
+import cv.igrp.framework.auth.core.scope.IgrpScope;
+import org.hibernate.annotations.Filter;
 import org.hibernate.envers.Audited;
 import cv.igrp.platform.access_management.shared.application.constants.DepartmentStatus;
 import java.util.Set;
@@ -21,6 +23,7 @@ import java.util.List;
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
+@Filter(name = IgrpScope.FILTER, condition = AmScopes.DEPARTMENT, deduceAliasInjectionPoints = false)
 @Table(name = "t_department")
 public class DepartmentEntity extends AuditEntity {
 

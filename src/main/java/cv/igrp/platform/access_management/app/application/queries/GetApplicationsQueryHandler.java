@@ -7,7 +7,6 @@ import cv.igrp.platform.access_management.shared.infrastructure.persistence.enti
 import cv.igrp.platform.access_management.shared.infrastructure.persistence.repository.ApplicationEntityRepository;
 import cv.igrp.framework.core.domain.QueryHandler;
 import cv.igrp.framework.stereotype.IgrpQueryHandler;
-import cv.igrp.platform.access_management.shared.security.ScopeContext;
 import org.springframework.data.jpa.domain.Specification;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -62,7 +61,7 @@ public class GetApplicationsQueryHandler implements QueryHandler<GetApplications
    */
   @IgrpQueryHandler
   public ResponseEntity<List<ApplicationDTO>> handle(GetApplicationsQuery applicationsQuery) {
-    Specification<ApplicationEntity> spec = specification.buildSpecification(applicationsQuery, new ScopeContext());
+    Specification<ApplicationEntity> spec = specification.buildSpecification(applicationsQuery);
     List<ApplicationDTO> applications = applicationRepository.findAll(spec)
             .stream()
             .map(applicationMapper::toDto)

@@ -3,35 +3,21 @@ package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import cv.igrp.platform.access_management.shared.security.IgrpOidcUser;
 import cv.igrp.platform.access_management.oauth_server.infrastructure.persistence.repository.OAuthClientJpaRepository;
 import cv.igrp.platform.access_management.security_audit.application.service.SecurityAuditService;
-import cv.igrp.platform.access_management.security_audit.domain.enums.AuditCategory;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
-import org.springframework.security.oauth2.core.AuthorizationGrantType;
-import org.springframework.security.oauth2.core.oidc.user.OidcUser;
-import org.springframework.security.oauth2.core.OAuth2Error;
-import org.springframework.security.oauth2.core.OAuth2ErrorCodes;
-import org.springframework.security.oauth2.server.authorization.authentication.OAuth2ClientAuthenticationToken;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
-import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
-import org.springframework.security.oauth2.server.authorization.OAuth2TokenType;
 import org.springframework.security.oauth2.server.authorization.client.RegisteredClientRepository;
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.token.JwtEncodingContext;
 import org.springframework.security.oauth2.server.authorization.token.OAuth2TokenCustomizer;
-import org.springframework.security.oauth2.core.OAuth2AuthenticationException;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.time.Duration;
 
 /**
  * Wiring for JWT signing, the registered-client bridge, and iGRP-specific
@@ -39,8 +25,6 @@ import java.util.Map;
  */
 @Configuration
 public class JwtTokenConfig {
-
-    private static final Logger LOG = LoggerFactory.getLogger(JwtTokenConfig.class);
 
     private final KeyUtils keyUtils;
     private final String issuer;
@@ -129,229 +113,21 @@ public class JwtTokenConfig {
                 .build();
     }
 
+    /**
+     * @param userAccessTokenTtlSeconds a user's access token lifetime (#33): 5 minutes by default,
+     *                                  {@code IGRP_OAUTH_ACCESS_TOKEN_TTL_SECONDS}; a client with a shorter one keeps it
+     * @param refreshMaxLifetimeSeconds how long after signing in a refresh is still accepted (#33): the
+     *                                  user's session, {@code IGRP_SSO_SESSION_TIMEOUT_SECONDS}, 8 hours by default
+     */
     @Bean
     public OAuth2TokenCustomizer<JwtEncodingContext> igrpTokenCustomizer(ClaimsEnrichmentService claimsService,
                                                                          SecurityAuditService auditService,
-                                                                         SessionIssuanceService sessionIssuanceService,
-                                                                         TokenExchangeClaimsService tokenExchangeClaimsService) {
-        return context -> {
-            // ID_TOKEN branch — copy our SessionEntity binding id and device id
-            // from the already-issued access token onto the id_token under
-            // {@code igrp_session_id}, NOT under the OIDC-standard {@code sid}
-            // claim.
-            //
-            // Why a custom claim instead of the standard `sid`:
-            //
-            // Spring AS's {@code OidcLogoutAuthenticationProvider} (in
-            // spring-security-oauth2-authorization-server 1.5.x) compares the
-            // id_token's `sid` claim against {@code base64url(SHA-256(JSESSIONID))}
-            // — its own representation of "the current servlet session". When
-            // the values disagree it throws OAuth2AuthenticationException
-            // ("OpenID Connect 1.0 Logout Request Parameter: sid"), which
-            // ExceptionTranslationFilter resolves to a bare 401 Bearer because
-            // the auto-installed BearerTokenAuthenticationEntryPoint (MediaType.ALL
-            // matcher) wins the entry-point race. The browser-initiated POST
-            // /connect/logout then 401s on every logged-in user, while
-            // unauthenticated cURL (no JSESSIONID) succeeds because the
-            // provider's null-sessionId guard skips the check.
-            //
-            // Our `binding.sid()` is the SessionEntity UUID — never equal to
-            // Spring's hashed JSESSIONID by construction. Setting `sid` to it
-            // breaks RP-initiated logout 100% of the time for browsers and
-            // hides the failure on cURL.
-            //
-            // Resolution: keep our binding id in a separate claim
-            // ({@code igrp_session_id}). Spring AS sees no `sid` on the id_token,
-            // skips its check, and the logout request flows through to our
-            // SessionLogoutHandler — which now reads {@code igrp_session_id}
-            // to find the SessionEntity (see SessionLogoutHandler.extractSid).
-            //
-            // Note: we still record `sid` on the ACCESS token via the binding
-            // path below (line 234), because SessionEnforcementFilter resolves
-            // it from the access token JWT and never trips Spring AS's logout
-            // provider check (the provider only reads the id_token).
-            if ("id_token".equals(context.getTokenType().getValue())) {
-                OAuth2Authorization auth = context.getAuthorization();
-                if (auth != null && auth.getAccessToken() != null
-                        && auth.getAccessToken().getClaims() != null) {
-                    Map<String, Object> accessClaims = auth.getAccessToken().getClaims();
-                    Object sidClaim = accessClaims.get("sid");
-                    if (sidClaim != null) {
-                        context.getClaims().claim("igrp_session_id", sidClaim);
-                    }
-                    Object deviceClaim = accessClaims.get("device_id");
-                    if (deviceClaim != null) {
-                        context.getClaims().claim("device_id", deviceClaim);
-                    }
-                    Object superAdminClaim = accessClaims.get("is_super_admin");
-                    if (superAdminClaim != null) {
-                        context.getClaims().claim("is_super_admin", superAdminClaim);
-                    }
-                }
-                return;
-            }
-            if (!OAuth2TokenType.ACCESS_TOKEN.equals(context.getTokenType())) {
-                return;
-            }
-
-            if (AuthorizationGrantType.TOKEN_EXCHANGE.equals(context.getAuthorizationGrantType())) {
-                tokenExchangeClaimsService.customize(context);
-                auditService.logEvent(
-                        cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType.TOKEN_ISSUED,
-                        AuditCategory.AUTHENTICATION,
-                        Map.of("clientId", context.getRegisteredClient().getClientId(),
-                                "grantType", AuthorizationGrantType.TOKEN_EXCHANGE.getValue(),
-                                "sub", context.getClaims().build().getSubject(),
-                                "audience", context.getClaims().build().getAudience(),
-                                "act", context.getClaims().build().getClaim("act"),
-                                "userId", context.getClaims().build().getSubject()));
-                return;
-            }
-
-            String internalSub = null;
-            String upstreamIdToken = null;
-            String ssoLoginId = null;
-            if (context.getPrincipal() instanceof OAuth2AuthenticationToken oauth2Token) {
-                Map<String, Object> attributes = oauth2Token.getPrincipal().getAttributes();
-                String provider = oauth2Token.getAuthorizedClientRegistrationId();
-
-                String userEmail = (String) attributes.get("email");
-                if (userEmail != null) {
-                    internalSub = claimsService.mapEmail(provider, userEmail);
-                }
-                if (internalSub == null) {
-                    String externalUserId = (String) attributes.get("sub");
-                    internalSub = claimsService.mapSubject(provider, externalUserId);
-                }
-                // Capture the upstream IdP's original id_token so we can replay
-                // it as id_token_hint on the RP-initiated logout cascade. WSO2 IS
-                // (and other strict IdPs) ignore post_logout_redirect_uri when
-                // id_token_hint is missing; capturing it here is the only point
-                // in the flow where the upstream OidcUser principal is still
-                // attached to the token-issuance context.
-                // R1.6 — which AM sign-in this authorization was granted under.
-                // Minted in IgrpOidcUserService and carried on the principal,
-                // which Spring AS persists with the authorization; that is why
-                // it is readable here, at a token endpoint call that has no
-                // browser cookie of its own. Null for a principal from before
-                // this field existed, which simply means no key (R1.5).
-                if (oauth2Token.getPrincipal() instanceof IgrpOidcUser igrpOidcUser) {
-                    ssoLoginId = igrpOidcUser.getSsoLoginId();
-                    if (ssoLoginId == null) {
-                        LOG.debug("No SSO login id on the principal for sub={}; this session will not "
-                                + "take part in a logout cascade", internalSub);
-                    }
-                }
-                if (oauth2Token.getPrincipal() instanceof OidcUser oidcUser
-                        && oidcUser.getIdToken() != null) {
-                    upstreamIdToken = oidcUser.getIdToken().getTokenValue();
-                    LOG.debug("Captured upstream id_token ({} chars) for provider={} sub={} to stash on the session row",
-                            upstreamIdToken.length(), provider, internalSub);
-                } else {
-                    LOG.warn("No upstream id_token to capture at issuance: principal type={}, "
-                            + "OidcUser idToken null? = {}. RP-initiated logout cascade will "
-                            + "be missing id_token_hint and strict IdPs (Autentika, WSO2 IS) "
-                            + "will refuse to honor post_logout_redirect_uri.",
-                            oauth2Token.getPrincipal().getClass().getName(),
-                            !(oauth2Token.getPrincipal() instanceof OidcUser));
-                }
-            } else if (context.getPrincipal() != null
-                    && !(context.getPrincipal() instanceof OAuth2ClientAuthenticationToken)) {
-                Object name = context.getPrincipal().getName();
-                if (name != null) {
-                    internalSub = String.valueOf(name);
-                }
-            }
-
-            String clientId = context.getRegisteredClient().getClientId();
-            boolean isClientCredentials = AuthorizationGrantType.CLIENT_CREDENTIALS
-                    .equals(context.getAuthorizationGrantType());
-            if (isClientCredentials) {
-                internalSub = claimsService.resolveServiceAccountSubject(clientId)
-                        .orElse(internalSub);
-            }
-            if (internalSub != null) {
-                context.getClaims().subject(internalSub);
-            }
-            Map<String, Object> claims = claimsService.buildClaims(
-                    internalSub,
-                    clientId,
-                    context.getAuthorizedScopes()
-            );
-            claims.forEach((key, value) -> context.getClaims().claim(key, value));
-
-            // Phase B — bind the JWT to a server-side session and add sid/device_id claims.
-            // Skipped for client_credentials (M2M) where there is no end-user subject.
-            String issuanceUserId = parseUserId(internalSub);
-            if (!isClientCredentials && issuanceUserId != null) {
-                String jti = context.getClaims().build().getId();
-                try {
-                    SessionIssuanceService.IssuanceBinding binding =
-                            sessionIssuanceService.bindAccessToken(context, issuanceUserId, clientId, jti,
-                                    upstreamIdToken, ssoLoginId);
-                    context.getClaims().claim("sid", binding.sid().toString());
-                    context.getClaims().claim("device_id", binding.deviceId());
-                } catch (SessionIssuanceService.SessionRefreshRejectedException ex) {
-                    throw new OAuth2AuthenticationException(
-                            new OAuth2Error(OAuth2ErrorCodes.INVALID_GRANT,
-                                    ex.getMessage(),
-                                    null),
-                            ex);
-                } catch (RuntimeException ex) {
-                    // Anything else that goes wrong while opening the session is
-                    // OUR failure, and it must say so.
-                    //
-                    // Left to propagate, it escaped the authorization-server
-                    // filter chain, was forwarded to /error, and the security
-                    // chain denied that as anonymous — so the caller received a
-                    // bare 401 with no OAuth error body. That is the same shape
-                    // as invalid_client, which sent an integration team hunting a
-                    // credentials problem while the real cause was a duplicate
-                    // key on t_user_session (the ux_session_user_device_active
-                    // index, since dropped).
-                    //
-                    // server_error is the honest code: the request was fine, we
-                    // could not complete it. Spring AS renders it as a proper
-                    // OAuth error body with a 500, so clients can tell "retry or
-                    // escalate" from "fix your credentials". The cause is logged
-                    // here because the error returned to the caller is
-                    // deliberately generic.
-                    LOG.error("Session binding failed during token issuance for user={} client={}; "
-                            + "returning server_error", issuanceUserId, clientId, ex);
-                    throw new OAuth2AuthenticationException(
-                            new OAuth2Error(OAuth2ErrorCodes.SERVER_ERROR,
-                                    "The session could not be established for this token.",
-                                    null),
-                            ex);
-                }
-            }
-
-            // Record token issuance into the unified security audit trail. (The
-            // former parallel AuthAuditLog write was removed in Phase 1 of the
-            // Unified Audit feature — this is now the single source of truth.)
-            Map<String, Object> auditContext = new HashMap<>();
-            auditContext.put("clientId", clientId);
-            auditContext.put("grantType", context.getAuthorizationGrantType().getValue());
-            if (internalSub != null) {
-                auditContext.put("sub", internalSub);
-            }
-            auditService.logEvent(
-                    cv.igrp.platform.access_management.security_audit.domain.enums.AuditEventType.TOKEN_ISSUED,
-                    AuditCategory.AUTHENTICATION,
-                    auditContext
-            );
-        };
+                                                                         @Value("${igrp.oauth.access-token-ttl-seconds:300}")
+                                                                         long userAccessTokenTtlSeconds,
+                                                                         @Value("${igrp.oauth.refresh-max-lifetime-seconds:28800}")
+                                                                         long refreshMaxLifetimeSeconds) {
+        return new IgrpTokenCustomizer(claimsService, auditService,
+                Duration.ofSeconds(userAccessTokenTtlSeconds), Duration.ofSeconds(refreshMaxLifetimeSeconds));
     }
 
-    private static String parseUserId(String sub) {
-        if (sub == null || sub.isBlank()) {
-            return null;
-        }
-        try {
-            java.util.UUID.fromString(sub);
-            return sub;
-        } catch (IllegalArgumentException ex) {
-            return null;
-        }
-    }
 }

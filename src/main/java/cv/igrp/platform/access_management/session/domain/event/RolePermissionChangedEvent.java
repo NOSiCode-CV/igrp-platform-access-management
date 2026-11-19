@@ -1,7 +1,6 @@
 package cv.igrp.platform.access_management.session.domain.event;
 
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.time.Instant;
 
@@ -9,8 +8,7 @@ import java.time.Instant;
  * Event fired when role permissions change
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
-public class RolePermissionChangedEvent extends SessionEvent {
+public class RolePermissionChangedEvent {
 
     /** The scopes of some of the role's permissions changed (#21): which rows, not which routes. */
     public static final String CHANGE_SCOPES = "SCOPES_CHANGED";
@@ -25,13 +23,15 @@ public class RolePermissionChangedEvent extends SessionEvent {
     private String departmentCode;
     private String changeType; // PERMISSIONS_ADDED, PERMISSIONS_REMOVED, ROLE_STATUS_CHANGED
     private Instant timestamp;
+    /** Who triggered the change. */
+    private String source;
 
     public RolePermissionChangedEvent(String roleCode, String departmentCode, 
                                       String changeType, String triggeredBy) {
-        super(null, null, triggeredBy);
         this.roleCode = roleCode;
         this.departmentCode = departmentCode;
         this.changeType = changeType;
         this.timestamp = Instant.now();
+        this.source = triggeredBy;
     }
 }
