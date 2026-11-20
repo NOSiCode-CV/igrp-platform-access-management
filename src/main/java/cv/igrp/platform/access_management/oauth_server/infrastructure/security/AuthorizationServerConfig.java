@@ -199,6 +199,11 @@ public class AuthorizationServerConfig {
                         // before our SessionLogoutHandler is invoked, so this
                         // doesn't widen the auth surface.
                         .requestMatchers(CONNECT_LOGOUT_MATCHER).permitAll()
+                        // #46 — prompt=none must reach the authorization endpoint
+                        // without a session, so it answers login_required to the
+                        // client instead of sending it to the IdP login. See
+                        // SilentAuthorizationRequestMatcher.
+                        .requestMatchers(SilentAuthorizationRequestMatcher.INSTANCE).permitAll()
                         .anyRequest().authenticated())
 				.exceptionHandling(ex -> ex
                         // FR-20 — /connect/logout (OIDC RP-initiated logout) MUST behave

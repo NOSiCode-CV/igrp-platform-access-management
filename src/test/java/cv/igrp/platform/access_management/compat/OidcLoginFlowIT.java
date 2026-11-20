@@ -315,6 +315,54 @@ class OidcLoginFlowIT extends AbstractCompatIT {
         return ((Number) claims.get("exp")).longValue() - ((Number) claims.get("iat")).longValue();
     }
 
+    @Test
+    @Order(20)
+    @DisplayName("prompt=none without a session answers login_required to the client, not the IdP login (#46)")
+    void silentAuthorizeWithoutSession() throws Exception {
+        codeVerifier = randomUrlSafe(48);
+        String state = randomUrlSafe(16);
+
+        HttpResponse<String> response = new TestBrowser().get(authorizeUrl(REDIRECT_URI, state) + "&prompt=none");
+
+        assertEquals(302, response.statusCode(), response.body());
+        String location = response.headers().firstValue("Location").orElseThrow();
+        assertTrue(location.startsWith(REDIRECT_URI), "expected the client's redirect URI, got " + location);
+        Map<String, String> callback = TestBrowser.queryParameters(location);
+        assertEquals("login_required", callback.get("error"), location);
+        assertEquals(state, callback.get("state"), location);
+        assertNull(callback.get("code"), location);
+    }
+
+    @Test
+    @Order(21)
+    @DisplayName("prompt=none with a session issues the code without the IdP (#46)")
+    void silentAuthorizeWithSession() throws Exception {
+        TestBrowser browser = new TestBrowser();
+        signIn(browser);
+
+        codeVerifier = randomUrlSafe(48);
+        String state = randomUrlSafe(16);
+        HttpResponse<String> response = browser.get(authorizeUrl(REDIRECT_URI, state) + "&prompt=none");
+
+        assertEquals(302, response.statusCode(), response.body());
+        String location = response.headers().firstValue("Location").orElseThrow();
+        assertTrue(location.startsWith(REDIRECT_URI), "expected the client's redirect URI, got " + location);
+        exchange(location, state, REDIRECT_URI);
+    }
+
+    @Test
+    @Order(22)
+    @DisplayName("prompt=none for an unknown redirect URI is refused, never redirected there (#46)")
+    void silentAuthorizeKeepsRedirectValidation() throws Exception {
+        codeVerifier = randomUrlSafe(48);
+        HttpResponse<String> response = new TestBrowser()
+                .get(authorizeUrl("https://evil.example.com/callback", randomUrlSafe(16)) + "&prompt=none");
+
+        String location = response.headers().firstValue("Location").orElse("");
+        assertFalse(location.startsWith("https://evil.example.com"), "redirected to an unregistered URI: " + location);
+        assertEquals(4, response.statusCode() / 100, response.statusCode() + " " + location);
+    }
+
     /**
      * The authorization behind this access token. Other sign-ins of the same
      * user (the first one in this class, on another "browser") keep theirs.
