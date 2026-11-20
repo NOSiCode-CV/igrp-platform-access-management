@@ -363,8 +363,12 @@ public class RespondUserInvitationCommandHandler
 
                if (chosenActiveRole != null) {
                   Integer oldActiveRoleId = priorActiveRole != null ? priorActiveRole.getId() : null;
+                  // savedUser is managed: the change is flushed with the transaction.
+                  // A second userRepository.save(savedUser) merges it, and the merge
+                  // cascades to the UserRoleAssignment the loop above just created
+                  // (still transient), making a second managed copy with the same id:
+                  // Hibernate 7 then fails the flush with DuplicateKeyException (#47).
                   savedUser.setActiveRole(chosenActiveRole);
-                  savedUser = userRepository.save(savedUser);
                   LOGGER.info("Invitation accept set active role for user id={} role={} (department={})",
                           savedUserId, chosenActiveRole.getCode(),
                           chosenActiveRole.getDepartment() != null ? chosenActiveRole.getDepartment().getCode() : null);
