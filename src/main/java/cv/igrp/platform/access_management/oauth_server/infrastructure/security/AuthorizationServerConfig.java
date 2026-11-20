@@ -203,7 +203,7 @@ public class AuthorizationServerConfig {
                         // without a session, so it answers login_required to the
                         // client instead of sending it to the IdP login. See
                         // SilentAuthorizationRequestMatcher.
-                        .requestMatchers(SilentAuthorizationRequestMatcher.INSTANCE).permitAll()
+                        .requestMatchers(new SilentAuthorizationRequestMatcher()).permitAll()
                         .anyRequest().authenticated())
 				.exceptionHandling(ex -> ex
                         // FR-20 — /connect/logout (OIDC RP-initiated logout) MUST behave

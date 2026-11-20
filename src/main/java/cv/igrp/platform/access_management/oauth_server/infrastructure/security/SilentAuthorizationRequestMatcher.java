@@ -23,11 +23,6 @@ import java.util.Arrays;
  */
 public final class SilentAuthorizationRequestMatcher implements RequestMatcher {
 
-    public static final SilentAuthorizationRequestMatcher INSTANCE = new SilentAuthorizationRequestMatcher();
-
-    private SilentAuthorizationRequestMatcher() {
-    }
-
     @Override
     public boolean matches(HttpServletRequest request) {
         String uri = request.getRequestURI();

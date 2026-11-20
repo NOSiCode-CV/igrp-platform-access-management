@@ -1,11 +1,13 @@
 package cv.igrp.platform.access_management.oauth_server.infrastructure.security;
 
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.mock.web.MockHttpServletRequest;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 
 class SilentAuthorizationRequestMatcherTest {
 
@@ -29,17 +31,16 @@ class SilentAuthorizationRequestMatcherTest {
             request.setParameter("prompt", prompt);
         }
 
-        assertEquals(expected, SilentAuthorizationRequestMatcher.INSTANCE.matches(request));
+        assertEquals(expected, new SilentAuthorizationRequestMatcher().matches(request));
     }
 
-    @ParameterizedTest(name = "uri={0}")
+    @Test
     @DisplayName("A request without a URI does not match")
-    @CsvSource(nullValues = "NULL", value = {"NULL"})
-    void noUri(String uri) {
+    void noUri() {
         MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI(uri);
+        request.setRequestURI(null);
         request.setParameter("prompt", "none");
 
-        assertEquals(false, SilentAuthorizationRequestMatcher.INSTANCE.matches(request));
+        assertFalse(new SilentAuthorizationRequestMatcher().matches(request));
     }
 }
