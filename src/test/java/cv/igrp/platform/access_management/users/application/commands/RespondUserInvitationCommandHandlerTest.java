@@ -143,9 +143,12 @@ class RespondUserInvitationCommandHandlerTest {
         assertNotNull(response);
         assertEquals(HttpStatus.OK, response.getStatusCode());
         verify(invitationRepository).save(invitation);
-        // Saved twice: once creating the user, then again once accept has
-        // bootstrapped the active role from the invitation.
-        verify(userRepository, times(2)).save(any(IGRPUserEntity.class));
+        // Saved once (#47). The active role bootstrapped from the invitation is set on
+        // the managed user and flushed with the transaction: a second save merged
+        // the user and duplicated the new UserRoleAssignment (DuplicateKeyException).
+        ArgumentCaptor<IGRPUserEntity> saved = ArgumentCaptor.forClass(IGRPUserEntity.class);
+        verify(userRepository, times(1)).save(saved.capture());
+        assertNotNull(saved.getValue().getActiveRole(), "the active role is set on the managed user");
         verify(auditService).logUserChange(any(), eq("CREATE"));
     }
 
